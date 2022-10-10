@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@vitejs/css-lib": "file:./css-lib",
-    "bcrypt": "^5.0.1",
+    "bcrypt": "^5.1.0",
     "define-properties-exports": "file:./define-properties-exports",
     "define-property-exports": "file:./define-property-exports",
     "forwarded-export": "file:./forwarded-export",
@@ -32,6 +32,6 @@
     "pkg-exports": "file:./pkg-exports"
   },
   "devDependencies": {
-    "express": "^4.18.1"
+    "express": "^4.18.2"
   }
 }

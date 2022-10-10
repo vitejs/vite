@@ -15,12 +15,12 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.4.1"
+    "react-router-dom": "^6.4.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "workspace:*",
     "compression": "^1.7.4",
-    "express": "^4.18.1",
+    "express": "^4.18.2",
     "serve-static": "^1.15.0"
   }
 }
