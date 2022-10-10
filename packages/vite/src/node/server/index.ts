@@ -65,6 +65,7 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
+import type { ModuleNode } from './moduleGraph';
 import { ModuleGraph } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
@@ -246,10 +247,10 @@ export interface ViteDevServer {
    */
   ssrFixStacktrace(e: Error): void
   /**
-   * Invalidate a module by URL. Compared to `moduleGraph.invalidateModule`,
-   * this method also triggers HMR in the client. If `hmr` is false, this is a no-op.
+   * Triggers HMR for a module in the module graph. You can use the `server.moduleGraph`
+   * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
    */
-  invalidateModule(url: string): Promise<void>
+  reloadModule(module: ModuleNode): Promise<void>
   /**
    * Start the server.
    */
@@ -387,12 +388,9 @@ export async function createServer(
     ssrRewriteStacktrace(stack: string) {
       return ssrRewriteStacktrace(stack, moduleGraph)
     },
-    async invalidateModule(url) {
-      if (serverConfig.hmr !== false) {
-        const mod = await moduleGraph.getModuleByUrl(url)
-        if (mod) {
-          updateModules(mod.file || url, [mod], Date.now(), server)
-        }
+    async reloadModule(module) {
+      if (serverConfig.hmr !== false && module.file) {
+        updateModules(module.file, [module], Date.now(), server)
       }
     },
     async listen(port?: number, isRestart?: boolean) {

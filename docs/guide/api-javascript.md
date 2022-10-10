@@ -120,10 +120,10 @@ interface ViteDevServer {
    */
   ssrFixStacktrace(e: Error): void
   /**
-   * Invalidate a module by URL. Compared to `moduleGraph.invalidateModule`,
-   * this method also triggers HMR in the client. If `hmr` is false, this is a no-op.
+   * Triggers HMR for a module in the module graph. You can use the `server.moduleGraph`
+   * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
    */
-  invalidateModule(url: string): Promise<void>
+  reloadModule(module: ModuleNode): Promise<void>
   /**
    * Start the server.
    */
