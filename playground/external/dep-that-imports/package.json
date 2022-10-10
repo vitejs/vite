@@ -1,8 +1,9 @@
 {
-  "name": "@vitejs/dep-that-requires-vue",
+  "name": "@vitejs/dep-that-imports",
   "private": true,
   "version": "0.0.0",
   "dependencies": {
+    "slash": "^5.0.0",
     "vue": "^3.2.41"
   }
 }

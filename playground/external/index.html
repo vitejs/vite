@@ -7,7 +7,8 @@
     <script type="importmap">
       {
         "imports": {
-          "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js"
+          "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js",
+          "slash": "https://unpkg.com/slash@5.0.0/index.js"
         }
       }
     </script>
@@ -15,6 +16,8 @@
   <body>
     <p>Imported Vue version: <span id="imported-vue-version"></span></p>
     <p>Required Vue version: <span id="required-vue-version"></span></p>
+    <p>Imported slash exists: <span id="imported-slash-exists"></span></p>
+    <p>Required slash exists: <span id="required-slash-exists"></span></p>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
