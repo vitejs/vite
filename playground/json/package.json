@@ -12,7 +12,7 @@
     "debug:ssr": "node --inspect-brk server"
   },
   "devDependencies": {
-    "express": "^4.18.1",
+    "express": "^4.18.2",
     "json-module": "file:./json-module",
     "vue": "^3.2.40"
   }
