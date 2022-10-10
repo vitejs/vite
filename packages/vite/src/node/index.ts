@@ -119,6 +119,7 @@ export type {
 // dep types
 export type {
   AliasOptions,
+  MapToFunction,
   ResolverFunction,
   ResolverObject,
   Alias

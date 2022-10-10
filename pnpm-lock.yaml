@@ -215,7 +215,7 @@ importers:
       '@babel/parser': ^7.19.3
       '@babel/types': ^7.19.3
       '@jridgewell/trace-mapping': ^0.3.16
-      '@rollup/plugin-alias': ^3.1.9
+      '@rollup/plugin-alias': ^4.0.0
       '@rollup/plugin-commonjs': ^22.0.2
       '@rollup/plugin-dynamic-import-vars': ^1.4.4
       '@rollup/plugin-json': ^4.1.0
@@ -282,7 +282,7 @@ importers:
       '@babel/parser': 7.19.3
       '@babel/types': 7.19.3
       '@jridgewell/trace-mapping': 0.3.16
-      '@rollup/plugin-alias': 3.1.9_rollup@2.79.1
+      '@rollup/plugin-alias': 4.0.0_rollup@2.79.1
       '@rollup/plugin-commonjs': 22.0.2_rollup@2.79.1
       '@rollup/plugin-dynamic-import-vars': 1.4.4_rollup@2.79.1
       '@rollup/plugin-json': 4.1.0_rollup@2.79.1
@@ -2219,6 +2219,19 @@ packages:
     dependencies:
       rollup: 2.79.1
       slash: 3.0.0
+    dev: true
+
+  /@rollup/plugin-alias/4.0.0_rollup@2.79.1:
+    resolution: {integrity: sha512-fGRWzM2F6wXnzAqn4Db8SdB/2Ree0u2XOQaaTy9mhqA35NmUzJXevMBUcpZywPF2MIUUAw+SKfWogKxFSPh+Qw==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      rollup: 2.79.1
+      slash: 4.0.0
     dev: true
 
   /@rollup/plugin-commonjs/22.0.2_rollup@2.79.1:
