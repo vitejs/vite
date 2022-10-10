@@ -226,6 +226,12 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
+// `nodeImport` may run in parallel on multiple `ssrLoadModule` calls.
+// We keep track of the current importing count so that the first import
+// would `hookNodeResolve`, and the last import would `unhookNodeResolve`.
+let importingCount = 0
+let unhookNodeResolve: ReturnType<typeof hookNodeResolve> | undefined
+
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
@@ -250,34 +256,36 @@ async function nodeImport(
     return resolved.id
   }
 
-  // When an ESM module imports an ESM dependency, this hook is *not* used.
-  const unhookNodeResolve = hookNodeResolve(
-    (nodeResolve) => (id, parent, isMain, options) => {
-      // Use the Vite resolver only for bare imports while skipping
-      // any absolute paths, built-in modules and binary modules.
-      if (
-        !bareImportRE.test(id) ||
-        path.isAbsolute(id) ||
-        isBuiltin(id) ||
-        id.endsWith('.node')
-      ) {
-        return nodeResolve(id, parent, isMain, options)
-      }
-      if (parent) {
-        let resolved = viteResolve(id, parent.id)
-        if (resolved) {
-          // hookNodeResolve must use platform-specific path.normalize
-          // to be compatible with dynamicImport (#6080)
-          resolved = path.normalize(resolved)
+  if (importingCount === 0) {
+    // When an ESM module imports an ESM dependency, this hook is *not* used.
+    unhookNodeResolve = hookNodeResolve(
+      (nodeResolve) => (id, parent, isMain, options) => {
+        // Use the Vite resolver only for bare imports while skipping
+        // any absolute paths, built-in modules and binary modules.
+        if (
+          !bareImportRE.test(id) ||
+          path.isAbsolute(id) ||
+          isBuiltin(id) ||
+          id.endsWith('.node')
+        ) {
+          return nodeResolve(id, parent, isMain, options)
         }
-        return resolved
+        if (parent) {
+          let resolved = viteResolve(id, parent.id)
+          if (resolved) {
+            // hookNodeResolve must use platform-specific path.normalize
+            // to be compatible with dynamicImport (#6080)
+            resolved = path.normalize(resolved)
+          }
+          return resolved
+        }
+        // Importing a CJS module from an ESM module. In this case, the import
+        // specifier is already an absolute path, so this is a no-op.
+        // Options like `resolve.dedupe` and `mode` are not respected.
+        return id
       }
-      // Importing a CJS module from an ESM module. In this case, the import
-      // specifier is already an absolute path, so this is a no-op.
-      // Options like `resolve.dedupe` and `mode` are not respected.
-      return id
-    }
-  )
+    )
+  }
 
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {
@@ -299,10 +307,14 @@ async function nodeImport(
   }
 
   try {
+    importingCount++
     const mod = await dynamicImport(url)
     return proxyESM(mod)
   } finally {
-    unhookNodeResolve()
+    importingCount--
+    if (importingCount === 0) {
+      unhookNodeResolve?.()
+    }
   }
 }
 
