@@ -72,7 +72,7 @@
     "@babel/parser": "^7.19.3",
     "@babel/types": "^7.19.3",
     "@jridgewell/trace-mapping": "^0.3.16",
-    "@rollup/plugin-alias": "^3.1.9",
+    "@rollup/plugin-alias": "^4.0.0",
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-dynamic-import-vars": "^1.4.4",
     "@rollup/plugin-json": "^4.1.0",

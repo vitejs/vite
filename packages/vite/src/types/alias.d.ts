@@ -40,7 +40,9 @@ export interface Alias {
   customResolver?: ResolverFunction | ResolverObject | null
 }
 
-export type ResolverFunction = PluginHooks['resolveId']
+export type MapToFunction<T> = T extends Function ? T : never
+
+export type ResolverFunction = MapToFunction<PluginHooks['resolveId']>
 
 export interface ResolverObject {
   buildStart?: PluginHooks['buildStart']
