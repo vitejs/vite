@@ -122,7 +122,7 @@ npm add -D terser
 - **Type:** `BuildOptions['terserOptions']`
 - **Default:** `build.terserOptions`
 
-  Defaults to `build.terserOptions` specified inside config. Since `plugin-legacy` enforces the use of `terser` if minify is enabled, `polyfillChunksTerserOptions` can be set to be passed to [build.terserOptions](https://vitejs.dev/config/build-options.html#build-terseroptions).
+  Defaults to `build.terserOptions` specified inside vite config. Since `plugin-legacy` enforces the use of `terser` if minify is enabled, `polyfillChunksTerserOptions` can be set to be passed to [build.terserOptions](https://vitejs.dev/config/build-options.html#build-terseroptions).
 
 ## Dynamic Import
 
