@@ -1,8 +1,9 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { Logger } from 'vite'
 import { describe, expect, test } from 'vitest'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { resolveLibFilename } from '../build'
+import { resolveBuildOutputs, resolveLibFilename } from '../build'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -242,5 +243,28 @@ describe('resolveLibFilename', () => {
 
     expect(fileName1).toBe('custom-filename.mjs')
     expect(fileName2).toBe('custom-filename.mjs')
+  })
+})
+
+describe('resolveBuildOutputs', () => {
+  test('default format: one entry', () => {
+    const libOptions: LibraryOptions = {
+      entry: 'entryA.js',
+      name: 'entryA'
+    }
+
+    const outputs = resolveBuildOutputs(undefined, libOptions, {} as Logger)
+
+    expect(outputs).toEqual([{ format: 'es' }, { format: 'umd' }])
+  })
+
+  test('default format: multiple entries', () => {
+    const libOptions: LibraryOptions = {
+      entry: ['entryA.js', 'entryB.js']
+    }
+
+    const outputs = resolveBuildOutputs(undefined, libOptions, {} as Logger)
+
+    expect(outputs).toEqual([{ format: 'es' }, { format: 'cjs' }])
   })
 })
