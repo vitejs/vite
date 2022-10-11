@@ -94,3 +94,11 @@ declare module 'rollup-plugin-web-worker-loader' {
 // LESS' types somewhat references this which doesn't make sense in Node,
 // so we have to shim it
 declare interface HTMLLinkElement {}
+
+declare module 'rollup/dist/loadConfigFile' {
+  const loadAndParseConfigFile: <T>(
+    fileName: string,
+    commandOptions?: any
+  ) => Promise<{ options: T[] }>
+  export default loadAndParseConfigFile
+}

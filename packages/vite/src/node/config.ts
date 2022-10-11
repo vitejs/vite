@@ -8,6 +8,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
+import loadAndParseConfigFile from 'rollup/dist/loadConfigFile'
 import type { HookHandler, Plugin } from './plugin'
 import type {
   BuildOptions,
@@ -920,11 +921,18 @@ export async function loadConfigFromFile(
     )
     debug(`bundled config file loaded in ${getTime()}`)
 
-    const config = await (typeof userConfig === 'function'
+    let config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
       : userConfig)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
+    }
+    // read rollup config file
+    if (config?.build?.rollupConfigFile) {
+      const { options } = await loadAndParseConfigFile<RollupOptions>(
+        config.build.rollupConfigFile
+      )
+      config = mergeConfig(config, { build: { rollupOptions: options[0] } })
     }
     return {
       path: normalizePath(resolvedPath),
