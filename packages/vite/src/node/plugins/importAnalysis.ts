@@ -21,8 +21,7 @@ import {
   debugHmr,
   handlePrunedModules,
   lexAcceptedHmrDeps,
-  lexAcceptedHmrExports,
-  normalizeHmrUrl
+  lexAcceptedHmrExports
 } from '../server/hmr'
 import {
   cleanUrl,
@@ -630,7 +629,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              normalizeHmrUrl(importerModule.url)
+              importerModule.url
             )});`
         )
       }

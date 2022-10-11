@@ -31,10 +31,6 @@ declare module '*.module.pcss' {
   const classes: CSSModuleClasses
   export default classes
 }
-declare module '*.module.sss' {
-  const classes: CSSModuleClasses
-  export default classes
-}
 
 // CSS
 declare module '*.css' {
@@ -65,19 +61,11 @@ declare module '*.pcss' {
   const css: string
   export default css
 }
-declare module '*.sss' {
-  const css: string
-  export default css
-}
 
 // Built-in asset types
-// see `src/node/constants.ts`
+// see `src/constants.ts`
 
 // images
-declare module '*.png' {
-  const src: string
-  export default src
-}
 declare module '*.jpg' {
   const src: string
   export default src
@@ -95,6 +83,10 @@ declare module '*.pjpeg' {
   export default src
 }
 declare module '*.pjp' {
+  const src: string
+  export default src
+}
+declare module '*.png' {
   const src: string
   export default src
 }
@@ -172,6 +164,12 @@ declare module '*.otf' {
 }
 
 // other
+declare module '*.wasm?init' {
+  const initWasm: (
+    options: WebAssembly.Imports
+  ) => Promise<WebAssembly.Instance>
+  export default initWasm
+}
 declare module '*.webmanifest' {
   const src: string
   export default src
@@ -183,14 +181,6 @@ declare module '*.pdf' {
 declare module '*.txt' {
   const src: string
   export default src
-}
-
-// wasm?init
-declare module '*.wasm?init' {
-  const initWasm: (
-    options: WebAssembly.Imports
-  ) => Promise<WebAssembly.Instance>
-  export default initWasm
 }
 
 // web worker
@@ -208,28 +198,11 @@ declare module '*?worker&inline' {
   export default workerConstructor
 }
 
-declare module '*?worker&url' {
-  const src: string
-  export default src
-}
-
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
   }
   export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&inline' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&url' {
-  const src: string
-  export default src
 }
 
 declare module '*?raw' {

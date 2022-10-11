@@ -4,12 +4,11 @@ import history from 'connect-history-api-fallback'
 import type { Connect } from 'dep-types/connect'
 import { createDebugger } from '../../utils'
 
-export function htmlFallbackMiddleware(
-  root: string,
-  spaFallback: boolean
+export function spaFallbackMiddleware(
+  root: string
 ): Connect.NextHandleFunction {
-  const historyHtmlFallbackMiddleware = history({
-    logger: createDebugger('vite:html-fallback'),
+  const historySpaFallbackMiddleware = history({
+    logger: createDebugger('vite:spa-fallback'),
     // support /dir/ without explicit index.html
     rewrites: [
       {
@@ -21,9 +20,7 @@ export function htmlFallbackMiddleware(
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
           } else {
-            if (spaFallback) {
-              return `/index.html`
-            }
+            return `/index.html`
           }
         }
       }
@@ -31,7 +28,7 @@ export function htmlFallbackMiddleware(
   })
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteHtmlFallbackMiddleware(req, res, next) {
-    return historyHtmlFallbackMiddleware(req, res, next)
+  return function viteSpaFallbackMiddleware(req, res, next) {
+    return historySpaFallbackMiddleware(req, res, next)
   }
 }

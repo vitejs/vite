@@ -141,10 +141,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
             builtUrl = injectQuery(builtUrl, `type=${workerType}`)
           }
-          s.update(
+          s.overwrite(
             urlIndex,
             urlIndex + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            { contentOnly: true }
           )
         }
 
