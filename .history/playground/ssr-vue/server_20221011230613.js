@@ -68,7 +68,6 @@ export async function createServer(
 
       let template, render
       if (!isProd) {
-        ;('')
         // always read fresh template in dev
         template = fs.readFileSync(resolve('index.html'), 'utf-8')
         template = await vite.transformIndexHtml(url, template)
@@ -98,8 +97,8 @@ export async function createServer(
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(3000, () => {
-      console.log('http://localhost:3000')
+    app.listen(6173, () => {
+      console.log('http://localhost:6173')
     })
   )
 }
