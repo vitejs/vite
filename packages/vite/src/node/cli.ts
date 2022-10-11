@@ -79,6 +79,7 @@ cli
     // output structure is preserved even after bundling so require()
     // is ok here
     const { createServer } = await import('./server')
+    options.host = Array.isArray(options.host) ? options.host[0] : options.host
     try {
       const server = await createServer({
         root,
@@ -237,6 +238,9 @@ cli
         strictPort?: boolean
       } & GlobalCLIOptions
     ) => {
+      options.host = Array.isArray(options.host)
+        ? options.host[0]
+        : options.host
       const { preview } = await import('./preview')
       try {
         const server = await preview({
