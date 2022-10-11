@@ -84,22 +84,4 @@ export default defineConfig(async ({ command, mode }) => {
 
 ## Environment Variables
 
-Environmental Variables can be obtained from `process.env` as usual.
-
-Note that Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affect the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
-
-```js
-import { defineConfig, loadEnv } from 'vite'
-
-export default defineConfig(({ command, mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, process.cwd(), '')
-  return {
-    // vite config
-    define: {
-      __APP_ENV__: env.APP_ENV
-    }
-  }
-})
-```
+See [here](https://vitejs.dev/guide/env-and-mode.html)!
