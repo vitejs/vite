@@ -5,6 +5,7 @@ import type {
   Identifier,
   Pattern,
   Property,
+  VariableDeclaration,
   Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
@@ -196,11 +197,10 @@ async function ssrTransformScript(
         )
       } else {
         // anonymous default exports
-        s.overwrite(
+        s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
-          { contentOnly: true }
+          `${ssrModuleExportsKey}.default =`
         )
       }
     }
@@ -247,16 +247,14 @@ async function ssrTransformScript(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding, { contentOnly: true })
+        s.update(id.start, id.end, binding)
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
+      s.update(node.start, node.end, ssrImportMetaKey)
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
-        contentOnly: true
-      })
+      s.update(node.start, node.start + 6, ssrDynamicImportKey)
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }
@@ -319,6 +317,7 @@ function walk(
   { onIdentifier, onImportMeta, onDynamicImport }: Visitors
 ) {
   const parentStack: Node[] = []
+  const varKindStack: VariableDeclaration['kind'][] = []
   const scopeMap = new WeakMap<_Node, Set<string>>()
   const identifiers: [id: any, stack: Node[]][] = []
 
@@ -376,6 +375,11 @@ function walk(
         !(parent.type === 'IfStatement' && node === parent.alternate)
       ) {
         parentStack.unshift(parent)
+      }
+
+      // track variable declaration kind stack used by VariableDeclarator
+      if (node.type === 'VariableDeclaration') {
+        varKindStack.unshift(node.kind)
       }
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
@@ -437,7 +441,10 @@ function walk(
         // mark property in destructuring pattern
         setIsNodeInPattern(node)
       } else if (node.type === 'VariableDeclarator') {
-        const parentFunction = findParentScope(parentStack)
+        const parentFunction = findParentScope(
+          parentStack,
+          varKindStack[0] === 'var'
+        )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
@@ -451,6 +458,10 @@ function walk(
         !(parent.type === 'IfStatement' && node === parent.alternate)
       ) {
         parentStack.shift()
+      }
+
+      if (node.type === 'VariableDeclaration') {
+        varKindStack.shift()
       }
     }
   })
@@ -541,8 +552,12 @@ function isFunction(node: _Node): node is FunctionNode {
 
 const scopeNodeTypeRE =
   /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
-function findParentScope(parentStack: _Node[]): _Node | undefined {
-  return parentStack.find((i) => scopeNodeTypeRE.test(i.type))
+function findParentScope(
+  parentStack: _Node[],
+  isVar = false
+): _Node | undefined {
+  const regex = isVar ? functionNodeTypeRE : scopeNodeTypeRE
+  return parentStack.find((i) => regex.test(i.type))
 }
 
 function isInDestructuringAssignment(

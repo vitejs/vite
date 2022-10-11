@@ -1,3 +1,15 @@
+## 2.2.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(react): conditionally self-accept fast-refresh HMR (#10239) ([e976b06](https://github.com/vitejs/vite/commit/e976b06)), closes [#10239](https://github.com/vitejs/vite/issues/10239)
+* feat: add `throwIfNamespace` option for custom JSX runtime (#9571) ([f842f74](https://github.com/vitejs/vite/commit/f842f74)), closes [#9571](https://github.com/vitejs/vite/issues/9571)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
 ## 2.1.0 (2022-09-05)
 
 * fix(plugin-react): duplicate __self prop and __source prop (#9387) ([c89de3a](https://github.com/vitejs/vite/commit/c89de3a)), closes [#9387](https://github.com/vitejs/vite/issues/9387)
