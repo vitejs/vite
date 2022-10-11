@@ -6,6 +6,7 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
+import type { InlineConfig } from '.'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -226,6 +227,7 @@ cli
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .action(
     async (
       root: string,
@@ -235,11 +237,12 @@ cli
         https?: boolean
         open?: boolean | string
         strictPort?: boolean
+        outDir?: string
       } & GlobalCLIOptions
     ) => {
       const { preview } = await import('./preview')
       try {
-        const server = await preview({
+        const inlineConfig: InlineConfig = {
           root,
           base: options.base,
           configFile: options.config,
@@ -252,7 +255,11 @@ cli
             https: options.https,
             open: options.open
           }
-        })
+        }
+        if (options.outDir) {
+          inlineConfig.build = { outDir: options.outDir }
+        }
+        const server = await preview(inlineConfig)
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
