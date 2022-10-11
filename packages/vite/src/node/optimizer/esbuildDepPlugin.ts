@@ -178,7 +178,7 @@ export function esbuildDepPlugin(
           }
 
           // ensure esbuild uses our resolved entries
-          let entry: { path: string} | undefined
+          let entry: { path: string } | undefined
           // if this is an entry, return entry namespace resolve result
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry
