@@ -95,10 +95,10 @@ declare module 'rollup-plugin-web-worker-loader' {
 // so we have to shim it
 declare interface HTMLLinkElement {}
 
-declare module 'rollup/dist/loadConfigFile' {
-  const loadAndParseConfigFile: <T>(
+declare module 'rollup/loadConfigFile' {
+  import type { MergedRollupOptions } from 'rollup'
+  export default function loadConfigFile(
     fileName: string,
     commandOptions?: any
-  ) => Promise<{ options: T[] }>
-  export default loadAndParseConfigFile
+  ): Promise<{ options: MergedRollupOptions[] }>
 }

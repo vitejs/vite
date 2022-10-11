@@ -8,7 +8,8 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
-import loadAndParseConfigFile from 'rollup/dist/loadConfigFile'
+// eslint-disable-next-line node/no-missing-import
+import loadConfigFile from 'rollup/loadConfigFile'
 import type { HookHandler, Plugin } from './plugin'
 import type {
   BuildOptions,
@@ -929,9 +930,9 @@ export async function loadConfigFromFile(
     }
     // read rollup config file
     if (config?.build?.rollupConfigFile) {
-      const { options } = await loadAndParseConfigFile<RollupOptions>(
-        config.build.rollupConfigFile
-      )
+      const { options } = await loadConfigFile(config.build.rollupConfigFile, {
+        format: 'es'
+      })
       config = mergeConfig(config, { build: { rollupOptions: options[0] } })
     }
     return {

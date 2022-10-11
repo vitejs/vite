@@ -139,6 +139,7 @@ function createNodeConfig(isProduction: boolean) {
     },
     external: [
       'fsevents',
+      'rollup/loadConfigFile',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
