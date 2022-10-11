@@ -350,7 +350,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (!rewriteDone) {
                 let rewrittenUrl = JSON.stringify(file)
                 if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
-                str().update(start, end, rewrittenUrl)
+                str().overwrite(start, end, rewrittenUrl, {
+                  contentOnly: true
+                })
               }
             }
           }
@@ -372,7 +374,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
           const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().update(start, end, isDynamicImport ? `'${url}'` : url)
+          str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
+            contentOnly: true
+          })
         }
       }
 
@@ -401,7 +405,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
-            s.update(match.index, match.index + isModernFlag.length, isModern)
+            s.overwrite(
+              match.index,
+              match.index + isModernFlag.length,
+              isModern,
+              { contentOnly: true }
+            )
           }
           return {
             code: s.toString(),
@@ -496,7 +505,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         hasRemovedPureCssChunk = true
                       }
 
-                      s.update(expStart, expEnd, 'Promise.resolve({})')
+                      s.overwrite(expStart, expEnd, 'Promise.resolve({})', {
+                        contentOnly: true
+                      })
                     }
                   }
                 }
@@ -571,10 +582,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   )
                 }
 
-                s.update(
+                s.overwrite(
                   markerStartPos,
                   markerStartPos + preloadMarkerWithQuote.length,
-                  `[${renderedDeps.join(',')}]`
+                  `[${renderedDeps.join(',')}]`,
+                  { contentOnly: true }
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
@@ -586,10 +598,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           let markerStartPos = code.indexOf(preloadMarkerWithQuote)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
-              s.update(
+              s.overwrite(
                 markerStartPos,
                 markerStartPos + preloadMarkerWithQuote.length,
-                'void 0'
+                'void 0',
+                { contentOnly: true }
               )
             }
 

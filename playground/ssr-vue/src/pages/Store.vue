@@ -1,19 +1,18 @@
 <template>
-  <h1>{{ fooStore.foo }}</h1>
+  <h1>{{ foo }}</h1>
 </template>
 
 <script>
-import { defineStore } from 'pinia'
+import { createStore } from 'vuex'
 
 export default {
   async setup() {
-    const useFooStore = defineStore('foo-store', {
-      state: () => ({
+    const store = createStore({
+      state: {
         foo: 'bar'
-      })
+      }
     })
-    const fooStore = useFooStore()
-    return { fooStore }
+    return store.state
   }
 }
 </script>

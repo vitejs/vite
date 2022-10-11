@@ -746,21 +746,18 @@ export function resolveLibFilename(
   return `${name}.${format}.${extension}`
 }
 
-export function resolveBuildOutputs(
+function resolveBuildOutputs(
   outputs: OutputOptions | OutputOptions[] | undefined,
   libOptions: LibraryOptions | false,
   logger: Logger
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
-    const hasMultipleEntries =
-      typeof libOptions.entry !== 'string' &&
-      Object.values(libOptions.entry).length > 1
-
-    const formats =
-      libOptions.formats || (hasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
-
+    const formats = libOptions.formats || ['es', 'umd']
     if (formats.includes('umd') || formats.includes('iife')) {
-      if (hasMultipleEntries) {
+      if (
+        typeof libOptions.entry !== 'string' &&
+        Object.values(libOptions.entry).length > 1
+      ) {
         throw new Error(
           `Multiple entry points are not supported when output formats include "umd" or "iife".`
         )

@@ -19,8 +19,6 @@ on:
       - perf/*
       - v1
       - v2
-      - v2.*
-      - v3.*
   pull_request:
   workflow_dispatch:
 

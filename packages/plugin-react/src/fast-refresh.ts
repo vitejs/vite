@@ -58,56 +58,19 @@ if (import.meta.hot) {
   window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
 }`.replace(/[\n]+/gm, '')
 
-const timeout = `
-  if (!window.__vite_plugin_react_timeout) {
-    window.__vite_plugin_react_timeout = setTimeout(() => {
-      window.__vite_plugin_react_timeout = 0;
-      RefreshRuntime.performReactRefresh();
-    }, 30);
-  }
-`
-
 const footer = `
 if (import.meta.hot) {
   window.$RefreshReg$ = prevRefreshReg;
   window.$RefreshSig$ = prevRefreshSig;
 
   __ACCEPT__
+  if (!window.__vite_plugin_react_timeout) {
+    window.__vite_plugin_react_timeout = setTimeout(() => {
+      window.__vite_plugin_react_timeout = 0;
+      RefreshRuntime.performReactRefresh();
+    }, 30);
+  }
 }`
-
-const checkAndAccept = `
-function isReactRefreshBoundary(mod) {
-  if (mod == null || typeof mod !== 'object') {
-    return false;
-  }
-  let hasExports = false;
-  let areAllExportsComponents = true;
-  for (const exportName in mod) {
-    hasExports = true;
-    if (exportName === '__esModule') {
-      continue;
-    }
-    const desc = Object.getOwnPropertyDescriptor(mod, exportName);
-    if (desc && desc.get) {
-      // Don't invoke getters as they may have side effects.
-      return false;
-    }
-    const exportValue = mod[exportName];
-    if (!RefreshRuntime.isLikelyComponentType(exportValue)) {
-      areAllExportsComponents = false;
-    }
-  }
-  return hasExports && areAllExportsComponents;
-}
-
-import.meta.hot.accept(mod => {
-  if (isReactRefreshBoundary(mod)) {
-    ${timeout}
-  } else {
-    import.meta.hot.invalidate();
-  }
-});
-`
 
 export function addRefreshWrapper(
   code: string,
@@ -117,13 +80,12 @@ export function addRefreshWrapper(
   return (
     header.replace('__SOURCE__', JSON.stringify(id)) +
     code +
-    footer.replace('__ACCEPT__', accept ? checkAndAccept : timeout)
+    footer.replace('__ACCEPT__', accept ? 'import.meta.hot.accept();' : '')
   )
 }
 
 export function isRefreshBoundary(ast: t.File): boolean {
-  // Every export must be a potential React component.
-  // We'll also perform a runtime check that's more robust as well (isLikelyComponentType).
+  // Every export must be a React component.
   return ast.program.body.every((node) => {
     if (node.type !== 'ExportNamedDeclaration') {
       return true

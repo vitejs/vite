@@ -9,7 +9,6 @@ import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
-  getAttrKey,
   getScriptInfo,
   nodeIsElement,
   overwriteAttrValue,
@@ -113,7 +112,7 @@ const processNodeUrl = (
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
     const processedUrl =
-      attr.name === 'srcset' && attr.prefix === undefined
+      attr.name === 'srcset'
         ? processSrcSetSync(url, ({ url }) => replacer(url))
         : replacer(url)
     overwriteAttrValue(s, sourceCodeLocation, processedUrl)
@@ -185,10 +184,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    s.update(
+    s.overwrite(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"></script>`
+      `<script type="module" src="${modulePath}"></script>`,
+      { contentOnly: true }
     )
   }
 
@@ -229,11 +229,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
       for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
+        if (p.value && assetAttrs.includes(p.name)) {
           processNodeUrl(
             p,
-            node.sourceCodeLocation!.attrs![attrKey],
+            node.sourceCodeLocation!.attrs![p.name],
             s,
             config,
             htmlPath,
@@ -284,7 +283,7 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // htmlFallbackMiddleware appends '.html' to URLs
+    // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {
