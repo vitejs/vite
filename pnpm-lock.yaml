@@ -383,10 +383,7 @@ importers:
     specifiers: {}
 
   playground/cli:
-    specifiers:
-      url: ^0.11.0
-    dependencies:
-      url: 0.11.0
+    specifiers: {}
 
   playground/cli-module:
     specifiers:
