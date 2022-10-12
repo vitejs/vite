@@ -323,7 +323,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
   let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
-  if (resolvedUrl.protocol !== 'relative:') {
+  if (resolvedUrl.protocol === 'file:') {
     resolvedUrl = pathToFileURL(url)
   }
   const { search, hash } = resolvedUrl
