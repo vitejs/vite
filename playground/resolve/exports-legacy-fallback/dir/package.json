@@ -1,4 +1,4 @@
 {
   "main": "index.js",
-  "model": "index.mjs"
+  "module": "index.mjs"
 }
