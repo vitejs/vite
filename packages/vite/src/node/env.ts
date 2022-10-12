@@ -35,7 +35,7 @@ export function loadEnv(
     }
   }
 
-  let parsed = Object.fromEntries(
+  const parsed = Object.fromEntries(
     envFiles.flatMap((file) => {
       const path = lookupFile(envDir, [file], {
         pathOnly: true,
@@ -51,14 +51,18 @@ export function loadEnv(
   )
 
   // let environment variables use each other
-  parsed = expand({
+  const expandParsed = expand({
     parsed: {
       ...(process.env as any),
       ...parsed
     },
     // prevent process.env mutation
     ignoreProcessEnv: true
-  }).parsed as any
+  }).parsed!
+
+  Object.keys(parsed).forEach((key) => {
+    parsed[key] = expandParsed[key]
+  })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
