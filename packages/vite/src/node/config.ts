@@ -931,7 +931,7 @@ export async function loadConfigFromFile(
     // read rollup config file
     if (config?.build?.rollupConfigFile) {
       const { options } = await loadConfigFile(config.build.rollupConfigFile, {
-        format: 'es'
+        stdin: false
       })
       config = mergeConfig(config, { build: { rollupOptions: options[0] } })
     }

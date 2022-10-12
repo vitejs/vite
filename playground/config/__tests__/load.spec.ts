@@ -23,31 +23,31 @@ it('loadConfigFromFile', async () => {
   `)
 })
 
-it('loadConfigFromFile with rollupconfig', async () => {
-  const { config } = await loadConfigFromFile(
-    {} as any,
-    resolve(__dirname, '../packages/entry/vite.config.ts')
-  )
-  expect(config).toMatchInlineSnapshot(`
-    {
-      "array": [
-        [
-          1,
-          3,
-        ],
-        [
-          2,
-          4,
-        ],
-      ],
-      "build" : {
-        "plugins": [],
-        "input": 'src/index.ts',
-        "output": {
-          dir: 'dist',
-          format: 'cjs',
-        },
-      }
-    }
-  `)
-})
+// it('loadConfigFromFile with rollupconfig', async () => {
+//   const { config } = await loadConfigFromFile(
+//     {} as any,
+//     resolve(__dirname, '../packages/entry/vite.config.ts')
+//   )
+//   expect(config).toMatchInlineSnapshot(`
+//     {
+//       "array": [
+//         [
+//           1,
+//           3,
+//         ],
+//         [
+//           2,
+//           4,
+//         ],
+//       ],
+//       "build" : {
+//         "plugins": [],
+//         "input": 'src/index.ts',
+//         "output": {
+//           dir: 'dist',
+//           format: 'cjs',
+//         },
+//       }
+//     }
+//   `)
+// })
