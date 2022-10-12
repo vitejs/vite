@@ -1,4 +1,5 @@
 import aliasPlugin from '@rollup/plugin-alias'
+import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin } from '../plugin'
@@ -38,6 +39,10 @@ export async function resolvePlugins(
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
+  const { commonjsOptions } = config.build
+  const usePluginCommonjs =
+    !Array.isArray(commonjsOptions?.include) ||
+    commonjsOptions?.include.length !== 0
 
   return [
     isWatch ? ensureWatchPlugin() : null,
@@ -57,20 +62,7 @@ export async function resolvePlugins(
             : optimizedDepsPlugin(config)
         ]
       : []),
-    resolvePlugin({
-      ...config.resolve,
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      ssrConfig: config.ssr,
-      asSrc: true,
-      getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
-      shouldExternalize:
-        isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
-          ? (id) => shouldExternalizeForSSR(id, config)
-          : undefined
-    }),
+    ...(usePluginCommonjs ? [commonjsPlugin(commonjsOptions)] : []),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
@@ -85,6 +77,20 @@ export async function resolvePlugins(
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
+    resolvePlugin({
+      ...config.resolve,
+      root: config.root,
+      isProduction: config.isProduction,
+      isBuild,
+      packageCache: config.packageCache,
+      ssrConfig: config.ssr,
+      asSrc: true,
+      getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
+      shouldExternalize:
+        isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
+          ? (id) => shouldExternalizeForSSR(id, config)
+          : undefined
+    }),
     wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
