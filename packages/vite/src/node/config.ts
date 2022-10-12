@@ -25,6 +25,7 @@ import {
   createDebugger,
   createFilter,
   dynamicImport,
+  isBuiltin,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -972,7 +973,7 @@ async function bundleConfigFile(
 
           build.onResolve({ filter: /.*/ }, ({ path: id, importer, kind }) => {
             // externalize bare imports
-            if (id[0] !== '.' && !isAbsolute(id)) {
+            if (id[0] !== '.' && !path.isAbsolute(id) && !isBuiltin(id)) {
               let idFsPath = tryNodeResolve(id, importer, options, false)?.id
               if (idFsPath && (isESM || kind === 'dynamic-import')) {
                 idFsPath = pathToFileURL(idFsPath).href
@@ -1102,8 +1103,4 @@ export function isDepsOptimizerEnabled(
     (command === 'build' && disabled === 'build') ||
     (command === 'serve' && disabled === 'dev')
   )
-}
-
-function isAbsolute(id: string) {
-  return path.isAbsolute(id) || path.posix.isAbsolute(id)
 }
