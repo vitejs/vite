@@ -1013,13 +1013,10 @@ function resolveExports(
   options: InternalResolveOptions,
   targetWeb: boolean
 ) {
-  const conditions = [options.isProduction ? 'production' : 'development']
-  if (!options.isRequire) {
-    conditions.push('module')
-  }
-  if (options.conditions.length > 0) {
-    conditions.push(...options.conditions)
-  }
+  const conditions = [
+    options.isProduction ? 'production' : 'development',
+    ...options.conditions
+  ]
 
   return _resolveExports(pkg, key, {
     browser: targetWeb && !conditions.includes('node'),
