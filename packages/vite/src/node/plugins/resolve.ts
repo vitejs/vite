@@ -44,6 +44,7 @@ import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
+import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -144,13 +145,16 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       if (importer) {
+        const _importer = isWorkerRequest(importer)
+          ? splitFileAndPostfix(importer).file
+          : importer
         if (
-          isTsRequest(importer) ||
+          isTsRequest(_importer) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(_importer)?.meta?.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
@@ -644,13 +648,36 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
+  // nearest package.json
+  let nearestPkg: PackageData | undefined
+  // nearest package.json that may have the `exports` field
   let pkg: PackageData | undefined
-  const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
-    return pkg
+
+  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
+    nearestPkg = resolvePackageData(
+      pkgId,
+      basedir,
+      preserveSymlinks,
+      packageCache
+    )!
+    return nearestPkg
   })!
 
-  if (!pkg) {
+  const rootPkgId = possiblePkgIds[0]
+  const rootPkg = resolvePackageData(
+    rootPkgId,
+    basedir,
+    preserveSymlinks,
+    packageCache
+  )!
+  if (rootPkg?.data?.exports) {
+    pkg = rootPkg
+    pkgId = rootPkgId
+  } else {
+    pkg = nearestPkg
+  }
+
+  if (!pkg || !nearestPkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
@@ -749,7 +776,8 @@ export function tryNodeResolve(
   }
 
   const ext = path.extname(resolved)
-  const isCJS = ext === '.cjs' || (ext === '.js' && pkg.data.type !== 'module')
+  const isCJS =
+    ext === '.cjs' || (ext === '.js' && nearestPkg.data.type !== 'module')
 
   if (
     !options.ssrOptimizeCheck &&
@@ -1102,7 +1130,8 @@ function tryResolveBrowserMapping(
   externalize?: boolean
 ) {
   let res: string | undefined
-  const pkg = importer && idToPkgMap.get(importer)
+  const pkg =
+    importer && (idToPkgMap.get(importer) || resolvePkg(importer, options))
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
@@ -1160,4 +1189,41 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
     resolved = fs.realpathSync(resolved)
   }
   return normalizePath(resolved)
+}
+
+/**
+ * if importer was not resolved by vite's resolver previously
+ * (when esbuild resolved it)
+ * resolve importer's pkg and add to idToPkgMap
+ */
+function resolvePkg(importer: string, options: InternalResolveOptions) {
+  const { root, preserveSymlinks, packageCache } = options
+
+  if (importer.includes('\x00')) {
+    return null
+  }
+
+  const possiblePkgIds: string[] = []
+  for (let prevSlashIndex = -1; ; ) {
+    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
+    if (slashIndex < 0) {
+      break
+    }
+
+    prevSlashIndex = slashIndex + 1
+
+    const possiblePkgId = importer.slice(0, slashIndex)
+    possiblePkgIds.push(possiblePkgId)
+  }
+
+  let pkg: PackageData | undefined
+  possiblePkgIds.reverse().find((pkgId) => {
+    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
+    return pkg
+  })!
+
+  if (pkg) {
+    idToPkgMap.set(importer, pkg)
+  }
+  return pkg
 }

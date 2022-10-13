@@ -6,7 +6,11 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import { onRollupWarning, toOutputFilePathInString } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  onRollupWarning,
+  toOutputFilePathInJS
+} from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -27,6 +31,14 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
+
+export function isWorkerRequest(id: string): boolean {
+  const query = parseRequest(id)
+  if (query && query[WORKER_FILE_ID] != null) {
+    return true
+  }
+  return false
+}
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
@@ -318,6 +330,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         )
       }
       if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          outputOptions.format
+        )
+
         let match: RegExpExecArray | null
         s = new MagicString(code)
 
@@ -328,26 +344,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          const replacement = toOutputFilePathInString(
+          const replacement = toOutputFilePathInJS(
             filename,
             'asset',
             chunk.fileName,
             'js',
             config,
-            outputOptions.format
+            toRelativeRuntime
           )
           const replacementString =
             typeof replacement === 'string'
               ? JSON.stringify(replacement).slice(1, -1)
               : `"+${replacement.runtime}+"`
-          s.overwrite(
-            match.index,
-            match.index + full.length,
-            replacementString,
-            {
-              contentOnly: true
-            }
-          )
+          s.update(match.index, match.index + full.length, replacementString)
         }
       }
       return result()
