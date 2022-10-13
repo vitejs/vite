@@ -1,3 +1,9 @@
+## <small>3.1.8 (2022-10-13)</small>
+
+* fix(config): support builtin modules and deno (#10457) ([8fbae69](https://github.com/vitejs/vite/commit/8fbae69)), closes [#10457](https://github.com/vitejs/vite/issues/10457) [#10420](https://github.com/vitejs/vite/issues/10420) [#10446](https://github.com/vitejs/vite/issues/10446)
+
+
+
 ## <small>3.1.7 (2022-10-10)</small>
 
 * fix(ssr): track var as function scope (#10397) ([a5143e9](https://github.com/vitejs/vite/commit/a5143e9)), closes [#10397](https://github.com/vitejs/vite/issues/10397) [#10388](https://github.com/vitejs/vite/issues/10388)
