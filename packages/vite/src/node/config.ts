@@ -414,37 +414,29 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
+  const filterPlugin = (p: Plugin) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
+  }
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
   // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
   // So we need to separate the worker plugin from the plugin that vite needs to run.
   const rawWorkerUserPlugins = (
     (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
-  ).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  })
+  ).filter(filterPlugin)
 
   // resolve plugins
   const rawUserPlugins = (
     (await asyncFlatten(config.plugins || [])) as Plugin[]
-  ).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  })
+  ).filter(filterPlugin)
+
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
