@@ -986,6 +986,10 @@ async function bundleConfigFile(
           build.onResolve({ filter: /.*/ }, ({ path: id, importer, kind }) => {
             // externalize bare imports
             if (id[0] !== '.' && !path.isAbsolute(id) && !isBuiltin(id)) {
+              // partial deno support as `npm:` does not work in `tryNodeResolve`
+              if (id.startsWith('npm:')) {
+                return { external: true }
+              }
               let idFsPath = tryNodeResolve(id, importer, options, false)?.id
               if (idFsPath && (isESM || kind === 'dynamic-import')) {
                 idFsPath = pathToFileURL(idFsPath).href
