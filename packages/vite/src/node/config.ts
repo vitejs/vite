@@ -47,6 +47,7 @@ import {
   DEFAULT_CONFIG_FILES,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
+  DEFAULT_ROLLUP_CONFIG_FILES,
   ENV_ENTRY
 } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -865,6 +866,19 @@ export function sortUserPlugins(
   return [prePlugins, normalPlugins, postPlugins]
 }
 
+export function getConfigPath(
+  configRoot: string,
+  configPaths: string[]
+): string | undefined {
+  for (const filename of configPaths) {
+    const filePath = path.resolve(configRoot, filename)
+    if (!fs.existsSync(filePath)) continue
+
+    return filePath
+  }
+  return
+}
+
 export async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configFile?: string,
@@ -886,13 +900,7 @@ export async function loadConfigFromFile(
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    for (const filename of DEFAULT_CONFIG_FILES) {
-      const filePath = path.resolve(configRoot, filename)
-      if (!fs.existsSync(filePath)) continue
-
-      resolvedPath = filePath
-      break
-    }
+    resolvedPath = getConfigPath(configRoot, DEFAULT_CONFIG_FILES)
   }
 
   if (!resolvedPath) {
@@ -929,8 +937,12 @@ export async function loadConfigFromFile(
       throw new Error(`config must export or return an object.`)
     }
     // read rollup config file
-    if (config?.build?.rollupConfigFile) {
-      const { options } = await loadConfigFile(config.build.rollupConfigFile, {
+    const rollupConfigFile = getConfigPath(
+      configRoot,
+      DEFAULT_ROLLUP_CONFIG_FILES
+    )
+    if (rollupConfigFile) {
+      const { options } = await loadConfigFile(rollupConfigFile, {
         stdin: false
       })
       config = mergeConfig(config, { build: { rollupOptions: options[0] } })

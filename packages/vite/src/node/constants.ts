@@ -41,6 +41,13 @@ export const DEFAULT_CONFIG_FILES = [
   'vite.config.cts'
 ]
 
+export const DEFAULT_ROLLUP_CONFIG_FILES = [
+  'rollup.config.mjs',
+  'rollup.config.cjs',
+  'rollup.config.ts',
+  'rollup.config.js'
+]
+
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
 export const OPTIMIZABLE_ENTRY_RE = /\.(?:[cm]?[jt]s)$/

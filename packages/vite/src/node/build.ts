@@ -140,8 +140,6 @@ export interface BuildOptions {
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupOptions?: RollupOptions
-
-  rollupConfigFile?: string
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
    */
@@ -266,9 +264,7 @@ export type ResolveModulePreloadDependenciesFn = (
 ) => string[]
 
 export interface ResolvedBuildOptions
-  extends Required<
-    Omit<BuildOptions, 'polyfillModulePreload' | 'rollupConfigFile'>
-  > {
+  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
