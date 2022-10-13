@@ -648,13 +648,36 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
+  // nearest package.json
+  let nearestPkg: PackageData | undefined
+  // nearest package.json that may have the `exports` field
   let pkg: PackageData | undefined
-  const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
-    return pkg
+
+  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
+    nearestPkg = resolvePackageData(
+      pkgId,
+      basedir,
+      preserveSymlinks,
+      packageCache
+    )!
+    return nearestPkg
   })!
 
-  if (!pkg) {
+  const rootPkgId = possiblePkgIds[0]
+  const rootPkg = resolvePackageData(
+    rootPkgId,
+    basedir,
+    preserveSymlinks,
+    packageCache
+  )!
+  if (rootPkg?.data?.exports) {
+    pkg = rootPkg
+    pkgId = rootPkgId
+  } else {
+    pkg = nearestPkg
+  }
+
+  if (!pkg || !nearestPkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
@@ -753,7 +776,8 @@ export function tryNodeResolve(
   }
 
   const ext = path.extname(resolved)
-  const isCJS = ext === '.cjs' || (ext === '.js' && pkg.data.type !== 'module')
+  const isCJS =
+    ext === '.cjs' || (ext === '.js' && nearestPkg.data.type !== 'module')
 
   if (
     !options.ssrOptimizeCheck &&

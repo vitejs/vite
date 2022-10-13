@@ -20,6 +20,7 @@
     "resolve-custom-condition": "link:./custom-condition",
     "resolve-custom-main-field": "link:./custom-main-field",
     "resolve-exports-env": "link:./exports-env",
+    "resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
     "resolve-exports-path": "link:./exports-path",
     "resolve-linked": "workspace:*"
   }

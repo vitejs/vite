@@ -36,6 +36,13 @@ test('deep import with exports field + mapped dir', async () => {
   )
 })
 
+// this is how Svelte 3 is packaged
+test('deep import with exports and legacy fallback', async () => {
+  expect(await page.textContent('.exports-legacy-fallback')).toMatch(
+    '[success]'
+  )
+})
+
 test('Respect exports field env key priority', async () => {
   expect(await page.textContent('.exports-env')).toMatch('[success]')
 })

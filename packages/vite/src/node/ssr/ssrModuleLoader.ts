@@ -126,7 +126,7 @@ async function instantiateModule(
     preserveSymlinks,
     isBuild: true,
     isProduction,
-    isRequire: true,
+    isRequire: false,
     root
   }
 
