@@ -179,6 +179,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
+    target: 'esnext',
     ...options,
     minify: false,
     minifyIdentifiers: false,

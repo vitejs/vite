@@ -1,4 +1,4 @@
-import '../../../../../../types/importMeta'
+import 'types/importMeta'
 
 export interface ModuleType {
   name: string

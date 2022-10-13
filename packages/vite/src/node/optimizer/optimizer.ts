@@ -103,6 +103,8 @@ async function createDepsOptimizer(
 
   let handle: NodeJS.Timeout | undefined
 
+  let closed = false
+
   let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, ssr, sessionTimestamp)
 
@@ -118,6 +120,7 @@ async function createDepsOptimizer(
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     ensureFirstRun,
+    close,
     options: getDepOptimizationConfig(config, ssr)
   }
 
@@ -158,6 +161,13 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   let postScanOptimizationResult: Promise<DepOptimizationResult> | undefined
+
+  let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
+  async function close() {
+    closed = true
+    await postScanOptimizationResult
+    await optimizingNewDeps
+  }
 
   if (!cachedMetadata) {
     // Enter processing state until crawl of static imports ends
@@ -288,7 +298,7 @@ async function createDepsOptimizer(
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
 
-    if (Object.keys(metadata.discovered).length === 0) {
+    if (closed || Object.keys(metadata.discovered).length === 0) {
       currentlyProcessing = false
       return
     }
@@ -296,7 +306,16 @@ async function createDepsOptimizer(
     currentlyProcessing = true
 
     try {
-      const processingResult = preRunResult ?? (await optimizeNewDeps())
+      const processingResult =
+        preRunResult ?? (await (optimizingNewDeps = optimizeNewDeps()))
+      optimizingNewDeps = undefined
+
+      if (closed) {
+        currentlyProcessing = false
+        processingResult.cancel()
+        resolveEnqueuedProcessingPromises()
+        return
+      }
 
       const newData = processingResult.metadata
 
@@ -665,7 +684,7 @@ async function createDepsOptimizer(
   function ensureFirstRun() {
     if (!firstRunEnsured && !firstRunCalled && registeredIds.length === 0) {
       setTimeout(() => {
-        if (registeredIds.length === 0) {
+        if (!closed && registeredIds.length === 0) {
           onCrawlEnd()
         }
       }, runOptimizerIfIdleAfterMs)
@@ -699,7 +718,7 @@ async function createDepsOptimizer(
         waitingOn = next.id
         const afterLoad = () => {
           waitingOn = undefined
-          if (!workersSources.has(next.id)) {
+          if (!closed && !workersSources.has(next.id)) {
             if (registeredIds.length > 0) {
               runOptimizerWhenIdle()
             } else {
@@ -745,6 +764,8 @@ async function createDevSsrDepsOptimizer(
     delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
     resetRegisteredIds: () => {},
     ensureFirstRun: () => {},
+
+    close: async () => {},
     options: config.ssr.optimizeDeps
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)
