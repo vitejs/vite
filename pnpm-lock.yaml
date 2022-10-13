@@ -896,6 +896,7 @@ importers:
       resolve-custom-condition: link:./custom-condition
       resolve-custom-main-field: link:./custom-main-field
       resolve-exports-env: link:./exports-env
+      resolve-exports-legacy-fallback: link:./exports-legacy-fallback
       resolve-exports-path: link:./exports-path
       resolve-linked: workspace:*
     dependencies:
@@ -910,6 +911,7 @@ importers:
       resolve-custom-condition: link:custom-condition
       resolve-custom-main-field: link:custom-main-field
       resolve-exports-env: link:exports-env
+      resolve-exports-legacy-fallback: link:exports-legacy-fallback
       resolve-exports-path: link:exports-path
       resolve-linked: link:../resolve-linked
 
@@ -938,6 +940,12 @@ importers:
     specifiers: {}
 
   playground/resolve/exports-env:
+    specifiers: {}
+
+  playground/resolve/exports-legacy-fallback:
+    specifiers: {}
+
+  playground/resolve/exports-legacy-fallback/dir:
     specifiers: {}
 
   playground/resolve/exports-path:
