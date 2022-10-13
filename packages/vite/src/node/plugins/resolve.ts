@@ -648,10 +648,12 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
+  // nearest package.json
   let nearestPkg: PackageData | undefined
+  // nearest package.json that may have the `exports` field
   let pkg: PackageData | undefined
 
-  let pkgId: string = possiblePkgIds.reverse().find((pkgId) => {
+  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
     nearestPkg = resolvePackageData(
       pkgId,
       basedir,
@@ -668,7 +670,7 @@ export function tryNodeResolve(
     preserveSymlinks,
     packageCache
   )!
-  if (rootPkg && rootPkg?.data?.exports) {
+  if (rootPkg?.data?.exports) {
     pkg = rootPkg
     pkgId = rootPkgId
   } else {
