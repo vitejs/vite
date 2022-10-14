@@ -57,7 +57,7 @@ However, some libraries (e.g. [`vue`](https://github.com/vuejs/core/issues/1228)
 
 #### `useDefineForClassFields`
 
-Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext`. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
+Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ES2022` or higher including `ESNext`. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
 
 But it may be counter-intuitive for those coming from other programming languages or older versions of TypeScript.
 You can read more about the transition in the [TypeScript 3.7 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier).
@@ -71,10 +71,13 @@ But a few libraries haven't transitioned to this new default yet, including [`li
 #### Other Compiler Options Affecting the Build Result
 
 - [`extends`](https://www.typescriptlang.org/tsconfig#extends)
+- [`alwaysStrict`](https://www.typescriptlang.org/tsconfig#alwaysStrict)
 - [`importsNotUsedAsValues`](https://www.typescriptlang.org/tsconfig#importsNotUsedAsValues)
-- [`preserveValueImports`](https://www.typescriptlang.org/tsconfig#preserveValueImports)
+- [`jsx`](https://www.typescriptlang.org/tsconfig#jsx)
 - [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
+- [`jsxImportSource`](https://www.typescriptlang.org/tsconfig#jsxImportSource)
+- [`preserveValueImports`](https://www.typescriptlang.org/tsconfig#preserveValueImports)
 
 If migrating your codebase to `"isolatedModules": true` is an unsurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
 
