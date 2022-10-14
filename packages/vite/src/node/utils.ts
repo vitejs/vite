@@ -1190,3 +1190,37 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
 }
+
+/**
+ * Determine if a file is being requested with the correct case, to ensure
+ * consistent behaviour between dev and prod and across operating systems.
+ */
+export function shouldServe(url: URL, assetsDir: string): boolean {
+  const pathname = decodeURIComponent(url.pathname)
+  const file = assetsDir + pathname
+  if (
+    !fs.existsSync(file) ||
+    (!fs.statSync(file).isDirectory() &&
+      isCaseInsensitiveFS && // can skip case check on Linux
+      !hasCorrectCase(file, assetsDir))
+  ) {
+    return false
+  }
+  return true
+}
+
+/**
+ * Note that we can't use realpath here, because we don't want to follow
+ * symlinks.
+ */
+function hasCorrectCase(file: string, assets: string): boolean {
+  if (file === assets) return true
+
+  const parent = path.dirname(file)
+
+  if (fs.readdirSync(parent).includes(path.basename(file))) {
+    return hasCorrectCase(parent, assets)
+  }
+
+  return false
+}
