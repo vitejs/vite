@@ -23,7 +23,6 @@ import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
-export const publicAssetUrlRE = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
 
 export const duplicateAssets = new WeakMap<
   ResolvedConfig,
@@ -388,6 +387,8 @@ export const publicAssetUrlCache = new WeakMap<
   // hash -> url
   Map<string, string>
 >()
+
+export const publicAssetUrlRE = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
 
 export function publicFileToBuiltUrl(
   url: string,
