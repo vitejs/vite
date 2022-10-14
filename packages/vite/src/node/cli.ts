@@ -28,9 +28,7 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
-const normalizeOptionsConfig: {
-  [K in keyof ServerOptions]: (v: any[]) => any
-} = {
+const normalizeOptionsConfig: Record<string, (v: any[]) => any> = {
   port: (v) => {
     return v.find((p) => typeof p === 'number' || typeof p === 'string') || 5173
   }
