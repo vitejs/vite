@@ -162,7 +162,7 @@ export function esbuildDepPlugin(
         const flatId = flattenId(id)
         if (flatId in qualified) {
           return {
-            path: qualified[flatId],
+            path: qualified[flatId]
           }
         }
       }
