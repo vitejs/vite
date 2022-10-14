@@ -28,6 +28,11 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
+const normalizeOptionsConfig: Record<string, (v: any) => any> = {
+  port: (v: any[]): any => {
+    return v.find((p) => typeof p === 'number' || typeof p === 'string') || 5173
+  }
+}
 /**
  * removing global flags before passing as command specific sub-configs
  */
@@ -48,6 +53,16 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  for (const [key, value] of Object.entries(ret)) {
+    if (Array.isArray(value)) {
+      // may need to define the final return of option by themselves,
+      // so they retain their implementation portal.
+      // If it is not customized, take the last item of InlineConfig as the final result.
+      ret[key as keyof Options] = normalizeOptionsConfig[key]
+        ? normalizeOptionsConfig[key](value)
+        : value[value.length - 1]
+    }
+  }
   return ret
 }
 
