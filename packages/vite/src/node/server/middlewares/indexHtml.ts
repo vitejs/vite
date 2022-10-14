@@ -9,6 +9,7 @@ import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  getAttrKey,
   getScriptInfo,
   nodeIsElement,
   overwriteAttrValue,
@@ -112,7 +113,7 @@ const processNodeUrl = (
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
     const processedUrl =
-      attr.name === 'srcset'
+      attr.name === 'srcset' && attr.prefix === undefined
         ? processSrcSetSync(url, ({ url }) => replacer(url))
         : replacer(url)
     overwriteAttrValue(s, sourceCodeLocation, processedUrl)
@@ -228,10 +229,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
       for (const p of node.attrs) {
-        if (p.value && assetAttrs.includes(p.name)) {
+        const attrKey = getAttrKey(p)
+        if (p.value && assetAttrs.includes(attrKey)) {
           processNodeUrl(
             p,
-            node.sourceCodeLocation!.attrs![p.name],
+            node.sourceCodeLocation!.attrs![attrKey],
             s,
             config,
             htmlPath,
