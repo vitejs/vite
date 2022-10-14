@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
-    "terser": "^5.15.0",
+    "terser": "^5.15.1",
     "dep-a": "file:./dep-a",
     "dep-including-a": "file:./dep-including-a"
   }
