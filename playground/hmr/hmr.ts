@@ -10,6 +10,13 @@ text('.dep', depFoo)
 text('.nested', nestedFoo)
 text('.virtual', virtual)
 
+const btn = document.querySelector('.virtual-update') as HTMLButtonElement
+btn.onclick = () => {
+  if (import.meta.hot) {
+    import.meta.hot.send('virtual:increment')
+  }
+}
+
 if (import.meta.hot) {
   import.meta.hot.accept(({ foo }) => {
     console.log('(self-accepting 1) foo is now:', foo)

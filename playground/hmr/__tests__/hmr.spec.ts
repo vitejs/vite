@@ -651,11 +651,23 @@ if (!isBuild) {
   test('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual')
-    expect(await el.textContent()).toBe('[success]')
+    expect(await el.textContent()).toBe('[success]0')
     editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
     await untilUpdated(async () => {
       const el = await page.$('.virtual')
       return await el.textContent()
     }, '[wow]')
+  })
+
+  test('invalidate virtual module', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual')
+    expect(await el.textContent()).toBe('[wow]0')
+    const btn = await page.$('.virtual-update')
+    btn.click()
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual')
+      return await el.textContent()
+    }, '[wow]1')
   })
 }
