@@ -27,7 +27,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
     req: http.IncomingMessage,
     res: http.ServerResponse,
     options: ProxyOptions
-  ) => void | null | undefined | false | string | HttpProxy.ServerOptions
+  ) => void | null | undefined | false | string
 }
 
 export function proxyMiddleware(
