@@ -262,6 +262,9 @@ function handleParseError(
       // Accept duplicate attributes #9566
       // The first attribute is used, browsers silently ignore duplicates
       return
+    case 'non-void-html-element-start-tag-with-trailing-solidus':
+      // Allow self closing on non-void elements #10439
+      return
   }
   const parseError = {
     loc: filePath,
