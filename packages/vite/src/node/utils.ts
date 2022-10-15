@@ -825,10 +825,6 @@ export interface Hostname {
 export async function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Promise<Hostname> {
-  // If passed multiple redundant --host, use the first one
-  if (Array.isArray(optionsHost)) {
-    optionsHost = optionsHost[0]
-  }
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default

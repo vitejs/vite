@@ -51,6 +51,22 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   return ret
 }
 
+function filterDuplicateOptions<Options extends GlobalCLIOptions>(
+  options: Options
+) {
+  if (options && typeof options === 'object') {
+    Object.entries(options).forEach((item) => {
+      if (Array.isArray(item[1])) {
+        const filter_value = [...new Set(item[1])]
+        //@ts-ignore
+        options[item[0]] =
+          filter_value.length === 1 ? filter_value[0] : filter_value
+      }
+    })
+  }
+  return options
+}
+
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
   .option('--base <path>', `[string] public base path (default: /)`)
@@ -78,6 +94,7 @@ cli
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     // output structure is preserved even after bundling so require()
     // is ok here
+    filterDuplicateOptions(options)
     const { createServer } = await import('./server')
     try {
       const server = await createServer({
@@ -164,6 +181,7 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     const { build } = await import('./build')
     const buildOptions: BuildOptions = cleanOptions(options)
 
@@ -196,6 +214,7 @@ cli
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      filterDuplicateOptions(options)
       const { optimizeDeps } = await import('./optimizer')
       try {
         const config = await resolveConfig(
@@ -237,6 +256,7 @@ cli
         strictPort?: boolean
       } & GlobalCLIOptions
     ) => {
+      filterDuplicateOptions(options)
       const { preview } = await import('./preview')
       try {
         const server = await preview({
