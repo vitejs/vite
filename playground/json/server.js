@@ -1,6 +1,6 @@
 // @ts-check
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const express = require('express')
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
@@ -15,8 +15,7 @@ async function createServer(
   /**
    * @type {import('vite').ViteDevServer}
    */
-  let vite
-  vite = await require('vite').createServer({
+  const vite = await require('vite').createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {

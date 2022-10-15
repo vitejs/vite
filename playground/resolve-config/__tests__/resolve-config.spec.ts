@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execaCommandSync } from 'execa'
+import { describe, expect, it } from 'vitest'
 import { isBuild, testDir, viteBinPath } from '~utils'
 
 const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
@@ -48,5 +49,21 @@ describe.runIf(isBuild)('build', () => {
   it('loads vite.config.ts with package#type module', () => {
     build('ts-module')
     expect(getDistFile('ts-module', 'js')).toContain('console.log(true)')
+  })
+  it('loads vite.config.mts', () => {
+    build('mts')
+    expect(getDistFile('mts', 'mjs')).toContain('console.log(true)')
+  })
+  it('loads vite.config.mts with package#type module', () => {
+    build('mts-module')
+    expect(getDistFile('mts-module', 'js')).toContain('console.log(true)')
+  })
+  it('loads vite.config.cts', () => {
+    build('cts')
+    expect(getDistFile('cts', 'mjs')).toContain('console.log(true)')
+  })
+  it('loads vite.config.cts with package#type module', () => {
+    build('cts-module')
+    expect(getDistFile('cts-module', 'js')).toContain('console.log(true)')
   })
 })

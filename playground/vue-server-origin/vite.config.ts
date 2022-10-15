@@ -10,7 +10,7 @@ export default defineConfig({
   },
   plugins: [vuePlugin()],
   server: {
-    origin: 'https://vue-server-origin.test'
+    origin: 'http://localhost/server-origin/test'
   },
   build: {
     // to make tests faster

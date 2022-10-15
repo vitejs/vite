@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url'
 import { build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
-  BuildAdvancedBaseOptions,
   BuildOptions,
   HtmlTagDescriptor,
   Plugin,
@@ -20,6 +19,7 @@ import type {
   RenderedChunk
 } from 'rollup'
 import type { PluginItem as BabelPlugin } from '@babel/core'
+import colors from 'picocolors'
 import type { Options } from './types'
 
 // lazy load babel since it's not used during dev
@@ -32,38 +32,71 @@ async function loadBabel() {
   return babel
 }
 
-function getBaseInHTML(
-  urlRelativePath: string,
-  baseOptions: BuildAdvancedBaseOptions,
-  config: ResolvedConfig
-) {
+// Duplicated from build.ts in Vite Core, at least while the feature is experimental
+// We should later expose this helper for other plugins to use
+function toOutputFilePathInHtml(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (filename: string, importer: string) => string
+): string {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        throw new Error(
+          `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`
+        )
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  } else {
+    return config.base + filename
+  }
+}
+function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
   // Prefer explicit URL if defined for linking to assets and public files from HTML,
   // even when base relative is specified
-  return (
-    baseOptions.url ??
-    (baseOptions.relative
-      ? path.posix.join(
-          path.posix.relative(urlRelativePath, '').slice(0, -2),
-          './'
-        )
-      : config.base)
-  )
+  return config.base === './' || config.base === ''
+    ? path.posix.join(
+        path.posix.relative(urlRelativePath, '').slice(0, -2),
+        './'
+      )
+    : config.base
 }
 
-function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
-  return getBaseInHTML(
-    urlRelativePath,
-    config.experimental.buildAdvancedBaseOptions.assets,
-    config
-  )
-}
 function toAssetPathFromHtml(
   filename: string,
   htmlPath: string,
   config: ResolvedConfig
 ): string {
   const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
-  return getAssetsBase(relativeUrlPath, config) + filename
+  const toRelative = (filename: string, hostId: string) =>
+    getBaseInHTML(relativeUrlPath, config) + filename
+  return toOutputFilePathInHtml(
+    filename,
+    'asset',
+    htmlPath,
+    'html',
+    config,
+    toRelative
+  )
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
@@ -124,22 +157,56 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     })
   }
 
+  let overriddenBuildTarget = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
-    apply: 'build',
-    config(config) {
-      if (!config.build) {
-        config.build = {}
+    config(config, env) {
+      if (env.command === 'build') {
+        if (!config.build) {
+          config.build = {}
+        }
+
+        if (!config.build.cssTarget) {
+          // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
+          // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
+          // But note that only the `HexRGBA` feature affects the minify outcome.
+          // HSL & rebeccapurple values will be minified away regardless the target.
+          // So targeting `chrome61` suffices to fix the compatibility issue.
+          config.build.cssTarget = 'chrome61'
+        }
+
+        if (genLegacy) {
+          // Vite's default target browsers are **not** the same.
+          // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
+          overriddenBuildTarget = config.build.target !== undefined
+          // browsers supporting ESM + dynamic import + import.meta
+          config.build.target = [
+            'es2020',
+            'edge79',
+            'firefox67',
+            'chrome64',
+            'safari11.1'
+          ]
+        }
       }
 
-      if (!config.build.cssTarget) {
-        // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
-        // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
-        // But note that only the `HexRGBA` feature affects the minify outcome.
-        // HSL & rebeccapurple values will be minified away regardless the target.
-        // So targeting `chrome61` suffices to fix the compatibility issue.
-        config.build.cssTarget = 'chrome61'
+      return {
+        define: {
+          'import.meta.env.LEGACY':
+            env.command === 'serve' || config.build?.ssr
+              ? false
+              : legacyEnvVarMarker
+        }
+      }
+    },
+    configResolved(config) {
+      if (overriddenBuildTarget) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`
+          )
+        )
       }
     }
   }
@@ -163,6 +230,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             modernPolyfills
           )
         await buildPolyfillChunk(
+          config.mode,
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
@@ -195,6 +263,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           )
 
         await buildPolyfillChunk(
+          config.mode,
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
@@ -515,41 +584,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     }
   }
 
-  let envInjectionFailed = false
-  const legacyEnvPlugin: Plugin = {
-    name: 'vite:legacy-env',
-
-    config(config, env) {
-      if (env) {
-        return {
-          define: {
-            'import.meta.env.LEGACY':
-              env.command === 'serve' || config.build?.ssr
-                ? false
-                : legacyEnvVarMarker
-          }
-        }
-      } else {
-        envInjectionFailed = true
-      }
-    },
-
-    configResolved(config) {
-      if (envInjectionFailed) {
-        config.logger.warn(
-          `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
-            `to incompatible vite version (requires vite@^2.0.0-beta.69).`
-        )
-      }
-    }
-  }
-
-  return [
-    legacyConfigPlugin,
-    legacyGenerateBundlePlugin,
-    legacyPostPlugin,
-    legacyEnvPlugin
-  ]
+  return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
 }
 
 export async function detectPolyfills(
@@ -607,6 +642,7 @@ function createBabelPresetEnvOptions(
 }
 
 async function buildPolyfillChunk(
+  mode: string,
   imports: Set<string>,
   bundle: OutputBundle,
   facadeToChunkMap: Map<string, string>,
@@ -618,6 +654,7 @@ async function buildPolyfillChunk(
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
   const res = await build({
+    mode,
     // so that everything is resolved from here
     root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
@@ -625,8 +662,6 @@ async function buildPolyfillChunk(
     plugins: [polyfillsPlugin(imports, excludeSystemJS)],
     build: {
       write: false,
-      // if a value above 'es5' is set, esbuild injects helper functions which uses es2015 features
-      target: 'es5',
       minify,
       assetsDir,
       rollupOptions: {
@@ -635,9 +670,20 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
-          entryFileNames: rollupOutputOptions.entryFileNames,
-          manualChunks: undefined
+          entryFileNames: rollupOutputOptions.entryFileNames
         }
+      }
+    },
+    // Don't run esbuild for transpilation or minification
+    // because we don't want to transpile code.
+    esbuild: false,
+    optimizeDeps: {
+      esbuildOptions: {
+        // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
+        // This limits the input code not to include es2015+ codes.
+        // But core-js is the only dependency which includes commonjs code
+        // and core-js doesn't include es2015+ codes.
+        target: 'es5'
       }
     }
   })

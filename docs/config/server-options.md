@@ -14,9 +14,9 @@ This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 There are cases when other servers might respond instead of Vite.
 
-The first case is when `localhost` is used. Node.js below v17 reorders the result of DNS-resolved address by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening. Vite prints the resolved address when it differs.
+The first case is when `localhost` is used. Node.js under v17 reorders the result of DNS-resolved addresses by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening to. Vite prints the resolved address when it differs.
 
-You could set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Or you could set `server.host` to `127.0.0.1` explicitly.
+You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Vite will then print the address as `localhost`.
 
 ```js
 // vite.config.js
@@ -30,7 +30,7 @@ export default defineConfig({
 })
 ```
 
-The second case is when wildcard hosts (e.g. `0.0.0.0`) is used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
+The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
 
 :::
 
@@ -45,7 +45,7 @@ Specify server port. Note if the port is already being used, Vite will automatic
 
 - **Type:** `boolean`
 
-Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+Set to `true` to exit if port is already in use, instead of automatically trying the next available port.
 
 ## server.https
 
@@ -54,6 +54,8 @@ Set to `true` to exit if port is already in use, instead of automatically try th
 Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
 
 The value can also be an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
+
+A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins, which will automatically create and cache a self-signed certificate. But we recommend creating your own certificates.
 
 ## server.open
 
@@ -143,9 +145,11 @@ Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
 When `server.hmr.server` is defined, Vite will process the HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
+Check out [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue) for some examples.
+
 ::: tip NOTE
 
-With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fallback to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
+With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fall back to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
 
 ```
 Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.
@@ -165,8 +169,6 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
-When running Vite on Windows Subsystem for Linux (WSL) 2, if the project folder resides in a Windows filesystem, you'll need to set this option to `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
-
 The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
 
 ```js
@@ -184,6 +186,19 @@ export default defineConfig({
 })
 ```
 
+::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
+
+When running Vite on WSL2, file system watching does not work when a file is edited by Windows applications (non-WSL2 process). This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739). This also applies to running on Docker with a WSL2 backend.
+
+To fix it, you could either:
+
+- **Recommended**: Use WSL2 applications to edit your files.
+  - It is also recommended to move the project folder outside of a Windows filesystem. Accessing Windows filesystem from WSL2 is slow. Removing that overhead will improve performance.
+- Set `{ usePolling: true }`.
+  - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar#performance).
+
+:::
+
 ## server.middlewareMode
 
 - **Type:** `boolean`
@@ -196,8 +211,8 @@ Create Vite server in middleware mode.
 - **Example:**
 
 ```js
-const express = require('express')
-const { createServer: createViteServer } = require('vite')
+import express from 'express'
+import { createServer as createViteServer } from 'vite'
 
 async function createServer() {
   const app = express()
@@ -240,7 +255,7 @@ Restrict serving files outside of workspace root.
 
 Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
-Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
+Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fall back to the [project root](/guide/#index-html-and-project-root).
 
 - contains `workspaces` field in `package.json`
 - contains one of the following file
@@ -282,10 +297,9 @@ export default defineConfig({
 ## server.fs.deny
 
 - **Type:** `string[]`
+- **Default:** `['.env', '.env.*', '*.{pem,crt}']`
 
-Blocklist for sensitive files being restricted to be served by Vite dev server.
-
-Default to `['.env', '.env.*', '*.{pem,crt}']`.
+Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
 ## server.origin
 

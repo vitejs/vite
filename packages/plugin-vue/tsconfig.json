@@ -14,7 +14,6 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "types/*": ["../vite/types/*"],
       "vite": ["../vite/src/node/index.js"]
     }
   }

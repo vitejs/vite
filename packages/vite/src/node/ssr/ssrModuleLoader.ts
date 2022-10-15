@@ -12,7 +12,6 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
-import { NULL_BYTE_PLACEHOLDER } from '../constants'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -38,7 +37,7 @@ export async function ssrLoadModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean
 ): Promise<SSRModule> {
-  url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
+  url = unwrapId(url)
 
   // when we instantiate multiple dependency modules in parallel, they may
   // point to shared modules. We need to avoid duplicate instantiation attempts
@@ -119,13 +118,15 @@ async function instantiateModule(
   // CommonJS modules are preferred. We want to avoid ESM->ESM imports
   // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
-    dedupe,
+    mainFields: ['main'],
+    browserField: true,
+    conditions: [],
     extensions: ['.js', '.cjs', '.json'],
+    dedupe,
+    preserveSymlinks,
     isBuild: true,
     isProduction,
-    isRequire: true,
-    mainFields: ['main'],
-    preserveSymlinks,
+    isRequire: false,
     root
   }
 
@@ -137,6 +138,7 @@ async function instantiateModule(
     if (dep[0] !== '.' && dep[0] !== '/') {
       return nodeImport(dep, mod.file!, resolveOptions)
     }
+    // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
     dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
       pendingDeps.push(dep)
@@ -194,7 +196,7 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      result.code + `\n//# sourceURL=${mod.url}`
+      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`
     )
     await initModule(
       context.global,
@@ -224,6 +226,12 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
+// `nodeImport` may run in parallel on multiple `ssrLoadModule` calls.
+// We keep track of the current importing count so that the first import
+// would `hookNodeResolve`, and the last import would `unhookNodeResolve`.
+let importingCount = 0
+let unhookNodeResolve: ReturnType<typeof hookNodeResolve> | undefined
+
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
@@ -248,34 +256,36 @@ async function nodeImport(
     return resolved.id
   }
 
-  // When an ESM module imports an ESM dependency, this hook is *not* used.
-  const unhookNodeResolve = hookNodeResolve(
-    (nodeResolve) => (id, parent, isMain, options) => {
-      // Use the Vite resolver only for bare imports while skipping
-      // any absolute paths, built-in modules and binary modules.
-      if (
-        !bareImportRE.test(id) ||
-        path.isAbsolute(id) ||
-        isBuiltin(id) ||
-        id.endsWith('.node')
-      ) {
-        return nodeResolve(id, parent, isMain, options)
-      }
-      if (parent) {
-        let resolved = viteResolve(id, parent.id)
-        if (resolved) {
-          // hookNodeResolve must use platform-specific path.normalize
-          // to be compatible with dynamicImport (#6080)
-          resolved = path.normalize(resolved)
+  if (importingCount === 0) {
+    // When an ESM module imports an ESM dependency, this hook is *not* used.
+    unhookNodeResolve = hookNodeResolve(
+      (nodeResolve) => (id, parent, isMain, options) => {
+        // Use the Vite resolver only for bare imports while skipping
+        // any absolute paths, built-in modules and binary modules.
+        if (
+          !bareImportRE.test(id) ||
+          path.isAbsolute(id) ||
+          isBuiltin(id) ||
+          id.endsWith('.node')
+        ) {
+          return nodeResolve(id, parent, isMain, options)
         }
-        return resolved
+        if (parent) {
+          let resolved = viteResolve(id, parent.id)
+          if (resolved) {
+            // hookNodeResolve must use platform-specific path.normalize
+            // to be compatible with dynamicImport (#6080)
+            resolved = path.normalize(resolved)
+          }
+          return resolved
+        }
+        // Importing a CJS module from an ESM module. In this case, the import
+        // specifier is already an absolute path, so this is a no-op.
+        // Options like `resolve.dedupe` and `mode` are not respected.
+        return id
       }
-      // Importing a CJS module from an ESM module. In this case, the import
-      // specifier is already an absolute path, so this is a no-op.
-      // Options like `resolve.dedupe` and `mode` are not respected.
-      return id
-    }
-  )
+    )
+  }
 
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {
@@ -297,16 +307,20 @@ async function nodeImport(
   }
 
   try {
+    importingCount++
     const mod = await dynamicImport(url)
     return proxyESM(mod)
   } finally {
-    unhookNodeResolve()
+    importingCount--
+    if (importingCount === 0) {
+      unhookNodeResolve?.()
+    }
   }
 }
 
 // rollup-style default import interop for cjs
 function proxyESM(mod: any) {
-  // This is the only sensible option when the exports object is a primitve
+  // This is the only sensible option when the exports object is a primitive
   if (isPrimitive(mod)) return { default: mod }
 
   let defaultExport = 'default' in mod ? mod.default : mod

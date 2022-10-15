@@ -13,7 +13,7 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
     config.command !== 'build' ||
     !config.build.ssr ||
-    !config.resolve.dedupe?.length ||
+    !config.resolve.dedupe.length ||
     config.ssr?.noExternal === true ||
     config.ssr?.format !== 'cjs' ||
     isBuildOutputEsm(config)
@@ -53,7 +53,9 @@ type NodeResolveFilename = (
 /** Respect the `resolve.dedupe` option in production SSR. */
 function dedupeRequire(dedupe: string[]) {
   // eslint-disable-next-line no-restricted-globals
-  const Module = require('module') as { _resolveFilename: NodeResolveFilename }
+  const Module = require('node:module') as {
+    _resolveFilename: NodeResolveFilename
+  }
   const resolveFilename = Module._resolveFilename
   Module._resolveFilename = function (request, parent, isMain, options) {
     if (request[0] !== '.' && request[0] !== '/') {

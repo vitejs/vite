@@ -1,3 +1,56 @@
+## 2.2.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(react): conditionally self-accept fast-refresh HMR (#10239) ([e976b06](https://github.com/vitejs/vite/commit/e976b06)), closes [#10239](https://github.com/vitejs/vite/issues/10239)
+* feat: add `throwIfNamespace` option for custom JSX runtime (#9571) ([f842f74](https://github.com/vitejs/vite/commit/f842f74)), closes [#9571](https://github.com/vitejs/vite/issues/9571)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
+## 2.1.0 (2022-09-05)
+
+* fix(plugin-react): duplicate __self prop and __source prop (#9387) ([c89de3a](https://github.com/vitejs/vite/commit/c89de3a)), closes [#9387](https://github.com/vitejs/vite/issues/9387)
+
+
+
+## 2.1.0-beta.0 (2022-08-29)
+
+* docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
+* fix: add `react` to `optimizeDeps` (#9056) ([bc4a627](https://github.com/vitejs/vite/commit/bc4a627)), closes [#9056](https://github.com/vitejs/vite/issues/9056)
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+
+
+
+## <small>2.0.1 (2022-08-11)</small>
+
+* fix: don't count class declarations as react fast refresh boundry (fixes #3675) (#8887) ([5a18284](https://github.com/vitejs/vite/commit/5a18284)), closes [#3675](https://github.com/vitejs/vite/issues/3675) [#8887](https://github.com/vitejs/vite/issues/8887)
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(deps): update all non-major dependencies (#9176) ([31d3b70](https://github.com/vitejs/vite/commit/31d3b70)), closes [#9176](https://github.com/vitejs/vite/issues/9176)
+* fix(deps): update all non-major dependencies (#9575) ([8071325](https://github.com/vitejs/vite/commit/8071325)), closes [#9575](https://github.com/vitejs/vite/issues/9575)
+* fix(plugin-react): wrong substitution causes `React is not defined` (#9386) ([8a5b575](https://github.com/vitejs/vite/commit/8a5b575)), closes [#9386](https://github.com/vitejs/vite/issues/9386)
+* docs: fix server options link (#9242) ([29db3ea](https://github.com/vitejs/vite/commit/29db3ea)), closes [#9242](https://github.com/vitejs/vite/issues/9242)
+
+
+
+## 2.0.0 (2022-07-13)
+
+* chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
+* fix(react): sourcemap incorrect warning and classic runtime sourcemap (#9006) ([bdae7fa](https://github.com/vitejs/vite/commit/bdae7fa)), closes [#9006](https://github.com/vitejs/vite/issues/9006)
+
+
+
+## 2.0.0-beta.1 (2022-07-06)
+
+* fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
+* fix(plugin-react): pass correct context to runPluginOverrides (#8809) ([09742e2](https://github.com/vitejs/vite/commit/09742e2)), closes [#8809](https://github.com/vitejs/vite/issues/8809)
+* fix(plugin-react): return code if should skip in transform (fix #7586) (#8676) ([206e22a](https://github.com/vitejs/vite/commit/206e22a)), closes [#7586](https://github.com/vitejs/vite/issues/7586) [#8676](https://github.com/vitejs/vite/issues/8676)
+* chore: use `tsx` directly instead of indirect `esno` (#8773) ([f018f13](https://github.com/vitejs/vite/commit/f018f13)), closes [#8773](https://github.com/vitejs/vite/issues/8773)
+
+
+
 ## 2.0.0-beta.0 (2022-06-21)
 
 * feat: bump minimum node version to 14.18.0 (#8662) ([8a05432](https://github.com/vitejs/vite/commit/8a05432)), closes [#8662](https://github.com/vitejs/vite/issues/8662)

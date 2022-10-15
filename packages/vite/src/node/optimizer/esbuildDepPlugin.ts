@@ -1,16 +1,16 @@
 import path from 'node:path'
-import { promises as fs } from 'node:fs'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
+import { getDepOptimizationConfig } from '..'
 import type { ResolvedConfig } from '..'
 import {
   flattenId,
+  isBuiltin,
   isExternalUrl,
-  isRunningWithYarnPnp,
   moduleListContains,
   normalizePath
 } from '../utils'
-import { browserExternalId } from '../plugins/resolve'
+import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import type { ExportsData } from '.'
 
 const externalWithConversionNamespace =
@@ -27,6 +27,8 @@ const externalTypes = [
   'stylus',
   'pcss',
   'postcss',
+  // wasm
+  'wasm',
   // known SFC types
   'vue',
   'svelte',
@@ -42,13 +44,15 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig
+  external: string[],
+  config: ResolvedConfig,
+  ssr: boolean
 ): Plugin {
+  const { extensions } = getDepOptimizationConfig(config, ssr)
+
   // remove optimizable extensions from `externalTypes` list
-  const allExternalTypes = config.optimizeDeps.extensions
-    ? externalTypes.filter(
-        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
-      )
+  const allExternalTypes = extensions
+    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
 
   // default resolver which prefers ESM
@@ -77,7 +81,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined)
+    return resolver(id, _importer, undefined, ssr)
   }
 
   const resolveResult = (id: string, resolved: string) => {
@@ -86,6 +90,15 @@ export function esbuildDepPlugin(
         path: id,
         namespace: 'browser-external'
       }
+    }
+    if (resolved.startsWith(optionalPeerDepId)) {
+      return {
+        path: resolved,
+        namespace: 'optional-peer-dep'
+      }
+    }
+    if (ssr && isBuiltin(resolved)) {
+      return
     }
     if (isExternalUrl(resolved)) {
       return {
@@ -118,10 +131,16 @@ export function esbuildDepPlugin(
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            // here it is not set to `external: true` to convert `require` to `import`
+            if (kind === 'require-call') {
+              // here it is not set to `external: true` to convert `require` to `import`
+              return {
+                path: resolved,
+                namespace: externalWithConversionNamespace
+              }
+            }
             return {
               path: resolved,
-              namespace: externalWithConversionNamespace
+              external: true
             }
           }
         }
@@ -143,8 +162,7 @@ export function esbuildDepPlugin(
         const flatId = flattenId(id)
         if (flatId in qualified) {
           return {
-            path: flatId,
-            namespace: 'dep'
+            path: qualified[flatId]
           }
         }
       }
@@ -152,7 +170,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+          if (moduleListContains(external, id)) {
             return {
               path: id,
               external: true
@@ -160,7 +178,7 @@ export function esbuildDepPlugin(
           }
 
           // ensure esbuild uses our resolved entries
-          let entry: { path: string; namespace: string } | undefined
+          let entry: { path: string } | undefined
           // if this is an entry, return entry namespace resolve result
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry
@@ -178,48 +196,6 @@ export function esbuildDepPlugin(
           }
         }
       )
-
-      // For entry files, we'll read it ourselves and construct a proxy module
-      // to retain the entry's raw id instead of file path so that esbuild
-      // outputs desired output file structure.
-      // It is necessary to do the re-exporting to separate the virtual proxy
-      // module from the actual module since the actual module may get
-      // referenced via relative imports - if we don't separate the proxy and
-      // the actual module, esbuild will create duplicated copies of the same
-      // module!
-      const root = path.resolve(config.root)
-      build.onLoad({ filter: /.*/, namespace: 'dep' }, ({ path: id }) => {
-        const entryFile = qualified[id]
-
-        let relativePath = normalizePath(path.relative(root, entryFile))
-        if (
-          !relativePath.startsWith('./') &&
-          !relativePath.startsWith('../') &&
-          relativePath !== '.'
-        ) {
-          relativePath = `./${relativePath}`
-        }
-
-        let contents = ''
-        const { hasImports, exports, hasReExports } = exportsData[id]
-        if (!hasImports && !exports.length) {
-          // cjs
-          contents += `export default require("${relativePath}");`
-        } else {
-          if (exports.includes('default')) {
-            contents += `import d from "${relativePath}";export default d;`
-          }
-          if (hasReExports || exports.length > 1 || exports[0] !== 'default') {
-            contents += `\nexport * from "${relativePath}"`
-          }
-        }
-
-        return {
-          loader: 'js',
-          contents,
-          resolveDir: root
-        }
-      })
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
@@ -255,7 +231,7 @@ module.exports = Object.create(new Proxy({}, {
       key !== 'constructor' &&
       key !== 'splice'
     ) {
-      throw new Error(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
+      console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
     }
   }
 }))`
@@ -264,29 +240,48 @@ module.exports = Object.create(new Proxy({}, {
         }
       )
 
-      // yarn 2 pnp compat
-      if (isRunningWithYarnPnp) {
-        build.onResolve(
-          { filter: /.*/ },
-          async ({ path: id, importer, kind, resolveDir, namespace }) => {
-            const resolved = await resolve(
-              id,
-              importer,
-              kind,
-              // pass along resolveDir for entries
-              namespace === 'dep' ? resolveDir : undefined
-            )
-            if (resolved) {
-              return resolveResult(id, resolved)
+      build.onLoad(
+        { filter: /.*/, namespace: 'optional-peer-dep' },
+        ({ path }) => {
+          if (config.isProduction) {
+            return {
+              contents: 'module.exports = {}'
+            }
+          } else {
+            const [, peerDep, parentDep] = path.split(':')
+            return {
+              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
             }
           }
-        )
+        }
+      )
+    }
+  }
+}
 
-        build.onLoad({ filter: /.*/ }, async (args) => ({
-          contents: await fs.readFile(args.path),
-          loader: 'default'
-        }))
-      }
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const escape = (text: string) =>
+        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const filter = new RegExp(externals.map(escape).join('|'))
+
+      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        path: args.path,
+        external: true
+      }))
+
+      build.onResolve({ filter }, (args) => ({
+        path: args.path,
+        namespace: 'external'
+      }))
+
+      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+        contents: `export * from ${JSON.stringify(args.path)}`
+      }))
     }
   }
 }

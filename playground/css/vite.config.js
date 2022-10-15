@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
@@ -7,10 +7,17 @@ module.exports = {
   build: {
     cssTarget: 'chrome61'
   },
+  esbuild: {
+    logOverride: {
+      'unsupported-css-property': 'silent'
+    }
+  },
   resolve: {
     alias: {
       '@': __dirname,
-      spacefolder: __dirname + '/folder with space'
+      spacefolder: __dirname + '/folder with space',
+      '#alias': __dirname + '/aliased/foo.css',
+      '#alias-module': __dirname + '/aliased/bar.module.css'
     }
   },
   css: {
@@ -38,9 +45,14 @@ module.exports = {
     preprocessorOptions: {
       scss: {
         additionalData: `$injectedColor: orange;`,
-        importer(url) {
-          if (url === 'virtual-dep') return { contents: '' }
-        }
+        importer: [
+          function (url) {
+            return url === 'virtual-dep' ? { contents: '' } : null
+          },
+          function (url) {
+            return url.endsWith('.wxss') ? { contents: '' } : null
+          }
+        ]
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,

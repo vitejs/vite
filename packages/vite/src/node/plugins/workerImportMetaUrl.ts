@@ -8,11 +8,12 @@ import type { Plugin } from '../plugin'
 import {
   cleanUrl,
   injectQuery,
-  normalizePath,
   parseRequest,
-  transformResult
+  slash,
+  transformStableResult
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
+import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -38,7 +39,9 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   // need to find in comment code
-  const workerOptString = raw.substring(commaIndex + 1, endIndex)
+  const workerOptString = raw
+    .substring(commaIndex + 1, endIndex)
+    .replace(/}[^]*,/g, '}') // strip trailing comma for parsing
 
   const hasViteIgnore = ignoreFlagRE.test(workerOptString)
   if (hasViteIgnore) {
@@ -46,8 +49,8 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   // need to find in no comment code
-  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex)
-  if (!cleanWorkerOptString.trim().length) {
+  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex).trim()
+  if (!cleanWorkerOptString.length) {
     return 'classic'
   }
 
@@ -71,18 +74,21 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  let workerResolver: ResolveFn
 
   return {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
-      const query = parseRequest(id)
-      let s: MagicString | undefined
+      const ssr = options?.ssr === true
       if (
+        !options?.ssr &&
         (code.includes('new Worker') || code.includes('new SharedWorker')) &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
+        const query = parseRequest(id)
+        let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
@@ -95,13 +101,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const urlStart = cleanString.indexOf(emptyUrl, index)
           const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
-
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              urlIndex
-            )
-          }
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
@@ -117,26 +116,40 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             cleanString,
             index + allExp.length
           )
-          const file = normalizePath(
-            path.resolve(path.dirname(id), rawUrl.slice(1, -1))
-          )
-
-          let url: string
-          if (isBuild) {
-            getDepsOptimizer(config)?.registerWorkersSource(id)
-            url = await workerFileToUrl(config, file, query)
+          const url = rawUrl.slice(1, -1)
+          let file: string | undefined
+          if (url.startsWith('.')) {
+            file = path.resolve(path.dirname(id), url)
           } else {
-            url = await fileToUrl(cleanUrl(file), config, this)
-            url = injectQuery(url, WORKER_FILE_ID)
-            url = injectQuery(url, `type=${workerType}`)
+            workerResolver ??= config.createResolver({
+              extensions: [],
+              tryIndex: false,
+              preferRelative: true
+            })
+            file = await workerResolver(url, id)
+            file ??= url.startsWith('/')
+              ? slash(path.join(config.publicDir, url))
+              : slash(path.resolve(path.dirname(id), url))
           }
-          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
-            contentOnly: true
-          })
+
+          let builtUrl: string
+          if (isBuild) {
+            getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
+            builtUrl = await workerFileToUrl(config, file, query)
+          } else {
+            builtUrl = await fileToUrl(cleanUrl(file), config, this)
+            builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
+            builtUrl = injectQuery(builtUrl, `type=${workerType}`)
+          }
+          s.update(
+            urlIndex,
+            urlIndex + exp.length,
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+          )
         }
 
         if (s) {
-          return transformResult(s, id, config)
+          return transformStableResult(s, id, config)
         }
 
         return null

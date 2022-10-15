@@ -3,6 +3,8 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter, normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
+import MagicString from 'magic-string'
+import type { SourceMap } from 'magic-string'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -38,6 +40,11 @@ export interface Options {
    * @default true
    */
   jsxPure?: boolean
+  /**
+   * Toggles whether or not to throw an error if an XML namespaced tag name is used.
+   * @default true
+   */
+  jsxThrowIfNamespace?: boolean
   /**
    * Babel configuration applied in both dev and prod.
    */
@@ -88,11 +95,14 @@ declare module 'vite' {
   }
 }
 
+const prependReactImportCode = "import React from 'react'; "
+
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
   let devBase = '/'
   let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
+  let needHiresSourcemap = false
   let isProduction = true
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
@@ -135,6 +145,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       filter = createFilter(opts.include, opts.exclude, {
         resolve: projectRoot
       })
+      needHiresSourcemap =
+        config.command === 'build' && !!config.build.sourcemap
       isProduction = config.isProduction
       skipFastRefresh ||= isProduction || config.command === 'build'
 
@@ -165,10 +177,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           .filter(Boolean) as ReactBabelHook[]
 
         if (hooks.length > 0) {
-          return (runPluginOverrides = (babelOptions) => {
+          return (runPluginOverrides = (babelOptions, context) => {
             hooks.forEach((hook) => hook(babelOptions, context, config))
             return true
-          })(babelOptions)
+          })(babelOptions, context)
         }
         runPluginOverrides = () => false
         return false
@@ -217,6 +229,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
+        let prependReactImport = false
         if (!isProjectFile || isJSX) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
@@ -240,7 +253,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 {
                   runtime: 'automatic',
                   importSource: opts.jsxImportSource,
-                  pure: opts.jsxPure !== false
+                  pure: opts.jsxPure !== false,
+                  throwIfNamespace: opts.jsxThrowIfNamespace
                 }
               ])
 
@@ -261,8 +275,20 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // Even if the automatic JSX runtime is not used, we can still
             // inject the React import for .jsx and .tsx modules.
             if (!skipReactImport && !importReactRE.test(code)) {
-              code = `import React from 'react'; ` + code
+              prependReactImport = true
             }
+          }
+        }
+
+        let inputMap: SourceMap | undefined
+        if (prependReactImport) {
+          if (needHiresSourcemap) {
+            const s = new MagicString(code)
+            s.prepend(prependReactImportCode)
+            code = s.toString()
+            inputMap = s.generateMap({ hires: true, source: id })
+          } else {
+            code = prependReactImportCode + code
           }
         }
 
@@ -275,8 +301,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           !babelOptions.configFile &&
           !(isProjectFile && babelOptions.babelrc)
 
+        // Avoid parsing if no plugins exist.
         if (shouldSkip) {
-          return // Avoid parsing if no plugins exist.
+          return {
+            code,
+            map: inputMap ?? null
+          }
         }
 
         const parserPlugins: typeof babelOptions.parserOpts.plugins = [
@@ -323,7 +353,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           plugins,
           sourceMaps: true,
           // Vite handles sourcemap flattening
-          inputSourceMap: false as any
+          inputSourceMap: inputMap ?? (false as any)
         })
 
         if (result) {
@@ -382,7 +412,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config() {
       return {
         optimizeDeps: {
-          include: [reactJsxRuntimeId, reactJsxDevRuntimeId]
+          // We can't add `react-dom` because the dependency is `react-dom/client`
+          // for React 18 while it's `react-dom` for React 17. We'd need to detect
+          // what React version the user has installed.
+          include: [reactJsxRuntimeId, reactJsxDevRuntimeId, 'react']
         }
       }
     },

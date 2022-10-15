@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 const vue = require('@vitejs/plugin-vue')
 
 // Overriding the NODE_ENV set by vitest
@@ -14,10 +14,15 @@ module.exports = {
       'node:url': 'url'
     }
   },
-
   optimizeDeps: {
-    include: ['dep-linked-include', 'nested-exclude > nested-include'],
-    exclude: ['nested-exclude'],
+    disabled: false,
+    include: [
+      'dep-linked-include',
+      'nested-exclude > nested-include',
+      // will throw if optimized (should log warning instead)
+      'non-optimizable-include'
+    ],
+    exclude: ['nested-exclude', 'dep-non-optimized'],
     esbuildOptions: {
       plugins: [
         {
@@ -39,7 +44,11 @@ module.exports = {
 
   build: {
     // to make tests faster
-    minify: false
+    minify: false,
+    // Avoid @rollup/plugin-commonjs
+    commonjsOptions: {
+      include: []
+    }
   },
 
   plugins: [
@@ -49,6 +58,12 @@ module.exports = {
     {
       name: 'mock',
       configureServer({ middlewares }) {
+        middlewares.use('/ping', (_, res) => {
+          res.statusCode = 200
+          res.end('pong')
+        })
+      },
+      configurePreviewServer({ middlewares }) {
         middlewares.use('/ping', (_, res) => {
           res.statusCode = 200
           res.end('pong')
@@ -72,7 +87,7 @@ module.exports = {
       apply: 'build',
       enforce: 'pre',
       load(id) {
-        if (id === '__vite-browser-external:fs') {
+        if (id === '__vite-browser-external') {
           return `export default {}; export function readFileSync() {}`
         }
       }

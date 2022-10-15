@@ -1,5 +1,7 @@
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import fetch from 'node-fetch'
+import { expect, test, vi } from 'vitest'
 import { port } from './serve'
 import {
   browserLogs,
@@ -7,7 +9,8 @@ import {
   getColor,
   isBuild,
   page,
-  untilUpdated
+  untilUpdated,
+  viteServer
 } from '~utils'
 
 const url = `http://localhost:${port}/test/`
@@ -158,14 +161,18 @@ test('hydration', async () => {
   expect(await page.textContent('button')).toMatch('1')
 })
 
-test('hmr', async () => {
-  // This is test is flaky in Mac CI, but can't be reproduced locally. Wait until
-  // network idle to avoid the issue. TODO: This may be caused by a bug when
-  // modifying a file while loading, we should remove this guard
-  await page.goto(url, { waitUntil: 'networkidle' })
-  editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
-  await untilUpdated(() => page.textContent('h1'), 'changed')
-})
+test(
+  'hmr',
+  async () => {
+    // This is test is flaky in Mac CI, but can't be reproduced locally. Wait until
+    // network idle to avoid the issue. TODO: This may be caused by a bug when
+    // modifying a file while loading, we should remove this guard
+    await page.goto(url, { waitUntil: 'networkidle' })
+    editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
+    await untilUpdated(() => page.textContent('h1'), 'changed')
+  },
+  { retry: 3 }
+)
 
 test('client navigation', async () => {
   await page.goto(url)
@@ -202,3 +209,33 @@ test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
     expect(homeHtml).toMatch(file)
   }
 })
+
+test.runIf(!isBuild)(
+  'always throw error when evaluating an wrong SSR module',
+  async () => {
+    const __filename = fileURLToPath(import.meta.url)
+    const badjs = resolve(__filename, '../fixtures/ssrModuleLoader-bad.js')
+    const THROW_MESSAGE = 'it is an expected error'
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const expectedErrors = []
+    for (const _ of [0, 1]) {
+      try {
+        console.log(viteServer)
+        await viteServer.ssrLoadModule(badjs, { fixStacktrace: true })
+      } catch (e) {
+        expectedErrors.push(e)
+      }
+    }
+    expect(expectedErrors).toHaveLength(2)
+    expect(expectedErrors[0]).toBe(expectedErrors[1])
+    expectedErrors.forEach((error) => {
+      expect(error?.message).toContain(THROW_MESSAGE)
+    })
+    expect(spy).toBeCalledTimes(1)
+    const [firstParameter] = spy.mock.calls[0]
+    expect(firstParameter).toContain('Error when evaluating SSR module')
+    expect(firstParameter).toContain(THROW_MESSAGE)
+    spy.mockClear()
+  }
+)

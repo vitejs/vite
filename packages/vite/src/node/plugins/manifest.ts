@@ -3,6 +3,8 @@ import type { OutputAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
+import { cssEntryFilesCache } from './css'
+import { duplicateAssets } from './asset'
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -100,11 +102,17 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       function createAsset(chunk: OutputAsset): ManifestChunk {
-        return {
+        const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
           src: chunk.name
         }
+
+        if (cssEntryFiles.has(chunk.name!)) manifestChunk.isEntry = true
+
+        return manifestChunk
       }
+
+      const cssEntryFiles = cssEntryFilesCache.get(config)!
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -114,6 +122,11 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           manifest[chunk.name] = createAsset(chunk)
         }
       }
+
+      duplicateAssets.get(config)!.forEach((asset) => {
+        const chunk = createAsset(asset)
+        manifest[asset.name!] = chunk
+      })
 
       outputCount++
       const output = config.build.rollupOptions?.output

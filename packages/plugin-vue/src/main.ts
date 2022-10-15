@@ -128,7 +128,9 @@ export async function transformMain(
       output.push(`export const _rerender_only = true`)
     }
     output.push(
-      `import.meta.hot.accept(({ default: updated, _rerender_only }) => {`,
+      `import.meta.hot.accept(mod => {`,
+      `  if (!mod) return`,
+      `  const { default: updated, _rerender_only } = mod`,
       `  if (_rerender_only) {`,
       `    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)`,
       `  } else {`,
@@ -160,7 +162,7 @@ export async function transformMain(
   if (options.sourceMap) {
     if (scriptMap && templateMap) {
       // if the template is inlined into the main module (indicated by the presence
-      // of templateMap, we need to concatenate the two source maps.
+      // of templateMap), we need to concatenate the two source maps.
 
       const gen = fromMap(
         // version property of result.map is declared as string
@@ -211,15 +213,21 @@ export async function transformMain(
 
   // handle TS transpilation
   let resolvedCode = output.join('\n')
+  const lang = descriptor.scriptSetup?.lang || descriptor.script?.lang
+
   if (
-    (descriptor.script?.lang === 'ts' ||
-      descriptor.scriptSetup?.lang === 'ts') &&
+    lang &&
+    /tsx?$/.test(lang) &&
     !descriptor.script?.src // only normal script can have src
   ) {
     const { code, map } = await transformWithEsbuild(
       resolvedCode,
       filename,
-      { loader: 'ts', sourcemap: options.sourceMap },
+      {
+        loader: 'ts',
+        target: 'esnext',
+        sourcemap: options.sourceMap
+      },
       resolvedMap
     )
     resolvedCode = code
@@ -306,10 +314,17 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
+      const userPlugins = options.script?.babelParserPlugins || []
+      const defaultPlugins =
+        script.lang === 'ts'
+          ? userPlugins.includes('decorators')
+            ? (['typescript'] as const)
+            : (['typescript', 'decorators-legacy'] as const)
+          : []
       scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
-        script.lang === 'ts' ? ['typescript'] : undefined
+        [...defaultPlugins, ...userPlugins]
       )
       map = script.map
     } else {

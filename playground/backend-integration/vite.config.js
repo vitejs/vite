@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 const glob = require('fast-glob')
 const normalizePath = require('vite').normalizePath
 
@@ -19,6 +19,7 @@ function BackendIntegrationExample() {
         .map((filename) => [path.relative(root, filename), filename])
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
+      entrypoints.push(['foo.css', path.resolve(__dirname, './dir/foo.css')])
 
       return {
         build: {

@@ -13,7 +13,11 @@ import {
   injectQuery,
   parseRequest
 } from '../utils'
-import { onRollupWarning } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  onRollupWarning,
+  toOutputFilePathInJS
+} from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -23,7 +27,7 @@ interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
   assets: Map<string, EmittedAsset>
 
-  // worker bundle don't deps on any more worker runtime info an id only had an result.
+  // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <input_filename, fileName>
   bundle: Map<string, string>
@@ -36,6 +40,14 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
+
+export function isWorkerRequest(id: string): boolean {
+  const query = parseRequest(id)
+  if (query && query[WORKER_FILE_ID] != null) {
+    return true
+  }
+  return false
+}
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
@@ -197,10 +209,7 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-  const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
-  return assetsBase.relative || assetsBase.runtime
-    ? encodeWorkerAssetFileName(fileName, workerMap)
-    : (assetsBase.url ?? config.base) + fileName
+  return encodeWorkerAssetFileName(fileName, workerMap)
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -256,10 +265,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id) {
+    async transform(raw, id, options) {
+      const ssr = options?.ssr === true
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
-        // if import worker by worker constructor will had query.type
+        // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
         const workerType = query['type']! as WorkerType
         let injectEnv = ''
@@ -279,7 +289,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-
         return {
           code: injectEnv + raw
         }
@@ -303,7 +312,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
-        getDepsOptimizer(config)?.registerWorkersSource(id)
+        getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url
@@ -350,7 +359,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let s: MagicString
       const result = () => {
         return (
@@ -361,55 +370,48 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         )
       }
       if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          outputOptions.format
+        )
+
         let match: RegExpExecArray | null
         s = new MagicString(code)
 
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
         const { fileNameHash } = workerMap
-        const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
 
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          let replacement: string
-          if (assetsBase.runtime) {
-            replacement = `"+${assetsBase.runtime(JSON.stringify(filename))}+"`
-          } else {
-            // Relative base
-            let outputFilepath: string
-            if (assetsBase.relative && !config.build.ssr) {
-              outputFilepath = path.posix.relative(
-                path.dirname(chunk.fileName),
-                filename
-              )
-              if (!outputFilepath.startsWith('.')) {
-                outputFilepath = './' + outputFilepath
-              }
-            } else {
-              outputFilepath = (assetsBase.url ?? config.base) + filename
-            }
-            replacement = JSON.stringify(outputFilepath).slice(1, -1)
-          }
-          s.overwrite(match.index, match.index + full.length, replacement, {
-            contentOnly: true
-          })
+          const replacement = toOutputFilePathInJS(
+            filename,
+            'asset',
+            chunk.fileName,
+            'js',
+            config,
+            toRelativeRuntime
+          )
+          const replacementString =
+            typeof replacement === 'string'
+              ? JSON.stringify(replacement).slice(1, -1)
+              : `"+${replacement.runtime}+"`
+          s.update(match.index, match.index + full.length, replacementString)
         }
-
-        // TODO: check if this should be removed
-        if (config.isWorker) {
-          s = s.replace('import.meta.url', 'self.location.href')
-          return result()
-        }
-      }
-      if (!isWorker) {
-        const workerMap = workerCache.get(config)!
-        workerMap.assets.forEach((asset) => {
-          this.emitFile(asset)
-          workerMap.assets.delete(asset.fileName!)
-        })
       }
       return result()
+    },
+
+    generateBundle(opts) {
+      // @ts-ignore asset emits are skipped in legacy bundle
+      if (opts.__vite_skip_asset_emit__ || isWorker) {
+        return
+      }
+      const workerMap = workerCache.get(config)!
+      workerMap.assets.forEach((asset) => {
+        this.emitFile(asset)
+        workerMap.assets.delete(asset.fileName!)
+      })
     }
   }
 }

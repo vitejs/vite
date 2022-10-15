@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import {
   browserErrors,
   browserLogs,
@@ -33,11 +34,19 @@ describe.runIf(isBuild)('build', () => {
     const manifest = readManifest('dev')
     const htmlEntry = manifest['index.html']
     const cssAssetEntry = manifest['global.css']
+    const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
+    const dirFooAssetEntry = manifest['../../dir/foo.css'] // '\\' should not be used even on windows
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(cssAssetEntry?.file).not.toBeUndefined()
+    expect(cssAssetEntry?.isEntry).toEqual(true)
+    expect(scssAssetEntry?.file).not.toBeUndefined()
+    expect(scssAssetEntry?.src).toEqual('nested/blue.scss')
+    expect(scssAssetEntry?.isEntry).toEqual(true)
     expect(imgAssetEntry?.file).not.toBeUndefined()
+    expect(imgAssetEntry?.isEntry).toBeUndefined()
+    expect(dirFooAssetEntry).not.toBeUndefined()
   })
 })
 

@@ -1,11 +1,12 @@
+import { expect, test } from 'vitest'
 import {
-  isBuild,
-  editFile,
-  untilUpdated,
-  getColor,
-  getBgColor,
   browserLogs,
-  page
+  editFile,
+  getBgColor,
+  getColor,
+  isBuild,
+  page,
+  untilUpdated
 } from '~utils'
 
 test('should render', async () => {

@@ -7,13 +7,14 @@ import { URL, URLSearchParams, pathToFileURL } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
+import type { AddressInfo, Server } from 'node:net'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
-import type { Alias, AliasOptions } from 'types/alias'
+import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
@@ -24,10 +25,16 @@ import {
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER,
+  OPTIMIZABLE_ENTRY_RE,
   VALID_ID_PREFIX,
+  loopbackHosts,
   wildcardHosts
 } from './constants'
-import type { ResolvedConfig } from '.'
+import type { DepOptimizationConfig } from './optimizer'
+import type { ResolvedConfig } from './config'
+import type { ResolvedServerUrls } from './server'
+import type { CommonServerOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -47,10 +54,24 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// Strip valid id prefix. This is prepended to resolved Ids that are
-// not valid browser import specifiers by the importAnalysis plugin.
+/**
+ * Prepend `/@id/` and replace null byte so the id is URL-safe.
+ * This is prepended to resolved ids that are not valid browser
+ * import specifiers by the importAnalysis plugin.
+ */
+export function wrapId(id: string): string {
+  return id.startsWith(VALID_ID_PREFIX)
+    ? id
+    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
+}
+
+/**
+ * Undo {@link wrapId}'s `/@id/` and null byte replacements.
+ */
 export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
+  return id.startsWith(VALID_ID_PREFIX)
+    ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
+    : id
 }
 
 export const flattenId = (id: string): string =>
@@ -89,6 +110,17 @@ export function moduleListContains(
   id: string
 ): boolean | undefined {
   return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+}
+
+export function isOptimizable(
+  id: string,
+  optimizeDeps: DepOptimizationConfig
+): boolean {
+  const { extensions } = optimizeDeps
+  return (
+    OPTIMIZABLE_ENTRY_RE.test(id) ||
+    (extensions?.some((ext) => id.endsWith(ext)) ?? false)
+  )
 }
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
@@ -244,7 +276,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -294,11 +326,9 @@ export function injectQuery(url: string, queryToInject: string): string {
   if (resolvedUrl.protocol !== 'relative:') {
     resolvedUrl = pathToFileURL(url)
   }
-  let { protocol, pathname, search, hash } = resolvedUrl
-  if (protocol === 'file:') {
-    pathname = pathname.slice(1)
-  }
-  pathname = decodeURIComponent(pathname)
+  const { search, hash } = resolvedUrl
+  let pathname = cleanUrl(url)
+  pathname = isWindows ? slash(pathname) : pathname
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash ?? ''
   }`
@@ -373,6 +403,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 interface LookupFileOptions {
   pathOnly?: boolean
   rootDir?: string
+  predicate?: (file: string) => boolean
 }
 
 export function lookupFile(
@@ -383,7 +414,12 @@ export function lookupFile(
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
+      const result = options?.pathOnly
+        ? fullPath
+        : fs.readFileSync(fullPath, 'utf-8')
+      if (!options?.predicate || options.predicate(result)) {
+        return result
+      }
     }
   }
   const parentDir = path.dirname(dir)
@@ -412,10 +448,8 @@ export function posToNumber(
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
-  for (let i = 0; i < line - 1; i++) {
-    if (lines[i]) {
-      start += lines[i].length + 1
-    }
+  for (let i = 0; i < line - 1 && i < lines.length; i++) {
+    start += lines[i].length + 1
   }
   return start + column
 }
@@ -469,7 +503,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = start - (count - lineLength) + 1
+          const pad = Math.max(start - (count - lineLength) + 1, 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start
@@ -515,16 +549,45 @@ export function isFileReadable(filename: string): boolean {
   }
 }
 
+const splitFirstDirRE = /(.+?)[\\/](.+)/
+
 /**
  * Delete every file and subdirectory. **The given directory must exist.**
- * Pass an optional `skip` array to preserve files in the root directory.
+ * Pass an optional `skip` array to preserve files under the root directory.
  */
 export function emptyDir(dir: string, skip?: string[]): void {
+  const skipInDir: string[] = []
+  let nested: Map<string, string[]> | null = null
+  if (skip?.length) {
+    for (const file of skip) {
+      if (path.dirname(file) !== '.') {
+        const matched = file.match(splitFirstDirRE)
+        if (matched) {
+          nested ??= new Map()
+          const [, nestedDir, skipPath] = matched
+          let nestedSkip = nested.get(nestedDir)
+          if (!nestedSkip) {
+            nestedSkip = []
+            nested.set(nestedDir, nestedSkip)
+          }
+          if (!nestedSkip.includes(skipPath)) {
+            nestedSkip.push(skipPath)
+          }
+        }
+      } else {
+        skipInDir.push(file)
+      }
+    }
+  }
   for (const file of fs.readdirSync(dir)) {
-    if (skip?.includes(file)) {
+    if (skipInDir.includes(file)) {
       continue
     }
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    if (nested?.has(file)) {
+      emptyDir(path.resolve(dir, file), nested.get(file))
+    } else {
+      fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    }
   }
 }
 
@@ -757,8 +820,6 @@ export interface Hostname {
   host: string | undefined
   /** resolve to localhost when possible */
   name: string
-  /** if it is using the default behavior */
-  implicit: boolean
 }
 
 export async function resolveHostname(
@@ -786,7 +847,60 @@ export async function resolveHostname(
     }
   }
 
-  return { host, name, implicit: optionsHost === undefined }
+  return { host, name }
+}
+
+export async function resolveServerUrls(
+  server: Server,
+  options: CommonServerOptions,
+  config: ResolvedConfig
+): Promise<ResolvedServerUrls> {
+  const address = server.address()
+
+  const isAddressInfo = (x: any): x is AddressInfo => x?.address
+  if (!isAddressInfo(address)) {
+    return { local: [], network: [] }
+  }
+
+  const local: string[] = []
+  const network: string[] = []
+  const hostname = await resolveHostname(options.host)
+  const protocol = options.https ? 'https' : 'http'
+  const port = address.port
+  const base = config.base === './' || config.base === '' ? '/' : config.base
+
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+  } else {
+    Object.values(os.networkInterfaces())
+      .flatMap((nInterface) => nInterface ?? [])
+      .filter(
+        (detail) =>
+          detail &&
+          detail.address &&
+          // Node < v18
+          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+            // Node >= v18
+            (typeof detail.family === 'number' && detail.family === 4))
+      )
+      .forEach((detail) => {
+        const host = detail.address.replace('127.0.0.1', hostname.name)
+        const url = `${protocol}://${host}:${port}${base}`
+        if (detail.address.includes('127.0.0.1')) {
+          local.push(url)
+        } else {
+          network.push(url)
+        }
+      })
+  }
+  return { local, network }
 }
 
 export function arraify<T>(target: T | T[]): T[] {
@@ -916,6 +1030,10 @@ export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
+export function removeComments(raw: string): string {
+  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
@@ -1028,16 +1146,21 @@ function normalizeSingleAlias({
   return alias
 }
 
-export function transformResult(
+/**
+ * Transforms transpiled code result where line numbers aren't altered,
+ * so we can skip sourcemap generation during dev
+ */
+export function transformStableResult(
   s: MagicString,
   id: string,
   config: ResolvedConfig
 ): TransformResult {
-  const isBuild = config.command === 'build'
-  const needSourceMap = !isBuild || config.build.sourcemap
   return {
     code: s.toString(),
-    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+    map:
+      config.command === 'build' && config.build.sourcemap
+        ? s.generateMap({ hires: true, source: id })
+        : null
   }
 }
 
@@ -1073,4 +1196,15 @@ export function getDepsCacheSuffix(
     suffix += '_ssr'
   }
   return suffix
+}
+
+const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
+
+/**
+ * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
+ * this function returns false for them but true for absolute paths (e.g. C:/something)
+ */
+export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
+  if (!isWindows) return p.startsWith('/')
+  return windowsDrivePathPrefixRE.test(p)
 }
