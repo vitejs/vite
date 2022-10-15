@@ -30,7 +30,12 @@ interface GlobalCLIOptions {
 
 const normalizeOptionsConfig: Record<string, (v: any[]) => any> = {
   port: (v) => {
-    return v.find((p) => typeof p === 'number' || typeof p === 'string') || 5173
+    return (
+      v
+        .slice()
+        .reverse()
+        .find((p) => typeof p === 'number' || typeof p === 'string') || 5173
+    )
   }
 }
 
