@@ -898,6 +898,7 @@ importers:
       resolve-exports-env: link:./exports-env
       resolve-exports-path: link:./exports-path
       resolve-linked: workspace:*
+      tslib: ^2.4.0
     dependencies:
       '@babel/runtime': 7.19.0
       es5-ext: 0.10.62
@@ -912,6 +913,7 @@ importers:
       resolve-exports-env: link:exports-env
       resolve-exports-path: link:exports-path
       resolve-linked: link:../resolve-linked
+      tslib: 2.4.0
 
   playground/resolve-config:
     specifiers: {}
@@ -8696,7 +8698,6 @@ packages:
 
   /tslib/2.4.0:
     resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
-    dev: true
 
   /tsutils/3.21.0_typescript@4.6.4:
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}

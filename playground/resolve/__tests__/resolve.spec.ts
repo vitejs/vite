@@ -137,3 +137,7 @@ test('resolve package that contains # in path', async () => {
     '[success]'
   )
 })
+
+test('tslib should work', async () => {
+  expect(await page.textContent('.tslib')).toMatch('[success]')
+})
