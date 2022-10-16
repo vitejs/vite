@@ -28,31 +28,12 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
-const normalizeOptionsConfig: Record<string, (v: any[]) => any> = {
-  port: (v) => {
-    return (
-      v
-        .slice()
-        .reverse()
-        .find((p) => typeof p === 'number' || typeof p === 'string') || 5173
-    )
-  }
-}
-
-const normalizeOptions = <T extends object>(
-  options: T,
-  config = normalizeOptionsConfig
-): T => {
-  const c = { ...options }
+const filterDuplicateOptions = <T extends object>(options: T) => {
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value)) {
-      // may need to define the final return of option by themselves,
-      // so they retain their implementation portal.
-      // If it is not customized, take the last item of InlineConfig as the final result.
-      c[key as keyof T] = config[key]?.(value) ?? value[value.length - 1]
+      options[key as keyof T] = value[value.length - 1]
     }
   }
-  return c
 }
 /**
  * removing global flags before passing as command specific sub-configs
@@ -74,7 +55,7 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
-  return normalizeOptions(ret)
+  return ret
 }
 
 cli
@@ -102,6 +83,7 @@ cli
     `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     // output structure is preserved even after bundling so require()
     // is ok here
     const { createServer } = await import('./server')
@@ -190,6 +172,7 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     const { build } = await import('./build')
     const buildOptions: BuildOptions = cleanOptions(options)
 
@@ -222,8 +205,8 @@ cli
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      filterDuplicateOptions(options)
       const { optimizeDeps } = await import('./optimizer')
-      options = normalizeOptions(options)
       try {
         const config = await resolveConfig(
           {
@@ -264,8 +247,8 @@ cli
         strictPort?: boolean
       } & GlobalCLIOptions
     ) => {
+      filterDuplicateOptions(options)
       const { preview } = await import('./preview')
-      options = normalizeOptions(options)
       try {
         const server = await preview({
           root,
