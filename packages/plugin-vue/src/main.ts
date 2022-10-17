@@ -28,7 +28,7 @@ export async function transformMain(
   ssr: boolean,
   asCustomElement: boolean
 ) {
-  const { devServer, isProduction, devToolsEnabled } = options
+  const { inlineTemplate, devServer, isProduction, devToolsEnabled } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
@@ -55,7 +55,7 @@ export async function transformMain(
 
   // template
   const hasTemplateImport =
-    descriptor.template && !isUseInlineTemplate(descriptor, !devServer)
+    descriptor.template && !isUseInlineTemplate(descriptor, inlineTemplate)
 
   let templateCode = ''
   let templateMap: RawSourceMap | undefined = undefined

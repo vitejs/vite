@@ -28,6 +28,7 @@ export interface Options {
   exclude?: string | RegExp | (string | RegExp)[]
 
   isProduction?: boolean
+  inlineTemplate?: boolean
 
   // options to pass on to vue/compiler-sfc
   script?: Partial<Pick<SFCScriptCompileOptions, 'babelParserPlugins'>>
@@ -72,6 +73,7 @@ export interface Options {
 }
 
 export interface ResolvedOptions extends Options {
+  inlineTemplate: boolean
   compiler: typeof _compiler
   root: string
   sourceMap: boolean
@@ -105,6 +107,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     compiler: null as any, // to be set in buildStart
+    inlineTemplate: undefined as any, // to be set in buildStart
     ...rawOptions,
     include,
     exclude,
@@ -158,6 +161,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     buildStart() {
       options.compiler = options.compiler || resolveCompiler(options.root)
+      if (options.inlineTemplate === undefined)
+        options.inlineTemplate = !options.devServer
     },
 
     async resolveId(id) {
