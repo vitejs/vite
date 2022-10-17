@@ -566,12 +566,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // the legacy build should avoid inserting entry CSS modules here, they
-          // will be collected into `chunk.viteMetadata.importedCss` and injected
-          // later by the `'vite:build-html'` plugin into the `index.html`
-          if (chunk.isEntry && !config.build.lib) {
-            return null
-          }
+          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+          // and injected later by the `'vite:build-html'` plugin into the `index.html`
+          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+          // But because entry chunk can be imported by dynamic import,
+          // we shouldn't remove the inlined CSS. (#10285)
+
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
           cssString =
