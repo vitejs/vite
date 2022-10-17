@@ -25,7 +25,6 @@ import {
   createDebugger,
   createFilter,
   dynamicImport,
-  isBuiltin,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -49,7 +48,7 @@ import {
   ENV_ENTRY
 } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
-import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
+import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
@@ -949,6 +948,7 @@ async function bundleConfigFile(
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
+    mainFields: ['main'],
     sourcemap: 'inline',
     metafile: true,
     define: {
@@ -960,38 +960,44 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            isRequire: !isESM,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            dedupe: [],
-            extensions: DEFAULT_EXTENSIONS,
-            preserveSymlinks: false
-          }
+          // externalize bare imports
+          build.onResolve(
+            { filter: /^[^.].*/ },
+            async ({ path: id, importer, kind, resolveDir, pluginData }) => {
+              if (pluginData?.internalResolve) {
+                return
+              }
+              if (kind === 'entry-point' || path.isAbsolute(id)) {
+                return
+              }
 
-          build.onResolve({ filter: /.*/ }, ({ path: id, importer, kind }) => {
-            // externalize bare imports
-            if (id[0] !== '.' && !path.isAbsolute(id) && !isBuiltin(id)) {
-              // partial deno support as `npm:` does not work in `tryNodeResolve`
+              // partial deno support as `npm:` does not work with esbuild
               if (id.startsWith('npm:')) {
                 return { external: true }
               }
-              let idFsPath = tryNodeResolve(id, importer, options, false)?.id
-              if (idFsPath && (isESM || kind === 'dynamic-import')) {
-                idFsPath = pathToFileURL(idFsPath).href
+              const result = await build.resolve(id, {
+                importer,
+                kind:
+                  kind === 'import-statement' && !isESM ? 'require-call' : kind,
+                resolveDir,
+                pluginData: { internalResolve: true }
+              })
+              if (result.errors.length > 0) {
+                return { errors: result.errors }
               }
+              if (result.external) {
+                return { path: result.path, external: true }
+              }
+              const absolutePath = path.resolve(importer, '..', result.path)
               return {
-                path: idFsPath,
+                path:
+                  isESM || kind === 'dynamic-import'
+                    ? pathToFileURL(absolutePath).href
+                    : absolutePath,
                 external: true
               }
             }
-          })
+          )
         }
       },
       {
