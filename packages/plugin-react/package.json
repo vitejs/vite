@@ -7,8 +7,7 @@
     "Alec Larson"
   ],
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
