@@ -753,6 +753,7 @@ async function compileCSS(
     preprocessorOptions,
     devSourcemap
   } = config.css || {}
+  const fileName = cleanUrl(id)
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -800,7 +801,7 @@ async function compileCSS(
         }
     }
     // important: set this for relative import resolving
-    opts.filename = cleanUrl(id)
+    opts.filename = fileName
     opts.enableSourcemap = devSourcemap ?? false
 
     const preprocessResult = await preProcessor(
@@ -919,8 +920,8 @@ async function compileCSS(
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
-        to: id,
-        from: id,
+        to: fileName,
+        from: fileName,
         ...(devSourcemap
           ? {
               map: {
@@ -990,13 +991,13 @@ async function compileCSS(
     // version property of rawPostcssMap is declared as string
     // but actually it is a number
     rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
-    cleanUrl(id)
+    fileName
   )
 
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
+    map: combineSourcemapsIfExists(fileName, postcssMap, preprocessorMap),
     modules,
     deps
   }
