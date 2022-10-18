@@ -105,8 +105,8 @@ position: fixed;
 .foo {
   color: red;
 }`
-    const result1 = await transform(css, '/foo.module.css')
-    const result2 = await transform(css, '/foo.module.css?direct')
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
     resetMock()
   })
