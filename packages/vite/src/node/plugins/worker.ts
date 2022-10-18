@@ -101,7 +101,10 @@ export async function bundleWorkerEntry(
       onRollupWarning(warning, warn, config)
     },
     preserveEntrySignatures: false
+  }).catch((err) => {
+    throw err
   })
+
   workerMap.cache = mergeRollupCache(workerMap.cache, bundle.cache)
   let chunk: OutputChunk
   try {
@@ -335,18 +338,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      if (isBuild) {
-        const parsedQuery = parseRequest(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
-          return ''
-        }
+      const query = parseRequest(id)
+      if (query && (query.worker ?? query.sharedworker) != null) {
+        return ''
       }
       if (id.startsWith(WORKER_PREFIX)) {
         const input = workerPathFromUrl(id)
-        const query = parseRequest(id)!
         const workerMap = workerCache.get(config.mainConfig || config)!
         if (!workerMap.bundle.get(id)) {
           const outputChunk = await bundleWorkerEntry(config, input, query)
@@ -360,7 +357,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const outputChunk = workerMap.assets.get(id)!
         // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
-        const workerType = query['type']! as WorkerType
+        const workerType = query!['type']! as WorkerType
         let injectEnv = ''
 
         if (workerType === 'classic') {
