@@ -5,18 +5,11 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cleanUrl,
-  injectQuery,
-  parseRequest,
-  slash,
-  transformStableResult
-} from '../utils'
+import { parseRequest, slash, transformStableResult } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
-import { fileToUrl } from './asset'
+import { workerFileToUrl } from './worker'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -132,15 +125,16 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               : slash(path.resolve(path.dirname(id), url))
           }
 
-          let builtUrl: string
           if (isBuild) {
             getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-            builtUrl = await workerFileToUrl(config, file, query)
-          } else {
-            builtUrl = await fileToUrl(cleanUrl(file), config, this)
-            builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
-            builtUrl = injectQuery(builtUrl, `type=${workerType}`)
           }
+          const builtUrl = await workerFileToUrl(
+            config,
+            file,
+            query,
+            workerType
+          )
+
           s.update(
             urlIndex,
             urlIndex + exp.length,

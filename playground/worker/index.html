@@ -33,6 +33,12 @@
 <code class="pong-ts-output"></code>
 
 <p>
+  import DeepPathWorker from "../relative_path/a/deep-path-worker?worker"
+  <span class="classname">.deep-path-worker</span>
+</p>
+<code class="deep-path-worker"></code>
+
+<p>
   import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
   <span class="classname">.tick-count</span>
 </p>
@@ -48,7 +54,7 @@
   new Worker(new URL('@/url-worker', import.meta.url), { type: 'module' })
   <span class="classname">.worker-import-meta-url-resolve</span>
 </p>
-<code class="worker-import-meta-url-resolve"></code>
+<code class="worker-import-meta-url-resolve"></code>`
 
 <p>
   new SharedWorker(new URL('./url-shared-worker.js', import.meta.url), { type:

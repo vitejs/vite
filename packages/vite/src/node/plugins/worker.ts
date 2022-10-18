@@ -11,6 +11,7 @@ import {
   getDepsCacheSuffix,
   getHash,
   injectQuery,
+  normalizePath,
   parseRequest
 } from '../utils'
 import {
@@ -19,7 +20,6 @@ import {
   toOutputFilePathInJS
 } from '../build'
 import { getDepsOptimizer } from '../optimizer'
-import { fileToUrl } from './asset'
 
 interface WorkerCache {
   cache?: RollupCache
@@ -38,7 +38,9 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
-export const WORKER_FILE_ID = 'worker_file'
+const WORKER_FILE_ID = 'worker_file'
+const WORKER_PREFIX = '/@worker/'
+const VOLUME_RE = /^[A-Z]:/i
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 export function isWorkerRequest(id: string): boolean {
@@ -68,19 +70,32 @@ function mergeRollupCache(
   }
 }
 
+function workerPathFromUrl(url: string): string {
+  const id = cleanUrl(url)
+  const fsPath = normalizePath(
+    id.startsWith(WORKER_PREFIX) ? id.slice(WORKER_PREFIX.length) : id
+  )
+  return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
+    ? fsPath
+    : `/${fsPath}`
+}
+
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
+  const isBuild = config.command === 'build'
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
   const workerMap = workerCache.get(config.mainConfig || config)!
+  const cleanInput = cleanUrl(id)
+  const relativeDirPath = path.dirname(path.relative(config.root, cleanInput))
   const bundle = await rollup({
     ...rollupOptions,
     cache: workerMap.cache,
-    input: cleanUrl(id),
+    input: cleanInput,
     plugins,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
@@ -113,7 +128,23 @@ export async function bundleWorkerEntry(
       ),
       ...workerConfig,
       format,
-      sourcemap: config.build.sourcemap
+      sourcemap: config.build.sourcemap,
+      ...(!isBuild
+        ? {
+            entryFileNames: path.join(
+              relativeDirPath,
+              WORKER_PREFIX + '[name].js'
+            ),
+            chunkFileNames: path.join(
+              relativeDirPath,
+              WORKER_PREFIX + '[name].js'
+            ),
+            assetFileNames: path.join(
+              relativeDirPath,
+              WORKER_PREFIX + '[name].[ext]'
+            )
+          }
+        : {})
     })
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
@@ -192,7 +223,7 @@ function encodeWorkerAssetFileName(
   return `__VITE_WORKER_ASSET__${hash}__`
 }
 
-export async function workerFileToUrl(
+async function workerFileToBuiltUrl(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
@@ -210,6 +241,53 @@ export async function workerFileToUrl(
     workerMap.bundle.set(id, fileName)
   }
   return encodeWorkerAssetFileName(fileName, workerMap)
+  // if (query.inline != null) {
+  //         const chunk = await bundleWorkerEntry(config, id, query)
+  //         // inline as blob data url
+  //         return {
+  //           code: `const encodedJs = "${Buffer.from(chunk.code).toString(
+  //             'base64'
+  //           )}";
+  //           const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+  //           export default function WorkerWrapper() {
+  //             const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+  //             try {
+  //               return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+  //             } finally {
+  //               objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+  //             }
+  //           }`,
+
+  //           // Empty sourcemap to suppress Rollup warning
+  //           map: { mappings: '' }
+  //         }
+  //       }
+}
+
+async function workerFileToDevUrl(
+  config: ResolvedConfig,
+  id: string,
+  query: Record<string, string> | null,
+  workerType: WorkerType
+): Promise<string> {
+  let url = path.posix.join(WORKER_PREFIX + cleanUrl(id))
+  url = config.server?.origin ?? '' + config.base + url.replace(/^\//, '')
+  url = injectQuery(url, WORKER_FILE_ID)
+  url = injectQuery(url, `type=${workerType}`)
+  return url
+}
+
+export async function workerFileToUrl(
+  config: ResolvedConfig,
+  id: string,
+  query: Record<string, string> | null,
+  workerType: WorkerType
+): Promise<string> {
+  if (config.command === 'serve') {
+    return workerFileToDevUrl(config, id, query, workerType)
+  } else {
+    return workerFileToBuiltUrl(config, id, query)
+  }
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -247,13 +325,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     async buildEnd() {
+      if (isWorker) {
+        return
+      }
       await fsp.writeFile(
         cacheFilePath,
         JSON.stringify(workerCache.get(config)?.cache || '')
       )
     },
 
-    load(id) {
+    async load(id) {
       if (isBuild) {
         const parsedQuery = parseRequest(id)
         if (
@@ -263,12 +344,20 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           return ''
         }
       }
-    },
-
-    async transform(raw, id, options) {
-      const ssr = options?.ssr === true
-      const query = parseRequest(id)
-      if (query && query[WORKER_FILE_ID] != null) {
+      if (id.startsWith(WORKER_PREFIX)) {
+        const input = workerPathFromUrl(id)
+        const query = parseRequest(id)!
+        const workerMap = workerCache.get(config.mainConfig || config)!
+        if (!workerMap.bundle.get(id)) {
+          const outputChunk = await bundleWorkerEntry(config, input, query)
+          workerMap.assets.set(id, {
+            fileName: outputChunk.fileName,
+            source: outputChunk.code,
+            type: 'asset'
+          })
+          workerMap.bundle.set(id, outputChunk.fileName)
+        }
+        const outputChunk = workerMap.assets.get(id)!
         // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
         const workerType = query['type']! as WorkerType
@@ -289,19 +378,20 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-        return {
-          code: injectEnv + raw
-        }
+        return injectEnv + outputChunk.source
       }
+    },
+
+    async transform(raw, id, options) {
+      const ssr = options?.ssr === true
+      const query = parseRequest(id)
       if (
         query == null ||
         (query && (query.worker ?? query.sharedworker) == null)
       ) {
         return
       }
-
       // stringified url or `new URL(...)`
-      let url: string
       const { format } = config.worker
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
@@ -313,35 +403,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-        if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(config, id, query)
-          // inline as blob data url
-          return {
-            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
-              'base64'
-            )}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`,
-
-            // Empty sourcemap to suppress Rollup warning
-            map: { mappings: '' }
-          }
-        } else {
-          url = await workerFileToUrl(config, id, query)
-        }
-      } else {
-        url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, WORKER_FILE_ID)
-        url = injectQuery(url, `type=${workerType}`)
       }
-
+      const url = await workerFileToUrl(config, id, query, workerType)
       if (query.url != null) {
         return {
           code: `export default ${JSON.stringify(url)}`,

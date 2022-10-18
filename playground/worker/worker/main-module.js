@@ -4,12 +4,19 @@ import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'
+import DeepPathWorker from '../relative_path/a/deep-path-worker?worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
 
 document.querySelector('.mode-true').textContent = mode
+
+const deepPathWorker = new DeepPathWorker()
+deepPathWorker.postMessage('ping')
+deepPathWorker.addEventListener('message', (e) => {
+  text('.deep-path-worker', e.data)
+})
 
 const worker = new myWorker()
 worker.postMessage('ping')
