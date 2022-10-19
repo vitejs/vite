@@ -52,7 +52,9 @@ export function proxyMiddleware(
       const res = originalRes as http.ServerResponse | net.Socket
       if ('req' in res) {
         config.logger.error(
-          `${colors.red(`http proxy error:`)}\n${err.stack}`,
+          `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
+            err.stack
+          }`,
           {
             timestamp: true,
             error: err
