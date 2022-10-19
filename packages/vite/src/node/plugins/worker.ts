@@ -292,11 +292,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isWorker) {
         return
       }
-      let cache = undefined
+      let cache!: RollupCache
       if (existsSync(cacheFilePath)) {
         cache = JSON.parse(
           await fsp.readFile(cacheFilePath, { encoding: 'utf-8' })
         )
+      } else {
+        cache = {
+          modules: []
+        }
       }
       workerCache.set(config, {
         cache,
@@ -310,6 +314,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isWorker) {
         return
       }
+      await fsp.mkdir(config.cacheDir, { recursive: true })
       await fsp.writeFile(
         cacheFilePath,
         JSON.stringify(workerCache.get(config)?.cache || '')
