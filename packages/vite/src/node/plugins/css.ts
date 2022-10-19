@@ -42,6 +42,7 @@ import {
   normalizePath,
   parseRequest,
   processSrcSet,
+  removeDirectQuery,
   requireResolveFromRootWithFallback
 } from '../utils'
 import type { Logger } from '../logger'
@@ -753,7 +754,6 @@ async function compileCSS(
     preprocessorOptions,
     devSourcemap
   } = config.css || {}
-  const fileName = cleanUrl(id)
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -801,7 +801,7 @@ async function compileCSS(
         }
     }
     // important: set this for relative import resolving
-    opts.filename = fileName
+    opts.filename = cleanUrl(id)
     opts.enableSourcemap = devSourcemap ?? false
 
     const preprocessResult = await preProcessor(
@@ -915,13 +915,14 @@ async function compileCSS(
 
   let postcssResult: PostCSS.Result
   try {
+    const source = removeDirectQuery(id)
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await (await import('postcss'))
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
-        to: fileName,
-        from: fileName,
+        to: source,
+        from: source,
         ...(devSourcemap
           ? {
               map: {
@@ -991,13 +992,13 @@ async function compileCSS(
     // version property of rawPostcssMap is declared as string
     // but actually it is a number
     rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
-    fileName
+    cleanUrl(id)
   )
 
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: combineSourcemapsIfExists(fileName, postcssMap, preprocessorMap),
+    map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
     modules,
     deps
   }
