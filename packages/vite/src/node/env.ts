@@ -18,10 +18,10 @@ export function loadEnv(
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = [
-    /** mode local file */ `.env.${mode}.local`,
-    /** mode file */ `.env.${mode}`,
+    /** default file */ `.env`,
     /** local file */ `.env.local`,
-    /** default file */ `.env`
+    /** mode file */ `.env.${mode}`,
+    /** mode local file */ `.env.${mode}.local`
   ]
 
   // check if there are actual env variables starting with VITE_*
@@ -35,35 +35,38 @@ export function loadEnv(
     }
   }
 
-  for (const file of envFiles) {
-    const path = lookupFile(envDir, [file], { pathOnly: true, rootDir: envDir })
-    if (path) {
-      const parsed = dotenv.parse(fs.readFileSync(path), {
-        debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
+  const parsed = Object.fromEntries(
+    envFiles.flatMap((file) => {
+      const path = lookupFile(envDir, [file], {
+        pathOnly: true,
+        rootDir: envDir
       })
+      if (!path) return []
+      return Object.entries(
+        dotenv.parse(fs.readFileSync(path), {
+          debug: process.env.DEBUG?.includes('vite:dotenv')
+        })
+      )
+    })
+  )
 
-      // let environment variables use each other
-      dotenvExpand({
-        parsed,
-        // prevent process.env mutation
-        ignoreProcessEnv: true
-      } as any)
+  // let environment variables use each other
+  dotenvExpand({
+    parsed,
+    // prevent process.env mutation
+    ignoreProcessEnv: true
+  } as any)
 
-      // only keys that start with prefix are exposed to client
-      for (const [key, value] of Object.entries(parsed)) {
-        if (
-          prefixes.some((prefix) => key.startsWith(prefix)) &&
-          env[key] === undefined
-        ) {
-          env[key] = value
-        } else if (
-          key === 'NODE_ENV' &&
-          process.env.VITE_USER_NODE_ENV === undefined
-        ) {
-          // NODE_ENV override in .env file
-          process.env.VITE_USER_NODE_ENV = value
-        }
-      }
+  // only keys that start with prefix are exposed to client
+  for (const [key, value] of Object.entries(parsed)) {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+      env[key] = value
+    } else if (
+      key === 'NODE_ENV' &&
+      process.env.VITE_USER_NODE_ENV === undefined
+    ) {
+      // NODE_ENV override in .env file
+      process.env.VITE_USER_NODE_ENV = value
     }
   }
   return env
