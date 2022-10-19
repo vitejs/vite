@@ -361,9 +361,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         let injectEnv = ''
 
         if (workerType === 'classic') {
-          injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+          injectEnv = `importScripts('${ENV_PUBLIC_PATH}');\n`
         } else if (workerType === 'module') {
-          injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
+          injectEnv = `import '${ENV_PUBLIC_PATH}';\n`
         } else if (workerType === 'ignore') {
           if (isBuild) {
             injectEnv = ''
