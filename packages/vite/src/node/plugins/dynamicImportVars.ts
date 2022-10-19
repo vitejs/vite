@@ -4,6 +4,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -19,7 +20,7 @@ import { toAbsoluteGlob } from './importMetaGlob'
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
 interface DynamicImportRequest {
-  as?: 'raw'
+  as?: keyof KnownAsTypeMap
 }
 
 interface DynamicImportPattern {
@@ -63,6 +64,14 @@ function parseDynamicImportPattern(
 
   if (rawQuery?.raw !== undefined) {
     globParams = { as: 'raw' }
+  }
+
+  if (rawQuery?.url !== undefined) {
+    globParams = { as: 'url' }
+  }
+
+  if (rawQuery?.worker !== undefined) {
+    globParams = { as: 'worker' }
   }
 
   return {

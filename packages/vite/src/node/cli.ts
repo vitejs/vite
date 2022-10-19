@@ -28,6 +28,13 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
+const filterDuplicateOptions = <T extends object>(options: T) => {
+  for (const [key, value] of Object.entries(options)) {
+    if (Array.isArray(value)) {
+      options[key as keyof T] = value[value.length - 1]
+    }
+  }
+}
 /**
  * removing global flags before passing as command specific sub-configs
  */
@@ -76,6 +83,7 @@ cli
     `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     // output structure is preserved even after bundling so require()
     // is ok here
     const { createServer } = await import('./server')
@@ -164,6 +172,7 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     const { build } = await import('./build')
     const buildOptions: BuildOptions = cleanOptions(options)
 
@@ -196,6 +205,7 @@ cli
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      filterDuplicateOptions(options)
       const { optimizeDeps } = await import('./optimizer')
       try {
         const config = await resolveConfig(
@@ -237,6 +247,7 @@ cli
         strictPort?: boolean
       } & GlobalCLIOptions
     ) => {
+      filterDuplicateOptions(options)
       const { preview } = await import('./preview')
       try {
         const server = await preview({

@@ -29,6 +29,9 @@
 <h2>CommonJS w/ browser field mapping (axios)</h2>
 <div>This should show pong: <span class="cjs-browser-field"></span></div>
 
+<h2>CommonJS w/ bare id browser field mapping</h2>
+<div>This should show pong: <span class="cjs-browser-field-bare"></span></div>
+
 <h2>Detecting linked src package and optimizing its deps (lodash-es)</h2>
 <div>This should show fooBarBaz: <span class="deps-linked"></span></div>
 
@@ -99,6 +102,9 @@
 <script type="module">
   // test dep detection in globbed files
   const globbed = import.meta.glob('./glob/*.js', { eager: true })
+
+  import cjsBrowerFieldBare from 'dep-cjs-browser-field-bare'
+  text('.cjs-browser-field-bare', cjsBrowerFieldBare)
 
   import { camelCase } from 'dep-linked'
   text('.deps-linked', camelCase('foo-bar-baz'))
