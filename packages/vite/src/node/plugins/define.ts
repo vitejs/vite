@@ -11,6 +11,7 @@ const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   const isBuildLib = isBuild && config.build.lib
+  const isBuildWorker = config.isWorker
 
   // ignore replace process.env in lib build
   const processEnv: Record<string, string> = {}
@@ -40,7 +41,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
-  if (isBuild) {
+  if (isBuild || isBuildWorker) {
     const env: Record<string, any> = {
       ...config.env,
       SSR: !!config.build.ssr
@@ -101,12 +102,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     transform(code, id, options) {
       const ssr = options?.ssr === true
-      if (!ssr && !isBuild) {
+      if (!ssr && !isBuild && !isBuildWorker) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost.
         return
       }
-
       if (
         // exclude html, css and static assets for performance
         isHTMLRequest(id) ||

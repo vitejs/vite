@@ -1,5 +1,6 @@
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const inspect = require('vite-plugin-inspect')
 
 module.exports = vite.defineConfig({
   base: '/iife/',
@@ -8,6 +9,7 @@ module.exports = vite.defineConfig({
       '@': __dirname
     }
   },
+  plugins: [inspect()],
   worker: {
     format: 'iife',
     plugins: [

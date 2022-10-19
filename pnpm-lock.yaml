@@ -1288,10 +1288,12 @@ importers:
     specifiers:
       '@vitejs/plugin-vue-jsx': workspace:*
       dep-to-optimize: file:./dep-to-optimize
+      vite-plugin-inspect: ^0.7.5
     dependencies:
       dep-to-optimize: file:playground/worker/dep-to-optimize
     devDependencies:
       '@vitejs/plugin-vue-jsx': link:../../packages/plugin-vue-jsx
+      vite-plugin-inspect: 0.7.5
 
   playground/worker/dep-to-optimize:
     specifiers: {}
@@ -8957,6 +8959,22 @@ packages:
   /vary/1.1.2:
     resolution: {integrity: sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=}
     engines: {node: '>= 0.8'}
+    dev: true
+
+  /vite-plugin-inspect/0.7.5:
+    resolution: {integrity: sha512-O8xq6dbvD1G7le75u6BfQTXJDUMXcRYlMVPzUpRjSB6hLyqH6BNnNkNrb/cVgCNNmKwk7dX+H2I+XVU2xpJk9Q==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      vite: ^3.1.0
+    dependencies:
+      '@rollup/pluginutils': 4.2.1
+      debug: 4.3.4
+      fs-extra: 10.1.0
+      kolorist: 1.6.0
+      sirv: 2.0.2
+      ufo: 0.8.5
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /vitepress/1.0.0-alpha.19:
