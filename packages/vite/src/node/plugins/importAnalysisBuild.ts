@@ -665,6 +665,7 @@ export function parseImportsSystemJS(
   code: string
 ): ReadonlyArray<ImportSpecifier> {
   const moduleParam = analyzeSystemRegistration(code)?.moduleParam
+  if (!moduleParam) return []
 
   const re =
     /\((.+?(?<importDirective>\b\w+\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);?).*?),\s*"__VITE_PRELOAD__".*?\)/gs
