@@ -137,18 +137,9 @@ export async function bundleWorkerEntry(
       sourcemap: config.build.sourcemap,
       ...(!isBuild
         ? {
-            entryFileNames: path.join(
-              relativeDirPath,
-              WORKER_PREFIX + '[name].js'
-            ),
-            chunkFileNames: path.join(
-              relativeDirPath,
-              WORKER_PREFIX + '[name].js'
-            ),
-            assetFileNames: path.join(
-              relativeDirPath,
-              WORKER_PREFIX + '[name].[ext]'
-            )
+            entryFileNames: path.join(relativeDirPath, '[name].js'),
+            chunkFileNames: path.join(relativeDirPath, '[name].js'),
+            assetFileNames: path.join(relativeDirPath, '[name].[ext]')
           }
         : {})
     })
@@ -327,9 +318,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     resolveId(id, importer) {
       // resolve worker virtual module (/@worker/*) deps named
       if (importer && importer.startsWith(WORKER_PREFIX)) {
-        debug('[resolveId]', id)
-        const basePath = path.dirname(cleanUrl(importer))
-        return path.join(basePath, id)
+        const res = path.join(path.dirname(cleanUrl(importer)), id)
+        debug('[resolveId]', id, '->', res)
+        return res
       }
     },
 
