@@ -60,7 +60,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.15.9",
-    "postcss": "^8.4.17",
+    "postcss": "^8.4.18",
     "resolve": "^1.22.1",
     "rollup": "^2.79.1"
   },
@@ -69,9 +69,9 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.19.3",
-    "@babel/types": "^7.19.3",
-    "@jridgewell/trace-mapping": "^0.3.16",
+    "@babel/parser": "^7.19.4",
+    "@babel/types": "^7.19.4",
+    "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.0",
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-dynamic-import-vars": "^1.4.4",
@@ -84,14 +84,14 @@
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
     "connect-history-api-fallback": "^2.0.0",
-    "convert-source-map": "^1.8.0",
+    "convert-source-map": "^1.9.0",
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",
     "debug": "^4.3.4",
     "dep-types": "link:./src/types",
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "^1.0.3",
+    "es-module-lexer": "^1.0.5",
     "estree-walker": "^3.0.1",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
@@ -121,7 +121,7 @@
     "tsconfck": "^2.0.1",
     "tslib": "^2.4.0",
     "types": "link:./types",
-    "ufo": "^0.8.5",
+    "ufo": "^0.8.6",
     "ws": "^8.9.0"
   },
   "peerDependencies": {
