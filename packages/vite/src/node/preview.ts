@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type * as http from 'node:http'
+import type { Http2SecureServer } from 'node:http2'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
@@ -51,7 +52,7 @@ export interface PreviewServer {
   /**
    * native Node http server instance
    */
-  httpServer: http.Server
+  httpServer: http.Server | Http2SecureServer
   /**
    * The resolved urls Vite prints on the CLI
    */
@@ -66,7 +67,7 @@ export type PreviewServerHook = (
   this: void,
   server: {
     middlewares: Connect.Server
-    httpServer: http.Server
+    httpServer: http.Server | Http2SecureServer
   }
 ) => (() => void) | void | Promise<(() => void) | void>
 

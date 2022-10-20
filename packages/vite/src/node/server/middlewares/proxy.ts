@@ -1,4 +1,5 @@
 import type * as http from 'node:http'
+import type { Http2SecureServer } from 'node:http2'
 import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
@@ -30,7 +31,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 }
 
 export function proxyMiddleware(
-  httpServer: http.Server | null,
+  httpServer: http.Server | Http2SecureServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
