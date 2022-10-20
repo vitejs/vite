@@ -3,10 +3,11 @@ import path, { dirname, join, resolve } from 'node:path'
 import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
-import type {
+import {
   InlineConfig,
   Logger,
   PluginOption,
+  resolveConfig,
   ResolvedConfig,
   UserConfig,
   ViteDevServer
@@ -282,7 +283,8 @@ export async function startDefaultServe(): Promise<void> {
       config.__test__()
     }
     const _nodeEnv = process.env.NODE_ENV
-    const previewServer = await preview(testConfig)
+    const config = await resolveConfig(testConfig, 'serve', 'production')
+    const previewServer = await preview(config)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
     viteTestUrl = previewServer.resolvedUrls.local[0]

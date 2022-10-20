@@ -1,5 +1,5 @@
 import type { InlineConfig } from 'vite'
-import { build, createServer, preview } from 'vite'
+import { build, createServer, preview, resolveConfig } from 'vite'
 import { expect, test } from 'vitest'
 import { getColor, isBuild, isServe, page, ports, rootDir } from '~utils'
 
@@ -17,8 +17,9 @@ const getConfig = (base: string): InlineConfig => ({
 })
 
 async function withBuild(base: string, fn: () => Promise<void>) {
-  const config = getConfig(base)
-  await build(config)
+  const inlineConfig = getConfig(base)
+  await build(inlineConfig)
+  const config = await resolveConfig(inlineConfig, 'serve', 'production')
   const server = await preview(config)
 
   try {
