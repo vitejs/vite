@@ -303,7 +303,7 @@ export function getPotentialTsSrcPaths(filePath: string): string[] {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
-const directRequestRE = /(\?|&)direct(?:&|$)/
+const directRequestRE = /(\?|&)direct=?(?:&|$)/
 const internalPrefixes = [
   FS_PREFIX,
   VALID_ID_PREFIX,
