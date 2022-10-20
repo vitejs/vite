@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "aliased-module": "file:./dir/module",
-    "vue": "^3.2.40",
-    "@vue/shared": "^3.2.40"
+    "vue": "^3.2.41",
+    "@vue/shared": "^3.2.41"
   },
   "devDependencies": {
     "resolve-linked": "workspace:*"

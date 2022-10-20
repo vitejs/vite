@@ -3,7 +3,7 @@
 It converts
 
 ```ts
-exports["default"] = vuePlugin;
+exports.default = vuePlugin;
 exports.parseVueRequest = parseVueRequest;
 ```
 
@@ -11,7 +11,7 @@ to
 
 ```ts
 module.exports = vuePlugin;
-module.exports["default"] = vuePlugin;
+module.exports.default = vuePlugin;
 module.exports.parseVueRequest = parseVueRequest;
 ```
 */
@@ -22,7 +22,7 @@ import colors from 'picocolors'
 const indexPath = 'dist/index.cjs'
 let code = readFileSync(indexPath, 'utf-8')
 
-const matchMixed = code.match(/\nexports\["default"\] = (\w+);/)
+const matchMixed = code.match(/\nexports.default = (\w+);/)
 if (matchMixed) {
   const name = matchMixed[1]
 
@@ -47,7 +47,7 @@ if (matchMixed) {
 const matchDefault = code.match(/\nmodule.exports = (\w+);/)
 
 if (matchDefault) {
-  code += `module.exports["default"] = ${matchDefault[1]};\n`
+  code += `module.exports.default = ${matchDefault[1]};\n`
   writeFileSync(indexPath, code)
   console.log(colors.bold(`${indexPath} CJS patched`))
   process.exit(0)
