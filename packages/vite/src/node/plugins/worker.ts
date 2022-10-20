@@ -8,6 +8,7 @@ import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   cleanUrl,
+  createDebugger,
   getDepsCacheSuffix,
   getHash,
   injectQuery,
@@ -20,6 +21,8 @@ import {
   toOutputFilePathInJS
 } from '../build'
 import { getDepsOptimizer } from '../optimizer'
+
+const debug = createDebugger('vite:worker')
 
 interface WorkerCache {
   cache?: RollupCache
@@ -134,18 +137,9 @@ export async function bundleWorkerEntry(
       sourcemap: config.build.sourcemap,
       ...(!isBuild
         ? {
-            entryFileNames: path.join(
-              relativeDirPath,
-              WORKER_PREFIX + '[name].js'
-            ),
-            chunkFileNames: path.join(
-              relativeDirPath,
-              WORKER_PREFIX + '[name].js'
-            ),
-            assetFileNames: path.join(
-              relativeDirPath,
-              WORKER_PREFIX + '[name].[ext]'
-            )
+            entryFileNames: path.join(relativeDirPath, '[name].js'),
+            chunkFileNames: path.join(relativeDirPath, '[name].js'),
+            assetFileNames: path.join(relativeDirPath, '[name].[ext]')
           }
         : {})
     })
@@ -321,6 +315,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       )
     },
 
+    resolveId(id, importer) {
+      // resolve worker virtual module (/@worker/*) deps named
+      if (importer && importer.startsWith(WORKER_PREFIX)) {
+        const basePath = path.dirname(cleanUrl(importer))
+        return path.join(basePath, id)
+      }
+    },
+
     async load(id) {
       const query = parseRequest(id)
       // ?worker ?sharedworker
@@ -331,37 +333,45 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (id.startsWith(WORKER_PREFIX)) {
         const input = workerPathFromUrl(id)
         const workerMap = workerCache.get(config.mainConfig || config)!
-        if (!workerMap.bundle.get(id)) {
-          const outputChunk = await bundleWorkerEntry(config, input, query)
-          workerMap.assets.set(id, {
-            fileName: outputChunk.fileName,
-            source: outputChunk.code,
-            type: 'asset'
-          })
-          workerMap.bundle.set(id, outputChunk.fileName)
-        }
-        const outputChunk = workerMap.assets.get(id)!
-        // if import worker by worker constructor will have query.type
-        // other type will be import worker by esm
-        const workerType = query!['type']! as WorkerType
-        let injectEnv = ''
-
-        if (workerType === 'classic') {
-          injectEnv = `importScripts('${ENV_PUBLIC_PATH}');\n`
-        } else if (workerType === 'module') {
-          injectEnv = `import '${ENV_PUBLIC_PATH}';\n`
-        } else if (workerType === 'ignore') {
-          if (isBuild) {
-            injectEnv = ''
-          } else if (server) {
-            // dynamic worker type we can't know how import the env
-            // so we copy /@vite/env code of server transform result into file header
-            const { moduleGraph } = server
-            const module = moduleGraph.getModuleById(ENV_ENTRY)
-            injectEnv = module?.transformResult?.code || ''
+        if (query && query[WORKER_FILE_ID] != null) {
+          debug('[bundle]', id)
+          if (!workerMap.bundle.get(id)) {
+            const outputChunk = await bundleWorkerEntry(config, input, query)
+            workerMap.assets.set(id, {
+              fileName: outputChunk.fileName,
+              source: outputChunk.code,
+              type: 'asset'
+            })
+            workerMap.bundle.set(id, outputChunk.fileName)
           }
+          const outputChunk = workerMap.assets.get(id)!
+          // if import worker by worker constructor will have query.type
+          // other type will be import worker by esm
+          const workerType = query!['type']! as WorkerType
+          let injectEnv = ''
+
+          if (workerType === 'classic') {
+            injectEnv = `importScripts('${ENV_PUBLIC_PATH}');\n`
+          } else if (workerType === 'module') {
+            injectEnv = `import '${ENV_PUBLIC_PATH}';\n`
+          } else if (workerType === 'ignore') {
+            if (isBuild) {
+              injectEnv = ''
+            } else if (server) {
+              // dynamic worker type we can't know how import the env
+              // so we copy /@vite/env code of server transform result into file header
+              const { moduleGraph } = server
+              const module = moduleGraph.getModuleById(ENV_ENTRY)
+              injectEnv = module?.transformResult?.code || ''
+            }
+          }
+          return injectEnv + outputChunk.source
+        } else {
+          debug('[load module id]', id)
+          return workerMap.assets.get(
+            path.relative(WORKER_PREFIX + config.root, id)
+          )?.source as string
         }
-        return injectEnv + outputChunk.source
       }
     },
 
