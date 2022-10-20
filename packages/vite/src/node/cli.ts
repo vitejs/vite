@@ -6,7 +6,6 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
-import type { InlineConfig } from '.'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -242,12 +241,15 @@ cli
     ) => {
       const { preview } = await import('./preview')
       try {
-        const inlineConfig: InlineConfig = {
+        const server = await preview({
           root,
           base: options.base,
           configFile: options.config,
           logLevel: options.logLevel,
           mode: options.mode,
+          build: {
+            outDir: options.outDir
+          },
           preview: {
             port: options.port,
             strictPort: options.strictPort,
@@ -255,11 +257,7 @@ cli
             https: options.https,
             open: options.open
           }
-        }
-        if (options.outDir) {
-          inlineConfig.build = { outDir: options.outDir }
-        }
-        const server = await preview(inlineConfig)
+        })
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
