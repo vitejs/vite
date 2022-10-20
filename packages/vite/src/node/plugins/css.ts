@@ -42,6 +42,7 @@ import {
   normalizePath,
   parseRequest,
   processSrcSet,
+  removeDirectQuery,
   requireResolveFromRootWithFallback
 } from '../utils'
 import type { Logger } from '../logger'
@@ -914,13 +915,14 @@ async function compileCSS(
 
   let postcssResult: PostCSS.Result
   try {
+    const source = removeDirectQuery(id)
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await (await import('postcss'))
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
-        to: id,
-        from: id,
+        to: source,
+        from: source,
         ...(devSourcemap
           ? {
               map: {

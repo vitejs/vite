@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
+import type { InlineConfig } from '../../config'
 import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
 
 describe('search css url function', () => {
@@ -46,13 +47,17 @@ describe('search css url function', () => {
   })
 })
 
-describe('css path resolutions', () => {
-  const mockedProjectPath = path.join(process.cwd(), '/foo/bar/project')
-  const mockedBarCssRelativePath = '/css/bar.module.css'
-  const mockedFooCssRelativePath = '/css/foo.module.css'
-
-  test('cssmodule compose/from path resolutions', async () => {
-    const config = await resolveConfig(
+describe('css modules', () => {
+  test('css module compose/from path resolutions', async () => {
+    const mockedProjectPath = path.join(process.cwd(), '/foo/bar/project')
+    const { transform, resetMock } = await createCssPluginTransform(
+      {
+        [path.join(mockedProjectPath, '/css/bar.module.css')]: `\
+.bar {
+display: block;
+background: #f0f;
+}`
+      },
       {
         resolve: {
           alias: [
@@ -62,57 +67,48 @@ describe('css path resolutions', () => {
             }
           ]
         }
-      },
-      'serve'
+      }
     )
 
-    const { transform, buildStart } = cssPlugin(config)
-
-    await buildStart.call({})
-
-    const mockFs = vi
-      .spyOn(fs, 'readFile')
-      // @ts-ignore vi.spyOn not recognize override `fs.readFile` definition.
-      .mockImplementationOnce((p, encoding, callback) => {
-        expect(p).toBe(path.join(mockedProjectPath, mockedBarCssRelativePath))
-        expect(encoding).toBe('utf-8')
-        callback(
-          null,
-          Buffer.from(`
-.bar {
-  display: block;
-  background: #f0f;
-}
-      `)
-        )
-      })
-
-    const { code } = await transform.call(
-      {
-        addWatchFile() {
-          return
-        }
-      },
-      `
+    const result = await transform(
+      `\
 .foo {
-  position: fixed;
-  composes: bar from '@${mockedBarCssRelativePath}';
-}
-    `,
-      path.join(mockedProjectPath, mockedFooCssRelativePath)
+position: fixed;
+composes: bar from '@/css/bar.module.css';
+}`,
+      '/css/foo.module.css'
     )
 
-    expect(code).toBe(`
-._bar_soicv_2 {
-  display: block;
-  background: #f0f;
+    expect(result.code).toBe(
+      `\
+._bar_1csqm_1 {
+display: block;
+background: #f0f;
 }
-._foo_sctn3_2 {
-  position: fixed;
-}
-    `)
+._foo_86148_1 {
+position: fixed;
+}`
+    )
 
-    mockFs.mockReset()
+    resetMock()
+  })
+
+  test('custom generateScopedName', async () => {
+    const { transform, resetMock } = await createCssPluginTransform(undefined, {
+      css: {
+        modules: {
+          generateScopedName: 'custom__[hash:base64:5]'
+        }
+      }
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
+    expect(result1.code).toBe(result2.code)
+    resetMock()
   })
 })
 
@@ -205,3 +201,39 @@ describe('hoist @ rules', () => {
     `)
   })
 })
+
+async function createCssPluginTransform(
+  files?: Record<string, string>,
+  inlineConfig: InlineConfig = {}
+) {
+  const config = await resolveConfig(inlineConfig, 'serve')
+  const { transform, buildStart } = cssPlugin(config)
+
+  // @ts-expect-error
+  await buildStart.call({})
+
+  const mockFs = vi
+    .spyOn(fs, 'readFile')
+    // @ts-expect-error vi.spyOn not recognize override `fs.readFile` definition.
+    .mockImplementationOnce((p, encoding, callback) => {
+      callback(null, Buffer.from(files?.[p] ?? ''))
+    })
+
+  return {
+    async transform(code: string, id: string) {
+      // @ts-expect-error
+      return await transform.call(
+        {
+          addWatchFile() {
+            return
+          }
+        },
+        code,
+        id
+      )
+    },
+    resetMock() {
+      mockFs.mockReset()
+    }
+  }
+}
