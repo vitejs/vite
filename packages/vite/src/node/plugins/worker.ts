@@ -23,16 +23,17 @@ import {
 import { getDepsOptimizer } from '../optimizer'
 
 interface WorkerCache {
+  // rollup cache avoid rollup analysis the same file multi-times
   cache?: RollupCache
 
-  // save worker all emit chunk avoid rollup make the same asset unique.
+  // save worker all emit chunk avoid rollup make the same asset unique update the filename.
   assets: Map<string, EmittedAsset>
 
-  // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <input_filename, fileName>
   bundle: Map<string, string>
 
+  // use to replace the worker asset flag to truth path
   // <hash, fileName>
   fileNameHash: Map<string, string>
 }
@@ -226,29 +227,6 @@ function encodeWorkerAssetFileName(
   return `__VITE_WORKER_ASSET__${hash}__`
 }
 
-async function workerFileToBuiltUrl(
-  config: ResolvedConfig,
-  id: string,
-  query: Record<string, string> | null
-): Promise<string> {
-  const workerMap = workerCache.get(config.mainConfig || config)!
-  const outputChunk = await bundleWorkerEntry(config, id, query)
-  return encodeWorkerAssetFileName(outputChunk.fileName!, workerMap)
-}
-
-async function workerFileToDevUrl(
-  config: ResolvedConfig,
-  id: string,
-  query: Record<string, string> | null,
-  workerType: WorkerType
-): Promise<string> {
-  let url = path.posix.join(WORKER_PREFIX + cleanUrl(id))
-  url = config.server?.origin ?? '' + config.base + url.replace(/^\//, '')
-  url = injectQuery(url, WORKER_FILE_ID)
-  url = injectQuery(url, `type=${workerType}`)
-  return url
-}
-
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
@@ -256,9 +234,15 @@ export async function workerFileToUrl(
   workerType: WorkerType
 ): Promise<string> {
   if (config.command === 'serve') {
-    return workerFileToDevUrl(config, id, query, workerType)
+    let url = path.posix.join(WORKER_PREFIX + cleanUrl(id))
+    url = config.server?.origin ?? '' + config.base + url.replace(/^\//, '')
+    url = injectQuery(url, WORKER_FILE_ID)
+    url = injectQuery(url, `type=${workerType}`)
+    return url
   } else {
-    return workerFileToBuiltUrl(config, id, query)
+    const workerMap = workerCache.get(config.mainConfig || config)!
+    const outputChunk = await bundleWorkerEntry(config, id, query)
+    return encodeWorkerAssetFileName(outputChunk.fileName!, workerMap)
   }
 }
 
@@ -322,29 +306,28 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     async load(id) {
       const query = parseRequest(id)
-      // ?worker ?sharedworker
       if (query && (query.worker ?? query.sharedworker) != null) {
-        // bundle nested worker
         if (isWorker) {
+          // bundle nested worker
           const input = workerPathFromUrl(id)
           debug('[bundle nested worker]', id)
           const outputChunk = await bundleWorkerEntry(config, input, query)
           return outputChunk.source as string
         }
+        // will transform by worker wrap
         return ''
       }
       // /@worker/*
       if (id.startsWith(WORKER_PREFIX)) {
+        debug('[virtual module]', id)
         const input = workerPathFromUrl(id)
         const workerMap = workerCache.get(config.mainConfig || config)!
         if (query && query[WORKER_FILE_ID] != null) {
-          debug('[bundle]', id)
           const outputChunk = await bundleWorkerEntry(config, input, query)
           // if import worker by worker constructor will have query.type
           // other type will be import worker by esm
           const workerType = query!['type']! as WorkerType
-          let injectEnv = ''
-
+          let injectEnv!: string
           if (workerType === 'classic') {
             injectEnv = `importScripts('${ENV_PUBLIC_PATH}');\n`
           } else if (workerType === 'module') {
@@ -362,7 +345,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
           return injectEnv + outputChunk.source
         } else {
-          debug('[load module id]', id)
           return workerMap.assets.get(
             path.relative(WORKER_PREFIX + config.root, id)
           )?.source as string
@@ -414,7 +396,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
       }
       const url = await workerFileToUrl(config, id, query, workerType)
-      debug('[transform]', id)
       if (query.url != null) {
         return {
           code: `export default ${JSON.stringify(url)}`,
