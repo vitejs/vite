@@ -1,0 +1,11 @@
+{
+  "name": "@vite/test-config-plugin-module-condition",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "module": "./module.mjs",
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    }
+  }
+}

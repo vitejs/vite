@@ -241,6 +241,7 @@ importers:
       fast-glob: ^3.2.12
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
+      import-meta-resolve: ^2.1.0
       json5: ^2.2.1
       launch-editor-middleware: ^2.6.0
       magic-string: ^0.26.7
@@ -306,6 +307,7 @@ importers:
       etag: 1.8.1
       fast-glob: 3.2.12
       http-proxy: 1.18.1_debug@4.3.4
+      import-meta-resolve: 2.1.0
       json5: 2.2.1
       launch-editor-middleware: 2.6.0
       magic-string: 0.26.7
@@ -392,6 +394,12 @@ importers:
       url: 0.11.0
 
   playground/config/packages/entry:
+    specifiers:
+      '@vite/test-config-plugin-module-condition': link:../plugin-module-condition
+    dependencies:
+      '@vite/test-config-plugin-module-condition': link:../plugin-module-condition
+
+  playground/config/packages/plugin-module-condition:
     specifiers: {}
 
   playground/config/packages/siblings:
@@ -5908,6 +5916,10 @@ packages:
   /import-lazy/4.0.0:
     resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
     engines: {node: '>=8'}
+    dev: true
+
+  /import-meta-resolve/2.1.0:
+    resolution: {integrity: sha512-yG9pxkWJVTy4cmRsNWE3ztFdtFuYIV8G4N+cbCkO8b+qngkLyIUhxQFuZ0qJm67+0nUOxjMPT7nfksPKza1v2g==}
     dev: true
 
   /imurmurhash/0.1.4:
