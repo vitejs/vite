@@ -135,7 +135,7 @@ function createNodeConfig(isProduction: boolean) {
     },
     output: {
       ...sharedNodeOptions.output,
-      sourcemap: !isProduction
+      sourcemap: !isProduction || !!process.env.CI
     },
     external: [
       'fsevents',
