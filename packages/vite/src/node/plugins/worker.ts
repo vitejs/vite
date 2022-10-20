@@ -1,4 +1,3 @@
-import { existsSync, promises as fsp } from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { EmittedAsset, OutputChunk, RollupCache } from 'rollup'
@@ -9,7 +8,6 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   cleanUrl,
   createDebugger,
-  getDepsCacheSuffix,
   getHash,
   injectQuery,
   normalizePath,
@@ -24,7 +22,7 @@ import { getDepsOptimizer } from '../optimizer'
 
 interface WorkerCache {
   // rollup cache avoid rollup analysis the same file multi-times
-  cache?: RollupCache
+  cache: RollupCache
 
   // save worker all emit chunk avoid rollup make the same asset unique update the filename.
   assets: Map<string, EmittedAsset>
@@ -54,10 +52,7 @@ export function isWorkerRequest(id: string): boolean {
   return false
 }
 
-function mergeRollupCache(
-  o?: RollupCache,
-  n?: RollupCache
-): RollupCache | undefined {
+function mergeRollupCache(o?: RollupCache, n?: RollupCache): RollupCache {
   return {
     modules: (o?.modules || []).concat(n?.modules || []),
     plugins: Object.assign({}, o?.plugins, n?.plugins)
@@ -250,10 +245,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let server: ViteDevServer
   const isWorker = config.isWorker
-  const cacheFilePath = path.join(
-    config.cacheDir,
-    getDepsCacheSuffix(config, !!config.build.ssr) + '_worker_cache.json'
-  )
 
   return {
     name: 'vite:worker',
@@ -266,33 +257,25 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isWorker) {
         return
       }
-      let cache!: RollupCache
-      if (existsSync(cacheFilePath)) {
-        cache = JSON.parse(
-          await fsp.readFile(cacheFilePath, { encoding: 'utf-8' })
-        )
-      } else {
-        cache = {
-          modules: []
-        }
-      }
       workerCache.set(config, {
-        cache,
+        cache: {
+          modules: []
+        },
         assets: new Map(),
         bundle: new Map(),
         fileNameHash: new Map()
       })
     },
 
-    async buildEnd() {
-      if (isWorker) {
-        return
-      }
-      await fsp.mkdir(config.cacheDir, { recursive: true })
-      await fsp.writeFile(
-        cacheFilePath,
-        JSON.stringify(workerCache.get(config)?.cache || '')
-      )
+    handleHotUpdate({ file, modules, server }) {
+      const workerMap = workerCache.get(config.mainConfig || config)!
+      workerMap.bundle.delete(file)
+      server.moduleGraph
+        .getModulesByFile(path.join(WORKER_PREFIX, file))
+        ?.forEach((m) => {
+          modules.push(m)
+        })
+      return modules
     },
 
     resolveId(id, importer) {
