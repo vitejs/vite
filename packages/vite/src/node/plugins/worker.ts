@@ -22,8 +22,6 @@ import {
 } from '../build'
 import { getDepsOptimizer } from '../optimizer'
 
-const debug = createDebugger('vite:worker')
-
 interface WorkerCache {
   cache?: RollupCache
 
@@ -39,8 +37,9 @@ interface WorkerCache {
   fileNameHash: Map<string, string>
 }
 
+const debug = createDebugger('vite:worker')
 export type WorkerType = 'classic' | 'module' | 'ignore'
-
+const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 const WORKER_FILE_ID = 'worker_file'
 const WORKER_PREFIX = '/@worker/'
 const VOLUME_RE = /^[A-Z]:/i
@@ -52,15 +51,6 @@ export function isWorkerRequest(id: string): boolean {
     return true
   }
   return false
-}
-
-function saveEmitWorkerAsset(
-  config: ResolvedConfig,
-  asset: EmittedAsset
-): void {
-  const fileName = asset.fileName!
-  const workerMap = workerCache.get(config.mainConfig || config)!
-  workerMap.assets.set(fileName, asset)
 }
 
 function mergeRollupCache(
@@ -83,16 +73,20 @@ function workerPathFromUrl(url: string): string {
     : `/${fsPath}`
 }
 
-export async function bundleWorkerEntry(
+async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
-): Promise<OutputChunk> {
+): Promise<EmittedAsset> {
+  const workerMap = workerCache.get(config.mainConfig || config)!
+  if (workerMap.bundle.get(id)) {
+    const outputChunk = workerMap.assets.get(id)!
+    return outputChunk
+  }
   // bundle the file as entry to support imports
   const isBuild = config.command === 'build'
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const workerMap = workerCache.get(config.mainConfig || config)!
   const cleanInput = cleanUrl(id)
   const relativeDirPath = path.dirname(path.relative(config.root, cleanInput))
   const bundle = await rollup({
@@ -146,9 +140,9 @@ export async function bundleWorkerEntry(
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
-        saveEmitWorkerAsset(config, outputChunk)
+        workerMap.assets.set(outputChunk.fileName, outputChunk)
       } else if (outputChunk.type === 'chunk') {
-        saveEmitWorkerAsset(config, {
+        workerMap.assets.set(outputChunk.fileName, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
           type: 'asset'
@@ -158,6 +152,14 @@ export async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
+
+  workerMap.assets.set(id, {
+    fileName: chunk.fileName,
+    source: chunk.code,
+    type: 'asset'
+  })
+  workerMap.bundle.set(id, chunk.fileName)
+
   return emitSourcemapForWorkerEntry(config, query, chunk)
 }
 
@@ -165,7 +167,7 @@ function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
   query: Record<string, string> | null,
   chunk: OutputChunk
-): OutputChunk {
+): EmittedAsset {
   const { map: sourcemap } = chunk
 
   if (sourcemap) {
@@ -181,7 +183,9 @@ function emitSourcemapForWorkerEntry(
     ) {
       const data = sourcemap.toString()
       const mapFileName = chunk.fileName + '.map'
-      saveEmitWorkerAsset(config, {
+      const workerMap = workerCache.get(config.mainConfig || config)!
+
+      workerMap.assets.set(mapFileName, {
         fileName: mapFileName,
         type: 'asset',
         source: data
@@ -203,10 +207,12 @@ function emitSourcemapForWorkerEntry(
     }
   }
 
-  return chunk
+  return {
+    fileName: chunk.fileName,
+    source: chunk.code,
+    type: 'asset'
+  }
 }
-
-export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 function encodeWorkerAssetFileName(
   fileName: string,
@@ -226,18 +232,8 @@ async function workerFileToBuiltUrl(
   query: Record<string, string> | null
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
-  let fileName = workerMap.bundle.get(id)
-  if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(config, id, query)
-    fileName = outputChunk.fileName
-    saveEmitWorkerAsset(config, {
-      fileName,
-      source: outputChunk.code,
-      type: 'asset'
-    })
-    workerMap.bundle.set(id, fileName)
-  }
-  return encodeWorkerAssetFileName(fileName, workerMap)
+  const outputChunk = await bundleWorkerEntry(config, id, query)
+  return encodeWorkerAssetFileName(outputChunk.fileName!, workerMap)
 }
 
 async function workerFileToDevUrl(
@@ -328,6 +324,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const query = parseRequest(id)
       // ?worker ?sharedworker
       if (query && (query.worker ?? query.sharedworker) != null) {
+        // bundle nested worker
+        if (isWorker) {
+          const input = workerPathFromUrl(id)
+          debug('[bundle nested worker]', id)
+          const outputChunk = await bundleWorkerEntry(config, input, query)
+          return outputChunk.source as string
+        }
         return ''
       }
       // /@worker/*
@@ -336,16 +339,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const workerMap = workerCache.get(config.mainConfig || config)!
         if (query && query[WORKER_FILE_ID] != null) {
           debug('[bundle]', id)
-          if (!workerMap.bundle.get(id)) {
-            const outputChunk = await bundleWorkerEntry(config, input, query)
-            workerMap.assets.set(id, {
-              fileName: outputChunk.fileName,
-              source: outputChunk.code,
-              type: 'asset'
-            })
-            workerMap.bundle.set(id, outputChunk.fileName)
-          }
-          const outputChunk = workerMap.assets.get(id)!
+          const outputChunk = await bundleWorkerEntry(config, input, query)
           // if import worker by worker constructor will have query.type
           // other type will be import worker by esm
           const workerType = query!['type']! as WorkerType
@@ -401,7 +395,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url
           return {
-            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
+            code: `const encodedJs = "${Buffer.from(chunk.source!).toString(
               'base64'
             )}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
