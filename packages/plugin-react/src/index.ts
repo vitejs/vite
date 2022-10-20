@@ -95,6 +95,11 @@ declare module 'vite' {
   }
 }
 
+declare module 'rollup' {
+  export interface CustomPluginOptions
+    extends Pick<Options, 'jsxImportSource'> {}
+}
+
 const prependReactImportCode = "import React from 'react'; "
 
 export default function viteReact(opts: Options = {}): PluginOption[] {
@@ -245,6 +250,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 : [null, false]
 
             if (isJSX || (ast = restoredAst)) {
+              const moduleInfo = this.getModuleInfo(id)!
+              const importSource =
+                moduleInfo.meta.jsxImportSource || opts.jsxImportSource
+
               plugins.push([
                 await loadPlugin(
                   '@babel/plugin-transform-react-jsx' +
@@ -252,7 +261,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 ),
                 {
                   runtime: 'automatic',
-                  importSource: opts.jsxImportSource,
+                  importSource,
                   pure: opts.jsxPure !== false,
                   throwIfNamespace: opts.jsxThrowIfNamespace
                 }
