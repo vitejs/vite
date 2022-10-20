@@ -74,6 +74,7 @@ async function bundleWorkerEntry(
   id: string,
   query: Record<string, string> | null
 ): Promise<EmittedAsset> {
+  const start = Date.now()
   const workerMap = workerCache.get(config.mainConfig || config)!
   if (workerMap.bundle.get(id)) {
     const outputChunk = workerMap.assets.get(id)!
@@ -155,7 +156,7 @@ async function bundleWorkerEntry(
     type: 'asset'
   })
   workerMap.bundle.set(id, chunk.fileName)
-
+  debug('[bundleWorkerEntry]', id, 'duration:', Date.now() - start, 'ms')
   return emitSourcemapForWorkerEntry(config, query, chunk)
 }
 
