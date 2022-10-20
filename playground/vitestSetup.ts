@@ -3,11 +3,10 @@ import path, { dirname, join, resolve } from 'node:path'
 import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
-import {
+import type {
   InlineConfig,
   Logger,
   PluginOption,
-  resolveConfig,
   ResolvedConfig,
   UserConfig,
   ViteDevServer
@@ -17,7 +16,8 @@ import {
   createServer,
   loadConfigFromFile,
   mergeConfig,
-  preview
+  preview,
+  resolveConfig
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
