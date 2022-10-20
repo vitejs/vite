@@ -283,8 +283,12 @@ export async function startDefaultServe(): Promise<void> {
       config.__test__()
     }
     const _nodeEnv = process.env.NODE_ENV
-    const config = await resolveConfig(testConfig, 'serve', 'production')
-    const previewServer = await preview(config)
+    const resolvedConfig = await resolveConfig(
+      testConfig,
+      'serve',
+      'production'
+    )
+    const previewServer = await preview(resolvedConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
     viteTestUrl = previewServer.resolvedUrls.local[0]
