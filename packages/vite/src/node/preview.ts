@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import type * as http from 'node:http'
 import type { Http2SecureServer } from 'node:http2'
@@ -79,6 +80,13 @@ export async function preview(
 ): Promise<PreviewServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'production')
 
+  const distDir = path.resolve(config.root, config.build.outDir)
+  if (!fs.existsSync(distDir)) {
+    throw new Error(
+      `"${config.build.outDir}" does not exist. Create build then try again.`
+    )
+  }
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
@@ -111,7 +119,6 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
   app.use(
     previewBase,
