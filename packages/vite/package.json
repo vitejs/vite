@@ -88,6 +88,7 @@
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",
     "debug": "^4.3.4",
+    "dep-types": "link:./src/types",
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^1.0.3",
@@ -95,6 +96,7 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
     "http-proxy": "^1.18.1",
+    "import-meta-resolve": "^2.1.0",
     "json5": "^2.2.1",
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.26.7",
@@ -118,7 +120,6 @@
     "strip-literal": "^0.4.2",
     "tsconfck": "^2.0.1",
     "tslib": "^2.4.0",
-    "dep-types": "link:./src/types",
     "types": "link:./types",
     "ufo": "^0.8.5",
     "ws": "^8.9.0"
