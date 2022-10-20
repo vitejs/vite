@@ -1,6 +1,7 @@
 const path = require('node:path')
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const inspect = require('vite-plugin-inspect')
 
 module.exports = vite.defineConfig({
   base: './',
@@ -34,6 +35,7 @@ module.exports = vite.defineConfig({
     baseRoute: '/relative-base/'
   },
   plugins: [
+    inspect(),
     {
       name: 'resolve-format-es',
       transform(code, id) {

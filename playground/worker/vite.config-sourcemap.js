@@ -1,5 +1,6 @@
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const inspect = require('vite-plugin-inspect')
 
 module.exports = vite.defineConfig((sourcemap) => {
   sourcemap = process.env.WORKER_MODE || sourcemap
@@ -15,6 +16,7 @@ module.exports = vite.defineConfig((sourcemap) => {
         '@': __dirname
       }
     },
+    plugins: [inspect()],
     worker: {
       format: 'iife',
       plugins: [vueJsx()],

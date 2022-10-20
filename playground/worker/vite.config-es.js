@@ -1,5 +1,6 @@
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const inspect = require('vite-plugin-inspect')
 
 module.exports = vite.defineConfig({
   base: '/es/',
@@ -31,6 +32,7 @@ module.exports = vite.defineConfig({
     }
   },
   plugins: [
+    inspect(),
     {
       name: 'resolve-format-es',
 
