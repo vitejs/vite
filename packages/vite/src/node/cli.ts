@@ -1,4 +1,6 @@
 import { performance } from 'node:perf_hooks'
+import fs from 'node:fs'
+import path from 'node:path'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
@@ -250,20 +252,25 @@ cli
       filterDuplicateOptions(options)
       const { preview } = await import('./preview')
       try {
-        const server = await preview({
-          root,
-          base: options.base,
-          configFile: options.config,
-          logLevel: options.logLevel,
-          mode: options.mode,
-          preview: {
-            port: options.port,
-            strictPort: options.strictPort,
-            host: options.host,
-            https: options.https,
-            open: options.open
-          }
-        })
+        const config = await resolveConfig(
+          {
+            root,
+            base: options.base,
+            configFile: options.config,
+            logLevel: options.logLevel
+          },
+          'serve',
+          'production'
+        )
+
+        const distDir = path.resolve(config.root, config.build.outDir)
+        if (!fs.existsSync(distDir)) {
+          throw new Error(
+            `"${config.build.outDir}" does not exist. Create build then try again.`
+          )
+        }
+
+        const server = await preview(config)
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(

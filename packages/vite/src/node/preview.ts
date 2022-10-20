@@ -18,8 +18,7 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls } from './utils'
 import { printServerUrls } from './logger'
-import { resolveConfig } from '.'
-import type { InlineConfig, ResolvedConfig } from '.'
+import type { ResolvedConfig } from '.'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -74,11 +73,7 @@ export type PreviewServerHook = (
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
  */
-export async function preview(
-  inlineConfig: InlineConfig = {}
-): Promise<PreviewServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'production')
-
+export async function preview(config: ResolvedConfig): Promise<PreviewServer> {
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
