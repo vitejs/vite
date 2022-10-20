@@ -53,6 +53,7 @@ import {
   shouldExternalizeForSSR
 } from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
+import type { ResolvedUrl } from '../server/moduleGraph'
 import {
   getDepsCacheDirPrefix,
   getDepsOptimizer,
@@ -264,7 +265,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizeUrl = async (
         url: string,
         pos: number
-      ): Promise<[string, string]> => {
+      ): Promise<ResolvedUrl> => {
         url = stripBase(url, base)
 
         let importerFile = importer
@@ -292,7 +293,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (!resolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
-            return [url, url]
+            return [url, url, null]
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
@@ -325,7 +326,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (isExternalUrl(url)) {
-          return [url, url]
+          return [url, url, resolved.meta]
         }
 
         // if the resolved id is not a valid browser import specifier,
@@ -361,9 +362,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // up-to-date version of this module.
           try {
             // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            const depModule = await moduleGraph.ensureEntryFromUrl(
-              unwrapId(url),
-              ssr,
+            const depModule = moduleGraph.ensureEntryFromResolved(
+              [unwrapId(url), resolved.id, resolved.meta],
               canSkipImportAnalysis(url)
             )
             if (depModule.lastHMRTimestamp > 0) {
@@ -380,7 +380,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = joinUrlSegments(base, url)
         }
 
-        return [url, resolved.id]
+        return [url, resolved.id, resolved.meta]
       }
 
       for (let index = 0; index < imports.length; index++) {
@@ -475,11 +475,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // normalize
-          const [url, resolvedId] = await normalizeUrl(specifier, start)
+          const [url, resolvedId, resolvedMeta] = await normalizeUrl(
+            specifier,
+            start
+          )
 
           // record as safe modules
-          server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
+          moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
 
+          // ensure module is in the graph under the correct
+          // resolvedId and sporting correct meta properties.
+          const mod = moduleGraph.getModuleById(resolvedId)
+          if (mod) {
+            mod.meta = { ...mod.meta, ...resolvedMeta }
+          } else {
+            moduleGraph.ensureEntryFromResolved([url, resolvedId, resolvedMeta])
+          }
+
+          // rewrite
           if (url !== specifier) {
             let rewriteDone = false
             if (

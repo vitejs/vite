@@ -5,6 +5,8 @@ import type { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
+import { importAnalysisPlugin } from '../../plugins/importAnalysis'
+import type { ViteDevServer } from '..'
 
 let resolveId: (id: string) => any
 let moduleGraph: ModuleGraph
@@ -66,6 +68,44 @@ describe('plugin container', () => {
       await container.close()
 
       expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
+    })
+
+    it('preserves metadata calculated from import query string', async () => {
+      const entryUrl = '/main.js'
+      const testedId = 'x.js'
+
+      const plugin: Plugin = {
+        name: 'p1',
+        resolveId(url) {
+          if (url === entryUrl) {
+            return url
+          }
+          const [id, query] = url.split('?')
+          const match = query?.match(/test=([^&]+)/)
+          if (match) {
+            return { id, meta: { test: +match[1] } }
+          }
+        },
+        load(id) {
+          if (id === entryUrl) {
+            return `import "${testedId}?test=1"`
+          } else if (id === testedId) {
+            const meta = this.getModuleInfo(id).meta
+            expect(meta.test).toBe(1)
+            return ''
+          }
+        }
+      }
+
+      const container = await getPluginContainer({ plugins: [plugin] })
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await container.transform(
+        (await container.load(entryUrl)) as any,
+        entryUrl
+      )
+
+      await container.load(testedId)
+      expect.assertions(1)
     })
 
     it('can pass metadata between plugins', async () => {
@@ -153,12 +193,20 @@ async function getPluginContainer(
   inlineConfig?: UserConfig
 ): Promise<PluginContainer> {
   const config = await resolveConfig(
-    { configFile: false, ...inlineConfig },
+    {
+      configFile: false,
+      server: { preTransformRequests: false },
+      ...inlineConfig
+    },
     'serve'
   )
 
   // @ts-ignore: This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !/pre-alias/.test(p.name))
+
+  // @ts-ignore: So does this one and this mock one seems to work
+  const iap = config.plugins.find((p) => p.name === 'vite:import-analysis')
+  iap.configureServer(<ViteDevServer>{ moduleGraph })
 
   resolveId = (id) => container.resolveId(id)
   const container = await createPluginContainer(config, moduleGraph)

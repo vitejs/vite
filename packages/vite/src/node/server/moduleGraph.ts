@@ -149,7 +149,7 @@ export class ModuleGraph {
     for (const imported of importedModules) {
       const dep =
         typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported, ssr)
+          ? this.urlToModuleMap.get(imported)!
           : imported
       dep.importers.add(mod)
       nextImports.add(dep)
@@ -179,13 +179,11 @@ export class ModuleGraph {
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(
-    rawUrl: string,
-    ssr?: boolean,
+  ensureEntryFromResolved(
+    [url, resolvedId, meta]: ResolvedUrl,
     setIsSelfAccepting = true
-  ): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.idToModuleMap.get(resolvedId)
+  ): ModuleNode {
+    let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -206,6 +204,15 @@ export class ModuleGraph {
       this.urlToModuleMap.set(url, mod)
     }
     return mod
+  }
+
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true
+  ): Promise<ModuleNode> {
+    const resolvedUrl = await this.resolveUrl(rawUrl, ssr)
+    return this.ensureEntryFromResolved(resolvedUrl, setIsSelfAccepting)
   }
 
   // some deps, like a css file referenced via @import, don't have its own
