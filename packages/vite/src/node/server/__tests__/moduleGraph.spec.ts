@@ -14,21 +14,35 @@ describe('moduleGraph', () => {
       moduleGraph.invalidateModule(entryModule)
       expect(entryModule.ssrError).toBe(null)
     })
+  })
 
-    it('ensureEntryFromUrl should based on resolvedId', async () => {
+  describe('ensureEntryFromUrl', () => {
+    it('reuses an entry with same resolved id', async () => {
+      const moduleGraph = new ModuleGraph(async (url) => {
+        if (url === '/xx.js') {
+          return { id: '/x.js', meta: { vite: 'test' } }
+        } else {
+          return { id: url, meta: { vite: 'test' } }
+        }
+      })
+
+      const mod1 = await moduleGraph.ensureEntryFromUrl('/x.js', false)
+      const mod2 = await moduleGraph.ensureEntryFromUrl('/xx.js', false)
+      expect(mod1 === mod2).to.be.true
+    })
+
+    it('creates a new entry if resolved "meta" differs', async () => {
       const moduleGraph = new ModuleGraph(async (url) => {
         if (url === '/xx.js') {
           return { id: '/x.js' }
         } else {
-          return { id: url }
+          return { id: url, meta: { vite: 'test' } }
         }
       })
-      const meta = { vite: 'test' }
 
       const mod1 = await moduleGraph.ensureEntryFromUrl('/x.js', false)
-      mod1.meta = meta
       const mod2 = await moduleGraph.ensureEntryFromUrl('/xx.js', false)
-      expect(mod2.meta).to.equal(meta)
+      expect(mod1 === mod2).to.be.false
     })
   })
 })

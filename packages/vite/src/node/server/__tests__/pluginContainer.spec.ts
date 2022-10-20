@@ -205,8 +205,12 @@ async function getPluginContainer(
   config.plugins = config.plugins.filter((p) => !/pre-alias/.test(p.name))
 
   // @ts-ignore: So does this one and this mock one seems to work
-  const iap = config.plugins.find((p) => p.name === 'vite:import-analysis')
-  iap.configureServer(<ViteDevServer>{ moduleGraph })
+  const iap = config.plugins.find((p) => p.name === 'vite:import-analysis')!
+  if (typeof iap.configureServer === 'function') {
+    iap.configureServer(<ViteDevServer>{ moduleGraph })
+  } else {
+    throw 'Expected vite:import-analysis plugin to have a "configureServer" method'
+  }
 
   resolveId = (id) => container.resolveId(id)
   const container = await createPluginContainer(config, moduleGraph)
