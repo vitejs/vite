@@ -137,9 +137,18 @@ export async function bundleWorkerEntry(
       sourcemap: config.build.sourcemap,
       ...(!isBuild
         ? {
-            entryFileNames: path.join(relativeDirPath, '[name].js'),
-            chunkFileNames: path.join(relativeDirPath, '[name].js'),
-            assetFileNames: path.join(relativeDirPath, '[name].[ext]')
+            entryFileNames: path.join(
+              relativeDirPath,
+              WORKER_PREFIX + '[name].js'
+            ),
+            chunkFileNames: path.join(
+              relativeDirPath,
+              WORKER_PREFIX + '[name].js'
+            ),
+            assetFileNames: path.join(
+              relativeDirPath,
+              WORKER_PREFIX + '[name].[ext]'
+            )
           }
         : {})
     })
@@ -318,6 +327,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     resolveId(id, importer) {
       // resolve worker virtual module (/@worker/*) deps named
       if (importer && importer.startsWith(WORKER_PREFIX)) {
+        debug('[resolveId]', id)
         const basePath = path.dirname(cleanUrl(importer))
         return path.join(basePath, id)
       }
@@ -396,29 +406,30 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-      }
-      if (query.inline != null) {
-        const chunk = await bundleWorkerEntry(config, id, query)
-        // inline as blob data url
-        return {
-          code: `const encodedJs = "${Buffer.from(chunk.code).toString(
-            'base64'
-          )}";
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper() {
-            const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-            try {
-              return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-            } finally {
-              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-            }
-          }`,
+        if (query.inline != null) {
+          const chunk = await bundleWorkerEntry(config, id, query)
+          // inline as blob data url
+          return {
+            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
+              'base64'
+            )}";
+            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+            export default function WorkerWrapper() {
+              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              try {
+                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+              } finally {
+                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              }
+            }`,
 
-          // Empty sourcemap to suppress Rollup warning
-          map: { mappings: '' }
+            // Empty sourcemap to suppress Rollup warning
+            map: { mappings: '' }
+          }
         }
       }
       const url = await workerFileToUrl(config, id, query, workerType)
+      debug('[transform]', id)
       if (query.url != null) {
         return {
           code: `export default ${JSON.stringify(url)}`,
