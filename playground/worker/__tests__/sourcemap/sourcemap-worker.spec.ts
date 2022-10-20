@@ -8,8 +8,7 @@ describe.runIf(isBuild)('build', () => {
   test('sourcemap generation for web workers', async () => {
     const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 2 worker chunk
-    expect(files.length).toBe(31)
+    expect(files.length).toBe(33)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
