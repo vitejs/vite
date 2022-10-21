@@ -43,7 +43,8 @@ import {
   parseRequest,
   processSrcSet,
   removeDirectQuery,
-  requireResolveFromRootWithFallback
+  requireResolveFromRootWithFallback,
+  stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -352,6 +353,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      css = stripBomTag(css)
 
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
