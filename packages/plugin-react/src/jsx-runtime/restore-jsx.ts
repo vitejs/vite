@@ -42,6 +42,9 @@ export async function restoreJSX(
     return jsxNotFound
   }
 
+  const flowRE = /(\/\/\s*@flow|\/\*\s*@flow\s*\*\/)/
+  const special = flowRE.test(code) ? 'flow' : 'typescript'
+
   const result = await babel.transformAsync(code, {
     babelrc: false,
     configFile: false,
@@ -49,7 +52,7 @@ export async function restoreJSX(
     code: false,
     filename,
     parserOpts: {
-      plugins: ['jsx']
+      plugins: [special, 'jsx']
     },
     plugins: [[await getBabelRestoreJSX(), { reactAlias }]]
   })
