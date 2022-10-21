@@ -22,7 +22,7 @@ module.exports = {
       // will throw if optimized (should log warning instead)
       'non-optimizable-include'
     ],
-    exclude: ['nested-exclude'],
+    exclude: ['nested-exclude', 'dep-non-optimized'],
     esbuildOptions: {
       plugins: [
         {
@@ -58,6 +58,12 @@ module.exports = {
     {
       name: 'mock',
       configureServer({ middlewares }) {
+        middlewares.use('/ping', (_, res) => {
+          res.statusCode = 200
+          res.end('pong')
+        })
+      },
+      configurePreviewServer({ middlewares }) {
         middlewares.use('/ping', (_, res) => {
           res.statusCode = 200
           res.end('pong')

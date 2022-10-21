@@ -34,14 +34,17 @@ import { join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import type {
+  AsyncPluginHooks,
   CustomPluginOptions,
   EmittedFile,
+  FunctionPluginHooks,
   InputOptions,
   LoadResult,
   MinimalPluginContext,
   ModuleInfo,
   NormalizedInputOptions,
   OutputOptions,
+  ParallelPluginHooks,
   PartialResolvedId,
   ResolvedId,
   RollupError,
@@ -74,6 +77,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
+import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 
@@ -137,11 +141,19 @@ type PluginContext = Omit<
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
-  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  config: ResolvedConfig,
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
+  const {
+    plugins,
+    logger,
+    root,
+    build: { rollupOptions }
+  } = config
+  const { getSortedPluginHooks, getSortedPlugins } =
+    createPluginHookUtils(plugins)
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -190,6 +202,28 @@ export async function createPluginContainer(
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
     )
+  }
+
+  // parallel, ignores returns
+  async function hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
+    hookName: H,
+    context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
+    args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>
+  ): Promise<void> {
+    const parallelPromises: Promise<unknown>[] = []
+    for (const plugin of getSortedPlugins(hookName)) {
+      const hook = plugin[hookName]
+      if (!hook) continue
+      const handler: Function = 'handler' in hook ? hook.handler : hook
+      if ((hook as { sequential?: boolean }).sequential) {
+        await Promise.all(parallelPromises)
+        parallelPromises.length = 0
+        await handler.apply(context(plugin), args(plugin))
+      } else {
+        parallelPromises.push(handler.apply(context(plugin), args(plugin)))
+      }
+    }
+    await Promise.all(parallelPromises)
   }
 
   // throw when an unsupported ModuleInfo property is accessed,
@@ -500,10 +534,8 @@ export async function createPluginContainer(
   const container: PluginContainer = {
     options: await (async () => {
       let options = rollupOptions
-      for (const plugin of plugins) {
-        if (!plugin.options) continue
-        options =
-          (await plugin.options.call(minimalContext, options)) || options
+      for (const optionsHook of getSortedPluginHooks('options')) {
+        options = (await optionsHook.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
@@ -520,15 +552,10 @@ export async function createPluginContainer(
     getModuleInfo,
 
     async buildStart() {
-      await Promise.all(
-        plugins.map((plugin) => {
-          if (plugin.buildStart) {
-            return plugin.buildStart.call(
-              new Context(plugin) as any,
-              container.options as NormalizedInputOptions
-            )
-          }
-        })
+      await hookParallel(
+        'buildStart',
+        (plugin) => new Context(plugin),
+        () => [container.options as NormalizedInputOptions]
       )
     },
 
@@ -544,24 +571,23 @@ export async function createPluginContainer(
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
-      for (const plugin of plugins) {
+      for (const plugin of getSortedPlugins('resolveId')) {
         if (!plugin.resolveId) continue
         if (skip?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
         const pluginResolveStart = isDebug ? performance.now() : 0
-        const result = await plugin.resolveId.call(
-          ctx as any,
-          rawId,
-          importer,
-          {
-            custom: options?.custom,
-            isEntry: !!options?.isEntry,
-            ssr,
-            scan
-          }
-        )
+        const handler =
+          'handler' in plugin.resolveId
+            ? plugin.resolveId.handler
+            : plugin.resolveId
+        const result = await handler.call(ctx as any, rawId, importer, {
+          custom: options?.custom,
+          isEntry: !!options?.isEntry,
+          ssr,
+          scan
+        })
         if (!result) continue
 
         if (typeof result === 'string') {
@@ -607,10 +633,12 @@ export async function createPluginContainer(
       const ssr = options?.ssr
       const ctx = new Context()
       ctx.ssr = !!ssr
-      for (const plugin of plugins) {
+      for (const plugin of getSortedPlugins('load')) {
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const result = await plugin.load.call(ctx as any, id, { ssr })
+        const handler =
+          'handler' in plugin.load ? plugin.load.handler : plugin.load
+        const result = await handler.call(ctx as any, id, { ssr })
         if (result != null) {
           if (isObject(result)) {
             updateModuleInfo(id, result)
@@ -626,15 +654,19 @@ export async function createPluginContainer(
       const ssr = options?.ssr
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
-      for (const plugin of plugins) {
+      for (const plugin of getSortedPlugins('transform')) {
         if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
         const start = isDebug ? performance.now() : 0
         let result: TransformResult | string | undefined
+        const handler =
+          'handler' in plugin.transform
+            ? plugin.transform.handler
+            : plugin.transform
         try {
-          result = await plugin.transform.call(ctx as any, code, id, { ssr })
+          result = await handler.call(ctx as any, code, id, { ssr })
         } catch (e) {
           ctx.error(e)
         }
@@ -670,11 +702,15 @@ export async function createPluginContainer(
     async close() {
       if (closed) return
       const ctx = new Context()
-      await Promise.all(
-        plugins.map((p) => p.buildEnd && p.buildEnd.call(ctx as any))
+      await hookParallel(
+        'buildEnd',
+        () => ctx,
+        () => []
       )
-      await Promise.all(
-        plugins.map((p) => p.closeBundle && p.closeBundle.call(ctx as any))
+      await hookParallel(
+        'closeBundle',
+        () => ctx,
+        () => []
       )
       closed = true
     }

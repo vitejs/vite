@@ -1,3 +1,38 @@
+## 2.3.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10246) ([81d4d04](https://github.com/vitejs/vite/commit/81d4d04)), closes [#10246](https://github.com/vitejs/vite/issues/10246)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(legacy): don't force set `build.target` when `renderLegacyChunks=false` (fixes #10201) (#10220) ([7f548e8](https://github.com/vitejs/vite/commit/7f548e8)), closes [#10201](https://github.com/vitejs/vite/issues/10201) [#10220](https://github.com/vitejs/vite/issues/10220)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
+## 2.2.0 (2022-09-19)
+
+* docs(plugin-legacy): fix Vite default target (#10158) ([62ff788](https://github.com/vitejs/vite/commit/62ff788)), closes [#10158](https://github.com/vitejs/vite/issues/10158)
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(plugin-legacy): force set `build.target` (#10072) ([a13a7eb](https://github.com/vitejs/vite/commit/a13a7eb)), closes [#10072](https://github.com/vitejs/vite/issues/10072)
+
+
+
+## 2.1.0 (2022-09-05)
+
+
+
+
+## 2.1.0-beta.0 (2022-08-29)
+
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+* fix(plugin-legacy): prevent global process.env.NODE_ENV mutation (#9741) ([a8279af](https://github.com/vitejs/vite/commit/a8279af)), closes [#9741](https://github.com/vitejs/vite/issues/9741)
+* chore(deps): update all non-major dependencies (#9675) ([4e56e87](https://github.com/vitejs/vite/commit/4e56e87)), closes [#9675](https://github.com/vitejs/vite/issues/9675)
+* chore(deps): update all non-major dependencies (#9778) ([aceaefc](https://github.com/vitejs/vite/commit/aceaefc)), closes [#9778](https://github.com/vitejs/vite/issues/9778)
+* refactor(legacy): build polyfill chunk (#9639) ([7ba0c9f](https://github.com/vitejs/vite/commit/7ba0c9f)), closes [#9639](https://github.com/vitejs/vite/issues/9639)
+* refactor(legacy): remove code for Vite 2 (#9640) ([b1bbc5b](https://github.com/vitejs/vite/commit/b1bbc5b)), closes [#9640](https://github.com/vitejs/vite/issues/9640)
+
+
+
 ## <small>2.0.1 (2022-08-11)</small>
 
 * fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)

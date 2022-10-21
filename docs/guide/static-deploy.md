@@ -40,9 +40,9 @@ $ npm run build
 $ npm run preview
 ```
 
-The `vite preview` command will boot up local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up a local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
 
-You may configure the port of the server by passing `--port` flag as an argument.
+You may configure the port of the server by passing the `--port` flag as an argument.
 
 ```json
 {
@@ -64,7 +64,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 2. Inside your project, create `deploy.sh` with the following content (with highlighted lines uncommented appropriately), and run it to deploy:
 
-   ```bash{13,21,24}
+   ```bash{16,24,27}
    #!/usr/bin/env sh
 
    # abort on errors
@@ -76,11 +76,14 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
    # navigate into the build output directory
    cd dist
 
+   # place .nojekyll to bypass Jekyll processing
+   echo > .nojekyll
+
    # if you are deploying to a custom domain
    # echo 'www.example.com' > CNAME
 
    git init
-   git checkout -b main
+   git checkout -B main
    git add -A
    git commit -m 'deploy'
 
@@ -276,60 +279,6 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 
 You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
 
-## Heroku
-
-1. Install [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
-
-2. Create a Heroku account by [signing up](https://signup.heroku.com).
-
-3. Run `heroku login` and fill in your Heroku credentials:
-
-   ```bash
-   $ heroku login
-   ```
-
-4. Create a file called `static.json` in the root of your project with the below content:
-
-   `static.json`:
-
-   ```json
-   {
-     "root": "./dist"
-   }
-   ```
-
-   This is the configuration of your site; read more at [heroku-buildpack-static](https://github.com/heroku/heroku-buildpack-static).
-
-5. Set up your Heroku git remote:
-
-   ```bash
-   # version change
-   $ git init
-   $ git add .
-   $ git commit -m "My site ready for deployment."
-
-   # creates a new app with a specified name
-   $ heroku apps:create example
-   ```
-
-6. Set buildpacks. We use `heroku/nodejs` to build the project and `heroku-buildpack-static` to serve it.
-
-   ```bash
-   # set buildpacks
-   $ heroku buildpacks:set heroku/nodejs
-   $ heroku buildpacks:add https://github.com/heroku/heroku-buildpack-static.git
-   ```
-
-7. Deploy your site:
-
-   ```bash
-   # publish site
-   $ git push heroku main
-
-   # opens a browser to view the Dashboard version of Heroku CI
-   $ heroku open
-   ```
-
 ## Azure Static Web Apps
 
 You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://aka.ms/staticwebapps) service. You need:
@@ -363,6 +312,6 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 
    Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
 
-By default, any new commit pushed to the specified branch will automatically trigger a new deploy. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
+By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.

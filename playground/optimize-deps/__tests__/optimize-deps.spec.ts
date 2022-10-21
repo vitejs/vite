@@ -58,6 +58,10 @@ test('cjs browser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
 })
 
+test('cjs browser field bare', async () => {
+  expect(await page.textContent('.cjs-browser-field-bare')).toBe('pong')
+})
+
 test('dep from linked dep (lodash-es)', async () => {
   expect(await page.textContent('.deps-linked')).toBe('fooBarBaz')
 })
@@ -146,19 +150,32 @@ test('flatten id should generate correctly', async () => {
   expect(await page.textContent('.clonedeep-dot')).toBe('clonedeep-dot')
 })
 
+test('non optimized module is not duplicated', async () => {
+  expect(
+    await page.textContent('.non-optimized-module-is-not-duplicated')
+  ).toBe('from-absolute-path, from-relative-path')
+})
+
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([
-      // from dep-with-builtin-module-esm top-level try-catch
+      // from dep-with-builtin-module-esm
+      expect.stringMatching(/dep-with-builtin-module-esm.*is not a function/),
+      // dep-with-builtin-module-esm warnings
       expect.stringContaining(
-        'dep-with-builtin-module-esm Error: Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.'
+        'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.'
       ),
       expect.stringContaining(
-        'dep-with-builtin-module-esm Error: Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.'
+        'Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.'
       ),
-      // from dep-with-builtin-module-cjs top-level try-catch
+      // from dep-with-builtin-module-cjs
+      expect.stringMatching(/dep-with-builtin-module-cjs.*is not a function/),
+      // dep-with-builtin-module-cjs warnings
       expect.stringContaining(
-        'dep-with-builtin-module-cjs Error: Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.'
+        'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.'
+      ),
+      expect.stringContaining(
+        'Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.'
       )
     ])
   )
@@ -167,11 +184,7 @@ test.runIf(isServe)('error on builtin modules usage', () => {
     expect.arrayContaining([
       // from user source code
       'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
-      'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
-      // from dep-with-builtin-module-esm read()
-      'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.',
-      // from dep-with-builtin-module-esm read()
-      'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.'
+      'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.'
     ])
   )
 })

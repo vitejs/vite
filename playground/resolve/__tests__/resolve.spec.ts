@@ -18,7 +18,7 @@ test('deep import with exports field', async () => {
 })
 
 test('deep import with query with exports field', async () => {
-  // since it is imported with `?url` it should return a url
+  // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
     isBuild ? /base64/ : '/exports-path/deep.json'
   )
@@ -32,6 +32,13 @@ test('deep import with exports field + exposed dir', async () => {
 
 test('deep import with exports field + mapped dir', async () => {
   expect(await page.textContent('.exports-deep-mapped-dir')).toMatch(
+    '[success]'
+  )
+})
+
+// this is how Svelte 3 is packaged
+test('deep import with exports and legacy fallback', async () => {
+  expect(await page.textContent('.exports-legacy-fallback')).toMatch(
     '[success]'
   )
 })

@@ -50,12 +50,15 @@ export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
 type TSConfigJSON = {
   extends?: string
   compilerOptions?: {
-    target?: string
+    alwaysStrict?: boolean
+    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    jsx?: 'react' | 'react-jsx' | 'react-jsxdev' | 'preserve'
     jsxFactory?: string
     jsxFragmentFactory?: string
-    useDefineForClassFields?: boolean
-    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    jsxImportSource?: string
     preserveValueImports?: boolean
+    target?: string
+    useDefineForClassFields?: boolean
   }
   [key: string]: any
 }
@@ -92,12 +95,15 @@ export async function transformWithEsbuild(
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
-      'target',
+      'alwaysStrict',
+      'importsNotUsedAsValues',
+      'jsx',
       'jsxFactory',
       'jsxFragmentFactory',
-      'useDefineForClassFields',
-      'importsNotUsedAsValues',
-      'preserveValueImports'
+      'jsxImportSource',
+      'preserveValueImports',
+      'target',
+      'useDefineForClassFields'
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
@@ -179,6 +185,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
+    target: 'esnext',
     ...options,
     minify: false,
     minifyIdentifiers: false,
@@ -403,14 +410,17 @@ const tsconfckParseOptions: TSConfckParseOptions = {
 }
 
 async function initTSConfck(config: ResolvedConfig) {
-  tsconfckParseOptions.cache!.clear()
   const workspaceRoot = searchForWorkspaceRoot(config.root)
+  debug(`init tsconfck (root: ${colors.cyan(workspaceRoot)})`)
+
+  tsconfckParseOptions.cache!.clear()
   tsconfckParseOptions.root = workspaceRoot
   tsconfckParseOptions.tsConfigPaths = new Set([
     ...(await findAll(workspaceRoot, {
       skip: (dir) => dir === 'node_modules' || dir === '.git'
     }))
   ])
+  debug(`init tsconfck end`)
 }
 
 async function loadTsconfigJsonForFile(

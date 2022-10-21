@@ -1,4 +1,4 @@
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '..'
 
 // this middleware is only active when (config.base !== '/')
@@ -15,7 +15,7 @@ export function baseMiddleware({
     const path = parsed.pathname || '/'
 
     if (path.startsWith(devBase)) {
-      // rewrite url to remove base.. this ensures that other middleware does
+      // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
       req.url = url.replace(devBase, '/')
       return next()

@@ -77,7 +77,7 @@ Is the same as:
 import _imports_0 from '../image.png'
 </script>
 
-<img src="_imports_0" />
+<img :src="_imports_0" />
 ```
 
 By default the following tag/attribute combinations are transformed, and can be configured using the `template.transformAssetUrls` option.

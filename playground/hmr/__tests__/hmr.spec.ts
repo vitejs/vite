@@ -18,14 +18,14 @@ test('should render', async () => {
 
 if (!isBuild) {
   test('should connect', async () => {
-    expect(browserLogs.length).toBe(2)
+    expect(browserLogs.length).toBe(3)
     expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
     browserLogs.length = 0
   })
 
   test('self accept', async () => {
     const el = await page.$('.app')
-
+    browserLogs.length = 0
     editFile('hmr.ts', (code) => code.replace('const foo = 1', 'const foo = 2'))
     await untilUpdated(() => el.textContent(), '2')
 
@@ -95,6 +95,7 @@ if (!isBuild) {
 
   test('nested dep propagation', async () => {
     const el = await page.$('.nested')
+    browserLogs.length = 0
 
     editFile('hmrNestedDep.js', (code) =>
       code.replace('const foo = 1', 'const foo = 2')
@@ -129,6 +130,25 @@ if (!isBuild) {
       '(multi deps) nested foo is now: 3',
       '[vite] hot updated: /hmrDep.js via /hmr.ts',
       '>>> vite:afterUpdate -- update'
+    ])
+    browserLogs.length = 0
+  })
+
+  test('invalidate', async () => {
+    browserLogs.length = 0
+    const el = await page.$('.invalidation')
+
+    editFile('invalidation/child.js', (code) =>
+      code.replace('child', 'child updated')
+    )
+    await untilUpdated(() => el.textContent(), 'child updated')
+    expect(browserLogs).toMatchObject([
+      '>>> vite:beforeUpdate -- update',
+      '>>> vite:invalidate -- /invalidation/child.js',
+      '[vite] hot updated: /invalidation/child.js',
+      '>>> vite:beforeUpdate -- update',
+      '(invalidation) parent is executing',
+      '[vite] hot updated: /invalidation/parent.js'
     ])
     browserLogs.length = 0
   })
@@ -222,6 +242,32 @@ if (!isBuild) {
     }
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
+  })
+
+  // #2255
+  test('importing reloaded', async () => {
+    await page.goto(viteTestUrl)
+    const outputEle = await page.$('.importing-reloaded')
+    const getOutput = () => {
+      return outputEle.innerHTML()
+    }
+
+    await untilUpdated(getOutput, ['a.js: a0', 'b.js: b0,a0'].join('<br>'))
+
+    editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
+    await untilUpdated(
+      getOutput,
+      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>')
+    )
+
+    editFile('importing-updated/b.js', (code) =>
+      code.replace('`b0,${a}`', '`b1,${a}`')
+    )
+    // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
+    await untilUpdated(
+      getOutput,
+      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>')
+    )
   })
 
   describe('acceptExports', () => {
@@ -606,5 +652,28 @@ if (!isBuild) {
     await page.waitForNavigation()
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Compteur 0')
+  })
+
+  test('handle virtual module updates', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual')
+    expect(await el.textContent()).toBe('[success]0')
+    editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual')
+      return await el.textContent()
+    }, '[wow]')
+  })
+
+  test('invalidate virtual module', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual')
+    expect(await el.textContent()).toBe('[wow]0')
+    const btn = await page.$('.virtual-update')
+    btn.click()
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual')
+      return await el.textContent()
+    }, '[wow]1')
   })
 }

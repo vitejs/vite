@@ -50,7 +50,7 @@ export type {
   SSRFormat,
   SSRTarget
 } from './ssr'
-export type { Plugin } from './plugin'
+export type { Plugin, HookHandler } from './plugin'
 export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,
@@ -60,12 +60,6 @@ export type {
   LogType,
   LoggerOptions
 } from './logger'
-export type {
-  AliasOptions,
-  ResolverFunction,
-  ResolverObject,
-  Alias
-} from 'types/alias'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
@@ -108,25 +102,40 @@ export type {
   PrunePayload,
   ErrorPayload
 } from 'types/hmrPayload'
-export type { Connect } from 'types/connect'
-export type { WebSocket, WebSocketAlias } from 'types/ws'
-export type { HttpProxy } from 'types/http-proxy'
 export type {
-  FSWatcher,
-  WatchOptions,
-  AwaitWriteFinishOptions
-} from 'types/chokidar'
-export type { Terser } from 'types/terser'
-export type { RollupCommonJSOptions } from 'types/commonjs'
-export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
-export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
+  CustomEventMap,
+  InferCustomEventPayload,
+  InvalidatePayload
+} from 'types/customEvent'
+// [deprecated: use vite/client/types instead]
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
   ImportGlobOptions,
+  GeneralImportGlobOptions,
   KnownAsTypeMap
 } from 'types/importGlob'
+
+// dep types
+export type {
+  AliasOptions,
+  MapToFunction,
+  ResolverFunction,
+  ResolverObject,
+  Alias
+} from 'dep-types/alias'
+export type { Connect } from 'dep-types/connect'
+export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
+export type { HttpProxy } from 'dep-types/http-proxy'
+export type {
+  FSWatcher,
+  WatchOptions,
+  AwaitWriteFinishOptions
+} from 'dep-types/chokidar'
+export type { Terser } from 'dep-types/terser'
+export type { RollupCommonJSOptions } from 'dep-types/commonjs'
+export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
+export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
 
 declare module 'rollup' {
   export interface RenderedChunk {
