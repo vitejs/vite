@@ -90,7 +90,7 @@ async function ssrTransformScript(
   const deps = new Set<string>()
   const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
-  const sourceToId = new Map();
+  const sourceToId = new Map()
   const declaredConst = new Set<string>()
 
   function defineImport(node: Node, source: string) {
