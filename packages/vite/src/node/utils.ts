@@ -1195,8 +1195,13 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
  * Determine if a file is being requested with the correct case, to ensure
  * consistent behaviour between dev and prod and across operating systems.
  */
-export function shouldServe(url: URL, assetsDir: string): boolean {
-  const pathname = decodeURIComponent(url.pathname)
+export function shouldServe(url: string, assetsDir: string): boolean {
+  // viteTestUrl is set to something like http://localhost:4173/ and then many tests make calls
+  // like `await page.goto(viteTestUrl + '/example')` giving us URLs beginning with a double slash
+  const pathname = decodeURIComponent(
+    new URL(url.startsWith('//') ? url.substring(1) : url, 'http://example.com')
+      .pathname
+  )
   const file = assetsDir + pathname
   if (
     !fs.existsSync(file) ||

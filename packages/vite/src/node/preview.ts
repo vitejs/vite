@@ -125,13 +125,7 @@ export async function preview(
     }
   })
   app.use(previewBase, async (req, res, next) => {
-    // TODO: why is this necessary? what's screwing up the request URL?
-    // tons of tests fail without this since we're receiving URLs like //assets/dep-42fa3c.js
-    const fixedUrl = req.url!.startsWith('//')
-      ? req.url!.substring(1)
-      : req.url!
-    const url = new URL(fixedUrl, 'http://example.com')
-    if (shouldServe(url, distDir)) {
+    if (shouldServe(req.url!, distDir)) {
       return assetServer(req, res, next)
     }
     next()

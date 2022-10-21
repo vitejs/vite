@@ -53,8 +53,7 @@ export function servePublicMiddleware(
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    const url = new URL(req.url!, 'http://example.com')
-    if (shouldServe(url, dir)) {
+    if (shouldServe(req.url!, dir)) {
       return serve(req, res, next)
     }
     next()
