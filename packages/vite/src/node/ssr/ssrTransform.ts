@@ -90,15 +90,21 @@ async function ssrTransformScript(
   const deps = new Set<string>()
   const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
+  const sourceToId = new Map();
   const declaredConst = new Set<string>()
 
   function defineImport(node: Node, source: string) {
+    if (sourceToId.has(source)) {
+      return sourceToId.get(source)
+    }
+
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
     s.appendRight(
       node.start,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`
     )
+    sourceToId.set(source, importId)
     return importId
   }
 
