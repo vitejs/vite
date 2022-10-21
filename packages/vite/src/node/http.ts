@@ -5,7 +5,6 @@ import type {
   OutgoingHttpHeaders as HttpServerHeaders
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import type { Http2SecureServer } from 'node:http2'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import { isObject } from './utils'
@@ -95,7 +94,7 @@ export async function resolveHttpServer(
   { proxy }: CommonServerOptions,
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions
-): Promise<HttpServer | Http2SecureServer> {
+): Promise<HttpServer> {
   if (!httpsOptions) {
     const { createServer } = await import('node:http')
     return createServer(app)
@@ -117,7 +116,7 @@ export async function resolveHttpServer(
       },
       // @ts-expect-error TODO: is this correct?
       app
-    )
+    ) as unknown as HttpServer
   }
 }
 
@@ -150,7 +149,7 @@ function readFileIfExists(value?: string | Buffer | any[]) {
 }
 
 export async function httpServerStart(
-  httpServer: HttpServer | Http2SecureServer,
+  httpServer: HttpServer,
   serverOptions: {
     port: number
     strictPort: boolean | undefined
@@ -186,7 +185,7 @@ export async function httpServerStart(
 }
 
 export function setClientErrorHandler(
-  server: HttpServer | Http2SecureServer,
+  server: HttpServer,
   logger: Logger
 ): void {
   server.on('clientError', (err, socket) => {

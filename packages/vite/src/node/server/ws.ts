@@ -2,7 +2,6 @@ import type { Server } from 'node:http'
 import { STATUS_CODES } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
-import type { Http2SecureServer } from 'node:http2'
 import type { Socket } from 'node:net'
 import colors from 'picocolors'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
@@ -79,7 +78,7 @@ const wsServerEvents = [
 ]
 
 export function createWebSocketServer(
-  server: Server | Http2SecureServer | null,
+  server: Server | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions
 ): WebSocketServer {

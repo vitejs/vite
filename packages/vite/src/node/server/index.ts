@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type * as net from 'node:net'
 import type * as http from 'node:http'
-import type { Http2SecureServer } from 'node:http2'
 import { performance } from 'node:perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
@@ -183,7 +182,7 @@ export interface ViteDevServer {
    * native Node http server instance
    * will be null in middleware mode
    */
-  httpServer: http.Server | Http2SecureServer | null
+  httpServer: http.Server | null
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -693,7 +692,7 @@ async function startServer(
   }
 }
 
-function createServerCloseFn(server: http.Server | Http2SecureServer | null) {
+function createServerCloseFn(server: http.Server | null) {
   if (!server) {
     return () => {}
   }

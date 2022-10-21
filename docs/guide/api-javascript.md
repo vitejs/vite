@@ -72,7 +72,7 @@ interface ViteDevServer {
    * Native Node http server instance.
    * Will be null in middleware mode.
    */
-  httpServer: http.Server | Http2SecureServer | null
+  httpServer: http.Server | null
   /**
    * Chokidar watcher instance.
    * https://github.com/paulmillr/chokidar#api
