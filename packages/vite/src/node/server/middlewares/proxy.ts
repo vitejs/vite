@@ -1,5 +1,4 @@
 import type * as http from 'node:http'
-import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
@@ -9,6 +8,29 @@ import { createDebugger, isObject } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
+
+export interface ProxyRetryOptions {
+  /**
+   * how often to try the request (including the initial one)
+   * @default 60
+   */
+  maxTries?: number
+  /**
+   * initial delay (in milliseconds) before next attempt
+   * @default 1000
+   */
+  delay?: number
+  /**
+   * maximum delay (in milliseconds) before next attempt
+   * @default 30000
+   */
+  maxDelay?: number
+  /**
+   * whether to use exponential backoff after failed attempts
+   * @default false
+   */
+  backoff?: boolean
+}
 
 export interface ProxyOptions extends HttpProxy.ServerOptions {
   /**
@@ -27,6 +49,10 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
     res: http.ServerResponse,
     options: ProxyOptions
   ) => void | null | undefined | false | string
+  /**
+   * whether to retry failed requests
+   */
+  retry?: boolean | ProxyRetryOptions
 }
 
 export function proxyMiddleware(
@@ -46,35 +72,6 @@ export function proxyMiddleware(
       opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
-
-    proxy.on('error', (err, req, originalRes) => {
-      // When it is ws proxy, res is net.Socket
-      const res = originalRes as http.ServerResponse | net.Socket
-      if ('req' in res) {
-        config.logger.error(
-          `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
-            err.stack
-          }`,
-          {
-            timestamp: true,
-            error: err
-          }
-        )
-        if (!res.headersSent && !res.writableEnded) {
-          res
-            .writeHead(500, {
-              'Content-Type': 'text/plain'
-            })
-            .end()
-        }
-      } else {
-        config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
-          timestamp: true,
-          error: err
-        })
-        res.end()
-      }
-    })
 
     if (opts.configure) {
       opts.configure(proxy, opts)
@@ -99,7 +96,17 @@ export function proxyMiddleware(
               req.url = opts.rewrite(url)
             }
             debug(`${req.url} -> ws ${opts.target}`)
-            proxy.ws(req, socket, head)
+
+            proxy.ws(req, socket, head, undefined, (err, _req, res) => {
+              config.logger.error(
+                `${colors.red(`ws proxy error:`)}\n${err.stack}`,
+                {
+                  timestamp: true,
+                  error: err
+                }
+              )
+              res.end()
+            })
             return
           }
         }
@@ -135,8 +142,45 @@ export function proxyMiddleware(
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
-        proxy.web(req, res, options)
-        return
+
+        const { maxTries, delay, maxDelay, backoff } = resolveRetryOptions(
+          opts.retry
+        )
+        let attempt = 0
+        let currentDelay = delay
+
+        const run = () => {
+          proxy.web(req, res, options, (err, _req, res) => {
+            if (attempt + 1 < maxTries) {
+              setTimeout(run, currentDelay)
+
+              attempt++
+              if (backoff) {
+                currentDelay = Math.min(currentDelay * 2, maxDelay)
+              }
+              return
+            }
+
+            config.logger.error(
+              `${colors.red(`http proxy error at ${res.req.url}:`)}\n${
+                err.stack
+              }`,
+              {
+                timestamp: true,
+                error: err
+              }
+            )
+            if (!res.headersSent && !res.writableEnded) {
+              res
+                .writeHead(500, {
+                  'Content-Type': 'text/plain'
+                })
+                .end()
+            }
+          })
+        }
+
+        return run()
       }
     }
     next()
@@ -148,4 +192,35 @@ function doesProxyContextMatchUrl(context: string, url: string): boolean {
     (context.startsWith('^') && new RegExp(context).test(url)) ||
     url.startsWith(context)
   )
+}
+
+const defaultRetryOptions: Required<ProxyRetryOptions> = {
+  maxTries: 60,
+  delay: 1_000,
+  maxDelay: 30_000,
+  backoff: false
+}
+
+function resolveRetryOptions(
+  options?: boolean | ProxyRetryOptions
+): Required<ProxyRetryOptions> {
+  if (!options) {
+    return {
+      maxTries: 1,
+      delay: 0,
+      maxDelay: 0,
+      backoff: false
+    }
+  }
+
+  if (options === true) {
+    return defaultRetryOptions
+  }
+
+  return {
+    maxTries: options.maxTries ?? defaultRetryOptions.maxTries,
+    delay: options.delay ?? defaultRetryOptions.delay,
+    maxDelay: options.maxDelay ?? defaultRetryOptions.maxDelay,
+    backoff: options.backoff ?? defaultRetryOptions.backoff
+  }
 }

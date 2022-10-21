@@ -115,6 +115,16 @@ export default defineConfig({
       '/socket.io': {
         target: 'ws://localhost:5173',
         ws: true
+      },
+      // With retry, e.g. when the backend is not ready yet
+      '/api': {
+        target: 'http://jsonplaceholder.typicode.com',
+        retry: {
+          maxTries: 10,
+          delay: 1000,
+          maxDelay: 30000,
+          backoff: true
+        }
       }
     }
   }

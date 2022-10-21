@@ -39,10 +39,10 @@ export namespace HttpProxy {
     secureProtocol?: string | undefined
   }
 
-  export type ErrorCallback = (
+  export type ErrorCallback<Res> = (
     err: Error,
     req: http.IncomingMessage,
-    res: http.ServerResponse,
+    res: Res,
     target?: ProxyTargetUrl
   ) => void
 
@@ -63,7 +63,7 @@ export namespace HttpProxy {
       req: http.IncomingMessage,
       res: http.ServerResponse,
       options?: ServerOptions,
-      callback?: ErrorCallback
+      callback?: ErrorCallback<http.ServerResponse>
     ): void
 
     /**
@@ -78,7 +78,7 @@ export namespace HttpProxy {
       socket: unknown,
       head: unknown,
       options?: ServerOptions,
-      callback?: ErrorCallback
+      callback?: ErrorCallback<net.Socket>
     ): void
 
     /**
@@ -115,7 +115,10 @@ export namespace HttpProxy {
 
     addListener(event: string, listener: () => void): this
     on(event: string, listener: () => void): this
-    on(event: 'error', listener: ErrorCallback): this
+    on(
+      event: 'error',
+      listener: ErrorCallback<http.ServerResponse | net.Socket>
+    ): this
     on(
       event: 'start',
       listener: (
