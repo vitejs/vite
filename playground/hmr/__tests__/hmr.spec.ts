@@ -146,9 +146,11 @@ if (!isBuild) {
       '>>> vite:beforeUpdate -- update',
       '>>> vite:invalidate -- /invalidation/child.js',
       '[vite] hot updated: /invalidation/child.js',
+      '>>> vite:afterUpdate -- update',
       '>>> vite:beforeUpdate -- update',
       '(invalidation) parent is executing',
-      '[vite] hot updated: /invalidation/parent.js'
+      '[vite] hot updated: /invalidation/parent.js',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
   })
