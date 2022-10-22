@@ -54,6 +54,8 @@ export async function handleHMRUpdate(
   const isEnv =
     config.inlineConfig.envFile !== false &&
     (fileName === '.env' || fileName.startsWith('.env.'))
+
+  const keepAddress = config.server.keepAddress
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${colors.dim(shortFile)}`)
@@ -108,6 +110,11 @@ export async function handleHMRUpdate(
         clear: true,
         timestamp: true
       })
+      if (keepAddress) {
+        server.printReadyInfo()
+        server.printUrls()
+      }
+
       ws.send({
         type: 'full-reload',
         path: config.server.middlewareMode
@@ -128,11 +135,13 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, ws }: ViteDevServer
+  { config, ws, printReadyInfo, printUrls }: ViteDevServer
 ): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false
+
+  const keepAddress = config.server.keepAddress
 
   for (const mod of modules) {
     invalidate(mod, timestamp, invalidatedModules)
@@ -169,6 +178,10 @@ export function updateModules(
       clear: true,
       timestamp: true
     })
+    if (keepAddress) {
+      printReadyInfo()
+      printUrls()
+    }
     ws.send({
       type: 'full-reload'
     })
@@ -186,6 +199,10 @@ export function updateModules(
       .join('\n'),
     { clear: true, timestamp: true }
   )
+  if (keepAddress) {
+    printReadyInfo()
+    printUrls()
+  }
   ws.send({
     type: 'update',
     updates

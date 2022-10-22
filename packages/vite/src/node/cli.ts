@@ -1,4 +1,3 @@
-import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
@@ -105,25 +104,7 @@ cli
 
       await server.listen()
 
-      const info = server.config.logger.info
-
-      // @ts-ignore
-      const viteStartTime = global.__vite_start_time ?? false
-      const startupDurationString = viteStartTime
-        ? colors.dim(
-            `ready in ${colors.reset(
-              colors.bold(Math.ceil(performance.now() - viteStartTime))
-            )} ms`
-          )
-        : ''
-
-      info(
-        `\n  ${colors.green(
-          `${colors.bold('VITE')} v${VERSION}`
-        )}  ${startupDurationString}\n`,
-        { clear: !server.config.logger.hasWarned }
-      )
-
+      server.printReadyInfo()
       server.printUrls()
     } catch (e) {
       createLogger(options.logLevel).error(

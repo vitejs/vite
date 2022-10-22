@@ -42,7 +42,7 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer
 } from '../optimizer'
-import { CLIENT_DIR } from '../constants'
+import { CLIENT_DIR, VERSION } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
@@ -123,6 +123,12 @@ export interface ServerOptions extends CommonServerOptions {
    * in a future minor version without following semver
    */
   force?: boolean
+
+  /**
+   * Always keep address
+   * @default false
+   */
+  keepAddress?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -263,6 +269,11 @@ export interface ViteDevServer {
    * Print server urls
    */
   printUrls(): void
+
+  /**
+   * Print server start ready info
+   */
+  printReadyInfo(): void
   /**
    * Restart the server.
    *
@@ -435,6 +446,24 @@ export async function createServer(
           'cannot print server URLs before server.listen is called.'
         )
       }
+    },
+    printReadyInfo() {
+      const info = server.config.logger.info
+      // @ts-ignore
+      const viteStartTime = global.__vite_start_time ?? false
+      const startupDurationString = viteStartTime
+        ? colors.dim(
+            `ready in ${colors.reset(
+              colors.bold(Math.ceil(performance.now() - viteStartTime))
+            )} ms`
+          )
+        : ''
+      info(
+        `\n  ${colors.green(
+          `${colors.bold('VITE')} v${VERSION}`
+        )}  ${startupDurationString}\n`,
+        { clear: !server.config.logger.hasWarned }
+      )
     },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
