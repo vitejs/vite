@@ -681,6 +681,7 @@ export function tryNodeResolve(
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
+      depsOptimizer && // only required for optimizer so esbuild bundles correctly
       basedir !== root && // root has no peer dep
       !isBuiltin(id) &&
       !id.includes('\0') &&
