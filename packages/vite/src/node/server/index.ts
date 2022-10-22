@@ -123,6 +123,10 @@ export interface ServerOptions extends CommonServerOptions {
    * in a future minor version without following semver
    */
   force?: boolean
+  /**
+   * Whether to print the change log
+   */
+  printLog?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {

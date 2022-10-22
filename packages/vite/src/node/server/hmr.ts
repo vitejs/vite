@@ -46,7 +46,7 @@ export async function handleHMRUpdate(
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
   const fileName = path.basename(file)
-
+  const printLog = config.server.printLog
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === name
@@ -104,10 +104,14 @@ export async function handleHMRUpdate(
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
-        clear: true,
-        timestamp: true
-      })
+      printLog &&
+        config.logger.info(
+          colors.green(`page reload `) + colors.dim(shortFile),
+          {
+            clear: true,
+            timestamp: true
+          }
+        )
       ws.send({
         type: 'full-reload',
         path: config.server.middlewareMode
@@ -133,7 +137,7 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false
-
+  const printLog = config.server.printLog
   for (const mod of modules) {
     invalidate(mod, timestamp, invalidatedModules)
     if (needFullReload) {
@@ -165,10 +169,11 @@ export function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
-      clear: true,
-      timestamp: true
-    })
+    printLog &&
+      config.logger.info(colors.green(`page reload `) + colors.dim(file), {
+        clear: true,
+        timestamp: true
+      })
     ws.send({
       type: 'full-reload'
     })
@@ -180,12 +185,13 @@ export function updateModules(
     return
   }
 
-  config.logger.info(
-    updates
-      .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
-      .join('\n'),
-    { clear: true, timestamp: true }
-  )
+  printLog &&
+    config.logger.info(
+      updates
+        .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
+        .join('\n'),
+      { clear: true, timestamp: true }
+    )
   ws.send({
     type: 'update',
     updates
