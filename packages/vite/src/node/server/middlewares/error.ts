@@ -1,6 +1,6 @@
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import strip from 'strip-ansi'
 import type { ErrorPayload } from 'types/hmrPayload'
 import { pad } from '../../utils'
@@ -26,7 +26,8 @@ export function buildErrorMessage(
   includeStack = true
 ): string {
   if (err.plugin) args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
-  if (err.id) args.push(`  File: ${colors.cyan(err.id)}`)
+  const loc = err.loc ? `:${err.loc.line}:${err.loc.column}` : ''
+  if (err.id) args.push(`  File: ${colors.cyan(err.id)}${loc}`)
   if (err.frame) args.push(colors.yellow(pad(err.frame)))
   if (includeStack && err.stack) args.push(pad(cleanStack(err.stack)))
   return args.join('\n')

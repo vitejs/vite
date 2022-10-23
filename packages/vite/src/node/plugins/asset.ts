@@ -5,6 +5,7 @@ import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
+  OutputAsset,
   OutputOptions,
   PluginContext,
   PreRenderedAsset,
@@ -12,13 +13,21 @@ import type {
 } from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
-import { toOutputFilePathInString } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  toOutputFilePathInJS
+} from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
+
+export const duplicateAssets = new WeakMap<
+  ResolvedConfig,
+  Map<string, OutputAsset>
+>()
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -51,6 +60,10 @@ export function renderAssetUrlInJS(
   opts: NormalizedOutputOptions,
   code: string
 ): MagicString | undefined {
+  const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+    opts.format
+  )
+
   let match: RegExpExecArray | null
   let s: MagicString | undefined
 
@@ -70,21 +83,19 @@ export function renderAssetUrlInJS(
     const file = getAssetFilename(hash, config) || ctx.getFileName(hash)
     chunk.viteMetadata.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
-    const replacement = toOutputFilePathInString(
+    const replacement = toOutputFilePathInJS(
       filename,
       'asset',
       chunk.fileName,
       'js',
       config,
-      opts.format
+      toRelativeRuntime
     )
     const replacementString =
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
         : `"+${replacement.runtime}+"`
-    s.overwrite(match.index, match.index + full.length, replacementString, {
-      contentOnly: true
-    })
+    s.update(match.index, match.index + full.length, replacementString)
   }
 
   // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
@@ -94,21 +105,19 @@ export function renderAssetUrlInJS(
     s ||= new MagicString(code)
     const [full, hash] = match
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-    const replacement = toOutputFilePathInString(
+    const replacement = toOutputFilePathInJS(
       publicUrl,
       'public',
       chunk.fileName,
       'js',
       config,
-      opts.format
+      toRelativeRuntime
     )
     const replacementString =
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
         : `"+${replacement.runtime}+"`
-    s.overwrite(match.index, match.index + full.length, replacementString, {
-      contentOnly: true
-    })
+    s.update(match.index, match.index + full.length, replacementString)
   }
 
   return s
@@ -129,6 +138,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(config, new Map())
       emittedHashMap.set(config, new Set())
+      duplicateAssets.set(config, new Map())
     },
 
     resolveId(id) {
@@ -470,8 +480,9 @@ async function fileToBuiltUrl(
       map.set(contentHash, fileName)
     }
     const emittedSet = emittedHashMap.get(config)!
+    const duplicates = duplicateAssets.get(config)!
+    const name = normalizePath(path.relative(config.root, file))
     if (!emittedSet.has(contentHash)) {
-      const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
         name,
         fileName,
@@ -479,6 +490,14 @@ async function fileToBuiltUrl(
         source: content
       })
       emittedSet.add(contentHash)
+    } else {
+      duplicates.set(name, {
+        name,
+        fileName: map.get(contentHash)!,
+        type: 'asset',
+        source: content,
+        isAsset: true
+      })
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE

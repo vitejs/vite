@@ -18,7 +18,7 @@ import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
-import type { Alias } from 'types/alias'
+import type { Alias } from 'dep-types/alias'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -42,7 +42,9 @@ import {
   normalizePath,
   parseRequest,
   processSrcSet,
-  requireResolveFromRootWithFallback
+  removeDirectQuery,
+  requireResolveFromRootWithFallback,
+  stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -104,7 +106,7 @@ export interface CSSModulesOptions {
     | null
 }
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
@@ -127,7 +129,13 @@ const enum PreprocessLang {
 const enum PureCssLang {
   css = 'css'
 }
-type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
+const enum PostCssDialectLang {
+  sss = 'sugarss'
+}
+type CssLang =
+  | keyof typeof PureCssLang
+  | keyof typeof PreprocessLang
+  | keyof typeof PostCssDialectLang
 
 export const isCSSRequest = (request: string): boolean =>
   cssLangRE.test(request)
@@ -150,10 +158,10 @@ export const removedPureCssFilesCache = new WeakMap<
 
 export const cssEntryFilesCache = new WeakMap<ResolvedConfig, Set<string>>()
 
-const postcssConfigCache = new WeakMap<
-  ResolvedConfig,
-  PostCSSConfigResult | null
->()
+const postcssConfigCache: Record<
+  string,
+  WeakMap<ResolvedConfig, PostCSSConfigResult | null>
+> = {}
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
@@ -345,6 +353,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      css = stripBomTag(css)
 
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
@@ -560,12 +570,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // the legacy build should avoid inserting entry CSS modules here, they
-          // will be collected into `chunk.viteMetadata.importedCss` and injected
-          // later by the `'vite:build-html'` plugin into the `index.html`
-          if (chunk.isEntry) {
-            return null
-          }
+          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+          // and injected later by the `'vite:build-html'` plugin into the `index.html`
+          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+          // But because entry chunk can be imported by dynamic import,
+          // we shouldn't remove the inlined CSS. (#10285)
+
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
           cssString =
@@ -752,8 +762,8 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
+  const postcssConfig = await resolvePostcssConfig(config, getCssDialect(lang))
 
   // 1. plain css that needs no processing
   if (
@@ -827,6 +837,15 @@ async function compileCSS(
 
   // 3. postcss
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
+
+  // for sugarss change parser
+  if (lang === 'sss') {
+    postcssOptions.parser = loadPreprocessor(
+      PostCssDialectLang.sss,
+      config.root
+    )
+  }
+
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
@@ -899,13 +918,14 @@ async function compileCSS(
 
   let postcssResult: PostCSS.Result
   try {
+    const source = removeDirectQuery(id)
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await (await import('postcss'))
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
-        to: id,
-        from: id,
+        to: source,
+        from: source,
         ...(devSourcemap
           ? {
               map: {
@@ -1050,9 +1070,15 @@ interface PostCSSConfigResult {
 }
 
 async function resolvePostcssConfig(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  dialect = 'css'
 ): Promise<PostCSSConfigResult | null> {
-  let result = postcssConfigCache.get(config)
+  postcssConfigCache[dialect] ??= new WeakMap<
+    ResolvedConfig,
+    PostCSSConfigResult | null
+  >()
+
+  let result = postcssConfigCache[dialect].get(config)
   if (result !== undefined) {
     return result
   }
@@ -1089,7 +1115,7 @@ async function resolvePostcssConfig(
     }
   }
 
-  postcssConfigCache.set(config, result)
+  postcssConfigCache[dialect].set(config, result)
   return result
 }
 
@@ -1385,7 +1411,9 @@ export interface StylePreprocessorResults {
   deps: string[]
 }
 
-const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
+const loadedPreprocessors: Partial<
+  Record<PreprocessLang | PostCssDialectLang, any>
+> = {}
 
 // TODO: use dynamic import
 const _require = createRequire(import.meta.url)
@@ -1397,7 +1425,14 @@ function loadPreprocessor(
   lang: PreprocessLang.stylus,
   root: string
 ): typeof Stylus
-function loadPreprocessor(lang: PreprocessLang, root: string): any {
+function loadPreprocessor(
+  lang: PostCssDialectLang.sss,
+  root: string
+): PostCSS.Parser
+function loadPreprocessor(
+  lang: PreprocessLang | PostCssDialectLang,
+  root: string
+): any {
   if (lang in loadedPreprocessors) {
     return loadedPreprocessors[lang]
   }
@@ -1441,8 +1476,8 @@ const scss: SassStylePreprocessor = async (
   const importer = [internalImporter]
   if (options.importer) {
     Array.isArray(options.importer)
-      ? importer.push(...options.importer)
-      : importer.push(options.importer)
+      ? importer.unshift(...options.importer)
+      : importer.unshift(options.importer)
   }
 
   const { content: data, map: additionalMap } = await getSource(
@@ -1808,4 +1843,8 @@ const preProcessors = Object.freeze({
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
+}
+
+function getCssDialect(lang: CssLang | undefined): string {
+  return lang === 'sss' ? 'sss' : 'css'
 }

@@ -364,6 +364,7 @@ export function updateStyle(id: string, content: string): void {
     if (!style) {
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
+      style.setAttribute('data-vite-dev-id', id)
       style.innerHTML = content
       document.head.appendChild(style)
     } else {
@@ -545,10 +546,10 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
+    // tell the server to re-perform hmr propagation from this module as root
     invalidate() {
-      // TODO should tell the server to re-perform hmr propagation
-      // from this module as root
-      location.reload()
+      notifyListeners('vite:invalidate', { path: ownerPath })
+      this.send('vite:invalidate', { path: ownerPath })
     },
 
     // custom events
