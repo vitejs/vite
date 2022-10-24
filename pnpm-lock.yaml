@@ -234,7 +234,7 @@ importers:
       dep-types: link:./src/types
       dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
-      es-module-lexer: ^1.0.5
+      es-module-lexer: 1.0.3
       esbuild: ^0.15.9
       estree-walker: ^3.0.1
       etag: ^1.8.1
@@ -302,7 +302,7 @@ importers:
       dep-types: link:src/types
       dotenv: 14.3.2
       dotenv-expand: 5.1.0
-      es-module-lexer: 1.0.5
+      es-module-lexer: 1.0.3
       estree-walker: 3.0.1
       etag: 1.8.1
       fast-glob: 3.2.12
@@ -4221,8 +4221,8 @@ packages:
       unbox-primitive: 1.0.2
     dev: true
 
-  /es-module-lexer/1.0.5:
-    resolution: {integrity: sha512-oxJ+R1DzAw6j4g1Lx70bIKgfoRCX67C51kH2Mx7J4bS7ZzWxkcivXskFspzgKHUj6JUwUTghQgUPy8zTp6mMBw==}
+  /es-module-lexer/1.0.3:
+    resolution: {integrity: sha512-iC67eXHToclrlVhQfpRawDiF8D8sQxNxmbqw5oebegOaJkyx/w9C/k57/5e6yJR2zIByRt9OXdqX50DV2t6ZKw==}
     dev: true
 
   /es-shim-unscopables/1.0.0:
