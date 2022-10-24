@@ -1,3 +1,11 @@
+## 3.2.0-beta.4 (2022-10-24)
+
+* chore: revert #10196 until Vite 4 (#10574) ([07c0336](https://github.com/vitejs/vite/commit/07c0336)), closes [#10196](https://github.com/vitejs/vite/issues/10196) [#10574](https://github.com/vitejs/vite/issues/10574)
+* fix(css): strip BOM (fixes #10043) (#10577) ([e0463bd](https://github.com/vitejs/vite/commit/e0463bd)), closes [#10043](https://github.com/vitejs/vite/issues/10043) [#10577](https://github.com/vitejs/vite/issues/10577)
+* fix(ssr): resolve with isRequire true (#10569) ([7b81210](https://github.com/vitejs/vite/commit/7b81210)), closes [#10569](https://github.com/vitejs/vite/issues/10569)
+
+
+
 ## 3.2.0-beta.3 (2022-10-20)
 
 * feat: include line and column in error format (#10529) ([d806c4a](https://github.com/vitejs/vite/commit/d806c4a)), closes [#10529](https://github.com/vitejs/vite/issues/10529)
