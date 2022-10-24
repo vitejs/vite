@@ -104,6 +104,10 @@ export interface CSSModulesOptions {
     | 'dashes'
     | 'dashesOnly'
     | null
+  /**
+   * default: true
+   */
+  namedExports?: boolean
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
@@ -319,6 +323,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
 
+  const modulesOptions = config.css?.modules
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
     Array.isArray(rollupOptionsOutput)
@@ -371,7 +376,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const modulesCode =
         modules &&
         !inlined &&
-        dataToEsm(modules, { namedExports: true, preferConst: true })
+        dataToEsm(modules, {
+          namedExports:
+            modulesOptions && 'namedExports' in modulesOptions
+              ? modulesOptions.namedExports
+              : true,
+          preferConst: true
+        })
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
