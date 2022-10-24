@@ -219,6 +219,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
+        if (config.command === 'build') {
+          // #9800 If we cannot resolve the css url, leave a warning.
+          config.logger.warnOnce(
+            `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`
+          )
+        }
         return url
       }
 
