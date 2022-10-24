@@ -34,7 +34,7 @@
   "devDependencies": {
     "cross-spawn": "^7.0.3",
     "kolorist": "^1.6.0",
-    "minimist": "^1.2.6",
+    "minimist": "^1.2.7",
     "prompts": "^2.4.2"
   }
 }

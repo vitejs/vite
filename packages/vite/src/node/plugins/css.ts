@@ -42,7 +42,9 @@ import {
   normalizePath,
   parseRequest,
   processSrcSet,
-  requireResolveFromRootWithFallback
+  removeDirectQuery,
+  requireResolveFromRootWithFallback,
+  stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -217,6 +219,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
+        if (config.command === 'build') {
+          // #9800 If we cannot resolve the css url, leave a warning.
+          config.logger.warnOnce(
+            `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`
+          )
+        }
         return url
       }
 
@@ -351,6 +359,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      css = stripBomTag(css)
 
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
@@ -914,13 +924,14 @@ async function compileCSS(
 
   let postcssResult: PostCSS.Result
   try {
+    const source = removeDirectQuery(id)
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await (await import('postcss'))
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
-        to: id,
-        from: id,
+        to: source,
+        from: source,
         ...(devSourcemap
           ? {
               map: {
