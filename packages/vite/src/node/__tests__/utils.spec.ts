@@ -18,6 +18,18 @@ describe('injectQuery', () => {
         'C:/User/Vite/Project?direct'
       )
     })
+
+    test('absolute file path', () => {
+      expect(injectQuery('C:\\test-file.vue', 'direct')).toEqual(
+        'C:/test-file.vue?direct'
+      )
+    })
+
+    test('absolute file path with parameters', () => {
+      expect(
+        injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct')
+      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
+    })
   }
 
   test('relative path', () => {
