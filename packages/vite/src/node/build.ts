@@ -338,6 +338,18 @@ export function resolveBuildOptions(
         : defaultModulePreload
   }
 
+  // Auto-resolve dependencies if not specified
+  if (raw && raw.lib !== false && raw.rollupOptions?.external == null) {
+    const formats = raw.lib?.formats ?? []
+    const isUMD = formats.includes('umd')
+    const isIIFE = formats.includes('iife')
+    if (!isUMD && !isIIFE) {
+      resolved.rollupOptions.external = [
+        // Resolve all project's dependencies as external
+      ]
+    }
+  }
+
   // handle special build targets
   if (resolved.target === 'modules') {
     resolved.target = ESBUILD_MODULES_TARGET
