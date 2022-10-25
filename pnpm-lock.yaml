@@ -234,7 +234,7 @@ importers:
       dep-types: link:./src/types
       dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
-      es-module-lexer: 1.1.0
+      es-module-lexer: ^1.1.0
       esbuild: ^0.15.9
       estree-walker: ^3.0.1
       etag: ^1.8.1
