@@ -481,7 +481,7 @@ function esbuildScanPlugin(
       // for jsx/tsx, we need to access the content and check for
       // presence of import.meta.glob, since it results in import relationships
       // but isn't crawled by esbuild.
-      build.onLoad({ filter: JS_TYPES_RE }, ({ path: id }) => {
+      build.onLoad({ filter: JS_TYPES_RE }, async ({ path: id }) => {
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
@@ -493,6 +493,16 @@ function esbuildScanPlugin(
         const loader =
           config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
           (ext as Loader)
+
+        if (contents.includes('import.meta.glob')) {
+          return {
+            loader,
+            contents:
+              (
+                await transformGlobImport(contents, id, config.root, resolve)
+              )?.s.toString() || contents
+          }
+        }
 
         return {
           loader,
