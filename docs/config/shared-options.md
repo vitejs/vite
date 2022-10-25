@@ -341,6 +341,14 @@ The directory from which `.env` files are loaded. Can be an absolute path, or a 
 
 See [here](/guide/env-and-mode#env-files) for more about environment files.
 
+**Example:**
+
+```js
+export default defineConfig({
+  envDir: "./envDirName"
+})
+```
+
 ## envPrefix
 
 - **Type:** `string | string[]`
