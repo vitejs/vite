@@ -344,9 +344,13 @@ export function resolveBuildOptions(
     const isUMD = formats.includes('umd')
     const isIIFE = formats.includes('iife')
     if (!isUMD && !isIIFE) {
-      resolved.rollupOptions.external = [
-        // Resolve all project's dependencies as external
-      ]
+      const configRoot = process.cwd()
+      const pkg = lookupFile(configRoot, ['package.json'])
+      const dependencies: string[] =
+        (!!pkg && JSON.parse(pkg)?.dependencies) || []
+      if (dependencies.length > 0) {
+        resolved.rollupOptions.external = dependencies
+      }
     }
   }
 
