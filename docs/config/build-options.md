@@ -209,6 +209,14 @@ Set to `false` to disable writing the bundle to disk. This is mostly used in [pr
 
 By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
+## build.copyPublicDir
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `true`
+
+By default, Vite will copy files from the `publicDir` into the `outDir` on build. Set to `false` to disable this.
+
 ## build.reportCompressedSize
 
 - **Type:** `boolean`
