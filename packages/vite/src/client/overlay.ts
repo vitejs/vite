@@ -9,7 +9,7 @@ const template = /*html*/ `
   left: 0;
   width: 100%;
   height: 100%;
-
+  z-index: 99999;
   --monospace: 'SFMono-Regular', Consolas,
   'Liberation Mono', Menlo, Courier, monospace;
   --red: #ff5555;

@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@babel/runtime": "^7.19.0",
+    "@babel/runtime": "^7.19.4",
     "es5-ext": "0.10.62",
     "normalize.css": "^8.0.1",
     "require-pkg-with-module-field": "link:./require-pkg-with-module-field",
@@ -20,6 +20,7 @@
     "resolve-custom-condition": "link:./custom-condition",
     "resolve-custom-main-field": "link:./custom-main-field",
     "resolve-exports-env": "link:./exports-env",
+    "resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
     "resolve-exports-path": "link:./exports-path",
     "resolve-linked": "workspace:*"
   }

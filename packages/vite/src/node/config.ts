@@ -8,6 +8,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
+import { resolve as importMetaResolve } from 'import-meta-resolve'
 import type { HookHandler, Plugin } from './plugin'
 import type {
   BuildOptions,
@@ -48,7 +49,7 @@ import {
   ENV_ENTRY
 } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
-import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
+import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
@@ -413,37 +414,29 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
+  const filterPlugin = (p: Plugin) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
+  }
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
   // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
   // So we need to separate the worker plugin from the plugin that vite needs to run.
   const rawWorkerUserPlugins = (
     (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
-  ).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  })
+  ).filter(filterPlugin)
 
   // resolve plugins
   const rawUserPlugins = (
     (await asyncFlatten(config.plugins || [])) as Plugin[]
-  ).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  })
+  ).filter(filterPlugin)
+
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
@@ -956,6 +949,7 @@ async function bundleConfigFile(
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
+    mainFields: ['main'],
     sourcemap: 'inline',
     metafile: true,
     define: {
@@ -967,34 +961,38 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            isRequire: !isESM,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            dedupe: [],
-            extensions: DEFAULT_EXTENSIONS,
-            preserveSymlinks: false
-          }
+          // externalize bare imports
+          build.onResolve(
+            { filter: /^[^.].*/ },
+            async ({ path: id, importer, kind }) => {
+              if (kind === 'entry-point' || path.isAbsolute(id)) {
+                return
+              }
 
-          build.onResolve({ filter: /.*/ }, ({ path: id, importer, kind }) => {
-            // externalize bare imports
-            if (id[0] !== '.' && !isAbsolute(id)) {
-              let idFsPath = tryNodeResolve(id, importer, options, false)?.id
-              if (idFsPath && (isESM || kind === 'dynamic-import')) {
-                idFsPath = pathToFileURL(idFsPath).href
+              // partial deno support as `npm:` does not work with esbuild
+              if (id.startsWith('npm:')) {
+                return { external: true }
               }
-              return {
-                path: idFsPath,
-                external: true
+
+              const resolveWithRequire =
+                kind === 'require-call' ||
+                kind === 'require-resolve' ||
+                (kind === 'import-statement' && !isESM)
+
+              let resolved: string
+              if (resolveWithRequire) {
+                const require = createRequire(importer)
+                resolved = require.resolve(id)
+              } else {
+                resolved = await importMetaResolve(
+                  id,
+                  pathToFileURL(importer).href
+                )
               }
+
+              return { path: resolved, external: true }
             }
-          })
+          )
         }
       },
       {
@@ -1114,8 +1112,4 @@ export function isDepsOptimizerEnabled(
     (command === 'build' && disabled === 'build') ||
     (command === 'serve' && disabled === 'dev')
   )
-}
-
-function isAbsolute(id: string) {
-  return path.isAbsolute(id) || path.posix.isAbsolute(id)
 }
