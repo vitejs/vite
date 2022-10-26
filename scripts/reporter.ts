@@ -50,13 +50,13 @@ export default function ReporterPlugin(): Plugin {
     }
   }
 
-  return <Plugin>{
+  return {
     name: 'vite-plugin-inspect',
     apply: 'serve',
     configResolved(config) {
       config.plugins.forEach((plugin) => injectTimeCollect(plugin, config))
     }
-  }
+  } as Plugin
 }
 
 process.on('exit', () => {
