@@ -670,4 +670,28 @@ if (!isBuild) {
       return await el.textContent()
     }, '[wow]1')
   })
+
+  test('keep hmr reload after missing import on server startup', async () => {
+    const file = 'missing-import/a.js'
+    const importCode = "import 'missing-modules'"
+    const unImportCode = `// ${importCode}`
+    const timeout = 2000
+
+    await page.goto(viteTestUrl + '/missing-import/index.html')
+
+    browserLogs.length = 0
+    expect(browserLogs).toMatchObject([])
+
+    editFile(file, (code) => code.replace(importCode, unImportCode))
+
+    await page.waitForNavigation({ timeout })
+    expect(browserLogs.some((msg) => msg.match('missing test'))).toBe(true)
+    browserLogs.length = 0
+
+    editFile(file, (code) => code.replace(unImportCode, importCode))
+
+    await page.waitForNavigation({ timeout })
+    expect(browserLogs.some((msg) => msg.includes('500'))).toBe(true)
+    browserLogs.length = 0
+  })
 }

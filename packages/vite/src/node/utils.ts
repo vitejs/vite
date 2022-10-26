@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
-import { URL, URLSearchParams, pathToFileURL } from 'node:url'
+import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -326,10 +326,7 @@ export function removeDirectQuery(url: string): string {
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
-  if (resolvedUrl.protocol !== 'relative:') {
-    resolvedUrl = pathToFileURL(url)
-  }
+  const resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
   const { search, hash } = resolvedUrl
   let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
