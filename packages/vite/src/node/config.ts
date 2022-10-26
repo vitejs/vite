@@ -515,11 +515,7 @@ export async function resolveConfig(
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
-  const resolvedBuildOptions = resolveBuildOptions(
-    config.build,
-    isBuild,
-    logger
-  )
+  const resolvedBuildOptions = resolveBuildOptions(config.build, logger)
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
