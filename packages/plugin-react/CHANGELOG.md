@@ -1,3 +1,11 @@
+## 2.2.0 (2022-10-26)
+
+* fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
+* fix(plugin-react): update `package.json` (#10479) ([7f45eb5](https://github.com/vitejs/vite/commit/7f45eb5)), closes [#10479](https://github.com/vitejs/vite/issues/10479)
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+
+
+
 ## 2.2.0-beta.0 (2022-10-05)
 
 * fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
