@@ -3,7 +3,7 @@ export { createServer } from './server'
 export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
-export { formatPostcssSourceMap } from './plugins/css'
+export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'
@@ -67,7 +67,11 @@ export type {
   IndexHtmlTransformResult,
   HtmlTagDescriptor
 } from './plugins/html'
-export type { CSSOptions, CSSModulesOptions } from './plugins/css'
+export type {
+  CSSOptions,
+  CSSModulesOptions,
+  PreprocessCSSResult
+} from './plugins/css'
 export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
