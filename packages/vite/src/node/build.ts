@@ -161,6 +161,7 @@ export interface BuildOptions {
   /**
    * Copy the public directory to outDir on write.
    * @default true
+   * @experimental
    */
   copyPublicDir?: boolean
   /**
