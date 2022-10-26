@@ -306,7 +306,6 @@ export function resolveBuildOptions(
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
-    cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
     minify: raw?.ssr ? false : 'esbuild',
@@ -330,6 +329,7 @@ export function resolveBuildOptions(
   // @ts-expect-error Fallback options instead of merging
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
+    cssTarget: false,
     ...userBuildOptions,
     commonjsOptions: {
       include: [/node_modules/],
