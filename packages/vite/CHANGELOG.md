@@ -2,9 +2,9 @@
 
 ### Main Changes
 
-#### Multiple entries for lib mode
+#### Multiple Entries for Library Mode
 
-Lib mode now supports multiple entries:
+Library mode now supports multiple entries:
 ```js
   lib: {
     entry: {
