@@ -1,3 +1,21 @@
+## 3.2.0 (2022-10-26)
+
+* fix(create-vite): remove baseUrl from Svelte configs (#10200) ([9c7a331](https://github.com/vitejs/vite/commit/9c7a331)), closes [#10200](https://github.com/vitejs/vite/issues/10200)
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* chore: remove duplicated logic in vanilla template (#10145) ([f29fef5](https://github.com/vitejs/vite/commit/f29fef5)), closes [#10145](https://github.com/vitejs/vite/issues/10145)
+* chore(create-vite): remove sourcemap, move --noEmit to tsconfig (#10150) ([414d2ef](https://github.com/vitejs/vite/commit/414d2ef)), closes [#10150](https://github.com/vitejs/vite/issues/10150)
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+* chore(deps): update all non-major dependencies (#10488) ([15aa827](https://github.com/vitejs/vite/commit/15aa827)), closes [#10488](https://github.com/vitejs/vite/issues/10488)
+* chore(deps): update dependency vue-tsc to v1 (#10547) ([9d0e0af](https://github.com/vitejs/vite/commit/9d0e0af)), closes [#10547](https://github.com/vitejs/vite/issues/10547)
+* feat: Switch to JSX runtime transform in preact-ts template (#10061) ([bf69063](https://github.com/vitejs/vite/commit/bf69063)), closes [#10061](https://github.com/vitejs/vite/issues/10061)
+* feat(create-vite): support create-vite-extra (#10214) ([8116cbd](https://github.com/vitejs/vite/commit/8116cbd)), closes [#10214](https://github.com/vitejs/vite/issues/10214)
+
+
+
 ## 3.1.0 (2022-09-05)
 
 * refactor(create-vite): migrate to TypeScript (#9941) ([85fa2c8](https://github.com/vitejs/vite/commit/85fa2c8)), closes [#9941](https://github.com/vitejs/vite/issues/9941)
