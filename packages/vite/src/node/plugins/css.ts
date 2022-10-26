@@ -179,7 +179,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
-  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -233,14 +232,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map
-      } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers,
-        server
-      )
+      } = await compileCSS(id, raw, config, urlReplacer)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -744,13 +736,16 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+const configToAtImportResolvers = new WeakMap<
+  ResolvedConfig,
+  CSSAtImportResolvers
+>()
+
 async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers,
-  server?: ViteDevServer
+  urlReplacer?: CssUrlReplacer
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -785,6 +780,12 @@ async function compileCSS(
   let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
+
+  let atImportResolvers = configToAtImportResolvers.get(config)!
+  if (!atImportResolvers) {
+    atImportResolvers = createCSSResolvers(config)
+    configToAtImportResolvers.set(config, atImportResolvers)
+  }
 
   // 2. pre-processors: sass etc.
   if (isPreProcessor(lang)) {
@@ -880,12 +881,15 @@ async function compileCSS(
       })
     )
   }
-  postcssPlugins.push(
-    UrlRewritePostcssPlugin({
-      replacer: urlReplacer,
-      logger: config.logger
-    })
-  )
+
+  if (urlReplacer) {
+    postcssPlugins.push(
+      UrlRewritePostcssPlugin({
+        replacer: urlReplacer,
+        logger: config.logger
+      })
+    )
+  }
 
   if (isModule) {
     postcssPlugins.unshift(
@@ -1011,6 +1015,24 @@ async function compileCSS(
     modules,
     deps
   }
+}
+
+export interface PreprocessCSSResult {
+  code: string
+  map?: SourceMapInput
+  modules?: Record<string, string>
+  deps?: Set<string>
+}
+
+/**
+ * @experimental
+ */
+export async function preprocessCSS(
+  code: string,
+  filename: string,
+  config: ResolvedConfig
+): Promise<PreprocessCSSResult> {
+  return await compileCSS(filename, code, config)
 }
 
 export async function formatPostcssSourceMap(
