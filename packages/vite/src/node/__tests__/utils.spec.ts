@@ -95,7 +95,7 @@ describe('resolveHostname', () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
 
     expect(await resolveHostname(undefined)).toEqual({
-      host: 'localhost',
+      host: '127.0.0.1',
       name: resolved ?? 'localhost'
     })
   })
@@ -104,7 +104,7 @@ describe('resolveHostname', () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
 
     expect(await resolveHostname('localhost')).toEqual({
-      host: 'localhost',
+      host: '127.0.0.1',
       name: resolved ?? 'localhost'
     })
   })
