@@ -69,17 +69,17 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.19.4",
+    "@babel/parser": "^7.19.6",
     "@babel/types": "^7.19.4",
     "@jridgewell/trace-mapping": "^0.3.17",
-    "@rollup/plugin-alias": "^4.0.0",
+    "@rollup/plugin-alias": "^4.0.2",
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-dynamic-import-vars": "^1.4.4",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "14.1.0",
     "@rollup/plugin-typescript": "^8.5.0",
     "@rollup/pluginutils": "^4.2.1",
-    "acorn": "^8.8.0",
+    "acorn": "^8.8.1",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
@@ -91,7 +91,7 @@
     "dep-types": "link:./src/types",
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "1.0.3",
+    "es-module-lexer": "^1.1.0",
     "estree-walker": "^3.0.1",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
@@ -122,7 +122,7 @@
     "tslib": "^2.4.0",
     "types": "link:./types",
     "ufo": "^0.8.6",
-    "ws": "^8.9.0"
+    "ws": "^8.10.0"
   },
   "peerDependencies": {
     "less": "*",
