@@ -2,13 +2,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  getAttrKey,
   getScriptInfo,
   nodeIsElement,
   overwriteAttrValue,
@@ -19,19 +20,15 @@ import {
 } from '../../plugins/html'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
-import {
-  CLIENT_PUBLIC_PATH,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
-} from '../../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
   normalizePath,
-  processSrcSetSync
+  processSrcSetSync,
+  wrapId
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -116,7 +113,7 @@ const processNodeUrl = (
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
     const processedUrl =
-      attr.name === 'srcset'
+      attr.name === 'srcset' && attr.prefix === undefined
         ? processSrcSetSync(url, ({ url }) => replacer(url))
         : replacer(url)
     overwriteAttrValue(s, sourceCodeLocation, processedUrl)
@@ -144,7 +141,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // and ids are properly handled
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
-    proxyModuleUrl = `${VALID_ID_PREFIX}${NULL_BYTE_PLACEHOLDER}${validPath}`
+    proxyModuleUrl = wrapId(proxyModulePath)
   }
 
   const s = new MagicString(html)
@@ -188,11 +185,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    s.overwrite(
+    s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"></script>`,
-      { contentOnly: true }
+      `<script type="module" src="${modulePath}"></script>`
     )
   }
 
@@ -233,10 +229,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
       for (const p of node.attrs) {
-        if (p.value && assetAttrs.includes(p.name)) {
+        const attrKey = getAttrKey(p)
+        if (p.value && assetAttrs.includes(attrKey)) {
           processNodeUrl(
             p,
-            node.sourceCodeLocation!.attrs![p.name],
+            node.sourceCodeLocation!.attrs![attrKey],
             s,
             config,
             htmlPath,
@@ -287,7 +284,7 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // spa-fallback always redirects to /index.html
+    // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {

@@ -2,7 +2,7 @@ import path from 'node:path'
 import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
 import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
 import type { CommonServerOptions } from './http'
@@ -82,7 +82,7 @@ export async function preview(
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
+    await resolveHttpsConfig(config.preview?.https)
   )
   setClientErrorHandler(httpServer, config.logger)
 

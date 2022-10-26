@@ -1,3 +1,24 @@
+## 3.2.0 (2022-10-26)
+
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+* chore(deps): update all non-major dependencies (#10488) ([15aa827](https://github.com/vitejs/vite/commit/15aa827)), closes [#10488](https://github.com/vitejs/vite/issues/10488)
+* fix(plugin-vue): enable ts in template when using tsx in dev mode (#10180) ([a9f9d31](https://github.com/vitejs/vite/commit/a9f9d31)), closes [#10180](https://github.com/vitejs/vite/issues/10180)
+* docs: add missing binding in asset import example (#10414) ([d7ac96d](https://github.com/vitejs/vite/commit/d7ac96d)), closes [#10414](https://github.com/vitejs/vite/issues/10414)
+
+
+
+## 3.2.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(deps): update rollup to `^2.79.1` (#10298) ([2266d83](https://github.com/vitejs/vite/commit/2266d83)), closes [#10298](https://github.com/vitejs/vite/issues/10298)
+* fix(esbuild): transpile with esnext in dev (#10207) ([43b7b78](https://github.com/vitejs/vite/commit/43b7b78)), closes [#10207](https://github.com/vitejs/vite/issues/10207)
+* chore(deps): update dependency slash to v5 (#10317) ([9d87c11](https://github.com/vitejs/vite/commit/9d87c11)), closes [#10317](https://github.com/vitejs/vite/issues/10317)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
 ## 3.1.0 (2022-09-05)
 
 
