@@ -200,6 +200,29 @@ function esbuildScanPlugin(
     external: !entries.includes(path)
   })
 
+  const doTransformGlobImport = async (
+    contents: string,
+    id: string,
+    loader: Loader
+  ) => {
+    let transpiledContents
+    // transpile because `transformGlobImport` only expects js
+    if (loader !== 'js') {
+      transpiledContents = (await transform(contents, { loader })).code
+    } else {
+      transpiledContents = contents
+    }
+
+    const result = await transformGlobImport(
+      transpiledContents,
+      id,
+      config.root,
+      resolve
+    )
+
+    return result?.s.toString() || transpiledContents
+  }
+
   return {
     name: 'vite:dep-scan',
     setup(build) {
@@ -305,26 +328,9 @@ function esbuildScanPlugin(
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {
-                let transpiledContents
-                // transpile because `transformGlobImport` only expects js
-                if (loader !== 'js') {
-                  transpiledContents = (await transform(contents, { loader }))
-                    .code
-                } else {
-                  transpiledContents = contents
-                }
-
                 scripts[key] = {
                   loader: 'js', // since it is transpiled
-                  contents:
-                    (
-                      await transformGlobImport(
-                        transpiledContents,
-                        path,
-                        config.root,
-                        resolve
-                      )
-                    )?.s.toString() || transpiledContents,
+                  contents: await doTransformGlobImport(contents, path, loader),
                   pluginData: {
                     htmlType: { loader }
                   }
@@ -496,11 +502,8 @@ function esbuildScanPlugin(
 
         if (contents.includes('import.meta.glob')) {
           return {
-            loader,
-            contents:
-              (
-                await transformGlobImport(contents, id, config.root, resolve)
-              )?.s.toString() || contents
+            loader: 'js', // since it is transpiled,
+            contents: await doTransformGlobImport(contents, id, loader)
           }
         }
 
