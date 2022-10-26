@@ -50,6 +50,7 @@ import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
+import { mergeConfig } from './publicUtils'
 
 export interface BuildOptions {
   /**
@@ -276,7 +277,6 @@ export interface ResolvedBuildOptions
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
-  isBuild: boolean,
   logger: Logger
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
@@ -301,8 +301,7 @@ export function resolveBuildOptions(
     polyfill: true
   }
 
-  const resolved: ResolvedBuildOptions = {
-    target: 'modules',
+  const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -321,17 +320,26 @@ export function resolveBuildOptions(
     ssrManifest: false,
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
-    watch: null,
-    ...raw,
+    watch: null
+  }
+
+  const userBuildOptions = raw
+    ? mergeConfig(defaultBuildOptions, raw)
+    : defaultBuildOptions
+
+  // @ts-expect-error Fallback options instead of merging
+  const resolved: ResolvedBuildOptions = {
+    target: 'modules',
+    ...userBuildOptions,
     commonjsOptions: {
       include: [/node_modules/],
       extensions: ['.js', '.cjs'],
-      ...raw?.commonjsOptions
+      ...userBuildOptions.commonjsOptions
     },
     dynamicImportVarsOptions: {
       warnOnError: true,
       exclude: [/node_modules/],
-      ...raw?.dynamicImportVarsOptions
+      ...userBuildOptions.dynamicImportVarsOptions
     },
     // Resolve to false | object
     modulePreload:
