@@ -830,7 +830,11 @@ export async function resolveHostname(
   const DEFAULT_NAME = 'localhost'
   let host: string | undefined
 
-  if (optionsHost === undefined || optionsHost === false) {
+  if (
+    optionsHost === undefined ||
+    optionsHost === false ||
+    optionsHost === 'localhost'
+  ) {
     host = DEFAULT_HOST
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
