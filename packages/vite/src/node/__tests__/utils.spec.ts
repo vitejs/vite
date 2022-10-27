@@ -6,6 +6,7 @@ import {
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
+  posToNumber,
   resolveHostname
 } from '../utils'
 
@@ -16,6 +17,18 @@ describe('injectQuery', () => {
       expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toEqual(
         'C:/User/Vite/Project?direct'
       )
+    })
+
+    test('absolute file path', () => {
+      expect(injectQuery('C:\\test-file.vue', 'direct')).toEqual(
+        'C:/test-file.vue?direct'
+      )
+    })
+
+    test('absolute file path with parameters', () => {
+      expect(
+        injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct')
+      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
     })
   }
 
@@ -154,6 +167,25 @@ test('ts import of file with .js and query param', () => {
     'test-file.js.ts?lee=123',
     'test-file.js.tsx?lee=123'
   ])
+})
+
+describe('posToNumber', () => {
+  test('simple', () => {
+    const actual = posToNumber('a\nb', { line: 2, column: 0 })
+    expect(actual).toBe(2)
+  })
+  test('pass though pos', () => {
+    const actual = posToNumber('a\nb', 2)
+    expect(actual).toBe(2)
+  })
+  test('empty line', () => {
+    const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
+    expect(actual).toBe(3)
+  })
+  test('out of range', () => {
+    const actual = posToNumber('a\nb', { line: 4, column: 0 })
+    expect(actual).toBe(4)
+  })
 })
 
 describe('getHash', () => {

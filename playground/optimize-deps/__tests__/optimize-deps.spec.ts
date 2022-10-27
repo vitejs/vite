@@ -58,6 +58,10 @@ test('cjs browser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
 })
 
+test('cjs browser field bare', async () => {
+  expect(await page.textContent('.cjs-browser-field-bare')).toBe('pong')
+})
+
 test('dep from linked dep (lodash-es)', async () => {
   expect(await page.textContent('.deps-linked')).toBe('fooBarBaz')
 })
@@ -144,6 +148,12 @@ test('variable names are reused in different scripts', async () => {
 test('flatten id should generate correctly', async () => {
   expect(await page.textContent('.clonedeep-slash')).toBe('clonedeep-slash')
   expect(await page.textContent('.clonedeep-dot')).toBe('clonedeep-dot')
+})
+
+test('non optimized module is not duplicated', async () => {
+  expect(
+    await page.textContent('.non-optimized-module-is-not-duplicated')
+  ).toBe('from-absolute-path, from-relative-path')
 })
 
 test.runIf(isServe)('error on builtin modules usage', () => {

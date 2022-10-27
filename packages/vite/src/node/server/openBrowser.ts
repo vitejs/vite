@@ -68,17 +68,36 @@ function startBrowserProcess(browser: string | undefined, url: string) {
     process.platform === 'darwin' && (browser === '' || browser === OSX_CHROME)
 
   if (shouldTryOpenChromeWithAppleScript) {
-    try {
-      // Try our best to reuse existing tab
-      // on OS X Google Chrome with AppleScript
-      execSync('ps cax | grep "Google Chrome"')
-      execSync('osascript openChrome.applescript "' + encodeURI(url) + '"', {
-        cwd: join(VITE_PACKAGE_DIR, 'bin'),
-        stdio: 'ignore'
-      })
-      return true
-    } catch (err) {
-      // Ignore errors
+    // Will use the first open browser found from list
+    const supportedChromiumBrowsers = [
+      'Google Chrome Canary',
+      'Google Chrome Dev',
+      'Google Chrome Beta',
+      'Google Chrome',
+      'Microsoft Edge',
+      'Brave Browser',
+      'Vivaldi',
+      'Chromium'
+    ]
+
+    for (const chromiumBrowser of supportedChromiumBrowsers) {
+      try {
+        // Try our best to reuse existing tab
+        // on OS X Google Chrome with AppleScript
+        execSync(`ps cax | grep "${chromiumBrowser}"`)
+        execSync(
+          `osascript openChrome.applescript "${encodeURI(
+            url
+          )}" "${chromiumBrowser}"`,
+          {
+            cwd: join(VITE_PACKAGE_DIR, 'bin'),
+            stdio: 'ignore'
+          }
+        )
+        return true
+      } catch (err) {
+        // Ignore errors
+      }
     }
   }
 

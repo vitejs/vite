@@ -1,5 +1,5 @@
 import { performance } from 'node:perf_hooks'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import { createDebugger, prettifyUrl, timeFrom } from '../../utils'
 
 const logTime = createDebugger('vite:time')
