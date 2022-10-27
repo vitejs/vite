@@ -19,7 +19,7 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, normalizePath } from '../utils'
+import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -249,9 +249,8 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX + id)
   }
-  const origin = config.server?.origin ?? ''
-  const devBase = config.base
-  return origin + devBase + rtn.replace(/^\//, '')
+  const base = joinUrlSegments(config.server?.origin ?? '', config.base)
+  return joinUrlSegments(base, rtn.replace(/^\//, ''))
 }
 
 export function getAssetFilename(
@@ -396,7 +395,7 @@ export function publicFileToBuiltUrl(
 ): string {
   if (config.command !== 'build') {
     // We don't need relative base or renderBuiltUrl support during dev
-    return config.base + url.slice(1)
+    return joinUrlSegments(config.base, url)
   }
   const hash = getHash(url)
   let cache = publicAssetUrlCache.get(config)
