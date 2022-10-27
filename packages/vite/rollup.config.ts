@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
@@ -8,7 +9,10 @@ import MagicString from 'magic-string'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
 import licensePlugin from '../../scripts/rollupLicensePlugin.mjs'
-import pkg from './package.json' assert { type: 'json' }
+
+const pkg = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url)).toString()
+)
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
