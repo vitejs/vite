@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-globals */
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
