@@ -27,7 +27,13 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  copyDir,
+  emptyDir,
+  joinUrlSegments,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -1071,7 +1077,7 @@ export function toOutputFilePathInJS(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   }
-  return config.base + filename
+  return joinUrlSegments(config.base, filename)
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(

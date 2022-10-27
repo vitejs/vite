@@ -39,6 +39,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
+  joinUrlSegments,
   normalizePath,
   parseRequest,
   processSrcSet,
@@ -211,7 +212,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (encodePublicUrlsInCSS(config)) {
             return publicFileToBuiltUrl(url, config)
           } else {
-            return config.base + url.slice(1)
+            return joinUrlSegments(config.base, url)
           }
         }
         const resolved = await resolveUrl(url, importer)
@@ -249,7 +250,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)
-        const devBase = config.base
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
           const isSelfAccepting =
@@ -258,6 +258,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
             const depModules = new Set<string | ModuleNode>()
+            const devBase = config.base
             for (const file of deps) {
               depModules.add(
                 isCSSRequest(file)
@@ -387,10 +388,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const cssContent = await getContentWithSourcemap(css)
-        const devBase = config.base
         const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-            path.posix.join(devBase, CLIENT_PUBLIC_PATH)
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
