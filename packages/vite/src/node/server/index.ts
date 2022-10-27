@@ -79,6 +79,8 @@ import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import type { PersistentCache } from './persistentCache'
+import { createPersistentCache } from './persistentCache'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -301,6 +303,10 @@ export interface ViteDevServer {
    * @internal
    */
   _fsDenyGlob: Matcher
+  /**
+   * @internal
+   */
+  _persistentCache: PersistentCache | null
 }
 
 export interface ResolvedServerUrls {
@@ -452,7 +458,8 @@ export async function createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true })
+    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
+    _persistentCache: await createPersistentCache(config)
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)

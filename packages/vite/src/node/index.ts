@@ -95,6 +95,12 @@ export type {
   TransformResult
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+export type {
+  PersistentCache,
+  PersistentCacheEntry,
+  PersistentCacheManifest,
+  PersistentCacheResult
+} from './server/persistentCache'
 
 export type {
   HMRPayload,

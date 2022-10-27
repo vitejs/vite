@@ -60,6 +60,7 @@ import type { PackageCache } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
+import { version } from './publicUtils'
 
 const debug = createDebugger('vite:config')
 
@@ -288,6 +289,40 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
+  /**
+   * Enables persistent cache for the development server.
+   *
+   * @experimental
+   * @default null
+   */
+  serverPersistentCaching?: ServerPersistentCacheOptions | true
+}
+
+export interface ServerPersistentCacheOptions {
+  /**
+   * Enable or disable persistent cache.
+   */
+  enabled?: boolean
+  /**
+   * Path to the cache directory.
+   */
+  cacheDir?: string
+  /**
+   * Paths to files that should be taken into account when determining whether to clear the cache.
+   * By default will use the vite config file and your package lock file (for npm, yarn or pnpm).
+   */
+  cacheVersionFromFiles?: string[]
+  /**
+   * Manual version string that should be taken into account when determining whether to clear the cache.
+   * Will be added to the result of `cacheVersionFromFiles`.
+   */
+  cacheVersion?: string
+}
+
+export interface ResolvedServerPersistentCacheOptions {
+  cacheDir: string
+  cacheVersionFromFiles: string[]
+  cacheVersion: string
 }
 
 export interface LegacyOptions {
@@ -346,6 +381,7 @@ export type ResolvedConfig = Readonly<
     worker: ResolveWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
+    resolvedServerPersistentCacheOptions: ResolvedServerPersistentCacheOptions | null
   } & PluginHookUtils
 >
 
@@ -612,8 +648,60 @@ export async function resolveConfig(
     getSortedPluginHooks: undefined!
   }
 
+  const resolvedConfigFile = configFile ? normalizePath(configFile) : undefined
+
+  // [experimental] Server persistent caching
+
+  let resolvedServerPersistentCacheOptions: ResolvedServerPersistentCacheOptions | null
+  if (
+    config.experimental?.serverPersistentCaching !== false ||
+    (typeof config.experimental?.serverPersistentCaching === 'object' &&
+      config.experimental.serverPersistentCaching.enabled !== false)
+  ) {
+    const castedToObject =
+      typeof config.experimental?.serverPersistentCaching === 'object'
+        ? config.experimental.serverPersistentCaching
+        : null
+    const dir = castedToObject?.cacheDir
+      ? path.resolve(resolvedRoot, castedToObject.cacheDir)
+      : pkgPath
+      ? path.join(path.dirname(pkgPath), `node_modules/.vite-server-cache`)
+      : path.join(resolvedRoot, `.vite-server-cache`)
+
+    const cacheVersionFromFiles: string[] =
+      castedToObject?.cacheVersionFromFiles ?? []
+
+    if (resolvedConfigFile) {
+      cacheVersionFromFiles.push(resolvedConfigFile)
+    }
+
+    const packageLockFile = lookupFile(
+      resolvedRoot,
+      [
+        'package-lock.json',
+        'yarn.lock',
+        'pnpm-lock.yaml',
+        'bun.lockb',
+        'npm-shrinkwrap.json'
+      ],
+      { pathOnly: true }
+    )
+    if (packageLockFile) {
+      cacheVersionFromFiles.push(packageLockFile)
+    }
+
+    resolvedServerPersistentCacheOptions = {
+      cacheDir: dir,
+      cacheVersionFromFiles,
+      cacheVersion: castedToObject?.cacheVersion ?? ''
+    }
+    resolvedServerPersistentCacheOptions.cacheVersion += version
+  } else {
+    resolvedServerPersistentCacheOptions = null
+  }
+
   const resolvedConfig: ResolvedConfig = {
-    configFile: configFile ? normalizePath(configFile) : undefined,
+    configFile: resolvedConfigFile,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name))
     ),
@@ -662,7 +750,8 @@ export async function resolveConfig(
       ...config.experimental
     },
     getSortedPlugins: undefined!,
-    getSortedPluginHooks: undefined!
+    getSortedPluginHooks: undefined!,
+    resolvedServerPersistentCacheOptions
   }
   const resolved: ResolvedConfig = {
     ...config,

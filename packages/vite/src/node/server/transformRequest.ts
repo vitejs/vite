@@ -228,42 +228,66 @@ async function loadAndTransform(
   const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
 
-  // transform
-  const transformStart = isDebug ? performance.now() : 0
-  const transformResult = await pluginContainer.transform(code, id, {
-    inMap: map,
-    ssr
-  })
-  const originalCode = code
-  if (
-    transformResult == null ||
-    (isObject(transformResult) && transformResult.code == null)
-  ) {
-    // no transform applied, keep code as-is
-    isDebug &&
-      debugTransform(
-        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
-      )
-  } else {
-    isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
-    code = transformResult.code!
-    map = transformResult.map
-  }
+  let result: TransformResult | null = null
 
-  if (map && mod.file) {
-    map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
+  // persistent cache
+
+  const persistentCacheKey =
+    (server._persistentCache?.getKey(code) ?? '') + (options.ssr ? '-ssr' : '')
+
+  if (server._persistentCache) {
+    const cached = await server._persistentCache.read(persistentCacheKey)
+    if (cached) {
+      result = {
+        code: cached.code,
+        map: cached.map,
+        etag: getEtag(cached.code, { weak: true })
+      }
     }
   }
 
-  const result = ssr
-    ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
-    : ({
-        code,
-        map,
-        etag: getEtag(code, { weak: true })
-      } as TransformResult)
+  if (!result) {
+    // transform
+    const transformStart = isDebug ? performance.now() : 0
+    const transformResult = await pluginContainer.transform(code, id, {
+      inMap: map,
+      ssr
+    })
+    const originalCode = code
+    if (
+      transformResult == null ||
+      (isObject(transformResult) && transformResult.code == null)
+    ) {
+      // no transform applied, keep code as-is
+      isDebug &&
+        debugTransform(
+          timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
+        )
+    } else {
+      isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
+      code = transformResult.code!
+      map = transformResult.map
+    }
+
+    if (map && mod.file) {
+      map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
+      if (map.mappings && !map.sourcesContent) {
+        await injectSourcesContent(map, mod.file, logger)
+      }
+    }
+
+    result = ssr
+      ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
+      : ({
+          code,
+          map,
+          etag: getEtag(code, { weak: true })
+        } as TransformResult)
+
+    if (server._persistentCache) {
+      await server._persistentCache.write(persistentCacheKey, file, code, map)
+    }
+  }
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
