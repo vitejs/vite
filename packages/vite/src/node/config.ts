@@ -317,12 +317,17 @@ export interface ServerPersistentCacheOptions {
    * Will be added to the result of `cacheVersionFromFiles`.
    */
   cacheVersion?: string
+  /**
+   * Exclude requests from being cached.
+   */
+  exclude?: (url: string) => boolean
 }
 
 export interface ResolvedServerPersistentCacheOptions {
   cacheDir: string
   cacheVersionFromFiles: string[]
   cacheVersion: string
+  exclude?: (url: string) => boolean
 }
 
 export interface LegacyOptions {
@@ -694,7 +699,8 @@ export async function resolveConfig(
     resolvedServerPersistentCacheOptions = {
       cacheDir: dir,
       cacheVersionFromFiles,
-      cacheVersion: castedToObject?.cacheVersion ?? ''
+      cacheVersion: castedToObject?.cacheVersion ?? '',
+      exclude: castedToObject?.exclude
     }
     resolvedServerPersistentCacheOptions.cacheVersion += version
   } else {
