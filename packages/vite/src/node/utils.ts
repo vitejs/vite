@@ -826,16 +826,10 @@ export interface Hostname {
 export async function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Promise<Hostname> {
-  const DEFAULT_HOST = '127.0.0.1'
-  const DEFAULT_NAME = 'localhost'
   let host: string | undefined
-
-  if (
-    optionsHost === undefined ||
-    optionsHost === false ||
-    optionsHost === 'localhost'
-  ) {
-    host = DEFAULT_HOST
+  if (optionsHost === undefined || optionsHost === false) {
+    // Use a secure default
+    host = 'localhost'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
@@ -843,13 +837,10 @@ export async function resolveHostname(
     host = optionsHost
   }
 
-  // Set host name to default host when possible
-  let name =
-    host === DEFAULT_HOST || host === undefined || wildcardHosts.has(host)
-      ? DEFAULT_NAME
-      : host
+  // Set host name to localhost when possible
+  let name = host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
-  if (host === DEFAULT_HOST) {
+  if (host === 'localhost') {
     // See #8647 for more details.
     const localhostAddr = await getLocalhostAddressIfDiffersFromDNS()
     if (localhostAddr) {

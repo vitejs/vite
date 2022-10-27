@@ -178,8 +178,19 @@ export async function httpServerStart(
     httpServer.on('error', onError)
 
     httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
+      if (host === 'localhost') {
+        httpServer.close()
+        httpServer.listen(port, '0.0.0.0', () => {
+          httpServer.close()
+          httpServer.listen(port, host, () => {
+            httpServer.removeListener('error', onError)
+            resolve(port)
+          })
+        })
+      } else {
+        httpServer.removeListener('error', onError)
+        resolve(port)
+      }
     })
   })
 }
