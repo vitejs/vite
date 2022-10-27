@@ -233,7 +233,8 @@ async function loadAndTransform(
   // persistent cache
 
   const persistentCacheKey =
-    (server._persistentCache?.getKey(code) ?? '') + (options.ssr ? '-ssr' : '')
+    (server._persistentCache?.getKey(id + code) ?? '') +
+    (options.ssr ? '-ssr' : '')
 
   if (
     server._persistentCache &&
