@@ -31,6 +31,7 @@ import {
   asyncFlatten,
   copyDir,
   emptyDir,
+  joinUrlSegments,
   lookupFile,
   normalizePath
 } from './utils'
@@ -1082,7 +1083,7 @@ export function toOutputFilePathInJS(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   }
-  return config.base + filename
+  return joinUrlSegments(config.base, filename)
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(

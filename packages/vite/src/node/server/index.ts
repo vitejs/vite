@@ -550,8 +550,7 @@ export async function createServer(
   }
 
   // base
-  const devBase = config.base
-  if (devBase !== '/') {
+  if (config.base !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
@@ -655,7 +654,6 @@ async function startServer(
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
-  const devBase = server.config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -684,7 +682,8 @@ async function startServer(
   }
 
   if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : devBase
+    const path =
+      typeof options.open === 'string' ? options.open : server.config.base
     openBrowser(
       path.startsWith('http')
         ? path
