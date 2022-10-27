@@ -654,9 +654,10 @@ export async function resolveConfig(
 
   let resolvedServerPersistentCacheOptions: ResolvedServerPersistentCacheOptions | null
   if (
-    config.experimental?.serverPersistentCaching !== false ||
-    (typeof config.experimental?.serverPersistentCaching === 'object' &&
-      config.experimental.serverPersistentCaching.enabled !== false)
+    config.experimental?.serverPersistentCaching != null &&
+    (config.experimental?.serverPersistentCaching !== false ||
+      (typeof config.experimental?.serverPersistentCaching === 'object' &&
+        config.experimental.serverPersistentCaching.enabled !== false))
   ) {
     const castedToObject =
       typeof config.experimental?.serverPersistentCaching === 'object'
