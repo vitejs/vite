@@ -1,7 +1,7 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // @ts-expect-error
-import { version } from '../../package.json'
+import { version } from '../../package.json' assert { type: 'json' }
 
 export const VERSION = version as string
 

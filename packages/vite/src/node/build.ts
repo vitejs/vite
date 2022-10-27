@@ -27,7 +27,13 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  asyncFlatten,
+  copyDir,
+  emptyDir,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -377,15 +383,16 @@ export function resolveBuildOptions(
   return resolved
 }
 
-export function resolveBuildPlugins(config: ResolvedConfig): {
+export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
-} {
+}> {
   const options = config.build
   const { commonjsOptions } = options
   const usePluginCommonjs =
     !Array.isArray(commonjsOptions?.include) ||
     commonjsOptions?.include.length !== 0
+  const rollupOptionsPlugins = options.rollupOptions.plugins
   return {
     pre: [
       completeSystemWrapPlugin(),
@@ -393,9 +400,13 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
-        : [])
+      ...((
+        await asyncFlatten(
+          Array.isArray(rollupOptionsPlugins)
+            ? rollupOptionsPlugins
+            : [rollupOptionsPlugins]
+        )
+      ).filter(Boolean) as Plugin[])
     ],
     post: [
       buildImportAnalysisPlugin(config),

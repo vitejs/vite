@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-globals */
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -8,7 +9,9 @@ import MagicString from 'magic-string'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
 import licensePlugin from '../../scripts/rollupLicensePlugin.mjs'
-import pkg from './package.json'
+import pkg from './package.json' assert { type: 'json' }
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
