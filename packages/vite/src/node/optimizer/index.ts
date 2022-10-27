@@ -33,6 +33,8 @@ export {
   getDepsOptimizer
 } from './optimizer'
 
+export type { default as picomatch } from 'picomatch'
+
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
 const isDebugEnabled = _debug('vite:deps').enabled
