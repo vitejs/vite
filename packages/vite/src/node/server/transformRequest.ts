@@ -235,7 +235,7 @@ async function loadAndTransform(
   const persistentCacheKey =
     (server._persistentCache?.getKey(code) ?? '') + (options.ssr ? '-ssr' : '')
 
-  if (server._persistentCache) {
+  if (server._persistentCache && !code.includes('import.meta.glob')) {
     const cached = await server._persistentCache.read(persistentCacheKey)
     if (cached) {
       result = {
