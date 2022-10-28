@@ -674,8 +674,9 @@ export async function resolveConfig(
       ? path.join(path.dirname(pkgPath), `node_modules/.vite-server-cache`)
       : path.join(resolvedRoot, `.vite-server-cache`)
 
-    const cacheVersionFromFiles: string[] =
+    const cacheVersionFromFiles: string[] = (
       castedToObject?.cacheVersionFromFiles ?? []
+    ).map((file) => path.join(resolvedRoot, file))
 
     if (resolvedConfigFile) {
       cacheVersionFromFiles.push(resolvedConfigFile)
