@@ -64,15 +64,15 @@ export async function createPersistentCache(
 
   // Cache version
 
-  const cacheVersion =
-    (await Promise.all(
-      options.cacheVersionFromFiles.map((file) => {
-        if (!fs.existsSync(file)) {
-          throw new Error(`Persistent cache version file not found: ${file}`)
-        }
-        return fs.promises.readFile(file, 'utf-8')
-      })
-    ).then((codes) => hashCode(codes.join('')))) + options.cacheVersion
+  const hashedVersionFiles = await Promise.all(
+    options.cacheVersionFromFiles.map((file) => {
+      if (!fs.existsSync(file)) {
+        throw new Error(`Persistent cache version file not found: ${file}`)
+      }
+      return fs.promises.readFile(file, 'utf-8')
+    })
+  ).then((codes) => hashCode(codes.join('')))
+  const cacheVersion = `${options.cacheVersion}-${hashedVersionFiles}`
 
   // Manifest
 

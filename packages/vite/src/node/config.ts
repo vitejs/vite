@@ -703,7 +703,8 @@ export async function resolveConfig(
       cacheVersion: castedToObject?.cacheVersion ?? '',
       exclude: castedToObject?.exclude
     }
-    resolvedServerPersistentCacheOptions.cacheVersion += version
+    // Add vite version
+    resolvedServerPersistentCacheOptions.cacheVersion += `(vite:${version})`
   } else {
     resolvedServerPersistentCacheOptions = null
   }
