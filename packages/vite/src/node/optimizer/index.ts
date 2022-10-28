@@ -603,7 +603,7 @@ export async function runOptimizeDeps(
             js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`
           }
         : undefined,
-    target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
+    target: config.build.target ?? isBuild ? undefined : ESBUILD_MODULES_TARGET,
     external,
     logLevel: 'error',
     splitting: true,
