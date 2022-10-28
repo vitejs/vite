@@ -60,7 +60,7 @@ import type { PackageCache } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
-import { version } from './publicUtils'
+import { resolvePersistentCacheOptions } from './server/persistentCache'
 
 const debug = createDebugger('vite:config')
 
@@ -655,66 +655,13 @@ export async function resolveConfig(
 
   const resolvedConfigFile = configFile ? normalizePath(configFile) : undefined
 
-  // [experimental] Server persistent caching
-
-  let resolvedServerPersistentCacheOptions: ResolvedServerPersistentCacheOptions | null
-  if (
-    config.experimental?.serverPersistentCaching != null &&
-    (config.experimental?.serverPersistentCaching !== false ||
-      (typeof config.experimental?.serverPersistentCaching === 'object' &&
-        config.experimental.serverPersistentCaching.enabled !== false))
-  ) {
-    const castedToObject =
-      typeof config.experimental?.serverPersistentCaching === 'object'
-        ? config.experimental.serverPersistentCaching
-        : null
-    const dir = castedToObject?.cacheDir
-      ? path.resolve(resolvedRoot, castedToObject.cacheDir)
-      : pkgPath
-      ? path.join(path.dirname(pkgPath), `node_modules/.vite-server-cache`)
-      : path.join(resolvedRoot, `.vite-server-cache`)
-
-    const cacheVersionFromFiles: string[] = (
-      castedToObject?.cacheVersionFromFiles ?? []
-    ).map((file) => path.join(resolvedRoot, file))
-
-    if (resolvedConfigFile) {
-      cacheVersionFromFiles.push(resolvedConfigFile)
-    }
-
-    const packageLockFile = lookupFile(
+  const resolvedServerPersistentCacheOptions =
+    await resolvePersistentCacheOptions({
+      config,
+      pkgPath,
       resolvedRoot,
-      [
-        'package-lock.json',
-        'yarn.lock',
-        'pnpm-lock.yaml',
-        'bun.lockb',
-        'npm-shrinkwrap.json'
-      ],
-      { pathOnly: true }
-    )
-    if (packageLockFile) {
-      cacheVersionFromFiles.push(packageLockFile)
-    }
-
-    const tsconfigFile = lookupFile(resolvedRoot, ['tsconfig.json'], {
-      pathOnly: true
+      resolvedConfigFile
     })
-    if (tsconfigFile) {
-      cacheVersionFromFiles.push(tsconfigFile)
-    }
-
-    resolvedServerPersistentCacheOptions = {
-      cacheDir: dir,
-      cacheVersionFromFiles,
-      cacheVersion: castedToObject?.cacheVersion ?? '',
-      exclude: castedToObject?.exclude
-    }
-    // Add vite version
-    resolvedServerPersistentCacheOptions.cacheVersion += `(vite:${version})`
-  } else {
-    resolvedServerPersistentCacheOptions = null
-  }
 
   const resolvedConfig: ResolvedConfig = {
     configFile: resolvedConfigFile,

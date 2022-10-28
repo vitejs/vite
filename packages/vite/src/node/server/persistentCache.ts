@@ -2,8 +2,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '../config'
-import { normalizePath } from '../publicUtils'
+import type {
+  InlineConfig,
+  ResolvedConfig,
+  ResolvedServerPersistentCacheOptions
+} from '../config'
+import { normalizePath, version } from '../publicUtils'
+import { lookupFile } from '../utils'
 
 export interface PersistentCache {
   manifest: PersistentCacheManifest
@@ -222,4 +227,78 @@ export async function createPersistentCache(
     write,
     queueManifestWrite
   }
+}
+
+interface ResolveServerPersistentCacheConfigPayload {
+  config: InlineConfig
+  pkgPath: string | undefined
+  resolvedRoot: string
+  resolvedConfigFile: string | undefined
+}
+
+export async function resolvePersistentCacheOptions(
+  payload: ResolveServerPersistentCacheConfigPayload
+): Promise<ResolvedServerPersistentCacheOptions | null> {
+  const { config, resolvedRoot, pkgPath, resolvedConfigFile } = payload
+
+  let resolvedServerPersistentCacheOptions: ResolvedServerPersistentCacheOptions | null
+  if (
+    config.experimental?.serverPersistentCaching != null &&
+    (config.experimental?.serverPersistentCaching !== false ||
+      (typeof config.experimental?.serverPersistentCaching === 'object' &&
+        config.experimental.serverPersistentCaching.enabled !== false))
+  ) {
+    const castedToObject =
+      typeof config.experimental?.serverPersistentCaching === 'object'
+        ? config.experimental.serverPersistentCaching
+        : null
+    const dir = castedToObject?.cacheDir
+      ? path.resolve(resolvedRoot, castedToObject.cacheDir)
+      : pkgPath
+      ? path.join(path.dirname(pkgPath), `node_modules/.vite-server-cache`)
+      : path.join(resolvedRoot, `.vite-server-cache`)
+
+    const cacheVersionFromFiles: string[] = (
+      castedToObject?.cacheVersionFromFiles ?? []
+    ).map((file) => path.join(resolvedRoot, file))
+
+    if (resolvedConfigFile) {
+      cacheVersionFromFiles.push(resolvedConfigFile)
+    }
+
+    const packageLockFile = lookupFile(
+      resolvedRoot,
+      [
+        'package-lock.json',
+        'yarn.lock',
+        'pnpm-lock.yaml',
+        'bun.lockb',
+        'npm-shrinkwrap.json'
+      ],
+      { pathOnly: true }
+    )
+    if (packageLockFile) {
+      cacheVersionFromFiles.push(packageLockFile)
+    }
+
+    const tsconfigFile = lookupFile(resolvedRoot, ['tsconfig.json'], {
+      pathOnly: true
+    })
+    if (tsconfigFile) {
+      cacheVersionFromFiles.push(tsconfigFile)
+    }
+
+    resolvedServerPersistentCacheOptions = {
+      cacheDir: dir,
+      cacheVersionFromFiles,
+      cacheVersion: castedToObject?.cacheVersion ?? '',
+      exclude: castedToObject?.exclude
+    }
+    // Add vite version
+    resolvedServerPersistentCacheOptions.cacheVersion += `(vite:${version})`
+  } else {
+    resolvedServerPersistentCacheOptions = null
+  }
+
+  return resolvedServerPersistentCacheOptions
 }
