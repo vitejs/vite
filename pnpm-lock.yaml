@@ -241,7 +241,6 @@ importers:
       fast-glob: ^3.2.12
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
-      import-meta-resolve: ^2.1.0
       json5: ^2.2.1
       launch-editor-middleware: ^2.6.0
       magic-string: ^0.26.7
@@ -307,7 +306,6 @@ importers:
       etag: 1.8.1
       fast-glob: 3.2.12
       http-proxy: 1.18.1_debug@4.3.4
-      import-meta-resolve: 2.1.0
       json5: 2.2.1
       launch-editor-middleware: 2.6.0
       magic-string: 0.26.7
@@ -5540,6 +5538,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5934,7 +5945,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -6010,10 +6021,6 @@ packages:
   /import-lazy/4.0.0:
     resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
     engines: {node: '>=8'}
-    dev: true
-
-  /import-meta-resolve/2.1.0:
-    resolution: {integrity: sha512-yG9pxkWJVTy4cmRsNWE3ztFdtFuYIV8G4N+cbCkO8b+qngkLyIUhxQFuZ0qJm67+0nUOxjMPT7nfksPKza1v2g==}
     dev: true
 
   /imurmurhash/0.1.4:

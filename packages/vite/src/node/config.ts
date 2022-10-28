@@ -8,7 +8,6 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
-import { resolve as importMetaResolve } from 'import-meta-resolve'
 import type { HookHandler, Plugin } from './plugin'
 import type {
   BuildOptions,
@@ -26,6 +25,7 @@ import {
   createDebugger,
   createFilter,
   dynamicImport,
+  isBuiltin,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -48,8 +48,12 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
-import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
-import { resolvePlugin } from './plugins/resolve'
+import type {
+  InternalResolveOptions,
+  InternalResolveOptionsWithOverrideConditions,
+  ResolveOptions
+} from './plugins/resolve'
+import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
@@ -957,11 +961,31 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
+          const options: InternalResolveOptionsWithOverrideConditions = {
+            root: path.dirname(fileName),
+            isBuild: true,
+            isProduction: true,
+            isRequire: !isESM,
+            preferRelative: false,
+            tryIndex: true,
+            mainFields: [],
+            browserField: false,
+            conditions: [],
+            overrideConditions: ['node'],
+            dedupe: [],
+            extensions: DEFAULT_EXTENSIONS,
+            preserveSymlinks: false
+          }
+
           // externalize bare imports
           build.onResolve(
             { filter: /^[^.].*/ },
             async ({ path: id, importer, kind }) => {
-              if (kind === 'entry-point' || path.isAbsolute(id)) {
+              if (
+                kind === 'entry-point' ||
+                path.isAbsolute(id) ||
+                isBuiltin(id)
+              ) {
                 return
               }
 
@@ -969,24 +993,14 @@ async function bundleConfigFile(
               if (id.startsWith('npm:')) {
                 return { external: true }
               }
-
-              const resolveWithRequire =
-                kind === 'require-call' ||
-                kind === 'require-resolve' ||
-                (kind === 'import-statement' && !isESM)
-
-              let resolved: string
-              if (resolveWithRequire) {
-                const require = createRequire(importer)
-                resolved = require.resolve(id)
-              } else {
-                resolved = await importMetaResolve(
-                  id,
-                  pathToFileURL(importer).href
-                )
+              let idFsPath = tryNodeResolve(id, importer, options, false)?.id
+              if (idFsPath && (isESM || kind === 'dynamic-import')) {
+                idFsPath = pathToFileURL(idFsPath).href
               }
-
-              return { path: resolved, external: true }
+              return {
+                path: idFsPath,
+                external: true
+              }
             }
           )
         }

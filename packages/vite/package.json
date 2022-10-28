@@ -96,7 +96,6 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
     "http-proxy": "^1.18.1",
-    "import-meta-resolve": "^2.1.0",
     "json5": "^2.2.1",
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.26.7",
