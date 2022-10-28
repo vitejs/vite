@@ -232,17 +232,17 @@ async function loadAndTransform(
 
   // persistent cache
 
-  const persistentCacheKey =
-    (server._persistentCache?.getKey(id + code) ?? '') +
-    (options.ssr ? '-ssr' : '')
-
-  if (
+  const includedInPersistentCache =
     server._persistentCache &&
-    !code.includes('import.meta.glob') &&
     (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
       !server.config.resolvedServerPersistentCacheOptions.exclude(url))
-  ) {
-    const cached = await server._persistentCache.read(persistentCacheKey)
+  const persistentCacheKey = includedInPersistentCache
+    ? (server._persistentCache?.getKey(id + code) ?? '') +
+      (options.ssr ? '-ssr' : '')
+    : ''
+
+  if (includedInPersistentCache && !code.includes('import.meta.glob')) {
+    const cached = await server._persistentCache?.read(persistentCacheKey)
     if (cached) {
       result = {
         code: cached.code,
@@ -290,12 +290,8 @@ async function loadAndTransform(
           etag: getEtag(code, { weak: true })
         } as TransformResult)
 
-    if (
-      server._persistentCache &&
-      (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
-        !server.config.resolvedServerPersistentCacheOptions.exclude(url))
-    ) {
-      await server._persistentCache.write(persistentCacheKey, file, code, map)
+    if (includedInPersistentCache) {
+      await server._persistentCache?.write(persistentCacheKey, file, code, map)
     }
   }
 
