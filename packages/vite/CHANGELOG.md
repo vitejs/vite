@@ -38,7 +38,7 @@ Laravel and other backends integrations will now get entries for every asset fil
 
 #### Customizable ErrorOverlay
 
-You can now customize the ErrorOverlay by using [css parts](developer.mozilla.org/en-US/docs/Web/CSS/::part). Check out the PR for more details: [#10234](https://github.com/vitejs/vite/issues/10234).
+You can now customize the ErrorOverlay by using [css parts](https://developer.mozilla.org/en-US/docs/Web/CSS/::part). Check out the PR for more details: [#10234](https://github.com/vitejs/vite/issues/10234).
   
 ### Features
 
