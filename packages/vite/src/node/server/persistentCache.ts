@@ -82,12 +82,19 @@ export async function createPersistentCache(
     try {
       manifest = JSON.parse(await fs.promises.readFile(manifestPath, 'utf-8'))
       if (manifest && manifest.version !== cacheVersion) {
-        // Burst cache if version changed
+        // Bust cache if version changed
+        logger.info(
+          colors.blue(
+            `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
+          )
+        )
         try {
           // Empty the directory
           const files = await fs.promises.readdir(resolvedCacheDir)
           await Promise.all(
-            files.map((file) => fs.promises.unlink(path.join(resolvedCacheDir, file)))
+            files.map((file) =>
+              fs.promises.unlink(path.join(resolvedCacheDir, file))
+            )
           )
         } catch (e) {
           logger.warn(
