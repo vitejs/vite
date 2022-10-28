@@ -697,6 +697,13 @@ export async function resolveConfig(
       cacheVersionFromFiles.push(packageLockFile)
     }
 
+    const tsconfigFile = lookupFile(resolvedRoot, ['tsconfig.json'], {
+      pathOnly: true
+    })
+    if (tsconfigFile) {
+      cacheVersionFromFiles.push(tsconfigFile)
+    }
+
     resolvedServerPersistentCacheOptions = {
       cacheDir: dir,
       cacheVersionFromFiles,
