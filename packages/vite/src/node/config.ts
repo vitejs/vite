@@ -25,6 +25,7 @@ import {
   createDebugger,
   createFilter,
   dynamicImport,
+  isBuiltin,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -980,7 +981,11 @@ async function bundleConfigFile(
           build.onResolve(
             { filter: /^[^.].*/ },
             async ({ path: id, importer, kind }) => {
-              if (kind === 'entry-point' || path.isAbsolute(id)) {
+              if (
+                kind === 'entry-point' ||
+                path.isAbsolute(id) ||
+                isBuiltin(id)
+              ) {
                 return
               }
 
