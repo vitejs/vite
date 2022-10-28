@@ -87,9 +87,7 @@ export async function createPersistentCache(
           // Empty the directory
           const files = await fs.promises.readdir(resolvedCacheDir)
           await Promise.all(
-            files.map((file) =>
-              fs.promises.unlink(path.join(resolvedCacheDir, file))
-            )
+            files.map((file) => fs.promises.unlink(path.join(resolvedCacheDir, file)))
           )
         } catch (e) {
           logger.warn(
