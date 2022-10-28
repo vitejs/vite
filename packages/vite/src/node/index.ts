@@ -98,6 +98,7 @@ export type { HmrOptions, HmrContext } from './server/hmr'
 export type {
   PersistentCache,
   PersistentCacheEntry,
+  PersistentCacheFile,
   PersistentCacheManifest,
   PersistentCacheResult
 } from './server/persistentCache'

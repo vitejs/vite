@@ -3,7 +3,7 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
-import type { SourceDescription, SourceMap } from 'rollup'
+import type { LoadResult, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
 import {
@@ -17,6 +17,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
+import { DEP_VERSION_RE } from '../constants'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
@@ -168,7 +169,50 @@ async function loadAndTransform(
 
   // load
   const loadStart = isDebug ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, { ssr })
+  let loadResult: LoadResult
+
+  const idWithoutHmrFlag = id.replace(DEP_VERSION_RE, '')
+  const loadCacheKey = ssr ? `ssr:${idWithoutHmrFlag}` : idWithoutHmrFlag
+
+  loadResult = await pluginContainer.load(id, { ssr })
+
+  const includedInPersistentCache =
+    server._persistentCache &&
+    (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
+      !server.config.resolvedServerPersistentCacheOptions.exclude(url))
+
+  // Persist load result just in case (for example: svelte component CSS subrequest)
+
+  if (
+    server._persistentCache &&
+    includedInPersistentCache &&
+    idWithoutHmrFlag !== file
+  ) {
+    const fileCacheInfo = (server._persistentCache.manifest.files[file] = server
+      ._persistentCache.manifest.files[file] ?? {
+      relatedModules: {}
+    })
+    if (loadResult != null) {
+      const saveKey = server._persistentCache.getKey(loadCacheKey)
+      let code: string
+      let map: any | null
+      if (typeof loadResult === 'string') {
+        code = loadResult
+      } else {
+        code = loadResult.code
+        map = loadResult.map
+      }
+      await server._persistentCache.write(saveKey, file, code, map)
+      fileCacheInfo.relatedModules[loadCacheKey] = saveKey
+      server._persistentCache.queueManifestWrite()
+    } else {
+      const saveKey = fileCacheInfo.relatedModules[loadCacheKey]
+      if (saveKey) {
+        loadResult = await server._persistentCache.read(saveKey)
+      }
+    }
+  }
+
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
@@ -232,10 +276,6 @@ async function loadAndTransform(
 
   // persistent cache
 
-  const includedInPersistentCache =
-    server._persistentCache &&
-    (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
-      !server.config.resolvedServerPersistentCacheOptions.exclude(url))
   const persistentCacheKey = includedInPersistentCache
     ? (server._persistentCache?.getKey(id + code) ?? '') +
       (options.ssr ? '-ssr' : '')

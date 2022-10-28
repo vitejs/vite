@@ -10,11 +10,13 @@ export interface PersistentCache {
   getKey: (code: string) => string
   read: (key: string) => Promise<PersistentCacheResult | null>
   write: (key: string, file: string, code: string, map?: any) => Promise<void>
+  queueManifestWrite: () => void
 }
 
 export interface PersistentCacheManifest {
   version: string
   modules: Record<string, PersistentCacheEntry>
+  files: Record<string, PersistentCacheFile>
 }
 
 export interface PersistentCacheEntry {
@@ -26,6 +28,10 @@ export interface PersistentCacheEntry {
 export interface PersistentCacheResult {
   code: string
   map?: any
+}
+
+export interface PersistentCacheFile {
+  relatedModules: Record<string, string>
 }
 
 function hashCode(code: string) {
@@ -102,9 +108,10 @@ export async function createPersistentCache(
       )
     }
   }
-  const resolvedManifest = manifest ?? {
+  const resolvedManifest: PersistentCacheManifest = manifest ?? {
     version: cacheVersion,
-    modules: {}
+    modules: {},
+    files: {}
   }
 
   // Manifest write queue
@@ -207,6 +214,7 @@ export async function createPersistentCache(
     manifest: resolvedManifest,
     getKey,
     read,
-    write
+    write,
+    queueManifestWrite
   }
 }
