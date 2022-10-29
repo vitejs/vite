@@ -9,6 +9,7 @@ import type {
 } from '../config'
 import { normalizePath, version } from '../publicUtils'
 import { lookupFile } from '../utils'
+import type { ModuleNode } from './moduleGraph'
 
 export interface PersistentCache {
   manifest: PersistentCacheManifest
@@ -17,6 +18,8 @@ export interface PersistentCache {
   write: (
     key: string,
     id: string,
+    mod: ModuleNode | null,
+    ssr: boolean,
     file: string,
     code: string,
     map?: any
@@ -35,6 +38,12 @@ export interface PersistentCacheEntry {
   file: string
   fileCode: string
   fileMap?: string
+  importedModules?: string[]
+  importedBindings?: Record<string, string[]>
+  acceptedHmrDeps?: string[]
+  acceptedHmrExports?: string[]
+  isSelfAccepting?: boolean
+  ssr: boolean
 }
 
 export interface PersistentCacheResult {
@@ -234,6 +243,8 @@ export async function createPersistentCache(
   async function write(
     key: string,
     id: string,
+    mod: ModuleNode | null,
+    ssr: boolean,
     file: string,
     code: string,
     map?: any
@@ -247,12 +258,41 @@ export async function createPersistentCache(
         await fs.promises.writeFile(fileMap, JSON.stringify(map), 'utf8')
       }
 
-      resolvedManifest.modules[key] = {
+      const entry: PersistentCacheEntry = {
         id,
         file,
         fileCode,
-        fileMap
+        fileMap,
+        ssr
       }
+
+      if (mod) {
+        entry.importedModules = Array.from(mod.importedModules)
+          .map((m) => m.url)
+          .filter(Boolean) as string[]
+        const importedBindings: any = {}
+        if (mod.importedBindings) {
+          for (const k in mod.importedBindings) {
+            const s = mod.importedBindings.get(k)
+            if (s) {
+              importedBindings[k] = Array.from(s)
+            }
+          }
+        }
+        entry.importedBindings = importedBindings
+
+        entry.acceptedHmrDeps = Array.from(mod.acceptedHmrDeps)
+          .map((m) => m.url)
+          .filter(Boolean) as string[]
+
+        entry.acceptedHmrExports = mod.acceptedHmrExports
+          ? (Array.from(mod.acceptedHmrExports).filter(Boolean) as string[])
+          : []
+
+        entry.isSelfAccepting = mod.isSelfAccepting
+      }
+
+      resolvedManifest.modules[key] = entry
 
       queueManifestWrite()
     } catch (e) {

@@ -157,7 +157,8 @@ async function loadAndTransform(
   options: TransformOptions,
   timestamp: number
 ) {
-  const { config, pluginContainer, moduleGraph, watcher } = server
+  const { config, pluginContainer, moduleGraph, watcher, _persistentCache } =
+    server
   const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
@@ -177,23 +178,23 @@ async function loadAndTransform(
   loadResult = await pluginContainer.load(id, { ssr })
 
   const includedInPersistentCache =
-    server._persistentCache &&
+    _persistentCache &&
     (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
       !server.config.resolvedServerPersistentCacheOptions.exclude(url))
 
   // Persist load result just in case (for example: svelte component CSS subrequest)
 
   if (
-    server._persistentCache &&
+    _persistentCache &&
     includedInPersistentCache &&
     idWithoutHmrFlag !== file
   ) {
-    const fileCacheInfo = (server._persistentCache.manifest.files[file] = server
-      ._persistentCache.manifest.files[file] ?? {
-      relatedModules: {}
-    })
+    const fileCacheInfo = (_persistentCache.manifest.files[file] =
+      _persistentCache.manifest.files[file] ?? {
+        relatedModules: {}
+      })
     if (loadResult != null) {
-      const saveKey = server._persistentCache.getKey(loadCacheKey)
+      const saveKey = _persistentCache.getKey(loadCacheKey)
       let code: string
       let map: any | null
       if (typeof loadResult === 'string') {
@@ -202,13 +203,13 @@ async function loadAndTransform(
         code = loadResult.code
         map = loadResult.map
       }
-      await server._persistentCache.write(saveKey, id, file, code, map)
+      await _persistentCache.write(saveKey, id, null, ssr, file, code, map)
       fileCacheInfo.relatedModules[loadCacheKey] = saveKey
-      server._persistentCache.queueManifestWrite()
+      _persistentCache.queueManifestWrite()
     } else {
       const saveKey = fileCacheInfo.relatedModules[loadCacheKey]
       if (saveKey) {
-        loadResult = await server._persistentCache.read(saveKey)
+        loadResult = await _persistentCache.read(saveKey)
       }
     }
   }
@@ -277,13 +278,36 @@ async function loadAndTransform(
   // persistent cache
 
   const persistentCacheKey = includedInPersistentCache
-    ? (server._persistentCache?.getKey(id + code) ?? '') +
-      (options.ssr ? '-ssr' : '')
+    ? (_persistentCache?.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
     : ''
 
   if (includedInPersistentCache && !code.includes('import.meta.glob')) {
-    const cached = await server._persistentCache?.read(persistentCacheKey)
+    const cached = await _persistentCache?.read(persistentCacheKey)
     if (cached) {
+      // Restore module graph node info for HMR
+      const entry = _persistentCache?.manifest.modules[persistentCacheKey]
+      if (
+        entry &&
+        entry.importedModules &&
+        entry.importedBindings &&
+        entry.acceptedHmrDeps &&
+        entry.acceptedHmrExports
+      ) {
+        const importedBindings = new Map<string, Set<string>>()
+        for (const [key, value] of Object.entries(entry.importedBindings)) {
+          importedBindings.set(key, new Set(value))
+        }
+        await moduleGraph.updateModuleInfo(
+          mod,
+          new Set(entry.importedModules),
+          importedBindings,
+          new Set(entry.acceptedHmrDeps),
+          new Set(entry.acceptedHmrExports),
+          entry.isSelfAccepting as boolean,
+          entry.ssr
+        )
+      }
+
       result = {
         code: cached.code,
         map: cached.map,
@@ -331,9 +355,11 @@ async function loadAndTransform(
         } as TransformResult)
 
     if (includedInPersistentCache) {
-      await server._persistentCache?.write(
+      await _persistentCache?.write(
         persistentCacheKey,
         id,
+        mod,
+        ssr,
         file,
         code,
         map
