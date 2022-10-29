@@ -28,7 +28,6 @@
     "dist",
     "client.d.ts",
     "index.cjs",
-    "src/client",
     "types"
   ],
   "engines": {
