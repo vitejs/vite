@@ -128,26 +128,27 @@ export async function createPersistentCache(
           }
           manifest = null
         } else {
-          // Clean up stale cache files (no longer present in manifest)
-          setTimeout(async () => {
-            const files = await fs.promises.readdir(resolvedCacheDir)
-            let cleaned = 0
-            await Promise.all(
-              files.map(async (file) => {
-                const matched = /^c-(.+)(?:-map)?$/.exec(file)
-                if (matched) {
-                  const key = matched[1]
-                  if (!manifest?.modules[key]) {
-                    await fs.promises.unlink(path.join(resolvedCacheDir, file))
-                    cleaned++
-                  }
-                }
-              })
-            )
-            if (cleaned) {
-              logger.info(`Cleaned ${cleaned} stale cache files.`)
-            }
-          }, 10000)
+          // @TODO fix this
+          // // Clean up stale cache files (no longer present in manifest)
+          // setTimeout(async () => {
+          //   const files = await fs.promises.readdir(resolvedCacheDir)
+          //   let cleaned = 0
+          //   await Promise.all(
+          //     files.map(async (file) => {
+          //       const matched = /^c-(.+)(?:-map)?$/.exec(file)
+          //       if (matched) {
+          //         const key = matched[1]
+          //         if (!manifest?.modules[key]) {
+          //           await fs.promises.unlink(path.join(resolvedCacheDir, file))
+          //           cleaned++
+          //         }
+          //       }
+          //     })
+          //   )
+          //   if (cleaned) {
+          //     logger.info(`Cleaned ${cleaned} stale cache files.`)
+          //   }
+          // }, 10000)
         }
       }
     } catch (e) {
