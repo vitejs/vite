@@ -14,7 +14,13 @@ export interface PersistentCache {
   manifest: PersistentCacheManifest
   getKey: (code: string) => string
   read: (key: string) => Promise<PersistentCacheResult | null>
-  write: (key: string, file: string, code: string, map?: any) => Promise<void>
+  write: (
+    key: string,
+    id: string,
+    file: string,
+    code: string,
+    map?: any
+  ) => Promise<void>
   queueManifestWrite: () => void
 }
 
@@ -25,6 +31,7 @@ export interface PersistentCacheManifest {
 }
 
 export interface PersistentCacheEntry {
+  id: string
   file: string
   fileCode: string
   fileMap?: string
@@ -194,7 +201,13 @@ export async function createPersistentCache(
     }
   }
 
-  async function write(key: string, file: string, code: string, map?: any) {
+  async function write(
+    key: string,
+    id: string,
+    file: string,
+    code: string,
+    map?: any
+  ) {
     try {
       const fileCode = path.resolve(resolvedCacheDir, 'c-' + key)
       const fileMap = map ? fileCode + '-map' : undefined
@@ -205,6 +218,7 @@ export async function createPersistentCache(
       }
 
       resolvedManifest.modules[key] = {
+        id,
         file,
         fileCode,
         fileMap
