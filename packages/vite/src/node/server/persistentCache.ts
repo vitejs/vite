@@ -93,29 +93,53 @@ export async function createPersistentCache(
   if (fs.existsSync(manifestPath)) {
     try {
       manifest = JSON.parse(await fs.promises.readFile(manifestPath, 'utf-8'))
-      if (manifest && manifest.version !== cacheVersion) {
-        // Bust cache if version changed
-        logger.info(
-          colors.blue(
-            `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
-          )
-        )
-        try {
-          // Empty the directory
-          const files = await fs.promises.readdir(resolvedCacheDir)
-          await Promise.all(
-            files.map((file) =>
-              fs.promises.unlink(path.join(resolvedCacheDir, file))
+      if (manifest) {
+        if (manifest.version !== cacheVersion) {
+          // Bust cache if version changed
+          logger.info(
+            colors.blue(
+              `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
             )
           )
-        } catch (e) {
-          logger.warn(
-            colors.yellow(
-              `Failed to empty persistent cache directory '${resolvedCacheDir}': ${e.message}`
+          try {
+            // Empty the directory
+            const files = await fs.promises.readdir(resolvedCacheDir)
+            await Promise.all(
+              files.map((file) =>
+                fs.promises.unlink(path.join(resolvedCacheDir, file))
+              )
             )
-          )
+            logger.info(`Deleted ${files.length} files.`)
+          } catch (e) {
+            logger.warn(
+              colors.yellow(
+                `Failed to empty persistent cache directory '${resolvedCacheDir}': ${e.message}`
+              )
+            )
+          }
+          manifest = null
+        } else {
+          // Clean up stale cache files (no longer present in manifest)
+          setTimeout(async () => {
+            const files = await fs.promises.readdir(resolvedCacheDir)
+            let cleaned = 0
+            await Promise.all(
+              files.map(async (file) => {
+                const matched = /^c-(.+)(?:-map)?$/.exec(file)
+                if (matched) {
+                  const key = matched[1]
+                  if (!manifest?.modules[key]) {
+                    await fs.promises.unlink(path.join(resolvedCacheDir, file))
+                    cleaned++
+                  }
+                }
+              })
+            )
+            if (cleaned) {
+              logger.info(`Cleaned ${cleaned} stale cache files.`)
+            }
+          }, 10000)
         }
-        manifest = null
       }
     } catch (e) {
       logger.warn(
