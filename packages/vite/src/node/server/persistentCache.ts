@@ -135,24 +135,30 @@ export async function createPersistentCache(
 
   let isManifestWriteQueued = false
   let isManifestWriting = false
+  let manifestWriteTimer: any = null
 
   function queueManifestWrite() {
     if (isManifestWriteQueued) {
       return
     }
-
+    isManifestWriteQueued = true
     if (isManifestWriting) {
-      isManifestWriteQueued = true
       return
     }
 
-    setTimeout(async () => {
+    writeManifest()
+  }
+
+  function writeManifest() {
+    clearTimeout(manifestWriteTimer)
+    manifestWriteTimer = setTimeout(async () => {
       isManifestWriting = true
       try {
         await fs.promises.writeFile(
           manifestPath,
           JSON.stringify(resolvedManifest, null, 2)
         )
+        logger.info(colors.blue(`Persistent cache manifest saved`))
       } catch (e) {
         logger.warn(
           colors.yellow(
@@ -164,9 +170,9 @@ export async function createPersistentCache(
 
       if (isManifestWriteQueued) {
         isManifestWriteQueued = false
-        queueManifestWrite()
+        writeManifest()
       }
-    }, 500)
+    }, 1000)
   }
 
   // Methods
