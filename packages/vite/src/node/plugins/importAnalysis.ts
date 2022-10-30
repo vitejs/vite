@@ -34,6 +34,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isJSRequest,
+  joinUrlSegments,
   moduleListContains,
   normalizePath,
   prettifyUrl,
@@ -377,7 +378,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // prepend base (dev base is guaranteed to have ending slash)
-          url = base + url.replace(/^\//, '')
+          url = joinUrlSegments(base, url.replace(/^\//, ''))
         }
 
         return [url, resolved.id]
