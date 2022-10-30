@@ -50,15 +50,12 @@ export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
 type TSConfigJSON = {
   extends?: string
   compilerOptions?: {
-    alwaysStrict?: boolean
-    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
-    jsx?: 'react' | 'react-jsx' | 'react-jsxdev' | 'preserve'
+    target?: string
     jsxFactory?: string
     jsxFragmentFactory?: string
-    jsxImportSource?: string
-    preserveValueImports?: boolean
-    target?: string
     useDefineForClassFields?: boolean
+    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    preserveValueImports?: boolean
   }
   [key: string]: any
 }
@@ -95,15 +92,12 @@ export async function transformWithEsbuild(
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
-      'alwaysStrict',
-      'importsNotUsedAsValues',
-      'jsx',
+      'target',
       'jsxFactory',
       'jsxFragmentFactory',
-      'jsxImportSource',
-      'preserveValueImports',
-      'target',
-      'useDefineForClassFields'
+      'useDefineForClassFields',
+      'importsNotUsedAsValues',
+      'preserveValueImports'
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
