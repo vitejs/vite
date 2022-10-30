@@ -15,14 +15,19 @@ export function htmlFallbackMiddleware(
       {
         from: /\/$/,
         to({ parsedUrl }: any) {
-          const rewritten =
-            decodeURIComponent(parsedUrl.pathname) + 'index.html'
+          const decodedUrl = decodeURIComponent(parsedUrl.pathname)
+          const rewritten = decodedUrl + 'index.html'
 
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
           } else {
             if (spaFallback) {
               return `/index.html`
+            } else {
+              // multi-page app, get the corresponding folder name from the path
+              // and concatenate it with `/index.html`
+              const secondSlashIndex = decodedUrl.indexOf('/', 1)
+              return decodedUrl.slice(0, secondSlashIndex) + '/index.html'
             }
           }
         }
