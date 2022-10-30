@@ -12,6 +12,9 @@
     "preview:relative-base": "vite --config ./vite.config-relative-base.js preview",
     "dev:runtime-base": "vite --config ./vite.config-runtime-base.js dev",
     "build:runtime-base": "vite --config ./vite.config-runtime-base.js build",
-    "preview:runtime-base": "vite --config ./vite.config-runtime-base.js preview"
+    "preview:runtime-base": "vite --config ./vite.config-runtime-base.js preview",
+    "dev:without-trailing-slash": "vite --config ./vite.config-without-trailing-slash.js dev",
+    "build:without-trailing-slash": "vite --config ./vite.config-without-trailing-slash.js build",
+    "preview:without-trailing-slash": "vite --config ./vite.config-without-trailing-slash.js preview"
   }
 }
