@@ -39,6 +39,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  stripBase,
   stripBomTag,
   timeFrom,
   transformStableResult,
@@ -539,7 +540,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to unwrap and normalize away base
-          const hmrUrl = unwrapId(url.replace(base, '/'))
+          const hmrUrl = unwrapId(stripBase(url, base))
           importedUrls.add(hmrUrl)
 
           if (enablePartialAccept && importedBindings) {

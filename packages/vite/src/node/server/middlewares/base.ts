@@ -1,24 +1,22 @@
 import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '..'
-import { joinUrlSegments } from '../../utils'
+import { joinUrlSegments, stripBase } from '../../utils'
 
 // this middleware is only active when (config.base !== '/')
 
 export function baseMiddleware({
   config
 }: ViteDevServer): Connect.NextHandleFunction {
-  const devBase = config.base.endsWith('/') ? config.base : config.base + '/'
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
     const parsed = new URL(url, 'http://vitejs.dev')
     const path = parsed.pathname || '/'
 
-    if (path.startsWith(devBase)) {
+    if (path.startsWith(config.base)) {
       // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
-      req.url = url.replace(devBase, '/')
+      req.url = stripBase(url, config.base)
       return next()
     }
 
@@ -36,7 +34,10 @@ export function baseMiddleware({
       return
     } else if (req.headers.accept?.includes('text/html')) {
       // non-based page visit
-      const redirectPath = joinUrlSegments(config.base, url)
+      const redirectPath =
+        url + '/' !== config.base
+          ? joinUrlSegments(config.base, url)
+          : config.base
       res.writeHead(404, {
         'Content-Type': 'text/html'
       })
