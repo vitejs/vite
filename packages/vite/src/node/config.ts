@@ -827,14 +827,6 @@ export function resolveBaseUrl(
     }
   }
 
-  // ensure ending slash
-  if (!base.endsWith('/')) {
-    logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
-    )
-    base += '/'
-  }
-
   return base
 }
 
