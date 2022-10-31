@@ -39,10 +39,13 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
+  joinUrlSegments,
   normalizePath,
   parseRequest,
   processSrcSet,
-  requireResolveFromRootWithFallback
+  removeDirectQuery,
+  requireResolveFromRootWithFallback,
+  stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -177,7 +180,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
-  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -210,12 +212,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (encodePublicUrlsInCSS(config)) {
             return publicFileToBuiltUrl(url, config)
           } else {
-            return config.base + url.slice(1)
+            return joinUrlSegments(config.base, url)
           }
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
           return fileToUrl(resolved, config, this)
+        }
+        if (config.command === 'build') {
+          // #9800 If we cannot resolve the css url, leave a warning.
+          config.logger.warnOnce(
+            `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`
+          )
         }
         return url
       }
@@ -225,14 +233,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map
-      } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers,
-        server
-      )
+      } = await compileCSS(id, raw, config, urlReplacer)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -249,7 +250,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)
-        const devBase = config.base
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
           const isSelfAccepting =
@@ -258,6 +258,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
             const depModules = new Set<string | ModuleNode>()
+            const devBase = config.base
             for (const file of deps) {
               depModules.add(
                 isCSSRequest(file)
@@ -352,6 +353,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      css = stripBomTag(css)
+
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
 
@@ -385,10 +388,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const cssContent = await getContentWithSourcemap(css)
-        const devBase = config.base
         const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-            path.posix.join(devBase, CLIENT_PUBLIC_PATH)
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
@@ -566,12 +568,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // the legacy build should avoid inserting entry CSS modules here, they
-          // will be collected into `chunk.viteMetadata.importedCss` and injected
-          // later by the `'vite:build-html'` plugin into the `index.html`
-          if (chunk.isEntry && !config.build.lib) {
-            return null
-          }
+          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+          // and injected later by the `'vite:build-html'` plugin into the `index.html`
+          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+          // But because entry chunk can be imported by dynamic import,
+          // we shouldn't remove the inlined CSS. (#10285)
+
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
           cssString =
@@ -734,13 +736,16 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+const configToAtImportResolvers = new WeakMap<
+  ResolvedConfig,
+  CSSAtImportResolvers
+>()
+
 async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers,
-  server?: ViteDevServer
+  urlReplacer?: CssUrlReplacer
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -775,6 +780,12 @@ async function compileCSS(
   let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
+
+  let atImportResolvers = configToAtImportResolvers.get(config)!
+  if (!atImportResolvers) {
+    atImportResolvers = createCSSResolvers(config)
+    configToAtImportResolvers.set(config, atImportResolvers)
+  }
 
   // 2. pre-processors: sass etc.
   if (isPreProcessor(lang)) {
@@ -870,17 +881,22 @@ async function compileCSS(
       })
     )
   }
-  postcssPlugins.push(
-    UrlRewritePostcssPlugin({
-      replacer: urlReplacer,
-      logger: config.logger
-    })
-  )
+
+  if (urlReplacer) {
+    postcssPlugins.push(
+      UrlRewritePostcssPlugin({
+        replacer: urlReplacer,
+        logger: config.logger
+      })
+    )
+  }
 
   if (isModule) {
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        // TODO: convert null to undefined (`null` should be removed from `CSSModulesOptions.localsConvention`)
+        localsConvention: modulesOptions?.localsConvention ?? undefined,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
@@ -914,13 +930,14 @@ async function compileCSS(
 
   let postcssResult: PostCSS.Result
   try {
+    const source = removeDirectQuery(id)
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await (await import('postcss'))
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
-        to: id,
-        from: id,
+        to: source,
+        from: source,
         ...(devSourcemap
           ? {
               map: {
@@ -1000,6 +1017,24 @@ async function compileCSS(
     modules,
     deps
   }
+}
+
+export interface PreprocessCSSResult {
+  code: string
+  map?: SourceMapInput
+  modules?: Record<string, string>
+  deps?: Set<string>
+}
+
+/**
+ * @experimental
+ */
+export async function preprocessCSS(
+  code: string,
+  filename: string,
+  config: ResolvedConfig
+): Promise<PreprocessCSSResult> {
+  return await compileCSS(filename, code, config)
 }
 
 export async function formatPostcssSourceMap(

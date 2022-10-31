@@ -27,7 +27,13 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  copyDir,
+  emptyDir,
+  joinUrlSegments,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -50,6 +56,7 @@ import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
+import { mergeConfig } from './publicUtils'
 
 export interface BuildOptions {
   /**
@@ -158,6 +165,12 @@ export interface BuildOptions {
    * @default true when outDir is a sub directory of project root
    */
   emptyOutDir?: boolean | null
+  /**
+   * Copy the public directory to outDir on write.
+   * @default true
+   * @experimental
+   */
+  copyPublicDir?: boolean
   /**
    * Whether to emit a manifest.json under assets dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
@@ -270,7 +283,6 @@ export interface ResolvedBuildOptions
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
-  isBuild: boolean,
   logger: Logger
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
@@ -295,36 +307,45 @@ export function resolveBuildOptions(
     polyfill: true
   }
 
-  const resolved: ResolvedBuildOptions = {
-    target: 'modules',
+  const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
-    cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
     minify: raw?.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
+    copyPublicDir: true,
     manifest: false,
     lib: false,
     ssr: false,
     ssrManifest: false,
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
-    watch: null,
-    ...raw,
+    watch: null
+  }
+
+  const userBuildOptions = raw
+    ? mergeConfig(defaultBuildOptions, raw)
+    : defaultBuildOptions
+
+  // @ts-expect-error Fallback options instead of merging
+  const resolved: ResolvedBuildOptions = {
+    target: 'modules',
+    cssTarget: false,
+    ...userBuildOptions,
     commonjsOptions: {
       include: [/node_modules/],
       extensions: ['.js', '.cjs'],
-      ...raw?.commonjsOptions
+      ...userBuildOptions.commonjsOptions
     },
     dynamicImportVarsOptions: {
       warnOnError: true,
       exclude: [/node_modules/],
-      ...raw?.dynamicImportVarsOptions
+      ...userBuildOptions.dynamicImportVarsOptions
     },
     // Resolve to false | object
     modulePreload:
@@ -687,7 +708,11 @@ function prepareOutDir(
         .filter(Boolean)
       emptyDir(outDir, [...skipDirs, '.git'])
     }
-    if (config.publicDir && fs.existsSync(config.publicDir)) {
+    if (
+      config.build.copyPublicDir &&
+      config.publicDir &&
+      fs.existsSync(config.publicDir)
+    ) {
       copyDir(config.publicDir, outDir)
     }
   }
@@ -1052,7 +1077,7 @@ export function toOutputFilePathInJS(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   }
-  return config.base + filename
+  return joinUrlSegments(config.base, filename)
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(

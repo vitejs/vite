@@ -1,14 +1,13 @@
 {
   "name": "@vitejs/plugin-react",
-  "version": "2.2.0-beta.0",
+  "version": "2.2.0",
   "license": "MIT",
   "author": "Evan You",
   "contributors": [
     "Alec Larson"
   ],
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -39,11 +38,11 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react#readme",
   "dependencies": {
-    "@babel/core": "^7.19.3",
+    "@babel/core": "^7.19.6",
     "@babel/plugin-transform-react-jsx": "^7.19.0",
     "@babel/plugin-transform-react-jsx-development": "^7.18.6",
     "@babel/plugin-transform-react-jsx-self": "^7.18.6",
-    "@babel/plugin-transform-react-jsx-source": "^7.18.6",
+    "@babel/plugin-transform-react-jsx-source": "^7.19.6",
     "magic-string": "^0.26.7",
     "react-refresh": "^0.14.0"
   },

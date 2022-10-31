@@ -48,7 +48,11 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
-import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
+import type {
+  InternalResolveOptions,
+  InternalResolveOptionsWithOverrideConditions,
+  ResolveOptions
+} from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -515,11 +519,7 @@ export async function resolveConfig(
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
-  const resolvedBuildOptions = resolveBuildOptions(
-    config.build,
-    isBuild,
-    logger
-  )
+  const resolvedBuildOptions = resolveBuildOptions(config.build, logger)
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -949,6 +949,7 @@ async function bundleConfigFile(
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
+    mainFields: ['main'],
     sourcemap: 'inline',
     metafile: true,
     define: {
@@ -960,7 +961,7 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptions = {
+          const options: InternalResolveOptionsWithOverrideConditions = {
             root: path.dirname(fileName),
             isBuild: true,
             isProduction: true,
@@ -970,15 +971,25 @@ async function bundleConfigFile(
             mainFields: [],
             browserField: false,
             conditions: [],
+            overrideConditions: ['node'],
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
             preserveSymlinks: false
           }
 
-          build.onResolve({ filter: /.*/ }, ({ path: id, importer, kind }) => {
-            // externalize bare imports
-            if (id[0] !== '.' && !path.isAbsolute(id) && !isBuiltin(id)) {
-              // partial deno support as `npm:` does not work in `tryNodeResolve`
+          // externalize bare imports
+          build.onResolve(
+            { filter: /^[^.].*/ },
+            async ({ path: id, importer, kind }) => {
+              if (
+                kind === 'entry-point' ||
+                path.isAbsolute(id) ||
+                isBuiltin(id)
+              ) {
+                return
+              }
+
+              // partial deno support as `npm:` does not work with esbuild
               if (id.startsWith('npm:')) {
                 return { external: true }
               }
@@ -991,7 +1002,7 @@ async function bundleConfigFile(
                 external: true
               }
             }
-          })
+          )
         }
       },
       {

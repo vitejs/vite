@@ -28,6 +28,13 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
+const filterDuplicateOptions = <T extends object>(options: T) => {
+  for (const [key, value] of Object.entries(options)) {
+    if (Array.isArray(value)) {
+      options[key as keyof T] = value[value.length - 1]
+    }
+  }
+}
 /**
  * removing global flags before passing as command specific sub-configs
  */
@@ -76,6 +83,7 @@ cli
     `[boolean] force the optimizer to ignore the cache and re-bundle`
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     // output structure is preserved even after bundling so require()
     // is ok here
     const { createServer } = await import('./server')
@@ -164,6 +172,7 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
+    filterDuplicateOptions(options)
     const { build } = await import('./build')
     const buildOptions: BuildOptions = cleanOptions(options)
 
@@ -196,6 +205,7 @@ cli
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      filterDuplicateOptions(options)
       const { optimizeDeps } = await import('./optimizer')
       try {
         const config = await resolveConfig(
@@ -226,6 +236,7 @@ cli
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .action(
     async (
       root: string,
@@ -235,8 +246,10 @@ cli
         https?: boolean
         open?: boolean | string
         strictPort?: boolean
+        outDir?: string
       } & GlobalCLIOptions
     ) => {
+      filterDuplicateOptions(options)
       const { preview } = await import('./preview')
       try {
         const server = await preview({
@@ -245,6 +258,9 @@ cli
           configFile: options.config,
           logLevel: options.logLevel,
           mode: options.mode,
+          build: {
+            outDir: options.outDir
+          },
           preview: {
             port: options.port,
             strictPort: options.strictPort,
