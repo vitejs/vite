@@ -44,7 +44,6 @@ export const virtual = _virtual + '${num}';`
     configureServer(server) {
       server.ws.on('virtual:increment', async () => {
         const mod = await server.moduleGraph.getModuleByUrl('\0virtual:file')
-        console.log(mod)
         if (mod) {
           num++
           server.reloadModule(mod)

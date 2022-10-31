@@ -474,6 +474,10 @@ export async function createPluginContainer(
       this.filename = filename
       this.originalCode = code
       if (inMap) {
+        if (isDebugSourcemapCombineFocused) {
+          // @ts-expect-error inject name for debug purpose
+          inMap.name = '$inMap'
+        }
         this.sourcemapChain.push(inMap)
       }
     }

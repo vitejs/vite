@@ -7,6 +7,7 @@ import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
 import {
+  blankReplacer,
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
@@ -201,6 +202,8 @@ async function loadAndTransform(
           convertSourceMap.fromSource(code) ||
           convertSourceMap.fromMapFileSource(code, path.dirname(file))
         )?.toObject()
+
+        code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
         logger.warn(`Failed to load source map for ${url}.`, {
           timestamp: true
