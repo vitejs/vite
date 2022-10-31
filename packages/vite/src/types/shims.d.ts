@@ -8,10 +8,6 @@ declare module 'cors' {
   export = cors
 }
 
-declare module 'selfsigned' {
-  export function generate(attrs: any, options: any, done?: any): any
-}
-
 declare module 'http-proxy' {
   const proxy: any
   export = proxy
@@ -27,18 +23,6 @@ declare module 'launch-editor-middleware' {
   export = plugin
 }
 
-declare module 'postcss-load-config' {
-  import type { Plugin, ProcessOptions } from 'postcss'
-  function load(
-    inline: any,
-    root: string
-  ): Promise<{
-    options: ProcessOptions
-    plugins: Plugin[]
-  }>
-  export = load
-}
-
 declare module 'postcss-import' {
   import type { Plugin } from 'postcss'
   const plugin: (options: {
@@ -50,45 +34,6 @@ declare module 'postcss-import' {
     nameLayer: (index: number, rootFilename: string) => string
   }) => Plugin
   export = plugin
-}
-
-declare module 'postcss-modules' {
-  import type { Plugin } from 'postcss'
-  const plugin: (options: any) => Plugin
-  export = plugin
-}
-
-declare module '@rollup/plugin-dynamic-import-vars' {
-  import type { Plugin } from 'rollup'
-  import type { BaseNode } from 'estree'
-
-  interface Options {
-    include?: string | RegExp | (string | RegExp)[]
-    exclude?: string | RegExp | (string | RegExp)[]
-    warnOnError?: boolean
-  }
-
-  const p: (o?: Options) => Plugin
-  export default p
-  export function dynamicImportToGlob(
-    ast: BaseNode,
-    source: string
-  ): null | string
-}
-
-declare module 'rollup-plugin-web-worker-loader' {
-  import type { Plugin } from 'rollup'
-
-  interface Options {
-    targetPlatform?: string
-    pattern?: RegExp
-    extensions?: string[]
-    sourcemap?: boolean
-    inline?: boolean
-  }
-
-  const p: (o?: Options) => Plugin
-  export default p
 }
 
 // LESS' types somewhat references this which doesn't make sense in Node,

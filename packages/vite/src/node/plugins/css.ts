@@ -895,6 +895,8 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        // TODO: convert null to undefined (`null` should be removed from `CSSModulesOptions.localsConvention`)
+        localsConvention: modulesOptions?.localsConvention ?? undefined,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
