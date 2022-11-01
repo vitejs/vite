@@ -182,7 +182,12 @@ async function loadAndTransform(
     (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
       !server.config.resolvedServerPersistentCacheOptions.exclude(url))
 
-  // Persist load result just in case (for example: svelte component CSS subrequest)
+  // Persist load result just in case it depends on a previous `transform` call
+  // that got cached (aka skipped)
+  // For example: svelte component CSS subrequest
+  // - `transform` is called on `MyComponent.svelte` => saves `<style>` section into
+  // an internal cache as side effect
+  // - `load` is called on `MyComponent.svelte?css` => reads the plugin internal cache
 
   if (
     _persistentCache &&
