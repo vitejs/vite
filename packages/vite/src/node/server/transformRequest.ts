@@ -179,8 +179,8 @@ async function loadAndTransform(
 
   const includedInPersistentCache =
     _persistentCache &&
-    (!server.config.resolvedServerPersistentCacheOptions?.exclude ||
-      !server.config.resolvedServerPersistentCacheOptions.exclude(url))
+    (!server.config.serverPersistentCache?.exclude ||
+      !server.config.serverPersistentCache.exclude(url))
 
   // Persist load result just in case it depends on a previous `transform` call
   // that got cached (aka skipped)

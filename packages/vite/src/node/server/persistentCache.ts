@@ -64,7 +64,7 @@ function hashCode(code: string) {
 export async function createPersistentCache(
   config: ResolvedConfig
 ): Promise<PersistentCache | null> {
-  const options = config.resolvedServerPersistentCacheOptions
+  const options = config.serverPersistentCache
   if (!options) {
     return null
   }

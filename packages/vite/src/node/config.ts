@@ -386,7 +386,7 @@ export type ResolvedConfig = Readonly<
     worker: ResolveWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
-    resolvedServerPersistentCacheOptions: ResolvedServerPersistentCacheOptions | null
+    serverPersistentCache: ResolvedServerPersistentCacheOptions | null
   } & PluginHookUtils
 >
 
@@ -655,13 +655,12 @@ export async function resolveConfig(
 
   const resolvedConfigFile = configFile ? normalizePath(configFile) : undefined
 
-  const resolvedServerPersistentCacheOptions =
-    await resolvePersistentCacheOptions({
-      config,
-      cacheDir,
-      resolvedRoot,
-      resolvedConfigFile
-    })
+  const serverPersistentCache = await resolvePersistentCacheOptions({
+    config,
+    cacheDir,
+    resolvedRoot,
+    resolvedConfigFile
+  })
 
   const resolvedConfig: ResolvedConfig = {
     configFile: resolvedConfigFile,
@@ -714,7 +713,7 @@ export async function resolveConfig(
     },
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
-    resolvedServerPersistentCacheOptions
+    serverPersistentCache
   }
   const resolved: ResolvedConfig = {
     ...config,
