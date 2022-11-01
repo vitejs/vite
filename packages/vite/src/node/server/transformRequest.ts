@@ -293,15 +293,14 @@ async function loadAndTransform(
 
   // persistent cache
 
-  const persistentCacheKey = includedInPersistentCache
-    ? (_persistentCache.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
-    : ''
-
   const finalIncludedInPersistentCache =
     includedInPersistentCache &&
-    !code.includes('import.meta.glob') &&
-    // TODO: handle ENV changes
-    !code.includes('import.meta.env')
+    // Exclude glob matching so it's always re-evaluated
+    !code.includes('import.meta.glob')
+
+    const persistentCacheKey = finalIncludedInPersistentCache
+    ? (_persistentCache.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
+    : ''
 
   if (finalIncludedInPersistentCache) {
     const cached = await _persistentCache.read(persistentCacheKey)
