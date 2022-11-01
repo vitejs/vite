@@ -946,6 +946,10 @@ export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
+export function getCodeHash(code: string): string {
+  return createHash('sha1').update(code).digest('hex')
+}
+
 export const requireResolveFromRootWithFallback = (
   root: string,
   id: string

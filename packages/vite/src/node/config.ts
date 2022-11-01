@@ -26,6 +26,7 @@ import {
   createDebugger,
   createFilter,
   dynamicImport,
+  getCodeHash,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -355,6 +356,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
     configFile: string | undefined
+    configFileHash: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
     root: string
@@ -410,6 +412,7 @@ export async function resolveConfig(
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  let configFileHash: string | undefined
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
 
@@ -441,6 +444,7 @@ export async function resolveConfig(
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
+      configFileHash = loadResult.hash
       configFileDependencies = loadResult.dependencies
     }
   }
@@ -657,13 +661,14 @@ export async function resolveConfig(
 
   const serverPersistentCache = await resolvePersistentCacheOptions({
     config,
+    configFileHash,
     cacheDir,
-    resolvedRoot,
-    resolvedConfigFile
+    resolvedRoot
   })
 
   const resolvedConfig: ResolvedConfig = {
     configFile: resolvedConfigFile,
+    configFileHash,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name))
     ),
@@ -912,6 +917,7 @@ export async function loadConfigFromFile(
   path: string
   config: UserConfig
   dependencies: string[]
+  hash: string
 } | null> {
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
@@ -969,7 +975,8 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies: bundled.dependencies
+      dependencies: bundled.dependencies,
+      hash: getCodeHash(bundled.code)
     }
   } catch (e) {
     createLogger(logLevel).error(

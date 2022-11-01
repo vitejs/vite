@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type {
   InlineConfig,
@@ -8,7 +7,7 @@ import type {
   ResolvedServerPersistentCacheOptions
 } from '../config'
 import { normalizePath, version } from '../publicUtils'
-import { createDebugger, isDefined, lookupFile } from '../utils'
+import { createDebugger, getCodeHash, isDefined, lookupFile } from '../utils'
 import type { ModuleNode } from './moduleGraph'
 
 export interface PersistentCache {
@@ -68,10 +67,6 @@ export interface PersistentCacheFile {
   relatedModules: Record<string, string>
 }
 
-function hashCode(code: string) {
-  return crypto.createHash('sha1').update(code).digest('hex')
-}
-
 export async function createPersistentCache(
   config: ResolvedConfig
 ): Promise<PersistentCache | null> {
@@ -106,7 +101,7 @@ export async function createPersistentCache(
       }
       return fs.promises.readFile(file, 'utf-8')
     })
-  ).then((codes) => hashCode(codes.join('')))
+  ).then((codes) => getCodeHash(codes.join('')))
   const cacheVersion = `${options.cacheVersion}-${hashedVersionFiles}`
 
   // Manifest
@@ -200,7 +195,7 @@ export async function createPersistentCache(
   // Methods
 
   function getKey(code: string) {
-    return hashCode(code)
+    return getCodeHash(code)
   }
 
   async function read(key: string): Promise<PersistentCacheResult | null> {
@@ -307,15 +302,15 @@ export async function createPersistentCache(
 
 interface ResolveServerPersistentCacheConfigPayload {
   config: InlineConfig
+  configFileHash: string | undefined
   cacheDir: string
   resolvedRoot: string
-  resolvedConfigFile: string | undefined
 }
 
 export async function resolvePersistentCacheOptions(
   payload: ResolveServerPersistentCacheConfigPayload
 ): Promise<ResolvedServerPersistentCacheOptions | null> {
-  const { config, resolvedRoot, cacheDir, resolvedConfigFile } = payload
+  const { config, resolvedRoot, cacheDir, configFileHash } = payload
 
   if (
     !config.experimental?.serverPersistentCaching ||
@@ -336,10 +331,6 @@ export async function resolvePersistentCacheOptions(
   const cacheVersionFromFiles: string[] = (
     castedToObject?.cacheVersionFromFiles ?? []
   ).map((file) => path.join(resolvedRoot, file))
-
-  if (resolvedConfigFile) {
-    cacheVersionFromFiles.push(resolvedConfigFile)
-  }
 
   const packageLockFile = lookupFile(
     resolvedRoot,
@@ -366,7 +357,9 @@ export async function resolvePersistentCacheOptions(
   return {
     cacheDir: dir,
     cacheVersionFromFiles,
-    cacheVersion: `${castedToObject?.cacheVersion ?? ''}(vite:${version})`,
+    cacheVersion: `${castedToObject?.cacheVersion ?? ''}(vite:${version})${
+      configFileHash ? `(config:${configFileHash})` : ''
+    }`,
     exclude: castedToObject?.exclude
   }
 }
