@@ -8,7 +8,7 @@ import type {
   ResolvedServerPersistentCacheOptions
 } from '../config'
 import { normalizePath, version } from '../publicUtils'
-import { createDebugger, lookupFile } from '../utils'
+import { createDebugger, isDefined, lookupFile } from '../utils'
 import type { ModuleNode } from './moduleGraph'
 
 export interface PersistentCache {
@@ -263,7 +263,7 @@ export async function createPersistentCache(
 
         entry.acceptedHmrDeps = Array.from(mod.acceptedHmrDeps)
           .map((m) => m.url)
-          .filter(Boolean) as string[]
+          .filter(isDefined)
 
         entry.acceptedHmrExports = mod.acceptedHmrExports
           ? (Array.from(mod.acceptedHmrExports).filter(Boolean) as string[])
