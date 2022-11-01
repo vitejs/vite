@@ -203,7 +203,16 @@ async function loadAndTransform(
         code = loadResult.code
         map = loadResult.map
       }
-      await _persistentCache.write(saveKey, id, null, ssr, file, code, map)
+      await _persistentCache.write(
+        saveKey,
+        id,
+        undefined,
+        null,
+        ssr,
+        file,
+        code,
+        map
+      )
       fileCacheInfo.relatedModules[loadCacheKey] = saveKey
       _persistentCache.queueManifestWrite()
     } else {
@@ -358,6 +367,7 @@ async function loadAndTransform(
       await _persistentCache?.write(
         persistentCacheKey,
         id,
+        url,
         mod,
         ssr,
         file,

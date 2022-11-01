@@ -18,6 +18,7 @@ export interface PersistentCache {
   write: (
     key: string,
     id: string,
+    url: string | undefined,
     mod: ModuleNode | null,
     ssr: boolean,
     file: string,
@@ -35,6 +36,7 @@ export interface PersistentCacheManifest {
 
 export interface PersistentCacheEntry {
   id: string
+  url?: string
   file: string
   fileCode: string
   fileMap?: string
@@ -243,6 +245,7 @@ export async function createPersistentCache(
   async function write(
     key: string,
     id: string,
+    url: string | undefined,
     mod: ModuleNode | null,
     ssr: boolean,
     file: string,
@@ -260,6 +263,7 @@ export async function createPersistentCache(
 
       const entry: PersistentCacheEntry = {
         id,
+        url,
         file,
         fileCode,
         fileMap,
