@@ -14,7 +14,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@': __dirname,
+      '=': __dirname,
       spacefolder: __dirname + '/folder with space',
       '#alias': __dirname + '/aliased/foo.css',
       '#alias-module': __dirname + '/aliased/bar.module.css'
