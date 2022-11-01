@@ -314,7 +314,7 @@ export interface ServerPersistentCacheOptions {
   cacheVersionFromFiles?: string[]
   /**
    * Manual version string that should be taken into account when determining whether to clear the cache.
-   * Will be added to the result of `cacheVersionFromFiles`.
+   * Will be added to the hash of `cacheVersionFromFiles`.
    */
   cacheVersion?: string
   /**
