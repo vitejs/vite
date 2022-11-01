@@ -661,8 +661,6 @@ export async function resolveConfig(
     getSortedPluginHooks: undefined!
   }
 
-  const resolvedConfigFile = configFile ? normalizePath(configFile) : undefined
-
   const serverPersistentCache = await resolvePersistentCacheOptions({
     config,
     configFileHash,
@@ -671,7 +669,7 @@ export async function resolveConfig(
   })
 
   const resolvedConfig: ResolvedConfig = {
-    configFile: resolvedConfigFile,
+    configFile: configFile ? normalizePath(configFile) : undefined,
     configFileHash,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name))
