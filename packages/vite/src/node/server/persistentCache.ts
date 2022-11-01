@@ -312,7 +312,7 @@ interface ResolveServerPersistentCacheConfigPayload {
 export async function resolvePersistentCacheOptions(
   payload: ResolveServerPersistentCacheConfigPayload
 ): Promise<ResolvedServerPersistentCacheOptions | null> {
-  const { config, resolvedRoot, cacheDir, configFileHash } = payload
+  const { config, resolvedRoot, configFileHash } = payload
 
   if (
     !config.experimental?.serverPersistentCaching ||
@@ -326,9 +326,7 @@ export async function resolvePersistentCacheOptions(
     typeof config.experimental?.serverPersistentCaching === 'object'
       ? config.experimental.serverPersistentCaching
       : null
-  const dir = castedToObject?.cacheDir
-    ? path.resolve(resolvedRoot, castedToObject.cacheDir)
-    : path.join(cacheDir, `server-cache`)
+  const cacheDir = path.join(payload.cacheDir, `server-cache`)
 
   const cacheVersionFromFiles: string[] = (
     castedToObject?.cacheVersionFromFiles ?? []
@@ -357,7 +355,7 @@ export async function resolvePersistentCacheOptions(
   }
 
   return {
-    cacheDir: dir,
+    cacheDir,
     cacheVersionFromFiles,
     cacheVersion: `${castedToObject?.cacheVersion ?? ''}(vite:${version})${
       configFileHash ? `(config:${configFileHash})` : ''

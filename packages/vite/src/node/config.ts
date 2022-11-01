@@ -309,10 +309,6 @@ export interface ServerPersistentCacheOptions {
    */
   enabled?: boolean
   /**
-   * Path to the cache directory.
-   */
-  cacheDir?: string
-  /**
    * Paths to files that should be taken into account when determining whether to clear the cache.
    * By default will use the vite config file and your package lock file (for npm, yarn or pnpm).
    */
