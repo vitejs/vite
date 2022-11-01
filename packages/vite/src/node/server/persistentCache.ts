@@ -104,7 +104,7 @@ export async function createPersistentCache(
   let manifest: PersistentCacheManifest | null = null
   if (fs.existsSync(manifestPath)) {
     try {
-      manifest = JSON.parse(await fs.promises.readFile(manifestPath, 'utf-8'))
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
       if (manifest && manifest.version !== cacheVersion) {
         // Bust cache if version changed
         debugLog(
