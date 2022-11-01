@@ -20,6 +20,7 @@ import { getDepsOptimizer } from '../optimizer'
 import { DEP_VERSION_RE } from '../constants'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+import { isFullCacheEntry } from './persistentCache'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -302,13 +303,7 @@ async function loadAndTransform(
     if (cached) {
       // Restore module graph node info for HMR
       const entry = _persistentCache.manifest.modules[persistentCacheKey]
-      if (
-        entry &&
-        entry.importedModules &&
-        entry.importedBindings &&
-        entry.acceptedHmrDeps &&
-        entry.acceptedHmrExports
-      ) {
+      if (entry && isFullCacheEntry(entry)) {
         const importedBindings = new Map<string, Set<string>>()
         for (const [key, value] of Object.entries(entry.importedBindings)) {
           importedBindings.set(key, new Set(value))

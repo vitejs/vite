@@ -34,18 +34,29 @@ export interface PersistentCacheManifest {
   files: Record<string, PersistentCacheFile>
 }
 
-export interface PersistentCacheEntry {
+interface SimpleCacheEntry {
   id: string
   url?: string
   file: string
   fileCode: string
   fileMap?: string
-  importedModules?: string[]
-  importedBindings?: Record<string, string[]>
-  acceptedHmrDeps?: string[]
-  acceptedHmrExports?: string[]
+}
+
+interface FullCacheEntry extends SimpleCacheEntry {
+  importedModules: string[]
+  importedBindings: Record<string, string[]>
+  acceptedHmrDeps: string[]
+  acceptedHmrExports: string[]
   isSelfAccepting?: boolean
   ssr: boolean
+}
+
+export type PersistentCacheEntry = SimpleCacheEntry | FullCacheEntry
+
+export function isFullCacheEntry(
+  entry: PersistentCacheEntry
+): entry is FullCacheEntry {
+  return Array.isArray((entry as FullCacheEntry).importedModules)
 }
 
 export interface PersistentCacheResult {
@@ -247,7 +258,8 @@ export async function createPersistentCache(
       }
 
       if (mod) {
-        entry.importedModules = Array.from(mod.importedModules)
+        const fullEntry = entry as FullCacheEntry
+        fullEntry.importedModules = Array.from(mod.importedModules)
           .map((m) => m.url)
           .filter(Boolean) as string[]
         const importedBindings: any = {}
@@ -259,17 +271,17 @@ export async function createPersistentCache(
             }
           }
         }
-        entry.importedBindings = importedBindings
+        fullEntry.importedBindings = importedBindings
 
-        entry.acceptedHmrDeps = Array.from(mod.acceptedHmrDeps)
+        fullEntry.acceptedHmrDeps = Array.from(mod.acceptedHmrDeps)
           .map((m) => m.url)
           .filter(isDefined)
 
-        entry.acceptedHmrExports = mod.acceptedHmrExports
+        fullEntry.acceptedHmrExports = mod.acceptedHmrExports
           ? (Array.from(mod.acceptedHmrExports).filter(Boolean) as string[])
           : []
 
-        entry.isSelfAccepting = mod.isSelfAccepting
+        fullEntry.isSelfAccepting = mod.isSelfAccepting
       }
 
       resolvedManifest.modules[key] = entry
