@@ -181,6 +181,8 @@ async function loadAndTransform(
 
   const includedInPersistentCache =
     _persistentCache &&
+    !file.includes(server.config.cacheDir) &&
+    !id.includes('@vite/client') &&
     (!server.config.serverPersistentCache?.exclude ||
       !server.config.serverPersistentCache.exclude(url))
 
