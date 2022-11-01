@@ -189,11 +189,7 @@ async function loadAndTransform(
   // an internal cache as side effect
   // - `load` is called on `MyComponent.svelte?css` => reads the plugin internal cache
 
-  if (
-    _persistentCache &&
-    includedInPersistentCache &&
-    idWithoutHmrFlag !== file
-  ) {
+  if (includedInPersistentCache && idWithoutHmrFlag !== file) {
     const fileCacheInfo = (_persistentCache.manifest.files[file] =
       _persistentCache.manifest.files[file] ?? {
         relatedModules: {}
@@ -292,14 +288,20 @@ async function loadAndTransform(
   // persistent cache
 
   const persistentCacheKey = includedInPersistentCache
-    ? (_persistentCache?.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
+    ? (_persistentCache.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
     : ''
 
-  if (includedInPersistentCache && !code.includes('import.meta.glob')) {
-    const cached = await _persistentCache?.read(persistentCacheKey)
+  const finalIncludedInPersistentCache =
+    includedInPersistentCache &&
+    !code.includes('import.meta.glob') &&
+    // TODO: handle ENV changes
+    !code.includes('import.meta.env')
+
+  if (finalIncludedInPersistentCache) {
+    const cached = await _persistentCache.read(persistentCacheKey)
     if (cached) {
       // Restore module graph node info for HMR
-      const entry = _persistentCache?.manifest.modules[persistentCacheKey]
+      const entry = _persistentCache.manifest.modules[persistentCacheKey]
       if (
         entry &&
         entry.importedModules &&
@@ -368,7 +370,7 @@ async function loadAndTransform(
           etag: getEtag(code, { weak: true })
         } as TransformResult)
 
-    if (includedInPersistentCache) {
+    if (finalIncludedInPersistentCache) {
       await _persistentCache?.write(
         persistentCacheKey,
         id,
