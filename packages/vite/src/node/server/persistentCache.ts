@@ -33,7 +33,7 @@ export interface PersistentCacheManifest {
   files: Record<string, PersistentCacheFile>
 }
 
-interface SimpleCacheEntry {
+export interface PersistentSimpleCacheEntry {
   id: string
   url?: string
   file: string
@@ -41,7 +41,7 @@ interface SimpleCacheEntry {
   fileMap?: string
 }
 
-interface FullCacheEntry extends SimpleCacheEntry {
+export interface PersistentFullCacheEntry extends PersistentSimpleCacheEntry {
   importedModules: string[]
   importedBindings: Record<string, string[]>
   acceptedHmrDeps: string[]
@@ -50,12 +50,14 @@ interface FullCacheEntry extends SimpleCacheEntry {
   ssr: boolean
 }
 
-export type PersistentCacheEntry = SimpleCacheEntry | FullCacheEntry
+export type PersistentCacheEntry =
+  | PersistentSimpleCacheEntry
+  | PersistentFullCacheEntry
 
 export function isFullCacheEntry(
   entry: PersistentCacheEntry
-): entry is FullCacheEntry {
-  return Array.isArray((entry as FullCacheEntry).importedModules)
+): entry is PersistentFullCacheEntry {
+  return Array.isArray((entry as PersistentFullCacheEntry).importedModules)
 }
 
 export interface PersistentCacheResult {
@@ -253,7 +255,7 @@ export async function createPersistentCache(
       }
 
       if (mod) {
-        const fullEntry = entry as FullCacheEntry
+        const fullEntry = entry as PersistentFullCacheEntry
         fullEntry.importedModules = Array.from(mod.importedModules)
           .map((m) => m.url)
           .filter(Boolean) as string[]
