@@ -6,6 +6,7 @@ import type {
   ResolvedConfig,
   ResolvedServerPersistentCacheOptions
 } from '../config'
+import { DEP_VERSION_RE } from '../constants'
 import { normalizePath, version } from '../publicUtils'
 import { createDebugger, getCodeHash, isDefined, lookupFile } from '../utils'
 import type { ModuleNode } from './moduleGraph'
@@ -264,7 +265,7 @@ export async function createPersistentCache(
       if (mod) {
         const fullEntry = entry as PersistentFullCacheEntry
         fullEntry.importedModules = Array.from(mod.importedModules)
-          .map((m) => m.url)
+          .map((m) => m.url.replace(DEP_VERSION_RE, ''))
           .filter(Boolean) as string[]
         const importedBindings: any = {}
         if (mod.importedBindings) {
