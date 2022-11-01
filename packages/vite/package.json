@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.2.0",
+  "version": "3.2.2",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -28,7 +28,6 @@
     "dist",
     "client.d.ts",
     "index.cjs",
-    "src/client",
     "types"
   ],
   "engines": {
@@ -69,12 +68,12 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.19.6",
-    "@babel/types": "^7.19.4",
+    "@babel/parser": "^7.20.0",
+    "@babel/types": "^7.20.0",
     "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.2",
-    "@rollup/plugin-commonjs": "^22.0.2",
-    "@rollup/plugin-dynamic-import-vars": "^1.4.4",
+    "@rollup/plugin-commonjs": "^23.0.2",
+    "@rollup/plugin-dynamic-import-vars": "^2.0.1",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "14.1.0",
     "@rollup/plugin-typescript": "^8.5.0",
@@ -96,7 +95,6 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
     "http-proxy": "^1.18.1",
-    "import-meta-resolve": "^2.1.0",
     "json5": "^2.2.1",
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.26.7",
