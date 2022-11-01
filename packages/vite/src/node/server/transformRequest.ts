@@ -182,7 +182,7 @@ async function loadAndTransform(
   const includedInPersistentCache =
     _persistentCache &&
     !file.includes(server.config.cacheDir) &&
-    !id.includes('@vite/client') &&
+    !file.includes('vite/dist/client') &&
     (!server.config.serverPersistentCache?.exclude ||
       !server.config.serverPersistentCache.exclude(url))
 
@@ -298,7 +298,7 @@ async function loadAndTransform(
     // Exclude glob matching so it's always re-evaluated
     !code.includes('import.meta.glob')
 
-    const persistentCacheKey = finalIncludedInPersistentCache
+  const persistentCacheKey = finalIncludedInPersistentCache
     ? (_persistentCache.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
     : ''
 
