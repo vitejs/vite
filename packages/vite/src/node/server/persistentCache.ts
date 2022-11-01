@@ -8,7 +8,7 @@ import type {
   ResolvedServerPersistentCacheOptions
 } from '../config'
 import { normalizePath, version } from '../publicUtils'
-import { lookupFile } from '../utils'
+import { createDebugger, lookupFile } from '../utils'
 import type { ModuleNode } from './moduleGraph'
 
 export interface PersistentCache {
@@ -70,6 +70,7 @@ export async function createPersistentCache(
   }
 
   const logger = config.logger
+  const debugLog = createDebugger('vite:persistent-cache')
 
   logger.warn(
     colors.yellow(
@@ -106,10 +107,8 @@ export async function createPersistentCache(
       manifest = JSON.parse(await fs.promises.readFile(manifestPath, 'utf-8'))
       if (manifest && manifest.version !== cacheVersion) {
         // Bust cache if version changed
-        logger.info(
-          colors.blue(
-            `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
-          )
+        debugLog(
+          `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
         )
         try {
           // Empty the directory
@@ -170,7 +169,7 @@ export async function createPersistentCache(
           manifestPath,
           JSON.stringify(resolvedManifest, null, 2)
         )
-        logger.info(colors.blue(`Persistent cache manifest saved`))
+        debugLog(`Persistent cache manifest saved`)
       } catch (e) {
         logger.warn(
           colors.yellow(
