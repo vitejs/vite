@@ -295,7 +295,7 @@ export async function createPersistentCache(
 
 interface ResolveServerPersistentCacheConfigPayload {
   config: InlineConfig
-  pkgPath: string | undefined
+  cacheDir: string
   resolvedRoot: string
   resolvedConfigFile: string | undefined
 }
@@ -303,7 +303,7 @@ interface ResolveServerPersistentCacheConfigPayload {
 export async function resolvePersistentCacheOptions(
   payload: ResolveServerPersistentCacheConfigPayload
 ): Promise<ResolvedServerPersistentCacheOptions | null> {
-  const { config, resolvedRoot, pkgPath, resolvedConfigFile } = payload
+  const { config, resolvedRoot, cacheDir, resolvedConfigFile } = payload
 
   if (
     !config.experimental?.serverPersistentCaching ||
@@ -319,9 +319,7 @@ export async function resolvePersistentCacheOptions(
       : null
   const dir = castedToObject?.cacheDir
     ? path.resolve(resolvedRoot, castedToObject.cacheDir)
-    : pkgPath
-    ? path.join(path.dirname(pkgPath), `node_modules/.vite-server-cache`)
-    : path.join(resolvedRoot, `.vite-server-cache`)
+    : path.join(cacheDir, `server-cache`)
 
   const cacheVersionFromFiles: string[] = (
     castedToObject?.cacheVersionFromFiles ?? []

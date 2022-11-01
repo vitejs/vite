@@ -658,7 +658,7 @@ export async function resolveConfig(
   const resolvedServerPersistentCacheOptions =
     await resolvePersistentCacheOptions({
       config,
-      pkgPath,
+      cacheDir,
       resolvedRoot,
       resolvedConfigFile
     })
