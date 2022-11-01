@@ -104,7 +104,14 @@ export async function createPersistentCache(
       return fs.promises.readFile(file, 'utf-8')
     })
   ).then((codes) => getCodeHash(codes.join('')))
-  const cacheVersion = `${options.cacheVersion}-${hashedVersionFiles}`
+
+  const defineHash = config.define
+    ? getCodeHash(JSON.stringify(config.define))
+    : ''
+
+  const cacheVersion = [options.cacheVersion, hashedVersionFiles, defineHash]
+    .filter(Boolean)
+    .join('-')
 
   // Manifest
 
