@@ -38,35 +38,59 @@ declare module '*.module.sss' {
 
 // CSS
 declare module '*.css' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.css?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.scss' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.scss?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.sass' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.sass?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.less' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.less?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.styl' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.styl?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.stylus' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.stylus?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.pcss' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.pcss?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 declare module '*.sss' {
-  const css: string
+  /**
+   * @deprecated Use `import style from './style.sss?inline'` instead.
+   */
+  const css: unknown
   export default css
 }
 
