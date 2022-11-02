@@ -82,12 +82,6 @@ export async function createPersistentCache(
   const logger = config.logger
   const debugLog = createDebugger('vite:persistent-cache')
 
-  logger.warn(
-    colors.yellow(
-      `You have server persistent cache enabled. This is an experimental feature.`
-    )
-  )
-
   // Cache directory
 
   const resolvedCacheDir = normalizePath(path.resolve(options.cacheDir))
