@@ -375,6 +375,7 @@ export function resolveEsbuildTranspileOptions(
     return {
       ...options,
       minify: true,
+      charset: 'utf8',
       treeShaking: true
     }
   }
