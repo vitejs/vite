@@ -72,16 +72,19 @@ function startBrowserProcess(browser: string | undefined, url: string) {
   // requested a different browser, we can try opening
   // a Chromium browser with AppleScript. This lets us reuse an
   // existing tab when possible instead of creating a new one.
+  const preferredOSXBrowser =
+    browser === 'google chrome' ? 'Google Chrome' : browser
   const shouldTryOpenChromeWithAppleScript =
     process.platform === 'darwin' &&
-    (!browser || supportedChromiumBrowsers.includes(browser))
+    (!preferredOSXBrowser ||
+      supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
   if (shouldTryOpenChromeWithAppleScript) {
     try {
       const ps = execSync('ps cax').toString()
       const openedBrowser =
-        browser && ps.includes(browser)
-          ? browser
+        preferredOSXBrowser && ps.includes(preferredOSXBrowser)
+          ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       // Try our best to reuse existing tab with AppleScript
       execSync(
