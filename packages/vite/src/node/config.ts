@@ -657,9 +657,8 @@ export async function resolveConfig(
     getSortedPluginHooks: undefined!
   }
 
-  const serverPersistentCache = await resolvePersistentCacheOptions({
+  const serverPersistentCache = resolvePersistentCacheOptions({
     config,
-    configFileHash,
     cacheDir,
     resolvedRoot
   })

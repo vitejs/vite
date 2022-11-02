@@ -109,6 +109,8 @@ export async function createPersistentCache(
 
   const cacheVersion = [
     options.cacheVersion,
+    `vite:${version}`,
+    config.configFileHash,
     hashedVersionFiles,
     defineHash,
     envHash
@@ -383,15 +385,14 @@ export async function createPersistentCache(
 
 interface ResolveServerPersistentCacheConfigPayload {
   config: InlineConfig
-  configFileHash: string | undefined
   cacheDir: string
   resolvedRoot: string
 }
 
-export async function resolvePersistentCacheOptions(
+export function resolvePersistentCacheOptions(
   payload: ResolveServerPersistentCacheConfigPayload
-): Promise<ResolvedServerPersistentCacheOptions | null> {
-  const { config, resolvedRoot, configFileHash } = payload
+): ResolvedServerPersistentCacheOptions | null {
+  const { config, resolvedRoot } = payload
 
   if (
     !config.experimental?.serverPersistentCaching ||
@@ -436,9 +437,7 @@ export async function resolvePersistentCacheOptions(
   return {
     cacheDir,
     cacheVersionFromFiles,
-    cacheVersion: `${castedToObject?.cacheVersion ?? ''}(vite:${version})${
-      configFileHash ? `(config:${configFileHash})` : ''
-    }`,
+    cacheVersion: castedToObject?.cacheVersion ?? '',
     exclude: castedToObject?.exclude
   }
 }
