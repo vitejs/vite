@@ -230,7 +230,12 @@ async function createDepsOptimizer(
             // run on the background, but we wait until crawling has ended
             // to decide if we send this result to the browser or we need to
             // do another optimize step
-            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+            postScanOptimizationResult = runOptimizeDeps(
+              config,
+              knownDeps,
+              undefined,
+              server
+            )
           }
         } catch (e) {
           logger.error(e.message)
@@ -271,7 +276,7 @@ async function createDepsOptimizer(
 
     startNextDiscoveredBatch()
 
-    return await runOptimizeDeps(config, knownDeps)
+    return await runOptimizeDeps(config, knownDeps, undefined, server)
   }
 
   function prepareKnownDeps() {

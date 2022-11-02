@@ -1,12 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
+import type { DepOptimizationMetadata } from '../index'
 import type {
   InlineConfig,
   ResolvedConfig,
   ResolvedServerPersistentCacheOptions
 } from '../config'
-import { DEP_VERSION_RE } from '../constants'
 import { normalizePath, version } from '../publicUtils'
 import { createDebugger, getCodeHash, isDefined, lookupFile } from '../utils'
 import type { ModuleNode } from './moduleGraph'
@@ -26,6 +26,7 @@ export interface PersistentCache {
     map?: any
   ) => Promise<void>
   queueManifestWrite: () => void
+  updateDepsMetadata: (metadata: DepOptimizationMetadata) => Promise<void>
 }
 
 export interface PersistentCacheManifest {
@@ -43,7 +44,7 @@ export interface PersistentSimpleCacheEntry {
 }
 
 export interface PersistentFullCacheEntry extends PersistentSimpleCacheEntry {
-  importedModules: string[]
+  importedModules: { id: string; file: string; url: string }[]
   importedBindings: Record<string, string[]>
   acceptedHmrDeps: string[]
   acceptedHmrExports: string[]
@@ -202,7 +203,7 @@ export async function createPersistentCache(
     }, 1000)
   }
 
-  // Methods
+  // Main methods
 
   function getKey(code: string) {
     return getCodeHash(code)
@@ -248,6 +249,26 @@ export async function createPersistentCache(
       const fileCode = path.resolve(resolvedCacheDir, 'c-' + key)
       const fileMap = map ? fileCode + '-map' : undefined
 
+      // Rewrite optimized deps imports using the final browserHash
+      // The version query will change after first time they are optimized
+      // (They are not updated during first run to keep urls stable)
+      if (depsMetadata && mod) {
+        for (const m of mod.importedModules) {
+          if (m.file) {
+            for (const depId in depsMetadata.optimized) {
+              const dep = depsMetadata.optimized[depId]
+              if (dep.file === m.file) {
+                code = code.replaceAll(
+                  m.url,
+                  m.url.replace(/v=[\w\d]+/, `v=${depsMetadata.browserHash}`)
+                )
+                break
+              }
+            }
+          }
+        }
+      }
+
       await fs.promises.writeFile(fileCode, code, 'utf8')
       if (map && fileMap) {
         await fs.promises.writeFile(fileMap, JSON.stringify(map), 'utf8')
@@ -265,8 +286,12 @@ export async function createPersistentCache(
       if (mod) {
         const fullEntry = entry as PersistentFullCacheEntry
         fullEntry.importedModules = Array.from(mod.importedModules)
-          .map((m) => m.url.replace(DEP_VERSION_RE, ''))
-          .filter(Boolean) as string[]
+          .filter((m) => !!m.id && !!m.file)
+          .map((m) => ({
+            id: m.id!,
+            url: m.url,
+            file: m.file!
+          }))
         const importedBindings: any = {}
         if (mod.importedBindings) {
           for (const k in mod.importedBindings) {
@@ -301,12 +326,57 @@ export async function createPersistentCache(
     }
   }
 
+  // Optimized deps
+
+  let depsMetadata: DepOptimizationMetadata | null = null
+
+  async function updateDepsMetadata(metadata: DepOptimizationMetadata) {
+    depsMetadata = metadata
+
+    // Update existing cache files
+    for (const key in resolvedManifest.modules) {
+      const entry = resolvedManifest.modules[key]
+      if (entry && isFullCacheEntry(entry)) {
+        // Gather code changes
+        const optimizedDeps: [string, string][] = []
+        for (const m of entry.importedModules) {
+          for (const depId in metadata.optimized) {
+            const dep = metadata.optimized[depId]
+            if (dep.file === m.file) {
+              optimizedDeps.push([
+                m.url,
+                m.url.replace(/v=[\w\d]+/, `v=${metadata.browserHash}`)
+              ])
+              break
+            }
+          }
+        }
+        // Apply code changes
+        if (optimizedDeps.length) {
+          let code = await fs.promises.readFile(entry.fileCode, 'utf8')
+          for (const [from, to] of optimizedDeps) {
+            code = code.replaceAll(from, to)
+          }
+          await fs.promises.writeFile(entry.fileCode, code, 'utf8')
+          debugLog(
+            `Updated ${
+              entry.id
+            } with new optimized deps imports: ${optimizedDeps
+              .map(([from, to]) => `${from} -> ${to}`)
+              .join(', ')}`
+          )
+        }
+      }
+    }
+  }
+
   return {
     manifest: resolvedManifest,
     getKey,
     read,
     write,
-    queueManifestWrite
+    queueManifestWrite,
+    updateDepsMetadata
   }
 }
 

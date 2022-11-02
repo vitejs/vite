@@ -314,7 +314,7 @@ async function loadAndTransform(
         }
         await moduleGraph.updateModuleInfo(
           mod,
-          new Set(entry.importedModules),
+          new Set(entry.importedModules.map(({ url }) => url)),
           importedBindings,
           new Set(entry.acceptedHmrDeps),
           new Set(entry.acceptedHmrExports),

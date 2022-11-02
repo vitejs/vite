@@ -25,6 +25,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
+import type { ViteDevServer } from '../index'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -450,7 +451,8 @@ export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
   ssr: boolean = resolvedConfig.command === 'build' &&
-    !!resolvedConfig.build.ssr
+    !!resolvedConfig.build.ssr,
+  server?: ViteDevServer
 ): Promise<DepOptimizationResult> {
   const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
@@ -670,6 +672,10 @@ export async function runOptimizeDeps(
 
   const dataPath = path.join(processingCacheDir, '_metadata.json')
   writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
+
+  if (server?._persistentCache) {
+    await server._persistentCache.updateDepsMetadata(metadata)
+  }
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
