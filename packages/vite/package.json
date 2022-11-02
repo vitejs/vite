@@ -6,7 +6,8 @@
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
   "bin": {
-    "vite": "bin/vite.js"
+    "vite": "bin/vite.js",
+    "vited": "bin/vited.js"
   },
   "main": "./dist/node/index.js",
   "module": "./dist/node/index.js",
