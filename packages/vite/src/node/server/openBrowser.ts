@@ -16,9 +16,6 @@ import colors from 'picocolors'
 import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
 
-// https://github.com/sindresorhus/open#app
-const OSX_CHROME = 'google chrome'
-
 /**
  * Reads the BROWSER environment variable and decides what to do with it.
  * Returns true if it opened a browser or ran a node.js script, otherwise false.
@@ -59,45 +56,49 @@ function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   return true
 }
 
+const supportedChromiumBrowsers = [
+  'Google Chrome Canary',
+  'Google Chrome Dev',
+  'Google Chrome Beta',
+  'Google Chrome',
+  'Microsoft Edge',
+  'Brave Browser',
+  'Vivaldi',
+  'Chromium'
+]
+
 function startBrowserProcess(browser: string | undefined, url: string) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
-  // Chrome with AppleScript. This lets us reuse an
+  // a Chromium browser with AppleScript. This lets us reuse an
   // existing tab when possible instead of creating a new one.
+  const preferredOSXBrowser =
+    browser === 'google chrome' ? 'Google Chrome' : browser
   const shouldTryOpenChromeWithAppleScript =
-    process.platform === 'darwin' && (browser === '' || browser === OSX_CHROME)
+    process.platform === 'darwin' &&
+    (!preferredOSXBrowser ||
+      supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
   if (shouldTryOpenChromeWithAppleScript) {
-    // Will use the first open browser found from list
-    const supportedChromiumBrowsers = [
-      'Google Chrome Canary',
-      'Google Chrome Dev',
-      'Google Chrome Beta',
-      'Google Chrome',
-      'Microsoft Edge',
-      'Brave Browser',
-      'Vivaldi',
-      'Chromium'
-    ]
-
-    for (const chromiumBrowser of supportedChromiumBrowsers) {
-      try {
-        // Try our best to reuse existing tab
-        // on OS X Google Chrome with AppleScript
-        execSync(`ps cax | grep "${chromiumBrowser}"`)
-        execSync(
-          `osascript openChrome.applescript "${encodeURI(
-            url
-          )}" "${chromiumBrowser}"`,
-          {
-            cwd: join(VITE_PACKAGE_DIR, 'bin'),
-            stdio: 'ignore'
-          }
-        )
-        return true
-      } catch (err) {
-        // Ignore errors
-      }
+    try {
+      const ps = execSync('ps cax').toString()
+      const openedBrowser =
+        preferredOSXBrowser && ps.includes(preferredOSXBrowser)
+          ? preferredOSXBrowser
+          : supportedChromiumBrowsers.find((b) => ps.includes(b))
+      // Try our best to reuse existing tab with AppleScript
+      execSync(
+        `osascript openChrome.applescript "${encodeURI(
+          url
+        )}" "${openedBrowser}"`,
+        {
+          cwd: join(VITE_PACKAGE_DIR, 'bin'),
+          stdio: 'ignore'
+        }
+      )
+      return true
+    } catch (err) {
+      // Ignore errors
     }
   }
 
