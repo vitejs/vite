@@ -29,7 +29,7 @@ type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
 const debug = createDebugger('vite:deps')
 
-const htmlTypesRE = /\.(html|vue|svelte|astro)$/
+const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since
@@ -143,7 +143,8 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
         ? []
         : [`**/__tests__/**`, `**/coverage/**`])
     ],
-    absolute: true
+    absolute: true,
+    suppressErrors: true // suppress EACCES errors
   })
 }
 
@@ -198,6 +199,29 @@ function esbuildScanPlugin(
     path,
     external: !entries.includes(path)
   })
+
+  const doTransformGlobImport = async (
+    contents: string,
+    id: string,
+    loader: Loader
+  ) => {
+    let transpiledContents
+    // transpile because `transformGlobImport` only expects js
+    if (loader !== 'js') {
+      transpiledContents = (await transform(contents, { loader })).code
+    } else {
+      transpiledContents = contents
+    }
+
+    const result = await transformGlobImport(
+      transpiledContents,
+      id,
+      config.root,
+      resolve
+    )
+
+    return result?.s.toString() || transpiledContents
+  }
 
   return {
     name: 'vite:dep-scan',
@@ -304,26 +328,9 @@ function esbuildScanPlugin(
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {
-                let transpiledContents
-                // transpile because `transformGlobImport` only expects js
-                if (loader !== 'js') {
-                  transpiledContents = (await transform(contents, { loader }))
-                    .code
-                } else {
-                  transpiledContents = contents
-                }
-
                 scripts[key] = {
                   loader: 'js', // since it is transpiled
-                  contents:
-                    (
-                      await transformGlobImport(
-                        transpiledContents,
-                        path,
-                        config.root,
-                        resolve
-                      )
-                    )?.s.toString() || transpiledContents,
+                  contents: await doTransformGlobImport(contents, path, loader),
                   pluginData: {
                     htmlType: { loader }
                   }
@@ -426,7 +433,8 @@ function esbuildScanPlugin(
       // css & json & wasm
       build.onResolve(
         {
-          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json|wasm)$/
+          filter:
+            /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss|json|wasm)$/
         },
         externalUnlessEntry
       )
@@ -479,7 +487,7 @@ function esbuildScanPlugin(
       // for jsx/tsx, we need to access the content and check for
       // presence of import.meta.glob, since it results in import relationships
       // but isn't crawled by esbuild.
-      build.onLoad({ filter: JS_TYPES_RE }, ({ path: id }) => {
+      build.onLoad({ filter: JS_TYPES_RE }, async ({ path: id }) => {
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
@@ -491,6 +499,13 @@ function esbuildScanPlugin(
         const loader =
           config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
           (ext as Loader)
+
+        if (contents.includes('import.meta.glob')) {
+          return {
+            loader: 'js', // since it is transpiled,
+            contents: await doTransformGlobImport(contents, id, loader)
+          }
+        }
 
         return {
           loader,

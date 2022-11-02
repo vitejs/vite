@@ -65,7 +65,17 @@ export default defineConfig({
     ['meta', { property: 'og:url', content: ogUrl }],
     ['meta', { property: 'og:description', content: ogDescription }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:site', content: '@vite_js' }]
+    ['meta', { name: 'twitter:site', content: '@vite_js' }],
+    ['meta', { name: 'theme-color', content: '#646cff' }],
+    [
+      'script',
+      {
+        src: 'https://cdn.usefathom.com/script.js',
+        'data-site': 'CBDFBSLI',
+        'data-spa': 'auto',
+        defer: ''
+      }
+    ]
   ],
 
   vue: {

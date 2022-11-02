@@ -4,6 +4,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
@@ -14,11 +15,12 @@ import {
   requestQuerySplitRE,
   transformStableResult
 } from '../utils'
+import { toAbsoluteGlob } from './importMetaGlob'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
 interface DynamicImportRequest {
-  as?: 'raw'
+  as?: keyof KnownAsTypeMap
 }
 
 interface DynamicImportPattern {
@@ -64,6 +66,14 @@ function parseDynamicImportPattern(
     globParams = { as: 'raw' }
   }
 
+  if (rawQuery?.url !== undefined) {
+    globParams = { as: 'url' }
+  }
+
+  if (rawQuery?.worker !== undefined) {
+    globParams = { as: 'worker' }
+  }
+
   return {
     globParams,
     userPattern,
@@ -77,7 +87,8 @@ export async function transformDynamicImport(
   resolve: (
     url: string,
     importer?: string
-  ) => Promise<string | undefined> | string | undefined
+  ) => Promise<string | undefined> | string | undefined,
+  root: string
 ): Promise<{
   glob: string
   pattern: string
@@ -105,10 +116,20 @@ export async function transformDynamicImport(
   const params = globParams
     ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
     : ''
+
+  let newRawPattern = posix.relative(
+    posix.dirname(importer),
+    await toAbsoluteGlob(rawPattern, root, importer, resolve)
+  )
+
+  if (!/^\.{1,2}\//.test(newRawPattern)) {
+    newRawPattern = `./${newRawPattern}`
+  }
+
   const exp = `(import.meta.glob(${JSON.stringify(userPattern)}${params}))`
 
   return {
-    rawPattern,
+    rawPattern: newRawPattern,
     pattern: userPattern,
     glob: exp
   }
@@ -183,7 +204,12 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           // parenthesis, so we manually remove them for now.
           // See https://github.com/guybedford/es-module-lexer/issues/118
           const importSource = removeComments(source.slice(start, end)).trim()
-          result = await transformDynamicImport(importSource, importer, resolve)
+          result = await transformDynamicImport(
+            importSource,
+            importer,
+            resolve,
+            config.root
+          )
         } catch (error) {
           if (warnOnError) {
             this.warn(error)

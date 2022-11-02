@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import { expect, test } from 'vitest'
 import { port } from './serve'
 import { browserLogs, editFile, page, untilUpdated } from '~utils'
 

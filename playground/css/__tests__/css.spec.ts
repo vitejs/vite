@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
@@ -8,7 +9,9 @@ import {
   page,
   removeFile,
   serverLogs,
-  untilUpdated
+  untilUpdated,
+  viteTestUrl,
+  withRetry
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
@@ -76,6 +79,7 @@ test('sass', async () => {
   const imported = await page.$('.sass')
   const atImport = await page.$('.sass-at-import')
   const atImportAlias = await page.$('.sass-at-import-alias')
+  const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
@@ -84,6 +88,9 @@ test('sass', async () => {
   expect(await getColor(atImportAlias)).toBe('olive')
   expect(await getBg(atImportAlias)).toMatch(
     isBuild ? /base64/ : '/nested/icon.png'
+  )
+  expect(await getBg(urlStartsWithVariable)).toMatch(
+    isBuild ? /ok\.\w+\.png/ : `${viteTestUrl}/ok.png`
   )
   expect(await getColor(partialImport)).toBe('orchid')
 
@@ -107,6 +114,7 @@ test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
+  const urlStartsWithVariable = await page.$('.less-url-starts-with-variable')
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
@@ -114,6 +122,9 @@ test('less', async () => {
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
     isBuild ? /base64/ : '/nested/icon.png'
+  )
+  expect(await getBg(urlStartsWithVariable)).toMatch(
+    isBuild ? /ok\.\w+\.png/ : `${viteTestUrl}/ok.png`
   )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
@@ -256,6 +267,11 @@ test.runIf(isBuild)('@charset hoist', async () => {
     // no warning from esbuild css minifier
     expect(log).not.toMatch('"@charset" must be the first rule in the file')
   })
+})
+
+test('layers', async () => {
+  expect(await getColor('.layers-blue')).toMatch('blue')
+  expect(await getColor('.layers-green')).toMatch('green')
 })
 
 test('@import dependency w/ style entry', async () => {
@@ -448,4 +464,40 @@ test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
     // no warning from esbuild css minifier
     expect(log).not.toMatch('unsupported-css-property')
   })
+})
+
+test('sugarss', async () => {
+  const imported = await page.$('.sugarss')
+  const atImport = await page.$('.sugarss-at-import')
+  const atImportAlias = await page.$('.sugarss-at-import-alias')
+
+  expect(await getColor(imported)).toBe('blue')
+  expect(await getColor(atImport)).toBe('darkslateblue')
+  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(atImportAlias)).toBe('darkslateblue')
+  expect(await getBg(atImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
+
+  editFile('sugarss.sss', (code) => code.replace('color: blue', 'color: coral'))
+  await untilUpdated(() => getColor(imported), 'coral')
+
+  editFile('nested/nested.sss', (code) =>
+    code.replace('color: darkslateblue', 'color: blue')
+  )
+  await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+// NOTE: the match inline snapshot should generate by build mode
+test('async css order', async () => {
+  await withRetry(async () => {
+    expect(await getColor('.async-green')).toMatchInlineSnapshot('"green"')
+    expect(await getColor('.async-blue')).toMatchInlineSnapshot('"blue"')
+  }, true)
+})
+
+test('async css order with css modules', async () => {
+  await withRetry(async () => {
+    expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
+  }, true)
 })

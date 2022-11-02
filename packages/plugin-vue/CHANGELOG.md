@@ -1,3 +1,51 @@
+## 3.2.0 (2022-10-26)
+
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+* chore(deps): update all non-major dependencies (#10488) ([15aa827](https://github.com/vitejs/vite/commit/15aa827)), closes [#10488](https://github.com/vitejs/vite/issues/10488)
+* fix(plugin-vue): enable ts in template when using tsx in dev mode (#10180) ([a9f9d31](https://github.com/vitejs/vite/commit/a9f9d31)), closes [#10180](https://github.com/vitejs/vite/issues/10180)
+* docs: add missing binding in asset import example (#10414) ([d7ac96d](https://github.com/vitejs/vite/commit/d7ac96d)), closes [#10414](https://github.com/vitejs/vite/issues/10414)
+
+
+
+## 3.2.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(deps): update rollup to `^2.79.1` (#10298) ([2266d83](https://github.com/vitejs/vite/commit/2266d83)), closes [#10298](https://github.com/vitejs/vite/issues/10298)
+* fix(esbuild): transpile with esnext in dev (#10207) ([43b7b78](https://github.com/vitejs/vite/commit/43b7b78)), closes [#10207](https://github.com/vitejs/vite/issues/10207)
+* chore(deps): update dependency slash to v5 (#10317) ([9d87c11](https://github.com/vitejs/vite/commit/9d87c11)), closes [#10317](https://github.com/vitejs/vite/issues/10317)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
+## 3.1.0 (2022-09-05)
+
+
+
+
+## 3.1.0-beta.0 (2022-08-29)
+
+* docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
+* feat: support object style hooks (#9634) ([757a92f](https://github.com/vitejs/vite/commit/757a92f)), closes [#9634](https://github.com/vitejs/vite/issues/9634)
+* chore: fix typo (#9684) ([d30f881](https://github.com/vitejs/vite/commit/d30f881)), closes [#9684](https://github.com/vitejs/vite/issues/9684)
+* chore(deps): update all non-major dependencies (#9675) ([4e56e87](https://github.com/vitejs/vite/commit/4e56e87)), closes [#9675](https://github.com/vitejs/vite/issues/9675)
+* chore(plugin-vue): update reactivityTransform comment docs [ci skip] ([d04784b](https://github.com/vitejs/vite/commit/d04784b))
+
+
+
+## <small>3.0.3 (2022-08-12)</small>
+
+
+
+
+## <small>3.0.2 (2022-08-11)</small>
+
+* chore: fix code typos (#9033) ([ed02861](https://github.com/vitejs/vite/commit/ed02861)), closes [#9033](https://github.com/vitejs/vite/issues/9033)
+* chore: narrow down rollup version (#9637) ([fcf4d98](https://github.com/vitejs/vite/commit/fcf4d98)), closes [#9637](https://github.com/vitejs/vite/issues/9637)
+
+
+
 ## <small>3.0.1 (2022-07-18)</small>
 
 * fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)

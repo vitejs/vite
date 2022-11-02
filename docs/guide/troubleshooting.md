@@ -8,12 +8,12 @@ If the suggestions here don't work, please try posting questions on [GitHub Disc
 
 ### `Error: Cannot find module 'C:\foo\bar&baz\vite\bin\vite.js'`
 
-The path to your project folder may include `?`, which doesn't work with `npm` on Windows ([npm/cmd-shim#45](https://github.com/npm/cmd-shim/issues/45)).
+The path to your project folder may include `&`, which doesn't work with `npm` on Windows ([npm/cmd-shim#45](https://github.com/npm/cmd-shim/issues/45)).
 
 You will need to either:
 
 - Switch to another package manager (e.g. `pnpm`, `yarn`)
-- Remove `?` from the path to your project
+- Remove `&` from the path to your project
 
 ## Dev Server
 
@@ -44,6 +44,16 @@ To solve this:
   $ sudo sysctl fs.inotify.max_user_watches=524288
   ```
 
+### 431 Request Header Fields Too Large
+
+When the server / WebSocket server receives a large HTTP header, the request will be dropped and the following warning will be shown.
+
+> Server responded with status code 431. See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.
+
+This is because Node.js limits request header size to mitigate [CVE-2018-12121](https://www.cve.org/CVERecord?id=CVE-2018-12121).
+
+To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it. Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
+
 ## HMR
 
 ### Vite detects a file change but the HMR is not working
@@ -66,6 +76,20 @@ If HMR is not handled by Vite or a plugin, a full reload will happen.
 
 Also if there is a dependency loop, a full reload will happen. To solve this, try removing the loop.
 
+## Build
+
+### Built file does not work because of CORS error
+
+If the HTML file output was opened with `file` protocol, the scripts won't run with the following error.
+
+> Access to script at 'file:///foo/bar.js' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: http, data, isolated-app, chrome-extension, chrome, https, chrome-untrusted.
+
+> Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at file:///foo/bar.js. (Reason: CORS request not http).
+
+See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSRequestNotHttp) for more information about why this happens.
+
+You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
+
 ## Others
 
 ### Syntax Error / Type Error happens
@@ -78,4 +102,4 @@ For example, you might see these errors.
 
 > TypeError: Cannot create property 'foo' on boolean 'false'
 
-If these code are used inside dependecies, you could use [`patch-package`](https://github.com/ds300/patch-package) (or [`yarn patch`](https://yarnpkg.com/cli/patch) or [`pnpm patch`](https://pnpm.io/cli/patch)) for an escape hatch.
+If these code are used inside dependencies, you could use [`patch-package`](https://github.com/ds300/patch-package) (or [`yarn patch`](https://yarnpkg.com/cli/patch) or [`pnpm patch`](https://pnpm.io/cli/patch)) for an escape hatch.

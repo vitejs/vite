@@ -42,6 +42,7 @@ const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
   hasImports: boolean
+  // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   facade: boolean
   // es-module-lexer has a facade detection but isn't always accurate for our
@@ -64,6 +65,8 @@ export interface DepsOptimizer {
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
   ensureFirstRun: () => void
+
+  close: () => Promise<void>
 
   options: DepOptimizationOptions
 }
@@ -910,12 +913,22 @@ function esbuildOutputFromId(
   id: string,
   cacheDirOutputPath: string
 ): any {
+  const cwd = process.cwd()
   const flatId = flattenId(id) + '.js'
-  return outputs[
-    normalizePath(
-      path.relative(process.cwd(), path.join(cacheDirOutputPath, flatId))
-    )
-  ]
+  const normalizedOutputPath = normalizePath(
+    path.relative(cwd, path.join(cacheDirOutputPath, flatId))
+  )
+  const output = outputs[normalizedOutputPath]
+  if (output) {
+    return output
+  }
+  // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
+  // Normalize keys to support this case too
+  for (const [key, value] of Object.entries(outputs)) {
+    if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
+      return value
+    }
+  }
 }
 
 export async function extractExportsData(
@@ -941,7 +954,7 @@ export async function extractExportsData(
     const [imports, exports, facade] = parse(result.outputFiles[0].text)
     return {
       hasImports: imports.length > 0,
-      exports,
+      exports: exports.map((e) => e.n),
       facade
     }
   }
@@ -973,7 +986,7 @@ export async function extractExportsData(
   const [imports, exports, facade] = parseResult
   const exportsData: ExportsData = {
     hasImports: imports.length > 0,
-    exports,
+    exports: exports.map((e) => e.n),
     facade,
     hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)
@@ -1029,7 +1042,12 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
+const lockfileFormats = [
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'bun.lockb'
+]
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
   let content = lookupFile(config.root, lockfileFormats) || ''

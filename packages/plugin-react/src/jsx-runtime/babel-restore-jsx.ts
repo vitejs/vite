@@ -4,6 +4,10 @@
  */
 import type * as babel from '@babel/core'
 
+interface PluginOptions {
+  reactAlias: string
+}
+
 /**
  * Visitor factory for babel, converting React.createElement(...) to <jsx ...>...</jsx>
  *
@@ -17,7 +21,10 @@ import type * as babel from '@babel/core'
  *
  * Any of those arguments might also be missing (undefined) and/or invalid.
  */
-export default function ({ types: t }: typeof babel): babel.PluginObj {
+export default function (
+  { types: t }: typeof babel,
+  { reactAlias = 'React' }: PluginOptions
+): babel.PluginObj {
   /**
    * Get a `JSXElement` from a `CallExpression`.
    * Returns `null` if this impossible.
@@ -48,7 +55,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     if (
       t.isJSXMemberExpression(name) &&
       t.isJSXIdentifier(name.object) &&
-      name.object.name === 'React' &&
+      name.object.name === reactAlias &&
       name.property.name === 'Fragment'
     ) {
       return t.jsxFragment(
@@ -69,7 +76,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
 
   /**
    * Get a JSXIdentifier or JSXMemberExpression from a Node of known type.
-   * Returns null if a unknown node type, null or undefined is passed.
+   * Returns null if an unknown node type, null or undefined is passed.
    */
   function getJSXName(node: any): any {
     if (node == null) {
@@ -93,7 +100,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
   }
 
   /**
-   * Get a array of JSX(Spread)Attribute from a props ObjectExpression.
+   * Get an array of JSX(Spread)Attribute from a props ObjectExpression.
    * Handles the _extends Expression babel creates from SpreadElement nodes.
    * Returns null if a validation error occurs.
    */
@@ -119,14 +126,20 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     if (!isPlainObjectExpression(node)) {
       return null
     }
-    return node.properties.map((prop: any) =>
-      t.isObjectProperty(prop)
-        ? t.jsxAttribute(
-            getJSXIdentifier(prop.key)!,
-            getJSXAttributeValue(prop.value)
-          )
-        : t.jsxSpreadAttribute(prop.argument)
-    )
+    return node.properties
+      .map((prop: any) =>
+        t.isObjectProperty(prop)
+          ? t.jsxAttribute(
+              getJSXIdentifier(prop.key)!,
+              getJSXAttributeValue(prop.value)
+            )
+          : t.jsxSpreadAttribute(prop.argument)
+      )
+      .filter((prop: any) =>
+        t.isJSXIdentifier(prop.name)
+          ? prop.name.name !== '__self' && prop.name.name !== '__source'
+          : true
+      )
   }
 
   function getJSXChild(node: any) {
@@ -182,7 +195,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
   const isReactCreateElement = (node: any) =>
     t.isCallExpression(node) &&
     t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.object, { name: 'React' }) &&
+    t.isIdentifier(node.callee.object, { name: reactAlias }) &&
     t.isIdentifier(node.callee.property, { name: 'createElement' }) &&
     !node.callee.computed
 

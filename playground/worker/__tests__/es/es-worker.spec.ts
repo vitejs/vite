@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { describe, expect, test } from 'vitest'
 import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
@@ -12,6 +13,11 @@ test('normal', async () => {
   await untilUpdated(
     () => page.textContent('.bundle-with-plugin'),
     'worker bundle with plugin success!',
+    true
+  )
+  await untilUpdated(
+    () => page.textContent('.asset-url'),
+    isBuild ? '/es/assets/vite.svg' : '/es/vite.svg',
     true
   )
 })
@@ -86,6 +92,16 @@ describe.runIf(isBuild)('build', () => {
 })
 
 test('module worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.worker-import-meta-url'),
+    'A string',
+    true
+  )
+  await untilUpdated(
+    () => page.textContent('.worker-import-meta-url-resolve'),
+    'A string',
+    true
+  )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',

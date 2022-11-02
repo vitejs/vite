@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { clearServeError, serveError } from './serve'
 import {
   browserLogs,

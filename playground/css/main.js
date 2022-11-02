@@ -3,6 +3,9 @@ import './minify.css'
 import css from './imported.css'
 text('.imported-css', css)
 
+import sugarss from './sugarss.sss'
+text('.imported-sugarss', sugarss)
+
 import sass from './sass.scss'
 text('.imported-sass', sass)
 
@@ -44,9 +47,12 @@ text('.modules-inline', inlineMod)
 import charset from './charset.css'
 text('.charset-css', charset)
 
+import './layered/index.css'
+
 import './dep.css'
 import './glob-dep.css'
 
+// eslint-disable-next-line import/order
 import { barModuleClasses } from 'css-js-dep'
 document
   .querySelector('.css-js-dep-module')
@@ -106,3 +112,5 @@ document
   .classList.add(aliasModule.aliasedModule)
 
 import './unsupported.css'
+
+import './async/index'

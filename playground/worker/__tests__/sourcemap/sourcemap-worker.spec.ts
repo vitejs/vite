@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { describe, expect, test } from 'vitest'
 import { isBuild, testDir } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
@@ -8,7 +9,7 @@ describe.runIf(isBuild)('build', () => {
     const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
-    expect(files.length).toBe(30)
+    expect(files.length).toBe(31)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)

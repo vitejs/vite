@@ -6,6 +6,7 @@ import {
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
+  posToNumber,
   resolveHostname
 } from '../utils'
 
@@ -17,7 +18,46 @@ describe('injectQuery', () => {
         'C:/User/Vite/Project?direct'
       )
     })
+
+    test('absolute file path', () => {
+      expect(injectQuery('C:\\test-file.vue', 'direct')).toEqual(
+        'C:/test-file.vue?direct'
+      )
+    })
+
+    test('absolute file path with parameters', () => {
+      expect(
+        injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct')
+      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
+    })
   }
+
+  test('relative path', () => {
+    expect(injectQuery('usr/vite/%20a%20', 'direct')).toEqual(
+      'usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
+      './usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
+      '../usr/vite/%20a%20?direct'
+    )
+  })
+
+  test('path with hash', () => {
+    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toEqual(
+      '/usr/vite/path with space/?direct#1?2/'
+    )
+  })
+
+  test('path with protocol', () => {
+    expect(injectQuery('file:///usr/vite/%20a%20', 'direct')).toMatch(
+      'file:///usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('http://usr.vite/%20a%20', 'direct')).toMatch(
+      'http://usr.vite/%20a%20?direct'
+    )
+  })
 
   test('path with multiple spaces', () => {
     expect(injectQuery('/usr/vite/path with space', 'direct')).toEqual(
@@ -127,6 +167,25 @@ test('ts import of file with .js and query param', () => {
     'test-file.js.ts?lee=123',
     'test-file.js.tsx?lee=123'
   ])
+})
+
+describe('posToNumber', () => {
+  test('simple', () => {
+    const actual = posToNumber('a\nb', { line: 2, column: 0 })
+    expect(actual).toBe(2)
+  })
+  test('pass though pos', () => {
+    const actual = posToNumber('a\nb', 2)
+    expect(actual).toBe(2)
+  })
+  test('empty line', () => {
+    const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
+    expect(actual).toBe(3)
+  })
+  test('out of range', () => {
+    const actual = posToNumber('a\nb', { line: 4, column: 0 })
+    expect(actual).toBe(4)
+  })
 })
 
 describe('getHash', () => {

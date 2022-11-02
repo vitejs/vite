@@ -2,12 +2,13 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
-import * as convertSourceMap from 'convert-source-map'
+import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import {
+  blankReplacer,
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
@@ -17,7 +18,6 @@ import {
   timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
-import { ssrTransform } from '../ssr/ssrTransform'
 import { getDepsOptimizer } from '../optimizer'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
@@ -198,6 +198,8 @@ async function loadAndTransform(
           convertSourceMap.fromSource(code) ||
           convertSourceMap.fromMapFileSource(code, path.dirname(file))
         )?.toObject()
+
+        code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
         logger.warn(`Failed to load source map for ${url}.`, {
           timestamp: true
@@ -269,9 +271,7 @@ async function loadAndTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url, originalCode, {
-        json: { stringify: !!server.config.json?.stringify }
-      })
+    ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
     : ({
         code,
         map,

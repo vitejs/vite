@@ -1,4 +1,5 @@
-import { getColor, page, serverLogs, untilUpdated } from '~utils'
+import { expect, test } from 'vitest'
+import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -92,7 +93,39 @@ test('should load dynamic import with vars raw', async () => {
   )
 })
 
+test('should load dynamic import with vars url', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-url'),
+    isBuild ? 'data:application/javascript' : '/alias/url.js',
+    true
+  )
+})
+
+test('should load dynamic import with vars worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-worker'),
+    'load worker',
+    true
+  )
+})
+
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
   await untilUpdated(() => getColor('.pkg-css'), 'blue', true)
+})
+
+test('should work with load ../ and itself directory', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-self'),
+    'dynamic-import-self-content',
+    true
+  )
+})
+
+test('should work with load ../ and contain itself directory', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-nested-self'),
+    'dynamic-import-nested-self-content',
+    true
+  )
 })

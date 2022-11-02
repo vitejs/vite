@@ -1,3 +1,52 @@
+## 3.2.0 (2022-10-26)
+
+* fix(create-vite): remove baseUrl from Svelte configs (#10200) ([9c7a331](https://github.com/vitejs/vite/commit/9c7a331)), closes [#10200](https://github.com/vitejs/vite/issues/10200)
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* chore: remove duplicated logic in vanilla template (#10145) ([f29fef5](https://github.com/vitejs/vite/commit/f29fef5)), closes [#10145](https://github.com/vitejs/vite/issues/10145)
+* chore(create-vite): remove sourcemap, move --noEmit to tsconfig (#10150) ([414d2ef](https://github.com/vitejs/vite/commit/414d2ef)), closes [#10150](https://github.com/vitejs/vite/issues/10150)
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+* chore(deps): update all non-major dependencies (#10488) ([15aa827](https://github.com/vitejs/vite/commit/15aa827)), closes [#10488](https://github.com/vitejs/vite/issues/10488)
+* chore(deps): update dependency vue-tsc to v1 (#10547) ([9d0e0af](https://github.com/vitejs/vite/commit/9d0e0af)), closes [#10547](https://github.com/vitejs/vite/issues/10547)
+* feat: Switch to JSX runtime transform in preact-ts template (#10061) ([bf69063](https://github.com/vitejs/vite/commit/bf69063)), closes [#10061](https://github.com/vitejs/vite/issues/10061)
+* feat(create-vite): support create-vite-extra (#10214) ([8116cbd](https://github.com/vitejs/vite/commit/8116cbd)), closes [#10214](https://github.com/vitejs/vite/issues/10214)
+
+
+
+## 3.1.0 (2022-09-05)
+
+* refactor(create-vite): migrate to TypeScript (#9941) ([85fa2c8](https://github.com/vitejs/vite/commit/85fa2c8)), closes [#9941](https://github.com/vitejs/vite/issues/9941)
+* perf: bundle create-vite (#9034) ([37ac91e](https://github.com/vitejs/vite/commit/37ac91e)), closes [#9034](https://github.com/vitejs/vite/issues/9034)
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+* test(cli): remove unnecessary generics usage (#9859) ([45d6797](https://github.com/vitejs/vite/commit/45d6797)), closes [#9859](https://github.com/vitejs/vite/issues/9859)
+* feat: skip `.git` when emptying dir (#9659) ([07fe65e](https://github.com/vitejs/vite/commit/07fe65e)), closes [#9659](https://github.com/vitejs/vite/issues/9659)
+* feat(create-vite): add support for custom init commands (`create-vue`, Nuxt, and SvelteKit) (#9406) ([1673f3d](https://github.com/vitejs/vite/commit/1673f3d)), closes [#9406](https://github.com/vitejs/vite/issues/9406)
+* chore(deps): update all non-major dependencies (#9675) ([4e56e87](https://github.com/vitejs/vite/commit/4e56e87)), closes [#9675](https://github.com/vitejs/vite/issues/9675)
+* chore(deps): update all non-major dependencies (#9778) ([aceaefc](https://github.com/vitejs/vite/commit/aceaefc)), closes [#9778](https://github.com/vitejs/vite/issues/9778)
+
+
+
+## <small>3.0.2 (2022-08-12)</small>
+
+
+
+
+## <small>3.0.1 (2022-08-11)</small>
+
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(create-vite): update vanilla-ts brand color (#9254) ([bff3abb](https://github.com/vitejs/vite/commit/bff3abb)), closes [#9254](https://github.com/vitejs/vite/issues/9254)
+* fix(deps): update all non-major dependencies (#9176) ([31d3b70](https://github.com/vitejs/vite/commit/31d3b70)), closes [#9176](https://github.com/vitejs/vite/issues/9176)
+* fix(deps): update all non-major dependencies (#9575) ([8071325](https://github.com/vitejs/vite/commit/8071325)), closes [#9575](https://github.com/vitejs/vite/issues/9575)
+* chore: remove unused `favicon.svg` (#9181) ([33b5b0d](https://github.com/vitejs/vite/commit/33b5b0d)), closes [#9181](https://github.com/vitejs/vite/issues/9181)
+* chore: tidy up eslint config (#9468) ([f4addcf](https://github.com/vitejs/vite/commit/f4addcf)), closes [#9468](https://github.com/vitejs/vite/issues/9468)
+* chore(deps): update all non-major dependencies (#9347) ([2fcb027](https://github.com/vitejs/vite/commit/2fcb027)), closes [#9347](https://github.com/vitejs/vite/issues/9347)
+* chore(deps): update all non-major dependencies (#9478) ([c530d16](https://github.com/vitejs/vite/commit/c530d16)), closes [#9478](https://github.com/vitejs/vite/issues/9478)
+
+
+
 ## 3.0.0 (2022-07-13)
 
 * chore: bump minors and rebuild lock (#8074) ([aeb5b74](https://github.com/vitejs/vite/commit/aeb5b74)), closes [#8074](https://github.com/vitejs/vite/issues/8074)

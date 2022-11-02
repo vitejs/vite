@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { isBuild, isWindows, page } from '~utils'
 
 test('bom import', async () => {
@@ -17,7 +18,7 @@ test('deep import with exports field', async () => {
 })
 
 test('deep import with query with exports field', async () => {
-  // since it is imported with `?url` it should return a url
+  // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
     isBuild ? /base64/ : '/exports-path/deep.json'
   )
@@ -31,6 +32,13 @@ test('deep import with exports field + exposed dir', async () => {
 
 test('deep import with exports field + mapped dir', async () => {
   expect(await page.textContent('.exports-deep-mapped-dir')).toMatch(
+    '[success]'
+  )
+})
+
+// this is how Svelte 3 is packaged
+test('deep import with exports and legacy fallback', async () => {
+  expect(await page.textContent('.exports-legacy-fallback')).toMatch(
     '[success]'
   )
 })
@@ -85,6 +93,18 @@ test('absolute path', async () => {
 
 test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
+})
+
+test('Resolve browser field even if module field exists', async () => {
+  expect(await page.textContent('.browser-module1')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely UMD or CJS', async () => {
+  expect(await page.textContent('.browser-module2')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely IIFE', async () => {
+  expect(await page.textContent('.browser-module3')).toMatch('[success]')
 })
 
 test('css entry', async () => {

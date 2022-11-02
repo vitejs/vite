@@ -1,3 +1,48 @@
+## 2.2.0 (2022-10-26)
+
+* fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
+* fix(plugin-react): update `package.json` (#10479) ([7f45eb5](https://github.com/vitejs/vite/commit/7f45eb5)), closes [#10479](https://github.com/vitejs/vite/issues/10479)
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+
+
+
+## 2.2.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(react): conditionally self-accept fast-refresh HMR (#10239) ([e976b06](https://github.com/vitejs/vite/commit/e976b06)), closes [#10239](https://github.com/vitejs/vite/issues/10239)
+* feat: add `throwIfNamespace` option for custom JSX runtime (#9571) ([f842f74](https://github.com/vitejs/vite/commit/f842f74)), closes [#9571](https://github.com/vitejs/vite/issues/9571)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
+## 2.1.0 (2022-09-05)
+
+* fix(plugin-react): duplicate __self prop and __source prop (#9387) ([c89de3a](https://github.com/vitejs/vite/commit/c89de3a)), closes [#9387](https://github.com/vitejs/vite/issues/9387)
+
+
+
+## 2.1.0-beta.0 (2022-08-29)
+
+* docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
+* fix: add `react` to `optimizeDeps` (#9056) ([bc4a627](https://github.com/vitejs/vite/commit/bc4a627)), closes [#9056](https://github.com/vitejs/vite/issues/9056)
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+
+
+
+## <small>2.0.1 (2022-08-11)</small>
+
+* fix: don't count class declarations as react fast refresh boundry (fixes #3675) (#8887) ([5a18284](https://github.com/vitejs/vite/commit/5a18284)), closes [#3675](https://github.com/vitejs/vite/issues/3675) [#8887](https://github.com/vitejs/vite/issues/8887)
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(deps): update all non-major dependencies (#9176) ([31d3b70](https://github.com/vitejs/vite/commit/31d3b70)), closes [#9176](https://github.com/vitejs/vite/issues/9176)
+* fix(deps): update all non-major dependencies (#9575) ([8071325](https://github.com/vitejs/vite/commit/8071325)), closes [#9575](https://github.com/vitejs/vite/issues/9575)
+* fix(plugin-react): wrong substitution causes `React is not defined` (#9386) ([8a5b575](https://github.com/vitejs/vite/commit/8a5b575)), closes [#9386](https://github.com/vitejs/vite/issues/9386)
+* docs: fix server options link (#9242) ([29db3ea](https://github.com/vitejs/vite/commit/29db3ea)), closes [#9242](https://github.com/vitejs/vite/issues/9242)
+
+
+
 ## 2.0.0 (2022-07-13)
 
 * chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
