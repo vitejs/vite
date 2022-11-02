@@ -30,6 +30,7 @@ import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
+  arrayEqual,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -305,7 +306,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
-  let pureCssChunks: Set<string>
+  let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -339,7 +340,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
-      pureCssChunks = new Set<string>()
+      pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
     },
@@ -537,7 +538,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
-          pureCssChunks.add(chunk.fileName)
+          pureCssChunks.add(chunk)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
           const cssAssetName = chunk.facadeModuleId
@@ -624,7 +625,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
-        const emptyChunkFiles = [...pureCssChunks]
+        // map each pure css chunk (rendered chunk) to it's corresponding bundle
+        // chunk. we check that by comparing the `moduleIds` as they have different
+        // filenames (rendered chunk has the !~{XXX}~ placeholder)
+        const pureCssChunkNames: string[] = []
+        for (const pureCssChunk of pureCssChunks) {
+          for (const key in bundle) {
+            const bundleChunk = bundle[key]
+            if (
+              bundleChunk.type === 'chunk' &&
+              arrayEqual(bundleChunk.moduleIds, pureCssChunk.moduleIds)
+            ) {
+              pureCssChunkNames.push(key)
+              break
+            }
+          }
+        }
+
+        const emptyChunkFiles = pureCssChunkNames
           .map((file) => path.basename(file))
           .join('|')
           .replace(/\./g, '\\.')
@@ -641,7 +659,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // and also register the emitted CSS files under the importer
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunks.has(file)) {
+              if (pureCssChunkNames.includes(file)) {
                 const {
                   viteMetadata: { importedCss }
                 } = bundle[file] as OutputChunk
@@ -660,7 +678,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
-        pureCssChunks.forEach((fileName) => {
+        pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
