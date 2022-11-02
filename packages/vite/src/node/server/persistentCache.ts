@@ -105,7 +105,14 @@ export async function createPersistentCache(
     ? getCodeHash(JSON.stringify(config.define))
     : ''
 
-  const cacheVersion = [options.cacheVersion, hashedVersionFiles, defineHash]
+  const envHash = getCodeHash(JSON.stringify(config.env))
+
+  const cacheVersion = [
+    options.cacheVersion,
+    hashedVersionFiles,
+    defineHash,
+    envHash
+  ]
     .filter(Boolean)
     .join('-')
 
