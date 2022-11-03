@@ -43,6 +43,14 @@ To solve this:
   $ sudo sysctl fs.inotify.max_user_instances=8192
   $ sudo sysctl fs.inotify.max_user_watches=524288
   ```
+#### Alternatively try Modifying Configs
+
+If the above steps don't work then you can also try modifying the following files. 
+
+- /etc/systemd/system.conf 
+- /etc/systemd/user.conf
+
+By adding in the following un-commented config: `DefaultLimitNOFILE=65536`. Note that these settings persist but a **restart is required**.
 
 ### 431 Request Header Fields Too Large
 
