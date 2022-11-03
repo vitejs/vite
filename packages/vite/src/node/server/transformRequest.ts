@@ -253,8 +253,16 @@ async function loadAndTransform(
     code = transformResult.code!
     map = transformResult.map
 
-    // To enable debugging create a sourcemap for known modified JS files without one:
-    if (!map && mod.file && mod.type === 'js' && code !== originalCode) {
+    // To enable IDE debugging add a minimal sourcemap for modified non-HMR JS files without one:
+    if (
+      !map &&
+      mod.file &&
+      mod.type === 'js' &&
+      code !== originalCode &&
+      !code.startsWith(
+        'import { createHotContext as __vite__createHotContext } from'
+      )
+    ) {
       map = new MagicString(code).generateMap({ source: mod.file })
     }
   }
