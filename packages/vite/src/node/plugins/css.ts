@@ -39,6 +39,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
+  joinUrlSegments,
   normalizePath,
   parseRequest,
   processSrcSet,
@@ -179,7 +180,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
-  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -212,7 +212,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (encodePublicUrlsInCSS(config)) {
             return publicFileToBuiltUrl(url, config)
           } else {
-            return config.base + url.slice(1)
+            return joinUrlSegments(config.base, url)
           }
         }
         const resolved = await resolveUrl(url, importer)
@@ -233,14 +233,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map
-      } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers,
-        server
-      )
+      } = await compileCSS(id, raw, config, urlReplacer)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -257,7 +250,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)
-        const devBase = config.base
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
           const isSelfAccepting =
@@ -266,6 +258,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
             const depModules = new Set<string | ModuleNode>()
+            const devBase = config.base
             for (const file of deps) {
               depModules.add(
                 isCSSRequest(file)
@@ -395,10 +388,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const cssContent = await getContentWithSourcemap(css)
-        const devBase = config.base
         const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-            path.posix.join(devBase, CLIENT_PUBLIC_PATH)
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
@@ -744,13 +736,16 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+const configToAtImportResolvers = new WeakMap<
+  ResolvedConfig,
+  CSSAtImportResolvers
+>()
+
 async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers,
-  server?: ViteDevServer
+  urlReplacer?: CssUrlReplacer
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -785,6 +780,12 @@ async function compileCSS(
   let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
+
+  let atImportResolvers = configToAtImportResolvers.get(config)!
+  if (!atImportResolvers) {
+    atImportResolvers = createCSSResolvers(config)
+    configToAtImportResolvers.set(config, atImportResolvers)
+  }
 
   // 2. pre-processors: sass etc.
   if (isPreProcessor(lang)) {
@@ -880,17 +881,22 @@ async function compileCSS(
       })
     )
   }
-  postcssPlugins.push(
-    UrlRewritePostcssPlugin({
-      replacer: urlReplacer,
-      logger: config.logger
-    })
-  )
+
+  if (urlReplacer) {
+    postcssPlugins.push(
+      UrlRewritePostcssPlugin({
+        replacer: urlReplacer,
+        logger: config.logger
+      })
+    )
+  }
 
   if (isModule) {
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        // TODO: convert null to undefined (`null` should be removed from `CSSModulesOptions.localsConvention`)
+        localsConvention: modulesOptions?.localsConvention ?? undefined,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
@@ -1011,6 +1017,24 @@ async function compileCSS(
     modules,
     deps
   }
+}
+
+export interface PreprocessCSSResult {
+  code: string
+  map?: SourceMapInput
+  modules?: Record<string, string>
+  deps?: Set<string>
+}
+
+/**
+ * @experimental
+ */
+export async function preprocessCSS(
+  code: string,
+  filename: string,
+  config: ResolvedConfig
+): Promise<PreprocessCSSResult> {
+  return await compileCSS(filename, code, config)
 }
 
 export async function formatPostcssSourceMap(
@@ -1471,7 +1495,7 @@ const scss: SassStylePreprocessor = async (
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias)
+        rebaseUrls(resolved, options.filename, options.alias, '$')
           .then((data) => done?.(data))
           .catch((data) => done?.(data))
       } else {
@@ -1555,7 +1579,8 @@ const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
 async function rebaseUrls(
   file: string,
   rootFile: string,
-  alias: Alias[]
+  alias: Alias[],
+  variablePrefix: string
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1580,6 +1605,8 @@ async function rebaseUrls(
   let rebased
   const rebaseFn = (url: string) => {
     if (url.startsWith('/')) return url
+    // ignore url's starting with variable
+    if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
       const matches =
@@ -1712,7 +1739,12 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, this.rootFile, this.alias)
+          const result = await rebaseUrls(
+            resolved,
+            this.rootFile,
+            this.alias,
+            '@'
+          )
           let contents: string
           if (result && 'contents' in result) {
             contents = result.contents
