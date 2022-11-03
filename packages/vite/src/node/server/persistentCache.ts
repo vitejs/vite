@@ -9,6 +9,7 @@ import type {
 } from '../config'
 import { normalizePath, version } from '../publicUtils'
 import { createDebugger, getCodeHash, isDefined, lookupFile } from '../utils'
+import type { Logger } from '../logger'
 import type { ModuleNode } from './moduleGraph'
 
 export interface PersistentCache {
@@ -71,16 +72,16 @@ export interface PersistentCacheFile {
   relatedModules: Record<string, string>
 }
 
+const debugLog = createDebugger('vite:persistent-cache')
+
 export async function createPersistentCache(
   config: ResolvedConfig
 ): Promise<PersistentCache | null> {
-  const options = config.serverPersistentCache
+  const { logger, serverPersistentCache: options } = config
+
   if (!options) {
     return null
   }
-
-  const logger = config.logger
-  const debugLog = createDebugger('vite:persistent-cache')
 
   // Cache directory
 
@@ -92,119 +93,15 @@ export async function createPersistentCache(
 
   // Cache version
 
-  const hashedVersionFiles = await Promise.all(
-    options.cacheVersionFromFiles.map((file) => {
-      if (!fs.existsSync(file)) {
-        throw new Error(`Persistent cache version file not found: ${file}`)
-      }
-      return fs.promises.readFile(file, 'utf-8')
-    })
-  ).then((codes) => getCodeHash(codes.join('')))
-
-  const defineHash = config.define
-    ? getCodeHash(JSON.stringify(config.define))
-    : ''
-
-  const envHash = getCodeHash(JSON.stringify(config.env))
-
-  const cacheVersion = [
-    options.cacheVersion,
-    `vite:${version}`,
-    config.configFileHash,
-    hashedVersionFiles,
-    defineHash,
-    envHash
-  ]
-    .filter(Boolean)
-    .join('-')
+  const cacheVersion = await computeCacheVersion(config, options)
 
   // Manifest
 
-  const manifestPath = path.join(resolvedCacheDir, 'manifest.json')
-  let manifest: PersistentCacheManifest | null = null
-  if (fs.existsSync(manifestPath)) {
-    try {
-      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
-      if (manifest && manifest.version !== cacheVersion) {
-        // Bust cache if version changed
-        debugLog(
-          `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
-        )
-        try {
-          // Empty the directory
-          const files = await fs.promises.readdir(resolvedCacheDir)
-          await Promise.all(
-            files.map((file) =>
-              fs.promises.unlink(path.join(resolvedCacheDir, file))
-            )
-          )
-          logger.info(`Deleted ${files.length} files.`)
-        } catch (e) {
-          logger.warn(
-            colors.yellow(
-              `Failed to empty persistent cache directory '${resolvedCacheDir}': ${e.message}`
-            )
-          )
-        }
-        manifest = null
-      }
-    } catch (e) {
-      logger.warn(
-        colors.yellow(
-          `Failed to load persistent cache manifest '${manifestPath}': ${e.message}`
-        )
-      )
-    }
-  }
-  const resolvedManifest: PersistentCacheManifest = manifest ?? {
-    version: cacheVersion,
-    modules: {},
-    files: {}
-  }
-
-  // Manifest write queue
-
-  let isManifestWriteQueued = false
-  let isManifestWriting = false
-  let manifestWriteTimer: any = null
-
-  function queueManifestWrite() {
-    if (isManifestWriteQueued) {
-      return
-    }
-    isManifestWriteQueued = true
-    if (isManifestWriting) {
-      return
-    }
-
-    writeManifest()
-  }
-
-  function writeManifest() {
-    clearTimeout(manifestWriteTimer)
-    manifestWriteTimer = setTimeout(async () => {
-      isManifestWriting = true
-      try {
-        await fs.promises.writeFile(
-          manifestPath,
-          JSON.stringify(resolvedManifest, null, 2)
-        )
-        debugLog(`Persistent cache manifest saved`)
-      } catch (e) {
-        logger.warn(
-          colors.yellow(
-            `Failed to write persistent cache manifest '${manifestPath}': ${e.message}`
-          )
-        )
-      }
-      isManifestWriting = false
-
-      if (isManifestWriteQueued) {
-        isManifestWriteQueued = false
-        writeManifest()
-      }
-    }, 1000)
-  }
+  const { manifest, queueManifestWrite } = await useCacheManifest(
+    resolvedCacheDir,
+    cacheVersion,
+    logger
+  )
 
   // Main methods
 
@@ -213,7 +110,7 @@ export async function createPersistentCache(
   }
 
   async function read(key: string): Promise<PersistentCacheResult | null> {
-    const entry = resolvedManifest.modules[key]
+    const entry = manifest.modules[key]
     if (!entry) {
       return null
     }
@@ -317,7 +214,7 @@ export async function createPersistentCache(
         fullEntry.isSelfAccepting = mod.isSelfAccepting
       }
 
-      resolvedManifest.modules[key] = entry
+      manifest.modules[key] = entry
 
       queueManifestWrite()
     } catch (e) {
@@ -337,8 +234,8 @@ export async function createPersistentCache(
     depsMetadata = metadata
 
     // Update existing cache files
-    for (const key in resolvedManifest.modules) {
-      const entry = resolvedManifest.modules[key]
+    for (const key in manifest.modules) {
+      const entry = manifest.modules[key]
       if (entry && isFullCacheEntry(entry)) {
         // Gather code changes
         const optimizedDeps: [string, string][] = []
@@ -374,12 +271,142 @@ export async function createPersistentCache(
   }
 
   return {
-    manifest: resolvedManifest,
+    manifest,
     getKey,
     read,
     write,
     queueManifestWrite,
     updateDepsMetadata
+  }
+}
+
+async function computeCacheVersion(
+  config: ResolvedConfig,
+  options: ResolvedServerPersistentCacheOptions
+): Promise<string> {
+  const hashedVersionFiles = await Promise.all(
+    options.cacheVersionFromFiles.map((file) => {
+      if (!fs.existsSync(file)) {
+        throw new Error(`Persistent cache version file not found: ${file}`)
+      }
+      return fs.promises.readFile(file, 'utf-8')
+    })
+  ).then((codes) => getCodeHash(codes.join('')))
+
+  const defineHash = config.define
+    ? getCodeHash(JSON.stringify(config.define))
+    : ''
+
+  const envHash = getCodeHash(JSON.stringify(config.env))
+
+  const cacheVersion = [
+    options.cacheVersion,
+    `vite:${version}`,
+    config.configFileHash,
+    hashedVersionFiles,
+    defineHash,
+    envHash
+  ]
+    .filter(Boolean)
+    .join('-')
+
+  return cacheVersion
+}
+
+async function useCacheManifest(
+  resolvedCacheDir: string,
+  cacheVersion: string,
+  logger: Logger
+) {
+  const manifestPath = path.join(resolvedCacheDir, 'manifest.json')
+  let manifest: PersistentCacheManifest | null = null
+  if (fs.existsSync(manifestPath)) {
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+      if (manifest && manifest.version !== cacheVersion) {
+        // Bust cache if version changed
+        debugLog(
+          `Clearing persistent cache (${cacheVersion} from ${manifest.version})...`
+        )
+        try {
+          // Empty the directory
+          const files = await fs.promises.readdir(resolvedCacheDir)
+          await Promise.all(
+            files.map((file) =>
+              fs.promises.unlink(path.join(resolvedCacheDir, file))
+            )
+          )
+          logger.info(`Deleted ${files.length} files.`)
+        } catch (e) {
+          logger.warn(
+            colors.yellow(
+              `Failed to empty persistent cache directory '${resolvedCacheDir}': ${e.message}`
+            )
+          )
+        }
+        manifest = null
+      }
+    } catch (e) {
+      logger.warn(
+        colors.yellow(
+          `Failed to load persistent cache manifest '${manifestPath}': ${e.message}`
+        )
+      )
+    }
+  }
+  const resolvedManifest: PersistentCacheManifest = manifest ?? {
+    version: cacheVersion,
+    modules: {},
+    files: {}
+  }
+
+  // Manifest write queue
+
+  let isManifestWriteQueued = false
+  let isManifestWriting = false
+  let manifestWriteTimer: any = null
+
+  function queueManifestWrite() {
+    if (isManifestWriteQueued) {
+      return
+    }
+    isManifestWriteQueued = true
+    if (isManifestWriting) {
+      return
+    }
+
+    writeManifest()
+  }
+
+  function writeManifest() {
+    clearTimeout(manifestWriteTimer)
+    manifestWriteTimer = setTimeout(async () => {
+      isManifestWriting = true
+      try {
+        await fs.promises.writeFile(
+          manifestPath,
+          JSON.stringify(resolvedManifest, null, 2)
+        )
+        debugLog(`Persistent cache manifest saved`)
+      } catch (e) {
+        logger.warn(
+          colors.yellow(
+            `Failed to write persistent cache manifest '${manifestPath}': ${e.message}`
+          )
+        )
+      }
+      isManifestWriting = false
+
+      if (isManifestWriteQueued) {
+        isManifestWriteQueued = false
+        writeManifest()
+      }
+    }, 1000)
+  }
+
+  return {
+    manifest: resolvedManifest,
+    queueManifestWrite
   }
 }
 
