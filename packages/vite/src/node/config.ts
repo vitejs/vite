@@ -322,6 +322,10 @@ export interface ServerPersistentCacheOptions {
    * Exclude requests from being cached.
    */
   exclude?: (url: string) => boolean
+  /**
+   * Path to the cache directory.
+   */
+  cacheDir?: string
 }
 
 export interface ResolvedExperimentalOptions

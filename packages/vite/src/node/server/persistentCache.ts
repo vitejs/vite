@@ -442,7 +442,7 @@ export function resolvePersistentCacheOptions(
     typeof config.experimental?.serverPersistentCaching === 'object'
       ? config.experimental.serverPersistentCaching
       : null
-  const cacheDir = path.join(payload.cacheDir, `server-cache`)
+  const cacheDir = path.join(payload.cacheDir, castedToObject?.cacheDir ?? `server-cache`)
 
   const cacheVersionFromFiles: string[] = (
     castedToObject?.cacheVersionFromFiles ?? []
