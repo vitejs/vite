@@ -912,7 +912,8 @@ export function toUpperCaseDriveLetter(pathName: string): string {
   return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+// Taken from https://stackoverflow.com/a/36328890
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
