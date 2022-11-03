@@ -169,10 +169,7 @@ export async function createPersistentCache(
         }
       }
 
-      await fs.promises.writeFile(fileCode, code, 'utf8')
-      if (map && fileMap) {
-        await fs.promises.writeFile(fileMap, JSON.stringify(map), 'utf8')
-      }
+      // Create cache entry
 
       const entry: PersistentCacheEntry = {
         id,
@@ -217,6 +214,13 @@ export async function createPersistentCache(
       manifest.modules[key] = entry
 
       queueManifestWrite()
+
+      // Write files
+
+      await fs.promises.writeFile(fileCode, code, 'utf8')
+      if (map && fileMap) {
+        await fs.promises.writeFile(fileMap, JSON.stringify(map), 'utf8')
+      }
     } catch (e) {
       logger.warn(
         colors.yellow(
@@ -234,40 +238,42 @@ export async function createPersistentCache(
     depsMetadata = metadata
 
     // Update existing cache files
-    for (const key in manifest.modules) {
-      const entry = manifest.modules[key]
-      if (entry && isFullCacheEntry(entry)) {
-        // Gather code changes
-        const optimizedDeps: [string, string][] = []
-        for (const m of entry.importedModules) {
-          for (const depId in metadata.optimized) {
-            const dep = metadata.optimized[depId]
-            if (dep.file === m.file) {
-              optimizedDeps.push([
-                m.url,
-                m.url.replace(/v=[\w\d]+/, `v=${metadata.browserHash}`)
-              ])
-              break
+    await Promise.all(
+      Object.keys(manifest.modules).map(async (key) => {
+        const entry = manifest.modules[key]
+        if (entry && isFullCacheEntry(entry)) {
+          // Gather code changes
+          const optimizedDeps: [string, string][] = []
+          for (const m of entry.importedModules) {
+            for (const depId in metadata.optimized) {
+              const dep = metadata.optimized[depId]
+              if (dep.file === m.file) {
+                optimizedDeps.push([
+                  m.url,
+                  m.url.replace(/v=[\w\d]+/, `v=${metadata.browserHash}`)
+                ])
+                break
+              }
             }
           }
-        }
-        // Apply code changes
-        if (optimizedDeps.length) {
-          let code = await fs.promises.readFile(entry.fileCode, 'utf8')
-          for (const [from, to] of optimizedDeps) {
-            code = code.replaceAll(from, to)
+          // Apply code changes
+          if (optimizedDeps.length) {
+            let code = await fs.promises.readFile(entry.fileCode, 'utf8')
+            for (const [from, to] of optimizedDeps) {
+              code = code.replaceAll(from, to)
+            }
+            await fs.promises.writeFile(entry.fileCode, code, 'utf8')
+            debugLog(
+              `Updated ${
+                entry.id
+              } with new optimized deps imports: ${optimizedDeps
+                .map(([from, to]) => `${from} -> ${to}`)
+                .join(', ')}`
+            )
           }
-          await fs.promises.writeFile(entry.fileCode, code, 'utf8')
-          debugLog(
-            `Updated ${
-              entry.id
-            } with new optimized deps imports: ${optimizedDeps
-              .map(([from, to]) => `${from} -> ${to}`)
-              .join(', ')}`
-          )
         }
-      }
-    }
+      })
+    )
   }
 
   return {
