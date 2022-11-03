@@ -379,7 +379,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // prepend base
-          url = joinUrlSegments(base, url.replace(/^\//, ''))
+          url = joinUrlSegments(base, url)
         }
 
         return [url, resolved.id]
