@@ -789,7 +789,8 @@ async function restartServer(server: ViteDevServer) {
     inlineConfig = mergeConfig(inlineConfig, {
       optimizeDeps: {
         force: true
-      }
+      },
+      root: server.config.root
     })
   }
 
