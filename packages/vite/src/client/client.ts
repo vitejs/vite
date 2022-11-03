@@ -154,10 +154,12 @@ async function handleMessage(payload: HMRPayload) {
         clearErrorOverlay()
         isFirstUpdate = false
       }
-      payload.updates.forEach((update) => {
-        if (update.type === 'js-update') {
-          queueUpdate(fetchUpdate(update))
-        } else {
+      await Promise.all(
+        payload.updates.map(async (update): Promise<void> => {
+          if (update.type === 'js-update') {
+            return queueUpdate(fetchUpdate(update))
+          }
+
           // css-update
           // this is only sent when a css file referenced with <link> is updated
           const { path, timestamp } = update
@@ -171,27 +173,36 @@ async function handleMessage(payload: HMRPayload) {
             (e) =>
               !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
           )
-          if (el) {
-            const newPath = `${base}${searchUrl.slice(1)}${
-              searchUrl.includes('?') ? '&' : '?'
-            }t=${timestamp}`
 
-            // rather than swapping the href on the existing tag, we will
-            // create a new link tag. Once the new stylesheet has loaded we
-            // will remove the existing link tag. This removes a Flash Of
-            // Unstyled Content that can occur when swapping out the tag href
-            // directly, as the new stylesheet has not yet been loaded.
+          if (!el) {
+            return
+          }
+
+          const newPath = `${base}${searchUrl.slice(1)}${
+            searchUrl.includes('?') ? '&' : '?'
+          }t=${timestamp}`
+
+          // rather than swapping the href on the existing tag, we will
+          // create a new link tag. Once the new stylesheet has loaded we
+          // will remove the existing link tag. This removes a Flash Of
+          // Unstyled Content that can occur when swapping out the tag href
+          // directly, as the new stylesheet has not yet been loaded.
+          return new Promise((resolve) => {
             const newLinkTag = el.cloneNode() as HTMLLinkElement
             newLinkTag.href = new URL(newPath, el.href).href
-            const removeOldEl = () => el.remove()
+            const removeOldEl = () => {
+              el.remove()
+              console.debug(`[vite] css hot updated: ${searchUrl}`)
+              resolve()
+            }
             newLinkTag.addEventListener('load', removeOldEl)
             newLinkTag.addEventListener('error', removeOldEl)
             outdatedLinkTags.add(el)
             el.after(newLinkTag)
-          }
-          console.debug(`[vite] css hot updated: ${searchUrl}`)
-        }
-      })
+          })
+        })
+      )
+      notifyListeners('vite:afterUpdate', payload)
       break
     case 'custom': {
       notifyListeners(payload.event, payload.data)

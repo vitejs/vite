@@ -145,6 +145,7 @@ Listen to an HMR event.
 The following HMR events are dispatched by Vite automatically:
 
 - `'vite:beforeUpdate'` when an update is about to be applied (e.g. a module will be replaced)
+- `'vite:afterUpdate'` when an update has just been applied (e.g. a module has been replaced)
 - `'vite:beforeFullReload'` when a full reload is about to occur
 - `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
 - `'vite:invalidate'` when a module is invalidated with `import.meta.hot.invalidate()`

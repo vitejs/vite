@@ -79,10 +79,10 @@ if (!isBuild) {
 
     await untilUpdated(() => getBgColor(el), 'rgb(220, 38, 38)')
 
-    expect(browserLogs).toMatchObject([
-      '[vite] css hot updated: /index.css',
+    expect(browserLogs).toContain('[vite] css hot updated: /index.css')
+    expect(browserLogs).toContain(
       '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js'
-    ])
+    )
 
     browserLogs.length = 0
   })

@@ -7,6 +7,7 @@ import type {
 
 export interface CustomEventMap {
   'vite:beforeUpdate': UpdatePayload
+  'vite:afterUpdate': UpdatePayload
   'vite:beforePrune': PrunePayload
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
