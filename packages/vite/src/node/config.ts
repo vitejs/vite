@@ -324,6 +324,11 @@ export interface ServerPersistentCacheOptions {
   exclude?: (url: string) => boolean
 }
 
+export interface ResolvedExperimentalOptions
+  extends Omit<ExperimentalOptions, 'serverPersistentCaching'> {
+  serverPersistentCaching: ResolvedServerPersistentCacheOptions | null
+}
+
 export interface ResolvedServerPersistentCacheOptions {
   cacheDir: string
   cacheVersionFromFiles: string[]
@@ -354,7 +359,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker' | 'experimental'
+  > & {
     configFile: string | undefined
     configFileHash: string | undefined
     configFileDependencies: string[]
@@ -387,8 +395,7 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     appType: AppType
-    experimental: ExperimentalOptions
-    serverPersistentCache: ResolvedServerPersistentCacheOptions | null
+    experimental: ResolvedExperimentalOptions
   } & PluginHookUtils
 >
 
@@ -657,7 +664,7 @@ export async function resolveConfig(
     getSortedPluginHooks: undefined!
   }
 
-  const serverPersistentCache = resolvePersistentCacheOptions({
+  const serverPersistentCaching = resolvePersistentCacheOptions({
     config,
     cacheDir,
     resolvedRoot
@@ -711,11 +718,11 @@ export async function resolveConfig(
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
-      ...config.experimental
+      ...config.experimental,
+      serverPersistentCaching
     },
     getSortedPlugins: undefined!,
-    getSortedPluginHooks: undefined!,
-    serverPersistentCache
+    getSortedPluginHooks: undefined!
   }
   const resolved: ResolvedConfig = {
     ...config,

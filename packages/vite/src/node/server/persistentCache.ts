@@ -77,7 +77,10 @@ const debugLog = createDebugger('vite:persistent-cache')
 export async function createPersistentCache(
   config: ResolvedConfig
 ): Promise<PersistentCache | null> {
-  const { logger, serverPersistentCache: options } = config
+  const {
+    logger,
+    experimental: { serverPersistentCaching: options }
+  } = config
 
   if (!options) {
     return null
