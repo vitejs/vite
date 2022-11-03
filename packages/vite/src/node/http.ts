@@ -163,36 +163,37 @@ export async function httpServerStart(
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
         if (strictPort) {
-          httpServer.removeListener('error', onError)
           reject(new Error(`Port ${port} is already in use`))
         } else {
           logger.info(`Port ${port} is in use, trying another one...`)
           httpServer.listen(++port, host)
         }
       } else {
-        httpServer.removeListener('error', onError)
         reject(e)
       }
     }
 
-    httpServer.on('error', onError)
+    try {
+      httpServer.on('error', (e: Error & { code?: string }) => {
+        // pass to handler in catch
+        throw e;
+      });
 
-    httpServer.listen(port, host, () => {
       if (host === 'localhost') {
-        httpServer.close()
+        // check if 0.0.0.0 is already occupied
         httpServer.listen(port, '0.0.0.0', () => {
-          httpServer.close()
-          httpServer.listen(port, host, () => {
-            httpServer.removeListener('error', onError)
-            resolve(port)
-          })
-        })
-      } else {
-        httpServer.removeListener('error', onError)
-        resolve(port)
+          httpServer.close();
+        });
       }
-    })
-  })
+
+      // Now we can detect collisions with localhost aliases
+      httpServer.listen(port, host, () => {
+        resolve(port);
+      });
+    } catch (e: any) {
+      onError(e);
+    }
+  });
 }
 
 export function setClientErrorHandler(
