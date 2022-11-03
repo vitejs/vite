@@ -378,7 +378,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             throw e
           }
 
-          // prepend base (dev base is guaranteed to have ending slash)
+          // prepend base
           url = joinUrlSegments(base, url.replace(/^\//, ''))
         }
 
