@@ -359,9 +359,10 @@ export function resolveBuildOptions(
         : defaultModulePreload
   }
 
-  // Auto-resolve dependencies if not specified
+  // Auto-resolve dependencies if not explicitly specified
   if (raw && raw.lib !== false && raw.rollupOptions?.external == null) {
     const formats = raw.lib?.formats ?? []
+    // If umd or iife is specified, we need to bundle all dependencies and cannot use external automatically
     const isUMD = formats.includes('umd')
     const isIIFE = formats.includes('iife')
     if (!isUMD && !isIIFE) {
@@ -369,10 +370,13 @@ export function resolveBuildOptions(
       const pkg = lookupFile(configRoot, ['package.json'])
       if (pkg) {
         const pkgData = JSON.parse(pkg)
-        const dependencies: string[] = pkgData.dependencies || []
-        const peerDependencies: string[] = pkgData.peerDependencies || []
-        const optionalDependencies: string[] =
-          pkgData.optionalDependencies || []
+        const dependencies: string[] = Object.keys(pkgData.dependencies || {})
+        const peerDependencies: string[] = Object.keys(
+          pkgData.peerDependencies || {}
+        )
+        const optionalDependencies: string[] = Object.keys(
+          pkgData.optionalDependencies || {}
+        )
         const allDependencies = [
           ...dependencies,
           ...peerDependencies,
