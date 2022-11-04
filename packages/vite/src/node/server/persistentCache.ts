@@ -131,7 +131,7 @@ export async function createPersistentCache(
     }
 
     try {
-      debugLog(`read ${key}`)
+      debugLog(`read ${key} from ${entry.fileCode}`)
       const code = await fs.promises.readFile(entry.fileCode, 'utf8')
       const map = entry.fileMap
         ? JSON.parse(await fs.promises.readFile(entry.fileMap, 'utf8'))
@@ -162,9 +162,9 @@ export async function createPersistentCache(
     map?: any
   ) {
     try {
-      debugLog(`write ${key}`)
       const fileCode = path.resolve(resolvedCacheDir, 'c-' + key)
       const fileMap = map ? fileCode + '-map' : undefined
+      debugLog(`write ${key} to ${fileCode}`)
 
       let wasPatched = false
 
