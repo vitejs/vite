@@ -236,6 +236,7 @@ cli
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
+  .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .action(
     async (
       root: string,
@@ -245,6 +246,7 @@ cli
         https?: boolean
         open?: boolean | string
         strictPort?: boolean
+        outDir?: string
       } & GlobalCLIOptions
     ) => {
       filterDuplicateOptions(options)
@@ -256,6 +258,9 @@ cli
           configFile: options.config,
           logLevel: options.logLevel,
           mode: options.mode,
+          build: {
+            outDir: options.outDir
+          },
           preview: {
             port: options.port,
             strictPort: options.strictPort,

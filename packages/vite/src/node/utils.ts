@@ -276,7 +276,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro|imba)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -912,7 +912,8 @@ export function toUpperCaseDriveLetter(pathName: string): string {
   return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+// Taken from https://stackoverflow.com/a/36328890
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
@@ -1190,4 +1191,17 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
+}
+
+export function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a.endsWith('/')) {
+    a = a.substring(0, a.length - 1)
+  }
+  if (!b.startsWith('/')) {
+    b = '/' + b
+  }
+  return a + b
 }

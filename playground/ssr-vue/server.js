@@ -19,8 +19,9 @@ export async function createServer(
     : ''
 
   const manifest = isProd
-    ? // @ts-ignore
-      (await import('./dist/client/ssr-manifest.json')).default
+    ? JSON.parse(
+        fs.readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8')
+      )
     : {}
 
   const app = express()

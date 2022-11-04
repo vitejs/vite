@@ -34,6 +34,7 @@ const externalTypes = [
   'svelte',
   'marko',
   'astro',
+  'imba',
   // JSX/TSX may be configured to be compiled differently from how esbuild
   // handles it by default, so exclude them as well
   'jsx',
