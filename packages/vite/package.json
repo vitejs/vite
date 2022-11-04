@@ -123,6 +123,7 @@
     "ws": "^8.10.0"
   },
   "peerDependencies": {
+    "@types/node": ">= 14",
     "less": "*",
     "sass": "*",
     "stylus": "*",
@@ -130,6 +131,9 @@
     "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
+    "@types/node": {
+      "optional": true
+    },
     "sass": {
       "optional": true
     },
