@@ -107,7 +107,7 @@ export async function createPersistentCache(
   )
 
   /**
-   * This is used to skip read for modules that was patched by the cache for future warm restarts
+   * This is used to skip read for modules that were patched by the cache for future warm restarts
    * in case the same module is red from persistent cache again during the same session.
    * For example: rewriting optimized deps imports should be "reverted" for the current session
    * as they will be incorrect otherwise (vite keeps the version query stable until next restart).
