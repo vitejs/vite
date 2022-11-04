@@ -119,6 +119,7 @@ export async function createPersistentCache(
     }
 
     try {
+      debugLog(`read ${key}`)
       const code = await fs.promises.readFile(entry.fileCode, 'utf8')
       const map = entry.fileMap
         ? JSON.parse(await fs.promises.readFile(entry.fileMap, 'utf8'))
@@ -149,6 +150,7 @@ export async function createPersistentCache(
     map?: any
   ) {
     try {
+      debugLog(`write ${key}`)
       const fileCode = path.resolve(resolvedCacheDir, 'c-' + key)
       const fileMap = map ? fileCode + '-map' : undefined
 
@@ -442,7 +444,10 @@ export function resolvePersistentCacheOptions(
     typeof config.experimental?.serverPersistentCaching === 'object'
       ? config.experimental.serverPersistentCaching
       : null
-  const cacheDir = path.join(payload.cacheDir, castedToObject?.cacheDir ?? `server-cache`)
+  const cacheDir = path.join(
+    payload.cacheDir,
+    castedToObject?.cacheDir ?? `server-cache`
+  )
 
   const cacheVersionFromFiles: string[] = (
     castedToObject?.cacheVersionFromFiles ?? []
