@@ -72,6 +72,8 @@ export interface PersistentCacheFile {
   relatedModules: Record<string, string>
 }
 
+type TemporaryCache = Record<string, string>
+
 const debugLog = createDebugger('vite:persistent-cache')
 
 export async function createPersistentCache(
@@ -106,6 +108,15 @@ export async function createPersistentCache(
     logger
   )
 
+  // Temporary cache
+  /**
+   * This is used to return the code that was patched by the cache for future warm restarts
+   * in case the same module is red from persistent cache again during the same session.
+   * For example: rewriting optimized deps imports should be "reverted" for the current session
+   * as they will be incorrect otherwise (vite keeps the version query stable until next restart).
+   */
+  const temporaryCache: TemporaryCache = {}
+
   // Main methods
 
   function getKey(code: string) {
@@ -120,7 +131,9 @@ export async function createPersistentCache(
 
     try {
       debugLog(`read ${key}`)
-      const code = await fs.promises.readFile(entry.fileCode, 'utf8')
+      const code =
+        temporaryCache[key] ??
+        (await fs.promises.readFile(entry.fileCode, 'utf8'))
       const map = entry.fileMap
         ? JSON.parse(await fs.promises.readFile(entry.fileMap, 'utf8'))
         : undefined
@@ -154,6 +167,9 @@ export async function createPersistentCache(
       const fileCode = path.resolve(resolvedCacheDir, 'c-' + key)
       const fileMap = map ? fileCode + '-map' : undefined
 
+      let wasPatched = false
+      const originalCode = code
+
       // Rewrite optimized deps imports using the final browserHash
       // The version query will change after first time they are optimized
       // (They are not updated during first run to keep urls stable)
@@ -167,6 +183,7 @@ export async function createPersistentCache(
                   m.url,
                   m.url.replace(/v=[\w\d]+/, `v=${depsMetadata.browserHash}`)
                 )
+                wasPatched = true
                 break
               }
             }
@@ -222,6 +239,12 @@ export async function createPersistentCache(
 
       // Write files
 
+      if (wasPatched) {
+        temporaryCache[key] = originalCode
+      } else {
+        delete temporaryCache[key]
+      }
+
       await fs.promises.writeFile(fileCode, code, 'utf8')
       if (map && fileMap) {
         await fs.promises.writeFile(fileMap, JSON.stringify(map), 'utf8')
@@ -264,6 +287,7 @@ export async function createPersistentCache(
           // Apply code changes
           if (optimizedDeps.length) {
             let code = await fs.promises.readFile(entry.fileCode, 'utf8')
+            temporaryCache[key] = code
             for (const [from, to] of optimizedDeps) {
               code = code.replaceAll(from, to)
             }
