@@ -367,10 +367,20 @@ export function resolveBuildOptions(
     if (!isUMD && !isIIFE) {
       const configRoot = process.cwd()
       const pkg = lookupFile(configRoot, ['package.json'])
-      const dependencies: string[] =
-        (!!pkg && JSON.parse(pkg)?.dependencies) || []
-      if (dependencies.length > 0) {
-        resolved.rollupOptions.external = dependencies
+      if (pkg) {
+        const pkgData = JSON.parse(pkg)
+        const dependencies: string[] = pkgData.dependencies || []
+        const peerDependencies: string[] = pkgData.peerDependencies || []
+        const optionalDependencies: string[] =
+          pkgData.optionalDependencies || []
+        const allDependencies = [
+          ...dependencies,
+          ...peerDependencies,
+          ...optionalDependencies
+        ]
+        if (allDependencies.length > 0) {
+          resolved.rollupOptions.external = allDependencies
+        }
       }
     }
   }
