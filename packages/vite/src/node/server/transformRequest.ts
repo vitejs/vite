@@ -369,7 +369,7 @@ async function loadAndTransform(
           etag: getEtag(code, { weak: true })
         } as TransformResult)
 
-    if (finalIncludedInPersistentCache) {
+    if (finalIncludedInPersistentCache && result) {
       await _persistentCache?.write(
         persistentCacheKey,
         id,
@@ -377,8 +377,8 @@ async function loadAndTransform(
         mod,
         ssr,
         file,
-        code,
-        map
+        result.code,
+        result.map
       )
     }
   }
