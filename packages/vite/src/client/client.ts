@@ -376,10 +376,10 @@ export function updateStyle(id: string, content: string): void {
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
       style.setAttribute('data-vite-dev-id', id)
-      style.innerHTML = content
+      style.textContent = content
       document.head.appendChild(style)
     } else {
-      style.innerHTML = content
+      style.textContent = content
     }
   }
   sheetsMap.set(id, style)

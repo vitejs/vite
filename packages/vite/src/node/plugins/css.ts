@@ -587,7 +587,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${cssString};` +
+            `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
           const wrapIdx = code.indexOf('System.register')
           const insertMark = "'use strict';"
