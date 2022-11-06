@@ -179,7 +179,7 @@ function esbuildScanPlugin(
       id,
       importer && normalizePath(importer),
       {
-        ...(options ?? { assertions: {} }),
+        ...options,
         scan: true
       }
     )
@@ -394,7 +394,6 @@ function esbuildScanPlugin(
             return externalUnlessEntry({ path: id })
           }
           const resolved = await resolve(id, importer, {
-            assertions: {}, // TODO: forward assertions
             custom: {
               depScan: { loader: pluginData?.htmlType?.loader }
             }
@@ -463,7 +462,6 @@ function esbuildScanPlugin(
         async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer, {
-            assertions: {}, // TODO: forward assertions
             custom: {
               depScan: { loader: pluginData?.htmlType?.loader }
             }

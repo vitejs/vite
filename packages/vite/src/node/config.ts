@@ -570,7 +570,6 @@ export async function resolveConfig(
       }
       return (
         await container.resolveId(id, importer, {
-          assertions: {},
           ssr,
           scan: options?.scan
         })

@@ -141,12 +141,7 @@ async function doTransform(
 
   // resolve
   const id =
-    (
-      await pluginContainer.resolveId(url, undefined, {
-        assertions: {}, // TODO: forward assertions
-        ssr
-      })
-    )?.id || url
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
 
   const result = loadAndTransform(id, url, server, options, timestamp)
 
