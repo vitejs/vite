@@ -1,7 +1,7 @@
 import type {
   GetManualChunk,
-  GetManualChunkApi,
   GetModuleInfo,
+  ManualChunkMeta,
   OutputOptions
 } from 'rollup'
 import type { UserConfig } from '../../node'
@@ -106,7 +106,7 @@ export function splitVendorChunkPlugin(): Plugin {
             if (output.manualChunks) {
               if (typeof output.manualChunks === 'function') {
                 const userManualChunks = output.manualChunks
-                output.manualChunks = (id: string, api: GetManualChunkApi) => {
+                output.manualChunks = (id: string, api: ManualChunkMeta) => {
                   return userManualChunks(id, api) ?? viteManualChunks(id, api)
                 }
               }

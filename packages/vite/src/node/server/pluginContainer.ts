@@ -96,6 +96,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
+      assertions?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
@@ -295,6 +296,7 @@ export async function createPluginContainer(
       id: string,
       importer?: string,
       options?: {
+        assertions?: Record<string, string>
         custom?: CustomPluginOptions
         isEntry?: boolean
         skipSelf?: boolean
@@ -306,6 +308,7 @@ export async function createPluginContainer(
         skip.add(this._activePlugin)
       }
       let out = await container.resolveId(id, importer, {
+        assertions: options?.assertions,
         custom: options?.custom,
         isEntry: !!options?.isEntry,
         skip,
@@ -587,6 +590,7 @@ export async function createPluginContainer(
             ? plugin.resolveId.handler
             : plugin.resolveId
         const result = await handler.call(ctx as any, rawId, importer, {
+          assertions: options?.assertions ?? {},
           custom: options?.custom,
           isEntry: !!options?.isEntry,
           ssr,

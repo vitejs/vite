@@ -1,7 +1,10 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-// @ts-expect-error
-import { version } from '../../package.json'
+import { readFileSync } from 'node:fs'
+
+const { version } = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url)).toString()
+)
 
 export const VERSION = version as string
 

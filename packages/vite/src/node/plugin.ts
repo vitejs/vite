@@ -146,6 +146,7 @@ export interface Plugin extends RollupPlugin {
       source: string,
       importer: string | undefined,
       options: {
+        assertions: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
         /**

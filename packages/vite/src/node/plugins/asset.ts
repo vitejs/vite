@@ -494,8 +494,7 @@ async function fileToBuiltUrl(
         name,
         fileName: map.get(contentHash)!,
         type: 'asset',
-        source: content,
-        isAsset: true
+        source: content
       })
     }
 

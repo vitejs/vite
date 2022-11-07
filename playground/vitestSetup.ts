@@ -306,7 +306,7 @@ export async function notifyRebuildComplete(
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
-  return watcher.removeListener('event', callback)
+  return watcher.off('event', callback)
 }
 
 function createInMemoryLogger(logs: string[]): Logger {
