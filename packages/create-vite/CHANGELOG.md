@@ -1,3 +1,10 @@
+## <small>3.2.1 (2022-11-07)</small>
+
+* chore(deps): update all non-major dependencies (#10725) ([22cfad8](https://github.com/vitejs/vite/commit/22cfad8)), closes [#10725](https://github.com/vitejs/vite/issues/10725)
+* fix(create-vite): add `rel="noreferrer"` to elements with `target="_blank"` (#10675) ([e8eb67a](https://github.com/vitejs/vite/commit/e8eb67a)), closes [#10675](https://github.com/vitejs/vite/issues/10675)
+
+
+
 ## 3.2.0 (2022-10-26)
 
 * fix(create-vite): remove baseUrl from Svelte configs (#10200) ([9c7a331](https://github.com/vitejs/vite/commit/9c7a331)), closes [#10200](https://github.com/vitejs/vite/issues/10200)
