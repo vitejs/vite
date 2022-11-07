@@ -68,8 +68,8 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.20.0",
-    "@babel/types": "^7.20.0",
+    "@babel/parser": "^7.20.2",
+    "@babel/types": "^7.20.2",
     "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.2",
     "@rollup/plugin-commonjs": "^23.0.2",
@@ -117,10 +117,10 @@
     "strip-ansi": "^7.0.1",
     "strip-literal": "^0.4.2",
     "tsconfck": "^2.0.1",
-    "tslib": "^2.4.0",
+    "tslib": "^2.4.1",
     "types": "link:./types",
     "ufo": "^0.8.6",
-    "ws": "^8.10.0"
+    "ws": "^8.11.0"
   },
   "peerDependencies": {
     "@types/node": ">= 14",

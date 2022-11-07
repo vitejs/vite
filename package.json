@@ -36,7 +36,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.20.0",
+    "@babel/types": "^7.20.2",
     "@microsoft/api-extractor": "^7.33.5",
     "@rollup/plugin-typescript": "^8.5.0",
     "@types/babel__core": "^7.1.19",
@@ -58,11 +58,11 @@
     "@types/semver": "^7.3.13",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.41.0",
-    "@typescript-eslint/parser": "^5.41.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
     "conventional-changelog-cli": "^2.2.2",
     "esbuild": "^0.14.47",
-    "eslint": "^8.26.0",
+    "eslint": "^8.27.0",
     "eslint-define-config": "^1.11.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
@@ -74,22 +74,22 @@
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.27.1",
-    "pnpm": "^7.14.1",
+    "pnpm": "^7.14.2",
     "prettier": "2.7.1",
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
     "rimraf": "^3.0.2",
     "rollup": "~3.2.3",
-    "rollup-plugin-license": "^2.9.0",
+    "rollup-plugin-license": "^2.9.1",
     "semver": "^7.3.8",
     "simple-git-hooks": "^2.8.1",
-    "tslib": "^2.4.0",
+    "tslib": "^2.4.1",
     "tsx": "^3.11.0",
     "typescript": "^4.6.4",
     "unbuild": "^0.9.4",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.26",
-    "vitest": "^0.24.3",
+    "vitepress": "^1.0.0-alpha.27",
+    "vitest": "^0.24.5",
     "vue": "^3.2.41"
   },
   "simple-git-hooks": {
@@ -110,7 +110,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.14.1",
+  "packageManager": "pnpm@7.14.2",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
