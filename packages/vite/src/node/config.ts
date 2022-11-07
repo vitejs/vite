@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { parse as parseUrl, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
@@ -808,33 +808,34 @@ export function resolveBaseUrl(
         )
       )
     )
-    base = '/'
+    return '/'
   }
 
-  // external URL
-  if (isExternalUrl(base)) {
-    if (!isBuild) {
-      // get base from full url during dev
-      const parsed = parseUrl(base)
-      base = parsed.pathname || '/'
-    }
-  } else {
-    // ensure leading slash
-    if (!base.startsWith('/')) {
-      logger.warn(
-        colors.yellow(
-          colors.bold(`(!) "base" option should start with a slash.`)
-        )
-      )
-      base = '/' + base
-    }
+  // external URL flag
+  const isExternal = isExternalUrl(base)
+  // no leading slash warn
+  if (!isExternal && !base.startsWith('/')) {
+    logger.warn(
+      colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
+    )
   }
-
-  // ensure ending slash
+  // no ending slash warn
   if (!base.endsWith('/')) {
     logger.warn(
       colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
     )
+  }
+
+  // parse base when command is serve or base is not External URL
+  if (!isBuild || !isExternal) {
+    base = new URL(base, 'http://vitejs.dev').pathname
+    // ensure leading slash
+    if (!base.startsWith('/')) {
+      base = '/' + base
+    }
+  }
+  // ensure ending slash
+  if (!base.endsWith('/')) {
     base += '/'
   }
 
