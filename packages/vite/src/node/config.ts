@@ -300,7 +300,7 @@ export interface ExperimentalOptions {
    * @experimental
    * @default null
    */
-  serverPersistentCaching?: ServerPersistentCacheOptions | true
+  serverPersistentCache?: ServerPersistentCacheOptions | true
 }
 
 export interface ServerPersistentCacheOptions {
@@ -329,8 +329,8 @@ export interface ServerPersistentCacheOptions {
 }
 
 export interface ResolvedExperimentalOptions
-  extends Omit<ExperimentalOptions, 'serverPersistentCaching'> {
-  serverPersistentCaching: ResolvedServerPersistentCacheOptions | null
+  extends Omit<ExperimentalOptions, 'serverPersistentCache'> {
+  serverPersistentCache: ResolvedServerPersistentCacheOptions | null
 }
 
 export interface ResolvedServerPersistentCacheOptions {
@@ -668,7 +668,7 @@ export async function resolveConfig(
     getSortedPluginHooks: undefined!
   }
 
-  const serverPersistentCaching = resolvePersistentCacheOptions({
+  const serverPersistentCache = resolvePersistentCacheOptions({
     config,
     cacheDir,
     resolvedRoot
@@ -723,7 +723,7 @@ export async function resolveConfig(
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
       ...config.experimental,
-      serverPersistentCaching
+      serverPersistentCache
     },
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!

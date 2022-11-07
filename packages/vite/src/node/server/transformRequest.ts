@@ -182,8 +182,8 @@ async function loadAndTransform(
     _persistentCache &&
     !file.includes(server.config.cacheDir) &&
     !file.includes('vite/dist/client') &&
-    (!server.config.experimental.serverPersistentCaching?.exclude ||
-      !server.config.experimental.serverPersistentCaching.exclude(url))
+    (!server.config.experimental.serverPersistentCache?.exclude ||
+      !server.config.experimental.serverPersistentCache.exclude(url))
 
   // Persist load result just in case it depends on a previous `transform` call
   // that got cached (aka skipped)

@@ -79,7 +79,7 @@ export async function createPersistentCache(
 ): Promise<PersistentCache | null> {
   const {
     logger,
-    experimental: { serverPersistentCaching: options }
+    experimental: { serverPersistentCache: options }
   } = config
 
   if (!options) {
@@ -455,16 +455,16 @@ export function resolvePersistentCacheOptions(
   const { config, resolvedRoot } = payload
 
   if (
-    !config.experimental?.serverPersistentCaching ||
-    (typeof config.experimental?.serverPersistentCaching === 'object' &&
-      config.experimental.serverPersistentCaching?.enabled === false)
+    !config.experimental?.serverPersistentCache ||
+    (typeof config.experimental?.serverPersistentCache === 'object' &&
+      config.experimental.serverPersistentCache?.enabled === false)
   ) {
     return null
   }
 
   const castedToObject =
-    typeof config.experimental?.serverPersistentCaching === 'object'
-      ? config.experimental.serverPersistentCaching
+    typeof config.experimental?.serverPersistentCache === 'object'
+      ? config.experimental.serverPersistentCache
       : null
   const cacheDir = path.join(
     payload.cacheDir,
