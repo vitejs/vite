@@ -569,7 +569,10 @@ export async function resolveConfig(
           }))
       }
       return (
-        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+        await container.resolveId(id, importer, {
+          ssr,
+          scan: options?.scan
+        })
       )?.id
     }
   }
