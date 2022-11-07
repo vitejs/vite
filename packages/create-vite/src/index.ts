@@ -73,13 +73,13 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-create-vue',
-        display: 'Customize with create-vue',
+        display: 'Customize with create-vue ↗',
         color: green,
         customCommand: 'npm create vue@latest TARGET_DIR'
       },
       {
         name: 'custom-nuxt',
-        display: 'Nuxt',
+        display: 'Nuxt ↗',
         color: lightGreen,
         customCommand: 'npm exec nuxi init TARGET_DIR'
       }
@@ -153,9 +153,22 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-svelte-kit',
-        display: 'SvelteKit',
+        display: 'SvelteKit ↗',
         color: red,
         customCommand: 'npm create svelte@latest TARGET_DIR'
+      }
+    ]
+  },
+  {
+    name: 'others',
+    display: 'Others',
+    color: reset,
+    variants: [
+      {
+        name: 'create-vite-extra',
+        display: 'create-vite-extra ↗',
+        color: reset,
+        customCommand: 'npm create vite-extra@latest TARGET_DIR'
       }
     ]
   }
@@ -279,7 +292,7 @@ async function init() {
   }
 
   // determine template
-  const template: string = variant || framework || argTemplate
+  const template: string = variant || framework?.name || argTemplate
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
@@ -287,6 +300,7 @@ async function init() {
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
+
   if (customCommand) {
     const fullCustomCommand = customCommand
       .replace('TARGET_DIR', targetDir)

@@ -25,6 +25,7 @@ import {
   createDebugger,
   createFilter,
   dynamicImport,
+  isBuiltin,
   isExternalUrl,
   isObject,
   lookupFile,
@@ -47,8 +48,12 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
-import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
-import { resolvePlugin } from './plugins/resolve'
+import type {
+  InternalResolveOptions,
+  InternalResolveOptionsWithOverrideConditions,
+  ResolveOptions
+} from './plugins/resolve'
+import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
@@ -413,37 +418,29 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
+  const filterPlugin = (p: Plugin) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
+  }
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
   // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
   // So we need to separate the worker plugin from the plugin that vite needs to run.
   const rawWorkerUserPlugins = (
     (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
-  ).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  })
+  ).filter(filterPlugin)
 
   // resolve plugins
   const rawUserPlugins = (
     (await asyncFlatten(config.plugins || [])) as Plugin[]
-  ).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  })
+  ).filter(filterPlugin)
+
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
@@ -522,11 +519,7 @@ export async function resolveConfig(
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
-  const resolvedBuildOptions = resolveBuildOptions(
-    config.build,
-    isBuild,
-    logger
-  )
+  const resolvedBuildOptions = resolveBuildOptions(config.build, logger)
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -576,7 +569,10 @@ export async function resolveConfig(
           }))
       }
       return (
-        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+        await container.resolveId(id, importer, {
+          ssr,
+          scan: options?.scan
+        })
       )?.id
     }
   }
@@ -956,6 +952,7 @@ async function bundleConfigFile(
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
+    mainFields: ['main'],
     sourcemap: 'inline',
     metafile: true,
     define: {
@@ -967,41 +964,48 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
-            // externalize bare imports
-            if (id[0] !== '.' && !path.isAbsolute(id)) {
+          const options: InternalResolveOptionsWithOverrideConditions = {
+            root: path.dirname(fileName),
+            isBuild: true,
+            isProduction: true,
+            isRequire: !isESM,
+            preferRelative: false,
+            tryIndex: true,
+            mainFields: [],
+            browserField: false,
+            conditions: [],
+            overrideConditions: ['node'],
+            dedupe: [],
+            extensions: DEFAULT_EXTENSIONS,
+            preserveSymlinks: false
+          }
+
+          // externalize bare imports
+          build.onResolve(
+            { filter: /^[^.].*/ },
+            async ({ path: id, importer, kind }) => {
+              if (
+                kind === 'entry-point' ||
+                path.isAbsolute(id) ||
+                isBuiltin(id)
+              ) {
+                return
+              }
+
+              // partial deno support as `npm:` does not work with esbuild
+              if (id.startsWith('npm:')) {
+                return { external: true }
+              }
+              let idFsPath = tryNodeResolve(id, importer, options, false)?.id
+              if (idFsPath && (isESM || kind === 'dynamic-import')) {
+                idFsPath = pathToFileURL(idFsPath).href
+              }
               return {
+                path: idFsPath,
                 external: true
               }
             }
-            // bundle the rest and make sure that the we can also access
-            // it's third-party dependencies. externalize if not.
-            // monorepo/
-            // ├─ package.json
-            // ├─ utils.js -----------> bundle (share same node_modules)
-            // ├─ vite-project/
-            // │  ├─ vite.config.js --> entry
-            // │  ├─ package.json
-            // ├─ foo-project/
-            // │  ├─ utils.js --------> external (has own node_modules)
-            // │  ├─ package.json
-            const idFsPath = path.resolve(path.dirname(importer), id)
-            const idPkgPath = lookupFile(idFsPath, [`package.json`], {
-              pathOnly: true
-            })
-            if (idPkgPath) {
-              const idPkgDir = path.dirname(idPkgPath)
-              // if this file needs to go up one or more directory to reach the vite config,
-              // that means it has it's own node_modules (e.g. foo-project)
-              if (path.relative(idPkgDir, fileName).startsWith('..')) {
-                return {
-                  // normalize actual import after bundled as a single vite config
-                  path: isESM ? pathToFileURL(idFsPath).href : idFsPath,
-                  external: true
-                }
-              }
-            }
-          })
+          )
         }
       },
       {

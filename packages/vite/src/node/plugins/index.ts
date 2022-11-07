@@ -35,7 +35,7 @@ export async function resolvePlugins(
   const isBuild = config.command === 'build'
   const isWatch = isBuild && !!config.build.watch
   const buildPlugins = isBuild
-    ? (await import('../build')).resolveBuildPlugins(config)
+    ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
 
