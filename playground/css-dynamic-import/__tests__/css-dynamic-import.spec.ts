@@ -97,7 +97,8 @@ baseOptions.forEach(({ base, label }) => {
           }
         ])
       })
-    }
+    },
+    { retry: 3 }
   )
 
   test.runIf(isServe)(
@@ -116,6 +117,7 @@ baseOptions.forEach(({ base, label }) => {
           }
         ])
       })
-    }
+    },
+    { retry: 3 }
   )
 })
