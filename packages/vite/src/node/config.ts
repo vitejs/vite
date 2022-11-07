@@ -408,12 +408,6 @@ export async function resolveConfig(
     }
   }
 
-  // Define logger
-  const logger = createLogger(config.logLevel, {
-    allowClearScreen: config.clearScreen,
-    customLogger: config.customLogger
-  })
-
   // user config may provide an alternative mode. But --mode has a higher priority
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
@@ -456,6 +450,12 @@ export async function resolveConfig(
     config.build ??= {}
     config.build.commonjsOptions = { include: [] }
   }
+
+  // Define logger
+  const logger = createLogger(config.logLevel, {
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger
+  })
 
   // resolve root
   const resolvedRoot = normalizePath(
