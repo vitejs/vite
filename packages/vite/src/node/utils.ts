@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
-import { URL, URLSearchParams } from 'node:url'
+import { URL, URLSearchParams, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -958,13 +958,7 @@ export const requireResolveFromRootWithFallback = (
   // Use `resolve` package to check existence first, so if the package is not found,
   // it won't be cached by nodejs, since there isn't a way to invalidate them:
   // https://github.com/nodejs/node/issues/44663
-  if (!resolve.sync(id, { paths })) {
-    const err: any = new Error(
-      `Cannot find module '${root}' imported from '${root}'`
-    )
-    err.code = 'ERR_MODULE_NOT_FOUND'
-    throw new err()
-  }
+  resolve.sync(id, { basedir: root, paths })
 
   // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
   return _require.resolve(id, { paths })
