@@ -9,7 +9,6 @@ import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
-  getAttrKey,
   getScriptInfo,
   nodeIsElement,
   overwriteAttrValue,
@@ -26,6 +25,7 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
+  joinUrlSegments,
   normalizePath,
   processSrcSetSync,
   wrapId
@@ -93,7 +93,8 @@ const processNodeUrl = (
   const devBase = config.base
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base (dev only, base is never relative)
-    overwriteAttrValue(s, sourceCodeLocation, devBase + url.slice(1))
+    const fullUrl = joinUrlSegments(devBase, url)
+    overwriteAttrValue(s, sourceCodeLocation, fullUrl)
   } else if (
     url.startsWith('.') &&
     originalUrl &&
@@ -113,7 +114,7 @@ const processNodeUrl = (
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
     const processedUrl =
-      attr.name === 'srcset' && attr.prefix === undefined
+      attr.name === 'srcset'
         ? processSrcSetSync(url, ({ url }) => replacer(url))
         : replacer(url)
     overwriteAttrValue(s, sourceCodeLocation, processedUrl)
@@ -132,7 +133,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
-    proxyModuleUrl = base + htmlPath.slice(1)
+    proxyModuleUrl = joinUrlSegments(base, htmlPath)
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -185,10 +186,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    s.update(
+    s.overwrite(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"></script>`
+      `<script type="module" src="${modulePath}"></script>`,
+      { contentOnly: true }
     )
   }
 
@@ -229,11 +231,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
       for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
+        if (p.value && assetAttrs.includes(p.name)) {
           processNodeUrl(
             p,
-            node.sourceCodeLocation!.attrs![attrKey],
+            node.sourceCodeLocation!.attrs![p.name],
             s,
             config,
             htmlPath,
@@ -284,7 +285,7 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // htmlFallbackMiddleware appends '.html' to URLs
+    // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {

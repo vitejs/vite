@@ -129,14 +129,14 @@ A self-accepting module may realize during runtime that it can't handle a HMR up
 
 Note that you should always call `import.meta.hot.accept` even if you plan to call `invalidate` immediately afterwards, or else the HMR client won't listen for future changes to the self-accepting module. To communicate your intent clearly, we recommend calling `invalidate` within the `accept` callback like so:
 
-```js
-import.meta.hot.accept((module) => {
-  // You may use the new module instance to decide whether to invalidate.
-  if (cannotHandleUpdate(module)) {
-    import.meta.hot.invalidate()
-  }
-})
-```
+    ```ts
+    import.meta.hot.accept(module => {
+      // You may use the new module instance to decide whether to invalidate.
+      if (cannotHandleUpdate(module)) {
+        import.meta.hot.invalidate()
+      }
+    })
+    ```
 
 ## `hot.on(event, cb)`
 
@@ -145,6 +145,7 @@ Listen to an HMR event.
 The following HMR events are dispatched by Vite automatically:
 
 - `'vite:beforeUpdate'` when an update is about to be applied (e.g. a module will be replaced)
+- `'vite:afterUpdate'` when an update has just been applied (e.g. a module has been replaced)
 - `'vite:beforeFullReload'` when a full reload is about to occur
 - `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
 - `'vite:invalidate'` when a module is invalidated with `import.meta.hot.invalidate()`

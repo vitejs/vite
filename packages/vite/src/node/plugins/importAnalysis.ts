@@ -21,8 +21,7 @@ import {
   debugHmr,
   handlePrunedModules,
   lexAcceptedHmrDeps,
-  lexAcceptedHmrExports,
-  normalizeHmrUrl
+  lexAcceptedHmrExports
 } from '../server/hmr'
 import {
   cleanUrl,
@@ -294,6 +293,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
+          // fix#9534, prevent the importerModuleNode being stopped from propagating updates
+          importerModule.isSelfAccepting = false
           return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
@@ -630,7 +631,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              normalizeHmrUrl(importerModule.url)
+              importerModule.url
             )});`
         )
       }

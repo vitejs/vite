@@ -24,6 +24,9 @@
 <h2>Exports field env priority</h2>
 <p class="exports-env">fail</p>
 
+<h2>Exports with legacy fallback</h2>
+<p class="exports-legacy-fallback">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -162,6 +165,9 @@
 
   import { msg as exportsEnvMsg } from 'resolve-exports-env'
   text('.exports-env', exportsEnvMsg)
+
+  import { msg as exportsLegacyFallbackMsg } from 'resolve-exports-legacy-fallback/dir'
+  text('.exports-legacy-fallback', exportsLegacyFallbackMsg)
 
   // implicit index resolving
   import { foo } from './util'

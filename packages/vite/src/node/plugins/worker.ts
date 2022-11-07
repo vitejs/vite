@@ -356,7 +356,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             typeof replacement === 'string'
               ? JSON.stringify(replacement).slice(1, -1)
               : `"+${replacement.runtime}+"`
-          s.update(match.index, match.index + full.length, replacementString)
+          s.overwrite(
+            match.index,
+            match.index + full.length,
+            replacementString,
+            {
+              contentOnly: true
+            }
+          )
         }
       }
       return result()

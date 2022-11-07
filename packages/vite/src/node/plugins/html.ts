@@ -182,7 +182,6 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   let isModule = false
   let isAsync = false
   for (const p of node.attrs) {
-    if (p.prefix !== undefined) continue
     if (p.name === 'src') {
       if (!src) {
         src = p
@@ -217,10 +216,11 @@ export function overwriteAttrValue(
   }
   const wrapOffset = valueStart[1] === '"' || valueStart[1] === "'" ? 1 : 0
   const valueOffset = valueStart.index! + valueStart[0].length - 1
-  s.update(
+  s.overwrite(
     sourceCodeLocation.startOffset + valueOffset + wrapOffset,
     sourceCodeLocation.endOffset - wrapOffset,
-    newValue
+    newValue,
+    { contentOnly: true }
   )
   return s
 }
@@ -261,6 +261,9 @@ function handleParseError(
     case 'duplicate-attribute':
       // Accept duplicate attributes #9566
       // The first attribute is used, browsers silently ignore duplicates
+      return
+    case 'non-void-html-element-start-tag-with-trailing-solidus':
+      // Allow self closing on non-void elements #10439
       return
   }
   const parseError = {
@@ -413,10 +416,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           const assetAttrs = assetAttrsConfig[node.nodeName]
           if (assetAttrs) {
             for (const p of node.attrs) {
-              const attrKey = getAttrKey(p)
-              if (p.value && assetAttrs.includes(attrKey)) {
+              if (p.value && assetAttrs.includes(p.name)) {
                 const attrSourceCodeLocation =
-                  node.sourceCodeLocation!.attrs![attrKey]
+                  node.sourceCodeLocation!.attrs![p.name]
                 // assetsUrl may be encodeURI
                 const url = decodeURI(p.value)
                 if (!isExcludedUrl(url)) {
@@ -425,9 +427,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     isCSSRequest(url) &&
                     // should not be converted if following attributes are present (#6748)
                     !node.attrs.some(
-                      (p) =>
-                        p.prefix === undefined &&
-                        (p.name === 'media' || p.name === 'disabled')
+                      (p) => p.name === 'media' || p.name === 'disabled'
                     )
                   ) {
                     // CSS references, convert to import
@@ -457,10 +457,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // <tag style="... url(...) ..."></tag>
           // extract inline styles as virtual css and add class attribute to tag for selecting
           const inlineStyle = node.attrs.find(
-            (prop) =>
-              prop.prefix === undefined &&
-              prop.name === 'style' &&
-              prop.value.includes('url(') // only url(...) in css need to emit file
+            (prop) => prop.name === 'style' && prop.value.includes('url(') // only url(...) in css need to emit file
           )
           if (inlineStyle) {
             inlineModuleIndex++
@@ -493,10 +490,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
-            s.update(
+            s.overwrite(
               styleNode.sourceCodeLocation!.startOffset,
               styleNode.sourceCodeLocation!.endOffset,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`
+              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              { contentOnly: true }
             )
           }
 
@@ -534,7 +532,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ) {
             try {
               const url =
-                attr.prefix === undefined && attr.name === 'srcset'
+                attr.name === 'srcset'
                   ? await processSrcSet(content, ({ url }) =>
                       urlToBuiltUrl(url, id, config, this)
                     )
@@ -551,9 +549,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (!isExcludedUrl(url)) {
-            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
+            s.overwrite(
+              start,
+              end,
+              await urlToBuiltUrl(url, id, config, this),
+              { contentOnly: true }
+            )
           } else if (checkPublicFile(url, config)) {
-            s.update(start, end, toOutputPublicFilePath(url))
+            s.overwrite(start, end, toOutputPublicFilePath(url), {
+              contentOnly: true
+            })
           }
         }
 
@@ -778,7 +783,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           s ||= new MagicString(result)
           const { 0: full, 1: scopedName } = match
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
-          s.update(match.index, match.index + full.length, cssTransformedCode)
+          s.overwrite(
+            match.index,
+            match.index + full.length,
+            cssTransformedCode,
+            { contentOnly: true }
+          )
         }
         if (s) {
           result = s.toString()
@@ -1139,8 +1149,4 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
-}
-
-export function getAttrKey(attr: Token.Attribute): string {
-  return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
 }

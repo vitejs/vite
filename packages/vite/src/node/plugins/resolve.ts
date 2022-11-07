@@ -580,12 +580,21 @@ function tryResolveFile(
   }
 }
 
+export type InternalResolveOptionsWithOverrideConditions =
+  InternalResolveOptions & {
+    /**
+     * @deprecated In future, `conditions` will work like this.
+     * @internal
+     */
+    overrideConditions?: string[]
+  }
+
 export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
-  options: InternalResolveOptions,
+  options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr?: boolean,
@@ -648,13 +657,36 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
+  // nearest package.json
+  let nearestPkg: PackageData | undefined
+  // nearest package.json that may have the `exports` field
   let pkg: PackageData | undefined
-  const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
-    return pkg
+
+  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
+    nearestPkg = resolvePackageData(
+      pkgId,
+      basedir,
+      preserveSymlinks,
+      packageCache
+    )!
+    return nearestPkg
   })!
 
-  if (!pkg) {
+  const rootPkgId = possiblePkgIds[0]
+  const rootPkg = resolvePackageData(
+    rootPkgId,
+    basedir,
+    preserveSymlinks,
+    packageCache
+  )!
+  if (rootPkg?.data?.exports) {
+    pkg = rootPkg
+    pkgId = rootPkgId
+  } else {
+    pkg = nearestPkg
+  }
+
+  if (!pkg || !nearestPkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
@@ -753,7 +785,8 @@ export function tryNodeResolve(
   }
 
   const ext = path.extname(resolved)
-  const isCJS = ext === '.cjs' || (ext === '.js' && pkg.data.type !== 'module')
+  const isCJS =
+    ext === '.cjs' || (ext === '.js' && nearestPkg.data.type !== 'module')
 
   if (
     !options.ssrOptimizeCheck &&
@@ -1007,17 +1040,44 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
+const conditionalConditions = new Set(['production', 'development', 'module'])
+
 function resolveExports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean
 ) {
-  const conditions = [options.isProduction ? 'production' : 'development']
-  if (!options.isRequire) {
+  const overrideConditions = options.overrideConditions
+    ? new Set(options.overrideConditions)
+    : undefined
+
+  const conditions = []
+  if (
+    (!overrideConditions || overrideConditions.has('production')) &&
+    options.isProduction
+  ) {
+    conditions.push('production')
+  }
+  if (
+    (!overrideConditions || overrideConditions.has('development')) &&
+    !options.isProduction
+  ) {
+    conditions.push('development')
+  }
+  if (
+    (!overrideConditions || overrideConditions.has('module')) &&
+    !options.isRequire
+  ) {
     conditions.push('module')
   }
-  if (options.conditions.length > 0) {
+  if (options.overrideConditions) {
+    conditions.push(
+      ...options.overrideConditions.filter((condition) =>
+        conditionalConditions.has(condition)
+      )
+    )
+  } else if (options.conditions.length > 0) {
     conditions.push(...options.conditions)
   }
 
@@ -1106,8 +1166,7 @@ function tryResolveBrowserMapping(
   externalize?: boolean
 ) {
   let res: string | undefined
-  const pkg =
-    importer && (idToPkgMap.get(importer) || resolvePkg(importer, options))
+  const pkg = importer && idToPkgMap.get(importer)
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
@@ -1165,41 +1224,4 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
     resolved = fs.realpathSync(resolved)
   }
   return normalizePath(resolved)
-}
-
-/**
- * if importer was not resolved by vite's resolver previously
- * (when esbuild resolved it)
- * resolve importer's pkg and add to idToPkgMap
- */
-function resolvePkg(importer: string, options: InternalResolveOptions) {
-  const { root, preserveSymlinks, packageCache } = options
-
-  if (importer.includes('\x00')) {
-    return null
-  }
-
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
-    if (slashIndex < 0) {
-      break
-    }
-
-    prevSlashIndex = slashIndex + 1
-
-    const possiblePkgId = importer.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
-
-  let pkg: PackageData | undefined
-  possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
-    return pkg
-  })!
-
-  if (pkg) {
-    idToPkgMap.set(importer, pkg)
-  }
-  return pkg
 }
