@@ -1,3 +1,9 @@
+## 4.0.0-alpha.0 (2022-11-07)
+
+* feat: rollup 3 (#9870) ([beb7166](https://github.com/vitejs/vite/commit/beb7166)), closes [#9870](https://github.com/vitejs/vite/issues/9870)
+
+
+
 ## <small>3.2.3 (2022-11-07)</small>
 
 * refactor: change style.innerHTML to style.textContent (#10801) ([8ea71b4](https://github.com/vitejs/vite/commit/8ea71b4)), closes [#10801](https://github.com/vitejs/vite/issues/10801)
