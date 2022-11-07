@@ -174,8 +174,7 @@ async function loadAndTransform(
   const loadStart = isDebug ? performance.now() : 0
   let loadResult: LoadResult
 
-  const idWithoutHmrFlag = id.replace(DEP_VERSION_RE, '')
-  const loadCacheKey = ssr ? `ssr:${idWithoutHmrFlag}` : idWithoutHmrFlag
+  const loadCacheKey = id.replace(DEP_VERSION_RE, '')
 
   loadResult = await pluginContainer.load(id, { ssr })
 
@@ -193,13 +192,13 @@ async function loadAndTransform(
   // an internal cache as side effect
   // - `load` is called on `MyComponent.svelte?css` => reads the plugin internal cache
 
-  if (includedInPersistentCache && idWithoutHmrFlag !== file) {
+  if (includedInPersistentCache && loadCacheKey !== file) {
     const fileCacheInfo = (_persistentCache.manifest.files[file] =
       _persistentCache.manifest.files[file] ?? {
         relatedModules: {}
       })
     if (loadResult != null) {
-      const saveKey = _persistentCache.getKey(loadCacheKey)
+      const saveKey = _persistentCache.getKey(loadCacheKey, ssr)
       let code: string
       let map: any | null
       if (typeof loadResult === 'string') {
@@ -299,7 +298,7 @@ async function loadAndTransform(
     !code.includes('import.meta.glob')
 
   const persistentCacheKey = finalIncludedInPersistentCache
-    ? (_persistentCache.getKey(id + code) ?? '') + (options.ssr ? '-ssr' : '')
+    ? _persistentCache.getKey(id + code, ssr)
     : ''
 
   if (finalIncludedInPersistentCache) {

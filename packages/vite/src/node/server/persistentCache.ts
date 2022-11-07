@@ -14,7 +14,7 @@ import type { ModuleNode } from './moduleGraph'
 
 export interface PersistentCache {
   manifest: PersistentCacheManifest
-  getKey: (code: string) => string
+  getKey: (code: string, ssr: boolean) => string
   read: (key: string) => Promise<PersistentCacheResult | null>
   write: (
     key: string,
@@ -116,8 +116,8 @@ export async function createPersistentCache(
 
   // Main methods
 
-  function getKey(code: string) {
-    return getCodeHash(code)
+  function getKey(code: string, ssr: boolean) {
+    return getCodeHash(code) + (ssr ? '-ssr' : '')
   }
 
   async function read(key: string): Promise<PersistentCacheResult | null> {
