@@ -323,7 +323,9 @@ export interface ServerPersistentCacheOptions {
    */
   exclude?: (url: string) => boolean
   /**
-   * Path to the cache directory.
+   * Name of the cache directory.
+   * If you have multiple vite servers running (e.g. Nuxt), you can use this to differentiate them.
+   * @default 'server-cache'
    */
   cacheDir?: string
 }
