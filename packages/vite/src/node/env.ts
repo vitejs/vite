@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import dotenv, { config } from 'dotenv'
+import { config, parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
@@ -35,7 +35,7 @@ export function loadEnv(
         rootDir: envDir
       })
       if (!path) return []
-      return Object.entries(dotenv.parse(fs.readFileSync(path)))
+      return Object.entries(parse(fs.readFileSync(path)))
     })
   )
 
