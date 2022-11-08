@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import dotenv from 'dotenv'
-import { expand } from 'dotenv-expand'
+import dotenvExpand from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
 
@@ -40,14 +40,14 @@ export function loadEnv(
   )
 
   // let environment variables use each other
-  const expandParsed = expand({
+  const expandParsed = dotenvExpand({
     parsed: {
       ...(process.env as any),
       ...parsed
     },
     // prevent process.env mutation
     ignoreProcessEnv: true
-  }).parsed!
+  } as any).parsed!
 
   Object.keys(parsed).forEach((key) => {
     parsed[key] = expandParsed[key]
