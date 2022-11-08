@@ -148,7 +148,7 @@ Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/ro
 - **Type:** `{ entry: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string) }`
 - **Related:** [Library Mode](/guide/build#library-mode)
 
-Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`. `fileName` is the name of the package file output, default `fileName` is the name option of package.json, it can also be defined as function taking the `format` and `entryAlias` as arguments.
+Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`, or `['es', 'cjs']`, if multiple entries are used. `fileName` is the name of the package file output, default `fileName` is the name option of package.json, it can also be defined as function taking the `format` and `entryAlias` as arguments.
 
 ## build.manifest
 
@@ -208,6 +208,14 @@ Set to `false` to disable writing the bundle to disk. This is mostly used in [pr
 - **Default:** `true` if `outDir` is inside `root`
 
 By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
+
+## build.copyPublicDir
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `true`
+
+By default, Vite will copy files from the `publicDir` into the `outDir` on build. Set to `false` to disable this.
 
 ## build.reportCompressedSize
 

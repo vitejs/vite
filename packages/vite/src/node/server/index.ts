@@ -65,6 +65,7 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
+import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
@@ -246,6 +247,11 @@ export interface ViteDevServer {
    */
   ssrFixStacktrace(e: Error): void
   /**
+   * Triggers HMR for a module in the module graph. You can use the `server.moduleGraph`
+   * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
+   */
+  reloadModule(module: ModuleNode): Promise<void>
+  /**
    * Start the server.
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
@@ -381,6 +387,11 @@ export async function createServer(
     },
     ssrRewriteStacktrace(stack: string) {
       return ssrRewriteStacktrace(stack, moduleGraph)
+    },
+    async reloadModule(module) {
+      if (serverConfig.hmr !== false && module.file) {
+        updateModules(module.file, [module], Date.now(), server)
+      }
     },
     async listen(port?: number, isRestart?: boolean) {
       await startServer(server, port, isRestart)
@@ -536,8 +547,7 @@ export async function createServer(
   }
 
   // base
-  const devBase = config.base
-  if (devBase !== '/') {
+  if (config.base !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
@@ -641,7 +651,6 @@ async function startServer(
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
-  const devBase = server.config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -670,7 +679,8 @@ async function startServer(
   }
 
   if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : devBase
+    const path =
+      typeof options.open === 'string' ? options.open : server.config.base
     openBrowser(
       path.startsWith('http')
         ? path

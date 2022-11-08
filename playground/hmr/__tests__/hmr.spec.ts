@@ -34,7 +34,8 @@ if (!isBuild) {
       'foo was: 1',
       '(self-accepting 1) foo is now: 2',
       '(self-accepting 2) foo is now: 2',
-      '[vite] hot updated: /hmr.ts'
+      '[vite] hot updated: /hmr.ts',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
 
@@ -46,7 +47,8 @@ if (!isBuild) {
       'foo was: 2',
       '(self-accepting 1) foo is now: 3',
       '(self-accepting 2) foo is now: 3',
-      '[vite] hot updated: /hmr.ts'
+      '[vite] hot updated: /hmr.ts',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
   })
@@ -67,7 +69,8 @@ if (!isBuild) {
       '(single dep) nested foo is now: 1',
       '(multi deps) foo is now: 2',
       '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
 
@@ -84,7 +87,8 @@ if (!isBuild) {
       '(single dep) nested foo is now: 1',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
   })
@@ -106,7 +110,8 @@ if (!isBuild) {
       '(single dep) nested foo is now: 2',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 2',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
 
@@ -123,7 +128,8 @@ if (!isBuild) {
       '(single dep) nested foo is now: 3',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 3',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
   })
@@ -140,9 +146,11 @@ if (!isBuild) {
       '>>> vite:beforeUpdate -- update',
       '>>> vite:invalidate -- /invalidation/child.js',
       '[vite] hot updated: /invalidation/child.js',
+      '>>> vite:afterUpdate -- update',
       '>>> vite:beforeUpdate -- update',
       '(invalidation) parent is executing',
-      '[vite] hot updated: /invalidation/parent.js'
+      '[vite] hot updated: /invalidation/parent.js',
+      '>>> vite:afterUpdate -- update'
     ])
     browserLogs.length = 0
   })
@@ -651,11 +659,47 @@ if (!isBuild) {
   test('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual')
-    expect(await el.textContent()).toBe('[success]')
+    expect(await el.textContent()).toBe('[success]0')
     editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
     await untilUpdated(async () => {
       const el = await page.$('.virtual')
       return await el.textContent()
     }, '[wow]')
+  })
+
+  test('invalidate virtual module', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual')
+    expect(await el.textContent()).toBe('[wow]0')
+    const btn = await page.$('.virtual-update')
+    btn.click()
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual')
+      return await el.textContent()
+    }, '[wow]1')
+  })
+
+  test('keep hmr reload after missing import on server startup', async () => {
+    const file = 'missing-import/a.js'
+    const importCode = "import 'missing-modules'"
+    const unImportCode = `// ${importCode}`
+    const timeout = 2000
+
+    await page.goto(viteTestUrl + '/missing-import/index.html')
+
+    browserLogs.length = 0
+    expect(browserLogs).toMatchObject([])
+
+    editFile(file, (code) => code.replace(importCode, unImportCode))
+
+    await page.waitForNavigation({ timeout })
+    expect(browserLogs.some((msg) => msg.match('missing test'))).toBe(true)
+    browserLogs.length = 0
+
+    editFile(file, (code) => code.replace(unImportCode, importCode))
+
+    await page.waitForNavigation({ timeout })
+    expect(browserLogs.some((msg) => msg.includes('500'))).toBe(true)
+    browserLogs.length = 0
   })
 }

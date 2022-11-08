@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
-import { URL, URLSearchParams, pathToFileURL } from 'node:url'
+import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -276,7 +276,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro|imba)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -303,6 +303,7 @@ export function getPotentialTsSrcPaths(filePath: string): string[] {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
+const directRequestRE = /(\?|&)direct=?(?:&|$)/
 const internalPrefixes = [
   FS_PREFIX,
   VALID_ID_PREFIX,
@@ -318,14 +319,14 @@ export const isInternalRequest = (url: string): boolean =>
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
+export function removeDirectQuery(url: string): string {
+  return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
+}
 
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
-  if (resolvedUrl.protocol !== 'relative:') {
-    resolvedUrl = pathToFileURL(url)
-  }
+  const resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
   const { search, hash } = resolvedUrl
   let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
@@ -911,7 +912,8 @@ export function toUpperCaseDriveLetter(pathName: string): string {
   return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+// Taken from https://stackoverflow.com/a/36328890
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
@@ -949,12 +951,17 @@ export const requireResolveFromRootWithFallback = (
   root: string,
   id: string
 ): string => {
+  const paths = _require.resolve.paths?.(id) || []
   // Search in the root directory first, and fallback to the default require paths.
-  const fallbackPaths = _require.resolve.paths?.(id) || []
-  const path = _require.resolve(id, {
-    paths: [root, ...fallbackPaths]
-  })
-  return path
+  paths.unshift(root)
+
+  // Use `resolve` package to check existence first, so if the package is not found,
+  // it won't be cached by nodejs, since there isn't a way to invalidate them:
+  // https://github.com/nodejs/node/issues/44663
+  resolve.sync(id, { basedir: root, paths })
+
+  // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
+  return _require.resolve(id, { paths })
 }
 
 // Based on node-graceful-fs
@@ -1189,4 +1196,26 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
+}
+
+export function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a.endsWith('/')) {
+    a = a.substring(0, a.length - 1)
+  }
+  if (!b.startsWith('/')) {
+    b = '/' + b
+  }
+  return a + b
+}
+
+export function arrayEqual(a: any[], b: any[]): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }

@@ -1,5 +1,5 @@
 <template>
-  <h1>{{ foo }}</h1>
+  <h1>{{ fooStore.foo }}</h1>
 </template>
 
 <script>
@@ -12,7 +12,8 @@ export default {
         foo: 'bar'
       })
     })
-    return useFooStore()
+    const fooStore = useFooStore()
+    return { fooStore }
   }
 }
 </script>

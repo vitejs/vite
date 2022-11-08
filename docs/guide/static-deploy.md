@@ -83,7 +83,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
    # echo 'www.example.com' > CNAME
 
    git init
-   git checkout -b main
+   git checkout -B main
    git add -A
    git commit -m 'deploy'
 
