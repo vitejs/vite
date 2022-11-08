@@ -546,7 +546,7 @@ function tryResolveFile(
           const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
           return resolved
         } catch (e) {
-          if (e.code !== 'ENOENT' && e.code !== 'EACCES') {
+          if (e.code !== 'ENOENT') {
             throw e
           }
         }
