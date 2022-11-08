@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import dotenv from 'dotenv'
-import dotenvExpand from 'dotenv-expand'
+import { expand } from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
 
@@ -40,11 +40,11 @@ export function loadEnv(
   )
 
   // let environment variables use each other
-  dotenvExpand({
+  expand({
     parsed,
     // prevent process.env mutation
     ignoreProcessEnv: true
-  } as any)
+  })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
