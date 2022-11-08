@@ -45,6 +45,10 @@ test('NODE_ENV', async () => {
   expect(await page.textContent('.node-env')).toBe(process.env.NODE_ENV)
 })
 
+test('expand', async () => {
+  expect(await page.textContent('.expand')).toBe('expand')
+})
+
 test('env object', async () => {
   const envText = await page.textContent('.env-object')
   expect(JSON.parse(envText)).toMatchObject({
