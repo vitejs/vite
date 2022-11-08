@@ -308,6 +308,7 @@ export function resolveEsbuildTranspileOptions(
   const esbuildOptions = config.esbuild || {}
   const options: TransformOptions = {
     ...esbuildOptions,
+    charset: config.charset,
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],
     // the final build should always support dynamic import and import.meta.
@@ -375,7 +376,6 @@ export function resolveEsbuildTranspileOptions(
     return {
       ...options,
       minify: true,
-      charset: 'utf8',
       treeShaking: true
     }
   }

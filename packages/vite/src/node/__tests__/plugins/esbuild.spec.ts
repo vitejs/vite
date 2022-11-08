@@ -17,7 +17,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es'
     )
     expect(options).toEqual({
-      charset: 'utf8',
       target: 'es2020',
       format: 'esm',
       keepNames: true,
@@ -151,7 +150,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs'
     )
     expect(options).toEqual({
-      charset: 'utf8',
       target: undefined,
       format: 'cjs',
       keepNames: true,
