@@ -537,10 +537,8 @@ export function writeFile(
 
 export function isFileReadable(filename: string): boolean {
   try {
-    const stat = fs.statSync(filename, { throwIfNoEntry: false })
-    // Test user permission. Throws error if no permission.
     fs.accessSync(filename, fs.constants.R_OK)
-    return !!stat
+    return true
   } catch {
     return false
   }
