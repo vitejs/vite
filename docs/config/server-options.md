@@ -79,7 +79,7 @@ export default defineConfig({
 
 Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Any requests that request path starts with that key will be proxied to that specified target. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
 
-Note that if you are using non-relative [`base`](/config/shared-options.md#base), make sure you prefixed each key with that `base`.
+Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
 
 Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
