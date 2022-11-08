@@ -1,8 +1,12 @@
 import fs from 'node:fs'
-import dotenv from 'dotenv'
+import dotenv, { config } from 'dotenv'
 import { expand } from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
+
+config({
+  debug: process.env.DEBUG?.includes('vite:dotenv')
+})
 
 export function loadEnv(
   mode: string,
@@ -31,11 +35,7 @@ export function loadEnv(
         rootDir: envDir
       })
       if (!path) return []
-      return Object.entries(
-        dotenv.parse(fs.readFileSync(path), {
-          debug: process.env.DEBUG?.includes('vite:dotenv')
-        })
-      )
+      return Object.entries(dotenv.parse(fs.readFileSync(path)))
     })
   )
 
