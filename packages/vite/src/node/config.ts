@@ -116,8 +116,6 @@ export type PluginOption =
   | PluginOption[]
   | Promise<Plugin | false | null | undefined | PluginOption[]>
 
-type Charset = 'ascii' | 'utf8'
-
 export interface UserConfig {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
@@ -154,11 +152,6 @@ export interface UserConfig {
    * each command, and can be overridden by the command line --mode option.
    */
   mode?: string
-  /**
-   * Charset
-   * @default 'utf8'
-   */
-  charset?: Charset
   /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
@@ -637,7 +630,6 @@ export async function resolveConfig(
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
-    charset: config.charset ?? 'utf8',
     command,
     mode,
     ssr,

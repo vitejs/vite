@@ -306,9 +306,10 @@ export function resolveEsbuildTranspileOptions(
   // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
   const isEsLibBuild = config.build.lib && format === 'es'
   const esbuildOptions = config.esbuild || {}
+
   const options: TransformOptions = {
+    charset: 'utf8',
     ...esbuildOptions,
-    charset: config.charset,
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],
     // the final build should always support dynamic import and import.meta.
