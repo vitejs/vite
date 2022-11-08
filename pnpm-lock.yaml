@@ -233,7 +233,7 @@ importers:
       debug: ^4.3.4
       dep-types: link:./src/types
       dotenv: ^14.3.2
-      dotenv-expand: ^9.0.0
+      dotenv-expand: ^5.1.0
       es-module-lexer: ^1.1.0
       esbuild: ^0.15.9
       estree-walker: ^3.0.1
@@ -300,7 +300,7 @@ importers:
       debug: 4.3.4
       dep-types: link:src/types
       dotenv: 14.3.2
-      dotenv-expand: 9.0.0
+      dotenv-expand: 5.1.0
       es-module-lexer: 1.1.0
       estree-walker: 3.0.1
       etag: 1.8.1
@@ -4104,9 +4104,8 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand/9.0.0:
-    resolution: {integrity: sha512-uW8Hrhp5ammm9x7kBLR6jDfujgaDarNA02tprvZdyrJ7MpdzD1KyrIHG4l+YoC2fJ2UcdFdNWNWIjt+sexBHJw==}
-    engines: {node: '>=12'}
+  /dotenv-expand/5.1.0:
+    resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
     dev: true
 
   /dotenv/14.3.2:
