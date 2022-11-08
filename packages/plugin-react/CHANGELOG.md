@@ -1,3 +1,10 @@
+## 3.0.0-alpha.0 (2022-11-08)
+
+* feat!: transform jsx with esbuild instead of babel (#9590) ([f677b62](https://github.com/vitejs/vite/commit/f677b62)), closes [#9590](https://github.com/vitejs/vite/issues/9590)
+* fix(deps): update all non-major dependencies (#10804) ([f686afa](https://github.com/vitejs/vite/commit/f686afa)), closes [#10804](https://github.com/vitejs/vite/issues/10804)
+
+
+
 ## 2.2.0 (2022-10-26)
 
 * fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
