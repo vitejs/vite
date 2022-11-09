@@ -147,8 +147,10 @@ export async function handleHotUpdate(
     if (!templateModule) {
       affectedModules.add(mainModule)
     } else if (mainModule && !affectedModules.has(mainModule)) {
+      const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
+      const cssLangRE = new RegExp(cssLangs)
       const styleImporters = [...mainModule.importers].filter((m) =>
-        /\.css($|\?)/.test(m.url)
+        cssLangRE.test(m.url)
       )
       styleImporters.forEach((m) => affectedModules.add(m))
     }
