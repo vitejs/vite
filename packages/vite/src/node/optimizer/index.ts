@@ -612,6 +612,7 @@ export async function runOptimizeDeps(
     ignoreAnnotations: !isBuild,
     metafile: true,
     plugins,
+    charset: 'utf8',
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
