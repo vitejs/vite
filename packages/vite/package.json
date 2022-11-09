@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.2.0-beta.3",
+  "version": "4.0.0-alpha.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -28,7 +28,6 @@
     "dist",
     "client.d.ts",
     "index.cjs",
-    "src/client",
     "types"
   ],
   "engines": {
@@ -62,24 +61,24 @@
     "esbuild": "^0.15.9",
     "postcss": "^8.4.18",
     "resolve": "^1.22.1",
-    "rollup": "^2.79.1"
+    "rollup": "~3.2.3"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.19.4",
-    "@babel/types": "^7.19.4",
+    "@babel/parser": "^7.20.2",
+    "@babel/types": "^7.20.2",
     "@jridgewell/trace-mapping": "^0.3.17",
-    "@rollup/plugin-alias": "^4.0.0",
-    "@rollup/plugin-commonjs": "^22.0.2",
-    "@rollup/plugin-dynamic-import-vars": "^1.4.4",
-    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-alias": "^4.0.2",
+    "@rollup/plugin-commonjs": "^23.0.2",
+    "@rollup/plugin-dynamic-import-vars": "^2.0.1",
+    "@rollup/plugin-json": "^5.0.1",
     "@rollup/plugin-node-resolve": "14.1.0",
     "@rollup/plugin-typescript": "^8.5.0",
     "@rollup/pluginutils": "^4.2.1",
-    "acorn": "^8.8.0",
+    "acorn": "^8.8.1",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
@@ -91,12 +90,11 @@
     "dep-types": "link:./src/types",
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "^1.0.5",
+    "es-module-lexer": "^1.1.0",
     "estree-walker": "^3.0.1",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
     "http-proxy": "^1.18.1",
-    "import-meta-resolve": "^2.1.0",
     "json5": "^2.2.1",
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.26.7",
@@ -119,12 +117,13 @@
     "strip-ansi": "^7.0.1",
     "strip-literal": "^0.4.2",
     "tsconfck": "^2.0.1",
-    "tslib": "^2.4.0",
+    "tslib": "^2.4.1",
     "types": "link:./types",
     "ufo": "^0.8.6",
-    "ws": "^8.9.0"
+    "ws": "^8.11.0"
   },
   "peerDependencies": {
+    "@types/node": ">= 14",
     "less": "*",
     "sass": "*",
     "stylus": "*",
@@ -132,6 +131,9 @@
     "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
+    "@types/node": {
+      "optional": true
+    },
     "sass": {
       "optional": true
     },

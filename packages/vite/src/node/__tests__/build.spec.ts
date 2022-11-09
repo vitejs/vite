@@ -1,9 +1,11 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Logger } from 'vite'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import type { OutputOptions } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import { resolveBuildOutputs, resolveLibFilename } from '../build'
+import { createLogger } from '../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -12,6 +14,101 @@ const baseLibOptions: LibraryOptions = {
   fileName: 'my-lib',
   entry: 'mylib.js'
 }
+
+describe('resolveBuildOutputs', () => {
+  test('resolves outputs correctly', () => {
+    const logger = createLogger()
+    const libOptions: LibraryOptions = { ...baseLibOptions }
+    const outputs: OutputOptions[] = [{ format: 'es' }]
+    const resolvedOutputs = resolveBuildOutputs(outputs, libOptions, logger)
+
+    expect(resolvedOutputs).toEqual([
+      {
+        format: 'es'
+      }
+    ])
+  })
+
+  test('resolves outputs from lib options', () => {
+    const logger = createLogger()
+    const libOptions: LibraryOptions = { ...baseLibOptions, name: 'lib' }
+    const resolvedOutputs = resolveBuildOutputs(void 0, libOptions, logger)
+
+    expect(resolvedOutputs).toEqual([
+      {
+        format: 'es'
+      },
+      {
+        format: 'umd'
+      }
+    ])
+  })
+
+  test('does not change outputs when lib options are missing', () => {
+    const logger = createLogger()
+    const outputs: OutputOptions[] = [{ format: 'es' }]
+    const resolvedOutputs = resolveBuildOutputs(outputs, false, logger)
+
+    expect(resolvedOutputs).toEqual(outputs)
+  })
+
+  test('logs a warning when outputs is an array and formats are specified', () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    const libOptions: LibraryOptions = {
+      ...baseLibOptions,
+      formats: ['iife']
+    }
+    const outputs: OutputOptions[] = [{ format: 'es' }]
+
+    resolveBuildOutputs(outputs, libOptions, logger)
+
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.stringContaining('"build.lib.formats" will be ignored because')
+    )
+  })
+
+  test('throws an error when lib.name is missing on iife format', () => {
+    const logger = createLogger()
+    const libOptions: LibraryOptions = {
+      ...baseLibOptions,
+      formats: ['iife']
+    }
+    const resolveBuild = () => resolveBuildOutputs(void 0, libOptions, logger)
+
+    expect(resolveBuild).toThrowError(/Option "build\.lib\.name" is required/)
+  })
+
+  test('throws an error when lib.name is missing on umd format', () => {
+    const logger = createLogger()
+    const libOptions: LibraryOptions = { ...baseLibOptions, formats: ['umd'] }
+    const resolveBuild = () => resolveBuildOutputs(void 0, libOptions, logger)
+
+    expect(resolveBuild).toThrowError(/Option "build\.lib\.name" is required/)
+  })
+
+  test('throws an error when output.name is missing on iife format', () => {
+    const logger = createLogger()
+    const libOptions: LibraryOptions = { ...baseLibOptions }
+    const outputs: OutputOptions[] = [{ format: 'iife' }]
+    const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
+
+    expect(resolveBuild).toThrowError(
+      /Entries in "build\.rollupOptions\.output" must specify "name"/
+    )
+  })
+
+  test('throws an error when output.name is missing on umd format', () => {
+    const logger = createLogger()
+    const libOptions: LibraryOptions = { ...baseLibOptions }
+    const outputs: OutputOptions[] = [{ format: 'umd' }]
+    const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
+
+    expect(resolveBuild).toThrowError(
+      /Entries in "build\.rollupOptions\.output" must specify "name"/
+    )
+  })
+})
 
 describe('resolveLibFilename', () => {
   test('custom filename function', () => {

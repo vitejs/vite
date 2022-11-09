@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type * as net from 'node:net'
 import type * as http from 'node:http'
-import type { Http2SecureServer } from 'node:http2'
 import { performance } from 'node:perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
@@ -183,7 +182,7 @@ export interface ViteDevServer {
    * native Node http server instance
    * will be null in middleware mode
    */
-  httpServer: http.Server | Http2SecureServer | null
+  httpServer: http.Server | null
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -548,8 +547,7 @@ export async function createServer(
   }
 
   // base
-  const devBase = config.base
-  if (devBase !== '/') {
+  if (config.base !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
@@ -653,7 +651,6 @@ async function startServer(
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
-  const devBase = server.config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -682,7 +679,8 @@ async function startServer(
   }
 
   if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : devBase
+    const path =
+      typeof options.open === 'string' ? options.open : server.config.base
     openBrowser(
       path.startsWith('http')
         ? path
@@ -693,7 +691,7 @@ async function startServer(
   }
 }
 
-function createServerCloseFn(server: http.Server | Http2SecureServer | null) {
+function createServerCloseFn(server: http.Server | null) {
   if (!server) {
     return () => {}
   }
