@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { parse as parseUrl, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
@@ -408,12 +408,6 @@ export async function resolveConfig(
     }
   }
 
-  // Define logger
-  const logger = createLogger(config.logLevel, {
-    allowClearScreen: config.clearScreen,
-    customLogger: config.customLogger
-  })
-
   // user config may provide an alternative mode. But --mode has a higher priority
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
@@ -456,6 +450,12 @@ export async function resolveConfig(
     config.build ??= {}
     config.build.commonjsOptions = { include: [] }
   }
+
+  // Define logger
+  const logger = createLogger(config.logLevel, {
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger
+  })
 
   // resolve root
   const resolvedRoot = normalizePath(
@@ -569,7 +569,10 @@ export async function resolveConfig(
           }))
       }
       return (
-        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+        await container.resolveId(id, importer, {
+          ssr,
+          scan: options?.scan
+        })
       )?.id
     }
   }
@@ -805,33 +808,34 @@ export function resolveBaseUrl(
         )
       )
     )
-    base = '/'
+    return '/'
   }
 
-  // external URL
-  if (isExternalUrl(base)) {
-    if (!isBuild) {
-      // get base from full url during dev
-      const parsed = parseUrl(base)
-      base = parsed.pathname || '/'
-    }
-  } else {
-    // ensure leading slash
-    if (!base.startsWith('/')) {
-      logger.warn(
-        colors.yellow(
-          colors.bold(`(!) "base" option should start with a slash.`)
-        )
-      )
-      base = '/' + base
-    }
+  // external URL flag
+  const isExternal = isExternalUrl(base)
+  // no leading slash warn
+  if (!isExternal && !base.startsWith('/')) {
+    logger.warn(
+      colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
+    )
   }
-
-  // ensure ending slash
+  // no ending slash warn
   if (!base.endsWith('/')) {
     logger.warn(
       colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
     )
+  }
+
+  // parse base when command is serve or base is not External URL
+  if (!isBuild || !isExternal) {
+    base = new URL(base, 'http://vitejs.dev').pathname
+    // ensure leading slash
+    if (!base.startsWith('/')) {
+      base = '/' + base
+    }
+  }
+  // ensure ending slash
+  if (!base.endsWith('/')) {
     base += '/'
   }
 
