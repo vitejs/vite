@@ -44,7 +44,7 @@ To solve this:
   $ sudo sysctl fs.inotify.max_user_watches=524288
   ```
 
-  If the above steps don't work then you can also try modifying the following files.
+If the above steps don't work then you can also try modifying the following files.
 
 - /etc/systemd/system.conf
 - /etc/systemd/user.conf
