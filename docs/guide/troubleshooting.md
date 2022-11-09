@@ -44,6 +44,13 @@ To solve this:
   $ sudo sysctl fs.inotify.max_user_watches=524288
   ```
 
+If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as an un-commented config to the following files:
+
+- /etc/systemd/system.conf
+- /etc/systemd/user.conf
+
+Note that these settings persist but a **restart is required**.
+
 ### 431 Request Header Fields Too Large
 
 When the server / WebSocket server receives a large HTTP header, the request will be dropped and the following warning will be shown.
