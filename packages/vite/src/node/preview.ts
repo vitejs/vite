@@ -83,7 +83,7 @@ export async function preview(
   const distDir = path.resolve(config.root, config.build.outDir)
   if (!fs.existsSync(distDir)) {
     throw new Error(
-      `"${config.build.outDir}" does not exist. Create build then try again.`
+      `"${config.build.outDir}" does not exist. Did you build your project?`
     )
   }
 
