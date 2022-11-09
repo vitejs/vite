@@ -2,11 +2,12 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
-import * as convertSourceMap from 'convert-source-map'
+import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
 import {
+  blankReplacer,
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
@@ -196,6 +197,8 @@ async function loadAndTransform(
           convertSourceMap.fromSource(code) ||
           convertSourceMap.fromMapFileSource(code, path.dirname(file))
         )?.toObject()
+
+        code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
         logger.warn(`Failed to load source map for ${url}.`, {
           timestamp: true

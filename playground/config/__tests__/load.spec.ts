@@ -5,7 +5,8 @@ import { expect, it } from 'vitest'
 it('loadConfigFromFile', async () => {
   const { config } = await loadConfigFromFile(
     {} as any,
-    resolve(__dirname, '../packages/entry/vite.config.ts')
+    resolve(__dirname, '../packages/entry/vite.config.ts'),
+    resolve(__dirname, '../packages/entry')
   )
   expect(config).toMatchInlineSnapshot(`
     {
@@ -19,6 +20,7 @@ it('loadConfigFromFile', async () => {
           4,
         ],
       ],
+      "moduleCondition": "require condition",
     }
   `)
 })
