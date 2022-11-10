@@ -1,3 +1,5 @@
+import path from 'node:path'
+import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
@@ -26,6 +28,27 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+}
+
+export const stopProfiler = (log: (message: string) => void): void => {
+  // @ts-ignore
+  const profileSession = global.__vite_profile_session
+  if (profileSession) {
+    profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
+      // Write profile to disk, upload, etc.
+      if (!err) {
+        const outPath = path.resolve('./vite-profile.cpuprofile')
+        fs.writeFileSync(outPath, JSON.stringify(profile))
+        log(
+          colors.yellow(
+            `CPU profile written to ${colors.white(colors.dim(outPath))}`
+          )
+        )
+      } else {
+        throw err
+      }
+    })
+  }
 }
 
 const filterDuplicateOptions = <T extends object>(options: T) => {
@@ -125,11 +148,13 @@ cli
       )
 
       server.printUrls()
+      stopProfiler((message) => server.config.logger.info(`  ${message}`))
     } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error when starting dev server:\n${e.stack}`),
-        { error: e }
-      )
+      const logger = createLogger(options.logLevel)
+      logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
+        error: e
+      })
+      stopProfiler(logger.info)
       process.exit(1)
     }
   })
@@ -193,6 +218,8 @@ cli
         { error: e }
       )
       process.exit(1)
+    } finally {
+      stopProfiler((message) => createLogger(options.logLevel).info(message))
     }
   })
 
@@ -276,6 +303,8 @@ cli
           { error: e }
         )
         process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
       }
     }
   )
