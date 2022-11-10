@@ -33,6 +33,16 @@ react({
 })
 ```
 
+## Opting out of the automatic JSX runtime
+
+By default, the plugin uses the [automatic JSX runtime](https://github.com/alloc/vite-react-jsx#faq). However, if you encounter any issues, you may opt out using the `jsxRuntime` option.
+
+```js
+react({
+  jsxRuntime: 'classic'
+})
+```
+
 ## Babel configuration
 
 The `babel` option lets you add plugins, presets, and [other configuration](https://babeljs.io/docs/en/options) to the Babel transformation performed on each JSX/TSX file.
@@ -65,7 +75,7 @@ react({
 })
 ```
 
-This option does not enable _code transformation_. That is handled by ESBuild.
+This option does not enable _code transformation_. That is handled by esbuild.
 
 **Note:** TypeScript syntax is handled automatically.
 
@@ -73,7 +83,7 @@ Here's the [complete list of Babel parser plugins](https://babeljs.io/docs/en/ba
 
 ## Middleware mode
 
-In [middleware mode](https://vitejs.dev/config/#server-middlewaremode), you should make sure your entry `index.html` file is transformed by Vite. Here's an example for an Express server:
+In [middleware mode](https://vitejs.dev/config/server-options.html#server-middlewaremode), you should make sure your entry `index.html` file is transformed by Vite. Here's an example for an Express server:
 
 ```js
 app.get('/', async (req, res, next) => {

@@ -1,17 +1,19 @@
 {
   "name": "vite-preact-ts-starter",
+  "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "preact": "^10.5.13"
+    "preact": "^10.11.2"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.0.0",
-    "typescript": "^4.3.2",
-    "vite": "^2.5.4"
+    "@preact/preset-vite": "^2.4.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.2.3"
   }
 }

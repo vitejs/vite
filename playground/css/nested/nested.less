@@ -1,0 +1,15 @@
+.less-at-import {
+  color: darkslateblue;
+  background: url(./icon.png) 10px no-repeat;
+}
+
+.less-at-import-alias {
+  color: darkslateblue;
+  background: url(=/nested/icon.png) 10px no-repeat;
+}
+
+@var: '/ok.png';
+.less-url-starts-with-variable {
+  background: url('@{var}');
+  background-position: center;
+}

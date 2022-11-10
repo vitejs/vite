@@ -1,12 +1,18 @@
-import path from 'path'
-import { promises as fs } from 'fs'
-import { Logger } from '../logger'
+import path from 'node:path'
+import { promises as fs } from 'node:fs'
+import type { SourceMap } from 'rollup'
+import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true
 })
+
+// Virtual modules should be prefixed with a null byte to avoid a
+// false positive "missing source" warning. We also check for certain
+// prefixes used for special handling in esbuildDepPlugin.
+const virtualSourceRE = /^(\0|dep:|browser-external:)/
 
 interface SourceMapLike {
   sources: string[]
@@ -30,7 +36,7 @@ export async function injectSourcesContent(
   const missingSources: string[] = []
   map.sourcesContent = await Promise.all(
     map.sources.map((sourcePath) => {
-      if (sourcePath) {
+      if (sourcePath && !virtualSourceRE.test(sourcePath)) {
         sourcePath = decodeURI(sourcePath)
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
@@ -51,4 +57,29 @@ export async function injectSourcesContent(
     logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
     isDebug && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
   }
+}
+
+export function genSourceMapUrl(map: SourceMap | string | undefined): string {
+  if (typeof map !== 'string') {
+    map = JSON.stringify(map)
+  }
+  return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
+}
+
+export function getCodeWithSourcemap(
+  type: 'js' | 'css',
+  code: string,
+  map: SourceMap | null
+): string {
+  if (isDebug) {
+    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
+  }
+
+  if (type === 'js') {
+    code += `\n//# sourceMappingURL=${genSourceMapUrl(map ?? undefined)}`
+  } else if (type === 'css') {
+    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map ?? undefined)} */`
+  }
+
+  return code
 }

@@ -10,20 +10,34 @@ Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
 ```ts
 interface ImportMeta {
-  readonly hot?: {
-    readonly data: any
+  readonly hot?: ViteHotContext
+}
 
-    accept(): void
-    accept(cb: (mod: any) => void): void
-    accept(dep: string, cb: (mod: any) => void): void
-    accept(deps: string[], cb: (mods: any[]) => void): void
+type ModuleNamespace = Record<string, any> & {
+  [Symbol.toStringTag]: 'Module'
+}
 
-    dispose(cb: (data: any) => void): void
-    decline(): void
-    invalidate(): void
+interface ViteHotContext {
+  readonly data: any
 
-    on(event: string, cb: (...args: any[]) => void): void
-  }
+  accept(): void
+  accept(cb: (mod: ModuleNamespace | undefined) => void): void
+  accept(dep: string, cb: (mod: ModuleNamespace | undefined) => void): void
+  accept(
+    deps: readonly string[],
+    cb: (mods: Array<ModuleNamespace | undefined>) => void
+  ): void
+
+  dispose(cb: (data: any) => void): void
+  decline(): void
+  invalidate(): void
+
+  // `InferCustomEventPayload` provides types for built-in Vite events
+  on<T extends string>(
+    event: T,
+    cb: (payload: InferCustomEventPayload<T>) => void
+  ): void
+  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }
 ```
 
@@ -46,7 +60,10 @@ export const count = 1
 
 if (import.meta.hot) {
   import.meta.hot.accept((newModule) => {
-    console.log('updated: count is now ', newModule.count)
+    if (newModule) {
+      // newModule is undefined when SyntaxError happened
+      console.log('updated: count is now ', newModule.count)
+    }
   })
 }
 ```
@@ -69,7 +86,7 @@ foo()
 if (import.meta.hot) {
   import.meta.hot.accept('./foo.js', (newFoo) => {
     // the callback receives the updated './foo.js' module
-    newFoo.foo()
+    newFoo?.foo()
   })
 
   // Can also accept an array of dep modules:
@@ -108,7 +125,18 @@ Calling `import.meta.hot.decline()` indicates this module is not hot-updatable, 
 
 ## `hot.invalidate()`
 
-For now, calling `import.meta.hot.invalidate()` simply reloads the page.
+A self-accepting module may realize during runtime that it can't handle a HMR update, and so the update needs to be forcefully propagated to importers. By calling `import.meta.hot.invalidate()`, the HMR server will invalidate the importers of the caller, as if the caller wasn't self-accepting.
+
+Note that you should always call `import.meta.hot.accept` even if you plan to call `invalidate` immediately afterwards, or else the HMR client won't listen for future changes to the self-accepting module. To communicate your intent clearly, we recommend calling `invalidate` within the `accept` callback like so:
+
+```js
+import.meta.hot.accept((module) => {
+  // You may use the new module instance to decide whether to invalidate.
+  if (cannotHandleUpdate(module)) {
+    import.meta.hot.invalidate()
+  }
+})
+```
 
 ## `hot.on(event, cb)`
 
@@ -117,8 +145,18 @@ Listen to an HMR event.
 The following HMR events are dispatched by Vite automatically:
 
 - `'vite:beforeUpdate'` when an update is about to be applied (e.g. a module will be replaced)
+- `'vite:afterUpdate'` when an update has just been applied (e.g. a module has been replaced)
 - `'vite:beforeFullReload'` when a full reload is about to occur
 - `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
+- `'vite:invalidate'` when a module is invalidated with `import.meta.hot.invalidate()`
 - `'vite:error'` when an error occurs (e.g. syntax error)
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+
+## `hot.send(event, data)`
+
+Send custom events back to Vite's dev server.
+
+If called before connected, the data will be buffered and sent once the connection is established.
+
+See [Client-server Communication](/guide/api-plugin.html#client-server-communication) for more details.

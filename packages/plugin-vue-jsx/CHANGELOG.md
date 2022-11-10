@@ -1,3 +1,159 @@
+## <small>2.1.1 (2022-11-07)</small>
+
+* chore(deps): update all non-major dependencies (#10725) ([22cfad8](https://github.com/vitejs/vite/commit/22cfad8)), closes [#10725](https://github.com/vitejs/vite/issues/10725)
+
+
+
+## 2.1.0 (2022-10-26)
+
+* fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
+
+
+
+## 2.1.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+* refactor(vue-jsx): remove `@babel/plugin-syntax-import-meta` (#10233) ([1bac86a](https://github.com/vitejs/vite/commit/1bac86a)), closes [#10233](https://github.com/vitejs/vite/issues/10233)
+
+
+
+## <small>2.0.1 (2022-08-29)</small>
+
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(deps): update all non-major dependencies (#9176) ([31d3b70](https://github.com/vitejs/vite/commit/31d3b70)), closes [#9176](https://github.com/vitejs/vite/issues/9176)
+* fix(deps): update all non-major dependencies (#9575) ([8071325](https://github.com/vitejs/vite/commit/8071325)), closes [#9575](https://github.com/vitejs/vite/issues/9575)
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+* perf(plugin-vue-jsx): hoist variables (#9687) ([d9eb6b9](https://github.com/vitejs/vite/commit/d9eb6b9)), closes [#9687](https://github.com/vitejs/vite/issues/9687)
+
+
+
+## 2.0.0 (2022-07-13)
+
+* chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
+* chore: use `tsx` directly instead of indirect `esno` (#8773) ([f018f13](https://github.com/vitejs/vite/commit/f018f13)), closes [#8773](https://github.com/vitejs/vite/issues/8773)
+* chore(deps): update all non-major dependencies (#9022) ([6342140](https://github.com/vitejs/vite/commit/6342140)), closes [#9022](https://github.com/vitejs/vite/issues/9022)
+* fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
+
+
+
+## 2.0.0-beta.0 (2022-06-21)
+
+* chore: update major deps (#8572) ([0e20949](https://github.com/vitejs/vite/commit/0e20949)), closes [#8572](https://github.com/vitejs/vite/issues/8572)
+* chore: use `esno` to replace `ts-node` (#8162) ([c18a5f3](https://github.com/vitejs/vite/commit/c18a5f3)), closes [#8162](https://github.com/vitejs/vite/issues/8162)
+* chore: use node prefix (#8309) ([60721ac](https://github.com/vitejs/vite/commit/60721ac)), closes [#8309](https://github.com/vitejs/vite/issues/8309)
+* feat: bump minimum node version to 14.18.0 (#8662) ([8a05432](https://github.com/vitejs/vite/commit/8a05432)), closes [#8662](https://github.com/vitejs/vite/issues/8662)
+* feat: expose createFilter util (#8562) ([c5c424a](https://github.com/vitejs/vite/commit/c5c424a)), closes [#8562](https://github.com/vitejs/vite/issues/8562)
+* refactor: remove hooks ssr param support (#8491) ([f59adf8](https://github.com/vitejs/vite/commit/f59adf8)), closes [#8491](https://github.com/vitejs/vite/issues/8491)
+* docs(plugin-vue-jsx): update the options (#8496) ([0826f7b](https://github.com/vitejs/vite/commit/0826f7b)), closes [#8496](https://github.com/vitejs/vite/issues/8496)
+* fix(deps): update all non-major dependencies (#8281) ([c68db4d](https://github.com/vitejs/vite/commit/c68db4d)), closes [#8281](https://github.com/vitejs/vite/issues/8281)
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* feat!: migrate to ESM (#8178) ([76fdc27](https://github.com/vitejs/vite/commit/76fdc27)), closes [#8178](https://github.com/vitejs/vite/issues/8178)
+
+
+
+## 2.0.0-alpha.1 (2022-05-19)
+
+* fix: rewrite CJS specific funcs/vars in plugins (#8227) ([9baa70b](https://github.com/vitejs/vite/commit/9baa70b)), closes [#8227](https://github.com/vitejs/vite/issues/8227)
+* build!: bump targets (#8045) ([66efd69](https://github.com/vitejs/vite/commit/66efd69)), closes [#8045](https://github.com/vitejs/vite/issues/8045)
+
+
+
+## 2.0.0-alpha.0 (2022-05-13)
+
+* chore: revert vitejs/vite#8152 (#8161) ([85b8b55](https://github.com/vitejs/vite/commit/85b8b55)), closes [vitejs/vite#8152](https://github.com/vitejs/vite/issues/8152) [#8161](https://github.com/vitejs/vite/issues/8161)
+* chore: update plugins peer deps ([d57c23c](https://github.com/vitejs/vite/commit/d57c23c))
+* chore: use `unbuild` to bundle plugins (#8139) ([638b168](https://github.com/vitejs/vite/commit/638b168)), closes [#8139](https://github.com/vitejs/vite/issues/8139)
+* chore(deps): update all non-major dependencies (#7780) ([eba9d05](https://github.com/vitejs/vite/commit/eba9d05)), closes [#7780](https://github.com/vitejs/vite/issues/7780)
+* chore(deps): update all non-major dependencies (#7949) ([b877d30](https://github.com/vitejs/vite/commit/b877d30)), closes [#7949](https://github.com/vitejs/vite/issues/7949)
+* chore(deps): use `esno` to replace `ts-node` (#8152) ([2363bd3](https://github.com/vitejs/vite/commit/2363bd3)), closes [#8152](https://github.com/vitejs/vite/issues/8152)
+* chore(plugin-vue-jsx): add peer deps (#8086) ([7b48e22](https://github.com/vitejs/vite/commit/7b48e22)), closes [#8086](https://github.com/vitejs/vite/issues/8086)
+* refactor: use node hash (#7975) ([5ce7c74](https://github.com/vitejs/vite/commit/5ce7c74)), closes [#7975](https://github.com/vitejs/vite/issues/7975)
+* refactor: use optional chaining in config `define` of vue-jsx (#8046) ([9f8381e](https://github.com/vitejs/vite/commit/9f8381e)), closes [#8046](https://github.com/vitejs/vite/issues/8046)
+* build!: remove node v12 support (#7833) ([eeac2d2](https://github.com/vitejs/vite/commit/eeac2d2)), closes [#7833](https://github.com/vitejs/vite/issues/7833)
+
+
+
+## <small>1.3.10 (2022-04-13)</small>
+
+* fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
+
+
+
+## <small>1.3.9 (2022-03-30)</small>
+
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+
+
+
+## [1.3.8](https://github.com/vitejs/vite/compare/plugin-vue@2.2.4...plugin-vue@1.3.8) (2022-02-28)
+
+
+
+## [1.3.7](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@1.3.7) (2022-02-14)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
+## [1.3.6](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@1.3.6) (2022-02-12)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
+## [1.3.5](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.4...plugin-vue-jsx@1.3.5) (2022-02-12)
+
+
+
+## [1.3.4](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.3...plugin-vue-jsx@1.3.4) (2022-02-09)
+
+
+
+## [1.3.3](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.2...plugin-vue-jsx@1.3.3) (2021-12-20)
+
+
+
+## [1.3.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.1...plugin-vue-jsx@1.3.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* allow overwriting `define` options in vue & vue-jsx plugins ([#6072](https://github.com/vitejs/vite/issues/6072)) ([5f3f6b7](https://github.com/vitejs/vite/commit/5f3f6b7b406cb3371084057c74814eb36175e5cf))
+
+
+
+## [1.3.1](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.0...plugin-vue-jsx@1.3.1) (2021-12-07)
+
+
+
+# [1.3.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.0-beta.0...plugin-vue-jsx@1.3.0) (2021-11-22)
+
+
+
+# [1.3.0-beta.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.2.0...plugin-vue-jsx@1.3.0-beta.0) (2021-10-28)
+
+
+
+# [1.2.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.8...plugin-vue-jsx@1.2.0) (2021-09-29)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
+* normalize internal plugin names ([#4976](https://github.com/vitejs/vite/issues/4976)) ([37f0b2f](https://github.com/vitejs/vite/commit/37f0b2fff74109d381513ed052a32b43655ee11d))
+
+
+
 ## [1.1.8](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.1.7...plugin-vue-jsx@1.1.8) (2021-09-07)
 
 

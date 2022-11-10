@@ -1,0 +1,13 @@
+@layer base;
+
+@import './blue.css' layer;
+@import './green.css' layer;
+
+@layer base {
+  .layers-blue {
+    color: black;
+  }
+  .layers-green {
+    color: black;
+  }
+}

@@ -1,11 +1,34 @@
 import MagicString from 'magic-string'
-import { TransformResult } from 'rollup'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
+
+const nonJsRe = /\.(json)($|\?)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const isBuildLib = isBuild && config.build.lib
+
+  // ignore replace process.env in lib build
+  const processEnv: Record<string, string> = {}
+  const processNodeEnv: Record<string, string> = {}
+  if (!isBuildLib) {
+    const nodeEnv = process.env.NODE_ENV || config.mode
+    Object.assign(processEnv, {
+      'process.env.': `({}).`,
+      'global.process.env.': `({}).`,
+      'globalThis.process.env.': `({}).`
+    })
+    Object.assign(processNodeEnv, {
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
+    })
+  }
 
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
@@ -13,8 +36,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
   }
 
-  // during dev, import.meta properties are handled by importAnalysis plugin
+  // during dev, import.meta properties are handled by importAnalysis plugin.
+  // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
+  const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
@@ -23,43 +48,59 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
-    Object.assign(importMetaKeys, {
+    Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
       'import.meta.hot': `false`
     })
   }
 
-  const replacements: Record<string, string | undefined> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    ...userDefine,
-    ...importMetaKeys,
-    'process.env.': `({}).`,
-    'global.process.env.': `({}).`,
-    'globalThis.process.env.': `({}).`
+  function generatePattern(
+    ssr: boolean
+  ): [Record<string, string | undefined>, RegExp | null] {
+    const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
+
+    const replacements: Record<string, string> = {
+      ...(replaceProcessEnv ? processNodeEnv : {}),
+      ...importMetaKeys,
+      ...userDefine,
+      ...importMetaFallbackKeys,
+      ...(replaceProcessEnv ? processEnv : {})
+    }
+
+    if (isBuild && !replaceProcessEnv) {
+      replacements['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
+    }
+
+    const replacementsKeys = Object.keys(replacements)
+    const pattern = replacementsKeys.length
+      ? new RegExp(
+          // Mustn't be preceded by a char that can be part of an identifier
+          // or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
+            replacementsKeys
+              .map((str) => {
+                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+              })
+              .join('|') +
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
+          'gu'
+        )
+      : null
+
+    return [replacements, pattern]
   }
 
-  const pattern = new RegExp(
-    // Do not allow preceding '.', but do allow preceding '...' for spread operations
-    '(?<!(?<!\\.\\.)\\.)\\b(' +
-      Object.keys(replacements)
-        .map((str) => {
-          return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-        })
-        .join('|') +
-      ')\\b',
-    'g'
-  )
+  const defaultPattern = generatePattern(false)
+  const ssrPattern = generatePattern(true)
 
   return {
     name: 'vite:define',
-    transform(code, id, ssr) {
+
+    transform(code, id, options) {
+      const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost.
@@ -67,11 +108,19 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
+      }
+
+      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
       }
 
       if (ssr && !isBuild) {
@@ -90,18 +139,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.update(start, end, replacement)
       }
 
       if (!hasReplaced) {
         return null
       }
 
-      const result: TransformResult = { code: s.toString() }
-      if (config.build.sourcemap) {
-        result.map = s.generateMap({ hires: true })
-      }
-      return result
+      return transformStableResult(s, id, config)
     }
   }
 }

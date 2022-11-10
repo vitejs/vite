@@ -1,11 +1,12 @@
-import * as http from 'http'
-import { createDebugger, isObject } from '../../utils'
+import type * as http from 'node:http'
+import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
+import type { Connect } from 'dep-types/connect'
+import type { HttpProxy } from 'dep-types/http-proxy'
+import colors from 'picocolors'
 import { HMR_HEADER } from '../ws'
-import { Connect } from 'types/connect'
-import { HttpProxy } from 'types/http-proxy'
-import chalk from 'chalk'
-import { ResolvedConfig } from '../..'
+import { createDebugger, isObject } from '../../utils'
+import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -30,25 +31,49 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
+  options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
-  const options = config.server.proxy!
-
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
+    if (!opts) {
+      return
+    }
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
-    proxy.on('error', (err) => {
-      config.logger.error(`${chalk.red(`http proxy error:`)}\n${err.stack}`, {
-        timestamp: true,
-        error: err
-      })
+    proxy.on('error', (err, req, originalRes) => {
+      // When it is ws proxy, res is net.Socket
+      const res = originalRes as http.ServerResponse | net.Socket
+      if ('req' in res) {
+        config.logger.error(
+          `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
+            err.stack
+          }`,
+          {
+            timestamp: true,
+            error: err
+          }
+        )
+        if (!res.headersSent && !res.writableEnded) {
+          res
+            .writeHead(500, {
+              'Content-Type': 'text/plain'
+            })
+            .end()
+        }
+      } else {
+        config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
+          timestamp: true,
+          error: err
+        })
+        res.end()
+      }
     })
 
     if (opts.configure) {
@@ -65,7 +90,9 @@ export function proxyMiddleware(
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
-            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            (opts.ws ||
+              opts.target?.toString().startsWith('ws:') ||
+              opts.target?.toString().startsWith('wss:')) &&
             req.headers['sec-websocket-protocol'] !== HMR_HEADER
           ) {
             if (opts.rewrite) {

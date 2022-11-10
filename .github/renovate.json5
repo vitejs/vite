@@ -1,11 +1,7 @@
 {
   "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
   "labels": ["dependencies"],
-  "ignorePaths": [
-    "packages/playground/**",
-    "packages/create-vite/template-*/**",
-    "**/__tests__/**"
-  ],
+  "ignorePaths": ["**/__tests__/**"],
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
@@ -20,18 +16,12 @@
     "esbuild",
     "rollup",
     "node",
-    "ts-node",
     "typescript",
 
     // breaking changes
-    "source-map",
-    "react-refresh",
-
-    // breaks since "3.0.1", needs futher investigate
-    "postcss-load-config",
-
-    // ESM Only
-    "strip-ansi",
-    "periscopic"
+    "source-map", // `source-map:v0.7.0+` needs more investigation
+    "dotenv-expand", // `dotenv-expand:6.0.0+` has breaking changes (#6858)
+    "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
+    "miniflare" // `miniflare:v2.0.0+` only supports node 16.7
   ]
 }

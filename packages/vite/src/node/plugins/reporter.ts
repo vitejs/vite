@@ -1,9 +1,9 @@
-import path from 'path'
-import chalk from 'chalk'
-import { gzip } from 'zlib'
-import { promisify } from 'util'
-import { Plugin } from 'rollup'
-import { ResolvedConfig } from '../config'
+import path from 'node:path'
+import { gzip } from 'node:zlib'
+import { promisify } from 'node:util'
+import colors from 'picocolors'
+import type { Plugin } from 'rollup'
+import type { ResolvedConfig } from '../config'
 import { normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
@@ -16,11 +16,11 @@ const enum WriteType {
 }
 
 const writeColors = {
-  [WriteType.JS]: chalk.cyan,
-  [WriteType.CSS]: chalk.magenta,
-  [WriteType.ASSET]: chalk.green,
-  [WriteType.HTML]: chalk.blue,
-  [WriteType.SOURCE_MAP]: chalk.gray
+  [WriteType.JS]: colors.cyan,
+  [WriteType.CSS]: colors.magenta,
+  [WriteType.ASSET]: colors.green,
+  [WriteType.HTML]: colors.blue,
+  [WriteType.SOURCE_MAP]: colors.gray
 }
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
@@ -33,11 +33,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   }
 
   async function getCompressedSize(code: string | Uint8Array): Promise<string> {
-    if (
-      config.build.ssr ||
-      !config.build.reportCompressedSize ||
-      config.build.brotliSize === false
-    ) {
+    if (config.build.ssr || !config.build.reportCompressedSize) {
       return ''
     }
     return ` / gzip: ${(
@@ -51,19 +47,17 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     content: string | Uint8Array,
     type: WriteType,
     maxLength: number,
+    outDir = config.build.outDir,
     compressedSize = ''
   ) {
-    const outDir =
+    outDir =
       normalizePath(
-        path.relative(
-          config.root,
-          path.resolve(config.root, config.build.outDir)
-        )
+        path.relative(config.root, path.resolve(config.root, outDir))
       ) + '/'
     const kibs = content.length / 1024
-    const sizeColor = kibs > chunkLimit ? chalk.yellow : chalk.dim
+    const sizeColor = kibs > chunkLimit ? colors.yellow : colors.dim
     config.logger.info(
-      `${chalk.gray(chalk.white.dim(outDir))}${writeColors[type](
+      `${colors.gray(colors.white(colors.dim(outDir)))}${writeColors[type](
         filePath.padEnd(maxLength + 2)
       )} ${sizeColor(`${kibs.toFixed(2)} KiB${compressedSize}`)}`
     )
@@ -78,7 +72,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
   const logTransform = throttle((id: string) => {
     writeLine(
-      `transforming (${transformedCount}) ${chalk.dim(
+      `transforming (${transformedCount}) ${colors.dim(
         path.relative(config.root, id)
       )}`
     )
@@ -110,7 +104,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           process.stdout.cursorTo(0)
         }
         config.logger.info(
-          `${chalk.green(`✓`)} ${transformedCount} modules transformed.`
+          `${colors.green(`✓`)} ${transformedCount} modules transformed.`
         )
       }
     },
@@ -141,7 +135,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async writeBundle(_, output) {
+    async writeBundle({ dir: outDir }, output) {
       let hasLargeChunks = false
 
       if (shouldLogInfo) {
@@ -165,6 +159,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                   chunk.code,
                   WriteType.JS,
                   longest,
+                  outDir,
                   await getCompressedSize(chunk.code)
                 )
                 if (chunk.map) {
@@ -172,7 +167,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     chunk.fileName + '.map',
                     chunk.map.toString(),
                     WriteType.SOURCE_MAP,
-                    longest
+                    longest,
+                    outDir
                   )
                 }
               }
@@ -184,11 +180,17 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (chunk.source) {
               const isCSS = chunk.fileName.endsWith('.css')
+              const isMap = chunk.fileName.endsWith('.js.map')
               printFileInfo(
                 chunk.fileName,
                 chunk.source,
-                isCSS ? WriteType.CSS : WriteType.ASSET,
+                isCSS
+                  ? WriteType.CSS
+                  : isMap
+                  ? WriteType.SOURCE_MAP
+                  : WriteType.ASSET,
                 longest,
+                outDir,
                 isCSS ? await getCompressedSize(chunk.source) : undefined
               )
             }
@@ -210,7 +212,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         !config.build.ssr
       ) {
         config.logger.warn(
-          chalk.yellow(
+          colors.yellow(
             `\n(!) Some chunks are larger than ${chunkLimit} KiB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +

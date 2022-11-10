@@ -1,12 +1,14 @@
 {
   "name": "vite-starter",
+  "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^2.5.4"
+    "vite": "^3.2.3"
   }
 }
