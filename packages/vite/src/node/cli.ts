@@ -150,10 +150,11 @@ cli
       server.printUrls()
       stopProfiler((message) => server.config.logger.info(`  ${message}`))
     } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error when starting dev server:\n${e.stack}`),
-        { error: e }
-      )
+      const logger = createLogger(options.logLevel)
+      logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
+        error: e
+      })
+      stopProfiler(logger.info)
       process.exit(1)
     }
   })
@@ -217,8 +218,9 @@ cli
         { error: e }
       )
       process.exit(1)
+    } finally {
+      stopProfiler((message) => createLogger(options.logLevel).info(message))
     }
-    stopProfiler((message) => createLogger(options.logLevel).info(message))
   })
 
 // optimize
@@ -301,6 +303,8 @@ cli
           { error: e }
         )
         process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
       }
     }
   )
