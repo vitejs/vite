@@ -37,6 +37,11 @@ export interface TransformResult {
 export interface TransformOptions {
   ssr?: boolean
   html?: boolean
+  /**
+   * For non-fatal errors, set true to throw an error, otherwise set false to
+   * return null instead
+   */
+  strict?: boolean
 }
 
 export function transformRequest(
@@ -161,6 +166,7 @@ async function loadAndTransform(
   const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
+  const strict = !!options.strict
 
   const file = cleanUrl(id)
 
@@ -215,7 +221,11 @@ async function loadAndTransform(
     }
   }
   if (code == null) {
-    const msg = checkPublicFile(url, config)
+    const isPublicFile = checkPublicFile(url, config)
+    if (!isPublicFile && !strict) {
+      return null
+    }
+    const msg = isPublicFile
       ? `This file is in /public and will be copied as-is during build without ` +
         `going through the plugin transforms, and therefore should not be ` +
         `imported from source code. It can only be referenced via HTML tags.`

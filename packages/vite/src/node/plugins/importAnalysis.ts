@@ -712,9 +712,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // These requests will also be registered in transformRequest to be awaited
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach(({ url, id }) => {
+        staticImportedUrls.forEach(({ url }) => {
           url = removeImportQuery(url)
-          transformRequest(url, server, { ssr }).catch((e) => {
+          transformRequest(url, server, { ssr, strict: true }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
               return
