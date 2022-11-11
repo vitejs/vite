@@ -441,12 +441,6 @@ async function fileToBuiltUrl(
     url = `data:${mimeType};base64,${content.toString('base64')}`
   } else {
     // emit as asset
-    // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
-    // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. It also fails to cascade the asset content change
-    // into the chunk's hash, so we have to do our own content hashing here.
-    // https://bundlers.tooling.report/hashing/asset-cascade/
-    // https://github.com/rollup/rollup/issues/3415
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
 
