@@ -1206,8 +1206,8 @@ export function shouldServe(url: string, assetsDir: string): boolean {
   const file = assetsDir + pathname
   if (
     !fs.existsSync(file) ||
-    (!fs.statSync(file).isDirectory() &&
-      isCaseInsensitiveFS && // can skip case check on Linux
+    (isCaseInsensitiveFS && // can skip case check on Linux
+      !fs.statSync(file).isDirectory() &&
       !hasCorrectCase(file, assetsDir))
   ) {
     return false
