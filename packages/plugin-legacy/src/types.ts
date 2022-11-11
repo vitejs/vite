@@ -29,4 +29,10 @@ export interface Options {
    * default: true
    */
   renderModernChunks?: boolean
+  /**
+   * default: {}
+   */
+  assumptions?: {
+    [key: string]: boolean
+  }
 }
