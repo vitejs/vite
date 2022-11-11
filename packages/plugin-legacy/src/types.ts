@@ -24,4 +24,10 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
+  /**
+   * default: {}
+   */
+  assumptions?: {
+    [key: string]: boolean
+  }
 }
