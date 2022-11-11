@@ -1199,11 +1199,11 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
 export function shouldServe(url: string, assetsDir: string): boolean {
   // viteTestUrl is set to something like http://localhost:4173/ and then many tests make calls
   // like `await page.goto(viteTestUrl + '/example')` giving us URLs beginning with a double slash
-  const pathname = decodeURIComponent(
+  const pathname = decodeURI(
     new URL(url.startsWith('//') ? url.substring(1) : url, 'http://example.com')
       .pathname
   )
-  const file = assetsDir + pathname
+  const file = path.join(assetsDir, pathname)
   if (
     !fs.existsSync(file) ||
     (isCaseInsensitiveFS && // can skip case check on Linux
