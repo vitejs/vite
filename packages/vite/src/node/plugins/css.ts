@@ -45,6 +45,7 @@ import {
   processSrcSet,
   removeDirectQuery,
   requireResolveFromRootWithFallback,
+  stripBase,
   stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
@@ -264,9 +265,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      (
-                        await fileToUrl(file, config, this)
-                      ).replace((config.server?.origin ?? '') + devBase, '/'),
+                      stripBase(
+                        await fileToUrl(file, config, this),
+                        (config.server?.origin ?? '') + devBase
+                      ),
                       ssr
                     )
               )

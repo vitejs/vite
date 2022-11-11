@@ -1206,7 +1206,9 @@ export function joinUrlSegments(a: string, b: string): string {
 }
 
 export function stripBase(path: string, base: string): string {
-  const devBase = base.endsWith('/') ? base.slice(0, -1) : base
-
-  return path.replace(RegExp(devBase + '/+'), '/')
+  if (path === base) {
+    return '/'
+  }
+  const devBase = base.endsWith('/') ? base : base + '/'
+  return path.replace(RegExp('^' + devBase), '/')
 }

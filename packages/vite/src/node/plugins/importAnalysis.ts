@@ -265,9 +265,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
-        if (base !== '/' && url.startsWith(base)) {
-          url = url.replace(base, '/')
-        }
+        url = stripBase(url, base)
 
         let importerFile = importer
 
@@ -321,7 +319,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         ) {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
-          url = path.posix.join(FS_PREFIX + resolved.id)
+          url = path.posix.join(FS_PREFIX, resolved.id)
         } else {
           url = resolved.id
         }
