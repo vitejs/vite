@@ -215,18 +215,13 @@ async function loadAndTransform(
     }
   }
   if (code == null) {
-    if (checkPublicFile(url, config)) {
-      throw new Error(
-        `Failed to load url ${url} (resolved id: ${id}). ` +
-          `This file is in /public and will be copied as-is during build without ` +
-          `going through the plugin transforms, and therefore should not be ` +
-          `imported from source code. It can only be referenced via HTML tags.`
-      )
-    } else {
-      return null
-    }
+    const msg = checkPublicFile(url, config)
+      ? `This file is in /public and will be copied as-is during build without ` +
+        `going through the plugin transforms, and therefore should not be ` +
+        `imported from source code. It can only be referenced via HTML tags.`
+      : `Does the file exist?`
+    throw new Error(`Failed to load url ${url} (resolved id: ${id}). ${msg}`)
   }
-
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
