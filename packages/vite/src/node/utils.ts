@@ -868,7 +868,8 @@ export async function resolveServerUrls(
   const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
-  const base = config.base === './' || config.base === '' ? '/' : config.base
+  const base =
+    config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
@@ -1248,6 +1249,14 @@ export function joinUrlSegments(a: string, b: string): string {
     b = '/' + b
   }
   return a + b
+}
+
+export function stripBase(path: string, base: string): string {
+  if (path === base) {
+    return '/'
+  }
+  const devBase = base.endsWith('/') ? base : base + '/'
+  return path.replace(RegExp('^' + devBase), '/')
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {

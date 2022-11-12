@@ -1,3 +1,4 @@
+import path from 'node:path'
 import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import {
@@ -30,8 +31,12 @@ test('should have no 404s', () => {
 })
 
 test('should get a 404 when using incorrect case', async () => {
-  expect((await fetch(viteTestUrl + 'icon.png')).status).toBe(200)
-  expect((await fetch(viteTestUrl + 'ICON.png')).status).toBe(404)
+  expect((await fetch(path.posix.join(viteTestUrl, 'icon.png'))).status).toBe(
+    200
+  )
+  expect((await fetch(path.posix.join(viteTestUrl, 'ICON.png'))).status).toBe(
+    404
+  )
 })
 
 describe('injected scripts', () => {
@@ -312,7 +317,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    '/foo/non-existent'
+    new URL('non-existent', page.url()).pathname
   )
 })
 

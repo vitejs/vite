@@ -1,24 +1,23 @@
 import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '..'
-import { joinUrlSegments } from '../../utils'
+import { joinUrlSegments, stripBase } from '../../utils'
 
-// this middleware is only active when (config.base !== '/')
+// this middleware is only active when (base !== '/')
 
 export function baseMiddleware({
   config
 }: ViteDevServer): Connect.NextHandleFunction {
-  const devBase = config.base.endsWith('/') ? config.base : config.base + '/'
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
     const parsed = new URL(url, 'http://vitejs.dev')
     const path = parsed.pathname || '/'
+    const base = config.rawBase
 
-    if (path.startsWith(devBase)) {
+    if (path.startsWith(base)) {
       // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
-      req.url = url.replace(devBase, '/')
+      req.url = stripBase(url, base)
       return next()
     }
 
@@ -30,18 +29,19 @@ export function baseMiddleware({
     if (path === '/' || path === '/index.html') {
       // redirect root visit to based url with search and hash
       res.writeHead(302, {
-        Location: config.base + (parsed.search || '') + (parsed.hash || '')
+        Location: base + (parsed.search || '') + (parsed.hash || '')
       })
       res.end()
       return
     } else if (req.headers.accept?.includes('text/html')) {
       // non-based page visit
-      const redirectPath = joinUrlSegments(config.base, url)
+      const redirectPath =
+        url + '/' !== base ? joinUrlSegments(base, url) : base
       res.writeHead(404, {
         'Content-Type': 'text/html'
       })
       res.end(
-        `The server is configured with a public base URL of ${config.base} - ` +
+        `The server is configured with a public base URL of ${base} - ` +
           `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`
       )
       return

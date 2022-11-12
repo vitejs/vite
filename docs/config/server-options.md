@@ -242,7 +242,7 @@ createServer()
 
 - **Type:** `string | undefined`
 
-Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start and end with the `/` character.
+Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start with the `/` character.
 
 ## server.fs.strict
 

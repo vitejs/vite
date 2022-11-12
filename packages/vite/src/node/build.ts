@@ -1138,7 +1138,7 @@ export function toOutputFilePathWithoutRuntime(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return config.base + filename
+    return joinUrlSegments(config.base, filename)
   }
 }
 
