@@ -912,7 +912,8 @@ export function toUpperCaseDriveLetter(pathName: string): string {
   return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+// Taken from https://stackoverflow.com/a/36328890
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
@@ -950,12 +951,17 @@ export const requireResolveFromRootWithFallback = (
   root: string,
   id: string
 ): string => {
+  const paths = _require.resolve.paths?.(id) || []
   // Search in the root directory first, and fallback to the default require paths.
-  const fallbackPaths = _require.resolve.paths?.(id) || []
-  const path = _require.resolve(id, {
-    paths: [root, ...fallbackPaths]
-  })
-  return path
+  paths.unshift(root)
+
+  // Use `resolve` package to check existence first, so if the package is not found,
+  // it won't be cached by nodejs, since there isn't a way to invalidate them:
+  // https://github.com/nodejs/node/issues/44663
+  resolve.sync(id, { basedir: root, paths })
+
+  // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
+  return _require.resolve(id, { paths })
 }
 
 // Based on node-graceful-fs
@@ -1211,4 +1217,13 @@ export function stripBase(path: string, base: string): string {
   }
   const devBase = base.endsWith('/') ? base : base + '/'
   return path.replace(RegExp('^' + devBase), '/')
+}
+
+export function arrayEqual(a: any[], b: any[]): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }

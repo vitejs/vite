@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.2.1",
+  "version": "4.0.0-alpha.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -28,7 +28,6 @@
     "dist",
     "client.d.ts",
     "index.cjs",
-    "src/client",
     "types"
   ],
   "engines": {
@@ -62,20 +61,20 @@
     "esbuild": "^0.15.9",
     "postcss": "^8.4.18",
     "resolve": "^1.22.1",
-    "rollup": "^2.79.1"
+    "rollup": "~3.2.3"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.19.6",
-    "@babel/types": "^7.19.4",
+    "@babel/parser": "^7.20.2",
+    "@babel/types": "^7.20.2",
     "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.2",
-    "@rollup/plugin-commonjs": "^22.0.2",
-    "@rollup/plugin-dynamic-import-vars": "^1.4.4",
-    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-commonjs": "^23.0.2",
+    "@rollup/plugin-dynamic-import-vars": "^2.0.1",
+    "@rollup/plugin-json": "^5.0.1",
     "@rollup/plugin-node-resolve": "14.1.0",
     "@rollup/plugin-typescript": "^8.5.0",
     "@rollup/pluginutils": "^4.2.1",
@@ -118,12 +117,13 @@
     "strip-ansi": "^7.0.1",
     "strip-literal": "^0.4.2",
     "tsconfck": "^2.0.1",
-    "tslib": "^2.4.0",
+    "tslib": "^2.4.1",
     "types": "link:./types",
     "ufo": "^0.8.6",
-    "ws": "^8.10.0"
+    "ws": "^8.11.0"
   },
   "peerDependencies": {
+    "@types/node": ">= 14",
     "less": "*",
     "sass": "*",
     "stylus": "*",
@@ -131,6 +131,9 @@
     "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
+    "@types/node": {
+      "optional": true
+    },
     "sass": {
       "optional": true
     },

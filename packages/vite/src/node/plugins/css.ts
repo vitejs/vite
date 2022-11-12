@@ -30,6 +30,7 @@ import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
+  arrayEqual,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -307,7 +308,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
-  let pureCssChunks: Set<string>
+  let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -341,7 +342,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
-      pureCssChunks = new Set<string>()
+      pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
     },
@@ -539,7 +540,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
-          pureCssChunks.add(chunk.fileName)
+          pureCssChunks.add(chunk)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
           const cssAssetName = chunk.facadeModuleId
@@ -589,7 +590,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${cssString};` +
+            `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
           const wrapIdx = code.indexOf('System.register')
           const insertMark = "'use strict';"
@@ -626,7 +627,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
-        const emptyChunkFiles = [...pureCssChunks]
+        // map each pure css chunk (rendered chunk) to it's corresponding bundle
+        // chunk. we check that by comparing the `moduleIds` as they have different
+        // filenames (rendered chunk has the !~{XXX}~ placeholder)
+        const pureCssChunkNames: string[] = []
+        for (const pureCssChunk of pureCssChunks) {
+          for (const key in bundle) {
+            const bundleChunk = bundle[key]
+            if (
+              bundleChunk.type === 'chunk' &&
+              arrayEqual(bundleChunk.moduleIds, pureCssChunk.moduleIds)
+            ) {
+              pureCssChunkNames.push(key)
+              break
+            }
+          }
+        }
+
+        const emptyChunkFiles = pureCssChunkNames
           .map((file) => path.basename(file))
           .join('|')
           .replace(/\./g, '\\.')
@@ -643,7 +661,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // and also register the emitted CSS files under the importer
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunks.has(file)) {
+              if (pureCssChunkNames.includes(file)) {
                 const {
                   viteMetadata: { importedCss }
                 } = bundle[file] as OutputChunk
@@ -662,7 +680,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
-        pureCssChunks.forEach((fileName) => {
+        pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
@@ -897,6 +915,8 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        // TODO: convert null to undefined (`null` should be removed from `CSSModulesOptions.localsConvention`)
+        localsConvention: modulesOptions?.localsConvention ?? undefined,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
@@ -1495,7 +1515,7 @@ const scss: SassStylePreprocessor = async (
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias)
+        rebaseUrls(resolved, options.filename, options.alias, '$')
           .then((data) => done?.(data))
           .catch((data) => done?.(data))
       } else {
@@ -1579,7 +1599,8 @@ const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
 async function rebaseUrls(
   file: string,
   rootFile: string,
-  alias: Alias[]
+  alias: Alias[],
+  variablePrefix: string
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1604,6 +1625,8 @@ async function rebaseUrls(
   let rebased
   const rebaseFn = (url: string) => {
     if (url.startsWith('/')) return url
+    // ignore url's starting with variable
+    if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
       const matches =
@@ -1736,7 +1759,12 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, this.rootFile, this.alias)
+          const result = await rebaseUrls(
+            resolved,
+            this.rootFile,
+            this.alias,
+            '@'
+          )
           let contents: string
           if (result && 'contents' in result) {
             contents = result.contents

@@ -28,6 +28,7 @@ import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import {
+  asyncFlatten,
   copyDir,
   emptyDir,
   joinUrlSegments,
@@ -383,15 +384,16 @@ export function resolveBuildOptions(
   return resolved
 }
 
-export function resolveBuildPlugins(config: ResolvedConfig): {
+export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
-} {
+}> {
   const options = config.build
   const { commonjsOptions } = options
   const usePluginCommonjs =
     !Array.isArray(commonjsOptions?.include) ||
     commonjsOptions?.include.length !== 0
+  const rollupOptionsPlugins = options.rollupOptions.plugins
   return {
     pre: [
       completeSystemWrapPlugin(),
@@ -399,9 +401,13 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
-        : [])
+      ...((
+        await asyncFlatten(
+          Array.isArray(rollupOptionsPlugins)
+            ? rollupOptionsPlugins
+            : [rollupOptionsPlugins]
+        )
+      ).filter(Boolean) as Plugin[])
     ],
     post: [
       buildImportAnalysisPlugin(config),
@@ -777,41 +783,49 @@ export function resolveBuildOutputs(
   logger: Logger
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
-    const hasMultipleEntries =
+    const libHasMultipleEntries =
       typeof libOptions.entry !== 'string' &&
       Object.values(libOptions.entry).length > 1
+    const libFormats =
+      libOptions.formats ||
+      (libHasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
 
-    const formats =
-      libOptions.formats || (hasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
+    if (!Array.isArray(outputs)) {
+      if (libFormats.includes('umd') || libFormats.includes('iife')) {
+        if (libHasMultipleEntries) {
+          throw new Error(
+            'Multiple entry points are not supported when output formats include "umd" or "iife".'
+          )
+        }
 
-    if (formats.includes('umd') || formats.includes('iife')) {
-      if (hasMultipleEntries) {
-        throw new Error(
-          `Multiple entry points are not supported when output formats include "umd" or "iife".`
-        )
+        if (!libOptions.name) {
+          throw new Error(
+            'Option "build.lib.name" is required when output formats include "umd" or "iife".'
+          )
+        }
       }
 
-      if (!libOptions.name) {
-        throw new Error(
-          `Option "build.lib.name" is required when output formats ` +
-            `include "umd" or "iife".`
-        )
-      }
+      return libFormats.map((format) => ({ ...outputs, format }))
     }
-    if (!outputs) {
-      return formats.map((format) => ({ format }))
-    } else if (!Array.isArray(outputs)) {
-      return formats.map((format) => ({ ...outputs, format }))
-    } else if (libOptions.formats) {
-      // user explicitly specifying own output array
+
+    // By this point, we know "outputs" is an Array.
+    if (libOptions.formats) {
       logger.warn(
         colors.yellow(
-          `"build.lib.formats" will be ignored because ` +
-            `"build.rollupOptions.output" is already an array format`
+          '"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.'
         )
       )
     }
+
+    outputs.forEach((output) => {
+      if (['umd', 'iife'].includes(output.format!) && !output.name) {
+        throw new Error(
+          'Entries in "build.rollupOptions.output" must specify "name" when the format is "umd" or "iife".'
+        )
+      }
+    })
   }
+
   return outputs
 }
 
@@ -827,12 +841,12 @@ export function onRollupWarning(
   config: ResolvedConfig
 ): void {
   if (warning.code === 'UNRESOLVED_IMPORT') {
-    const id = warning.source
-    const importer = warning.importer
+    const id = warning.id
+    const exporter = warning.exporter
     // throw unless it's commonjs external...
-    if (!importer || !/\?commonjs-external$/.test(importer)) {
+    if (!id || !/\?commonjs-external$/.test(id)) {
       throw new Error(
-        `[vite]: Rollup failed to resolve import "${id}" from "${importer}".\n` +
+        `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
           `This is most likely unintended because it can break your application at runtime.\n` +
           `If you do want to externalize this module explicitly add it to\n` +
           `\`build.rollupOptions.external\``
