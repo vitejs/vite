@@ -1,7 +1,7 @@
 import _debug from 'debug'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { HmrContext, ModuleNode } from 'vite'
-import { cssLangs } from 'vite/src/node/plugins/css'
+import { cssLangs } from 'vite'
 import {
   createDescriptor,
   getDescriptor,
