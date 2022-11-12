@@ -720,7 +720,7 @@ function polyfillsPlugin(
     load(id) {
       if (id === polyfillId) {
         return (
-          [...imports].map((i) => `import "${i}";`).join('') +
+          [...imports].map((i) => `import ${JSON.stringify(i)};`).join('') +
           (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }

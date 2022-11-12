@@ -26,7 +26,7 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 2. Click the "Run and Debug" icon in the activity bar of the editor, which opens the [_Run and Debug view_](https://code.visualstudio.com/docs/editor/debugging#_run-and-debug-view).
 
-3. Click the "JavaScript Debug Termimal" button in the _Run and Debug view_, which opens a terminal in VS Code.
+3. Click the "JavaScript Debug Terminal" button in the _Run and Debug view_, which opens a terminal in VS Code.
 
 4. From that terminal, go to `playground/xxx`, and run `pnpm run dev`.
 

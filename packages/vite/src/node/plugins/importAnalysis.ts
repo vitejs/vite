@@ -9,7 +9,6 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import { getDepOptimizationConfig } from '..'
 import type { ViteDevServer } from '..'
 import {
   CLIENT_DIR,
@@ -44,6 +43,7 @@ import {
   unwrapId,
   wrapId
 } from '../utils'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
@@ -712,7 +712,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // These requests will also be registered in transformRequest to be awaited
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach(({ url, id }) => {
+        staticImportedUrls.forEach(({ url }) => {
           url = removeImportQuery(url)
           transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
