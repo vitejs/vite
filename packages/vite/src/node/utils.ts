@@ -868,7 +868,8 @@ export async function resolveServerUrls(
   const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
-  const base = config.base === './' || config.base === '' ? '/' : config.base
+  const base =
+    config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
