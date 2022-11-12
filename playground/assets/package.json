@@ -3,18 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "dev": "vite",
     "build": "vite build",
-    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview",
     "dev:relative-base": "vite --config ./vite.config-relative-base.js dev",
     "build:relative-base": "vite --config ./vite.config-relative-base.js build",
     "preview:relative-base": "vite --config ./vite.config-relative-base.js preview",
     "dev:runtime-base": "vite --config ./vite.config-runtime-base.js dev",
     "build:runtime-base": "vite --config ./vite.config-runtime-base.js build",
-    "preview:runtime-base": "vite --config ./vite.config-runtime-base.js preview",
-    "dev:without-trailing-slash": "TRAILING_SLASH=false vite",
-    "build:without-trailing-slash": "TRAILING_SLASH=false vite build",
-    "preview:without-trailing-slash": "TRAILING_SLASH=false vite preview"
+    "preview:runtime-base": "vite --config ./vite.config-runtime-base.js preview"
   }
 }
