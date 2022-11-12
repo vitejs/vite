@@ -18,7 +18,7 @@ import {
   unwrapId
 } from '../../utils'
 import { send } from '../send'
-import { transformRequest } from '../transformRequest'
+import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import {
   DEP_VERSION_RE,
@@ -223,6 +223,10 @@ export function transformMiddleware(
         // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
         return
+      }
+      if (e?.code === ERR_LOAD_URL) {
+        // Let other middleware handle if we can't load the url via transformRequest
+        return next()
       }
       return next(e)
     }

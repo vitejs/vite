@@ -21,6 +21,9 @@ import { getDepsOptimizer } from '../optimizer'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
+export const ERR_LOAD_URL = 'ERR_LOAD_URL'
+export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
+
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
 const debugCache = createDebugger('vite:cache')
@@ -215,18 +218,18 @@ async function loadAndTransform(
     }
   }
   if (code == null) {
-    if (checkPublicFile(url, config)) {
-      throw new Error(
-        `Failed to load url ${url} (resolved id: ${id}). ` +
-          `This file is in /public and will be copied as-is during build without ` +
-          `going through the plugin transforms, and therefore should not be ` +
-          `imported from source code. It can only be referenced via HTML tags.`
-      )
-    } else {
-      return null
-    }
+    const isPublicFile = checkPublicFile(url, config)
+    const msg = isPublicFile
+      ? `This file is in /public and will be copied as-is during build without ` +
+        `going through the plugin transforms, and therefore should not be ` +
+        `imported from source code. It can only be referenced via HTML tags.`
+      : `Does the file exist?`
+    const err: any = new Error(
+      `Failed to load url ${url} (resolved id: ${id}). ${msg}`
+    )
+    err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
+    throw err
   }
-
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
