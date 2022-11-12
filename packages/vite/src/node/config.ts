@@ -828,6 +828,10 @@ export function resolveBaseUrl(
       base = '/' + base
     }
   }
+  // ensure ending slash
+  if (!base.endsWith('/')) {
+    base += '/'
+  }
 
   return base
 }
