@@ -11,7 +11,6 @@ import {
   normalizePath
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
-import type { ExportsData } from '.'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -44,7 +43,6 @@ const externalTypes = [
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
-  exportsData: Record<string, ExportsData>,
   external: string[],
   config: ResolvedConfig,
   ssr: boolean
