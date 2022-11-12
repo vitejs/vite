@@ -30,6 +30,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'vitejs/vite'
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
@@ -97,6 +98,7 @@ jobs:
         run: pnpm run test-docs
 
   lint:
+    if: github.repository == 'vitejs/vite'
     timeout-minutes: 10
     runs-on: ubuntu-latest
     name: "Lint: node-16, ubuntu-latest"
