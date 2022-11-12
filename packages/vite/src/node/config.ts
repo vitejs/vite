@@ -323,6 +323,7 @@ export type ResolvedConfig = Readonly<
     inlineConfig: InlineConfig
     root: string
     base: string
+    /** @internal */
     rawBase: string
     publicDir: string
     cacheDir: string
