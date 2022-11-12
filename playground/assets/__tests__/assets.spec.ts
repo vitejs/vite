@@ -1,3 +1,4 @@
+import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
@@ -12,6 +13,7 @@ import {
   readFile,
   readManifest,
   untilUpdated,
+  viteTestUrl,
   watcher
 } from '~utils'
 
@@ -25,6 +27,11 @@ test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
+})
+
+test('should get a 404 when using incorrect case', async () => {
+  expect((await fetch(viteTestUrl + 'icon.png')).status).toBe(200)
+  expect((await fetch(viteTestUrl + 'ICON.png')).status).toBe(404)
 })
 
 describe('injected scripts', () => {

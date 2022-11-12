@@ -14,6 +14,7 @@ import {
   isInternalRequest,
   isParentDirectory,
   isWindows,
+  shouldServe,
   slash
 } from '../../utils'
 
@@ -52,7 +53,10 @@ export function servePublicMiddleware(
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    serve(req, res, next)
+    if (shouldServe(req.url!, dir)) {
+      return serve(req, res, next)
+    }
+    next()
   }
 }
 
