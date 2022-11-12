@@ -24,17 +24,6 @@ export function loadEnv(
     /** mode local file */ `.env.${mode}.local`
   ]
 
-  // check if there are actual env variables starting with VITE_*
-  // these are typically provided inline and should be prioritized
-  for (const key in process.env) {
-    if (
-      prefixes.some((prefix) => key.startsWith(prefix)) &&
-      env[key] === undefined
-    ) {
-      env[key] = process.env[key] as string
-    }
-  }
-
   const parsed = Object.fromEntries(
     envFiles.flatMap((file) => {
       const path = lookupFile(envDir, [file], {
@@ -51,11 +40,18 @@ export function loadEnv(
   )
 
   // let environment variables use each other
-  dotenvExpand({
-    parsed,
+  const expandParsed = dotenvExpand({
+    parsed: {
+      ...(process.env as any),
+      ...parsed
+    },
     // prevent process.env mutation
     ignoreProcessEnv: true
-  } as any)
+  } as any).parsed!
+
+  Object.keys(parsed).forEach((key) => {
+    parsed[key] = expandParsed[key]
+  })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
@@ -69,6 +65,15 @@ export function loadEnv(
       process.env.VITE_USER_NODE_ENV = value
     }
   }
+
+  // check if there are actual env variables starting with VITE_*
+  // these are typically provided inline and should be prioritized
+  for (const key in process.env) {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+      env[key] = process.env[key] as string
+    }
+  }
+
   return env
 }
 

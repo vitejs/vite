@@ -580,12 +580,21 @@ function tryResolveFile(
   }
 }
 
+export type InternalResolveOptionsWithOverrideConditions =
+  InternalResolveOptions & {
+    /**
+     * @deprecated In future, `conditions` will work like this.
+     * @internal
+     */
+    overrideConditions?: string[]
+  }
+
 export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
-  options: InternalResolveOptions,
+  options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr?: boolean,
@@ -1031,17 +1040,44 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
+const conditionalConditions = new Set(['production', 'development', 'module'])
+
 function resolveExports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean
 ) {
-  const conditions = [options.isProduction ? 'production' : 'development']
-  if (!options.isRequire) {
+  const overrideConditions = options.overrideConditions
+    ? new Set(options.overrideConditions)
+    : undefined
+
+  const conditions = []
+  if (
+    (!overrideConditions || overrideConditions.has('production')) &&
+    options.isProduction
+  ) {
+    conditions.push('production')
+  }
+  if (
+    (!overrideConditions || overrideConditions.has('development')) &&
+    !options.isProduction
+  ) {
+    conditions.push('development')
+  }
+  if (
+    (!overrideConditions || overrideConditions.has('module')) &&
+    !options.isRequire
+  ) {
     conditions.push('module')
   }
-  if (options.conditions.length > 0) {
+  if (options.overrideConditions) {
+    conditions.push(
+      ...options.overrideConditions.filter((condition) =>
+        conditionalConditions.has(condition)
+      )
+    )
+  } else if (options.conditions.length > 0) {
     conditions.push(...options.conditions)
   }
 

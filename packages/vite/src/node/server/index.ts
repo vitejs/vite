@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import type * as net from 'node:net'
 import type * as http from 'node:http'
@@ -547,8 +546,7 @@ export async function createServer(
   }
 
   // base
-  const devBase = config.base
-  if (devBase !== '/') {
+  if (config.base !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
@@ -651,8 +649,6 @@ async function startServer(
   const hostname = await resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
-  const info = server.config.logger.info
-  const devBase = server.config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -661,27 +657,9 @@ async function startServer(
     logger: server.config.logger
   })
 
-  // @ts-ignore
-  const profileSession = global.__vite_profile_session
-  if (profileSession) {
-    profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
-      // Write profile to disk, upload, etc.
-      if (!err) {
-        const outPath = path.resolve('./vite-profile.cpuprofile')
-        fs.writeFileSync(outPath, JSON.stringify(profile))
-        info(
-          colors.yellow(
-            `  CPU profile written to ${colors.white(colors.dim(outPath))}\n`
-          )
-        )
-      } else {
-        throw err
-      }
-    })
-  }
-
   if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : devBase
+    const path =
+      typeof options.open === 'string' ? options.open : server.config.base
     openBrowser(
       path.startsWith('http')
         ? path

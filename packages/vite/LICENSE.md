@@ -535,28 +535,6 @@ License: MIT
 By: Rich Harris
 Repository: rollup/plugins
 
-> The MIT License (MIT)
-> 
-> Copyright (c) 2019 RollupJS Plugin Contributors (https://github.com/rollup/plugins/graphs/contributors)
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
-> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-> copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in
-> all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-> THE SOFTWARE.
-
 ---------------------------------------
 
 ## acorn
@@ -819,32 +797,6 @@ Repository: http://github.com/substack/node-commondir.git
 > ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
 > TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 > SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
----------------------------------------
-
-## concat-map
-License: MIT
-By: James Halliday
-Repository: git://github.com/substack/node-concat-map.git
-
-> This software is released under the MIT license:
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy of
-> this software and associated documentation files (the "Software"), to deal in
-> the Software without restriction, including without limitation the rights to
-> use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-> the Software, and to permit persons to whom the Software is furnished to do so,
-> subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in all
-> copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-> FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-> COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-> IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-> CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---------------------------------------
 
@@ -1555,7 +1507,7 @@ Repository: git://github.com/isaacs/node-glob.git
 
 > The ISC License
 > 
-> Copyright (c) Isaac Z. Schlueter and Contributors
+> Copyright (c) 2009-2022 Isaac Z. Schlueter and Contributors
 > 
 > Permission to use, copy, modify, and/or distribute this software for any
 > purpose with or without fee is hereby granted, provided that the above
@@ -1568,12 +1520,6 @@ Repository: git://github.com/isaacs/node-glob.git
 > WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 > ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 > IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-> 
-> ## Glob Logo
-> 
-> Glob's logo created by Tanya Brassie <http://tanyabrassie.com/>, licensed
-> under a Creative Commons Attribution-ShareAlike 4.0 International License
-> https://creativecommons.org/licenses/by-sa/4.0/
 
 ---------------------------------------
 
@@ -1648,88 +1594,6 @@ Repository: git+https://github.com/css-modules/icss-utils.git
 > Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 > 
 > THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
----------------------------------------
-
-## import-meta-resolve
-License: MIT
-By: Titus Wormer
-Repository: wooorm/import-meta-resolve
-
-> (The MIT License)
-> 
-> Copyright (c) 2021 Titus Wormer <mailto:tituswormer@gmail.com>
-> 
-> Permission is hereby granted, free of charge, to any person obtaining
-> a copy of this software and associated documentation files (the
-> 'Software'), to deal in the Software without restriction, including
-> without limitation the rights to use, copy, modify, merge, publish,
-> distribute, sublicense, and/or sell copies of the Software, and to
-> permit persons to whom the Software is furnished to do so, subject to
-> the following conditions:
-> 
-> The above copyright notice and this permission notice shall be
-> included in all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-> MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-> CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-> TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-> 
-> ---
-> 
-> This is a derivative work based on:
-> <https://github.com/nodejs/node>.
-> Which is licensed:
-> 
-> """
-> Copyright Node.js contributors. All rights reserved.
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to
-> deal in the Software without restriction, including without limitation the
-> rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-> sell copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in
-> all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-> FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-> IN THE SOFTWARE.
-> """
-> 
-> This license applies to parts of Node.js originating from the
-> https://github.com/joyent/node repository:
-> 
-> """
-> Copyright Joyent, Inc. and other Node contributors. All rights reserved.
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to
-> deal in the Software without restriction, including without limitation the
-> rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-> sell copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in
-> all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-> FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-> IN THE SOFTWARE.
-> """
 
 ---------------------------------------
 
@@ -2160,7 +2024,7 @@ Repository: git://github.com/isaacs/minimatch.git
 
 > The ISC License
 > 
-> Copyright (c) Isaac Z. Schlueter and Contributors
+> Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 > 
 > Permission to use, copy, modify, and/or distribute this software for any
 > purpose with or without fee is hereby granted, provided that the above
@@ -2474,35 +2338,6 @@ Repository: pillarjs/parseurl
 > CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 > TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 > SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
----------------------------------------
-
-## path-is-absolute
-License: MIT
-By: Sindre Sorhus
-Repository: sindresorhus/path-is-absolute
-
-> The MIT License (MIT)
-> 
-> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
-> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-> copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in
-> all copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-> THE SOFTWARE.
 
 ---------------------------------------
 
