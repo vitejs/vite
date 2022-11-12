@@ -6,6 +6,7 @@ on:
 
 jobs:
   reply-labeled:
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
       - name: contribution welcome
