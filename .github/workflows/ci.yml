@@ -30,7 +30,6 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'vitejs/vite'
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
