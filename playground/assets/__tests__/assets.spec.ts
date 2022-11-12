@@ -305,7 +305,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    '/foo/non-existent'
+    new URL('non-existent', page.url()).pathname
   )
 })
 
