@@ -323,6 +323,7 @@ export type ResolvedConfig = Readonly<
     inlineConfig: InlineConfig
     root: string
     base: string
+    rawBase: string
     publicDir: string
     cacheDir: string
     command: 'build' | 'serve'
@@ -626,7 +627,8 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase,
+    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -827,10 +829,6 @@ export function resolveBaseUrl(
     if (!base.startsWith('/')) {
       base = '/' + base
     }
-  }
-  // ensure ending slash
-  if (!base.endsWith('/')) {
-    base += '/'
   }
 
   return base
