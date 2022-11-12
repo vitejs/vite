@@ -323,6 +323,8 @@ export type ResolvedConfig = Readonly<
     inlineConfig: InlineConfig
     root: string
     base: string
+    /** @internal */
+    rawBase: string
     publicDir: string
     cacheDir: string
     command: 'build' | 'serve'
@@ -626,7 +628,8 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase,
+    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -819,12 +822,6 @@ export function resolveBaseUrl(
       colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
     )
   }
-  // no ending slash warn
-  if (!base.endsWith('/')) {
-    logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
-    )
-  }
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
@@ -833,10 +830,6 @@ export function resolveBaseUrl(
     if (!base.startsWith('/')) {
       base = '/' + base
     }
-  }
-  // ensure ending slash
-  if (!base.endsWith('/')) {
-    base += '/'
   }
 
   return base
