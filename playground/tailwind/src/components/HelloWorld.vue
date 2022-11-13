@@ -5,5 +5,6 @@
 </template>
 
 <script setup lang="ts">
-const count = 1
+import { INITIAL_COUNT } from '../utils.ts'
+const count = INITIAL_COUNT
 </script>
