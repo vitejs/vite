@@ -375,7 +375,6 @@ async function init() {
 }
 
 function formatTargetDir(targetDir: string | undefined) {
-  // eslint-disable-next-line regexp/no-super-linear-move -- `targetDir` won't be so long
   return targetDir?.trim().replace(/\/+$/g, '')
 }
 

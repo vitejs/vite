@@ -127,9 +127,7 @@ code {
 </div>
 `
 
-// eslint-disable-next-line regexp/no-super-linear-move -- won't use to long strings
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
-// eslint-disable-next-line regexp/no-super-linear-move -- won't use to long strings
 const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where

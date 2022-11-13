@@ -580,7 +580,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (!ssr) {
             const url = rawUrl
-              // eslint-disable-next-line regexp/no-super-linear-move -- `rawUrl` won't be so long
               .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
               .trim()
             if (

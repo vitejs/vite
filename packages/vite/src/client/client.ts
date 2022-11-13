@@ -593,20 +593,12 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = trimEndFromLastOfThatChar(
-    trimEndFromLastOfThatChar(url, '#'),
-    '?'
-  )
+  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
-}
-
-function trimEndFromLastOfThatChar(input: string, char: string) {
-  const pos = input.lastIndexOf(char)
-  return pos < 0 ? input : input.slice(0, pos)
 }
 
 export { ErrorOverlay }

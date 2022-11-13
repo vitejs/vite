@@ -78,11 +78,9 @@ export const flattenId = (id: string): string =>
   id
     .replace(/[/:]/g, '_')
     .replace(/\./g, '__')
-    // eslint-disable-next-line regexp/no-super-linear-move -- the input id won't be so long
     .replace(/(\s*>\s*)/g, '___')
 
 export const normalizeId = (id: string): string =>
-  // eslint-disable-next-line regexp/no-super-linear-move -- the input id won't be so long
   id.replace(/(\s*>\s*)/g, ' > ')
 
 //TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
@@ -263,13 +261,11 @@ export function ensureVolumeInPath(file: string): string {
   return isWindows ? path.resolve(file) : file
 }
 
-function trimEndFromLastOfThatChar(input: string, char: string) {
-  const pos = input.lastIndexOf(char)
-  return pos < 0 ? input : input.slice(0, pos)
-}
+export const queryRE = /\?.*$/s
+export const hashRE = /#.*$/s
 
 export const cleanUrl = (url: string): string =>
-  trimEndFromLastOfThatChar(trimEndFromLastOfThatChar(url, '#'), '?')
+  url.replace(hashRE, '').replace(queryRE, '')
 
 export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
@@ -549,7 +545,7 @@ export function isFileReadable(filename: string): boolean {
   }
 }
 
-const dirSplitRE = /[\\/]/
+const splitFirstDirRE = /(.+?)[\\/](.+)/
 
 /**
  * Delete every file and subdirectory. **The given directory must exist.**
@@ -561,11 +557,10 @@ export function emptyDir(dir: string, skip?: string[]): void {
   if (skip?.length) {
     for (const file of skip) {
       if (path.dirname(file) !== '.') {
-        const pos = file.match(dirSplitRE)?.index
-        if (pos) {
+        const matched = file.match(splitFirstDirRE)
+        if (matched) {
           nested ??= new Map()
-          const nestedDir = file.slice(0, pos)
-          const skipPath = file.slice(pos + 1)
+          const [, nestedDir, skipPath] = matched
           let nestedSkip = nested.get(nestedDir)
           if (!nestedSkip) {
             nestedSkip = []
@@ -916,6 +911,7 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 // Taken from https://stackoverflow.com/a/36328890
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
+export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
 // @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'
@@ -933,22 +929,8 @@ export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
   : _require
 
-const requestQueryRejectCharsRE = /[/|}]/
-
-export function splitRequestWithQuery(id: string): [string, string] {
-  const pos = id.lastIndexOf('?')
-  if (pos < 0) return [id, '']
-
-  const query = id.slice(pos + 1)
-  if (requestQueryRejectCharsRE.test(query)) {
-    return [id, '']
-  }
-
-  return [id.slice(0, pos), query]
-}
-
 export function parseRequest(id: string): Record<string, string> | null {
-  const [, search] = splitRequestWithQuery(id)
+  const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
     return null
   }

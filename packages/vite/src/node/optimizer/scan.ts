@@ -40,7 +40,6 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE =
-  // eslint-disable-next-line regexp/no-super-linear-move -- TODO: FIXME backtracking
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
