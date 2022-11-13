@@ -126,17 +126,12 @@ export interface PluginContainer {
 
 type PluginContext = Omit<
   RollupPluginContext,
+  // not supported
+  | 'load'
   // not documented
   | 'cache'
   // deprecated
-  | 'emitAsset'
-  | 'emitChunk'
-  | 'getAssetFileName'
-  | 'getChunkFileName'
-  | 'isExternal'
   | 'moduleIds'
-  | 'resolveId'
-  | 'load'
 >
 
 export let parser = acorn.Parser
