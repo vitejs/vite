@@ -1180,8 +1180,9 @@ export const cssUrlRE =
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-// eslint-disable-next-line regexp/no-unused-capturing-group, regexp/no-super-linear-backtracking -- TODO: FIXME backtracking
-const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^)]*\)|[^)])*)(?=\))/
+// Assuming a function name won't be longer than 256 chars
+// eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
+const cssImageSetRE = /(?<=image-set\()((?:[\w\-]{1,256}\([^)]\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
