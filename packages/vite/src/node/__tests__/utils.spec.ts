@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
@@ -5,6 +6,7 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   getPotentialTsSrcPaths,
   injectQuery,
+  isFileReadable,
   isWindows,
   posToNumber,
   resolveHostname
@@ -235,4 +237,29 @@ describe('asyncFlatten', () => {
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
+})
+
+describe('isFileReadable', () => {
+  test("file doesn't exist", async () => {
+    expect(isFileReadable('/does_not_exist')).toBe(false)
+  })
+
+  const testFile = require.resolve(
+    './utils/isFileReadable/permission-test-file'
+  )
+  test('file with normal permission', async () => {
+    expect(isFileReadable(testFile)).toBe(true)
+  })
+
+  if (process.platform !== 'win32') {
+    test('file with read-only permission', async () => {
+      fs.chmodSync(testFile, '400')
+      expect(isFileReadable(testFile)).toBe(true)
+    })
+    test('file without read permission', async () => {
+      fs.chmodSync(testFile, '044')
+      expect(isFileReadable(testFile)).toBe(false)
+      fs.chmodSync(testFile, '644')
+    })
+  }
 })

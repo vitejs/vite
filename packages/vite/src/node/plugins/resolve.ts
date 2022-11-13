@@ -531,9 +531,6 @@ function tryResolveFile(
   tryPrefix?: string,
   skipPackageJson?: boolean
 ): string | undefined {
-  // #2051 if we don't have read permission on a directory, existsSync() still
-  // works and will result in massively slow subsequent checks (which are
-  // unnecessary in the first place)
   if (isFileReadable(file)) {
     if (!fs.statSync(file).isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
