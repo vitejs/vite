@@ -4,7 +4,7 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { cssEntryFilesCache } from './css'
-import { duplicateAssets } from './asset'
+import { generatedAssets } from './asset'
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -101,10 +101,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         return manifestChunk
       }
 
-      function createAsset(chunk: OutputAsset): ManifestChunk {
+      function createAsset(chunk: OutputAsset, src: string): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
-          src: chunk.name
+          src
         }
 
         if (cssEntryFiles.has(chunk.name!)) manifestChunk.isEntry = true
@@ -114,18 +114,36 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       const cssEntryFiles = cssEntryFilesCache.get(config)!
 
+      const fileNameToAssetMeta = new Map<string, { originalName: string }>()
+      generatedAssets.get(config)!.forEach((asset, referenceId) => {
+        const fileName = this.getFileName(referenceId)
+        fileNameToAssetMeta.set(fileName, asset)
+      })
+
+      const fileNameToAsset = new Map<string, ManifestChunk>()
+
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
-          manifest[chunk.name] = createAsset(chunk)
+          // Add every unique asset to the manifest, keyed by its original name
+          const src =
+            fileNameToAssetMeta.get(chunk.fileName)?.originalName ?? chunk.name
+          const asset = createAsset(chunk, src)
+          manifest[src] = asset
+          fileNameToAsset.set(chunk.fileName, asset)
         }
       }
 
-      duplicateAssets.get(config)!.forEach((asset) => {
-        const chunk = createAsset(asset)
-        manifest[asset.name!] = chunk
+      // Add duplicate assets to the manifest
+      fileNameToAssetMeta.forEach(({ originalName }, fileName) => {
+        if (!manifest[originalName]) {
+          const asset = fileNameToAsset.get(fileName)
+          if (asset) {
+            manifest[originalName] = asset
+          }
+        }
       })
 
       outputCount++

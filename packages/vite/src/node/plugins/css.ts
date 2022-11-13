@@ -56,7 +56,6 @@ import {
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -475,7 +474,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
+      const resolveAssetUrlsInCss = (
+        chunkCSS: string,
+        cssAssetName: string
+      ) => {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
 
         const relative = config.base === './' || config.base === ''
@@ -494,7 +496,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          const filename = getAssetFilename(fileHash, config) + postfix
+          const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
