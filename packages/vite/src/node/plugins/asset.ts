@@ -72,8 +72,6 @@ export function renderAssetUrlInJS(
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
     const [full, referenceId, postfix = ''] = match
-    // some internal plugins may still need to emit chunks (e.g. worker) so
-    // fallback to this.getFileName for that. TODO: remove, not needed
     const file = ctx.getFileName(referenceId)
     chunk.viteMetadata.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
