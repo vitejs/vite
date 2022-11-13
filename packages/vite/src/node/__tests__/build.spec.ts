@@ -5,7 +5,12 @@ import type { Logger } from 'vite'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputOptions } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { resolveBuildOutputs, resolveLibFilename } from '../build'
+import {
+  resolveBuildOutputs,
+  resolveBuilds,
+  resolveLibFilename,
+  resolveLibName
+} from '../build'
 import { createLogger } from '../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
@@ -21,7 +26,12 @@ describe('resolveBuildOutputs', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = { ...baseLibOptions }
     const outputs: OutputOptions[] = [{ format: 'es' }]
-    const resolvedOutputs = resolveBuildOutputs(outputs, libOptions, logger)
+    const resolvedOutputs = resolveBuildOutputs(
+      libOptions.entry,
+      outputs,
+      libOptions,
+      logger
+    )
 
     expect(resolvedOutputs).toEqual([
       {
@@ -33,7 +43,12 @@ describe('resolveBuildOutputs', () => {
   test('resolves outputs from lib options', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = { ...baseLibOptions, name: 'lib' }
-    const resolvedOutputs = resolveBuildOutputs(void 0, libOptions, logger)
+    const resolvedOutputs = resolveBuildOutputs(
+      libOptions.entry,
+      void 0,
+      libOptions,
+      logger
+    )
 
     expect(resolvedOutputs).toEqual([
       {
@@ -48,7 +63,7 @@ describe('resolveBuildOutputs', () => {
   test('does not change outputs when lib options are missing', () => {
     const logger = createLogger()
     const outputs: OutputOptions[] = [{ format: 'es' }]
-    const resolvedOutputs = resolveBuildOutputs(outputs, false, logger)
+    const resolvedOutputs = resolveBuildOutputs('', outputs, false, logger)
 
     expect(resolvedOutputs).toEqual(outputs)
   })
@@ -62,7 +77,7 @@ describe('resolveBuildOutputs', () => {
     }
     const outputs: OutputOptions[] = [{ format: 'es' }]
 
-    resolveBuildOutputs(outputs, libOptions, logger)
+    resolveBuildOutputs(libOptions.entry, outputs, libOptions, logger)
 
     expect(loggerSpy).toHaveBeenCalledWith(
       expect.stringContaining('"build.lib.formats" will be ignored because')
@@ -75,27 +90,37 @@ describe('resolveBuildOutputs', () => {
       ...baseLibOptions,
       formats: ['iife']
     }
-    const resolveBuild = () => resolveBuildOutputs(void 0, libOptions, logger)
+    const resolveBuild = () =>
+      resolveBuildOutputs(libOptions.entry, void 0, libOptions, logger)
 
-    expect(resolveBuild).toThrowError(/Option "build\.lib\.name" is required/)
+    expect(resolveBuild).toThrowError(
+      `"build.lib.entry"/"build.rollupOptions.input" must be defined as object or option ` +
+        `"build.lib.name"/"build.rollupOptions.output.name" must be provided when output formats include "umd" or "iife".`
+    )
   })
 
   test('throws an error when lib.name is missing on umd format', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = { ...baseLibOptions, formats: ['umd'] }
-    const resolveBuild = () => resolveBuildOutputs(void 0, libOptions, logger)
+    const resolveBuild = () =>
+      resolveBuildOutputs(libOptions.entry, void 0, libOptions, logger)
 
-    expect(resolveBuild).toThrowError(/Option "build\.lib\.name" is required/)
+    expect(resolveBuild).toThrowError(
+      `"build.lib.entry"/"build.rollupOptions.input" must be defined as object or option ` +
+        `"build.lib.name"/"build.rollupOptions.output.name" must be provided when output formats include "umd" or "iife".`
+    )
   })
 
   test('throws an error when output.name is missing on iife format', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = { ...baseLibOptions }
     const outputs: OutputOptions[] = [{ format: 'iife' }]
-    const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
+    const resolveBuild = () =>
+      resolveBuildOutputs(libOptions.entry, outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/
+      `"build.lib.entry"/"build.rollupOptions.input" must be defined as object or option ` +
+        `"build.lib.name"/"build.rollupOptions.output.name" must be provided when output formats include "umd" or "iife".`
     )
   })
 
@@ -103,10 +128,12 @@ describe('resolveBuildOutputs', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = { ...baseLibOptions }
     const outputs: OutputOptions[] = [{ format: 'umd' }]
-    const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
+    const resolveBuild = () =>
+      resolveBuildOutputs(libOptions.entry, outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/
+      `"build.lib.entry"/"build.rollupOptions.input" must be defined as object or option ` +
+        `"build.lib.name"/"build.rollupOptions.output.name" must be provided when output formats include "umd" or "iife".`
     )
   })
 })
@@ -351,18 +378,27 @@ describe('resolveBuildOutputs', () => {
       name: 'entryA'
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'umd' }
-    ])
     expect(
-      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger)
+      resolveBuildOutputs(libOptions.entry, undefined, libOptions, {} as Logger)
+    ).toEqual([{ format: 'es' }, { format: 'umd' }])
+    expect(
+      resolveBuildOutputs(
+        libOptions.entry,
+        { name: 'A' },
+        libOptions,
+        {} as Logger
+      )
     ).toEqual([
       { format: 'es', name: 'A' },
       { format: 'umd', name: 'A' }
     ])
     expect(
-      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger)
+      resolveBuildOutputs(
+        libOptions.entry,
+        [{ name: 'A' }],
+        libOptions,
+        {} as Logger
+      )
     ).toEqual([{ name: 'A' }])
   })
 
@@ -371,53 +407,28 @@ describe('resolveBuildOutputs', () => {
       entry: ['entryA.js', 'entryB.js']
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'cjs' }
-    ])
     expect(
-      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger)
+      resolveBuildOutputs(libOptions.entry, undefined, libOptions, {} as Logger)
+    ).toEqual([{ format: 'es' }, { format: 'cjs' }])
+    expect(
+      resolveBuildOutputs(
+        libOptions.entry,
+        { name: 'A' },
+        libOptions,
+        {} as Logger
+      )
     ).toEqual([
       { format: 'es', name: 'A' },
       { format: 'cjs', name: 'A' }
     ])
     expect(
-      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger)
+      resolveBuildOutputs(
+        libOptions.entry,
+        [{ name: 'A' }],
+        libOptions,
+        {} as Logger
+      )
     ).toEqual([{ name: 'A' }])
-  })
-
-  test('umd or iife: should not support multiple entries', () => {
-    ;['umd', 'iife'].forEach((format) => {
-      expect(() =>
-        resolveBuildOutputs(
-          undefined,
-          {
-            entry: ['entryA.js', 'entryB.js'],
-            formats: [format as LibraryFormats]
-          },
-          {} as Logger
-        )
-      ).toThrow(
-        `Multiple entry points are not supported when output formats include "umd" or "iife".`
-      )
-    })
-  })
-
-  test('umd or iife: should define build.lib.name', () => {
-    ;['umd', 'iife'].forEach((format) => {
-      expect(() =>
-        resolveBuildOutputs(
-          undefined,
-          {
-            entry: 'entryA.js',
-            formats: [format as LibraryFormats]
-          },
-          {} as Logger
-        )
-      ).toThrow(
-        `Option "build.lib.name" is required when output formats include "umd" or "iife".`
-      )
-    })
   })
 
   test('array outputs: should ignore build.lib.formats', () => {
@@ -425,6 +436,7 @@ describe('resolveBuildOutputs', () => {
     const log = { warn: vi.fn() } as Logger
     expect(
       resolveBuildOutputs(
+        'entryA.js',
         [{ name: 'A' }],
         {
           entry: 'entryA.js',
@@ -438,5 +450,138 @@ describe('resolveBuildOutputs', () => {
         `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`
       )
     )
+  })
+
+  test('error on missing names for multiple entries', () => {
+    const libOptions: LibraryOptions = {
+      entry: ['entryA.js', 'entryB.js'],
+      formats: ['umd']
+    }
+
+    expect(() =>
+      resolveBuildOutputs(libOptions.entry, undefined, libOptions, {} as Logger)
+    ).toThrow(
+      `"build.lib.entry"/"build.rollupOptions.input" must be defined as object when there are multiple ` +
+        `inputs and output formats include "umd" or "iife".`
+    )
+  })
+})
+
+describe('resolveBuilds', () => {
+  test('one entry, one build', () => {
+    const libOptions: LibraryOptions = {
+      entry: 'entryA.js',
+      name: 'entryA',
+      formats: ['es', 'cjs', 'umd', 'iife']
+    }
+
+    const builds = resolveBuilds(
+      libOptions.entry,
+      undefined,
+      libOptions,
+      (_input) => (output) => output,
+      {} as Logger
+    )
+
+    expect(builds).toEqual([
+      {
+        input: 'entryA.js',
+        output: [
+          { format: 'es' },
+          { format: 'cjs' },
+          { format: 'umd' },
+          { format: 'iife' }
+        ]
+      }
+    ])
+  })
+
+  test('multiple entries, one build', () => {
+    const libOptions: LibraryOptions = {
+      entry: {
+        entryA: 'entryA.js',
+        entryB: 'entryB.js'
+      },
+      formats: ['es', 'cjs']
+    }
+
+    const builds = resolveBuilds(
+      libOptions.entry,
+      undefined,
+      libOptions,
+      (_input) => (output) => output,
+      {} as Logger
+    )
+
+    expect(builds).toEqual([
+      {
+        input: {
+          entryA: 'entryA.js',
+          entryB: 'entryB.js'
+        },
+        output: [{ format: 'es' }, { format: 'cjs' }]
+      }
+    ])
+  })
+
+  test('multiple builds', () => {
+    const libOptions: LibraryOptions = {
+      entry: {
+        entryA: 'entryA.js',
+        entryB: 'entryB.js'
+      },
+      formats: ['es', 'cjs', 'umd', 'iife']
+    }
+
+    const builds = resolveBuilds(
+      libOptions.entry,
+      undefined,
+      libOptions,
+      (_input) => (output) => output,
+      {} as Logger
+    )
+
+    expect(builds).toEqual([
+      {
+        input: {
+          entryA: 'entryA.js',
+          entryB: 'entryB.js'
+        },
+        output: [{ format: 'es' }, { format: 'cjs' }]
+      },
+      {
+        input: { entryA: 'entryA.js' },
+        output: [{ format: 'umd' }, { format: 'iife' }],
+        label: 'Extra non code splitting build for entry: entryA'
+      },
+      {
+        input: { entryB: 'entryB.js' },
+        output: [{ format: 'umd' }, { format: 'iife' }],
+        label: 'Extra non code splitting build for entry: entryB'
+      }
+    ])
+  })
+})
+
+describe('resolveLibName', () => {
+  test('returns name if provided', () => {
+    const libOptions: LibraryOptions = {
+      entry: '',
+      name: 'lib'
+    }
+
+    const name = resolveLibName(libOptions, '')
+    expect(name).toBe('lib')
+  })
+
+  test('returns name from entries object', () => {
+    const libOptions: LibraryOptions = {
+      entry: {
+        entryA: 'entryA.js'
+      }
+    }
+
+    const name = resolveLibName(libOptions, libOptions.entry)
+    expect(name).toBe('entryA')
   })
 })
