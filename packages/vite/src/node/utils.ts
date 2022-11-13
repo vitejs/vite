@@ -535,16 +535,10 @@ export function writeFile(
   fs.writeFileSync(filename, content)
 }
 
-/**
- * Use fs.statSync(filename) instead of fs.existsSync(filename)
- * #2051 if we don't have read permission on a directory, existsSync() still
- * works and will result in massively slow subsequent checks (which are
- * unnecessary in the first place)
- */
 export function isFileReadable(filename: string): boolean {
   try {
-    const stat = fs.statSync(filename, { throwIfNoEntry: false })
-    return !!stat
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
   } catch {
     return false
   }
