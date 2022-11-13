@@ -98,7 +98,9 @@ module.exports = defineConfig({
         memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
         allowSeparatedGroups: false
       }
-    ]
+    ],
+
+    'regexp/no-contradiction-with-assertion': 'error'
   },
   overrides: [
     {

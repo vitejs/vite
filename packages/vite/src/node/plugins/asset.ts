@@ -29,7 +29,7 @@ export const duplicateAssets = new WeakMap<
   Map<string, OutputAsset>
 >()
 
-const rawRE = /(\?|&)raw(?:&|$)/
+const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
@@ -173,7 +173,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
+      id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },

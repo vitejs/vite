@@ -26,9 +26,9 @@ export interface JsonOptions {
 }
 
 // Custom json filter for vite
-const jsonExtRE = /\.json($|\?)(?!commonjs-(proxy|external))/
+const jsonExtRE = /\.json(?:$|\?)(?!commonjs-(?:proxy|external))/
 
-const jsonLangs = `\\.(json|json5)($|\\?)`
+const jsonLangs = `\\.(?:json|json5)(?:$|\\?)`
 const jsonLangRE = new RegExp(jsonLangs)
 export const isJSONRequest = (request: string): boolean =>
   jsonLangRE.test(request)
@@ -71,7 +71,7 @@ export function jsonPlugin(
           map: { mappings: '' }
         }
       } catch (e) {
-        const errorMessageList = /[\d]+/.exec(e.message)
+        const errorMessageList = /\d+/.exec(e.message)
         const position = errorMessageList && parseInt(errorMessageList[0], 10)
         const msg = position
           ? `, invalid JSON syntax found at line ${position}`

@@ -18,7 +18,7 @@ import {
 // in later assertions to ensure CSS HMR doesn't reload the page
 test('imported css', async () => {
   const css = await page.textContent('.imported-css')
-  expect(css).toMatch(/\.imported ?{/)
+  expect(css).toMatch(/\.imported ?\{/)
   if (isBuild) {
     expect(css.trim()).not.toContain('\n') // check minified
   }
