@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
+import { commentRE, extractImportPaths, scriptRE } from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
@@ -89,8 +89,7 @@ describe('optimizer-scan:script-test', () => {
     ]
 
     shouldMatchArray.forEach((str) => {
-      importsRE.lastIndex = 0
-      expect(importsRE.exec(str)[1]).toEqual("'vue'")
+      expect(extractImportPaths(str)).toStrictEqual(["import 'vue'"])
     })
 
     const shouldFailArray = [
@@ -102,7 +101,7 @@ describe('optimizer-scan:script-test', () => {
       `import type Bar from 'foo'`
     ]
     shouldFailArray.forEach((str) => {
-      expect(importsRE.test(str)).toBe(false)
+      expect(extractImportPaths(str)).toStrictEqual([])
     })
   })
 

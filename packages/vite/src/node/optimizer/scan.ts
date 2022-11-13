@@ -39,9 +39,10 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 // use Acorn because it's slow. Luckily this doesn't have to be bullet proof
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
-export const importsRE =
-  // eslint-disable-next-line regexp/no-super-linear-move -- TODO: FIXME backtracking
-  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+// `[ \f\t\v\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff]` is same with
+// `[\r\n\u2028\u2029]` removed from `\s`
+const importsRE =
+  /(?<=^|;|\*\/)[ \f\t\v\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff]*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
@@ -325,7 +326,9 @@ function esbuildScanPlugin(
               // since they may be used in the template
               const contents =
                 content +
-                (loader.startsWith('ts') ? extractImportPaths(content) : '')
+                (loader.startsWith('ts')
+                  ? extractImportPaths(content).join('\n')
+                  : '')
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {
@@ -524,22 +527,22 @@ function esbuildScanPlugin(
  * the solution is to add `import 'x'` for every source to force
  * esbuild to keep crawling due to potential side effects.
  */
-function extractImportPaths(code: string) {
+export function extractImportPaths(code: string): string[] {
   // empty singleline & multiline comments to avoid matching comments
   code = code
     .replace(multilineCommentsRE, '/* */')
     .replace(singlelineCommentsRE, '')
 
-  let js = ''
+  const imports = []
   let m
   while ((m = importsRE.exec(code)) != null) {
     // This is necessary to avoid infinite loops with zero-width matches
     if (m.index === importsRE.lastIndex) {
       importsRE.lastIndex++
     }
-    js += `\nimport ${m[1]}`
+    imports.push(`import ${m[1]}`)
   }
-  return js
+  return imports
 }
 
 function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
