@@ -99,14 +99,9 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: null
+   * default: undefined
    */
-  localsConvention?:
-    | 'camelCase'
-    | 'camelCaseOnly'
-    | 'dashes'
-    | 'dashesOnly'
-    | null
+  localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
@@ -915,8 +910,7 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
-        // TODO: convert null to undefined (`null` should be removed from `CSSModulesOptions.localsConvention`)
-        localsConvention: modulesOptions?.localsConvention ?? undefined,
+        localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
