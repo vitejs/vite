@@ -66,6 +66,7 @@
     "eslint-define-config": "^1.11.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-regexp": "^1.10.0",
     "execa": "^6.1.0",
     "fast-glob": "^3.2.12",
     "fs-extra": "^10.1.0",

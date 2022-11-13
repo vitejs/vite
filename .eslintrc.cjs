@@ -7,9 +7,10 @@ module.exports = defineConfig({
   extends: [
     'eslint:recommended',
     'plugin:node/recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:@typescript-eslint/recommended',
+    'plugin:regexp/recommended'
   ],
-  plugins: ['import'],
+  plugins: ['import', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
