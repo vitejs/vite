@@ -26,7 +26,6 @@ import { toOutputFilePathInHtml } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
-  getAssetFilename,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl
@@ -794,9 +793,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return (
-            toOutputAssetFilePath(getAssetFilename(fileHash, config)!) + postfix
-          )
+          return toOutputAssetFilePath(this.getFileName(fileHash)) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {

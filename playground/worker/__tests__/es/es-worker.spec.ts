@@ -17,7 +17,7 @@ test('normal', async () => {
   )
   await untilUpdated(
     () => page.textContent('.asset-url'),
-    isBuild ? '/es/assets/vite.svg' : '/es/vite.svg',
+    isBuild ? '/es/assets/worker_asset.vite.svg' : '/es/vite.svg',
     true
   )
 })
