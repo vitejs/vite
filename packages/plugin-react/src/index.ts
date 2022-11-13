@@ -113,6 +113,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const importReactRE = /(?:^|\n)import\s+(?:\*\s+as\s+)?React(?:,|\s+)/
 
   // Any extension, including compound ones like '.bs.js'
+  // eslint-disable-next-line regexp/no-super-linear-move -- id won't be so long
   const fileExtensionRE = /\.[^/\s?]+$/
 
   const viteBabel: Plugin = {

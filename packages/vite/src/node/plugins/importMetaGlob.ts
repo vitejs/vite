@@ -139,7 +139,7 @@ export async function parseImportGlob(
       // tailing comma in object or array will make the parser think it's a comma operation
       // we try to parse again removing the comma
       try {
-        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
+        const statement = trimTrailingComma(code.slice(start, lastTokenPos))
         ast = parseExpressionAt(
           ' '.repeat(start) + statement, // to keep the ast position
           start,
@@ -298,6 +298,14 @@ export async function parseImportGlob(
   })
 
   return (await Promise.all(tasks)).filter(Boolean)
+}
+
+const spaceRE = /^\s*$/
+
+function trimTrailingComma(code: string): string {
+  const pos = code.lastIndexOf(',')
+  const remove = code.slice(pos + 1)
+  return spaceRE.test(remove) ? code.slice(0, pos) : code
 }
 
 const importPrefix = '__vite_glob_'

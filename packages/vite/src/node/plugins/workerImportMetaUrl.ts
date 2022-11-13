@@ -41,6 +41,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   // need to find in comment code
   const workerOptString = raw
     .substring(commaIndex + 1, endIndex)
+    // eslint-disable-next-line regexp/no-super-linear-move -- `raw` won't be so long
     .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
 
   const hasViteIgnore = ignoreFlagRE.test(workerOptString)

@@ -313,6 +313,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             fileName = fileName.replace('[name]', '[name]-legacy')
           } else {
             // entry.js -> entry-legacy.js
+            // eslint-disable-next-line regexp/no-super-linear-move -- fileName won't be so long
             fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
           }
 
@@ -453,7 +454,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       const tags: HtmlTagDescriptor[] = []
-      const htmlFilename = chunk.facadeModuleId?.replace(/\?.*$/, '')
+      const htmlFilename = chunk.facadeModuleId
+        ? trimQuery(chunk.facadeModuleId)
+        : undefined
 
       // 1. inject modern polyfills
       const modernPolyfillFilename = facadeToModernPolyfillMap.get(
@@ -791,6 +794,11 @@ function wrapIIFEBabelPlugin(): BabelPlugin {
       }
     }
   }
+}
+
+function trimQuery(id: string) {
+  const pos = id.lastIndexOf('?')
+  return pos < 0 ? id : id.slice(0, pos)
 }
 
 export const cspHashes = [

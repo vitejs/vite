@@ -12,7 +12,7 @@ import {
   normalizePath,
   parseRequest,
   removeComments,
-  requestQuerySplitRE,
+  splitRequestWithQuery,
   transformStableResult
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
@@ -59,8 +59,8 @@ function parseDynamicImportPattern(
     return null
   }
 
-  const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
-  const [rawPattern] = filename.split(requestQuerySplitRE, 2)
+  const [userPattern] = splitRequestWithQuery(userPatternQuery)
+  const [rawPattern] = splitRequestWithQuery(filename)
 
   if (rawQuery?.raw !== undefined) {
     globParams = { as: 'raw' }

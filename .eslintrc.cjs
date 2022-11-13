@@ -107,7 +107,13 @@ module.exports = defineConfig({
       files: ['packages/**'],
       excludedFiles: '**/__tests__/**',
       rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+        'no-restricted-globals': [
+          'error',
+          'require',
+          '__dirname',
+          '__filename'
+        ],
+        'regexp/no-super-linear-move': 'error'
       }
     },
     {

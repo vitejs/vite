@@ -473,7 +473,12 @@ async function linkSrcToDescriptor(
     (await pluginContext.resolve(src, descriptor.filename))?.id || src
   // #1812 if the src points to a dep file, the resolved id may contain a
   // version query.
-  setSrcDescriptor(srcFile.replace(/\?.*$/, ''), descriptor, scoped)
+  setSrcDescriptor(trimQuery(srcFile), descriptor, scoped)
+}
+
+function trimQuery(id: string) {
+  const pos = id.lastIndexOf('?')
+  return pos < 0 ? id : id.slice(0, pos)
 }
 
 // these are built-in query parameters so should be ignored

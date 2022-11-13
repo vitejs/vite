@@ -19,7 +19,8 @@ import {
   isDataUrl,
   isExternalUrl,
   normalizePath,
-  processSrcSet
+  processSrcSet,
+  removeComments
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
@@ -48,9 +49,9 @@ const inlineImportRE =
 const htmlLangRE = /\.(?:html|htm)$/
 
 const importMapRE =
-  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
+  /<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
 const moduleScriptRE =
-  /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
+  /<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -986,11 +987,10 @@ export async function applyHtmlTransforms(
 }
 
 const importRE = /\bimport\s*("[^"]*[^\\]"|'[^']*[^\\]');*/g
-const commentRE = /\/\*[\s\S]*?\*\/|\/\/.*$/gm
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
   // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return !code.replace(importRE, '').replace(commentRE, '').trim().length
+  return !removeComments(code.replace(importRE, '')).trim().length
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
@@ -1004,14 +1004,14 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
     : config.base
 }
 
-const headInjectRE = /([ \t]*)<\/head>/i
-const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
+const headInjectRE = /<\/head>/i
+const headPrependInjectRE = /<head[^>]*>/i
 
 const htmlInjectRE = /<\/html>/i
-const htmlPrependInjectRE = /([ \t]*)<html[^>]*>/i
+const htmlPrependInjectRE = /<html[^>]*>/i
 
-const bodyInjectRE = /([ \t]*)<\/body>/i
-const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
+const bodyInjectRE = /<\/body>/i
+const bodyPrependInjectRE = /<body[^>]*>/i
 
 const doctypePrependInjectRE = /<!doctype html>/i
 
@@ -1025,30 +1025,41 @@ function injectToHead(
   if (prepend) {
     // inject as the first element of head
     if (headPrependInjectRE.test(html)) {
-      return html.replace(
-        headPrependInjectRE,
-        (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
-      )
+      return html.replace(headPrependInjectRE, (match, offset) => {
+        const indent = getIndent(html, offset)
+        return `${match}\n${serializeTags(tags, incrementIndent(indent))}`
+      })
     }
   } else {
     // inject before head close
     if (headInjectRE.test(html)) {
       // respect indentation of head tag
-      return html.replace(
-        headInjectRE,
-        (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
-      )
+      return html.replace(headInjectRE, (match, offset) => {
+        const indent = getIndent(html, offset)
+        return `\n${serializeTags(
+          tags,
+          incrementIndent(indent)
+        )}${indent}${match}`
+      })
     }
     // try to inject before the body tag
     if (bodyPrependInjectRE.test(html)) {
-      return html.replace(
-        bodyPrependInjectRE,
-        (match, p1) => `${serializeTags(tags, p1)}\n${match}`
-      )
+      return html.replace(bodyPrependInjectRE, (match, offset) => {
+        const indent = getIndent(html, offset)
+        return `${serializeTags(tags, indent)}\n${match}`
+      })
     }
   }
   // if no head tag is present, we prepend the tag for both prepend and append
   return prependInjectFallback(html, tags)
+}
+
+function getIndent(html: string, pos: number) {
+  let indent = ''
+  for (; pos >= 0 && (html[pos] === ' ' || html[pos] === '\t'); pos--) {
+    indent += html[pos]
+  }
+  return indent
 }
 
 function injectToBody(
@@ -1061,26 +1072,29 @@ function injectToBody(
   if (prepend) {
     // inject after body open
     if (bodyPrependInjectRE.test(html)) {
-      return html.replace(
-        bodyPrependInjectRE,
-        (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
-      )
+      return html.replace(bodyPrependInjectRE, (match, offset) => {
+        const indent = getIndent(html, offset)
+        return `${match}\n${serializeTags(tags, incrementIndent(indent))}`
+      })
     }
     // if no there is no body tag, inject after head or fallback to prepend in html
     if (headInjectRE.test(html)) {
-      return html.replace(
-        headInjectRE,
-        (match, p1) => `${match}\n${serializeTags(tags, p1)}`
-      )
+      return html.replace(headInjectRE, (match, offset) => {
+        const indent = getIndent(html, offset)
+        return `${match}\n${serializeTags(tags, indent)}`
+      })
     }
     return prependInjectFallback(html, tags)
   } else {
     // inject before body close
     if (bodyInjectRE.test(html)) {
-      return html.replace(
-        bodyInjectRE,
-        (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
-      )
+      return html.replace(bodyInjectRE, (match, offset) => {
+        const indent = getIndent(match, offset)
+        return `\n${serializeTags(
+          tags,
+          incrementIndent(indent)
+        )}${indent}${match}`
+      })
     }
     // if no body tag is present, append to the html tag, or at the end of the file
     if (htmlInjectRE.test(html)) {
