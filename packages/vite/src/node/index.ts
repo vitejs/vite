@@ -111,7 +111,6 @@ export type {
   InferCustomEventPayload,
   InvalidatePayload
 } from 'types/customEvent'
-// [deprecated: use vite/client/types instead]
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
