@@ -737,9 +737,11 @@ export function tryNodeResolve(
         }
       }
 
-      // Reset the `pkgId` variable since we use it later on
-      // and the package.json didn't help us find the module.
+      // Reset the resolvedPkg variables to avoid false positives as we
+      // continue our search.
+      resolvedPkg = undefined
       resolvedPkgId = undefined
+      resolvedPkgType = undefined
       continue
     }
 
