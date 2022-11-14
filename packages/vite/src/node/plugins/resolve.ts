@@ -1099,6 +1099,19 @@ function resolveDeepImport(
       getInlineConditions(options, targetWeb),
       options.overrideConditions
     )
+    if (postfix) {
+      if (possibleFiles.length) {
+        possibleFiles = possibleFiles.map((f) => f + postfix)
+      } else {
+        possibleFiles = resolveExports(
+          data,
+          file + postfix,
+          options,
+          getInlineConditions(options, targetWeb),
+          options.overrideConditions
+        )
+      }
+    }
     if (!possibleFiles.length) {
       throw new Error(
         `Package subpath '${file}' is not defined by "exports" in ` +
@@ -1108,7 +1121,7 @@ function resolveDeepImport(
   } else if (targetWeb && options.browserField && isObject(browserField)) {
     const mapped = mapWithBrowserField(file, browserField)
     if (mapped) {
-      possibleFiles = [mapped]
+      possibleFiles = [mapped + postfix]
     } else if (mapped === false) {
       return (webResolvedImports[id] = browserExternalId)
     }
@@ -1127,7 +1140,6 @@ function resolveDeepImport(
         ))
     )
     if (resolved) {
-      resolved += postfix
       isDebug &&
         debug(
           `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`
