@@ -52,15 +52,14 @@ import {
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
-  assetFileNamesToFileName,
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
+  generatedAssets,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
-  renderAssetUrlInJS,
-  resolveAssetFileNames
+  renderAssetUrlInJS
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 
@@ -153,8 +152,6 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
-export const cssEntryFilesCache = new WeakMap<ResolvedConfig, Set<string>>()
-
 const postcssConfigCache: Record<
   string,
   WeakMap<ResolvedConfig, PostCSSConfigResult | null>
@@ -190,7 +187,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
-      cssEntryFilesCache.set(config, new Set())
     },
 
     async transform(raw, id, options) {
@@ -470,7 +466,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const cssEntryFiles = cssEntryFilesCache.get(config)!
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
@@ -547,24 +542,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const lang = path.extname(cssAssetName).slice(1)
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
-          if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
-
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
-          const fileHandle = this.emitFile({
-            name: isPreProcessor(lang) ? cssAssetName : cssFileName,
-            fileName: assetFileNamesToFileName(
-              resolveAssetFileNames(config),
-              cssFileName,
-              getHash(chunkCSS),
-              chunkCSS
-            ),
+          const referenceId = this.emitFile({
+            name: path.basename(cssFileName),
             type: 'asset',
             source: chunkCSS
           })
-          chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
+          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
+          const isEntry = chunk.isEntry && isPureCssChunk
+          generatedAssets
+            .get(config)!
+            .set(referenceId, { originalName, isEntry })
+          chunk.viteMetadata.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // legacy build and inline css
 

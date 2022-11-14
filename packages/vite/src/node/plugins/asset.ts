@@ -5,9 +5,7 @@ import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
-  OutputOptions,
   PluginContext,
-  PreRenderedAsset,
   RenderedChunk
 } from 'rollup'
 import MagicString from 'magic-string'
@@ -29,10 +27,15 @@ const urlRE = /(\?|&)url(?:&|$)/
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
 // chunk.name is the basename for the asset ignoring the directory structure
-// For the manifest, we need to preserve the original file path
+// For the manifest, we need to preserve the original file path and isEntry
+// for CSS assets. We keep a map from referenceId to this information.
+export interface GeneratedAssetMeta {
+  originalName: string
+  isEntry?: boolean
+}
 export const generatedAssets = new WeakMap<
   ResolvedConfig,
-  Map<string, { originalName: string }>
+  Map<string, GeneratedAssetMeta>
 >()
 
 // add own dictionary entry by directly assigning mrmime
@@ -246,120 +249,6 @@ export function getPublicAssetFilename(
   config: ResolvedConfig
 ): string | undefined {
   return publicAssetUrlCache.get(config)?.get(hash)
-}
-
-export function resolveAssetFileNames(
-  config: ResolvedConfig
-): string | ((chunkInfo: PreRenderedAsset) => string) {
-  const output = config.build?.rollupOptions?.output
-  const defaultAssetFileNames = path.posix.join(
-    config.build.assetsDir,
-    '[name].[hash][extname]'
-  )
-  // Steps to determine which assetFileNames will be actually used.
-  // First, if output is an object or string, use assetFileNames in it.
-  // And a default assetFileNames as fallback.
-  let assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined> =
-    (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
-    defaultAssetFileNames
-  if (output && Array.isArray(output)) {
-    // Second, if output is an array, adopt assetFileNames in the first object.
-    assetFileNames = output[0].assetFileNames ?? assetFileNames
-  }
-  return assetFileNames
-}
-
-/**
- * converts the source filepath of the asset to the output filename based on the assetFileNames option. \
- * this function imitates the behavior of rollup.js. \
- * https://rollupjs.org/guide/en/#outputassetfilenames
- *
- * @example
- * ```ts
- * const content = Buffer.from('text');
- * const fileName = assetFileNamesToFileName(
- *   'assets/[name].[hash][extname]',
- *   '/path/to/file.txt',
- *   getHash(content),
- *   content
- * )
- * // fileName: 'assets/file.982d9e3e.txt'
- * ```
- *
- * @param assetFileNames filename pattern. e.g. `'assets/[name].[hash][extname]'`
- * @param file filepath of the asset
- * @param contentHash hash of the asset. used for `'[hash]'` placeholder
- * @param content content of the asset. passed to `assetFileNames` if `assetFileNames` is a function
- * @returns output filename
- */
-export function assetFileNamesToFileName(
-  assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined>,
-  file: string,
-  contentHash: string,
-  content: string | Buffer
-): string {
-  const basename = path.basename(file)
-
-  // placeholders for `assetFileNames`
-  // `hash` is slightly different from the rollup's one
-  const extname = path.extname(basename)
-  const ext = extname.substring(1)
-  const name = basename.slice(0, -extname.length)
-  const hash = contentHash
-
-  if (typeof assetFileNames === 'function') {
-    assetFileNames = assetFileNames({
-      name: file,
-      source: content,
-      type: 'asset'
-    })
-    if (typeof assetFileNames !== 'string') {
-      throw new TypeError('assetFileNames must return a string')
-    }
-  } else if (typeof assetFileNames !== 'string') {
-    throw new TypeError('assetFileNames must be a string or a function')
-  }
-
-  const fileName = assetFileNames.replace(
-    /\[\w+\]/g,
-    (placeholder: string): string => {
-      switch (placeholder) {
-        case '[ext]':
-          return ext
-
-        case '[extname]':
-          return extname
-
-        case '[hash]':
-          return hash
-
-        case '[name]':
-          return sanitizeFileName(name)
-      }
-      throw new Error(
-        `invalid placeholder ${placeholder} in assetFileNames "${assetFileNames}"`
-      )
-    }
-  )
-
-  return fileName
-}
-
-// taken from https://github.com/rollup/rollup/blob/a8647dac0fe46c86183be8596ef7de25bc5b4e4b/src/utils/sanitizeFileName.ts
-// https://datatracker.ietf.org/doc/html/rfc2396
-// eslint-disable-next-line no-control-regex
-const INVALID_CHAR_REGEX = /[\x00-\x1F\x7F<>*#"{}|^[\]`;?:&=+$,]/g
-const DRIVE_LETTER_REGEX = /^[a-z]:/i
-function sanitizeFileName(name: string): string {
-  const match = DRIVE_LETTER_REGEX.exec(name)
-  const driveLetter = match ? match[0] : ''
-
-  // A `:` is only allowed as part of a windows drive letter (ex: C:\foo)
-  // Otherwise, avoid them because they can refer to NTFS alternate data streams.
-  return (
-    driveLetter +
-    name.substr(driveLetter.length).replace(INVALID_CHAR_REGEX, '_')
-  )
 }
 
 export const publicAssetUrlCache = new WeakMap<
