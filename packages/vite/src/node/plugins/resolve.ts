@@ -1038,7 +1038,14 @@ function packageEntryFailure(id: string, details?: string) {
 }
 
 function getInlineConditions(conditions: string[], targetWeb: boolean) {
-  return targetWeb && !conditions.includes('node') ? ['browser'] : ['node']
+  const inlineConditions =
+    targetWeb && !conditions.includes('node') ? ['browser'] : ['node']
+
+  // The "module" condition is no longer recommended, but some older
+  // packages may still use it.
+  inlineConditions.push('module')
+
+  return inlineConditions
 }
 
 function resolveDeepImport(
