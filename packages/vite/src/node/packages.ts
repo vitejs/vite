@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { createDebugger, createFilter, resolveFrom } from './utils'
+import { createDebugger, createFilter, lookupFile, resolveFrom } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
 
@@ -27,6 +27,7 @@ export interface PackageData {
     main: string
     module: string
     browser: string | Record<string, string | false>
+    imports: Record<string, any>
     exports: string | Record<string, any> | string[]
     dependencies: Record<string, string>
   }
@@ -129,6 +130,26 @@ export function loadPackageData(
 
   packageCache?.set(pkgPath, pkg)
   return pkg
+}
+
+export function loadNearestPackageData(
+  startDir: string,
+  options?: { preserveSymlinks?: boolean },
+  predicate?: (pkg: PackageData) => boolean
+): PackageData | null {
+  let importerPkg: PackageData | undefined
+  lookupFile(startDir, ['package.json'], {
+    pathOnly: true,
+    predicate(pkgPath) {
+      importerPkg = loadPackageData(pkgPath, options)
+      return !predicate || predicate(importerPkg)
+    }
+  })
+  return importerPkg || null
+}
+
+export function isNamedPackage(pkg: PackageData): boolean {
+  return !!pkg.data.name
 }
 
 export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {

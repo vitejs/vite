@@ -45,7 +45,9 @@ import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import {
   findPackageJson,
+  isNamedPackage,
   isWorkspaceRoot,
+  loadNearestPackageData,
   PackageCache,
   PackageData
 } from '../packages'
@@ -275,6 +277,58 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           }
           return res
         }
+      }
+
+      // handle subpath imports
+      // https://nodejs.org/api/packages.html#subpath-imports
+      if (id[0] === '#') {
+        if (!importer) {
+          return // Module not found.
+        }
+        const importerPkg = loadNearestPackageData(
+          path.dirname(importer),
+          options,
+          isNamedPackage
+        )
+        if (!importerPkg || !importerPkg.data.imports) {
+          return // Module not found.
+        }
+        // Rewrite the `imports` object to be compatible with the
+        // `resolve.exports` package.
+        const { name, imports } = importerPkg.data
+        const exports = Object.fromEntries<any>(
+          Object.entries(imports).map((entry) => {
+            entry[0] = entry[0].replace(/^#/, './')
+            return entry
+          })
+        )
+        const possiblePaths = resolveExports(
+          { name, exports },
+          id.replace(/^#/, './'),
+          options,
+          getInlineConditions(options, targetWeb),
+          options.overrideConditions
+        )
+        if (!possiblePaths.length) {
+          throw new Error(
+            `Package subpath '${id}' is not defined by "imports" in ` +
+              `${path.join(importerPkg.dir, 'package.json')}.`
+          )
+        }
+        for (const possiblePath of possiblePaths) {
+          if (possiblePath[0] === '#') {
+            continue // Subpath imports cannot be recursive.
+          }
+          const resolved = await this.resolve(
+            possiblePath,
+            importer,
+            resolveOpts
+          )
+          if (resolved) {
+            return resolved
+          }
+        }
+        return // Module not found.
       }
 
       // drive relative fs paths (only windows)
@@ -817,15 +871,7 @@ export function tryNodeResolve(
     // Some projects (like Svelte) have nameless package.json files to
     // appease older Node.js versions and they don't have the list of
     // optional peer dependencies like the root package.json does.
-    let basePkg: PackageData | undefined
-    lookupFile(basedir, ['package.json'], {
-      pathOnly: true,
-      predicate(pkgPath) {
-        basePkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
-        return !!basePkg.data.name
-      }
-    })
-
+    const basePkg = loadNearestPackageData(basedir, options, isNamedPackage)
     if (!basePkg) {
       return // Module not found.
     }
