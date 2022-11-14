@@ -579,21 +579,19 @@ function tryResolveFile(
   }
 }
 
-export type InternalResolveOptionsWithOverrideConditions =
-  InternalResolveOptions & {
-    /**
-     * @deprecated In future, `conditions` will work like this.
-     * @internal
-     */
-    overrideConditions?: string[]
-  }
+export interface InternalNodeResolveOptions extends InternalResolveOptions {
+  /**
+   * When defined, only conditions defined in this array will be used.
+   */
+  overrideConditions?: string[]
+}
 
 export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
-  options: InternalResolveOptionsWithOverrideConditions,
+  options: InternalNodeResolveOptions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr?: boolean,
@@ -1053,7 +1051,7 @@ function resolveDeepImport(
     data
   }: PackageData,
   targetWeb: boolean,
-  options: InternalResolveOptionsWithOverrideConditions
+  options: InternalNodeResolveOptions
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
