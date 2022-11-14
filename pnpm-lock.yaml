@@ -896,6 +896,7 @@ importers:
       '@babel/runtime': ^7.20.1
       es5-ext: 0.10.62
       normalize.css: ^8.0.1
+      pr-9170: link:./pr-9170/node_modules/pr-9170
       require-pkg-with-module-field: link:./require-pkg-with-module-field
       resolve-browser-field: link:./browser-field
       resolve-browser-module-field1: link:./browser-module-field1
@@ -911,6 +912,7 @@ importers:
       '@babel/runtime': 7.20.1
       es5-ext: 0.10.62
       normalize.css: 8.0.1
+      pr-9170: link:pr-9170/node_modules/pr-9170
       require-pkg-with-module-field: link:require-pkg-with-module-field
       resolve-browser-field: link:browser-field
       resolve-browser-module-field1: link:browser-module-field1
