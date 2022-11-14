@@ -64,7 +64,7 @@ test('css import from js', async () => {
 test('css import asset with space', async () => {
   const importedWithSpace = await page.$('.import-with-space')
 
-  expect(await getBg(importedWithSpace)).toMatch(/.*ok-.*png/)
+  expect(await getBg(importedWithSpace)).toMatch(/.*\/ok.*\.png/)
 })
 
 test('postcss config', async () => {
