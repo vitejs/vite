@@ -51,7 +51,8 @@ export type {
   SSRTarget
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
-export type { PackageCache, PackageData } from './packages'
+export type { PackageCache, PackageData, LoadPackageOptions } from './packages'
+export type { SymlinkResolver } from './symlinks'
 export type {
   Logger,
   LogOptions,
