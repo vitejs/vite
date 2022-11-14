@@ -43,7 +43,12 @@ import {
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
-import { findPackageJson, PackageCache, PackageData } from '../packages'
+import {
+  findPackageJson,
+  isWorkspaceRoot,
+  PackageCache,
+  PackageData
+} from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
 import { isWorkerRequest } from './worker'
 
@@ -784,6 +789,16 @@ export function tryNodeResolve(
         break
       }
     }
+
+    // Stop looking if we're at the workspace root directory.
+    if (
+      isWorkspaceRoot(
+        path.dirname(nodeModulesDir),
+        preserveSymlinks,
+        packageCache
+      )
+    )
+      break
   }
 
   if (!resolvedId) {
