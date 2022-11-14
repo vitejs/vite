@@ -19,6 +19,8 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
+import { isCSSRequest } from '../plugins/css'
+import { SPECIAL_QUERY_RE } from '../constants'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
@@ -259,9 +261,8 @@ async function loadAndTransform(
       mod.file &&
       mod.type === 'js' &&
       code !== originalCode &&
-      !code.startsWith(
-        'import { createHotContext as __vite__createHotContext } from'
-      )
+      !isCSSRequest(id) && // skip CSS : #9914
+      !SPECIAL_QUERY_RE.test(id) // skip special requests
     ) {
       map = new MagicString(code).generateMap({ source: mod.file })
     }
