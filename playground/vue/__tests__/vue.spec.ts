@@ -188,7 +188,7 @@ describe('hmr', () => {
   })
 
   test('should re-render when template is emptied', async () => {
-    editFile('Hmr.vue', () => '')
+    editFile('Hmr.vue', (code) => code.replace(/<template>.+<\/template>/s, ''))
     await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
   })
 })
