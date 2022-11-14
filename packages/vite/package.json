@@ -110,7 +110,7 @@
     "postcss-import": "^15.0.0",
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^5.0.0",
-    "resolve.exports": "^1.1.0",
+    "resolve.exports": "npm:@alloc/resolve.exports@^1.1.0",
     "sirv": "^2.0.2",
     "source-map-js": "^1.0.2",
     "source-map-support": "^0.5.21",

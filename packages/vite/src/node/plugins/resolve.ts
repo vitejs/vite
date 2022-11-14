@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
-import { resolve as _resolveExports } from 'resolve.exports'
+import { resolveExports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
@@ -923,29 +923,28 @@ export function resolvePackageEntry(
     return cached
   }
   try {
-    let entryPoint: string | undefined | void
+    let entryPoints: string[] = []
 
-    // resolve exports field with highest priority
-    // using https://github.com/lukeed/resolve.exports
+    // the exports field takes highest priority as described in
+    // https://nodejs.org/api/packages.html#package-entry-points
     if (data.exports) {
-      entryPoint = resolveExports(data, '.', options, targetWeb)
-    }
-
-    // if exports resolved to .mjs, still resolve other fields.
-    // This is because .mjs files can technically import .cjs files which would
-    // make them invalid for pure ESM environments - so if other module/browser
-    // fields are present, prioritize those instead.
-    if (
-      targetWeb &&
-      options.browserField &&
-      (!entryPoint || entryPoint.endsWith('.mjs'))
-    ) {
+      entryPoints = resolveExports(
+        data,
+        '.',
+        options,
+        getInlineConditions(options.conditions, targetWeb)
+      )
+      if (!entryPoints.length) {
+        packageEntryFailure(id)
+      }
+    } else if (targetWeb && options.browserField) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
       const browserEntry =
         typeof data.browser === 'string'
           ? data.browser
           : isObject(data.browser) && data.browser['.']
+
       if (browserEntry) {
         // check if the package also has a "module" field.
         if (
@@ -968,34 +967,34 @@ export function resolvePackageEntry(
             const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
             if (hasESMSyntax(content)) {
               // likely ESM, prefer browser
-              entryPoint = browserEntry
+              entryPoints[0] = browserEntry
             } else {
               // non-ESM, UMD or IIFE or CJS(!!! e.g. firebase 7.x), prefer module
-              entryPoint = data.module
+              entryPoints[0] = data.module
             }
           }
         } else {
-          entryPoint = browserEntry
+          entryPoints[0] = browserEntry
         }
       }
     }
 
-    if (!entryPoint || entryPoint.endsWith('.mjs')) {
+    if (!entryPoints[0]) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {
-          entryPoint = data[field]
+          entryPoints[0] = data[field]
           break
         }
       }
+      entryPoints[0] ||= data.main
     }
-    entryPoint ||= data.main
 
     // try default entry when entry is not define
     // https://nodejs.org/api/modules.html#all-together
-    const entryPoints = entryPoint
-      ? [entryPoint]
-      : ['index.js', 'index.json', 'index.node']
+    if (!entryPoints[0]) {
+      entryPoints = ['index.js', 'index.json', 'index.node']
+    }
 
     for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
@@ -1040,52 +1039,8 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
-const conditionalConditions = new Set(['production', 'development', 'module'])
-
-function resolveExports(
-  pkg: PackageData['data'],
-  key: string,
-  options: InternalResolveOptionsWithOverrideConditions,
-  targetWeb: boolean
-) {
-  const overrideConditions = options.overrideConditions
-    ? new Set(options.overrideConditions)
-    : undefined
-
-  const conditions = []
-  if (
-    (!overrideConditions || overrideConditions.has('production')) &&
-    options.isProduction
-  ) {
-    conditions.push('production')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('development')) &&
-    !options.isProduction
-  ) {
-    conditions.push('development')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('module')) &&
-    !options.isRequire
-  ) {
-    conditions.push('module')
-  }
-  if (options.overrideConditions) {
-    conditions.push(
-      ...options.overrideConditions.filter((condition) =>
-        conditionalConditions.has(condition)
-      )
-    )
-  } else if (options.conditions.length > 0) {
-    conditions.push(...options.conditions)
-  }
-
-  return _resolveExports(pkg, key, {
-    browser: targetWeb && !conditions.includes('node'),
-    require: options.isRequire && !conditions.includes('import'),
-    conditions
-  })
+function getInlineConditions(conditions: string[], targetWeb: boolean) {
+  return targetWeb && !conditions.includes('node') ? ['browser'] : ['node']
 }
 
 function resolveDeepImport(
@@ -1098,56 +1053,55 @@ function resolveDeepImport(
     data
   }: PackageData,
   targetWeb: boolean,
-  options: InternalResolveOptions
+  options: InternalResolveOptionsWithOverrideConditions
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
   }
 
-  let relativeId: string | undefined | void = id
   const { exports: exportsField, browser: browserField } = data
+  const { file, postfix } = splitFileAndPostfix(id)
 
-  // map relative based on exports data
+  let possibleFiles: string[] | undefined
   if (exportsField) {
-    if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      // resolve without postfix (see #7098)
-      const { file, postfix } = splitFileAndPostfix(relativeId)
-      const exportsId = resolveExports(data, file, options, targetWeb)
-      if (exportsId !== undefined) {
-        relativeId = exportsId + postfix
-      } else {
-        relativeId = undefined
-      }
-    } else {
-      // not exposed
-      relativeId = undefined
-    }
-    if (!relativeId) {
+    // map relative based on exports data
+    possibleFiles = resolveExports(
+      data,
+      file,
+      options,
+      getInlineConditions(options.conditions, targetWeb),
+      options.overrideConditions
+    )
+    if (!possibleFiles.length) {
       throw new Error(
-        `Package subpath '${relativeId}' is not defined by "exports" in ` +
+        `Package subpath '${file}' is not defined by "exports" in ` +
           `${path.join(dir, 'package.json')}.`
       )
     }
   } else if (targetWeb && options.browserField && isObject(browserField)) {
-    // resolve without postfix (see #7098)
-    const { file, postfix } = splitFileAndPostfix(relativeId)
     const mapped = mapWithBrowserField(file, browserField)
     if (mapped) {
-      relativeId = mapped + postfix
+      possibleFiles = [mapped]
     } else if (mapped === false) {
       return (webResolvedImports[id] = browserExternalId)
     }
   }
 
-  if (relativeId) {
-    const resolved = tryFsResolve(
-      path.join(dir, relativeId),
-      options,
-      !exportsField, // try index only if no exports field
-      targetWeb
+  possibleFiles ||= [id]
+  if (possibleFiles[0]) {
+    let resolved: string | undefined
+    possibleFiles.some(
+      (file) =>
+        (resolved = tryFsResolve(
+          path.join(dir, file),
+          options,
+          !exportsField, // try index only if no exports field
+          targetWeb
+        ))
     )
     if (resolved) {
+      resolved += postfix
       isDebug &&
         debug(
           `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`
