@@ -104,13 +104,14 @@ export interface CSSModulesOptions {
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
+// eslint-disable-next-line regexp/no-unused-capturing-group
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
-const directRequestRE = /(\?|&)direct\b/
-const htmlProxyRE = /(\?|&)html-proxy\b/
+const directRequestRE = /(?:\?|&)direct\b/
+const htmlProxyRE = /(?:\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
-const inlineRE = /(\?|&)inline\b/
-const inlineCSSRE = /(\?|&)inline-css\b/
-const usedRE = /(\?|&)used\b/
+const inlineRE = /(?:\?|&)inline\b/
+const inlineCSSRE = /(?:\?|&)inline-css\b/
+const usedRE = /(?:\?|&)used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -1163,11 +1164,13 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const cssDataUriRE =
-  /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
+// Assuming a function name won't be longer than 256 chars
+// eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
+const cssImageSetRE = /(?<=image-set\()((?:[\w\-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
@@ -1223,7 +1226,7 @@ function rewriteCssUrls(
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
     const [matched, rawUrl] = match
-    return await doUrlReplace(rawUrl, matched, replacer)
+    return await doUrlReplace(rawUrl.trim(), matched, replacer)
   })
 }
 
@@ -1233,7 +1236,7 @@ function rewriteCssDataUris(
 ): Promise<string> {
   return asyncReplace(css, cssDataUriRE, async (match) => {
     const [matched, rawUrl] = match
-    return await doUrlReplace(rawUrl, matched, replacer, 'data-uri')
+    return await doUrlReplace(rawUrl.trim(), matched, replacer, 'data-uri')
   })
 }
 
@@ -1250,7 +1253,7 @@ function rewriteImportCss(
 // TODO: image and cross-fade could contain a "url" that needs to be processed
 // https://drafts.csswg.org/css-images-4/#image-notation
 // https://drafts.csswg.org/css-images-4/#cross-fade-function
-const cssNotProcessedRE = /(gradient|element|cross-fade|image)\(/
+const cssNotProcessedRE = /(?:gradient|element|cross-fade|image)\(/
 
 async function rewriteCssImageSet(
   css: string,
@@ -1379,7 +1382,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
   const atImportRE =
-    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+    /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
   while ((match = atImportRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
     // Use `appendLeft` instead of `prepend` to preserve original @import order
@@ -1389,7 +1392,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
   const atCharsetRE =
-    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+    /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
   let foundCharset = false
   while ((match = atCharsetRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)

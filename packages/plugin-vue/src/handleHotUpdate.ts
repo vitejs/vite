@@ -11,7 +11,7 @@ import type { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
 
-const directRequestRE = /(\?|&)direct\b/
+const directRequestRE = /(?:\?|&)direct\b/
 
 /**
  * Vite-specific HMR handling
@@ -148,7 +148,7 @@ export async function handleHotUpdate(
       affectedModules.add(mainModule)
     } else if (mainModule && !affectedModules.has(mainModule)) {
       const styleImporters = [...mainModule.importers].filter((m) =>
-        /\.css($|\?)/.test(m.url)
+        /\.css(?:$|\?)/.test(m.url)
       )
       styleImporters.forEach((m) => affectedModules.add(m))
     }
@@ -205,7 +205,7 @@ function hasScriptChanged(prev: SFCDescriptor, next: SFCDescriptor): boolean {
   // this is only available in vue@^3.2.23
   const prevImports = prevResolvedScript?.imports
   if (prevImports) {
-    return next.shouldForceReload(prevImports)
+    return !next.template || next.shouldForceReload(prevImports)
   }
 
   return false

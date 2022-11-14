@@ -465,8 +465,8 @@ export async function resolveConfig(
   )
 
   const clientAlias = [
-    { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
-    { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
+    { find: /^\/?@vite\/env/, replacement: () => ENV_ENTRY },
+    { find: /^\/?@vite\/client/, replacement: () => CLIENT_ENTRY }
   ]
 
   // resolve alias with internal client alias
