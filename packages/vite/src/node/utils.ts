@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
-import { URL, URLSearchParams, pathToFileURL } from 'node:url'
+import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -276,7 +276,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro|imba)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -326,10 +326,7 @@ export function removeDirectQuery(url: string): string {
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
-  if (resolvedUrl.protocol !== 'relative:') {
-    resolvedUrl = pathToFileURL(url)
-  }
+  const resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
   const { search, hash } = resolvedUrl
   let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
@@ -538,16 +535,10 @@ export function writeFile(
   fs.writeFileSync(filename, content)
 }
 
-/**
- * Use fs.statSync(filename) instead of fs.existsSync(filename)
- * #2051 if we don't have read permission on a directory, existsSync() still
- * works and will result in massively slow subsequent checks (which are
- * unnecessary in the first place)
- */
 export function isFileReadable(filename: string): boolean {
   try {
-    const stat = fs.statSync(filename, { throwIfNoEntry: false })
-    return !!stat
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
   } catch {
     return false
   }
@@ -871,7 +862,8 @@ export async function resolveServerUrls(
   const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
-  const base = config.base === './' || config.base === '' ? '/' : config.base
+  const base =
+    config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
@@ -915,7 +907,8 @@ export function toUpperCaseDriveLetter(pathName: string): string {
   return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+// Taken from https://stackoverflow.com/a/36328890
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
@@ -953,12 +946,17 @@ export const requireResolveFromRootWithFallback = (
   root: string,
   id: string
 ): string => {
+  const paths = _require.resolve.paths?.(id) || []
   // Search in the root directory first, and fallback to the default require paths.
-  const fallbackPaths = _require.resolve.paths?.(id) || []
-  const path = _require.resolve(id, {
-    paths: [root, ...fallbackPaths]
-  })
-  return path
+  paths.unshift(root)
+
+  // Use `resolve` package to check existence first, so if the package is not found,
+  // it won't be cached by nodejs, since there isn't a way to invalidate them:
+  // https://github.com/nodejs/node/issues/44663
+  resolve.sync(id, { basedir: root, paths })
+
+  // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
+  return _require.resolve(id, { paths })
 }
 
 // Based on node-graceful-fs
@@ -1193,4 +1191,79 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
+}
+
+/**
+ * Determine if a file is being requested with the correct case, to ensure
+ * consistent behaviour between dev and prod and across operating systems.
+ */
+export function shouldServe(url: string, assetsDir: string): boolean {
+  try {
+    // viteTestUrl is set to something like http://localhost:4173/ and then many tests make calls
+    // like `await page.goto(viteTestUrl + '/example')` giving us URLs beginning with a double slash
+    const pathname = decodeURI(
+      new URL(
+        url.startsWith('//') ? url.substring(1) : url,
+        'http://example.com'
+      ).pathname
+    )
+    const file = path.join(assetsDir, pathname)
+    if (
+      !fs.existsSync(file) ||
+      (isCaseInsensitiveFS && // can skip case check on Linux
+        !fs.statSync(file).isDirectory() &&
+        !hasCorrectCase(file, assetsDir))
+    ) {
+      return false
+    }
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
+/**
+ * Note that we can't use realpath here, because we don't want to follow
+ * symlinks.
+ */
+function hasCorrectCase(file: string, assets: string): boolean {
+  if (file === assets) return true
+
+  const parent = path.dirname(file)
+
+  if (fs.readdirSync(parent).includes(path.basename(file))) {
+    return hasCorrectCase(parent, assets)
+  }
+
+  return false
+}
+
+export function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a.endsWith('/')) {
+    a = a.substring(0, a.length - 1)
+  }
+  if (!b.startsWith('/')) {
+    b = '/' + b
+  }
+  return a + b
+}
+
+export function stripBase(path: string, base: string): string {
+  if (path === base) {
+    return '/'
+  }
+  const devBase = base.endsWith('/') ? base : base + '/'
+  return path.replace(RegExp('^' + devBase), '/')
+}
+
+export function arrayEqual(a: any[], b: any[]): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }

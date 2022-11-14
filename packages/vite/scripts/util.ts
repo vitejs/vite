@@ -21,7 +21,7 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-function walkDir(dir: string, handleFile: (file: string) => void): void {
+export function walkDir(dir: string, handleFile: (file: string) => void): void {
   if (statSync(dir).isDirectory()) {
     const files = readdirSync(dir)
     for (const file of files) {

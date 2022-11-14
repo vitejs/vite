@@ -30,6 +30,7 @@ import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
+  arrayEqual,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -39,11 +40,13 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
+  joinUrlSegments,
   normalizePath,
   parseRequest,
   processSrcSet,
   removeDirectQuery,
   requireResolveFromRootWithFallback,
+  stripBase,
   stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
@@ -53,7 +56,6 @@ import {
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -96,14 +98,9 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: null
+   * default: undefined
    */
-  localsConvention?:
-    | 'camelCase'
-    | 'camelCaseOnly'
-    | 'dashes'
-    | 'dashesOnly'
-    | null
+  localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
@@ -179,7 +176,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
-  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -212,12 +208,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (encodePublicUrlsInCSS(config)) {
             return publicFileToBuiltUrl(url, config)
           } else {
-            return config.base + url.slice(1)
+            return joinUrlSegments(config.base, url)
           }
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
           return fileToUrl(resolved, config, this)
+        }
+        if (config.command === 'build') {
+          // #9800 If we cannot resolve the css url, leave a warning.
+          config.logger.warnOnce(
+            `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`
+          )
         }
         return url
       }
@@ -227,14 +229,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map
-      } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers,
-        server
-      )
+      } = await compileCSS(id, raw, config, urlReplacer)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -251,7 +246,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)
-        const devBase = config.base
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
           const isSelfAccepting =
@@ -260,14 +254,16 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
             const depModules = new Set<string | ModuleNode>()
+            const devBase = config.base
             for (const file of deps) {
               depModules.add(
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      (
-                        await fileToUrl(file, config, this)
-                      ).replace((config.server?.origin ?? '') + devBase, '/'),
+                      stripBase(
+                        await fileToUrl(file, config, this),
+                        (config.server?.origin ?? '') + devBase
+                      ),
                       ssr
                     )
               )
@@ -306,7 +302,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
-  let pureCssChunks: Set<string>
+  let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -340,7 +336,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
-      pureCssChunks = new Set<string>()
+      pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
     },
@@ -389,10 +385,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const cssContent = await getContentWithSourcemap(css)
-        const devBase = config.base
         const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-            path.posix.join(devBase, CLIENT_PUBLIC_PATH)
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
@@ -479,7 +474,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
+      const resolveAssetUrlsInCss = (
+        chunkCSS: string,
+        cssAssetName: string
+      ) => {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
 
         const relative = config.base === './' || config.base === ''
@@ -498,7 +496,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          const filename = getAssetFilename(fileHash, config) + postfix
+          const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
@@ -539,7 +537,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
-          pureCssChunks.add(chunk.fileName)
+          pureCssChunks.add(chunk)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
           const cssAssetName = chunk.facadeModuleId
@@ -589,7 +587,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${cssString};` +
+            `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
           const wrapIdx = code.indexOf('System.register')
           const insertMark = "'use strict';"
@@ -626,7 +624,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
-        const emptyChunkFiles = [...pureCssChunks]
+        // map each pure css chunk (rendered chunk) to it's corresponding bundle
+        // chunk. we check that by comparing the `moduleIds` as they have different
+        // filenames (rendered chunk has the !~{XXX}~ placeholder)
+        const pureCssChunkNames: string[] = []
+        for (const pureCssChunk of pureCssChunks) {
+          for (const key in bundle) {
+            const bundleChunk = bundle[key]
+            if (
+              bundleChunk.type === 'chunk' &&
+              arrayEqual(bundleChunk.moduleIds, pureCssChunk.moduleIds)
+            ) {
+              pureCssChunkNames.push(key)
+              break
+            }
+          }
+        }
+
+        const emptyChunkFiles = pureCssChunkNames
           .map((file) => path.basename(file))
           .join('|')
           .replace(/\./g, '\\.')
@@ -643,7 +658,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // and also register the emitted CSS files under the importer
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunks.has(file)) {
+              if (pureCssChunkNames.includes(file)) {
                 const {
                   viteMetadata: { importedCss }
                 } = bundle[file] as OutputChunk
@@ -662,7 +677,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
-        pureCssChunks.forEach((fileName) => {
+        pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
@@ -738,13 +753,16 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+const configToAtImportResolvers = new WeakMap<
+  ResolvedConfig,
+  CSSAtImportResolvers
+>()
+
 async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers,
-  server?: ViteDevServer
+  urlReplacer?: CssUrlReplacer
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -779,6 +797,12 @@ async function compileCSS(
   let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
+
+  let atImportResolvers = configToAtImportResolvers.get(config)!
+  if (!atImportResolvers) {
+    atImportResolvers = createCSSResolvers(config)
+    configToAtImportResolvers.set(config, atImportResolvers)
+  }
 
   // 2. pre-processors: sass etc.
   if (isPreProcessor(lang)) {
@@ -874,17 +898,21 @@ async function compileCSS(
       })
     )
   }
-  postcssPlugins.push(
-    UrlRewritePostcssPlugin({
-      replacer: urlReplacer,
-      logger: config.logger
-    })
-  )
+
+  if (urlReplacer) {
+    postcssPlugins.push(
+      UrlRewritePostcssPlugin({
+        replacer: urlReplacer,
+        logger: config.logger
+      })
+    )
+  }
 
   if (isModule) {
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
@@ -1005,6 +1033,24 @@ async function compileCSS(
     modules,
     deps
   }
+}
+
+export interface PreprocessCSSResult {
+  code: string
+  map?: SourceMapInput
+  modules?: Record<string, string>
+  deps?: Set<string>
+}
+
+/**
+ * @experimental
+ */
+export async function preprocessCSS(
+  code: string,
+  filename: string,
+  config: ResolvedConfig
+): Promise<PreprocessCSSResult> {
+  return await compileCSS(filename, code, config)
 }
 
 export async function formatPostcssSourceMap(
@@ -1465,7 +1511,7 @@ const scss: SassStylePreprocessor = async (
   const internalImporter: Sass.Importer = (url, importer, done) => {
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias)
+        rebaseUrls(resolved, options.filename, options.alias, '$')
           .then((data) => done?.(data))
           .catch((data) => done?.(data))
       } else {
@@ -1549,7 +1595,8 @@ const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
 async function rebaseUrls(
   file: string,
   rootFile: string,
-  alias: Alias[]
+  alias: Alias[],
+  variablePrefix: string
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1574,6 +1621,8 @@ async function rebaseUrls(
   let rebased
   const rebaseFn = (url: string) => {
     if (url.startsWith('/')) return url
+    // ignore url's starting with variable
+    if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
       const matches =
@@ -1706,7 +1755,12 @@ function createViteLessPlugin(
           path.join(dir, '*')
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, this.rootFile, this.alias)
+          const result = await rebaseUrls(
+            resolved,
+            this.rootFile,
+            this.alias,
+            '@'
+          )
           let contents: string
           if (result && 'contents' in result) {
             contents = result.contents

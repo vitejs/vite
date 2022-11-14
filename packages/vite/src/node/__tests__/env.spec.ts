@@ -9,14 +9,15 @@ describe('loadEnv', () => {
   test('basic', () => {
     expect(loadEnv('development', join(__dirname, './env')))
       .toMatchInlineSnapshot(`
-      {
-        "VITE_APP_BASE_ROUTE": "/",
-        "VITE_APP_BASE_URL": "/",
-        "VITE_ENV1": "ENV1",
-        "VITE_ENV2": "ENV2",
-        "VITE_ENV3": "ENV3",
-      }
-    `)
+        {
+          "VITE_APP_BASE_ROUTE": "/",
+          "VITE_APP_BASE_URL": "/",
+          "VITE_ENV1": "ENV1",
+          "VITE_ENV2": "ENV2",
+          "VITE_ENV3": "ENV3",
+          "VITE_USER_NODE_ENV": "production",
+        }
+      `)
   })
 
   test('specific prefix', () => {
@@ -49,5 +50,18 @@ describe('loadEnv', () => {
     process.env.VITE_USER_NODE_ENV = 'test'
     loadEnv('development', join(__dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('test')
+  })
+
+  test('prioritize existing process.env', () => {
+    process.env.VITE_ENV_TEST_ENV = 'EXIST'
+    expect(loadEnv('existing', join(__dirname, './env')))
+      .toMatchInlineSnapshot(`
+        {
+          "VITE_APP_BASE_ROUTE": "/",
+          "VITE_APP_BASE_URL": "/",
+          "VITE_ENV_TEST_ENV": "EXIST",
+          "VITE_USER_NODE_ENV": "test",
+        }
+      `)
   })
 })

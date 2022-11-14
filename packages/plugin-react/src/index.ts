@@ -1,7 +1,6 @@
-import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
-import { createFilter, normalizePath } from 'vite'
+import { createFilter } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'magic-string'
@@ -12,8 +11,6 @@ import {
   runtimeCode,
   runtimePublicPath
 } from './fast-refresh'
-import { babelImportToRequire } from './jsx-runtime/babel-import-to-require'
-import { restoreJSX } from './jsx-runtime/restore-jsx'
 
 export interface Options {
   include?: string | RegExp | Array<string | RegExp>
@@ -40,11 +37,6 @@ export interface Options {
    * @default true
    */
   jsxPure?: boolean
-  /**
-   * Toggles whether or not to throw an error if an XML namespaced tag name is used.
-   * @default true
-   */
-  jsxThrowIfNamespace?: boolean
   /**
    * Babel configuration applied in both dev and prod.
    */
@@ -100,7 +92,6 @@ const prependReactImportCode = "import React from 'react'; "
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
   let devBase = '/'
-  let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
   let needHiresSourcemap = false
   let isProduction = true
@@ -127,13 +118,30 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
-    config() {
+    config(_, { mode }) {
+      // Copied from https://github.com/vitejs/vite/blob/4e9bdd4fb3654a9d43917e1cb682d3d2bad25115/packages/vite/src/node/config.ts#L488-L490
+      const isProduction =
+        (process.env.NODE_ENV || process.env.VITE_USER_NODE_ENV || mode) ===
+        'production'
+
       if (opts.jsxRuntime === 'classic') {
         return {
           esbuild: {
             logOverride: {
               'this-is-undefined-in-esm': 'silent'
-            }
+            },
+            jsx: 'transform',
+            jsxImportSource: opts.jsxImportSource,
+            jsxSideEffects: opts.jsxPure === false
+          }
+        }
+      } else {
+        return {
+          esbuild: {
+            jsxDev: !isProduction,
+            jsx: 'automatic',
+            jsxImportSource: opts.jsxImportSource,
+            jsxSideEffects: opts.jsxPure === false
           }
         }
       }
@@ -141,7 +149,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     configResolved(config) {
       devBase = config.base
       projectRoot = config.root
-      resolvedCacheDir = normalizePath(path.resolve(config.cacheDir))
       filter = createFilter(opts.include, opts.exclude, {
         resolve: projectRoot
       })
@@ -231,39 +238,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         let ast: t.File | null | undefined
         let prependReactImport = false
         if (!isProjectFile || isJSX) {
-          if (useAutomaticRuntime) {
-            // By reverse-compiling "React.createElement" calls into JSX,
-            // React elements provided by dependencies will also use the
-            // automatic runtime!
-            // Avoid parsing the optimized react-dom since it will never
-            // contain compiled JSX and it's a pretty big file (800kb).
-            const isOptimizedReactDom =
-              id.startsWith(resolvedCacheDir) && id.includes('/react-dom.js')
-            const [restoredAst, isCommonJS] =
-              !isProjectFile && !isJSX && !isOptimizedReactDom
-                ? await restoreJSX(babel, code, id)
-                : [null, false]
-
-            if (isJSX || (ast = restoredAst)) {
-              plugins.push([
-                await loadPlugin(
-                  '@babel/plugin-transform-react-jsx' +
-                    (isProduction ? '' : '-development')
-                ),
-                {
-                  runtime: 'automatic',
-                  importSource: opts.jsxImportSource,
-                  pure: opts.jsxPure !== false,
-                  throwIfNamespace: opts.jsxThrowIfNamespace
-                }
-              ])
-
-              // Avoid inserting `import` statements into CJS modules.
-              if (isCommonJS) {
-                plugins.push(babelImportToRequire)
-              }
-            }
-          } else if (isProjectFile) {
+          if (!useAutomaticRuntime && isProjectFile) {
             // These plugins are only needed for the classic runtime.
             if (!isProduction) {
               plugins.push(
