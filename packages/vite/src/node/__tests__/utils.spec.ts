@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
@@ -5,9 +6,11 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   getPotentialTsSrcPaths,
   injectQuery,
+  isFileReadable,
   isWindows,
   posToNumber,
-  resolveHostname
+  resolveHostname,
+  shouldServe
 } from '../utils'
 
 describe('injectQuery', () => {
@@ -17,6 +20,18 @@ describe('injectQuery', () => {
       expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toEqual(
         'C:/User/Vite/Project?direct'
       )
+    })
+
+    test('absolute file path', () => {
+      expect(injectQuery('C:\\test-file.vue', 'direct')).toEqual(
+        'C:/test-file.vue?direct'
+      )
+    })
+
+    test('absolute file path with parameters', () => {
+      expect(
+        injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct')
+      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
     })
   }
 
@@ -223,4 +238,35 @@ describe('asyncFlatten', () => {
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
+})
+
+describe('shouldServe', () => {
+  test('returns false for malformed URLs', () => {
+    expect(shouldServe('/%c0%ae%c0%ae/etc/passwd', '/assets/dir')).toBe(false)
+  })
+})
+
+describe('isFileReadable', () => {
+  test("file doesn't exist", async () => {
+    expect(isFileReadable('/does_not_exist')).toBe(false)
+  })
+
+  const testFile = require.resolve(
+    './utils/isFileReadable/permission-test-file'
+  )
+  test('file with normal permission', async () => {
+    expect(isFileReadable(testFile)).toBe(true)
+  })
+
+  if (process.platform !== 'win32') {
+    test('file with read-only permission', async () => {
+      fs.chmodSync(testFile, '400')
+      expect(isFileReadable(testFile)).toBe(true)
+    })
+    test('file without read permission', async () => {
+      fs.chmodSync(testFile, '044')
+      expect(isFileReadable(testFile)).toBe(false)
+      fs.chmodSync(testFile, '644')
+    })
+  }
 })

@@ -5,10 +5,7 @@ import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
-  OutputAsset,
-  OutputOptions,
   PluginContext,
-  PreRenderedAsset,
   RenderedChunk
 } from 'rollup'
 import MagicString from 'magic-string'
@@ -19,27 +16,27 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, normalizePath } from '../utils'
+import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
-export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
+export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
-export const duplicateAssets = new WeakMap<
-  ResolvedConfig,
-  Map<string, OutputAsset>
->()
-
-const rawRE = /(\?|&)raw(?:&|$)/
+const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
-const assetHashToFilenameMap = new WeakMap<
+// chunk.name is the basename for the asset ignoring the directory structure
+// For the manifest, we need to preserve the original file path and isEntry
+// for CSS assets. We keep a map from referenceId to this information.
+export interface GeneratedAssetMeta {
+  originalName: string
+  isEntry?: boolean
+}
+export const generatedAssets = new WeakMap<
   ResolvedConfig,
-  Map<string, string>
+  Map<string, GeneratedAssetMeta>
 >()
-// save hashes of the files that has been emitted in build watch
-const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 
 // add own dictionary entry by directly assigning mrmime
 export function registerCustomMime(): void {
@@ -77,10 +74,8 @@ export function renderAssetUrlInJS(
 
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
-    const [full, hash, postfix = ''] = match
-    // some internal plugins may still need to emit chunks (e.g. worker) so
-    // fallback to this.getFileName for that. TODO: remove, not needed
-    const file = getAssetFilename(hash, config) || ctx.getFileName(hash)
+    const [full, referenceId, postfix = ''] = match
+    const file = ctx.getFileName(referenceId)
     chunk.viteMetadata.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
@@ -127,9 +122,6 @@ export function renderAssetUrlInJS(
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
 export function assetPlugin(config: ResolvedConfig): Plugin {
-  // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
-  assetHashToFilenameMap.set(config, new Map())
-
   registerCustomMime()
 
   return {
@@ -137,8 +129,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       assetCache.set(config, new Map())
-      emittedHashMap.set(config, new Set())
-      duplicateAssets.set(config, new Map())
+      generatedAssets.set(config, new Map())
     },
 
     resolveId(id) {
@@ -173,7 +164,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
+      id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
@@ -247,18 +238,10 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
   } else {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
-    rtn = path.posix.join(FS_PREFIX + id)
+    rtn = path.posix.join(FS_PREFIX, id)
   }
-  const origin = config.server?.origin ?? ''
-  const devBase = config.base
-  return origin + devBase + rtn.replace(/^\//, '')
-}
-
-export function getAssetFilename(
-  hash: string,
-  config: ResolvedConfig
-): string | undefined {
-  return assetHashToFilenameMap.get(config)?.get(hash)
+  const base = joinUrlSegments(config.server?.origin ?? '', config.base)
+  return joinUrlSegments(base, rtn.replace(/^\//, ''))
 }
 
 export function getPublicAssetFilename(
@@ -266,120 +249,6 @@ export function getPublicAssetFilename(
   config: ResolvedConfig
 ): string | undefined {
   return publicAssetUrlCache.get(config)?.get(hash)
-}
-
-export function resolveAssetFileNames(
-  config: ResolvedConfig
-): string | ((chunkInfo: PreRenderedAsset) => string) {
-  const output = config.build?.rollupOptions?.output
-  const defaultAssetFileNames = path.posix.join(
-    config.build.assetsDir,
-    '[name].[hash][extname]'
-  )
-  // Steps to determine which assetFileNames will be actually used.
-  // First, if output is an object or string, use assetFileNames in it.
-  // And a default assetFileNames as fallback.
-  let assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined> =
-    (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
-    defaultAssetFileNames
-  if (output && Array.isArray(output)) {
-    // Second, if output is an array, adopt assetFileNames in the first object.
-    assetFileNames = output[0].assetFileNames ?? assetFileNames
-  }
-  return assetFileNames
-}
-
-/**
- * converts the source filepath of the asset to the output filename based on the assetFileNames option. \
- * this function imitates the behavior of rollup.js. \
- * https://rollupjs.org/guide/en/#outputassetfilenames
- *
- * @example
- * ```ts
- * const content = Buffer.from('text');
- * const fileName = assetFileNamesToFileName(
- *   'assets/[name].[hash][extname]',
- *   '/path/to/file.txt',
- *   getHash(content),
- *   content
- * )
- * // fileName: 'assets/file.982d9e3e.txt'
- * ```
- *
- * @param assetFileNames filename pattern. e.g. `'assets/[name].[hash][extname]'`
- * @param file filepath of the asset
- * @param contentHash hash of the asset. used for `'[hash]'` placeholder
- * @param content content of the asset. passed to `assetFileNames` if `assetFileNames` is a function
- * @returns output filename
- */
-export function assetFileNamesToFileName(
-  assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined>,
-  file: string,
-  contentHash: string,
-  content: string | Buffer
-): string {
-  const basename = path.basename(file)
-
-  // placeholders for `assetFileNames`
-  // `hash` is slightly different from the rollup's one
-  const extname = path.extname(basename)
-  const ext = extname.substring(1)
-  const name = basename.slice(0, -extname.length)
-  const hash = contentHash
-
-  if (typeof assetFileNames === 'function') {
-    assetFileNames = assetFileNames({
-      name: file,
-      source: content,
-      type: 'asset'
-    })
-    if (typeof assetFileNames !== 'string') {
-      throw new TypeError('assetFileNames must return a string')
-    }
-  } else if (typeof assetFileNames !== 'string') {
-    throw new TypeError('assetFileNames must be a string or a function')
-  }
-
-  const fileName = assetFileNames.replace(
-    /\[\w+\]/g,
-    (placeholder: string): string => {
-      switch (placeholder) {
-        case '[ext]':
-          return ext
-
-        case '[extname]':
-          return extname
-
-        case '[hash]':
-          return hash
-
-        case '[name]':
-          return sanitizeFileName(name)
-      }
-      throw new Error(
-        `invalid placeholder ${placeholder} in assetFileNames "${assetFileNames}"`
-      )
-    }
-  )
-
-  return fileName
-}
-
-// taken from https://github.com/rollup/rollup/blob/a8647dac0fe46c86183be8596ef7de25bc5b4e4b/src/utils/sanitizeFileName.ts
-// https://datatracker.ietf.org/doc/html/rfc2396
-// eslint-disable-next-line no-control-regex
-const INVALID_CHAR_REGEX = /[\x00-\x1F\x7F<>*#"{}|^[\]`;?:&=+$,]/g
-const DRIVE_LETTER_REGEX = /^[a-z]:/i
-function sanitizeFileName(name: string): string {
-  const match = DRIVE_LETTER_REGEX.exec(name)
-  const driveLetter = match ? match[0] : ''
-
-  // A `:` is only allowed as part of a windows drive letter (ex: C:\foo)
-  // Otherwise, avoid them because they can refer to NTFS alternate data streams.
-  return (
-    driveLetter +
-    name.substr(driveLetter.length).replace(INVALID_CHAR_REGEX, '_')
-  )
 }
 
 export const publicAssetUrlCache = new WeakMap<
@@ -396,7 +265,7 @@ export function publicFileToBuiltUrl(
 ): string {
   if (config.command !== 'build') {
     // We don't need relative base or renderBuiltUrl support during dev
-    return config.base + url.slice(1)
+    return joinUrlSegments(config.base, url)
   }
   const hash = getHash(url)
   let cache = publicAssetUrlCache.get(config)
@@ -459,48 +328,20 @@ async function fileToBuiltUrl(
     url = `data:${mimeType};base64,${content.toString('base64')}`
   } else {
     // emit as asset
-    // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
-    // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. It also fails to cascade the asset content change
-    // into the chunk's hash, so we have to do our own content hashing here.
-    // https://bundlers.tooling.report/hashing/asset-cascade/
-    // https://github.com/rollup/rollup/issues/3415
-    const map = assetHashToFilenameMap.get(config)!
-    const contentHash = getHash(content)
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
 
-    const fileName = assetFileNamesToFileName(
-      resolveAssetFileNames(config),
-      file,
-      contentHash,
-      content
-    )
-    if (!map.has(contentHash)) {
-      map.set(contentHash, fileName)
-    }
-    const emittedSet = emittedHashMap.get(config)!
-    const duplicates = duplicateAssets.get(config)!
-    const name = normalizePath(path.relative(config.root, file))
-    if (!emittedSet.has(contentHash)) {
-      pluginContext.emitFile({
-        name,
-        fileName,
-        type: 'asset',
-        source: content
-      })
-      emittedSet.add(contentHash)
-    } else {
-      duplicates.set(name, {
-        name,
-        fileName: map.get(contentHash)!,
-        type: 'asset',
-        source: content,
-        isAsset: true
-      })
-    }
+    const referenceId = pluginContext.emitFile({
+      // Ignore directory structure for asset file names
+      name: path.basename(file),
+      type: 'asset',
+      source: content
+    })
 
-    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
+    const originalName = normalizePath(path.relative(config.root, file))
+    generatedAssets.get(config)!.set(referenceId, { originalName })
+
+    url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
   }
 
   cache.set(id, url)

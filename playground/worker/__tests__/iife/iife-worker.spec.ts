@@ -12,7 +12,7 @@ test('normal', async () => {
   )
   await untilUpdated(
     () => page.textContent('.asset-url'),
-    isBuild ? '/iife/assets/vite.svg' : '/iife/vite.svg',
+    isBuild ? '/iife/assets/worker_asset.vite.svg' : '/iife/vite.svg',
     true
   )
 })

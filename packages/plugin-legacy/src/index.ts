@@ -415,7 +415,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         configFile: false,
         compact: !!config.build.minify,
         sourceMaps,
-        inputSourceMap: sourceMaps ? chunk.map : undefined,
+        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
@@ -720,7 +720,7 @@ function polyfillsPlugin(
     load(id) {
       if (id === polyfillId) {
         return (
-          [...imports].map((i) => `import "${i}";`).join('') +
+          [...imports].map((i) => `import ${JSON.stringify(i)};`).join('') +
           (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }

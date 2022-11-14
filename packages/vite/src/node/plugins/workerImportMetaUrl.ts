@@ -41,7 +41,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   // need to find in comment code
   const workerOptString = raw
     .substring(commaIndex + 1, endIndex)
-    .replace(/}[^]*,/g, '}') // strip trailing comma for parsing
+    .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
 
   const hasViteIgnore = ignoreFlagRE.test(workerOptString)
   if (hasViteIgnore) {
@@ -91,11 +91,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
-          /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
-          const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
+          const { 0: allExp, 1: exp, 2: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index
 
           const urlStart = cleanString.indexOf(emptyUrl, index)

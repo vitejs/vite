@@ -9,7 +9,6 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import { getDepOptimizationConfig } from '..'
 import type { ViteDevServer } from '..'
 import {
   CLIENT_DIR,
@@ -34,16 +33,19 @@ import {
   isDataUrl,
   isExternalUrl,
   isJSRequest,
+  joinUrlSegments,
   moduleListContains,
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  stripBase,
   stripBomTag,
   timeFrom,
   transformStableResult,
   unwrapId,
   wrapId
 } from '../utils'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
@@ -69,12 +71,12 @@ const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
-const skipRE = /\.(map|json)($|\?)/
+const skipRE = /\.(?:map|json)(?:$|\?)/
 export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
-const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
-const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
+const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
+const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
@@ -263,9 +265,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
-        if (base !== '/' && url.startsWith(base)) {
-          url = url.replace(base, '/')
-        }
+        url = stripBase(url, base)
 
         let importerFile = importer
 
@@ -294,6 +294,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
+          // fix#9534, prevent the importerModuleNode being stopped from propagating updates
+          importerModule.isSelfAccepting = false
           return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
@@ -317,7 +319,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         ) {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
-          url = path.posix.join(FS_PREFIX + resolved.id)
+          url = path.posix.join(FS_PREFIX, resolved.id)
         } else {
           url = resolved.id
         }
@@ -345,7 +347,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // query can break 3rd party plugin's extension checks.
           if (
             (isRelative || isSelfImport) &&
-            !/[\?&]import=?\b/.test(url) &&
+            !/[?&]import=?\b/.test(url) &&
             !url.match(DEP_VERSION_RE)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
@@ -374,8 +376,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             throw e
           }
 
-          // prepend base (dev base is guaranteed to have ending slash)
-          url = base + url.replace(/^\//, '')
+          // prepend base
+          url = joinUrlSegments(base, url)
         }
 
         return [url, resolved.id]
@@ -536,7 +538,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to unwrap and normalize away base
-          const hmrUrl = unwrapId(url.replace(base, '/'))
+          const hmrUrl = unwrapId(stripBase(url, base))
           importedUrls.add(hmrUrl)
 
           if (enablePartialAccept && importedBindings) {
@@ -581,7 +583,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
               .trim()
             if (
-              !/^('.*'|".*"|`.*`)$/.test(url) ||
+              !/^(?:'.*'|".*"|`.*`)$/.test(url) ||
               isExplicitImportRequired(url.slice(1, -1))
             ) {
               needQueryInjectHelper = true
@@ -710,7 +712,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // These requests will also be registered in transformRequest to be awaited
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach(({ url, id }) => {
+        staticImportedUrls.forEach(({ url }) => {
           url = removeImportQuery(url)
           transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {

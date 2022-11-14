@@ -5,7 +5,7 @@ import path from 'node:path'
 import license from 'rollup-plugin-license'
 import colors from 'picocolors'
 import fg from 'fast-glob'
-import { sync as resolve } from 'resolve'
+import resolve from 'resolve'
 
 /**
  * @param {string} licenseFilePath
@@ -73,7 +73,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
             if (!licenseText && name) {
               try {
                 const pkgDir = path.dirname(
-                  resolve(path.join(name, 'package.json'), {
+                  resolve.sync(path.join(name, 'package.json'), {
                     preserveSymlinks: false
                   })
                 )
@@ -90,7 +90,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
                 '\n' +
                 licenseText
                   .trim()
-                  .replace(/(\r\n|\r)/gm, '\n')
+                  .replace(/(\r\n|\r)/g, '\n')
                   .split('\n')
                   .map((line) => `> ${line}`)
                   .join('\n') +

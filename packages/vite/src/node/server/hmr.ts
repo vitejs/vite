@@ -181,9 +181,8 @@ export function updateModules(
   }
 
   config.logger.info(
-    updates
-      .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
-      .join('\n'),
+    colors.green(`hmr update `) +
+      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: true, timestamp: true }
   )
   ws.send({

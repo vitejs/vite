@@ -26,7 +26,6 @@ import { toOutputFilePathInHtml } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
-  getAssetFilename,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl
@@ -44,12 +43,13 @@ const htmlProxyRE = /\?html-proxy=?(?:&inline-css)?&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-  /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
-const htmlLangRE = /\.(html|htm)$/
+  /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/g
+const htmlLangRE = /\.(?:html|htm)$/
 
 const importMapRE =
-  /[ \t]*<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
-const moduleScriptRE = /[ \t]*<script[^>]*type\s*=\s*["']?module["']?[^>]*>/is
+  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
+const moduleScriptRE =
+  /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -197,7 +197,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   return { src, sourceCodeLocation, isModule, isAsync }
 }
 
-const attrValueStartRE = /=[\s\t\n\r]*(.)/
+const attrValueStartRE = /=\s*(.)/
 
 export function overwriteAttrValue(
   s: MagicString,
@@ -261,6 +261,9 @@ function handleParseError(
     case 'duplicate-attribute':
       // Accept duplicate attributes #9566
       // The first attribute is used, browsers silently ignore duplicates
+      return
+    case 'non-void-html-element-start-tag-with-trailing-solidus':
+      // Allow self closing on non-void elements #10439
       return
   }
   const parseError = {
@@ -791,9 +794,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return (
-            toOutputAssetFilePath(getAssetFilename(fileHash, config)!) + postfix
-          )
+          return toOutputAssetFilePath(this.getFileName(fileHash)) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
