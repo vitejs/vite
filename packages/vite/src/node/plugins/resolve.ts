@@ -762,20 +762,28 @@ export function tryNodeResolve(
 
     // In case a file extension is missing, we need to try calling the
     // `tryFsResolve` function.
-    try {
-      const stat = fs.statSync(path.dirname(entryPath))
-      if (stat.isDirectory()) {
-        resolvedId = tryFsResolve(
-          entryPath,
-          { ...options, skipPackageJson: true },
-          false,
-          targetWeb
-        )
-        if (resolvedId) {
-          break
-        }
+    let entryDir = path.dirname(entryPath)
+    let entryDirExists = false
+    if (entryDir === nodeModulesDir) {
+      entryDirExists = true
+    } else {
+      try {
+        const stat = fs.statSync(entryDir)
+        entryDirExists = stat.isDirectory()
+      } catch {}
+    }
+
+    if (entryDirExists) {
+      resolvedId = tryFsResolve(
+        entryPath,
+        { ...options, skipPackageJson: true },
+        false,
+        targetWeb
+      )
+      if (resolvedId) {
+        break
       }
-    } catch {}
+    }
   }
 
   if (!resolvedId) {
@@ -826,7 +834,7 @@ export function tryNodeResolve(
       pathOnly: true
     })
     if (!pkgPath) {
-      return // Resolved module must be within a package.
+      return { id: resolvedId }
     }
     resolvedPkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
   }
