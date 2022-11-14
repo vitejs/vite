@@ -263,3 +263,11 @@ describe('vue worker', () => {
     expect(await page.textContent('.vue-worker')).toMatch('worker load!')
   })
 })
+
+describe('import with ?url', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.import-with-url-query')).toMatch(
+      isBuild ? /^data:/ : '/Null.vue'
+    )
+  })
+})
