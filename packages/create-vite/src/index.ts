@@ -388,7 +388,7 @@ function copy(src: string, dest: string) {
 }
 
 function isValidPackageName(projectName: string) {
-  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
+  return /^(?:@[a-z\d\-*~][a-z\d\-*._~]*\/)?[a-z\d\-~][a-z\d\-._~]*$/.test(
     projectName
   )
 }
@@ -399,7 +399,7 @@ function toValidPackageName(projectName: string) {
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/^[._]/, '')
-    .replace(/[^a-z0-9-~]+/g, '-')
+    .replace(/[^a-z\d\-~]+/g, '-')
 }
 
 function copyDir(srcDir: string, destDir: string) {

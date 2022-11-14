@@ -21,7 +21,7 @@ import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
-const rawRE = /(\?|&)raw(?:&|$)/
+const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
@@ -164,7 +164,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
+      id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },

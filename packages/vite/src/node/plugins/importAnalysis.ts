@@ -71,12 +71,12 @@ const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
-const skipRE = /\.(map|json)($|\?)/
+const skipRE = /\.(?:map|json)(?:$|\?)/
 export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
-const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
-const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
+const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
+const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
@@ -347,7 +347,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // query can break 3rd party plugin's extension checks.
           if (
             (isRelative || isSelfImport) &&
-            !/[\?&]import=?\b/.test(url) &&
+            !/[?&]import=?\b/.test(url) &&
             !url.match(DEP_VERSION_RE)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
@@ -583,7 +583,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
               .trim()
             if (
-              !/^('.*'|".*"|`.*`)$/.test(url) ||
+              !/^(?:'.*'|".*"|`.*`)$/.test(url) ||
               isExplicitImportRequired(url.slice(1, -1))
             ) {
               needQueryInjectHelper = true

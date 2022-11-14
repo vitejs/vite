@@ -43,12 +43,13 @@ const htmlProxyRE = /\?html-proxy=?(?:&inline-css)?&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-  /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
-const htmlLangRE = /\.(html|htm)$/
+  /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/g
+const htmlLangRE = /\.(?:html|htm)$/
 
 const importMapRE =
-  /[ \t]*<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
-const moduleScriptRE = /[ \t]*<script[^>]*type\s*=\s*["']?module["']?[^>]*>/is
+  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
+const moduleScriptRE =
+  /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -196,7 +197,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   return { src, sourceCodeLocation, isModule, isAsync }
 }
 
-const attrValueStartRE = /=[\s\t\n\r]*(.)/
+const attrValueStartRE = /=\s*(.)/
 
 export function overwriteAttrValue(
   s: MagicString,

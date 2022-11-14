@@ -38,7 +38,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null

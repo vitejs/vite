@@ -120,7 +120,7 @@ async function startedOnPort(serverProcess, port, timeout) {
       // hack, console output may contain color code gibberish
       // skip gibberish between localhost: and port number
       const match = str.match(
-        /(http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):)(?:.*)(\d{4})/
+        /(http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):).*(\d{4})/
       )
       if (match) {
         const startedPort = parseInt(match[2], 10)

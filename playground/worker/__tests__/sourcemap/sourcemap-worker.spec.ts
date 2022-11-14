@@ -115,7 +115,7 @@ describe.runIf(isBuild)('build', () => {
 })
 
 function getSourceMapUrl(code: string): string {
-  const regex = /\/\/[#@]\s(?:source(?:Mapping)?URL)=\s*(\S+)/g
+  const regex = /\/\/[#@]\ssource(?:Mapping)?URL=\s*(\S+)/
   const results = regex.exec(code)
 
   if (results && results.length >= 2) {

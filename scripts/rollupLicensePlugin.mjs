@@ -90,7 +90,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
                 '\n' +
                 licenseText
                   .trim()
-                  .replace(/(\r\n|\r)/gm, '\n')
+                  .replace(/(\r\n|\r)/g, '\n')
                   .split('\n')
                   .map((line) => `> ${line}`)
                   .join('\n') +

@@ -76,8 +76,8 @@ export function unwrapId(id: string): string {
 
 export const flattenId = (id: string): string =>
   id
-    .replace(/[\/:]/g, '_')
-    .replace(/[\.]/g, '__')
+    .replace(/[/:]/g, '_')
+    .replace(/\./g, '__')
     .replace(/(\s*>\s*)/g, '___')
 
 export const normalizeId = (id: string): string =>
@@ -276,7 +276,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro|imba)($|\?)/
+const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -288,8 +288,8 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const knownTsRE = /\.(ts|mts|cts|tsx)$/
-const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
+const knownTsRE = /\.(?:ts|mts|cts|tsx)$/
+const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
@@ -311,7 +311,7 @@ const internalPrefixes = [
   ENV_PUBLIC_PATH
 ]
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
-const trailingSeparatorRE = /[\?&]$/
+const trailingSeparatorRE = /[?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
@@ -684,7 +684,7 @@ function splitSrcSet(srcs: string) {
   const parts: string[] = []
   // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
   const cleanedSrcs = srcs.replace(
-    /(?:url|image|gradient|cross-fade)\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
+    /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
     blankReplacer
   )
   let startIndex = 0
@@ -908,9 +908,9 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 }
 
 // Taken from https://stackoverflow.com/a/36328890
-export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//gm
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
-export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
+export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
 // @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'

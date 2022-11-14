@@ -265,7 +265,7 @@ export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
     name: 'cjs-external',
     setup(build) {
       const escape = (text: string) =>
-        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+        `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
       const filter = new RegExp(externals.map(escape).join('|'))
 
       build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({

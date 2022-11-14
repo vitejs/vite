@@ -110,10 +110,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   // - import * as React from 'react';
   // - import React from 'react';
   // - import React, {useEffect} from 'react';
-  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React(,|\s+)/
+  const importReactRE = /(?:^|\n)import\s+(?:\*\s+as\s+)?React(?:,|\s+)/
 
   // Any extension, including compound ones like '.bs.js'
-  const fileExtensionRE = /\.[^\/\s\?]+$/
+  const fileExtensionRE = /\.[^/\s?]+$/
 
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
@@ -202,7 +202,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         filepath.match(fileExtensionRE) ||
         []
 
-      if (/\.(mjs|[tj]sx?)$/.test(extension)) {
+      if (/\.(?:mjs|[tj]sx?)$/.test(extension)) {
         const isJSX = extension.endsWith('x')
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =

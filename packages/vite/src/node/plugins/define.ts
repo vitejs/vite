@@ -5,7 +5,7 @@ import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
-const nonJsRe = /\.(json)($|\?)/
+const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
