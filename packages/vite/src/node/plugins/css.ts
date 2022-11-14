@@ -5,6 +5,7 @@ import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
+  InternalModuleFormat,
   NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
@@ -30,7 +31,6 @@ import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
-  analyzeSystemRegistration,
   arrayEqual,
   asyncReplace,
   cleanUrl,
@@ -168,6 +168,30 @@ const postcssConfigCache: Record<
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
+}
+
+export function calcEmptyChunkRE(
+  pureCssChunkNames: string[],
+  format: InternalModuleFormat
+): RegExp {
+  const emptyChunkFiles = pureCssChunkNames
+    .map((file) => path.basename(file))
+    .join('|')
+    .replace(/\./g, '\\.')
+  let regexStr: string
+  switch (format) {
+    case 'es':
+      regexStr = `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+      break
+    // notice we allow regex group capturing only on the system format case
+    case 'system':
+      regexStr = `\\w.import\\(\\s*["'][^"']*(${emptyChunkFiles})["']\\);?\n?`
+      break
+    default:
+      regexStr = `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`
+      break
+  }
+  return new RegExp(regexStr, 'g')
 }
 
 /**
@@ -643,38 +667,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const emptyChunkFiles = pureCssChunkNames
-          .map((file) => path.basename(file))
-          .join('|')
-          .replace(/\./g, '\\.')
-        const importExp = (() => {
-          switch (opts.format) {
-            case 'es':
-              return new RegExp(
-                `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`,
-                'g'
-              )
-            case 'system':
-              return (code: string) => {
-                const moduleParam = analyzeSystemRegistration(code)?.moduleParam
-                return moduleParam !== undefined
-                  ? new RegExp(
-                      `\\b${moduleParam}.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`,
-                      'g'
-                    )
-                  : null
-              }
-            case 'cjs':
-              return new RegExp(
-                `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
-                'g'
-              )
-            default:
-              return null
-          }
-        })()
-        const emptyChunkREConst =
-          typeof importExp === 'function' ? null : importExp
+        // if the format is `system`, the removing process of the empty chunk is done in the
+        //   `importAnalysisBuild` plugin on `generateBundle()`.
+        const emptyChunkRE =
+          opts.format !== 'system'
+            ? calcEmptyChunkRE(pureCssChunkNames, opts.format)
+            : undefined
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
@@ -693,10 +691,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
-            const emptyChunkRE =
-              emptyChunkREConst ||
-              (typeof importExp === 'function' ? importExp(chunk.code) : null)
-            if (emptyChunkRE) {
+            if (emptyChunkRE !== undefined) {
               chunk.code = chunk.code.replace(
                 emptyChunkRE,
                 // remove css import while preserving source map location

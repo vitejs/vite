@@ -2,11 +2,10 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputChunk, SourceMap } from 'rollup'
+import type { OutputChunk, RenderedChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import {
-  analyzeSystemRegistration,
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
@@ -20,7 +19,7 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
+import { calcEmptyChunkRE, isCSSRequest, removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
 /**
@@ -29,9 +28,12 @@ import { interopNamedImports } from './importAnalysis'
  * dropped.
  */
 export const isModernFlag = `__VITE_IS_MODERN__`
-export const preloadMethod = `__vitePreload`
+export const preloadMethod = `vitePreload`
+export const preloadCallMethod = `__vitePreloadCall`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
+export const preloadListMarker = `__VITE_PRELOAD_LIST__`
+export const preloadLegacyImportsToken = `window.__viteLegacyImports`
 
 export const preloadHelperId = '\0vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
@@ -177,9 +179,30 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       ? `'modulepreload'`
       : `(${detectScriptRel.toString()})()`
 
-  // There are three different cases for the preload list format in __vitePreload
+  const resolveEmptyModule = `Promise.resolve([[], () => ({ setters: [], execute: () => ({}) })])`
+  const systemHookingCode = `
+    if (${preloadLegacyImportsToken} === undefined) {
+      ${preloadLegacyImportsToken} = {}
+      const originalInstantiate = System.constructor.prototype.instantiate
+      System.constructor.prototype.instantiate = function (url, parentUrl) {
+        const callOriginal = () => originalInstantiate.call(this, url, parentUrl)
+        const importInfo = ${preloadLegacyImportsToken}[assetsURL(url, import.meta.url)]
+        return importInfo
+          ? ${preloadMethod}((importInfo.pure ? ${resolveEmptyModule} : callOriginal), importInfo.deps, import.meta.url)
+          : callOriginal()
+      }
+    }
+    ${preloadListMarker}.forEach((data) => {
+      ${preloadLegacyImportsToken}[assetsURL(data[0], import.meta.url)] = {
+        deps: data[1],
+        pure: data.length === 3
+      }
+    })
+  `
+
+  // There are three different cases for the preload list format in vitePreload
   //
-  // __vitePreload(() => import(asyncChunk), [ ...deps... ])
+  // vitePreload(() => import(asyncChunk), [ ...deps... ])
   //
   // This is maintained to keep backwards compatibility as some users developed plugins
   // using regex over this list to workaround the fact that module preload wasn't
@@ -187,17 +210,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const assetsURL = customModulePreloadPaths
     ? // If `experimental.renderBuiltUrl` or `build.modulePreload.resolveDependencies` are used
       // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
-      // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
+      // a helper `assetsURL` function is used to resolve from relative paths which can be minimized.
       `function(dep, importerUrl) { return dep.startsWith('.') ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
     ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-      // The importerUrl is passed as third parameter to __vitePreload in this case
+      // to the current chunk and are resolved to absolute URL by the vitePreload helper itself.
+      // The importerUrl is passed as third parameter to vitePreload in this case
       `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
     : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appendended inside __vitePreload too.
+      // is appendended inside vitePreload too.
       `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const ${preloadMethod} = ${preload.toString()};export const ${preloadCallMethod} = ${isModernFlag} ? ${preloadMethod} : (baseModule) => baseModule();if(!${isModernFlag}){${systemHookingCode}}`
 
   return {
     name: 'vite:build-import-analysis',
@@ -317,7 +340,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
-          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          str().prependLeft(expStart, `${preloadCallMethod}(() => `)
           str().appendRight(
             expEnd,
             `,"${preloadMarker}"${
@@ -403,9 +426,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (
         needPreloadHelper &&
         insertPreload &&
-        !source.includes(`const ${preloadMethod} =`)
+        !source.includes(`const ${preloadCallMethod} =`)
       ) {
-        str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
+        str().prepend(
+          `import { ${preloadCallMethod} } from "${preloadHelperId}";`
+        )
       }
 
       if (s) {
@@ -448,163 +473,268 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      for (const file in bundle) {
-        const chunk = bundle[file]
-        // can't use chunk.dynamicImports.length here since some modules e.g.
-        // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
-          const code = chunk.code
-          let imports!: ImportSpecifier[]
-          try {
-            imports = (
-              format === 'system'
-                ? parseImportsSystemJS(code)
-                : parseImports(code)[0]
-            ).filter((i) => i.d > -1)
-          } catch (e: any) {
-            this.error(e, e.idx)
+      const removedPureCssFiles = removedPureCssFilesCache.get(config)!
+      const removedPureCssFilesNames =
+        format !== 'system' ? undefined : [...removedPureCssFiles.keys()]
+
+      const createAddDepsFunc = (
+        deps: Set<string>,
+        ownerFilename: string,
+        onRemovedPureCss: (chunk: RenderedChunk) => void
+      ) => {
+        // literal import - trace direct imports and add to deps
+        const analyzed: Set<string> = new Set<string>()
+        const addDeps = (filename: string) => {
+          if (filename === ownerFilename) return
+          if (analyzed.has(filename)) return
+          analyzed.add(filename)
+          const chunk = bundle[filename] as OutputChunk | undefined
+          if (chunk) {
+            deps.add(chunk.fileName)
+            chunk.imports.forEach(addDeps)
+            // Ensure that the css imported by current chunk is loaded after the dependencies.
+            // So the style of current chunk won't be overwritten unexpectedly.
+            chunk.viteMetadata.importedCss.forEach((file) => {
+              deps.add(file)
+            })
+          } else {
+            const chunk = removedPureCssFiles.get(filename)
+            if (chunk) {
+              chunk.viteMetadata.importedCss.forEach((file) => {
+                deps.add(file)
+              })
+
+              onRemovedPureCss(chunk)
+            }
+          }
+        }
+        return addDeps
+      }
+
+      const calcRenderedDeps = (
+        normalizedFile: string | undefined,
+        depsArray: string[],
+        file: string,
+        chunk: RenderedChunk
+      ) => {
+        if (normalizedFile && customModulePreloadPaths) {
+          const { modulePreload } = config.build
+          const resolveDependencies =
+            modulePreload && modulePreload.resolveDependencies
+          let resolvedDeps: string[]
+          if (resolveDependencies) {
+            // We can't let the user remove css deps as these aren't really preloads, they are just using
+            // the same mechanism as module preloads for this chunk
+            const cssDeps: string[] = []
+            const otherDeps: string[] = []
+            for (const dep of depsArray) {
+              ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
+            }
+            resolvedDeps = [
+              ...resolveDependencies(normalizedFile, otherDeps, {
+                hostId: file,
+                hostType: 'js'
+              }),
+              ...cssDeps
+            ]
+          } else {
+            resolvedDeps = depsArray
           }
 
-          const s = new MagicString(code)
+          return resolvedDeps.map((dep: string) => {
+            const replacement = toOutputFilePathInJS(
+              dep,
+              'asset',
+              chunk.fileName,
+              'js',
+              config,
+              toRelativePath
+            )
+            const replacementString =
+              typeof replacement === 'string'
+                ? JSON.stringify(replacement)
+                : replacement.runtime
+
+            return replacementString
+          })
+        } else {
+          return depsArray.map((d) =>
+            // Don't include the assets dir if the default asset file names
+            // are used, the path will be reconstructed by the import preload helper
+            JSON.stringify(
+              optimizeModulePreloadRelativePaths ? toRelativePath(d, file) : d
+            )
+          )
+        }
+      }
+
+      for (const file in bundle) {
+        const chunk = bundle[file]
+
+        if (chunk.type !== 'chunk') continue
+
+        const code = chunk.code
+        const s = new MagicString(code)
+
+        if (chunk.code.indexOf(preloadListMarker) > -1) {
+          interface ImportInfo {
+            pure: boolean
+            deps: string[]
+          }
+          const importInfoMap: Record<string, ImportInfo> = {}
+
+          if (format === 'system') {
+            for (let index = 0; index < chunk.dynamicImports.length; index++) {
+              const normalizedFile = chunk.dynamicImports[index]
+              const deps: Set<string> = new Set()
+
+              let hasRemovedPureCssChunk = false
+              let selfIsPureCssChunk = false
+
+              createAddDepsFunc(deps, chunk.fileName, (chunk) => {
+                if (chunk.viteMetadata.importedCss.size) {
+                  hasRemovedPureCssChunk = true
+                }
+                selfIsPureCssChunk = true
+              })(normalizedFile)
+
+              // the dep list includes the main chunk, so only need to reload when there are actual other deps.
+              const depsArray =
+                deps.size > 1 ||
+                // main chunk is removed
+                (hasRemovedPureCssChunk && deps.size > 0)
+                  ? [...deps]
+                  : []
+
+              const renderedDeps = calcRenderedDeps(
+                normalizedFile,
+                depsArray,
+                file,
+                chunk
+              )
+              // notice that deps here are already renderered as a JS expression
+              const importInfo: ImportInfo = {
+                deps: renderedDeps,
+                pure: selfIsPureCssChunk
+              }
+              if (importInfo.deps.length > 0 || importInfo.pure) {
+                importInfoMap[toRelativePath(normalizedFile, file)] = importInfo
+              }
+            }
+
+            // since in system format we can't remove pure css imports safely, we add them to the import info list, marked as pure.
+            // notice that this regexp gives us a list of potential imports(almost exact),
+            //  and some elements might not get imported at all in the chunk, since there might be places of `(...).import(..)` )
+            //  in the code that doesn't refer to a SystemJS import.
+            if (removedPureCssFilesNames!.length > 0) {
+              const emptyChunkRE = calcEmptyChunkRE(
+                removedPureCssFilesNames!,
+                'system'
+              )
+              for (const match of code.matchAll(emptyChunkRE)) {
+                const removedImportRelative = toRelativePath(match[1], file)
+                if (importInfoMap[removedImportRelative] === undefined) {
+                  // if not scanned already, it must have no deps
+                  importInfoMap[removedImportRelative] = {
+                    deps: [],
+                    pure: true
+                  }
+                }
+              }
+            }
+          }
+
+          s.replace(
+            preloadListMarker,
+            `[${Object.entries(importInfoMap)
+              .map(
+                ([importFile, { deps, pure }]) =>
+                  `[${JSON.stringify(importFile)},[${deps.join(',')}]${
+                    pure ? ',1' : ''
+                  }]`
+              )
+              .join(',')}]`
+          )
+        }
+
+        // can't use chunk.dynamicImports.length here since some modules e.g.
+        // dynamic import to constant json may get inlined.
+        if (chunk.code.indexOf(preloadMarker) > -1) {
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
-          if (imports.length) {
-            for (let index = 0; index < imports.length; index++) {
-              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
-              const {
-                n: name,
-                s: start,
-                e: end,
-                ss: expStart,
-                se: expEnd
-              } = imports[index]
-              // check the chunk being imported
-              let url = name
-              if (!url) {
-                const rawUrl = code.slice(start, end)
-                if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
-                  url = rawUrl.slice(1, -1)
-              }
-              const deps: Set<string> = new Set()
-              let hasRemovedPureCssChunk = false
+          if (format === 'es') {
+            let imports!: ImportSpecifier[]
+            try {
+              imports = parseImports(code)[0].filter((i) => i.d > -1)
+            } catch (e: any) {
+              this.error(e, e.idx)
+            }
 
-              let normalizedFile: string | undefined = undefined
-
-              if (url) {
-                normalizedFile = path.posix.join(
-                  path.posix.dirname(chunk.fileName),
-                  url
-                )
-
-                const ownerFilename = chunk.fileName
-                // literal import - trace direct imports and add to deps
-                const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
-                  if (filename === ownerFilename) return
-                  if (analyzed.has(filename)) return
-                  analyzed.add(filename)
-                  const chunk = bundle[filename] as OutputChunk | undefined
-                  if (chunk) {
-                    deps.add(chunk.fileName)
-                    chunk.imports.forEach(addDeps)
-                    // Ensure that the css imported by current chunk is loaded after the dependencies.
-                    // So the style of current chunk won't be overwritten unexpectedly.
-                    chunk.viteMetadata.importedCss.forEach((file) => {
-                      deps.add(file)
-                    })
-                  } else {
-                    const removedPureCssFiles =
-                      removedPureCssFilesCache.get(config)!
-                    const chunk = removedPureCssFiles.get(filename)
-                    if (chunk) {
-                      if (chunk.viteMetadata.importedCss.size) {
-                        chunk.viteMetadata.importedCss.forEach((file) => {
-                          deps.add(file)
-                        })
-                        hasRemovedPureCssChunk = true
-                      }
-
-                      s.update(expStart, expEnd, 'Promise.resolve({})')
-                    }
-                  }
+            if (imports.length) {
+              for (let index = 0; index < imports.length; index++) {
+                // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+                const {
+                  n: name,
+                  s: start,
+                  e: end,
+                  ss: expStart,
+                  se: expEnd
+                } = imports[index]
+                // check the chunk being imported
+                let url = name
+                if (!url) {
+                  const rawUrl = code.slice(start, end)
+                  if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                    url = rawUrl.slice(1, -1)
                 }
-                addDeps(normalizedFile)
-              }
+                const deps: Set<string> = new Set()
+                let hasRemovedPureCssChunk = false
 
-              let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
-              // fix issue #3051
-              if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = code.indexOf(preloadMarkerWithQuote)
-              }
+                let normalizedFile: string | undefined = undefined
 
-              if (markerStartPos > 0) {
-                // the dep list includes the main chunk, so only need to reload when there are actual other deps.
-                const depsArray =
-                  deps.size > 1 ||
-                  // main chunk is removed
-                  (hasRemovedPureCssChunk && deps.size > 0)
-                    ? [...deps]
-                    : []
-
-                let renderedDeps: string[]
-                if (normalizedFile && customModulePreloadPaths) {
-                  const { modulePreload } = config.build
-                  const resolveDependencies =
-                    modulePreload && modulePreload.resolveDependencies
-                  let resolvedDeps: string[]
-                  if (resolveDependencies) {
-                    // We can't let the user remove css deps as these aren't really preloads, they are just using
-                    // the same mechanism as module preloads for this chunk
-                    const cssDeps: string[] = []
-                    const otherDeps: string[] = []
-                    for (const dep of depsArray) {
-                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
-                    }
-                    resolvedDeps = [
-                      ...resolveDependencies(normalizedFile, otherDeps, {
-                        hostId: file,
-                        hostType: 'js'
-                      }),
-                      ...cssDeps
-                    ]
-                  } else {
-                    resolvedDeps = depsArray
-                  }
-
-                  renderedDeps = resolvedDeps.map((dep: string) => {
-                    const replacement = toOutputFilePathInJS(
-                      dep,
-                      'asset',
-                      chunk.fileName,
-                      'js',
-                      config,
-                      toRelativePath
-                    )
-                    const replacementString =
-                      typeof replacement === 'string'
-                        ? JSON.stringify(replacement)
-                        : replacement.runtime
-
-                    return replacementString
-                  })
-                } else {
-                  renderedDeps = depsArray.map((d) =>
-                    // Don't include the assets dir if the default asset file names
-                    // are used, the path will be reconstructed by the import preload helper
-                    JSON.stringify(
-                      optimizeModulePreloadRelativePaths
-                        ? toRelativePath(d, file)
-                        : d
-                    )
+                if (url) {
+                  normalizedFile = path.posix.join(
+                    path.posix.dirname(chunk.fileName),
+                    url
                   )
+
+                  createAddDepsFunc(deps, chunk.fileName, (chunk) => {
+                    if (chunk.viteMetadata.importedCss.size) {
+                      hasRemovedPureCssChunk = true
+                    }
+                    s.update(expStart, expEnd, 'Promise.resolve({})')
+                  })(normalizedFile)
                 }
 
-                s.update(
-                  markerStartPos,
-                  markerStartPos + preloadMarkerWithQuote.length,
-                  `[${renderedDeps.join(',')}]`
-                )
-                rewroteMarkerStartPos.add(markerStartPos)
+                let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
+                // fix issue #3051
+                if (markerStartPos === -1 && imports.length === 1) {
+                  markerStartPos = code.indexOf(preloadMarkerWithQuote)
+                }
+
+                if (markerStartPos > 0) {
+                  // the dep list includes the main chunk, so only need to reload when there are actual other deps.
+                  const depsArray =
+                    deps.size > 1 ||
+                    // main chunk is removed
+                    (hasRemovedPureCssChunk && deps.size > 0)
+                      ? [...deps]
+                      : []
+
+                  const renderedDeps = calcRenderedDeps(
+                    normalizedFile,
+                    depsArray,
+                    file,
+                    chunk
+                  )
+
+                  s.update(
+                    markerStartPos,
+                    markerStartPos + preloadMarkerWithQuote.length,
+                    `[${renderedDeps.join(',')}]`
+                  )
+                  rewroteMarkerStartPos.add(markerStartPos)
+                }
               }
             }
           }
@@ -626,77 +756,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               markerStartPos + preloadMarkerWithQuote.length
             )
           }
+        }
 
-          if (s.hasChanged()) {
-            chunk.code = s.toString()
-            if (config.build.sourcemap && chunk.map) {
-              const nextMap = s.generateMap({
-                source: chunk.fileName,
-                hires: true
-              })
-              const map = combineSourcemaps(
-                chunk.fileName,
-                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
-                false
-              ) as SourceMap
-              map.toUrl = () => genSourceMapUrl(map)
-              chunk.map = map
-            }
+        if (s.hasChanged()) {
+          chunk.code = s.toString()
+          if (config.build.sourcemap && chunk.map) {
+            const nextMap = s.generateMap({
+              source: chunk.fileName,
+              hires: true
+            })
+            const map = combineSourcemaps(
+              chunk.fileName,
+              [nextMap as RawSourceMap, chunk.map as RawSourceMap],
+              false
+            ) as SourceMap
+            map.toUrl = () => genSourceMapUrl(map)
+            chunk.map = map
           }
         }
       }
     }
   }
-}
-
-/**
- * This function is an alternative to `parseImports` (i.e. `es-module-lexer/parse`) for a code written in the format of SystemJS,
- *  with the following limitations:
- *  * It gives only the imports statements.
- *  * It gives only the dynamic imports, ignoring the static ones.
- *  * For safety, since it's not 100% robust against any code,
- *     it just works when the dynamic import is used inside the auto generated `__vitePreload(..., "__VITE_PRELOAD__")` kind of code.
- *     This means it will catch only the dynamic imports on the system-formatted chunks that where generated by plugin-legacy
- *      from module-formatted chunks.
- *
- * @param code The code to be parsed
- */
-export function parseImportsSystemJS(
-  code: string
-): ReadonlyArray<ImportSpecifier> {
-  const moduleParam = analyzeSystemRegistration(code)?.moduleParam
-  if (!moduleParam) return []
-
-  const re =
-    /\((.+?(?<importDirective>\b\w+\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);?).*?),\s*"__VITE_PRELOAD__".*?\)/gs
-
-  let match
-  const imports: ImportSpecifier[] = []
-
-  while ((match = re.exec(code)) != null) {
-    const { index } = match as any
-    const { importDirective, path1, path2 } = (match as any).groups as {
-      importDirective: string
-      [key: string]: string | undefined
-    }
-    if (!importDirective.startsWith(moduleParam + '.import')) {
-      continue // This is not a module import, it's just another parameter invocation
-    }
-    const importDirectiveS = code.indexOf(importDirective, index)
-    const path = (path1 || path2)!
-    const pathS =
-      code.indexOf(path1 ? `'${path}'` : `"${path}"`, importDirectiveS) + 1
-    const pathE = pathS + path.length
-    imports.push({
-      n: code.slice(pathS, pathE),
-      s: pathS,
-      e: pathE,
-      ss: importDirectiveS,
-      se: importDirectiveS + importDirective!.length,
-      d: code.indexOf('(', importDirectiveS),
-      a: -1
-    })
-  }
-
-  return imports
 }

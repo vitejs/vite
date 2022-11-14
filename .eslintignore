@@ -1,5 +1,3 @@
 dist
 playground-temp
 temp
-packages/vite/client/types.d.ts
-packages/vite/src/node/__tests__/test-input/
