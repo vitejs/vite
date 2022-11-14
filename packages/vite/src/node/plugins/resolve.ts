@@ -580,7 +580,6 @@ function tryResolveFile(
 export type InternalResolveOptionsWithOverrideConditions =
   InternalResolveOptions & {
     /**
-     * @deprecated In future, `conditions` will work like this.
      * @internal
      */
     overrideConditions?: string[]
@@ -1037,50 +1036,36 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
-const conditionalConditions = new Set(['production', 'development', 'module'])
-
 function resolveExports(
   pkg: PackageData['data'],
   key: string,
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean
 ) {
-  const overrideConditions = options.overrideConditions
-    ? new Set(options.overrideConditions)
-    : undefined
+  const additionalConditions = new Set(
+    options.overrideConditions || [
+      'production',
+      'development',
+      'module',
+      ...options.conditions
+    ]
+  )
 
-  const conditions = []
-  if (
-    (!overrideConditions || overrideConditions.has('production')) &&
-    options.isProduction
-  ) {
-    conditions.push('production')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('development')) &&
-    !options.isProduction
-  ) {
-    conditions.push('development')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('module')) &&
-    !options.isRequire
-  ) {
-    conditions.push('module')
-  }
-  if (options.overrideConditions) {
-    conditions.push(
-      ...options.overrideConditions.filter((condition) =>
-        conditionalConditions.has(condition)
-      )
-    )
-  } else if (options.conditions.length > 0) {
-    conditions.push(...options.conditions)
-  }
+  const conditions = [...additionalConditions].filter((condition) => {
+    switch (condition) {
+      case 'production':
+        return options.isProduction
+      case 'development':
+        return !options.isProduction
+      case 'module':
+        return !options.isRequire
+    }
+    return true
+  })
 
   return _resolveExports(pkg, key, {
-    browser: targetWeb && !conditions.includes('node'),
-    require: options.isRequire && !conditions.includes('import'),
+    browser: targetWeb && !additionalConditions.has('node'),
+    require: options.isRequire && !additionalConditions.has('import'),
     conditions
   })
 }
