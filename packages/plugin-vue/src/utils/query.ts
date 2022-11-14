@@ -5,6 +5,7 @@ export interface VueQuery {
   index?: number
   lang?: string
   raw?: boolean
+  url?: boolean
   scoped?: boolean
 }
 
@@ -22,6 +23,9 @@ export function parseVueRequest(id: string): {
   }
   if (query.raw != null) {
     query.raw = true
+  }
+  if (query.url != null) {
+    query.url = true
   }
   if (query.scoped != null) {
     query.scoped = true

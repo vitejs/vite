@@ -207,7 +207,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     transform(code, id, opt) {
       const ssr = opt?.ssr === true
       const { filename, query } = parseVueRequest(id)
-      if (query.raw) {
+      if (query.raw || query.url) {
         return
       }
       if (!filter(filename) && !query.vue) {
