@@ -48,11 +48,7 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
-import type {
-  InternalResolveOptions,
-  InternalResolveOptionsWithOverrideConditions,
-  ResolveOptions
-} from './plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -958,7 +954,7 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptionsWithOverrideConditions = {
+          const options: InternalResolveOptions = {
             root: path.dirname(fileName),
             isBuild: true,
             isProduction: true,

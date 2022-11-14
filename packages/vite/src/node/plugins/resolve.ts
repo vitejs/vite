@@ -107,6 +107,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   shouldExternalize?: (id: string) => boolean | undefined
   // Check this resolve is called from `hookNodeResolve` in SSR
   isHookNodeResolve?: boolean
+  overrideConditions?: string[]
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -579,19 +580,12 @@ function tryResolveFile(
   }
 }
 
-export interface InternalNodeResolveOptions extends InternalResolveOptions {
-  /**
-   * When defined, only conditions defined in this array will be used.
-   */
-  overrideConditions?: string[]
-}
-
 export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
-  options: InternalNodeResolveOptions,
+  options: InternalResolveOptions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr?: boolean,
@@ -930,7 +924,8 @@ export function resolvePackageEntry(
         data,
         '.',
         options,
-        getInlineConditions(options.conditions, targetWeb)
+        getInlineConditions(options, targetWeb),
+        options.overrideConditions
       )
       if (!entryPoints.length) {
         packageEntryFailure(id)
@@ -1037,13 +1032,39 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
-function getInlineConditions(conditions: string[], targetWeb: boolean) {
-  const inlineConditions =
-    targetWeb && !conditions.includes('node') ? ['browser'] : ['node']
+/**
+ * This generates conditions that aren't inferred by `resolveExports`
+ * from the `options` object.
+ */
+function getInlineConditions(
+  options: InternalResolveOptions,
+  targetWeb: boolean
+) {
+  const inlineConditions: string[] = []
+
+  const conditions: readonly string[] =
+    options.overrideConditions || options.conditions
+
+  if (targetWeb) {
+    if (!conditions.includes('node')) {
+      inlineConditions.push('browser')
+    }
+  } else if (!conditions.includes('browser')) {
+    inlineConditions.push('node')
+  }
 
   // The "module" condition is no longer recommended, but some older
   // packages may still use it.
-  inlineConditions.push('module')
+  if (!options.isRequire && !conditions.includes('require')) {
+    inlineConditions.push('module')
+  }
+
+  // The "overrideConditions" array can add arbitrary conditions.
+  options.overrideConditions?.forEach((condition) => {
+    if (!inlineConditions.includes(condition)) {
+      inlineConditions.push(condition)
+    }
+  })
 
   return inlineConditions
 }
@@ -1058,7 +1079,7 @@ function resolveDeepImport(
     data
   }: PackageData,
   targetWeb: boolean,
-  options: InternalNodeResolveOptions
+  options: InternalResolveOptions
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
@@ -1075,7 +1096,7 @@ function resolveDeepImport(
       data,
       file,
       options,
-      getInlineConditions(options.conditions, targetWeb),
+      getInlineConditions(options, targetWeb),
       options.overrideConditions
     )
     if (!possibleFiles.length) {
