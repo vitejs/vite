@@ -55,7 +55,7 @@ export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
-const nodeModulesInPathRE = /(^|\/)node_modules\//
+const nodeModulesInPathRE = /(?:^|\/)node_modules\//
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
