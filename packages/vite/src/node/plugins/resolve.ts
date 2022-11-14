@@ -43,13 +43,13 @@ import {
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
+import type { PackageCache, PackageData } from '../packages'
 import {
   findPackageJson,
   isWorkspaceRoot,
-  PackageCache,
-  PackageData
+  loadPackageData,
+  resolvePackageData
 } from '../packages'
-import { loadPackageData, resolvePackageData } from '../packages'
 import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -765,9 +765,7 @@ export function tryNodeResolve(
       }
     } catch {}
 
-    // In case a file extension is missing, we need to try calling the
-    // `tryFsResolve` function.
-    let entryDir = path.dirname(entryPath)
+    const entryDir = path.dirname(entryPath)
     let entryDirExists = false
     if (entryDir === nodeModulesDir) {
       entryDirExists = true
@@ -779,6 +777,8 @@ export function tryNodeResolve(
     }
 
     if (entryDirExists) {
+      // In case a file extension is missing, we need to try calling the
+      // `tryFsResolve` function.
       resolvedId = tryFsResolve(
         entryPath,
         { ...options, skipPackageJson: true },
