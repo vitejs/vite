@@ -205,7 +205,7 @@ function hasScriptChanged(prev: SFCDescriptor, next: SFCDescriptor): boolean {
   // this is only available in vue@^3.2.23
   const prevImports = prevResolvedScript?.imports
   if (prevImports) {
-    return next.shouldForceReload(prevImports)
+    return !next.template || next.shouldForceReload(prevImports)
   }
 
   return false
