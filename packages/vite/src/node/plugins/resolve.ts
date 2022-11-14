@@ -687,11 +687,10 @@ export function tryNodeResolve(
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
-      depsOptimizer && // only required for optimizer so esbuild bundles correctly
       basedir !== root && // root has no peer dep
-      !isBuiltin(id) &&
-      !id.includes('\0') &&
-      bareImportRE.test(id)
+      !isBuiltin(nestedPath) &&
+      !nestedPath.includes('\0') &&
+      bareImportRE.test(nestedPath)
     ) {
       // find package.json with `name` as main
       const mainPackageJson = lookupFile(basedir, ['package.json'], {
@@ -700,11 +699,11 @@ export function tryNodeResolve(
       if (mainPackageJson) {
         const mainPkg = JSON.parse(mainPackageJson)
         if (
-          mainPkg.peerDependencies?.[id] &&
-          mainPkg.peerDependenciesMeta?.[id]?.optional
+          mainPkg.peerDependencies?.[nestedPath] &&
+          mainPkg.peerDependenciesMeta?.[nestedPath]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`
+            id: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`
           }
         }
       }
