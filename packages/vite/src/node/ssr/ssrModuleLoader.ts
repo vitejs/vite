@@ -127,7 +127,8 @@ async function instantiateModule(
     isBuild: true,
     isProduction,
     isRequire: true,
-    root
+    root,
+    isHookNodeResolve: true
   }
 
   // Since dynamic imports can happen in parallel, we need to
