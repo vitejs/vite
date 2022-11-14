@@ -968,7 +968,7 @@ async function bundleConfigFile(
             mainFields: [],
             browserField: false,
             conditions: [],
-            overrideConditions: ['node'],
+            overrideConditions: ['node', 'require'],
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
             preserveSymlinks: false
