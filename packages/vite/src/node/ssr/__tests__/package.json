@@ -1,0 +1,8 @@
+{
+  "name": "@vitejs/unit-ssr",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@vitejs/cjs-ssr-dep": "link:./fixtures/cjs-ssr-dep"
+  }
+}

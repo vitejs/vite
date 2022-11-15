@@ -2,17 +2,17 @@
 
 ## ssr.external
 
-- **Type:** `string[]`
+- **Type:** `string[] | true`
 - **Related:** [SSR Externals](/guide/ssr#ssr-externals)
 
-Force externalize dependencies for SSR.
+Externalize dependencies for SSR. By default, all dependencies are externalized, except linked dependencies for HMR. This can opted-out by adding the dependency to this option, or set `true` to force externalize all dependencies.
 
 ## ssr.noExternal
 
 - **Type:** `string | RegExp | (string | RegExp)[] | true`
 - **Related:** [SSR Externals](/guide/ssr#ssr-externals)
 
-Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized.
+Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized. This option has a higher priority than `ssr.external` except if a dependency is explicitly specified in the `ssr.external` array.
 
 ## ssr.target
 

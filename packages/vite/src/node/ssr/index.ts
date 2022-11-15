@@ -7,7 +7,7 @@ export type SsrDepOptimizationOptions = DepOptimizationConfig
 
 export interface SSROptions {
   noExternal?: string | RegExp | (string | RegExp)[] | true
-  external?: string[]
+  external?: string[] | true
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target

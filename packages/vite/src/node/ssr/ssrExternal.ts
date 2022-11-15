@@ -46,10 +46,12 @@ export function cjsSsrResolveExternals(
 
   const ssrExternals: Set<string> = new Set()
   const seen: Set<string> = new Set()
-  ssrConfig?.external?.forEach((id) => {
-    ssrExternals.add(id)
-    seen.add(id)
-  })
+  if (Array.isArray(ssrConfig?.external)) {
+    ssrConfig.external.forEach((id) => {
+      ssrExternals.add(id)
+      seen.add(id)
+    })
+  }
 
   cjsSsrCollectExternals(
     config.root,
@@ -156,11 +158,11 @@ export function createIsConfiguredAsSsrExternal(
   // Returns true if it is configured as external, false if it is filtered
   // by noExternal and undefined if it isn't affected by the explicit config
   return (id: string) => {
-    const { ssr } = config
     if (ssr) {
       if (
         // If this id is defined as external, force it as external
         // Note that individual package entries are allowed in ssr.external
+        ssr.external !== true &&
         ssr.external?.includes(id)
       ) {
         return true
@@ -172,6 +174,7 @@ export function createIsConfiguredAsSsrExternal(
       if (
         // A package name in ssr.external externalizes every
         // externalizable package entry
+        ssr.external !== true &&
         ssr.external?.includes(pkgName)
       ) {
         return isExternalizable(id, true)
@@ -183,7 +186,9 @@ export function createIsConfiguredAsSsrExternal(
         return false
       }
     }
-    return isExternalizable(id)
+    // If `ssr.external: true`, all will be externalized by default, regardless if
+    // it's a linked package
+    return ssr.external === true || isExternalizable(id)
   }
 }
 
