@@ -531,9 +531,11 @@ export async function resolveConfig(
     ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
     : path.join(resolvedRoot, `.vite`)
 
-  const assetsFilter = config.assetsInclude
-    ? createFilter(config.assetsInclude)
-    : () => false
+  const assetsFilter =
+    config.assetsInclude &&
+    (!(config.assetsInclude instanceof Array) || config.assetsInclude.length)
+      ? createFilter(config.assetsInclude)
+      : () => false
 
   // create an internal resolver to be used in special scenarios, e.g.
   // optimizer & handling css @imports
