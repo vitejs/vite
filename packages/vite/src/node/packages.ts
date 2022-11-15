@@ -141,7 +141,7 @@ export function loadNearestPackageData(
   lookupFile(startDir, ['package.json'], {
     pathOnly: true,
     predicate(pkgPath) {
-      importerPkg = loadPackageData(pkgPath, options)
+      importerPkg = loadPackageData(pkgPath, options?.preserveSymlinks)
       return !predicate || predicate(importerPkg)
     }
   })
