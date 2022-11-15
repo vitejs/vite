@@ -558,7 +558,11 @@ export async function createServer(
   // as-is without transforms.
   if (config.publicDir) {
     middlewares.use(
-      servePublicMiddleware(config.publicDir, config.server.headers)
+      servePublicMiddleware(
+        config.publicDir,
+        config.appType,
+        config.server.headers
+      )
     )
   }
 

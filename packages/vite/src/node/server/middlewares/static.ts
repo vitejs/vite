@@ -3,7 +3,7 @@ import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
-import type { ViteDevServer } from '../..'
+import type { AppType, ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
@@ -43,6 +43,7 @@ const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
 
 export function servePublicMiddleware(
   dir: string,
+  appType: AppType,
   headers?: OutgoingHttpHeaders
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions(headers))
@@ -53,7 +54,7 @@ export function servePublicMiddleware(
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    if (shouldServe(req.url!, dir)) {
+    if (shouldServe(req.url!, dir) || appType === 'spa') {
       return serve(req, res, next)
     }
     next()

@@ -39,6 +39,16 @@ test('should get a 404 when using incorrect case', async () => {
   )
 })
 
+test('should get a 200 when using incorrect case for spa appType', async () => {
+  await startDefaultServe('spa')
+  expect((await fetch(path.posix.join(viteTestUrl, 'icon.png'))).status).toBe(
+    200
+  )
+  expect((await fetch(path.posix.join(viteTestUrl, 'ICON.png'))).status).toBe(
+    200
+  )
+})
+
 describe('injected scripts', () => {
   test('@vite/client', async () => {
     const hasClient = await page.$(

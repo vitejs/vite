@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type * as http from 'node:http'
+import fs from 'node:fs'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
@@ -112,10 +113,11 @@ export async function preview(
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
+  const spaFallback = config.appType === 'spa'
   const assetServer = sirv(distDir, {
     etag: true,
     dev: true,
-    single: config.appType === 'spa',
+    single: spaFallback,
     setHeaders(res) {
       if (headers) {
         for (const name in headers) {
@@ -127,6 +129,16 @@ export async function preview(
   app.use(previewBase, async (req, res, next) => {
     if (shouldServe(req.url!, distDir)) {
       return assetServer(req, res, next)
+    } else if (spaFallback) {
+      try {
+        const indexHtml = fs.readFileSync(
+          path.resolve(distDir, 'index.html'),
+          'utf-8'
+        )
+        res.write(indexHtml)
+        res.end()
+      } catch {}
+      return
     }
     next()
   })

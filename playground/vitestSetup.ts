@@ -4,6 +4,7 @@ import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
+  AppType,
   InlineConfig,
   Logger,
   PluginOption,
@@ -203,7 +204,9 @@ function loadConfigFromDir(dir: string) {
   )
 }
 
-export async function startDefaultServe(): Promise<void> {
+export async function startDefaultServe(
+  appType: AppType = 'spa'
+): Promise<void> {
   let config: UserConfig | null = null
   // config file near the *.spec.ts
   const res = await loadConfigFromDir(dirname(testPath))
