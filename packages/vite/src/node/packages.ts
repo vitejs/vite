@@ -109,7 +109,6 @@ export type LoadPackageOptions = {
   preserveSymlinks?: boolean
   symlinkResolver?: SymlinkResolver
   packageCache?: PackageCache
-  cjsInclude?: (string | RegExp)[]
 }
 
 /**
@@ -141,28 +140,11 @@ export function loadPackageData(
       ? { preserveSymlinks: arg2, packageCache: arg3 }
       : arg2 || {}
 
-  if (options.preserveSymlinks !== true) {
-    const originalPkgPath = pkgPath
-
-    // Support uncached realpath calls for backwards compatibility.
-    pkgPath = getRealPath(
-      pkgPath,
-      options.symlinkResolver,
-      options.preserveSymlinks
-    )
-
-    // In case a linked package is a local clone of a CommonJS dependency,
-    // we need to ensure @rollup/plugin-commonjs analyzes the package even
-    // after it's been resolved to its actual file location.
-    if (options.cjsInclude && pkgPath !== originalPkgPath) {
-      const filter = createFilter(options.cjsInclude, undefined, {
-        resolve: false
-      })
-      if (!filter(pkgPath) && filter(originalPkgPath)) {
-        options.cjsInclude.push(path.dirname(pkgPath) + '/**')
-      }
-    }
-  }
+  pkgPath = getRealPath(
+    pkgPath,
+    options.symlinkResolver,
+    options.preserveSymlinks
+  )
 
   let cached: PackageData | undefined
   if ((cached = options.packageCache?.get(pkgPath))) {
