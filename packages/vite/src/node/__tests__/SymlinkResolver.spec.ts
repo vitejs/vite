@@ -1,4 +1,4 @@
-import { join, relative, resolve } from 'path'
+import { relative, resolve } from 'node:path'
 import type { SymlinkResolver } from '../symlinks'
 import { createSymlinkResolver } from '../symlinks'
 

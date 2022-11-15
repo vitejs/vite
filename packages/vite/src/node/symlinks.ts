@@ -1,4 +1,5 @@
-import path from 'path'
+import path from 'node:path'
+import nodeFs from 'node:fs'
 import { createDebugger } from './utils'
 
 const isDebug = !!process.env.DEBUG
@@ -24,7 +25,7 @@ export interface FileSystem {
  */
 export function createSymlinkResolver(
   root: string,
-  fs: FileSystem = require('fs')
+  fs: FileSystem = nodeFs
 ): SymlinkResolver {
   const cache: Record<string, string> = Object.create(null)
 
