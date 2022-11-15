@@ -335,6 +335,42 @@ importers:
       ufo: 0.8.6
       ws: 8.11.0
 
+  packages/vite/src/node/__tests__/packages/module:
+    specifiers: {}
+
+  packages/vite/src/node/__tests__/packages/name:
+    specifiers: {}
+
+  packages/vite/src/node/__tests__/packages/noname:
+    specifiers: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/lerna/nested:
+    specifiers: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/none/nested:
+    specifiers: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/pnpm:
+    specifiers: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/pnpm/nested:
+    specifiers: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/yarn:
+    specifiers: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/yarn/nested:
+    specifiers: {}
+
+  packages/vite/src/node/ssr/__tests__:
+    specifiers:
+      '@vitejs/cjs-ssr-dep': link:./fixtures/cjs-ssr-dep
+    dependencies:
+      '@vitejs/cjs-ssr-dep': link:fixtures/cjs-ssr-dep
+
+  packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep:
+    specifiers: {}
+
   playground:
     specifiers:
       convert-source-map: ^1.9.0

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import type { SSROptions } from '..'
 import { resolveConfig } from '../../config'
@@ -21,7 +22,11 @@ describe('createIsConfiguredAsSsrExternal', () => {
 
 async function createIsExternal(ssrConfig?: SSROptions) {
   const resolvedConfig = await resolveConfig(
-    { configFile: false, ssr: ssrConfig },
+    {
+      configFile: false,
+      root: fileURLToPath(new URL('./', import.meta.url)),
+      ssr: ssrConfig
+    },
     'serve'
   )
   return createIsConfiguredAsSsrExternal(resolvedConfig)
