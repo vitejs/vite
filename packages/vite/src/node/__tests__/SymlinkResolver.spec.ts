@@ -1,11 +1,12 @@
 import { relative, resolve } from 'node:path'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { SymlinkResolver } from '../symlinks'
 import { createSymlinkResolver } from '../symlinks'
 
 let resolver: SymlinkResolver
 
-const realpathMock = jest.fn()
-const readlinkMock = jest.fn()
+const realpathMock = vi.fn()
+const readlinkMock = vi.fn()
 
 const root = '/dev/root'
 const realpathSync = (p: string) => {
