@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { spawn } from 'node:child_process'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -179,7 +180,11 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)]
+    plugins: [
+      ...createNodePlugins(false, false, false),
+      !isProduction && cjsTypesPlugin(),
+      bundleSizeLimit(160)
+    ]
   })
 }
 
@@ -319,6 +324,20 @@ function bundleSizeLimit(limit: number): Plugin {
           `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(2)}kb.`
         )
       }
+    }
+  }
+}
+
+function cjsTypesPlugin(): Plugin {
+  return {
+    name: 'cjs-types',
+    generateBundle() {
+      const proc = spawn('pnpm', ['build-emit-cjs-types'], {
+        stdio: 'inherit'
+      })
+      return new Promise((resolve) => {
+        proc.once('close', resolve)
+      })
     }
   }
 }
