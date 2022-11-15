@@ -1,3 +1,13 @@
+## 4.0.0-alpha.3 (2022-11-15)
+
+* fix(ssr): skip optional peer dep resolve (#10593) ([0a69985](https://github.com/vitejs/vite/commit/0a69985)), closes [#10593](https://github.com/vitejs/vite/issues/10593)
+* chore(deps): update all non-major dependencies (#10910) ([f6ad607](https://github.com/vitejs/vite/commit/f6ad607)), closes [#10910](https://github.com/vitejs/vite/issues/10910)
+* chore(deps): update dependency @rollup/plugin-node-resolve to v15 (#10911) ([65f1e4d](https://github.com/vitejs/vite/commit/65f1e4d)), closes [#10911](https://github.com/vitejs/vite/issues/10911)
+* perf: regexp perf issues, refactor regexp stylistic issues (#10905) ([fc007df](https://github.com/vitejs/vite/commit/fc007df)), closes [#10905](https://github.com/vitejs/vite/issues/10905)
+* refactor: move CSS emitFile logic closer to rollup (#10909) ([92a206b](https://github.com/vitejs/vite/commit/92a206b)), closes [#10909](https://github.com/vitejs/vite/issues/10909)
+
+
+
 ## 4.0.0-alpha.2 (2022-11-13)
 
 * refactor: use rollup hashing when emitting assets (#10878) ([78c77be](https://github.com/vitejs/vite/commit/78c77be)), closes [#10878](https://github.com/vitejs/vite/issues/10878)
