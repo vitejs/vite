@@ -33,9 +33,14 @@ export async function handleHotUpdate(
 
   let needRerender = false
   const affectedModules = new Set<ModuleNode | undefined>()
-  const mainModule = modules.find(
-    (m) => !/type=/.test(m.url) || /type=script/.test(m.url)
-  )
+  const mainModule = modules
+    .filter((m) => !/type=/.test(m.url) || /type=script/.test(m.url))
+    // #9341
+    // We pick the module with the shortest URL in order to pick the module
+    // with the lowest number of query parameters.
+    .sort((m1, m2) => {
+      return m1.url.length - m2.url.length
+    })[0]
   const templateModule = modules.find((m) => /type=template/.test(m.url))
 
   if (hasScriptChanged(prevDescriptor, descriptor)) {
