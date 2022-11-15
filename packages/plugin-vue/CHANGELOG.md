@@ -1,3 +1,15 @@
+## 4.0.0-alpha.0 (2022-11-15)
+
+* fix: handle HMR for Vue SFC with query parameters (fix #9341) (#10794) ([6462ab0](https://github.com/vitejs/vite/commit/6462ab0)), closes [#9341](https://github.com/vitejs/vite/issues/9341) [#10794](https://github.com/vitejs/vite/issues/10794)
+* fix(vue): skip url query request (fixes #10863) (#10920) ([97d200c](https://github.com/vitejs/vite/commit/97d200c)), closes [#10863](https://github.com/vitejs/vite/issues/10863) [#10920](https://github.com/vitejs/vite/issues/10920)
+* chore(deps): update all non-major dependencies (#10910) ([f6ad607](https://github.com/vitejs/vite/commit/f6ad607)), closes [#10910](https://github.com/vitejs/vite/issues/10910)
+* chore(deps): update to rollup 3.3 (#10890) ([2d17aa2](https://github.com/vitejs/vite/commit/2d17aa2)), closes [#10890](https://github.com/vitejs/vite/issues/10890)
+* perf: regexp perf issues, refactor regexp stylistic issues (#10905) ([fc007df](https://github.com/vitejs/vite/commit/fc007df)), closes [#10905](https://github.com/vitejs/vite/issues/10905)
+* docs(plugin-vue): add link to plugin-vue-jsx (#10830) ([0c295e0](https://github.com/vitejs/vite/commit/0c295e0)), closes [#10830](https://github.com/vitejs/vite/issues/10830)
+* feat: rollup 3 (#9870) ([beb7166](https://github.com/vitejs/vite/commit/beb7166)), closes [#9870](https://github.com/vitejs/vite/issues/9870)
+
+
+
 ## 3.2.0 (2022-10-26)
 
 * chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
