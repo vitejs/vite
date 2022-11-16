@@ -361,11 +361,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            // delay setting `isSelfAccepting` until the file is actually used (#7870)
             const depModule = await moduleGraph.ensureEntryFromUrl(
               unwrapId(url),
               ssr,
-              canSkipImportAnalysis(url) || forceSkipImportAnalysis
+              // delay setting `isSelfAccepting` until the file is actually used (#7870)
+              {
+                isSelfAccepting:
+                  canSkipImportAnalysis(url) || forceSkipImportAnalysis
+                    ? false
+                    : undefined
+              }
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)

@@ -10,6 +10,8 @@ import {
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
 
+type ModuleNodeOptions = { isSelfAccepting: boolean | undefined }
+
 export class ModuleNode {
   /**
    * Public served url path, starts with /
@@ -37,14 +39,15 @@ export class ModuleNode {
   lastInvalidationTimestamp = 0
 
   /**
-   * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
+   * @param isSelfAccepting - undefined means its value isn't know when creating the module #7870
    */
-  constructor(url: string, setIsSelfAccepting = true) {
+  constructor(
+    url: string,
+    options: ModuleNodeOptions = { isSelfAccepting: false }
+  ) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
-    if (setIsSelfAccepting) {
-      this.isSelfAccepting = false
-    }
+    this.isSelfAccepting = options.isSelfAccepting
   }
 }
 
@@ -182,12 +185,12 @@ export class ModuleGraph {
   async ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
-    setIsSelfAccepting = true
+    options?: ModuleNodeOptions
   ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
-      mod = new ModuleNode(url, setIsSelfAccepting)
+      mod = new ModuleNode(url, options)
       if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId
