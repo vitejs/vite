@@ -312,8 +312,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let resolvedId = resolved.id
-        if (isExternalUrl(url)) {
-          return [url, resolvedId, resolved.meta]
+        if (isExternalUrl(resolvedId)) {
+          return [resolvedId, resolvedId, resolved.meta]
         }
 
         const isRelativeUrl = /^\.\.?(?:$|\/)/.test(url)
