@@ -87,8 +87,8 @@ function isFileExists(filepath: string): boolean {
   if (dir === path.dirname(dir)) {
     return true
   }
-  const filenames = fs.readdirSync(dir).map((f) => f.normalize())
-  if (filenames.indexOf(path.basename(filepath)) === -1) {
+  const filenames = fs.readdirSync(dir)
+  if (!filenames.includes(path.basename(filepath))) {
     return false
   }
   return isFileExists(dir)

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { page } from '~utils'
+import { isServe, page } from '~utils'
 
-test('case-sensitive', async () => {
+test.runIf(isServe)('case-sensitive', async () => {
   expect(await page.textContent('h1')).toBe('')
 })
