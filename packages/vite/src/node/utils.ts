@@ -29,7 +29,8 @@ import {
   OPTIMIZABLE_ENTRY_RE,
   VALID_ID_PREFIX,
   loopbackHosts,
-  wildcardHosts
+  wildcardHosts,
+  DEP_VERSION_RE
 } from './constants'
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
@@ -278,10 +279,10 @@ export const virtualModulePrefix = 'virtual-module:'
 
 const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
-  url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
     return true
   }
+  url = cleanUrl(url)
   if (!path.extname(url) && !url.endsWith('/')) {
     return true
   }
@@ -312,16 +313,22 @@ const internalPrefixes = [
 ]
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
 const trailingSeparatorRE = /[?&]$/
+
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
 
-export function removeImportQuery(url: string): string {
-  return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
-}
-export function removeDirectQuery(url: string): string {
-  return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
-}
+const removeQuery = (url: string, queryRE: RegExp): string =>
+  url.replace(queryRE, '$1').replace(trailingSeparatorRE, '')
+
+export const removeImportQuery = (url: string): string =>
+  removeQuery(url, importQueryRE)
+
+export const removeDirectQuery = (url: string): string =>
+  removeQuery(url, directRequestRE)
+
+export const removeDepVersionQuery = (url: string): string =>
+  removeQuery(url, DEP_VERSION_RE)
 
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL

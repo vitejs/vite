@@ -129,7 +129,7 @@ export const DEFAULT_ASSETS_RE = new RegExp(
   `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`
 )
 
-export const DEP_VERSION_RE = /[?&](v=[\w.-]+)\b/
+export const DEP_VERSION_RE = /(\?|&)(v=[\w.-]+)(?:&|$)/
 
 export const loopbackHosts = new Set([
   'localhost',

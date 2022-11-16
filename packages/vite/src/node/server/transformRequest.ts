@@ -231,7 +231,7 @@ async function loadAndTransform(
     throw err
   }
   // ensure module in graph after successful load
-  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr, false)
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform

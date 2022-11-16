@@ -5,6 +5,7 @@ import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
   normalizePath,
+  removeDepVersionQuery,
   removeImportQuery,
   removeTimestampQuery
 } from '../utils'
@@ -16,11 +17,11 @@ export class ModuleNode {
    * Public served url path, starts with /
    */
   url: string
+  file: string
   /**
    * Resolved file system path + query
    */
   id: string | null = null
-  file: string | null = null
   type: 'js' | 'css'
   info?: ModuleInfo
   meta?: Record<string, any>
@@ -41,12 +42,11 @@ export class ModuleNode {
    * @param allowHmrPropagation - set `isSelfAccepting` to false to ensure it's
    * never undefined (which prevents HMR update propagation, see #7870)
    */
-  constructor(url: string, allowHmrPropagation = true) {
+  constructor(url: string, file: string, isSelfAccepting?: boolean) {
     this.url = url
+    this.file = file
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
-    if (allowHmrPropagation) {
-      this.isSelfAccepting = false
-    }
+    this.isSelfAccepting = isSelfAccepting
   }
 }
 
@@ -89,7 +89,8 @@ export class ModuleGraph {
   }
 
   getModuleById(id: string): ModuleNode | undefined {
-    return this.idToModuleMap.get(removeTimestampQuery(id))
+    const unhashedId = removeDepVersionQuery(id)
+    return this.idToModuleMap.get(unhashedId) || this.idToModuleMap.get(id)
   }
 
   getModulesByFile(file: string): Set<ModuleNode> | undefined {
@@ -171,7 +172,7 @@ export class ModuleGraph {
     for (const accepted of acceptedModules) {
       const dep =
         typeof accepted === 'string'
-          ? await this.ensureEntryFromUrl(accepted, ssr)
+          ? await this.ensureEntryFromUrl(accepted, ssr, false)
           : accepted
       deps.add(dep)
     }
@@ -183,18 +184,31 @@ export class ModuleGraph {
 
   ensureEntryFromResolved(
     [url, resolvedId, meta]: ResolvedUrl,
-    setIsSelfAccepting = true
+    isSelfAccepting?: boolean
   ): ModuleNode {
+    const unhashedId = removeDepVersionQuery(resolvedId)
+    if (this.idToModuleMap.has(unhashedId)) {
+      resolvedId = unhashedId
+    }
     const modForId = this.idToModuleMap.get(resolvedId)
     const modForUrl = this.urlToModuleMap.get(url)
+
+    // When metadata is derived from the browser URL, we cannot reuse the module
+    // node for the resolved Rollup id, as load/transform hooks may use the
+    // metadata to produce a different result.
     let mod = (deepEqual(meta, modForId?.meta) && modForId) || modForUrl
+
     if (!mod) {
-      mod = new ModuleNode(url, setIsSelfAccepting)
-      if (meta) mod.meta = meta
-      this.urlToModuleMap.set(url, mod)
+      const file = cleanUrl(resolvedId)
+      mod = new ModuleNode(url, file, isSelfAccepting)
       mod.id = resolvedId
-      this.idToModuleMap.set(resolvedId, mod)
-      const file = (mod.file = cleanUrl(resolvedId))
+      if (meta) {
+        mod.meta = meta
+      }
+      this.urlToModuleMap.set(url, mod)
+      if (!modForId) {
+        this.idToModuleMap.set(resolvedId, mod)
+      }
       let fileMappedModules = this.fileToModulesMap.get(file)
       if (!fileMappedModules) {
         fileMappedModules = new Set()
@@ -207,16 +221,17 @@ export class ModuleGraph {
     else if (!modForUrl) {
       this.urlToModuleMap.set(url, mod)
     }
+
     return mod
   }
 
   async ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
-    setIsSelfAccepting = true
+    isSelfAccepting?: boolean
   ): Promise<ModuleNode> {
-    const resolvedUrl = await this.resolveUrl(rawUrl, ssr)
-    return this.ensureEntryFromResolved(resolvedUrl, setIsSelfAccepting)
+    const resolved = await this.resolveUrl(rawUrl, ssr)
+    return this.ensureEntryFromResolved(resolved, isSelfAccepting)
   }
 
   // some deps, like a css file referenced via @import, don't have its own
@@ -238,8 +253,7 @@ export class ModuleGraph {
       }
     }
 
-    const mod = new ModuleNode(url)
-    mod.file = file
+    const mod = new ModuleNode(url, file)
     fileMappedModules.add(mod)
     return mod
   }

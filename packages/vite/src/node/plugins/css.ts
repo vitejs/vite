@@ -261,7 +261,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                         await fileToUrl(file, config, this),
                         (config.server?.origin ?? '') + devBase
                       ),
-                      ssr
+                      ssr,
+                      false
                     )
               )
             }

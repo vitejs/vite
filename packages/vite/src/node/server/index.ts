@@ -508,7 +508,7 @@ export async function createServer(
   ws.on('vite:invalidate', async ({ path }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
-      const file = getShortName(mod.file!, config.root)
+      const file = getShortName(mod.file, config.root)
       updateModules(file, [...mod.importers], mod.lastHMRTimestamp, server)
     }
   })

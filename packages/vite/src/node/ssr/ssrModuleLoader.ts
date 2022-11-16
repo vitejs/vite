@@ -102,7 +102,7 @@ async function instantiateModule(
 
   const ssrImportMeta = {
     // The filesystem URL, matching native Node.js modules
-    url: pathToFileURL(mod.file!).toString()
+    url: pathToFileURL(mod.file).toString()
   }
 
   urlStack = urlStack.concat(url)
@@ -137,7 +137,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod.file!, resolveOptions)
+      return nodeImport(dep, mod.file, resolveOptions)
     }
     // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
     dep = unwrapId(dep)
