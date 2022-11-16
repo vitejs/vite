@@ -173,6 +173,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     }
     const check = (fp: string): boolean => {
       const dir = path.dirname(fp)
+      if (filepathExistsCache.has(dir)) {
+        return filepathExistsCache.get(dir)
+      }
       if (dir === path.dirname(dir)) {
         return true
       }
@@ -183,7 +186,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (dir === root) {
         return true
       }
-      return check(dir)
+      const checked = check(dir)
+      filepathExistsCache.set(dir, checked)
+      return checked
     }
 
     const result = check(filepath)
