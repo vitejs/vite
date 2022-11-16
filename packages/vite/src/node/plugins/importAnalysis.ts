@@ -496,7 +496,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // rewrite
-          if (url !== specifier) {
+          if (url !== rawSpecifier) {
             let rewriteDone = false
             if (
               depsOptimizer?.isOptimizedDepFile(resolvedId) &&
