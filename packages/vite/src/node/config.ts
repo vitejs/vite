@@ -533,7 +533,7 @@ export async function resolveConfig(
 
   const assetsFilter =
     config.assetsInclude &&
-    (!(config.assetsInclude instanceof Array) || config.assetsInclude.length)
+    (!Array.isArray(config.assetsInclude) || config.assetsInclude.length)
       ? createFilter(config.assetsInclude)
       : () => false
 
