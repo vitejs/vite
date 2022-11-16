@@ -38,12 +38,13 @@ export class ModuleNode {
   lastInvalidationTimestamp = 0
 
   /**
-   * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
+   * @param allowHmrPropagation - set `isSelfAccepting` to false to ensure it's
+   * never undefined (which prevents HMR update propagation, see #7870)
    */
-  constructor(url: string, setIsSelfAccepting = true) {
+  constructor(url: string, allowHmrPropagation = true) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
-    if (setIsSelfAccepting) {
+    if (allowHmrPropagation) {
       this.isSelfAccepting = false
     }
   }
