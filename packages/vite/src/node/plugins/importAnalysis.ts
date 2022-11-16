@@ -38,6 +38,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  removeTimestampQuery,
   stripBase,
   stripBomTag,
   timeFrom,
@@ -392,7 +393,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          n: specifier,
+          n: rawSpecifier,
           a: assertIndex
         } = imports[index]
 
@@ -437,7 +438,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
-        if (specifier) {
+        if (rawSpecifier) {
+          const specifier = removeTimestampQuery(rawSpecifier)
+
           // skip external / data uri
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
