@@ -271,8 +271,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<ResolvedUrl> => {
-        url = stripBase(url, base)
-
         let importerFile = importer
 
         const optimizeDeps = getDepOptimizationConfig(config, ssr)
@@ -461,39 +459,39 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // If resolvable, let's resolve it
         if (originalUrl) {
           // the module graph expects a url without timestamp query
-          let graphUrl = removeTimestampQuery(originalUrl)
+          let hmrUrl = removeTimestampQuery(stripBase(originalUrl, base))
 
           // skip external / data uri
-          if (isExternalUrl(graphUrl) || isDataUrl(graphUrl)) {
+          if (isExternalUrl(hmrUrl) || isDataUrl(hmrUrl)) {
             continue
           }
           // skip ssr external
           if (ssr) {
             if (config.legacy?.buildSsrCjsExternalHeuristics) {
-              if (cjsShouldExternalizeForSSR(graphUrl, server._ssrExternals)) {
+              if (cjsShouldExternalizeForSSR(hmrUrl, server._ssrExternals)) {
                 continue
               }
-            } else if (shouldExternalizeForSSR(graphUrl, config)) {
+            } else if (shouldExternalizeForSSR(hmrUrl, config)) {
               continue
             }
-            if (isBuiltin(graphUrl)) {
+            if (isBuiltin(hmrUrl)) {
               continue
             }
           }
           // skip client
-          if (graphUrl === clientPublicPath) {
+          if (hmrUrl === clientPublicPath) {
             continue
           }
 
           // warn imports to non-asset /public files
           if (
-            graphUrl.startsWith('/') &&
-            !config.assetsInclude(cleanUrl(graphUrl)) &&
-            !graphUrl.endsWith('.json') &&
-            checkPublicFile(graphUrl, config)
+            hmrUrl.startsWith('/') &&
+            !config.assetsInclude(cleanUrl(hmrUrl)) &&
+            !hmrUrl.endsWith('.json') &&
+            checkPublicFile(hmrUrl, config)
           ) {
             throw new Error(
-              `Cannot import non-asset file ${graphUrl} which is inside /public.` +
+              `Cannot import non-asset file ${hmrUrl} which is inside /public.` +
                 `JS/CSS files inside /public are copied as-is on build and ` +
                 `can only be referenced via <script src> or <link href> in html.`
             )
@@ -501,7 +499,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // normalize
           const [normalizedUrl, resolvedId, resolvedMeta] = await normalizeUrl(
-            graphUrl,
+            hmrUrl,
             start
           )
 
@@ -572,22 +570,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // The URL used by the module graph must contain none of the
           // following: the base URL, the /@id/ prefix, an HMR timestamp query.
-          graphUrl = removeTimestampQuery(
+          hmrUrl = removeTimestampQuery(
             unwrapId(stripBase(normalizedUrl, base))
           )
-          if (!moduleGraph.urlToModuleMap.has(graphUrl)) {
+          if (!moduleGraph.urlToModuleMap.has(hmrUrl)) {
             // The metadata from resolveId must be cached in the module graph.
             moduleGraph.ensureEntryFromResolved(
-              [graphUrl, resolvedId, resolvedMeta],
+              [hmrUrl, resolvedId, resolvedMeta],
               inferSelfAccepting(normalizedUrl)
             )
           }
 
           // record as safe modules
-          moduleGraph.safeModulesPath.add(fsPathFromUrl(graphUrl))
+          moduleGraph.safeModulesPath.add(fsPathFromUrl(hmrUrl))
 
           // record for HMR import chain analysis
-          importedUrls.add(graphUrl)
+          importedUrls.add(hmrUrl)
 
           if (enablePartialAccept && importedBindings) {
             extractImportedBindings(
@@ -600,7 +598,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (!isDynamicImport) {
             // for pre-transforming
-            staticImportedUrls.add({ url: graphUrl, id: resolvedId })
+            staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir)) {
           if (!importer.includes('node_modules')) {
