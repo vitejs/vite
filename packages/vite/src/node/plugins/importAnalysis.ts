@@ -82,18 +82,6 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
 }
 
-function isFileExists(filepath: string): boolean {
-  const dir = path.dirname(filepath)
-  if (dir === path.dirname(dir)) {
-    return true
-  }
-  const filenames = fs.readdirSync(dir)
-  if (!filenames.includes(path.basename(filepath))) {
-    return false
-  }
-  return isFileExists(dir)
-}
-
 function markExplicitImport(url: string) {
   if (isExplicitImportRequired(url)) {
     return injectQuery(url, 'import')
@@ -177,6 +165,32 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const needCheckFileExistsRE = new RegExp(root + '/(?!node_modules/)')
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
+  const filepathExistsCache = new Map()
+
+  const isFileExists = (filepath: string) => {
+    if (filepathExistsCache.has(filepath)) {
+      return filepathExistsCache.get(filepath)
+    }
+    const check = (fp: string): boolean => {
+      const dir = path.dirname(fp)
+      if (dir === path.dirname(dir)) {
+        return true
+      }
+      const filenames = fs.readdirSync(dir)
+      if (!filenames.includes(path.basename(fp))) {
+        return false
+      }
+      if (dir === root) {
+        return true
+      }
+      return check(dir)
+    }
+
+    const result = check(filepath)
+    filepathExistsCache.set(filepath, result)
+    return result
+  }
+
   let server: ViteDevServer
 
   return {
