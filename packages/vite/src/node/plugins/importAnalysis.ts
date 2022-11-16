@@ -174,8 +174,7 @@ function extractImportedBindings(
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
-  const fileExistsRE = new RegExp(root + '/(?!node_modules/)')
-
+  const needCheckFileExistsRE = new RegExp(root + '/(?!node_modules/)')
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
@@ -304,7 +303,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const resolved = await this.resolve(url, importerFile)
         if (
           !resolved ||
-          (fileExistsRE.test(resolved.id) &&
+          (needCheckFileExistsRE.test(resolved.id) &&
             !isFileExists(cleanUrl(resolved.id)))
         ) {
           // in ssr, we should let node handle the missing modules
