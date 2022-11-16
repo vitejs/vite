@@ -458,13 +458,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
         if (originalUrl) {
+          // skip external / data uri
+          if (isExternalUrl(originalUrl) || isDataUrl(originalUrl)) {
+            continue
+          }
+
           // the module graph expects a url without timestamp query
           let hmrUrl = removeTimestampQuery(stripBase(originalUrl, base))
 
-          // skip external / data uri
-          if (isExternalUrl(hmrUrl) || isDataUrl(hmrUrl)) {
-            continue
-          }
           // skip ssr external
           if (ssr) {
             if (config.legacy?.buildSsrCjsExternalHeuristics) {
