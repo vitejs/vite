@@ -414,14 +414,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          n: unescapedUrl,
+          n: originalUrl,
           a: assertIndex
         } = imports[index]
 
-        const originalUrl = source.slice(start, end)
+        const rawUrl = source.slice(start, end)
 
         // check import.meta usage
-        if (originalUrl === 'import.meta') {
+        if (rawUrl === 'import.meta') {
           const prop = source.slice(end, end + 4)
           if (prop === '.hot') {
             hasHMR = true
@@ -459,9 +459,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
-        if (unescapedUrl) {
+        if (originalUrl) {
           // the module graph expects a url without timestamp query
-          let graphUrl = removeTimestampQuery(unescapedUrl)
+          let graphUrl = removeTimestampQuery(originalUrl)
 
           // skip external / data uri
           if (isExternalUrl(graphUrl) || isDataUrl(graphUrl)) {
@@ -506,7 +506,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
 
           // rewrite
-          if (normalizedUrl !== unescapedUrl) {
+          if (normalizedUrl !== originalUrl) {
             let rewriteDone = false
             // For optimized CJS deps, support named imports by rewriting
             // named imports to const assignments. Internal optimized chunks
@@ -627,7 +627,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (!ssr) {
-            const url = originalUrl
+            const url = rawUrl
               .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
               .trim()
             if (
