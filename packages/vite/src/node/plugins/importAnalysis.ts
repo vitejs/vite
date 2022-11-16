@@ -82,6 +82,18 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
 }
 
+function isFileExists(filepath: string): boolean {
+  const dir = path.dirname(filepath)
+  if (dir === path.dirname(dir)) {
+    return true
+  }
+  const filenames = fs.readdirSync(dir).map((f) => f.normalize())
+  if (filenames.indexOf(path.basename(filepath)) === -1) {
+    return false
+  }
+  return isFileExists(dir)
+}
+
 function markExplicitImport(url: string) {
   if (isExplicitImportRequired(url)) {
     return injectQuery(url, 'import')
@@ -162,6 +174,8 @@ function extractImportedBindings(
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
+  const fileExistsRE = new RegExp(root + '/(?!node_modules/)')
+
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
@@ -288,8 +302,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const resolved = await this.resolve(url, importerFile)
-
-        if (!resolved) {
+        if (
+          !resolved ||
+          (fileExistsRE.test(resolved.id) &&
+            !isFileExists(cleanUrl(resolved.id)))
+        ) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
             return [url, url]
