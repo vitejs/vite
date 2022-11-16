@@ -1,5 +1,6 @@
 import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
+import deepEqual from 'fast-deep-equal'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
@@ -149,7 +150,7 @@ export class ModuleGraph {
     for (const imported of importedModules) {
       const dep =
         typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported, ssr)
+          ? this.urlToModuleMap.get(imported)!
           : imported
       dep.importers.add(mod)
       nextImports.add(dep)
@@ -179,13 +180,13 @@ export class ModuleGraph {
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(
-    rawUrl: string,
-    ssr?: boolean,
+  ensureEntryFromResolved(
+    [url, resolvedId, meta]: ResolvedUrl,
     setIsSelfAccepting = true
-  ): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.idToModuleMap.get(resolvedId)
+  ): ModuleNode {
+    const modForId = this.idToModuleMap.get(resolvedId)
+    const modForUrl = this.urlToModuleMap.get(url)
+    let mod = (deepEqual(meta, modForId?.meta) && modForId) || modForUrl
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -202,10 +203,19 @@ export class ModuleGraph {
     }
     // multiple urls can map to the same module and id, make sure we register
     // the url to the existing module in that case
-    else if (!this.urlToModuleMap.has(url)) {
+    else if (!modForUrl) {
       this.urlToModuleMap.set(url, mod)
     }
     return mod
+  }
+
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true
+  ): Promise<ModuleNode> {
+    const resolvedUrl = await this.resolveUrl(rawUrl, ssr)
+    return this.ensureEntryFromResolved(resolvedUrl, setIsSelfAccepting)
   }
 
   // some deps, like a css file referenced via @import, don't have its own
