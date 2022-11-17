@@ -248,14 +248,14 @@ export async function parseImportGlob(
 
         const isTemplateLiteral = property.value.type === 'TemplateLiteral'
         if (property.value.type !== 'Literal' && !isTemplateLiteral)
-          throw err('Could only use literals')
+          throw err(`Option ${name} can only use literals`)
 
         if (
           isTemplateLiteral &&
           (property.value as TemplateLiteral).expressions.length > 0
         ) {
           throw err(
-            `Expected glob to be a string, but got dynamic template literal`
+            `Expected option ${name} to be a string, but got dynamic template literal`
           )
         }
 
