@@ -561,7 +561,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     invalidate(message) {
       notifyListeners('vite:invalidate', { path: ownerPath, message })
       this.send('vite:invalidate', { path: ownerPath, message })
-      console.log(
+      console.debug(
         `[vite] invalidate ${ownerPath}${message ? `: ${message}` : ''}`
       )
     },
