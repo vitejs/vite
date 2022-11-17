@@ -1174,10 +1174,10 @@ type FlatAwaited<T> = Exclude<
 export async function asyncFlatten<T>(
   arr: readonly T[]
 ): Promise<FlatAwaited<T>[]> {
-  let flatArr: any[]
+  let flatArr = arr as any[]
   do {
-    flatArr = (await Promise.all(arr)).flat(Infinity)
-  } while (arr.some((v: any) => v?.then))
+    flatArr = (await Promise.all(flatArr)).flat(Infinity)
+  } while (flatArr.some((v: any) => v?.then))
   return flatArr
 }
 
