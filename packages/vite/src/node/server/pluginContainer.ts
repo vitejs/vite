@@ -30,9 +30,9 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
+import { VERSION as rollupVersion } from 'rollup'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -173,18 +173,9 @@ export async function createPluginContainer(
 
   const watchFiles = new Set<string>()
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
-
-  // get rollup version
-  const rollupPkgPath = resolve(
-    _require.resolve('rollup'),
-    '../../package.json'
-  )
   const minimalContext: MinimalPluginContext = {
     meta: {
-      rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))
-        .version,
+      rollupVersion,
       watchMode: true
     }
   }
