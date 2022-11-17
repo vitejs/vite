@@ -1115,8 +1115,8 @@ async function runConfigHook(
   const callConfigHandler = async (plugin: Plugin) => {
     calledPlugins.add(plugin)
     const handler =
-      plugin.config && 'handler' in plugin.config
-        ? plugin.config.handler!
+      typeof plugin.config !== 'function'
+        ? plugin.config!.handler!
         : plugin.config!
 
     const result = await handler(config, configEnv)
@@ -1130,6 +1130,10 @@ async function runConfigHook(
 
   const isEligible = (p: Plugin, order: typeof orders[number]) => {
     if (!p.config) {
+      return false
+    }
+    const handler = typeof p.config !== 'function' ? p.config.handler : p.config
+    if (!handler) {
       return false
     }
     if (calledPlugins.has(p)) {
