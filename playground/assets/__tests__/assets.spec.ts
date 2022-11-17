@@ -19,7 +19,7 @@ import {
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/assets\/asset\.\w{8}\.png/
+  ? /\/foo\/assets\/asset-\w{8}\.png/
   : '/foo/nested/asset.png'
 
 const iconMatch = `/foo/icon.png`
@@ -209,8 +209,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset\.\w{8}\.png \dx/
-          : /\/foo\/nested\/asset\.png \dx/
+          ? /\/foo\/assets\/asset-\w{8}\.png \dx/
+          : /\/foo\/nested\/asset.png \dx/
       )
     })
   })
@@ -338,7 +338,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })

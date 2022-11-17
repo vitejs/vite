@@ -298,7 +298,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           | string
           | ((chunkInfo: PreRenderedChunk) => string)
           | undefined,
-        defaultFileName = '[name]-legacy.[hash].js'
+        defaultFileName = '[name]-legacy-[hash].js'
       ): string | ((chunkInfo: PreRenderedChunk) => string) => {
         if (!fileNames) {
           return path.posix.join(config.build.assetsDir, defaultFileName)
