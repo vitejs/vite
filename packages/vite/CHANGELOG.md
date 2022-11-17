@@ -1,3 +1,14 @@
+## 4.0.0-alpha.4 (2022-11-17)
+
+* feat: align default chunk and asset file names with rollup (#10927) ([cc2adb3](https://github.com/vitejs/vite/commit/cc2adb3)), closes [#10927](https://github.com/vitejs/vite/issues/10927)
+* refactor: import version from rollup (#10964) ([9f54c6a](https://github.com/vitejs/vite/commit/9f54c6a)), closes [#10964](https://github.com/vitejs/vite/issues/10964)
+* test: improve node/build.ts ut coverage (#10786) ([411cc3d](https://github.com/vitejs/vite/commit/411cc3d)), closes [#10786](https://github.com/vitejs/vite/issues/10786)
+* chore: use isArray to check array (#10953) ([02c334a](https://github.com/vitejs/vite/commit/02c334a)), closes [#10953](https://github.com/vitejs/vite/issues/10953)
+* fix: make `addWatchFile()` work (fix #7024) (#9723) ([34db08b](https://github.com/vitejs/vite/commit/34db08b)), closes [#7024](https://github.com/vitejs/vite/issues/7024) [#9723](https://github.com/vitejs/vite/issues/9723)
+* fix(config): exclude config.assetsInclude empty array (#10941) ([18c71dc](https://github.com/vitejs/vite/commit/18c71dc)), closes [#10941](https://github.com/vitejs/vite/issues/10941)
+
+
+
 ## 4.0.0-alpha.3 (2022-11-15)
 
 * fix(ssr): skip optional peer dep resolve (#10593) ([0a69985](https://github.com/vitejs/vite/commit/0a69985)), closes [#10593](https://github.com/vitejs/vite/issues/10593)
