@@ -343,7 +343,7 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob("hey", { import: hey })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Invalid glob import syntax: Option import can only use literals]'
     )
     expect(
       await runError('import.meta.glob("hey", { eager: 123 })')
