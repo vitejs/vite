@@ -15,8 +15,8 @@ module.exports = {
     rollupOptions: {
       output: {
         entryFileNames: 'entries/[name].js',
-        chunkFileNames: 'chunks/[name].[hash].js',
-        assetFileNames: 'other-assets/[name].[hash][extname]'
+        chunkFileNames: 'chunks/[name]-[hash].js',
+        assetFileNames: 'other-assets/[name]-[hash][extname]'
       }
     }
   },

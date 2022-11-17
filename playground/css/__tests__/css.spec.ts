@@ -64,7 +64,7 @@ test('css import from js', async () => {
 test('css import asset with space', async () => {
   const importedWithSpace = await page.$('.import-with-space')
 
-  expect(await getBg(importedWithSpace)).toMatch(/.*ok\..*png/)
+  expect(await getBg(importedWithSpace)).toMatch(/.*\/ok.*\.png/)
 })
 
 test('postcss config', async () => {
@@ -90,7 +90,7 @@ test('sass', async () => {
     isBuild ? /base64/ : '/nested/icon.png'
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok\.\w+\.png/ : `${viteTestUrl}/ok.png`
+    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`
   )
   expect(await getColor(partialImport)).toBe('orchid')
 
@@ -124,7 +124,7 @@ test('less', async () => {
     isBuild ? /base64/ : '/nested/icon.png'
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok\.\w+\.png/ : `${viteTestUrl}/ok.png`
+    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`
   )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
@@ -297,8 +297,8 @@ test('async chunk', async () => {
   if (isBuild) {
     // assert that the css is extracted into its own file instead of in the
     // main css file
-    expect(findAssetFile(/index\.\w+\.css$/)).not.toMatch('teal')
-    expect(findAssetFile(/async\.\w+\.css$/)).toMatch('.async{color:teal}')
+    expect(findAssetFile(/index-\w+\.css$/)).not.toMatch('teal')
+    expect(findAssetFile(/async-\w+\.css$/)).toMatch('.async{color:teal}')
   } else {
     // test hmr
     editFile('async.css', (code) => code.replace('color: teal', 'color: blue'))
@@ -316,8 +316,8 @@ test('treeshaken async chunk', async () => {
     ).toBeNull()
     // assert that the css is not present anywhere
     expect(findAssetFile(/\.css$/)).not.toMatch('plum')
-    expect(findAssetFile(/index\.\w+\.js$/)).not.toMatch('.async{color:plum}')
-    expect(findAssetFile(/async\.\w+\.js$/)).not.toMatch('.async{color:plum}')
+    expect(findAssetFile(/index-\w+\.js$/)).not.toMatch('.async{color:plum}')
+    expect(findAssetFile(/async-\w+\.js$/)).not.toMatch('.async{color:plum}')
     // should have no chunk!
     expect(findAssetFile(/async-treeshaken/)).toBe('')
   } else {
@@ -416,7 +416,7 @@ test('minify css', async () => {
   }
 
   // should keep the rgba() syntax
-  const cssFile = findAssetFile(/index\.\w+\.css$/)
+  const cssFile = findAssetFile(/index-\w+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
 })

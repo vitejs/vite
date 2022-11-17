@@ -14,9 +14,9 @@ module.exports = vite.defineConfig({
     plugins: [vueJsx()],
     rollupOptions: {
       output: {
-        assetFileNames: 'worker-assets/worker_asset.[name]-[hash].[ext]',
-        chunkFileNames: 'worker-chunks/worker_chunk.[name]-[hash].js',
-        entryFileNames: 'worker-entries/worker_entry.[name]-[hash].js'
+        assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'worker-chunks/worker_chunk-[name]-[hash].js',
+        entryFileNames: 'worker-entries/worker_entry-[name]-[hash].js'
       }
     }
   },
