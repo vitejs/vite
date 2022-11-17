@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
-import type { UserConfig, UserConfigExport } from '../config'
+import type { PluginOption, UserConfig, UserConfigExport } from '../config'
 import { resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { mergeConfig } from '../publicUtils'
@@ -264,5 +264,53 @@ describe('preview config', () => {
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: previewConfig()
     })
+  })
+})
+
+describe('resolveConfig', () => {
+  const keepScreenMergePlugin = (): PluginOption => {
+    return {
+      name: 'vite-plugin-keep-screen-merge',
+      config() {
+        return { clearScreen: false }
+      }
+    }
+  }
+
+  const keepScreenOverridePlugin = (): PluginOption => {
+    return {
+      name: 'vite-plugin-keep-screen-override',
+      config(config) {
+        config.clearScreen = false
+      }
+    }
+  }
+
+  test('plugin merges `clearScreen` option', async () => {
+    const config1: InlineConfig = { plugins: [keepScreenMergePlugin()] }
+    const config2: InlineConfig = {
+      plugins: [keepScreenMergePlugin()],
+      clearScreen: true
+    }
+
+    const results1 = await resolveConfig(config1, 'build')
+    const results2 = await resolveConfig(config2, 'build')
+
+    expect(results1.clearScreen).toBe(false)
+    expect(results2.clearScreen).toBe(false)
+  })
+
+  test('plugin overrides `clearScreen` option', async () => {
+    const config1: InlineConfig = { plugins: [keepScreenOverridePlugin()] }
+    const config2: InlineConfig = {
+      plugins: [keepScreenOverridePlugin()],
+      clearScreen: true
+    }
+
+    const results1 = await resolveConfig(config1, 'build')
+    const results2 = await resolveConfig(config2, 'build')
+
+    expect(results1.clearScreen).toBe(false)
+    expect(results2.clearScreen).toBe(false)
   })
 })
