@@ -56,7 +56,7 @@ if (import.meta.hot) {
     RefreshRuntime.register(type, __SOURCE__ + " " + id)
   };
   window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
-}`.replace(/[\n]+/gm, '')
+}`.replace(/\n+/g, '')
 
 const timeout = `
   if (!window.__vite_plugin_react_timeout) {

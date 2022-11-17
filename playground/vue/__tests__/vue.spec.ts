@@ -188,7 +188,7 @@ describe('hmr', () => {
   })
 
   test('should re-render when template is emptied', async () => {
-    editFile('Hmr.vue', () => '')
+    editFile('Hmr.vue', (code) => code.replace(/<template>.+<\/template>/s, ''))
     await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
   })
 })
@@ -261,5 +261,13 @@ describe('setup import template', () => {
 describe('vue worker', () => {
   test('should work', async () => {
     expect(await page.textContent('.vue-worker')).toMatch('worker load!')
+  })
+})
+
+describe('import with ?url', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.import-with-url-query')).toMatch(
+      isBuild ? /^data:/ : '/Null.vue'
+    )
   })
 })

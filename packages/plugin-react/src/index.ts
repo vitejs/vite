@@ -1,6 +1,7 @@
+import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
-import { createFilter } from 'vite'
+import { createFilter, loadEnv, normalizePath, resolveEnvPrefix } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'magic-string'
@@ -110,16 +111,25 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   // - import * as React from 'react';
   // - import React from 'react';
   // - import React, {useEffect} from 'react';
-  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React(,|\s+)/
+  const importReactRE = /(?:^|\n)import\s+(?:\*\s+as\s+)?React(?:,|\s+)/
 
   // Any extension, including compound ones like '.bs.js'
-  const fileExtensionRE = /\.[^\/\s\?]+$/
+  const fileExtensionRE = /\.[^/\s?]+$/
 
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
-    config(_, { mode }) {
-      // Copied from https://github.com/vitejs/vite/blob/4e9bdd4fb3654a9d43917e1cb682d3d2bad25115/packages/vite/src/node/config.ts#L488-L490
+    config(userConfig, { mode }) {
+      // Copied from https://github.com/vitejs/vite/blob/4e9bdd4fb3654a9d43917e1cb682d3d2bad25115/packages/vite/src/node/config.ts#L477-L494
+
+      const resolvedRoot = normalizePath(
+        userConfig.root ? path.resolve(userConfig.root) : process.cwd()
+      )
+      const envDir = userConfig.envDir
+        ? normalizePath(path.resolve(resolvedRoot, userConfig.envDir))
+        : resolvedRoot
+      loadEnv(mode, envDir, resolveEnvPrefix(userConfig))
+
       const isProduction =
         (process.env.NODE_ENV || process.env.VITE_USER_NODE_ENV || mode) ===
         'production'
@@ -202,7 +212,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         filepath.match(fileExtensionRE) ||
         []
 
-      if (/\.(mjs|[tj]sx?)$/.test(extension)) {
+      if (/\.(?:mjs|[tj]sx?)$/.test(extension)) {
         const isJSX = extension.endsWith('x')
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =
