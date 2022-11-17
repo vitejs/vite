@@ -1129,10 +1129,10 @@ async function runConfigHook(
     (p.config && ('handler' in p.config ? p.config.order : p.enforce)) || null
 
   const isEligible = (p: Plugin, order: typeof orders[number]) => {
-    if (calledPlugins.has(p)) {
+    if (!p.config) {
       return false
     }
-    if (!p.config) {
+    if (calledPlugins.has(p)) {
       return false
     }
     return orders.indexOf(enforce(p)) <= orders.indexOf(order)
