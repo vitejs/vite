@@ -16,6 +16,7 @@ export interface CustomEventMap {
 
 export interface InvalidatePayload {
   path: string
+  message: string | undefined
 }
 
 export type InferCustomEventPayload<T extends string> =

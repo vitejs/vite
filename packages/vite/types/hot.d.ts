@@ -23,7 +23,7 @@ export interface ViteHotContext {
 
   dispose(cb: (data: any) => void): void
   decline(): void
-  invalidate(): void
+  invalidate(message?: string): void
 
   on<T extends string>(
     event: T,

@@ -54,6 +54,7 @@ if (!isBuild) {
     )
     await untilUpdated(() => page.textContent('#parent'), 'Updated')
     expect(browserLogs).toMatchObject([
+      '[vite] invalidate /hmr/no-exported-comp.jsx',
       '[vite] hot updated: /hmr/no-exported-comp.jsx',
       '[vite] hot updated: /hmr/parent.jsx',
       'Parent rendered'
@@ -79,6 +80,7 @@ if (!isBuild) {
       'context provider updated'
     )
     expect(browserLogs).toMatchObject([
+      '[vite] invalidate /context/CountProvider.jsx',
       '[vite] hot updated: /context/CountProvider.jsx',
       '[vite] hot updated: /App.jsx',
       '[vite] hot updated: /context/ContextButton.jsx',
