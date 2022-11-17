@@ -192,16 +192,16 @@ describe('resolveEnvPrefix', () => {
     expect(resolveEnvPrefix(config)).toMatchObject(['VITE_'])
   })
 
-  test(`throw error if envPrefix contains ''`, () => {
+  test(`filter '' if envPrefix contains ''`, () => {
     let config: UserConfig = { envPrefix: '' }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    expect(resolveEnvPrefix(config)).toMatchObject([])
     config = { envPrefix: ['', 'CUSTOM_'] }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
   })
 
   test('should work correctly for valid envPrefix value', () => {
     const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
-    expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
+    expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
   })
 })
 

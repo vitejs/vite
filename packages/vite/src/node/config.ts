@@ -495,7 +495,7 @@ export async function resolveConfig(
     : resolvedRoot
   const userEnv =
     inlineConfig.envFile !== false &&
-    loadEnv(mode, envDir, resolveEnvPrefix(config))
+    loadEnv(mode, envDir, resolveEnvPrefix(config, logger))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production

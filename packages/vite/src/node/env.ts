@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
+import type { Logger } from './logger'
 
 export function loadEnv(
   mode: string,
@@ -77,14 +78,15 @@ export function loadEnv(
   return env
 }
 
-export function resolveEnvPrefix({
-  envPrefix = 'VITE_'
-}: UserConfig): string[] {
-  envPrefix = arraify(envPrefix)
-  if (envPrefix.some((prefix) => prefix === '')) {
-    throw new Error(
+export function resolveEnvPrefix(
+  { envPrefix = 'VITE_' }: UserConfig,
+  logger?: Logger
+): string[] {
+  envPrefix = arraify(envPrefix).map((prefix) => prefix.trim())
+  if (logger && envPrefix.some((prefix) => prefix === '')) {
+    logger.warn(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`
     )
   }
-  return envPrefix
+  return envPrefix.filter((prefix) => !!prefix)
 }
