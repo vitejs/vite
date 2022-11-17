@@ -12,7 +12,7 @@ Externalize dependencies for SSR. By default, all dependencies are externalized,
 - **Type:** `string | RegExp | (string | RegExp)[] | true`
 - **Related:** [SSR Externals](/guide/ssr#ssr-externals)
 
-Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized. This option has a higher priority than `ssr.external` except if a dependency is explicitly specified in the `ssr.external` array.
+Prevent listed dependencies from being externalized for SSR. If `true`, no dependencies are externalized. If a dependency is explicitly defined in `ssr.external`, it will take priority and be externalized along with its transitive dependencies.
 
 ## ssr.target
 
