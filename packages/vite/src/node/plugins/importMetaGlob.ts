@@ -246,17 +246,30 @@ export async function parseImportGlob(
 
         if (!(name in knownOptions)) throw err(`Unknown options ${name}`)
 
-        if (property.value.type !== 'Literal')
+        const isTemplateLiteral = property.value.type === 'TemplateLiteral'
+        if (property.value.type !== 'Literal' && !isTemplateLiteral)
           throw err('Could only use literals')
 
-        const valueType = typeof property.value.value
+        if (
+          isTemplateLiteral &&
+          (property.value as TemplateLiteral).expressions.length > 0
+        ) {
+          throw err(
+            `Expected glob to be a string, but got dynamic template literal`
+          )
+        }
+
+        const optionValue = isTemplateLiteral
+          ? (property.value as TemplateLiteral).quasis[0].value.raw
+          : (property.value as Literal).value
+        const valueType = typeof optionValue
         if (valueType === 'undefined') continue
 
         if (valueType !== knownOptions[name])
           throw err(
             `Expected the type of option "${name}" to be "${knownOptions[name]}", but got "${valueType}"`
           )
-        options[name] = property.value.value as any
+        options[name] = optionValue as any
       }
     }
 
