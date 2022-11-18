@@ -367,7 +367,8 @@ export function resolveBuildOptions(
     const isUMD = formats.includes('umd')
     const isIIFE = formats.includes('iife')
     if (!isUMD && !isIIFE) {
-      const configRoot = process.cwd()
+      const libEntry = raw.lib?.entry
+      const configRoot = typeof libEntry === 'string' ? libEntry : process.cwd()
       const pkg = lookupFile(configRoot, ['package.json'])
       if (pkg) {
         const pkgData = JSON.parse(pkg)
