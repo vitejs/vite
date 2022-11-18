@@ -376,10 +376,10 @@ export function updateStyle(id: string, content: string): void {
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
       style.setAttribute('data-vite-dev-id', id)
-      style.innerHTML = content
+      style.textContent = content
       document.head.appendChild(style)
     } else {
-      style.innerHTML = content
+      style.textContent = content
     }
   }
   sheetsMap.set(id, style)
@@ -558,9 +558,12 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     decline() {},
 
     // tell the server to re-perform hmr propagation from this module as root
-    invalidate() {
-      notifyListeners('vite:invalidate', { path: ownerPath })
-      this.send('vite:invalidate', { path: ownerPath })
+    invalidate(message) {
+      notifyListeners('vite:invalidate', { path: ownerPath, message })
+      this.send('vite:invalidate', { path: ownerPath, message })
+      console.debug(
+        `[vite] invalidate ${ownerPath}${message ? `: ${message}` : ''}`
+      )
     },
 
     // custom events

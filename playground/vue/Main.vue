@@ -22,6 +22,7 @@
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
   <WorkerTest />
+  <Url />
 </template>
 
 <script setup lang="ts">
@@ -40,6 +41,7 @@ import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 import WorkerTest from './worker.vue'
 import { ref } from 'vue'
+import Url from './Url.vue'
 
 const time = ref('loading...')
 

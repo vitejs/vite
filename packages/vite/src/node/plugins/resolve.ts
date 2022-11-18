@@ -55,7 +55,7 @@ export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
-const nodeModulesInPathRE = /(^|\/)node_modules\//
+const nodeModulesInPathRE = /(?:^|\/)node_modules\//
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -105,6 +105,8 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
+  // Check this resolve is called from `hookNodeResolve` in SSR
+  isHookNodeResolve?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -531,9 +533,6 @@ function tryResolveFile(
   tryPrefix?: string,
   skipPackageJson?: boolean
 ): string | undefined {
-  // #2051 if we don't have read permission on a directory, existsSync() still
-  // works and will result in massively slow subsequent checks (which are
-  // unnecessary in the first place)
   if (isFileReadable(file)) {
     if (!fs.statSync(file).isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
@@ -690,10 +689,11 @@ export function tryNodeResolve(
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
+      !options.isHookNodeResolve &&
       basedir !== root && // root has no peer dep
-      !isBuiltin(id) &&
-      !id.includes('\0') &&
-      bareImportRE.test(id)
+      !isBuiltin(nestedPath) &&
+      !nestedPath.includes('\0') &&
+      bareImportRE.test(nestedPath)
     ) {
       // find package.json with `name` as main
       const mainPackageJson = lookupFile(basedir, ['package.json'], {
@@ -702,11 +702,11 @@ export function tryNodeResolve(
       if (mainPackageJson) {
         const mainPkg = JSON.parse(mainPackageJson)
         if (
-          mainPkg.peerDependencies?.[id] &&
-          mainPkg.peerDependenciesMeta?.[id]?.optional
+          mainPkg.peerDependencies?.[nestedPath] &&
+          mainPkg.peerDependenciesMeta?.[nestedPath]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`
+            id: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`
           }
         }
       }
