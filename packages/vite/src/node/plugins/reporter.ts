@@ -29,17 +29,17 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
   function isLarge(code: string | Uint8Array): boolean {
     // bail out on particularly large chunks
-    return code.length / 1024 > chunkLimit
+    return code.length / 1000 > chunkLimit
   }
 
   async function getCompressedSize(code: string | Uint8Array): Promise<string> {
     if (config.build.ssr || !config.build.reportCompressedSize) {
       return ''
     }
-    return ` / gzip: ${(
+    return ` / gzip: ${displaySize(
       (await compress(typeof code === 'string' ? code : Buffer.from(code)))
-        .length / 1024
-    ).toFixed(2)} KiB`
+        .length / 1000
+    )}`
   }
 
   function printFileInfo(
@@ -54,12 +54,12 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       normalizePath(
         path.relative(config.root, path.resolve(config.root, outDir))
       ) + '/'
-    const kibs = content.length / 1024
-    const sizeColor = kibs > chunkLimit ? colors.yellow : colors.dim
+    const kB = content.length / 1000
+    const sizeColor = kB > chunkLimit ? colors.yellow : colors.dim
     config.logger.info(
       `${colors.gray(colors.white(colors.dim(outDir)))}${writeColors[type](
         filePath.padEnd(maxLength + 2)
-      )} ${sizeColor(`${kibs.toFixed(2)} KiB${compressedSize}`)}`
+      )} ${sizeColor(`${displaySize(kB)}${compressedSize}`)}`
     )
   }
 
@@ -201,7 +201,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       } else {
         hasLargeChunks = Object.keys(output).some((file) => {
           const chunk = output[file]
-          return chunk.type === 'chunk' && chunk.code.length / 1024 > chunkLimit
+          return chunk.type === 'chunk' && chunk.code.length / 1000 > chunkLimit
         })
       }
 
@@ -213,7 +213,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       ) {
         config.logger.warn(
           colors.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit} KiB after minification. Consider:\n` +
+            `\n(!) Some chunks are larger than ${chunkLimit} kBs after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
               `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`
@@ -243,4 +243,11 @@ function throttle(fn: Function) {
       timerHandle = null
     }, 100)
   }
+}
+
+function displaySize(kB: number) {
+  return `${kB.toLocaleString('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2
+  })} kB`
 }
