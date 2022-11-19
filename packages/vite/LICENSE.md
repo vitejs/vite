@@ -1576,13 +1576,6 @@ Repository: https://github.com/http-party/node-http-proxy.git
 
 ---------------------------------------
 
-## icss-replace-symbols
-License: ISC
-By: Glen Maddern
-Repository: git+https://github.com/css-modules/icss-replace-symbols.git
-
----------------------------------------
-
 ## icss-utils
 License: ISC
 By: Glen Maddern
