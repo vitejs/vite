@@ -258,7 +258,7 @@ importers:
       postcss: ^8.4.19
       postcss-import: ^15.0.0
       postcss-load-config: ^4.0.1
-      postcss-modules: ^5.0.0
+      postcss-modules: ^6.0.0
       resolve: ^1.22.1
       resolve.exports: ^1.1.0
       rollup: ~3.3.0
@@ -322,7 +322,7 @@ importers:
       picomatch: 2.3.1
       postcss-import: 15.0.0_postcss@8.4.19
       postcss-load-config: 4.0.1_postcss@8.4.19
-      postcss-modules: 5.0.0_postcss@8.4.19
+      postcss-modules: 6.0.0_postcss@8.4.19
       resolve.exports: 1.1.0
       sirv: 2.0.2
       source-map-js: 1.0.2
@@ -1217,6 +1217,9 @@ importers:
       tailwindcss: ^3.2.4
     dependencies:
       tailwindcss: 3.2.4
+
+  playground/transform-plugin:
+    specifiers: {}
 
   playground/tsconfig-json:
     specifiers: {}
@@ -5751,10 +5754,6 @@ packages:
     dev: true
     optional: true
 
-  /icss-replace-symbols/1.1.0:
-    resolution: {integrity: sha512-chIaY3Vh2mh2Q3RGXttaDIzeiPvaVXJ+C4DAh/w3c37SKZ/U6PGMmuicR2EQQp9bKG8zLMCl7I+PtIoOOPp8Gg==}
-    dev: true
-
   /icss-utils/5.1.0_postcss@8.4.19:
     resolution: {integrity: sha512-soFhflCVWLfRNOPU3iv5Z9VUdT44xFRbzjLsEzSr5AQmgqPMTHdU3PMT1Cf1ssx8fLNJDA1juftYl+PUcv3MqA==}
     engines: {node: ^10 || ^12 || >= 14}
@@ -7313,13 +7312,13 @@ packages:
       postcss: 8.4.19
     dev: true
 
-  /postcss-modules/5.0.0_postcss@8.4.19:
-    resolution: {integrity: sha512-rGvpTDOM3//3Ysn3Xtvhzaj8ab984wKCpP02TEF559tLbUjNay3RQDpPxb7BREmfBtJm3/1WbQOZ7fSXwYLZ/w==}
+  /postcss-modules/6.0.0_postcss@8.4.19:
+    resolution: {integrity: sha512-7DGfnlyi/ju82BRzTIjWS5C4Tafmzl3R79YP/PASiocj+aa6yYphHhhKUOEoXQToId5rgyFgJ88+ccOUydjBXQ==}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
       generic-names: 4.0.0
-      icss-replace-symbols: 1.1.0
+      icss-utils: 5.1.0_postcss@8.4.19
       lodash.camelcase: 4.3.0
       postcss: 8.4.19
       postcss-modules-extract-imports: 3.0.0_postcss@8.4.19
