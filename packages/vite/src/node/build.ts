@@ -482,7 +482,11 @@ async function doBuild(
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
 
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+  if (
+    ssr &&
+    typeof input === 'string' &&
+    (input.endsWith('.html') || input.endsWith('.htm'))
+  ) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`

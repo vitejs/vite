@@ -314,6 +314,7 @@ async function fileToBuiltUrl(
     config.build.lib ||
     (!file.endsWith('.svg') &&
       !file.endsWith('.html') &&
+      !file.endsWith('.htm') &&
       content.length < Number(config.build.assetsInlineLimit) &&
       !isGitLfsPlaceholder(content))
   ) {
