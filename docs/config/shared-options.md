@@ -359,8 +359,8 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 
 Whether your application is a Single Page Application (SPA), a [Multi Page Application (MPA)](../guide/build#multi-page-app), or Custom Application (SSR and frameworks with custom HTML handling):
 
-- `'spa'`: include SPA fallback middleware and configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
-- `'mpa'`: only include non-SPA HTML middlewares
+- `'spa'`: include HTML middlewares and use SPA fallback. Configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
+- `'mpa'`: include HTML middlewares
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
