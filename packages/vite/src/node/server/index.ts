@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import type * as net from 'node:net'
 import type * as http from 'node:http'
@@ -506,11 +505,23 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server)
   })
 
-  ws.on('vite:invalidate', async ({ path }: InvalidatePayload) => {
+  ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+      config.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(path) +
+          (message ? ` ${message}` : ''),
+        { timestamp: true }
+      )
       const file = getShortName(mod.file!, config.root)
-      updateModules(file, [...mod.importers], mod.lastHMRTimestamp, server)
+      updateModules(
+        file,
+        [...mod.importers],
+        mod.lastHMRTimestamp,
+        server,
+        true
+      )
     }
   })
 
@@ -650,7 +661,6 @@ async function startServer(
   const hostname = await resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
-  const info = server.config.logger.info
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -658,25 +668,6 @@ async function startServer(
     host: hostname.host,
     logger: server.config.logger
   })
-
-  // @ts-ignore
-  const profileSession = global.__vite_profile_session
-  if (profileSession) {
-    profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
-      // Write profile to disk, upload, etc.
-      if (!err) {
-        const outPath = path.resolve('./vite-profile.cpuprofile')
-        fs.writeFileSync(outPath, JSON.stringify(profile))
-        info(
-          colors.yellow(
-            `  CPU profile written to ${colors.white(colors.dim(outPath))}\n`
-          )
-        )
-      } else {
-        throw err
-      }
-    })
-  }
 
   if (options.open && !isRestart) {
     const path =

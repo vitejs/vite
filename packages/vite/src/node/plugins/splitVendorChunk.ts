@@ -1,14 +1,14 @@
 import type {
   GetManualChunk,
-  GetManualChunkApi,
   GetModuleInfo,
+  ManualChunkMeta,
   OutputOptions
 } from 'rollup'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
 // This file will be built for both ESM and CJS. Avoid relying on other modules as possible.
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangs = `\\.(?:css|less|sass|scss|styl|stylus|pcss|postcss)(?:$|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 export const isCSSRequest = (request: string): boolean =>
   cssLangRE.test(request)
@@ -106,7 +106,7 @@ export function splitVendorChunkPlugin(): Plugin {
             if (output.manualChunks) {
               if (typeof output.manualChunks === 'function') {
                 const userManualChunks = output.manualChunks
-                output.manualChunks = (id: string, api: GetManualChunkApi) => {
+                output.manualChunks = (id: string, api: ManualChunkMeta) => {
                   return userManualChunks(id, api) ?? viteManualChunks(id, api)
                 }
               }

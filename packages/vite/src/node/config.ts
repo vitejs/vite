@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { parse as parseUrl, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
@@ -323,6 +323,8 @@ export type ResolvedConfig = Readonly<
     inlineConfig: InlineConfig
     root: string
     base: string
+    /** @internal */
+    rawBase: string
     publicDir: string
     cacheDir: string
     command: 'build' | 'serve'
@@ -408,12 +410,6 @@ export async function resolveConfig(
     }
   }
 
-  // Define logger
-  const logger = createLogger(config.logLevel, {
-    allowClearScreen: config.clearScreen,
-    customLogger: config.customLogger
-  })
-
   // user config may provide an alternative mode. But --mode has a higher priority
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
@@ -457,14 +453,20 @@ export async function resolveConfig(
     config.build.commonjsOptions = { include: [] }
   }
 
+  // Define logger
+  const logger = createLogger(config.logLevel, {
+    allowClearScreen: config.clearScreen,
+    customLogger: config.customLogger
+  })
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd()
   )
 
   const clientAlias = [
-    { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
-    { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
+    { find: /^\/?@vite\/env/, replacement: () => ENV_ENTRY },
+    { find: /^\/?@vite\/client/, replacement: () => CLIENT_ENTRY }
   ]
 
   // resolve alias with internal client alias
@@ -529,9 +531,11 @@ export async function resolveConfig(
     ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
     : path.join(resolvedRoot, `.vite`)
 
-  const assetsFilter = config.assetsInclude
-    ? createFilter(config.assetsInclude)
-    : () => false
+  const assetsFilter =
+    config.assetsInclude &&
+    (!Array.isArray(config.assetsInclude) || config.assetsInclude.length)
+      ? createFilter(config.assetsInclude)
+      : () => false
 
   // create an internal resolver to be used in special scenarios, e.g.
   // optimizer & handling css @imports
@@ -569,7 +573,10 @@ export async function resolveConfig(
           }))
       }
       return (
-        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+        await container.resolveId(id, importer, {
+          ssr,
+          scan: options?.scan
+        })
       )?.id
     }
   }
@@ -623,7 +630,8 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase,
+    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -805,34 +813,25 @@ export function resolveBaseUrl(
         )
       )
     )
-    base = '/'
+    return '/'
   }
 
-  // external URL
-  if (isExternalUrl(base)) {
-    if (!isBuild) {
-      // get base from full url during dev
-      const parsed = parseUrl(base)
-      base = parsed.pathname || '/'
-    }
-  } else {
+  // external URL flag
+  const isExternal = isExternalUrl(base)
+  // no leading slash warn
+  if (!isExternal && !base.startsWith('/')) {
+    logger.warn(
+      colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
+    )
+  }
+
+  // parse base when command is serve or base is not External URL
+  if (!isBuild || !isExternal) {
+    base = new URL(base, 'http://vitejs.dev').pathname
     // ensure leading slash
     if (!base.startsWith('/')) {
-      logger.warn(
-        colors.yellow(
-          colors.bold(`(!) "base" option should start with a slash.`)
-        )
-      )
       base = '/' + base
     }
-  }
-
-  // ensure ending slash
-  if (!base.endsWith('/')) {
-    logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
-    )
-    base += '/'
   }
 
   return base

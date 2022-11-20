@@ -20,7 +20,7 @@ export function ssrRewriteStacktrace(
     .split('\n')
     .map((line) => {
       return line.replace(
-        /^ {4}at (?:(.+?)\s+\()?(?:(.+?):(\d+)(?::(\d+))?)\)?/,
+        /^ {4}at (?:(\S.*?)\s\()?(.+?):(\d+)(?::(\d+))?\)?/,
         (input, varName, url, line, column) => {
           if (!url) return input
 
@@ -42,11 +42,12 @@ export function ssrRewriteStacktrace(
             return input
           }
 
+          const trimedVarName = varName.trim()
           const source = `${pos.source}:${pos.line}:${pos.column}`
-          if (!varName || varName === 'eval') {
+          if (!trimedVarName || trimedVarName === 'eval') {
             return `    at ${source}`
           } else {
-            return `    at ${varName} (${source})`
+            return `    at ${trimedVarName} (${source})`
           }
         }
       )

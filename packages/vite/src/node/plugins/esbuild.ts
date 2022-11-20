@@ -27,9 +27,9 @@ import { searchForWorkspaceRoot } from '..'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /^(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)/s
+  /^(.*?)((?:const|var) \S+=function\([^)]*\)\{"use strict";)/s
 const INJECT_HELPERS_UMD_RE =
-  /^(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)/s
+  /^(.*?)(\(function\([^)]*\)\{.+amd.+function\([^)]*\)\{"use strict";)/s
 
 let server: ViteDevServer
 
@@ -180,6 +180,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
     target: 'esnext',
+    charset: 'utf8',
     ...options,
     minify: false,
     minifyIdentifiers: false,
@@ -306,7 +307,9 @@ export function resolveEsbuildTranspileOptions(
   // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
   const isEsLibBuild = config.build.lib && format === 'es'
   const esbuildOptions = config.esbuild || {}
+
   const options: TransformOptions = {
+    charset: 'utf8',
     ...esbuildOptions,
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],

@@ -30,7 +30,7 @@ interface ViteHotContext {
 
   dispose(cb: (data: any) => void): void
   decline(): void
-  invalidate(): void
+  invalidate(message?: string): void
 
   // `InferCustomEventPayload` provides types for built-in Vite events
   on<T extends string>(
@@ -123,9 +123,9 @@ The `import.meta.hot.data` object is persisted across different instances of the
 
 Calling `import.meta.hot.decline()` indicates this module is not hot-updatable, and the browser should perform a full reload if this module is encountered while propagating HMR updates.
 
-## `hot.invalidate()`
+## `hot.invalidate(message?: string)`
 
-A self-accepting module may realize during runtime that it can't handle a HMR update, and so the update needs to be forcefully propagated to importers. By calling `import.meta.hot.invalidate()`, the HMR server will invalidate the importers of the caller, as if the caller wasn't self-accepting.
+A self-accepting module may realize during runtime that it can't handle a HMR update, and so the update needs to be forcefully propagated to importers. By calling `import.meta.hot.invalidate()`, the HMR server will invalidate the importers of the caller, as if the caller wasn't self-accepting. This will log a message both in the browser console and in the terminal. You can pass a message to give some context on why the invalidation happened.
 
 Note that you should always call `import.meta.hot.accept` even if you plan to call `invalidate` immediately afterwards, or else the HMR client won't listen for future changes to the self-accepting module. To communicate your intent clearly, we recommend calling `invalidate` within the `accept` callback like so:
 
@@ -145,6 +145,7 @@ Listen to an HMR event.
 The following HMR events are dispatched by Vite automatically:
 
 - `'vite:beforeUpdate'` when an update is about to be applied (e.g. a module will be replaced)
+- `'vite:afterUpdate'` when an update has just been applied (e.g. a module has been replaced)
 - `'vite:beforeFullReload'` when a full reload is about to occur
 - `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
 - `'vite:invalidate'` when a module is invalidated with `import.meta.hot.invalidate()`

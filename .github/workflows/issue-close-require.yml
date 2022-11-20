@@ -6,6 +6,7 @@ on:
 
 jobs:
   close-issues:
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
       - name: need reproduction

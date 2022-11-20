@@ -1,7 +1,10 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-// @ts-expect-error
-import { version } from '../../package.json'
+import { readFileSync } from 'node:fs'
+
+const { version } = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url)).toString()
+)
 
 export const VERSION = version as string
 
@@ -43,9 +46,9 @@ export const DEFAULT_CONFIG_FILES = [
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
-export const OPTIMIZABLE_ENTRY_RE = /\.(?:[cm]?[jt]s)$/
+export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
 
-export const SPECIAL_QUERY_RE = /[\?&](?:worker|sharedworker|raw|url)\b/
+export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
 
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
@@ -126,7 +129,7 @@ export const DEFAULT_ASSETS_RE = new RegExp(
   `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`
 )
 
-export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+export const DEP_VERSION_RE = /[?&](v=[\w.-]+)\b/
 
 export const loopbackHosts = new Set([
   'localhost',

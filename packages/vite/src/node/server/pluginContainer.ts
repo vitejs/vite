@@ -30,9 +30,9 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
+import { VERSION as rollupVersion } from 'rollup'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -96,6 +96,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
+      assertions?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
@@ -125,17 +126,12 @@ export interface PluginContainer {
 
 type PluginContext = Omit<
   RollupPluginContext,
+  // not supported
+  | 'load'
   // not documented
   | 'cache'
   // deprecated
-  | 'emitAsset'
-  | 'emitChunk'
-  | 'getAssetFileName'
-  | 'getChunkFileName'
-  | 'isExternal'
   | 'moduleIds'
-  | 'resolveId'
-  | 'load'
 >
 
 export let parser = acorn.Parser
@@ -177,18 +173,9 @@ export async function createPluginContainer(
 
   const watchFiles = new Set<string>()
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
-
-  // get rollup version
-  const rollupPkgPath = resolve(
-    _require.resolve('rollup'),
-    '../../package.json'
-  )
   const minimalContext: MinimalPluginContext = {
     meta: {
-      rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))
-        .version,
+      rollupVersion,
       watchMode: true
     }
   }
@@ -295,6 +282,7 @@ export async function createPluginContainer(
       id: string,
       importer?: string,
       options?: {
+        assertions?: Record<string, string>
         custom?: CustomPluginOptions
         isEntry?: boolean
         skipSelf?: boolean
@@ -306,6 +294,7 @@ export async function createPluginContainer(
         skip.add(this._activePlugin)
       }
       let out = await container.resolveId(id, importer, {
+        assertions: options?.assertions,
         custom: options?.custom,
         isEntry: !!options?.isEntry,
         skip,
@@ -587,6 +576,7 @@ export async function createPluginContainer(
             ? plugin.resolveId.handler
             : plugin.resolveId
         const result = await handler.call(ctx as any, rawId, importer, {
+          assertions: options?.assertions ?? {},
           custom: options?.custom,
           isEntry: !!options?.isEntry,
           ssr,

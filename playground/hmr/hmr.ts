@@ -45,6 +45,10 @@ if (import.meta.hot) {
     console.log(`foo was:`, foo)
   })
 
+  import.meta.hot.on('vite:afterUpdate', (event) => {
+    console.log(`>>> vite:afterUpdate -- ${event.type}`)
+  })
+
   import.meta.hot.on('vite:beforeUpdate', (event) => {
     console.log(`>>> vite:beforeUpdate -- ${event.type}`)
 
@@ -58,9 +62,8 @@ if (import.meta.hot) {
         (document.querySelector('.global-css') as HTMLLinkElement).href
       )
 
-      // We don't have a vite:afterUpdate event.
-      // We need to wait until the tag has been swapped out, which
-      // includes the time taken to download and parse the new stylesheet.
+      // Wait until the tag has been swapped out, which includes the time taken
+      // to download and parse the new stylesheet. Assert the swapped link.
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
