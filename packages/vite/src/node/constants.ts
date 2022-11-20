@@ -46,6 +46,9 @@ export const DEFAULT_CONFIG_FILES = [
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
+export const CSS_LANGS_RE =
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)/
+
 export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
 
 export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/

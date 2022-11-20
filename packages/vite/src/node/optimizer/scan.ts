@@ -6,7 +6,12 @@ import type { Loader, OnLoadResult, Plugin } from 'esbuild'
 import { build, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import { JS_TYPES_RE, KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
+import {
+  CSS_LANGS_RE,
+  JS_TYPES_RE,
+  KNOWN_ASSET_TYPES,
+  SPECIAL_QUERY_RE
+} from '../constants'
 import {
   cleanUrl,
   createDebugger,
@@ -430,14 +435,11 @@ function esbuildScanPlugin(
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
-      // css & json & wasm
-      build.onResolve(
-        {
-          filter:
-            /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss|json|wasm)$/
-        },
-        externalUnlessEntry
-      )
+      // css
+      build.onResolve({ filter: CSS_LANGS_RE }, externalUnlessEntry)
+
+      // json & wasm
+      build.onResolve({ filter: /\.(json|json5|wasm)$/ }, externalUnlessEntry)
 
       // known asset types
       build.onResolve(
