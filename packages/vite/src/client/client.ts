@@ -525,10 +525,10 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     accept(deps?: any, callback?: any) {
       if (typeof deps === 'function' || !deps) {
         // self-accept: hot.accept(() => {})
-        acceptDeps([ownerPath], ([mod]) => deps && deps(mod))
+        acceptDeps([ownerPath], ([mod]) => deps?.(mod))
       } else if (typeof deps === 'string') {
         // explicit deps
-        acceptDeps([deps], ([mod]) => callback && callback(mod))
+        acceptDeps([deps], ([mod]) => callback?.(mod))
       } else if (Array.isArray(deps)) {
         acceptDeps(deps, callback)
       } else {
@@ -538,8 +538,8 @@ export function createHotContext(ownerPath: string): ViteHotContext {
 
     // export names (first arg) are irrelevant on the client side, they're
     // extracted in the server for propagation
-    acceptExports(_: string | readonly string[], callback?: any) {
-      acceptDeps([ownerPath], callback && (([mod]) => callback(mod)))
+    acceptExports(_, callback) {
+      acceptDeps([ownerPath], ([mod]) => callback?.(mod))
     },
 
     dispose(cb) {
