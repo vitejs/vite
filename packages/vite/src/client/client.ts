@@ -425,12 +425,12 @@ async function fetchUpdate({
   if (isSelfUpdate || qualifiedCallbacks.length > 0) {
     const disposer = disposeMap.get(acceptedPath)
     if (disposer) await disposer(dataMap.get(acceptedPath))
-    const [path, query] = acceptedPath.split(`?`)
+    const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
     try {
       const newMod: ModuleNamespace = await import(
         /* @vite-ignore */
         base +
-          path.slice(1) +
+          acceptedPathWithoutQuery.slice(1) +
           `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
             query ? `&${query}` : ''
           }`
