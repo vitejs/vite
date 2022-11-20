@@ -14,17 +14,15 @@ export function htmlFallbackMiddleware(
     rewrites: [
       {
         from: /\/$/,
-        to({ parsedUrl }: any) {
+        to({ parsedUrl, request }: any) {
           const rewritten =
             decodeURIComponent(parsedUrl.pathname) + 'index.html'
 
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
-          } else {
-            if (spaFallback) {
-              return `/index.html`
-            }
           }
+
+          return spaFallback ? `/index.html` : request.url
         }
       }
     ]
