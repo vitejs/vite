@@ -1267,3 +1267,8 @@ export function arrayEqual(a: any[], b: any[]): boolean {
   }
   return true
 }
+
+export function evalValue<T = any>(rawValue: string): T {
+  const fn = new Function(`return (\n${rawValue}\n)`)
+  return fn()
+}
