@@ -95,7 +95,7 @@ import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
 
 // glob
-const glob = import.meta.glob('./glob-import/*.css')
+const glob = import.meta.glob('./glob-import/*.css', { query: '?inline' })
 Promise.all(
   Object.keys(glob).map((key) => glob[key]().then((i) => i.default))
 ).then((res) => {
@@ -103,7 +103,10 @@ Promise.all(
 })
 
 // globEager
-const globEager = import.meta.glob('./glob-import/*.css', { eager: true })
+const globEager = import.meta.glob('./glob-import/*.css', {
+  eager: true,
+  query: '?inline'
+})
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
 import postcssSourceInput from './postcss-source-input.css?query=foo'
