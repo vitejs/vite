@@ -105,7 +105,7 @@ const processNodeUrl = (
     // #10990 config.base './' or '' will be changed to `/` in dev mode
     // this function is only run in dev mode and config.base is always to be an absolute path.
     // we needn't handle config.base './' or ''
-    const replacer = (url: string) => path.posix.join(devBase, url.slice(1))
+    const replacer = (url: string) => path.posix.join(devBase, url)
 
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
