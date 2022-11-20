@@ -423,10 +423,9 @@ async function fetchUpdate({
   )
 
   if (isSelfUpdate || qualifiedCallbacks.length > 0) {
-    const dep = acceptedPath
-    const disposer = disposeMap.get(dep)
-    if (disposer) await disposer(dataMap.get(dep))
-    const [path, query] = dep.split(`?`)
+    const disposer = disposeMap.get(acceptedPath)
+    if (disposer) await disposer(dataMap.get(acceptedPath))
+    const [path, query] = acceptedPath.split(`?`)
     try {
       const newMod: ModuleNamespace = await import(
         /* @vite-ignore */
@@ -436,9 +435,9 @@ async function fetchUpdate({
             query ? `&${query}` : ''
           }`
       )
-      moduleMap.set(dep, newMod)
+      moduleMap.set(acceptedPath, newMod)
     } catch (e) {
-      warnFailedFetch(e, dep)
+      warnFailedFetch(e, acceptedPath)
     }
   }
 
