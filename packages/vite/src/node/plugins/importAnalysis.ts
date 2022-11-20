@@ -63,7 +63,7 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest
 } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest } from './css'
+import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
 const isDebug = !!process.env.DEBUG
@@ -434,6 +434,33 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // strip import assertions as we can process them ourselves
         if (!isDynamicImport && assertIndex > -1) {
           str().remove(end + 1, expEnd)
+        }
+
+        if (
+          !isDynamicImport &&
+          specifier &&
+          isCSSRequest(specifier) &&
+          !isModuleCSSRequest(specifier) &&
+          !specifier.includes('?') // ignore custom queries
+        ) {
+          const sourceExp = source.slice(expStart, start)
+          if (
+            sourceExp.includes('from') && // check default and named imports
+            !sourceExp.includes('__vite_glob_') // ignore glob
+          ) {
+            const newImport =
+              sourceExp + specifier + `?inline` + source.slice(end, expEnd)
+            this.warn(
+              `\n` +
+                colors.cyan(importerModule.file) +
+                `\n` +
+                generateCodeFrame(source, start) +
+                `\n` +
+                `Default and named imports from CSS files are deprecated. ` +
+                `Use the ?inline query instead. ` +
+                `For example: ${newImport}`
+            )
+          }
         }
 
         // static import or valid string in dynamic import

@@ -106,7 +106,7 @@ export interface CSSModulesOptions {
   localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
-const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE}`)
+const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
 const directRequestRE = /(?:\?|&)direct\b/
 const htmlProxyRE = /(?:\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/

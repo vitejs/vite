@@ -1,18 +1,23 @@
 import './minify.css'
 
-import css from './imported.css'
+import './imported.css'
+import css from './imported.css?inline'
 text('.imported-css', css)
 
-import sugarss from './sugarss.sss'
+import './sugarss.sss'
+import sugarss from './sugarss.sss?inline'
 text('.imported-sugarss', sugarss)
 
-import sass from './sass.scss'
+import './sass.scss'
+import sass from './sass.scss?inline'
 text('.imported-sass', sass)
 
-import less from './less.less'
+import './less.less'
+import less from './less.less?inline'
 text('.imported-less', less)
 
-import stylus from './stylus.styl'
+import './stylus.styl'
+import stylus from './stylus.styl?inline'
 text('.imported-stylus', stylus)
 
 import rawCss from './raw-imported.css?raw'
@@ -44,7 +49,7 @@ text(
 import inlineMod from './inline.module.css?inline'
 text('.modules-inline', inlineMod)
 
-import charset from './charset.css'
+import charset from './charset.css?inline'
 text('.charset-css', charset)
 
 import './layered/index.css'
