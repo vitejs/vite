@@ -255,14 +255,13 @@ async function loadAndTransform(
     code = transformResult.code!
     map = transformResult.map
 
-    // To enable IDE debugging add a minimal sourcemap for modified non-HMR JS files without one:
+    // To enable IDE debugging, add a minimal sourcemap for modified JS files without one
     if (
       !map &&
       mod.file &&
       mod.type === 'js' &&
       code !== originalCode &&
-      !isCSSRequest(id) && // skip CSS : #9914
-      !SPECIAL_QUERY_RE.test(id) // skip special requests
+      !(isCSSRequest(id) && !SPECIAL_QUERY_RE.test(id)) // skip CSS : #9914
     ) {
       map = new MagicString(code).generateMap({ source: mod.file })
     }
