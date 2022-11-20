@@ -66,32 +66,32 @@ baseOptions.forEach(({ base, label }) => {
         expect(await getColor('.css-dynamic-import')).toBe('green')
         expect(await getLinks()).toEqual([
           {
-            pathname: expect.stringMatching(/^\/assets\/index\..+\.css$/),
+            pathname: expect.stringMatching(/^\/assets\/index-.+\.css$/),
             rel: 'stylesheet',
             as: ''
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.css$/),
+            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
             rel: 'preload',
             as: 'style'
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.js$/),
+            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.js$/),
             rel: 'modulepreload',
             as: 'script'
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.css$/),
+            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
             rel: 'stylesheet',
             as: ''
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/static\..+\.js$/),
+            pathname: expect.stringMatching(/^\/assets\/static-.+\.js$/),
             rel: 'modulepreload',
             as: 'script'
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/index\..+\.js$/),
+            pathname: expect.stringMatching(/^\/assets\/index-.+\.js$/),
             rel: 'modulepreload',
             as: 'script'
           }

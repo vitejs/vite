@@ -323,6 +323,8 @@ export type ResolvedConfig = Readonly<
     inlineConfig: InlineConfig
     root: string
     base: string
+    /** @internal */
+    rawBase: string
     publicDir: string
     cacheDir: string
     command: 'build' | 'serve'
@@ -463,8 +465,8 @@ export async function resolveConfig(
   )
 
   const clientAlias = [
-    { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
-    { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
+    { find: /^\/?@vite\/env/, replacement: () => ENV_ENTRY },
+    { find: /^\/?@vite\/client/, replacement: () => CLIENT_ENTRY }
   ]
 
   // resolve alias with internal client alias
@@ -529,9 +531,11 @@ export async function resolveConfig(
     ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
     : path.join(resolvedRoot, `.vite`)
 
-  const assetsFilter = config.assetsInclude
-    ? createFilter(config.assetsInclude)
-    : () => false
+  const assetsFilter =
+    config.assetsInclude &&
+    (!Array.isArray(config.assetsInclude) || config.assetsInclude.length)
+      ? createFilter(config.assetsInclude)
+      : () => false
 
   // create an internal resolver to be used in special scenarios, e.g.
   // optimizer & handling css @imports
@@ -626,7 +630,8 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase,
+    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -819,12 +824,6 @@ export function resolveBaseUrl(
       colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
     )
   }
-  // no ending slash warn
-  if (!base.endsWith('/')) {
-    logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
-    )
-  }
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
@@ -833,10 +832,6 @@ export function resolveBaseUrl(
     if (!base.startsWith('/')) {
       base = '/' + base
     }
-  }
-  // ensure ending slash
-  if (!base.endsWith('/')) {
-    base += '/'
   }
 
   return base

@@ -580,9 +580,7 @@ export async function runOptimizeDeps(
   if (external.length) {
     plugins.push(esbuildCjsExternalPlugin(external))
   }
-  plugins.push(
-    esbuildDepPlugin(flatIdDeps, flatIdToExports, external, config, ssr)
-  )
+  plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
   const start = performance.now()
 
@@ -612,6 +610,7 @@ export async function runOptimizeDeps(
     ignoreAnnotations: !isBuild,
     metafile: true,
     plugins,
+    charset: 'utf8',
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,

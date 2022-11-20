@@ -4,7 +4,7 @@ const path = require('node:path')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  base: '/foo/',
+  base: '/foo',
   publicDir: 'static',
   resolve: {
     alias: {

@@ -1,3 +1,5 @@
+import path from 'node:path'
+import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
@@ -12,11 +14,12 @@ import {
   readFile,
   readManifest,
   untilUpdated,
+  viteTestUrl,
   watcher
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/assets\/asset\.\w{8}\.png/
+  ? /\/foo\/assets\/asset-\w{8}\.png/
   : '/foo/nested/asset.png'
 
 const iconMatch = `/foo/icon.png`
@@ -25,6 +28,15 @@ test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
+})
+
+test('should get a 404 when using incorrect case', async () => {
+  expect((await fetch(path.posix.join(viteTestUrl, 'icon.png'))).status).toBe(
+    200
+  )
+  expect((await fetch(path.posix.join(viteTestUrl, 'ICON.png'))).status).toBe(
+    404
+  )
 })
 
 describe('injected scripts', () => {
@@ -197,8 +209,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset\.\w{8}\.png \dx/
-          : /\/foo\/nested\/asset\.png \dx/
+          ? /\/foo\/assets\/asset-\w{8}\.png \dx/
+          : /\/foo\/nested\/asset.png \dx/
       )
     })
   })
@@ -305,7 +317,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    '/foo/non-existent'
+    new URL('non-existent', page.url()).pathname
   )
 })
 
@@ -326,7 +338,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })

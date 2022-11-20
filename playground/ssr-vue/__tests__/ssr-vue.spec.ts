@@ -39,16 +39,16 @@ test('/about', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(aboutHtml).not.toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home-\w{8}\.js"/
     )
     expect(aboutHtml).not.toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home-\w{8}\.css"/
     )
     expect(aboutHtml).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/About\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/About-\w{8}\.js"/
     )
     expect(aboutHtml).toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/About\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/About-\w{8}\.css"/
     )
   }
 })
@@ -69,13 +69,13 @@ test('/external', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(externalHtml).not.toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home-\w{8}\.js"/
     )
     expect(externalHtml).not.toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home-\w{8}\.css"/
     )
     expect(externalHtml).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/External\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/External-\w{8}\.js"/
     )
   }
 })
@@ -93,23 +93,23 @@ test('/', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home-\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home-\w{8}\.css"/
     )
     // JSX component preload registration
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Foo\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Foo-\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Foo\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Foo-\w{8}\.css"/
     )
     expect(html).not.toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/About\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/About-\w{8}\.js"/
     )
     expect(html).not.toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/About\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/About-\w{8}\.css"/
     )
   }
 })
@@ -135,7 +135,7 @@ test('asset', async () => {
   })
   const img = await page.$('img')
   expect(await img.getAttribute('src')).toMatch(
-    isBuild ? /\/test\/assets\/logo\.\w{8}\.png/ : '/src/assets/logo.png'
+    isBuild ? /\/test\/assets\/logo-\w{8}\.png/ : '/src/assets/logo.png'
   )
 })
 
@@ -194,7 +194,7 @@ test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
   await page.goto(url)
   const homeHtml = await (await fetch(url)).text()
   const re =
-    /link rel="modulepreload".*?href="\/test\/assets\/(Home\.\w{8}\.js)"/
+    /link rel="modulepreload".*?href="\/test\/assets\/(Home-\w{8}\.js)"/
   const filename = re.exec(homeHtml)[1]
   const manifest = (
     await import(

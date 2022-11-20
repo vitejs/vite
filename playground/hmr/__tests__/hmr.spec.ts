@@ -145,6 +145,7 @@ if (!isBuild) {
     expect(browserLogs).toMatchObject([
       '>>> vite:beforeUpdate -- update',
       '>>> vite:invalidate -- /invalidation/child.js',
+      '[vite] invalidate /invalidation/child.js',
       '[vite] hot updated: /invalidation/child.js',
       '>>> vite:afterUpdate -- update',
       '>>> vite:beforeUpdate -- update',

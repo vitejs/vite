@@ -13,7 +13,7 @@ import type { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
 
-const directRequestRE = /(\?|&)direct\b/
+const directRequestRE = /(?:\?|&)direct\b/
 
 /**
  * Vite-specific HMR handling
@@ -35,9 +35,14 @@ export async function handleHotUpdate(
 
   let needRerender = false
   const affectedModules = new Set<ModuleNode | undefined>()
-  const mainModule = modules.find(
-    (m) => !/type=/.test(m.url) || /type=script/.test(m.url)
-  )
+  const mainModule = modules
+    .filter((m) => !/type=/.test(m.url) || /type=script/.test(m.url))
+    // #9341
+    // We pick the module with the shortest URL in order to pick the module
+    // with the lowest number of query parameters.
+    .sort((m1, m2) => {
+      return m1.url.length - m2.url.length
+    })[0]
   const templateModule = modules.find((m) => /type=template/.test(m.url))
 
   if (hasScriptChanged(prevDescriptor, descriptor)) {
@@ -207,7 +212,7 @@ function hasScriptChanged(prev: SFCDescriptor, next: SFCDescriptor): boolean {
   // this is only available in vue@^3.2.23
   const prevImports = prevResolvedScript?.imports
   if (prevImports) {
-    return next.shouldForceReload(prevImports)
+    return !next.template || next.shouldForceReload(prevImports)
   }
 
   return false

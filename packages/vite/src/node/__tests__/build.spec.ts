@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import colors from 'picocolors'
 import type { Logger } from 'vite'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputOptions } from 'rollup'
@@ -350,9 +351,19 @@ describe('resolveBuildOutputs', () => {
       name: 'entryA'
     }
 
-    const outputs = resolveBuildOutputs(undefined, libOptions, {} as Logger)
-
-    expect(outputs).toEqual([{ format: 'es' }, { format: 'umd' }])
+    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
+      { format: 'es' },
+      { format: 'umd' }
+    ])
+    expect(
+      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger)
+    ).toEqual([
+      { format: 'es', name: 'A' },
+      { format: 'umd', name: 'A' }
+    ])
+    expect(
+      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger)
+    ).toEqual([{ name: 'A' }])
   })
 
   test('default format: multiple entries', () => {
@@ -360,8 +371,72 @@ describe('resolveBuildOutputs', () => {
       entry: ['entryA.js', 'entryB.js']
     }
 
-    const outputs = resolveBuildOutputs(undefined, libOptions, {} as Logger)
+    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
+      { format: 'es' },
+      { format: 'cjs' }
+    ])
+    expect(
+      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger)
+    ).toEqual([
+      { format: 'es', name: 'A' },
+      { format: 'cjs', name: 'A' }
+    ])
+    expect(
+      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger)
+    ).toEqual([{ name: 'A' }])
+  })
 
-    expect(outputs).toEqual([{ format: 'es' }, { format: 'cjs' }])
+  test('umd or iife: should not support multiple entries', () => {
+    ;['umd', 'iife'].forEach((format) => {
+      expect(() =>
+        resolveBuildOutputs(
+          undefined,
+          {
+            entry: ['entryA.js', 'entryB.js'],
+            formats: [format as LibraryFormats]
+          },
+          {} as Logger
+        )
+      ).toThrow(
+        `Multiple entry points are not supported when output formats include "umd" or "iife".`
+      )
+    })
+  })
+
+  test('umd or iife: should define build.lib.name', () => {
+    ;['umd', 'iife'].forEach((format) => {
+      expect(() =>
+        resolveBuildOutputs(
+          undefined,
+          {
+            entry: 'entryA.js',
+            formats: [format as LibraryFormats]
+          },
+          {} as Logger
+        )
+      ).toThrow(
+        `Option "build.lib.name" is required when output formats include "umd" or "iife".`
+      )
+    })
+  })
+
+  test('array outputs: should ignore build.lib.formats', () => {
+    // @ts-expect-error mock Logger
+    const log = { warn: vi.fn() } as Logger
+    expect(
+      resolveBuildOutputs(
+        [{ name: 'A' }],
+        {
+          entry: 'entryA.js',
+          formats: ['es']
+        },
+        log
+      )
+    ).toEqual([{ name: 'A' }])
+    expect(log.warn).toHaveBeenLastCalledWith(
+      colors.yellow(
+        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`
+      )
+    )
   })
 })

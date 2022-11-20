@@ -46,21 +46,20 @@ import {
   processSrcSet,
   removeDirectQuery,
   requireResolveFromRootWithFallback,
+  stripBase,
   stripBomTag
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
-  assetFileNamesToFileName,
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename,
+  generatedAssets,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
-  renderAssetUrlInJS,
-  resolveAssetFileNames
+  renderAssetUrlInJS
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 
@@ -98,25 +97,21 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: null
+   * default: undefined
    */
-  localsConvention?:
-    | 'camelCase'
-    | 'camelCaseOnly'
-    | 'dashes'
-    | 'dashesOnly'
-    | null
+  localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
+// eslint-disable-next-line regexp/no-unused-capturing-group
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
-const directRequestRE = /(\?|&)direct\b/
-const htmlProxyRE = /(\?|&)html-proxy\b/
+const directRequestRE = /(?:\?|&)direct\b/
+const htmlProxyRE = /(?:\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
-const inlineRE = /(\?|&)inline\b/
-const inlineCSSRE = /(\?|&)inline-css\b/
-const usedRE = /(\?|&)used\b/
+const inlineRE = /(?:\?|&)inline\b/
+const inlineCSSRE = /(?:\?|&)inline-css\b/
+const usedRE = /(?:\?|&)used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -158,8 +153,6 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
-export const cssEntryFilesCache = new WeakMap<ResolvedConfig, Set<string>>()
-
 const postcssConfigCache: Record<
   string,
   WeakMap<ResolvedConfig, PostCSSConfigResult | null>
@@ -195,7 +188,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
-      cssEntryFilesCache.set(config, new Set())
     },
 
     async transform(raw, id, options) {
@@ -265,9 +257,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      (
-                        await fileToUrl(file, config, this)
-                      ).replace((config.server?.origin ?? '') + devBase, '/'),
+                      stripBase(
+                        await fileToUrl(file, config, this),
+                        (config.server?.origin ?? '') + devBase
+                      ),
                       ssr
                     )
               )
@@ -474,11 +467,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const cssEntryFiles = cssEntryFilesCache.get(config)!
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
+      const resolveAssetUrlsInCss = (
+        chunkCSS: string,
+        cssAssetName: string
+      ) => {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
 
         const relative = config.base === './' || config.base === ''
@@ -497,7 +492,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          const filename = getAssetFilename(fileHash, config) + postfix
+          const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
@@ -548,24 +543,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const lang = path.extname(cssAssetName).slice(1)
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
-          if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
-
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
-          const fileHandle = this.emitFile({
-            name: isPreProcessor(lang) ? cssAssetName : cssFileName,
-            fileName: assetFileNamesToFileName(
-              resolveAssetFileNames(config),
-              cssFileName,
-              getHash(chunkCSS),
-              chunkCSS
-            ),
+          const referenceId = this.emitFile({
+            name: path.basename(cssFileName),
             type: 'asset',
             source: chunkCSS
           })
-          chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
+          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
+          const isEntry = chunk.isEntry && isPureCssChunk
+          generatedAssets
+            .get(config)!
+            .set(referenceId, { originalName, isEntry })
+          chunk.viteMetadata.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
@@ -913,8 +905,7 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
-        // TODO: convert null to undefined (`null` should be removed from `CSSModulesOptions.localsConvention`)
-        localsConvention: modulesOptions?.localsConvention ?? undefined,
+        localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
@@ -925,9 +916,9 @@ async function compileCSS(
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
         },
-        async resolve(id: string) {
+        async resolve(id: string, importer: string) {
           for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id)
+            const resolved = await atImportResolvers[key](id, importer)
             if (resolved) {
               return path.resolve(resolved)
             }
@@ -1173,11 +1164,13 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const cssDataUriRE =
-  /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
+// Assuming a function name won't be longer than 256 chars
+// eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
+const cssImageSetRE = /(?<=image-set\()((?:[\w\-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
@@ -1233,7 +1226,7 @@ function rewriteCssUrls(
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
     const [matched, rawUrl] = match
-    return await doUrlReplace(rawUrl, matched, replacer)
+    return await doUrlReplace(rawUrl.trim(), matched, replacer)
   })
 }
 
@@ -1243,7 +1236,7 @@ function rewriteCssDataUris(
 ): Promise<string> {
   return asyncReplace(css, cssDataUriRE, async (match) => {
     const [matched, rawUrl] = match
-    return await doUrlReplace(rawUrl, matched, replacer, 'data-uri')
+    return await doUrlReplace(rawUrl.trim(), matched, replacer, 'data-uri')
   })
 }
 
@@ -1260,7 +1253,7 @@ function rewriteImportCss(
 // TODO: image and cross-fade could contain a "url" that needs to be processed
 // https://drafts.csswg.org/css-images-4/#image-notation
 // https://drafts.csswg.org/css-images-4/#cross-fade-function
-const cssNotProcessedRE = /(gradient|element|cross-fade|image)\(/
+const cssNotProcessedRE = /(?:gradient|element|cross-fade|image)\(/
 
 async function rewriteCssImageSet(
   css: string,
@@ -1389,7 +1382,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
   const atImportRE =
-    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+    /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
   while ((match = atImportRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
     // Use `appendLeft` instead of `prepend` to preserve original @import order
@@ -1399,7 +1392,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
   const atCharsetRE =
-    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+    /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
   let foundCharset = false
   while ((match = atCharsetRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
