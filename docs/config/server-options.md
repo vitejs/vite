@@ -316,3 +316,18 @@ export default defineConfig({
   }
 })
 ```
+
+## resolve.preserveSymlinks,
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Treat symlinks like real files.
+
+```js
+export default defineConfig({
+  resolve: {
+        preserveSymlinks: true,
+    },
+})
+```
