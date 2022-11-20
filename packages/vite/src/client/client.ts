@@ -414,7 +414,7 @@ async function fetchUpdate({
     return
   }
 
-  const moduleMap = new Map<string, ModuleNamespace>()
+  let fetchedModule: ModuleNamespace | undefined
   const isSelfUpdate = path === acceptedPath
 
   // determine the qualified callbacks before we re-import the modules
@@ -427,7 +427,7 @@ async function fetchUpdate({
     if (disposer) await disposer(dataMap.get(acceptedPath))
     const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
     try {
-      const newMod: ModuleNamespace = await import(
+      fetchedModule = await import(
         /* @vite-ignore */
         base +
           acceptedPathWithoutQuery.slice(1) +
@@ -435,7 +435,6 @@ async function fetchUpdate({
             query ? `&${query}` : ''
           }`
       )
-      moduleMap.set(acceptedPath, newMod)
     } catch (e) {
       warnFailedFetch(e, acceptedPath)
     }
@@ -443,7 +442,7 @@ async function fetchUpdate({
 
   return () => {
     for (const { deps, fn } of qualifiedCallbacks) {
-      fn(deps.map((dep) => moduleMap.get(dep)))
+      fn(deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)))
     }
     const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
     console.debug(`[vite] hot updated: ${loggedPath}`)
