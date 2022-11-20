@@ -96,7 +96,7 @@ const knownOptions = {
   import: ['string'],
   exhaustive: ['boolean'],
   query: ['object', 'string']
-} as const
+}
 
 const forceDefaultAs = ['raw', 'url']
 
@@ -115,8 +115,7 @@ function parseGlobOptions(
     opts = evalValue(rawOpts)
   } catch {
     throw err(
-      'Vite is unable to parse the glob options as the value is not static.' +
-        'To ignore this error, please use /* @vite-ignore */ in the worker options.',
+      'Vite is unable to parse the glob options as the value is not static',
       optsStartIndex
     )
   }
@@ -131,13 +130,25 @@ function parseGlobOptions(
     }
     const allowedTypes = knownOptions[key as keyof typeof knownOptions]
     const valueType = typeof opts[key as keyof GeneralImportGlobOptions]
-    if (!allowedTypes.some((type) => valueType === type)) {
+    if (!allowedTypes.includes(valueType)) {
       throw err(
         `Expected glob option "${key}" to be of type ${allowedTypes.join(
           ' or '
         )}, but got ${valueType}`,
         optsStartIndex
       )
+    }
+  }
+
+  if (typeof opts.query === 'object') {
+    for (const key in opts.query) {
+      const value = opts.query[key]
+      if (!['string', 'number', 'boolean'].includes(typeof value)) {
+        throw err(
+          `Expected glob option "query.${key}" to be of type string, number, or boolean, but got ${typeof value}`,
+          optsStartIndex
+        )
+      }
     }
   }
 
