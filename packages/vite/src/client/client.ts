@@ -548,8 +548,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       disposeMap.set(ownerPath, cb)
     },
 
-    // @ts-expect-error untyped
-    prune(cb: (data: any) => void) {
+    prune(cb) {
       pruneMap.set(ownerPath, cb)
     },
 
