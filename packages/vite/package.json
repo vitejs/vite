@@ -76,7 +76,7 @@
     "@rollup/plugin-dynamic-import-vars": "^2.0.1",
     "@rollup/plugin-json": "^5.0.1",
     "@rollup/plugin-node-resolve": "15.0.1",
-    "@rollup/plugin-typescript": "^8.5.0",
+    "@rollup/plugin-typescript": "^9.0.2",
     "@rollup/pluginutils": "^4.2.1",
     "acorn": "^8.8.1",
     "cac": "^6.7.14",
