@@ -5,7 +5,7 @@ import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
 import { HMR_HEADER } from '../ws'
-import { createDebugger, isObject } from '../../utils'
+import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
@@ -120,10 +120,6 @@ export function proxyMiddleware(
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
             debug(`bypass: ${req.url} -> ${bypassResult}`)
-            return next()
-          } else if (isObject(bypassResult)) {
-            Object.assign(options, bypassResult)
-            debug(`bypass: ${req.url} use modified options: %O`, options)
             return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)
