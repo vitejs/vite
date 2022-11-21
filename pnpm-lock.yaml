@@ -12,7 +12,7 @@ importers:
     specifiers:
       '@babel/types': ^7.20.2
       '@microsoft/api-extractor': ^7.33.6
-      '@rollup/plugin-typescript': ^8.5.0
+      '@rollup/plugin-typescript': ^9.0.2
       '@types/babel__core': ^7.1.20
       '@types/babel__standalone': ^7.1.4
       '@types/convert-source-map': ^1.5.2
@@ -69,7 +69,7 @@ importers:
     devDependencies:
       '@babel/types': 7.20.2
       '@microsoft/api-extractor': 7.33.6
-      '@rollup/plugin-typescript': 8.5.0_yqostt2xxzqa34b3zsesexa75y
+      '@rollup/plugin-typescript': 9.0.2_yqostt2xxzqa34b3zsesexa75y
       '@types/babel__core': 7.1.20
       '@types/babel__standalone': 7.1.4
       '@types/convert-source-map': 1.5.2
@@ -222,7 +222,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': ^2.0.1
       '@rollup/plugin-json': ^5.0.1
       '@rollup/plugin-node-resolve': 15.0.1
-      '@rollup/plugin-typescript': ^8.5.0
+      '@rollup/plugin-typescript': ^9.0.2
       '@rollup/pluginutils': ^4.2.1
       acorn: ^8.8.1
       cac: ^6.7.14
@@ -289,7 +289,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': 2.0.1_rollup@3.3.0
       '@rollup/plugin-json': 5.0.1_rollup@3.3.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.3.0
-      '@rollup/plugin-typescript': 8.5.0_rollup@3.3.0+tslib@2.4.1
+      '@rollup/plugin-typescript': 9.0.2_rollup@3.3.0+tslib@2.4.1
       '@rollup/pluginutils': 4.2.1
       acorn: 8.8.1
       cac: 6.7.14
@@ -2369,51 +2369,43 @@ packages:
       rollup: 3.3.0
     dev: true
 
-  /@rollup/plugin-typescript/8.5.0_rollup@3.3.0+tslib@2.4.1:
-    resolution: {integrity: sha512-wMv1/scv0m/rXx21wD2IsBbJFba8wGF3ErJIr6IKRfRj49S85Lszbxb4DCo8iILpluTjk2GAAu9CoZt4G3ppgQ==}
-    engines: {node: '>=8.0.0'}
+  /@rollup/plugin-typescript/9.0.2_rollup@3.3.0+tslib@2.4.1:
+    resolution: {integrity: sha512-/sS93vmHUMjzDUsl5scNQr1mUlNE1QjBBvOhmRwJCH8k2RRhDIm3c977B3wdu3t3Ap17W6dDeXP3hj1P1Un1bA==}
+    engines: {node: '>=14.0.0'}
     peerDependencies:
-      rollup: ^2.14.0
+      rollup: ^2.14.0||^3.0.0
       tslib: '*'
       typescript: '>=3.7.0'
     peerDependenciesMeta:
+      rollup:
+        optional: true
       tslib:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
       resolve: 1.22.1
       rollup: 3.3.0
       tslib: 2.4.1
     dev: true
 
-  /@rollup/plugin-typescript/8.5.0_yqostt2xxzqa34b3zsesexa75y:
-    resolution: {integrity: sha512-wMv1/scv0m/rXx21wD2IsBbJFba8wGF3ErJIr6IKRfRj49S85Lszbxb4DCo8iILpluTjk2GAAu9CoZt4G3ppgQ==}
-    engines: {node: '>=8.0.0'}
+  /@rollup/plugin-typescript/9.0.2_yqostt2xxzqa34b3zsesexa75y:
+    resolution: {integrity: sha512-/sS93vmHUMjzDUsl5scNQr1mUlNE1QjBBvOhmRwJCH8k2RRhDIm3c977B3wdu3t3Ap17W6dDeXP3hj1P1Un1bA==}
+    engines: {node: '>=14.0.0'}
     peerDependencies:
-      rollup: ^2.14.0
+      rollup: ^2.14.0||^3.0.0
       tslib: '*'
       typescript: '>=3.7.0'
     peerDependenciesMeta:
+      rollup:
+        optional: true
       tslib:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
       resolve: 1.22.1
       rollup: 3.3.0
       tslib: 2.4.1
       typescript: 4.6.4
-    dev: true
-
-  /@rollup/pluginutils/3.1.0_rollup@3.3.0:
-    resolution: {integrity: sha512-GksZ6pr6TpIjHm8h9lSQ8pi8BE9VeubNT0OMJ3B5uZJ8pz73NPiqOtCog/x2/QzM1ENChPKxMDhiQuRHsqc+lg==}
-    engines: {node: '>= 8.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0
-    dependencies:
-      '@types/estree': 0.0.39
-      estree-walker: 1.0.1
-      picomatch: 2.3.1
-      rollup: 3.3.0
     dev: true
 
   /@rollup/pluginutils/4.2.1:
@@ -2553,10 +2545,6 @@ packages:
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
     dependencies:
       '@types/ms': 0.7.31
-    dev: true
-
-  /@types/estree/0.0.39:
-    resolution: {integrity: sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==}
     dev: true
 
   /@types/estree/1.0.0:
@@ -5108,10 +5096,6 @@ packages:
   /estraverse/5.3.0:
     resolution: {integrity: sha512-MMdARuVEQziNTeJD8DgMqmhwR11BRQ/cBP+pLtYdSTnf3MIO8fFeiINEbX36ZdNlfU/7A9f3gUw49B3oQsvwBA==}
     engines: {node: '>=4.0'}
-    dev: true
-
-  /estree-walker/1.0.1:
-    resolution: {integrity: sha512-1fMXF3YP4pZZVozF8j/ZLfvnR8NSIljt56UhbZ5PeeDmmGHpgpdwQt7ITlGvYaQukCvuBRMLEiKiYC+oeIg4cg==}
     dev: true
 
   /estree-walker/2.0.2:
