@@ -352,17 +352,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
     },
 
-    renderStart(opts) {
-      // @ts-ignore
-      // In the `renderChunk` hook,
-      // we skip inlining CSS for the entry chunk because a separate CSS file
-      // would've been already linked in index.html (see #9761).
-      // But if `genModern` is set to false, the CSS still should be inlined.
-      // If in the future vite doesn't inline CSS any more (as #9920 suggests),
-      // this flag can be safely deleted.
-      opts.__vite_inline_entry_css__ = !genModern
-    },
-
     async renderChunk(raw, chunk, opts) {
       if (config.build.ssr) {
         return null
