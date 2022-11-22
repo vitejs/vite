@@ -3,15 +3,15 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   optimizeDeps: {
     include: ['dep-that-imports', 'dep-that-requires'],
-    exclude: ['vue', 'slash']
+    exclude: ['vue', 'slash5']
   },
   build: {
     minify: false,
     rollupOptions: {
-      external: ['vue', 'slash']
+      external: ['vue', 'slash3', 'slash5']
     },
     commonjsOptions: {
-      esmExternals: ['vue', 'slash']
+      esmExternals: ['vue', 'slash5']
     }
   }
 })

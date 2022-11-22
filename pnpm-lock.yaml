@@ -502,28 +502,36 @@ importers:
     specifiers:
       '@vitejs/dep-that-imports': file:./dep-that-imports
       '@vitejs/dep-that-requires': file:./dep-that-requires
+      slash3: npm:slash@^3.0.0
+      slash5: npm:slash@^5.0.0
       vite: workspace:*
       vue: ^3.2.45
     dependencies:
       '@vitejs/dep-that-imports': file:playground/external/dep-that-imports
       '@vitejs/dep-that-requires': file:playground/external/dep-that-requires
     devDependencies:
+      slash3: /slash/3.0.0
+      slash5: /slash/5.0.0
       vite: link:../../packages/vite
       vue: 3.2.45
 
   playground/external/dep-that-imports:
     specifiers:
+      slash3: npm:slash@^3.0.0
       slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
+      slash3: /slash/3.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
 
   playground/external/dep-that-requires:
     specifiers:
+      slash3: npm:slash@^3.0.0
       slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
+      slash3: /slash/3.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
 
@@ -8079,12 +8087,10 @@ packages:
   /slash/3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
-    dev: true
 
   /slash/4.0.0:
     resolution: {integrity: sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==}
     engines: {node: '>=12'}
-    dev: true
 
   /slash/5.0.0:
     resolution: {integrity: sha512-n6KkmvKS0623igEVj3FF0OZs1gYYJ0o0Hj939yc1fyxl2xt+xYpLnzJB6xBSqOfV9ZFLEWodBBN/heZJahuIJQ==}
@@ -9226,7 +9232,7 @@ packages:
     name: '@vitejs/dep-that-imports'
     version: 0.0.0
     dependencies:
-      slash: 5.0.0
+      slash3: /slash/3.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
@@ -9236,7 +9242,7 @@ packages:
     name: '@vitejs/dep-that-requires'
     version: 0.0.0
     dependencies:
-      slash: 5.0.0
+      slash3: /slash/3.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
