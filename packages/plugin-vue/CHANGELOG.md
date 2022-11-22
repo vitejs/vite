@@ -1,3 +1,9 @@
+## 4.0.0-alpha.1 (2022-11-22)
+
+* feat: dedupe the `vue` in client bundle by default (#11032) ([fae0e23](https://github.com/vitejs/vite/commit/fae0e23)), closes [#11032](https://github.com/vitejs/vite/issues/11032)
+
+
+
 ## 4.0.0-alpha.0 (2022-11-15)
 
 * fix: handle HMR for Vue SFC with query parameters (fix #9341) (#10794) ([6462ab0](https://github.com/vitejs/vite/commit/6462ab0)), closes [#9341](https://github.com/vitejs/vite/issues/9341) [#10794](https://github.com/vitejs/vite/issues/10794)
