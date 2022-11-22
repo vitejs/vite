@@ -22,6 +22,7 @@ export interface ViteHotContext {
   ): void
 
   dispose(cb: (data: any) => void): void
+  prune(cb: (data: any) => void): void
   decline(): void
   invalidate(message?: string): void
 
