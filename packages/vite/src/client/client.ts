@@ -414,7 +414,7 @@ async function fetchUpdate({
     return
   }
 
-  const moduleMap = new Map<string, ModuleNamespace>()
+  let fetchedModule: ModuleNamespace | undefined
   const isSelfUpdate = path === acceptedPath
 
   // determine the qualified callbacks before we re-import the modules
@@ -423,28 +423,26 @@ async function fetchUpdate({
   )
 
   if (isSelfUpdate || qualifiedCallbacks.length > 0) {
-    const dep = acceptedPath
-    const disposer = disposeMap.get(dep)
-    if (disposer) await disposer(dataMap.get(dep))
-    const [path, query] = dep.split(`?`)
+    const disposer = disposeMap.get(acceptedPath)
+    if (disposer) await disposer(dataMap.get(acceptedPath))
+    const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
     try {
-      const newMod: ModuleNamespace = await import(
+      fetchedModule = await import(
         /* @vite-ignore */
         base +
-          path.slice(1) +
+          acceptedPathWithoutQuery.slice(1) +
           `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
             query ? `&${query}` : ''
           }`
       )
-      moduleMap.set(dep, newMod)
     } catch (e) {
-      warnFailedFetch(e, dep)
+      warnFailedFetch(e, acceptedPath)
     }
   }
 
   return () => {
     for (const { deps, fn } of qualifiedCallbacks) {
-      fn(deps.map((dep) => moduleMap.get(dep)))
+      fn(deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)))
     }
     const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
     console.debug(`[vite] hot updated: ${loggedPath}`)
@@ -527,10 +525,10 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     accept(deps?: any, callback?: any) {
       if (typeof deps === 'function' || !deps) {
         // self-accept: hot.accept(() => {})
-        acceptDeps([ownerPath], ([mod]) => deps && deps(mod))
+        acceptDeps([ownerPath], ([mod]) => deps?.(mod))
       } else if (typeof deps === 'string') {
         // explicit deps
-        acceptDeps([deps], ([mod]) => callback && callback(mod))
+        acceptDeps([deps], ([mod]) => callback?.(mod))
       } else if (Array.isArray(deps)) {
         acceptDeps(deps, callback)
       } else {
@@ -540,8 +538,8 @@ export function createHotContext(ownerPath: string): ViteHotContext {
 
     // export names (first arg) are irrelevant on the client side, they're
     // extracted in the server for propagation
-    acceptExports(_: string | readonly string[], callback?: any) {
-      acceptDeps([ownerPath], callback && (([mod]) => callback(mod)))
+    acceptExports(_, callback) {
+      acceptDeps([ownerPath], ([mod]) => callback?.(mod))
     },
 
     dispose(cb) {
