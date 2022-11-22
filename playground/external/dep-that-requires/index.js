@@ -1,5 +1,4 @@
 const { version } = require('vue')
-const { default: slash } = require('slash')
+// require('slash5') // cannot require ESM
 
 document.querySelector('#required-vue-version').textContent = version
-document.querySelector('#required-slash-exists').textContent = !!slash

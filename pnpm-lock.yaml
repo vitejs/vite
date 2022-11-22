@@ -502,31 +502,29 @@ importers:
     specifiers:
       '@vitejs/dep-that-imports': file:./dep-that-imports
       '@vitejs/dep-that-requires': file:./dep-that-requires
-      slash: ^5.0.0
       vite: workspace:*
       vue: ^3.2.45
     dependencies:
       '@vitejs/dep-that-imports': file:playground/external/dep-that-imports
       '@vitejs/dep-that-requires': file:playground/external/dep-that-requires
     devDependencies:
-      slash: 5.0.0
       vite: link:../../packages/vite
       vue: 3.2.45
 
   playground/external/dep-that-imports:
     specifiers:
-      slash: ^5.0.0
+      slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
-      slash: 5.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
 
   playground/external/dep-that-requires:
     specifiers:
-      slash: ^5.0.0
+      slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
-      slash: 5.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
 
   playground/file-delete-restore:
@@ -9229,6 +9227,7 @@ packages:
     version: 0.0.0
     dependencies:
       slash: 5.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
 
@@ -9238,6 +9237,7 @@ packages:
     version: 0.0.0
     dependencies:
       slash: 5.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
 

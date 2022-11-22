@@ -13,7 +13,6 @@
     "@vitejs/dep-that-requires": "file:./dep-that-requires"
   },
   "devDependencies": {
-    "slash": "^5.0.0",
     "vite": "workspace:*",
     "vue": "^3.2.45"
   }
