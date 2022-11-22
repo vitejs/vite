@@ -298,9 +298,7 @@ export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
           contents:
             `import * as m from ${JSON.stringify(
               nonFacadePrefix + args.path
-            )};` +
-            `export default m.default;` +
-            `export * from ${JSON.stringify(nonFacadePrefix + args.path)};`
+            )};` + `module.exports = m;`
         })
       )
     }
