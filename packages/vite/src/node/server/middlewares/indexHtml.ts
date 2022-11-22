@@ -94,7 +94,7 @@ const processNodeUrl = (
   const devBase = config.base
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base (dev only, base is never relative)
-    const fullUrl = joinUrlSegments(devBase, url)
+    const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
   } else if (
     url.startsWith('.') &&
@@ -102,12 +102,8 @@ const processNodeUrl = (
     originalUrl !== '/' &&
     htmlPath === '/index.html'
   ) {
-    const replacer = (url: string) =>
-      path.posix.join(
-        devBase,
-        path.posix.relative(originalUrl, devBase),
-        url.slice(1)
-      )
+    // prefix with base (dev only, base is never relative)
+    const replacer = (url: string) => path.posix.join(devBase, url)
 
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
