@@ -1,3 +1,16 @@
+## 4.0.0-alpha.5 (2022-11-22)
+
+* fix(html): transform relative path with long base in /index.html (#10990) ([752740c](https://github.com/vitejs/vite/commit/752740c)), closes [#10990](https://github.com/vitejs/vite/issues/10990)
+* fix(mpa): support mpa fallback (#10985) ([61165f0](https://github.com/vitejs/vite/commit/61165f0)), closes [#10985](https://github.com/vitejs/vite/issues/10985)
+* feat(build): Use kB in build reporter (#10982) ([b57acfa](https://github.com/vitejs/vite/commit/b57acfa)), closes [#10982](https://github.com/vitejs/vite/issues/10982)
+* feat(css): upgrade postcss-modules (#10987) ([892916d](https://github.com/vitejs/vite/commit/892916d)), closes [#10987](https://github.com/vitejs/vite/issues/10987)
+* feat(hmr): invalidate message (#10946) ([0d73473](https://github.com/vitejs/vite/commit/0d73473)), closes [#10946](https://github.com/vitejs/vite/issues/10946)
+* chore: proxy bypass do nothing with object result (#10209) ([934a304](https://github.com/vitejs/vite/commit/934a304)), closes [#10209](https://github.com/vitejs/vite/issues/10209)
+* chore(deps): update all non-major dependencies (#11006) ([96f2e98](https://github.com/vitejs/vite/commit/96f2e98)), closes [#11006](https://github.com/vitejs/vite/issues/11006)
+* chore(deps): update dependency @rollup/plugin-typescript to v9 (#11007) ([0e271ff](https://github.com/vitejs/vite/commit/0e271ff)), closes [#11007](https://github.com/vitejs/vite/issues/11007)
+
+
+
 ## 4.0.0-alpha.4 (2022-11-17)
 
 * feat: align default chunk and asset file names with rollup (#10927) ([cc2adb3](https://github.com/vitejs/vite/commit/cc2adb3)), closes [#10927](https://github.com/vitejs/vite/issues/10927)
