@@ -11,7 +11,6 @@ import {
   normalizePath
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
-import type { ExportsData } from '.'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -47,7 +46,6 @@ const externalTypes = [
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
-  exportsData: Record<string, ExportsData>,
   external: string[],
   config: ResolvedConfig,
   ssr: boolean
@@ -270,7 +268,7 @@ export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
     name: 'cjs-external',
     setup(build) {
       const escape = (text: string) =>
-        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+        `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
       const filter = new RegExp(externals.map(escape).join('|'))
 
       build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {

@@ -15,6 +15,6 @@
   "devDependencies": {
     "slash": "^5.0.0",
     "vite": "workspace:*",
-    "vue": "^3.2.41"
+    "vue": "^3.2.45"
   }
 }

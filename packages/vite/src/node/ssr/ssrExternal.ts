@@ -83,7 +83,7 @@ export function cjsSsrResolveExternals(
 }
 
 const CJS_CONTENT_RE =
-  /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
+  /\bmodule\.exports\b|\bexports[.[]|\brequire\s*\(|\bObject\.(?:defineProperty|defineProperties|assign)\s*\(\s*exports\b/
 
 // TODO: use import()
 const _require = createRequire(import.meta.url)
