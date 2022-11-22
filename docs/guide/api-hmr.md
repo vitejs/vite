@@ -29,6 +29,7 @@ interface ViteHotContext {
   ): void
 
   dispose(cb: (data: any) => void): void
+  prune(cb: (data: any) => void): void
   decline(): void
   invalidate(message?: string): void
 
@@ -110,6 +111,18 @@ setupSideEffect()
 
 if (import.meta.hot) {
   import.meta.hot.dispose((data) => {
+    // cleanup side effect
+  })
+}
+```
+
+## `hot.prune(cb)`
+
+Register a callback that will call when the module is no longer imported on the page. This can be used to clean up side effects like style injections. Vite already does this for `.css` imports.
+
+```js
+if (import.meta.hot) {
+  import.meta.hot.prune((data) => {
     // cleanup side effect
   })
 }
