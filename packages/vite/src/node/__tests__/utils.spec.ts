@@ -274,7 +274,7 @@ describe('isFileReadable', () => {
 })
 
 describe('processSrcSetSync', () => {
-  test('replace srcset with base url /base/', async () => {
+  test('prepend base URL to srcset', async () => {
     const devBase = '/base/'
     expect(
       processSrcSetSync(
