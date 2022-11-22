@@ -9,6 +9,8 @@ test('importmap', () => {
 
 test('should have default exports', async () => {
   expect(await page.textContent('#imported-slash5-exists')).toBe('true')
+  expect(await page.textContent('#imported-slash3-exists')).toBe('true')
+  expect(await page.textContent('#required-slash3-exists')).toBe('true')
 })
 
 describe.runIf(isBuild)('build', () => {
