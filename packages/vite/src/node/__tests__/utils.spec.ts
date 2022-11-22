@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
@@ -9,6 +10,7 @@ import {
   isFileReadable,
   isWindows,
   posToNumber,
+  processSrcSetSync,
   resolveHostname,
   shouldServe
 } from '../utils'
@@ -269,4 +271,16 @@ describe('isFileReadable', () => {
       fs.chmodSync(testFile, '644')
     })
   }
+})
+
+describe('processSrcSetSync', () => {
+  test('prepend base URL to srcset', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        './nested/asset.png 1x, ./nested/asset.png 2x',
+        ({ url }) => path.posix.join(devBase, url)
+      )
+    ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
 })
