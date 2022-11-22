@@ -6,7 +6,7 @@ import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITEST
 
 const DYNAMIC_SCRIPTS = `
   <script type="module">

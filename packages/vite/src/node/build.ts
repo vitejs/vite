@@ -452,7 +452,12 @@ export async function build(
 async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfig(inlineConfig, 'build', 'production')
+  const config = await resolveConfig(
+    inlineConfig,
+    'build',
+    'production',
+    'production'
+  )
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib

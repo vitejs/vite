@@ -79,7 +79,7 @@ export async function render(url, rootDir) {
   html += `\n<p class="external-using-external-entry">message from external-using-external-entry: ${externalUsingExternalEntryMessage}</p>`
 
   const linkedNoExternalMessage = linkedNoExternal()
-  html += `\n<p class="linked-no-external">message from linked-no-external: ${linkedNoExternalMessage}</p>`
+  html += `\n<p class="linked-no-external">linked-no-external msg: ${linkedNoExternalMessage}</p>`
 
   html += `\n<p class="dep-virtual">message from dep-virtual: ${virtualMessage}</p>`
 
