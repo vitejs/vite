@@ -14,7 +14,7 @@ If neither of these fit your needs, you can specify custom entries using this op
 
 - **Type:** `string[]`
 
-Dependencies to exclude from pre-bundling.
+Dependencies to exclude from pre-bundling. This option will take precedence over `optimizeDeps.include`.
 
 :::warning CommonJS
 CommonJS dependencies should not be excluded from optimization. If an ESM dependency is excluded from optimization, but has a nested CommonJS dependency, the CommonJS dependency should be added to `optimizeDeps.include`. Example:
