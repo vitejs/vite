@@ -1,6 +1,8 @@
 import _debug from 'debug'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { HmrContext, ModuleNode } from 'vite'
+import { isCSSRequest } from 'vite'
+
 import {
   createDescriptor,
   getDescriptor,
@@ -153,7 +155,7 @@ export async function handleHotUpdate(
       affectedModules.add(mainModule)
     } else if (mainModule && !affectedModules.has(mainModule)) {
       const styleImporters = [...mainModule.importers].filter((m) =>
-        /\.css(?:$|\?)/.test(m.url)
+        isCSSRequest(m.url)
       )
       styleImporters.forEach((m) => affectedModules.add(m))
     }
