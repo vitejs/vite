@@ -119,9 +119,13 @@ if (import.meta.hot) {
 
 ## `hot.prune(cb)`
 
-Register a callback that will call when the module is no longer imported on the page. This can be used to clean up side effects like style injections. Vite already does this for `.css` imports.
+Register a callback that will call when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
 
 ```js
+function setupOrReuseSideEffect() {}
+
+setupOrReuseSideEffect()
+
 if (import.meta.hot) {
   import.meta.hot.prune((data) => {
     // cleanup side effect
