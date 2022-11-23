@@ -8,25 +8,30 @@ import type { Logger } from './logger'
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string | string[] = 'VITE_'
+  prefixes: string | string[] = 'VITE_',
+  logger?: Logger
 ): Record<string, string> {
-  if (mode === 'local') {
-    throw new Error(
-      `"local" cannot be used as a mode name because it conflicts with ` +
-        `the .local postfix for .env files.`
+  if (mode === 'local' && logger) {
+    logger.warn(
+      `"local" mode conflicts with the .local postfix for .env files.`
     )
   }
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
-  const envFiles = [
+  const envFiles = new Set([
     /** default file */ `.env`,
-    /** local file */ `.env.local`,
-    /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`
-  ]
+    /** local file */ `.env.local`
+  ])
+
+  if (mode) {
+    /** mode file */
+    envFiles.add(`.env.${mode}`)
+    /** mode local file */
+    envFiles.add(`.env.${mode}.local`)
+  }
 
   const parsed = Object.fromEntries(
-    envFiles.flatMap((file) => {
+    [...envFiles].flatMap((file) => {
       const path = lookupFile(envDir, [file], {
         pathOnly: true,
         rootDir: envDir
