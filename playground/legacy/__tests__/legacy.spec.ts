@@ -6,6 +6,7 @@ import {
   listAssets,
   page,
   readManifest,
+  startDefaultServe,
   untilUpdated
 } from '~utils'
 
@@ -39,6 +40,7 @@ test('wraps with iife', async () => {
 })
 
 test('generates assets', async () => {
+  await startDefaultServe('mpa')
   await untilUpdated(
     () => page.textContent('#assets'),
     isBuild
@@ -50,6 +52,30 @@ test('generates assets', async () => {
           'immutable-chunk: 200',
           'immutable-chunk-legacy: 200',
           'polyfills-legacy: 404'
+        ].join('\n')
+      : [
+          'index: 404',
+          'index-legacy: 404',
+          'chunk-async: 404',
+          'chunk-async-legacy: 404',
+          'immutable-chunk: 404',
+          'immutable-chunk-legacy: 404',
+          'polyfills-legacy: 404'
+        ].join('\n'),
+    true
+  )
+  await startDefaultServe('spa')
+  await untilUpdated(
+    () => page.textContent('#assets'),
+    isBuild
+      ? [
+          'index: 200',
+          'index-legacy: 200',
+          'chunk-async: 200',
+          'chunk-async-legacy: 200',
+          'immutable-chunk: 200',
+          'immutable-chunk-legacy: 200',
+          'polyfills-legacy: 200'
         ].join('\n')
       : [
           'index: 404',
