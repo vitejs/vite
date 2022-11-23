@@ -51,8 +51,10 @@ type TSConfigJSON = {
   extends?: string
   compilerOptions?: {
     target?: string
+    jsx?: 'preserve' | 'react' | 'react-jsx' | 'react-jsxdev' | 'react-native'
     jsxFactory?: string
     jsxFragmentFactory?: string
+    jsxImportSource?: string
     useDefineForClassFields?: boolean
     importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
     preserveValueImports?: boolean
@@ -93,8 +95,10 @@ export async function transformWithEsbuild(
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
       'target',
+      'jsx',
       'jsxFactory',
       'jsxFragmentFactory',
+      'jsxImportSource',
       'useDefineForClassFields',
       'importsNotUsedAsValues',
       'preserveValueImports'
