@@ -26,6 +26,7 @@ import { toOutputFilePathInHtml } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
+  checkUserExternal,
   getAssetFilename,
   getPublicAssetFilename,
   publicAssetUrlRE,
@@ -290,7 +291,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     url.startsWith('#') ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
-    checkPublicFile(url, config)
+    checkPublicFile(url, config) ||
+    checkUserExternal(url, config)
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 

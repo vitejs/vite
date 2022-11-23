@@ -19,7 +19,13 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
+import {
+  cleanUrl,
+  getHash,
+  getIdMatcher,
+  joinUrlSegments,
+  normalizePath
+} from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -222,6 +228,14 @@ export function checkPublicFile(
   } else {
     return
   }
+}
+
+export function checkUserExternal(
+  url: string,
+  { build }: ResolvedConfig
+): boolean {
+  const isUserExternal = getIdMatcher(build?.rollupOptions?.external)
+  return isUserExternal(url, undefined, false)
 }
 
 export async function fileToUrl(

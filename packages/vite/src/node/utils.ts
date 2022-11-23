@@ -1210,3 +1210,55 @@ export function joinUrlSegments(a: string, b: string): string {
   }
   return a + b
 }
+
+/**
+ * based on rollup
+ * https://github.com/rollup/rollup/blob/96a5ba4cafc78e20eeb885ab3bdaed1640977753/src/utils/options/normalizeInputOptions.ts#L115
+ */
+export const getIdMatcher = <T extends Array<any>>(
+  option:
+    | undefined
+    | boolean
+    | string
+    | RegExp
+    | (string | RegExp)[]
+    | ((id: string, ...parameters: T) => boolean | null | void)
+): ((id: string, ...parameters: T) => boolean) => {
+  if (option === true) {
+    return () => true
+  }
+  if (typeof option === 'function') {
+    return (id, ...parameters) =>
+      (!id.startsWith('\0') && option(id, ...parameters)) || false
+  }
+  if (option) {
+    const ids = new Set<string>()
+    const matchers: RegExp[] = []
+    for (const value of ensureArray(option)) {
+      if (value instanceof RegExp) {
+        matchers.push(value)
+      } else {
+        ids.add(value)
+      }
+    }
+    return (id: string, ..._arguments) =>
+      ids.has(id) || matchers.some((matcher) => matcher.test(id))
+  }
+  return () => false
+}
+
+/**
+ * based on rollup
+ * https://github.com/rollup/rollup/blob/96a5ba4cafc78e20eeb885ab3bdaed1640977753/src/utils/ensureArray.ts#L1
+ */
+function ensureArray<T>(
+  items: (T | false | null | undefined)[] | T | false | null | undefined
+): T[] {
+  if (Array.isArray(items)) {
+    return items.filter(Boolean) as T[]
+  }
+  if (items) {
+    return [items]
+  }
+  return []
+}
