@@ -222,6 +222,7 @@ export async function startDefaultServe(
   }
 
   const options: InlineConfig = {
+    appType,
     root: rootDir,
     logLevel: 'silent',
     configFile: false,
