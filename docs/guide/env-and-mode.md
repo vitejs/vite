@@ -120,7 +120,7 @@ VITE_APP_TITLE=My App
 
 In your app, you can render the title using `import.meta.env.VITE_APP_TITLE`.
 
-However, it is important to understand that **mode** is a wider concept than just development vs. production. A typical example is you may want to have a "staging" mode where it should have production-like behavior, but with slightly different env variables from production.
+However, it is important to understand that **mode** is a wider concept than just development vs. production. A typical example is you may want to build in a "staging" mode where it should have development-like behavior and with slightly different env variables from production.
 
 You can overwrite the default mode used for a command by passing the `--mode` option flag. For example, if you want to build your app for our hypothetical staging mode:
 
@@ -132,8 +132,8 @@ And to get the behavior we want, we need a `.env.staging` file:
 
 ```
 # .env.staging
-NODE_ENV=production
+NODE_ENV=development
 VITE_APP_TITLE=My App (staging)
 ```
 
-Now your staging app should have production-like behavior, but display a different title from production.
+Now your staging app should have development-like behavior, and display a different title from production.
