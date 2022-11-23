@@ -102,7 +102,9 @@ test('msg from external using external entry', async () => {
 
 test('msg from linked no external', async () => {
   await page.goto(url)
-  expect(await page.textContent('.linked-no-external')).toMatch('Hello World!')
+  expect(await page.textContent('.linked-no-external')).toMatch(
+    `Hello World from ${process.env.NODE_ENV}!`
+  )
 })
 
 test('msg from linked no external', async () => {

@@ -310,7 +310,7 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  const config = await resolveConfig(inlineConfig, 'serve')
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -505,11 +505,23 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server)
   })
 
-  ws.on('vite:invalidate', async ({ path }: InvalidatePayload) => {
+  ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+      config.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(path) +
+          (message ? ` ${message}` : ''),
+        { timestamp: true }
+      )
       const file = getShortName(mod.file!, config.root)
-      updateModules(file, [...mod.importers], mod.lastHMRTimestamp, server)
+      updateModules(
+        file,
+        [...mod.importers],
+        mod.lastHMRTimestamp,
+        server,
+        true
+      )
     }
   })
 

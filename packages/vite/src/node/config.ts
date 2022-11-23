@@ -372,21 +372,17 @@ export type ResolveFn = (
 export async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
-  defaultMode = 'development'
+  defaultMode = 'development',
+  defaultNodeEnv = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
-  // production-specific behavior, so set it here even though we haven't
-  // resolve the final mode yet
-  if (mode === 'production') {
-    process.env.NODE_ENV = 'production'
-  }
-  // production env would not work in serve, fallback to development
-  if (command === 'serve' && process.env.NODE_ENV === 'production') {
-    process.env.NODE_ENV = 'development'
+  // production-specific behavior, so set it early on
+  if (!process.env.NODE_ENV) {
+    process.env.NODE_ENV = defaultNodeEnv
   }
 
   const configEnv = {
@@ -533,7 +529,7 @@ export async function resolveConfig(
 
   const assetsFilter =
     config.assetsInclude &&
-    (!(config.assetsInclude instanceof Array) || config.assetsInclude.length)
+    (!Array.isArray(config.assetsInclude) || config.assetsInclude.length)
       ? createFilter(config.assetsInclude)
       : () => false
 

@@ -76,7 +76,7 @@ test('should load dynamic import with css', async () => {
 
 test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild ? /\/assets\/vite\.\w+\.svg/ : '/vite.svg'
+    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg'
   )
 })
 
@@ -116,6 +116,6 @@ describe.runIf(isBuild)('build', () => {
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
   })
 })

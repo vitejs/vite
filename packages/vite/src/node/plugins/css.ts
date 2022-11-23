@@ -916,9 +916,9 @@ async function compileCSS(
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
         },
-        async resolve(id: string) {
+        async resolve(id: string, importer: string) {
           for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id)
+            const resolved = await atImportResolvers[key](id, importer)
             if (resolved) {
               return path.resolve(resolved)
             }
