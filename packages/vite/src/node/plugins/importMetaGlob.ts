@@ -161,6 +161,10 @@ export async function parseImportGlob(
     // import.meta.glob(...)['prop']
     if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
 
+    // string coercion (GH 10949)
+    // import. meta.glob(...) + ""
+    if (ast.type === 'BinaryExpression') ast = ast.left as CallExpression
+
     if (ast.type !== 'CallExpression')
       throw err(`Expect CallExpression, got ${ast.type}`)
 
