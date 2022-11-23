@@ -14,24 +14,24 @@ vite [root]
 
 #### Options
 
-| Options                  |                                                                 |
-| ------------------------ | --------------------------------------------------------------- |
-| `--host [host]`          | [string] specify hostname                                       |
-| `--port <port>`          | [number] specify port                                           |
-| `--https`                | [boolean] use TLS + HTTP/2                                      |
-| `--open [path]`          | [boolean \| string] open browser on startup                     |
-| `--cors`                 | [boolean] enable CORS                                           |
-| `--strictPort`           | [boolean] exit if specified port is already in use              |
-| `--force`                | [boolean] force the optimizer to ignore the cache and re-bundle |
-| `-c, --config <file>`    | [string] use specified config file                              |
-| `--base <path>`          | [string] public base path (default: `/`)                        |
-| `-l, --logLevel <level>` | [string] info \| warn \| error \| silent                        |
-| `--clearScreen`          | [boolean] allow/disable clear screen when logging               |
-| `-d, --debug [feat]`     | [string \| boolean] show debug logs                             |
-| `-f, --filter <filter>`  | [string] filter debug logs                                      |
-| `-m, --mode <mode>`      | [string] set env mode                                           |
-| `-h, --help`             | Display available CLI options                                   |
-| `-v, --version`          | Display version number                                          |
+| Options                  |                                                                   |
+| ------------------------ | ----------------------------------------------------------------- |
+| `--host [host]`          | Specify hostname (`string`)                                       |
+| `--port <port>`          | Specify port (`number`)                                           |
+| `--https`                | Use TLS + HTTP/2 (`boolean`)                                      |
+| `--open [path]`          | Open browser on startup (`boolean \| string`)                     |
+| `--cors`                 | Enable CORS (`boolean`)                                           |
+| `--strictPort`           | Exit if specified port is already in use (`boolean`)              |
+| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`) |
+| `-c, --config <file>`    | Use specified config file (`string`)                              |
+| `--base <path>`          | Public base path (default: `/`) (`string`)                        |
+| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                        |
+| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)               |
+| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                             |
+| `-f, --filter <filter>`  | Filter debug logs (`string`)                                      |
+| `-m, --mode <mode>`      | Set env mode (`string`)                                           |
+| `-h, --help`             | Display available CLI options                                     |
+| `-v, --version`          | Display version number                                            |
 
 ## Build
 
@@ -47,28 +47,28 @@ vite build [root]
 
 #### Options
 
-| Options                        |                                                                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `--target <target>`            | [string] transpile target (default: `'modules'`)                                                                |
-| `--outDir <dir>`               | [string] output directory (default: `dist`)                                                                     |
-| `--assetsDir <dir>`            | [string] directory under outDir to place assets in (default: `assets`)                                          |
-| `--assetsInlineLimit <number>` | [number] static asset base64 inline threshold in bytes (default: `4096`)                                        |
-| `--ssr [entry]`                | [string] build specified entry for server-side rendering                                                        |
-| `--sourcemap`                  | [boolean] output source maps for build (default: `false`)                                                       |
-| `--minify [minifier]`          | [boolean \| "terser" \| "esbuild"] enable/disable minification, or specify minifier to use (default: `esbuild`) |
-| `--manifest [name]`            | [boolean \| string] emit build manifest json                                                                    |
-| `--ssrManifest [name]`         | [boolean \| string] emit ssr manifest json                                                                      |
-| `--force`                      | [boolean] force the optimizer to ignore the cache and re-bundle (experimental)                                  |
-| `--emptyOutDir`                | [boolean] force empty outDir when it's outside of root                                                          |
-| `-w, --watch`                  | [boolean] rebuilds when modules have changed on disk                                                            |
-| `-c, --config <file>`          | [string] use specified config file                                                                              |
-| `--base <path>`                | [string] public base path (default: `/`)                                                                        |
-| `-l, --logLevel <level>`       | [string] info \| warn \| error \| silent                                                                        |
-| `--clearScreen`                | [boolean] allow/disable clear screen when logging                                                               |
-| `-d, --debug [feat]`           | [string \| boolean] show debug logs                                                                             |
-| `-f, --filter <filter>`        | [string] filter debug logs                                                                                      |
-| `-m, --mode <mode>`            | [string] set env mode                                                                                           |
-| `-h, --help`                   | Display available CLI options                                                                                   |
+| Options                        |                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `--target <target>`            | Transpile target (default: `'modules'`) (`string`)                                                                  |
+| `--outDir <dir>`               | Output directory (default: `dist`) (`string`)                                                                       |
+| `--assetsDir <dir>`            | Directory under outDir to place assets in (default: `"assets"`) (`string`)                                          |
+| `--assetsInlineLimit <number>` | Static asset base64 inline threshold in bytes (default: `4096`) (`number`)                                          |
+| `--ssr [entry]`                | Build specified entry for server-side rendering (`string`)                                                          |
+| `--sourcemap`                  | Output source maps for build (default: `false`) (`boolean`)                                                         |
+| `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`) |
+| `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                      |
+| `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                        |
+| `--force`                      | Force the optimizer to ignore the cache and re-bundle (experimental)(`boolean`)                                     |
+| `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                            |
+| `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                              |
+| `-c, --config <file>`          | Use specified config file (`string`)                                                                                |
+| `--base <path>`                | Public base path (default: `/`) (`string`)                                                                          |
+| `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                          |
+| `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                 |
+| `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                               |
+| `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                        |
+| `-m, --mode <mode>`            | Set env mode (`string`)                                                                                             |
+| `-h, --help`                   | Display available CLI options                                                                                       |
 
 ## Others
 
@@ -84,17 +84,17 @@ vite optimize [root]
 
 #### Options
 
-| Options                  |                                                                 |
-| ------------------------ | --------------------------------------------------------------- |
-| `--force`                | [boolean] force the optimizer to ignore the cache and re-bundle |
-| `-c, --config <file>`    | [string] use specified config file                              |
-| `--base <path>`          | [string] public base path (default: `/`)                        |
-| `-l, --logLevel <level>` | [string] info \| warn \| error \| silent                        |
-| `--clearScreen`          | [boolean] allow/disable clear screen when logging               |
-| `-d, --debug [feat]`     | [string \| boolean] show debug logs                             |
-| `-f, --filter <filter>`  | [string] filter debug logs                                      |
-| `-m, --mode <mode>`      | [string] set env mode                                           |
-| `-h, --help`             | Display available CLI options                                   |
+| Options                  |                                                                   |
+| ------------------------ | ----------------------------------------------------------------- |
+| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`) |
+| `-c, --config <file>`    | Use specified config file (`string`)                              |
+| `--base <path>`          | Public base path (default: `/`) (`string`)                        |
+| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                        |
+| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)               |
+| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                             |
+| `-f, --filter <filter>`  | Filter debug logs (`string`)                                      |
+| `-m, --mode <mode>`      | Set env mode (`string`)                                           |
+| `-h, --help`             | Display available CLI options                                     |
 
 ### `vite preview`
 
@@ -108,19 +108,19 @@ vite preview [root]
 
 #### Options
 
-| Options                  |                                                    |
-| ------------------------ | -------------------------------------------------- |
-| `--host [host]`          | [string] specify hostname                          |
-| `--port <port>`          | [number] specify port                              |
-| `--strictPort`           | [boolean] exit if specified port is already in use |
-| `--https`                | [boolean] use TLS + HTTP/2                         |
-| `--open [path]`          | [boolean \| string] open browser on startup        |
-| `--outDir <dir>`         | [string] output directory (default: dist)          |
-| `-c, --config <file>`    | [string] use specified config file                 |
-| `--base <path>`          | [string] public base path (default: /)             |
-| `-l, --logLevel <level>` | [string] info \| warn \| error \| silent           |
-| `--clearScreen`          | [boolean] allow/disable clear screen when logging  |
-| `-d, --debug [feat]`     | [string \| boolean] show debug logs                |
-| `-f, --filter <filter>`  | [string] filter debug logs                         |
-| `-m, --mode <mode>`      | [string] set env mode                              |
-| `-h, --help`             | Display available CLI options                      |
+| Options                  |                                                      |
+| ------------------------ | ---------------------------------------------------- |
+| `--host [host]`          | Specify hostname (`string`)                          |
+| `--port <port>`          | Specify port (`number`)                              |
+| `--strictPort`           | Exit if specified port is already in use (`boolean`) |
+| `--https`                | Use TLS + HTTP/2 (`boolean`)                         |
+| `--open [path]`          | Open browser on startup (`boolean \| string`)        |
+| `--outDir <dir>`         | Output directory (default: dist)(`string`)           |
+| `-c, --config <file>`    | Use specified config file (`string`)                 |
+| `--base <path>`          | Public base path (default: /) (`string`)             |
+| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)           |
+| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)  |
+| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                |
+| `-f, --filter <filter>`  | Filter debug logs (`string`)                         |
+| `-m, --mode <mode>`      | Set env mode (`string`)                              |
+| `-h, --help`             | Display available CLI options                        |
