@@ -13,6 +13,7 @@ import {
   page,
   readFile,
   readManifest,
+  startDefaultServe,
   untilUpdated,
   viteTestUrl,
   watcher
@@ -31,6 +32,7 @@ test('should have no 404s', () => {
 })
 
 test('should get a 404 when using incorrect case', async () => {
+  await startDefaultServe('mpa')
   expect((await fetch(path.posix.join(viteTestUrl, 'icon.png'))).status).toBe(
     200
   )
