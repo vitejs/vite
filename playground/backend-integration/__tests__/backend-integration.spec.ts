@@ -8,6 +8,7 @@ import {
   isServe,
   page,
   readManifest,
+  startDefaultServe,
   untilUpdated
 } from '~utils'
 
@@ -70,6 +71,7 @@ describe.runIf(isServe)('serve', () => {
   })
 
   test('CSS dependencies are tracked for HMR', async () => {
+    await startDefaultServe('spa')
     const el = await page.$('h1')
     browserLogs.length = 0
 
