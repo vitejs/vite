@@ -54,10 +54,7 @@ export function servePublicMiddleware(
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    if (appType === 'spa') {
-      serve(req, res, next)
-      return
-    } else if (shouldServe(req.url!, dir)) {
+    if (shouldServe(req.url!, dir) || appType === 'spa') {
       return serve(req, res, next)
     }
     next()
