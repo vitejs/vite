@@ -46,7 +46,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       SSR: !!config.build.ssr
     }
     for (const key in env) {
-      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
+      const envVal = env[key]
+      importMetaKeys[`import.meta.env.${key}`] = typeof envVal === 'string' ? `\`${envVal}\`` : JSON.stringify(envVal)
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
