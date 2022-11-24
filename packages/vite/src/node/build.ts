@@ -415,7 +415,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      buildReporterPlugin(config),
+      ...(!config.isWorker ? [buildReporterPlugin(config)] : []),
       loadFallbackPlugin()
     ]
   }
