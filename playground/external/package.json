@@ -9,10 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/dep-that-imports-vue": "file:./dep-that-imports-vue",
-    "@vitejs/dep-that-requires-vue": "file:./dep-that-requires-vue"
+    "@vitejs/dep-that-imports": "file:./dep-that-imports",
+    "@vitejs/dep-that-requires": "file:./dep-that-requires"
   },
   "devDependencies": {
+    "slash3": "npm:slash@^3.0.0",
+    "slash5": "npm:slash@^5.0.0",
     "vite": "workspace:*",
     "vue": "^3.2.45"
   }

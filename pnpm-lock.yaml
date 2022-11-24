@@ -500,27 +500,39 @@ importers:
 
   playground/external:
     specifiers:
-      '@vitejs/dep-that-imports-vue': file:./dep-that-imports-vue
-      '@vitejs/dep-that-requires-vue': file:./dep-that-requires-vue
+      '@vitejs/dep-that-imports': file:./dep-that-imports
+      '@vitejs/dep-that-requires': file:./dep-that-requires
+      slash3: npm:slash@^3.0.0
+      slash5: npm:slash@^5.0.0
       vite: workspace:*
       vue: ^3.2.45
     dependencies:
-      '@vitejs/dep-that-imports-vue': file:playground/external/dep-that-imports-vue
-      '@vitejs/dep-that-requires-vue': file:playground/external/dep-that-requires-vue
+      '@vitejs/dep-that-imports': file:playground/external/dep-that-imports
+      '@vitejs/dep-that-requires': file:playground/external/dep-that-requires
     devDependencies:
+      slash3: /slash/3.0.0
+      slash5: /slash/5.0.0
       vite: link:../../packages/vite
       vue: 3.2.45
 
-  playground/external/dep-that-imports-vue:
+  playground/external/dep-that-imports:
     specifiers:
+      slash3: npm:slash@^3.0.0
+      slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
+      slash3: /slash/3.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
 
-  playground/external/dep-that-requires-vue:
+  playground/external/dep-that-requires:
     specifiers:
+      slash3: npm:slash@^3.0.0
+      slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
+      slash3: /slash/3.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
 
   playground/file-delete-restore:
@@ -8075,17 +8087,14 @@ packages:
   /slash/3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
-    dev: true
 
   /slash/4.0.0:
     resolution: {integrity: sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==}
     engines: {node: '>=12'}
-    dev: true
 
   /slash/5.0.0:
     resolution: {integrity: sha512-n6KkmvKS0623igEVj3FF0OZs1gYYJ0o0Hj939yc1fyxl2xt+xYpLnzJB6xBSqOfV9ZFLEWodBBN/heZJahuIJQ==}
     engines: {node: '>=14.16'}
-    dev: true
 
   /slice-ansi/3.0.0:
     resolution: {integrity: sha512-pSyv7bSTC7ig9Dcgbw9AuRNUb5k5V6oDudjZoMBSr13qpLBG7tB+zgCkARjq7xIUgdz5P1Qe8u+rSGdouOOIyQ==}
@@ -9218,19 +9227,23 @@ packages:
     version: 1.0.0
     dev: false
 
-  file:playground/external/dep-that-imports-vue:
-    resolution: {directory: playground/external/dep-that-imports-vue, type: directory}
-    name: '@vitejs/dep-that-imports-vue'
+  file:playground/external/dep-that-imports:
+    resolution: {directory: playground/external/dep-that-imports, type: directory}
+    name: '@vitejs/dep-that-imports'
     version: 0.0.0
     dependencies:
+      slash3: /slash/3.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
 
-  file:playground/external/dep-that-requires-vue:
-    resolution: {directory: playground/external/dep-that-requires-vue, type: directory}
-    name: '@vitejs/dep-that-requires-vue'
+  file:playground/external/dep-that-requires:
+    resolution: {directory: playground/external/dep-that-requires, type: directory}
+    name: '@vitejs/dep-that-requires'
     version: 0.0.0
     dependencies:
+      slash3: /slash/3.0.0
+      slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
 
