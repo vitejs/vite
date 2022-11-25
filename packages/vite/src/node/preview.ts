@@ -76,7 +76,12 @@ export type PreviewServerHook = (
 export async function preview(
   inlineConfig: InlineConfig = {}
 ): Promise<PreviewServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+  const config = await resolveConfig(
+    inlineConfig,
+    'serve',
+    'production',
+    'production'
+  )
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
