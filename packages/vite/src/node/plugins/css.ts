@@ -1495,6 +1495,31 @@ function loadPreprocessor(
   }
 }
 
+// in unix, scss might append http://localhost in environments that shim `location`
+// see https://github.com/sass/dart-sass/issues/710
+const cleanScssBugUrl = (url: string) => url.replace(/^http:\/\/localhost/, '')
+
+function fixScssBugImportValue(
+  data: Sass.ImporterReturnType
+): Sass.ImporterReturnType {
+  // the scss bug doesn't load files properly so we have to load it ourselves
+  // to prevent internal error when it loads itself
+  if (
+    // check bug via `window` and `location` global
+    typeof window !== 'undefined' &&
+    typeof location !== 'undefined' &&
+    data &&
+    // @ts-expect-error
+    data.file &&
+    // @ts-expect-error
+    data.contents == null
+  ) {
+    // @ts-expect-error
+    data.contents = fs.readFileSync(data.file, 'utf-8')
+  }
+  return data
+}
+
 // .scss/.sass processor
 const scss: SassStylePreprocessor = async (
   source,
@@ -1504,10 +1529,11 @@ const scss: SassStylePreprocessor = async (
 ) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
   const internalImporter: Sass.Importer = (url, importer, done) => {
+    importer = cleanScssBugUrl(importer)
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
         rebaseUrls(resolved, options.filename, options.alias, '$')
-          .then((data) => done?.(data))
+          .then((data) => done?.(fixScssBugImportValue(data)))
           .catch((data) => done?.(data))
       } else {
         done?.(null)
@@ -1552,7 +1578,7 @@ const scss: SassStylePreprocessor = async (
         }
       })
     })
-    const deps = result.stats.includedFiles
+    const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
     const map: ExistingRawSourceMap | undefined = result.map
       ? JSON.parse(result.map.toString())
       : undefined
