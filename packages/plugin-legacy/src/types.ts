@@ -1,3 +1,5 @@
+import type { BuildOptions } from 'vite'
+
 export interface Options {
   /**
    * default: 'defaults'
@@ -24,4 +26,8 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
+  /**
+   * default: config.build.terserOptions
+   */
+  polyfillChunksTerserOptions?: BuildOptions['terserOptions']
 }
