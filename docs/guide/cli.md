@@ -115,9 +115,9 @@ vite preview [root]
 | `--strictPort`           | Exit if specified port is already in use (`boolean`) |
 | `--https`                | Use TLS + HTTP/2 (`boolean`)                         |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)        |
-| `--outDir <dir>`         | Output directory (default: `dist`)(`string`)           |
+| `--outDir <dir>`         | Output directory (default: `dist`)(`string`)         |
 | `-c, --config <file>`    | Use specified config file (`string`)                 |
-| `--base <path>`          | Public base path (default: `/`) (`string`)             |
+| `--base <path>`          | Public base path (default: `/`) (`string`)           |
 | `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)           |
 | `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)  |
 | `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                |
