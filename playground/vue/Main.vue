@@ -5,6 +5,9 @@
   <div class="hmr-block">
     <Hmr />
   </div>
+  <div class="hmr-tsx-block">
+    <HmrTsx />
+  </div>
   <Syntax />
   <PreProcessors />
   <CssModules />
@@ -27,6 +30,7 @@
 
 <script setup lang="ts">
 import Hmr from './Hmr.vue'
+import HmrTsx from './HmrTsx.vue'
 import Syntax from './Syntax.vue'
 import PreProcessors from './PreProcessors.vue'
 import CssModules from './CssModules.vue'
