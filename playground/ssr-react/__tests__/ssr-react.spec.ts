@@ -1,12 +1,19 @@
 import fetch from 'node-fetch'
 import { expect, test } from 'vitest'
 import { port } from './serve'
-import { browserLogs, editFile, page, untilUpdated } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  page,
+  untilBrowserLogAfter,
+  untilUpdated
+} from '~utils'
 
 const url = `http://localhost:${port}`
 
 test('/env', async () => {
-  await page.goto(url + '/env')
+  await untilBrowserLogAfter(() => page.goto(url + '/env'), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('default message here')
 
   // raw http request
@@ -15,7 +22,8 @@ test('/env', async () => {
 })
 
 test('/about', async () => {
-  await page.goto(url + '/about')
+  await untilBrowserLogAfter(() => page.goto(url + '/about'), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('About')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -28,7 +36,8 @@ test('/about', async () => {
 })
 
 test('/', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('Home')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -49,7 +58,8 @@ test('hmr', async () => {
 })
 
 test('client navigation', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
   await page.click('a[href="/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
