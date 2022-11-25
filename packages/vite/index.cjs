@@ -15,7 +15,8 @@ const asyncFunctions = [
   'resolveConfig',
   'optimizeDeps',
   'formatPostcssSourceMap',
-  'loadConfigFromFile'
+  'loadConfigFromFile',
+  'preprocessCSS'
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
