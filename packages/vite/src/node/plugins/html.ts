@@ -321,7 +321,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
           path: publicPath,
-          filename: id
+          filename: id,
+          meta: {}
         })
 
         let js = ''
@@ -790,7 +791,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           path: '/' + relativeUrlPath,
           filename: id,
           bundle,
-          chunk
+          chunk,
+          meta: {}
         })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
@@ -831,12 +833,15 @@ export interface HtmlTagDescriptor {
   injectTo?: 'head' | 'body' | 'head-prepend' | 'body-prepend'
 }
 
+export interface IndexHtmlTransformMetadata {}
+
 export type IndexHtmlTransformResult =
   | string
   | HtmlTagDescriptor[]
   | {
       html: string
       tags: HtmlTagDescriptor[]
+      meta?: Partial<IndexHtmlTransformMetadata>
     }
 
 export interface IndexHtmlTransformContext {
@@ -848,6 +853,7 @@ export interface IndexHtmlTransformContext {
    * filename on disk
    */
   filename: string
+  meta: Readonly<IndexHtmlTransformMetadata>
   server?: ViteDevServer
   bundle?: OutputBundle
   chunk?: OutputChunk
@@ -953,6 +959,9 @@ export async function applyHtmlTransforms(
       } else {
         html = res.html || html
         tags = res.tags
+        if (res.meta) {
+          Object.assign(ctx.meta, res.meta)
+        }
       }
 
       const headTags: HtmlTagDescriptor[] = []
