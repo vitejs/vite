@@ -128,6 +128,8 @@ In a project where Vite is installed, you can use the `vite` binary in your npm 
 
 You can specify additional CLI options like `--port` or `--https`. For a full list of CLI options, run `npx vite --help` in your project.
 
+Learn more about the [Command Line Interface](./cli.md)
+
 ## Using Unreleased Commits
 
 If you can't wait for a new release to test the latest features, you will need to clone the [vite repo](https://github.com/vitejs/vite) to your local machine and then build and link it yourself ([pnpm](https://pnpm.io/) is required):
