@@ -77,7 +77,7 @@
     "@rollup/plugin-json": "^5.0.1",
     "@rollup/plugin-node-resolve": "15.0.1",
     "@rollup/plugin-typescript": "^9.0.2",
-    "@rollup/pluginutils": "^4.2.1",
+    "@rollup/pluginutils": "^5.0.2",
     "acorn": "^8.8.1",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
