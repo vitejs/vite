@@ -130,6 +130,10 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 
 Directly customize the underlying Rollup bundle. This is the same as options that can be exported from a Rollup config file and will be merged with Vite's internal Rollup options. See [Rollup options docs](https://rollupjs.org/guide/en/#big-list-of-options) for more details.
 
+::: tip Note
+If you specify `build.lib` but not `raw.rollupOptions.external`, Vite will automatically add all dependencies as external unless `build.lib.formats` contains `umd` or `iife`.
+:::
+
 ## build.commonjsOptions
 
 - **Type:** [`RollupCommonJSOptions`](https://github.com/rollup/plugins/tree/master/packages/commonjs#options)
