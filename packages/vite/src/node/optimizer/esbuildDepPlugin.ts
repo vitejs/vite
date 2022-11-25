@@ -16,6 +16,9 @@ const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
 
+const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
+const nonFacadePrefix = 'vite-cjs-external-facade:'
+
 const externalTypes = [
   'css',
   // supported pre-processor types
@@ -268,19 +271,36 @@ export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
         `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
       const filter = new RegExp(externals.map(escape).join('|'))
 
-      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
-        path: args.path,
-        external: true
-      }))
+      build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
+        return {
+          path: args.path.slice(nonFacadePrefix.length),
+          external: true
+        }
+      })
 
-      build.onResolve({ filter }, (args) => ({
-        path: args.path,
-        namespace: 'external'
-      }))
+      build.onResolve({ filter }, (args) => {
+        if (args.kind === 'require-call') {
+          return {
+            path: args.path,
+            namespace: cjsExternalFacadeNamespace
+          }
+        }
 
-      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-        contents: `export * from ${JSON.stringify(args.path)}`
-      }))
+        return {
+          path: args.path,
+          external: true
+        }
+      })
+
+      build.onLoad(
+        { filter: /.*/, namespace: cjsExternalFacadeNamespace },
+        (args) => ({
+          contents:
+            `import * as m from ${JSON.stringify(
+              nonFacadePrefix + args.path
+            )};` + `module.exports = m;`
+        })
+      )
     }
   }
 }
