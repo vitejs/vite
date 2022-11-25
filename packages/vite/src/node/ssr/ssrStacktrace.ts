@@ -71,3 +71,19 @@ export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
     e.stack = stacktrace
   }
 }
+
+const rewroteStacktraceSymbol = Symbol('Vite.rewroteStacktrace')
+
+export function ssrFixStacktrace(
+  e: Error & { [rewroteStacktraceSymbol]?: true },
+  moduleGraph: ModuleGraph
+): void {
+  if (!e.stack) return
+  // stacktrace shouldn't be rewritten more than once
+  if (e[rewroteStacktraceSymbol]) return
+
+  const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+  rebindErrorStacktrace(e, stacktrace)
+
+  e[rewroteStacktraceSymbol] = true
+}
