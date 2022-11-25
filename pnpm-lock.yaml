@@ -223,7 +223,7 @@ importers:
       '@rollup/plugin-json': ^5.0.1
       '@rollup/plugin-node-resolve': 15.0.1
       '@rollup/plugin-typescript': ^9.0.2
-      '@rollup/pluginutils': ^4.2.1
+      '@rollup/pluginutils': ^5.0.2
       acorn: ^8.8.1
       cac: ^6.7.14
       chokidar: ^3.5.3
@@ -290,7 +290,7 @@ importers:
       '@rollup/plugin-json': 5.0.1_rollup@3.3.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.3.0
       '@rollup/plugin-typescript': 9.0.2_rollup@3.3.0+tslib@2.4.1
-      '@rollup/pluginutils': 4.2.1
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       acorn: 8.8.1
       cac: 6.7.14
       chokidar: 3.5.3
@@ -2311,7 +2311,7 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       commondir: 1.0.1
       estree-walker: 2.0.2
       glob: 8.0.3
@@ -2329,7 +2329,7 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       estree-walker: 2.0.2
       fast-glob: 3.2.12
       magic-string: 0.26.7
@@ -2345,7 +2345,7 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       rollup: 3.3.0
     dev: true
 
@@ -2358,7 +2358,7 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       '@types/resolve': 1.20.2
       deepmerge: 4.2.2
       is-builtin-module: 3.2.0
@@ -2394,7 +2394,7 @@ packages:
       tslib:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       resolve: 1.22.1
       rollup: 3.3.0
       tslib: 2.4.1
@@ -2413,7 +2413,7 @@ packages:
       tslib:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       resolve: 1.22.1
       rollup: 3.3.0
       tslib: 2.4.1
@@ -2428,8 +2428,8 @@ packages:
       picomatch: 2.3.1
     dev: true
 
-  /@rollup/pluginutils/5.0.1_rollup@3.3.0:
-    resolution: {integrity: sha512-4HaCVEXXuObvcPUaUlLt4faHYHCeQOOWNj8NKFGaRSrw3ZLD0TWeAFZicV9vXjnE2nkNuaVTfTuwAnjR+6uc9A==}
+  /@rollup/pluginutils/5.0.2_rollup@3.3.0:
+    resolution: {integrity: sha512-pTd9rIsP92h+B6wWwFbW8RkZv4hiR/xKsqre4SIuAOaOEQRxi0lqLke9k2/7WegC85GgUs9pjmOjCUi3In4vwA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0
@@ -8091,6 +8091,7 @@ packages:
   /slash/4.0.0:
     resolution: {integrity: sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==}
     engines: {node: '>=12'}
+    dev: true
 
   /slash/5.0.0:
     resolution: {integrity: sha512-n6KkmvKS0623igEVj3FF0OZs1gYYJ0o0Hj939yc1fyxl2xt+xYpLnzJB6xBSqOfV9ZFLEWodBBN/heZJahuIJQ==}
@@ -8770,7 +8771,7 @@ packages:
       '@rollup/plugin-json': 5.0.1_rollup@3.3.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.3.0
       '@rollup/plugin-replace': 5.0.0_rollup@3.3.0
-      '@rollup/pluginutils': 5.0.1_rollup@3.3.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.3.0
       chalk: 5.1.2
       consola: 2.15.3
       defu: 6.1.0
