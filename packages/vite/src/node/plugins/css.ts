@@ -1528,6 +1528,8 @@ const scss: SassStylePreprocessor = async (
   resolvers
 ) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
+  // NOTE: `sass` always runs it's own importer first, and only falls back to
+  // the `importer` option when it can't resolve a path
   const internalImporter: Sass.Importer = (url, importer, done) => {
     importer = cleanScssBugUrl(importer)
     resolvers.sass(url, importer).then((resolved) => {
