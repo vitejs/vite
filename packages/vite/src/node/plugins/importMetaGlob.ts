@@ -155,10 +155,9 @@ export async function parseImportGlob(
       }
     }
 
-    const callExpr = findNodeAt(ast, start, undefined, 'CallExpression')
-    if (!callExpr) throw err(`Expect CallExpression, got ${ast.type}`)
-
-    ast = callExpr.node as CallExpression
+    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
+    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
+    ast = found.node as unknown as CallExpression
 
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
