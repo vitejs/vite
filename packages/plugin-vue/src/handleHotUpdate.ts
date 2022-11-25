@@ -44,6 +44,7 @@ export async function handleHotUpdate(
       return m1.url.length - m2.url.length
     })[0]
   const templateModule = modules.find((m) => /type=template/.test(m.url))
+
   const scriptChanged = hasScriptChanged(prevDescriptor, descriptor)
   if (scriptChanged) {
     let scriptModule: ModuleNode | undefined
@@ -66,7 +67,7 @@ export async function handleHotUpdate(
     // binding metadata. However, when reloading the template alone the binding
     // metadata will not be available since the script part isn't loaded.
     // in this case, reuse the compiled script from previous descriptor.
-    if (mainModule && !scriptChanged) {
+    if (!scriptChanged) {
       setResolvedScript(
         descriptor,
         getResolvedScript(prevDescriptor, false)!,
