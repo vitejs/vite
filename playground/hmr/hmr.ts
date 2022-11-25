@@ -96,7 +96,7 @@ if (import.meta.hot) {
   })
 
   import.meta.hot.on('vite:error', (event) => {
-    console.log(`>>> vite:error -- ${event.type}`)
+    console.log(`>>> vite:error -- ${event.err.message}`)
   })
 
   import.meta.hot.on('vite:invalidate', ({ path }) => {

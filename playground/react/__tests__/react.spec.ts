@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest'
 import {
-  browserLogs,
   editFile,
   isBuild,
   isServe,
   page,
+  untilBrowserLogAfter,
   untilUpdated
 } from '~utils'
 
@@ -48,23 +48,24 @@ test.runIf(isServe)(
 if (!isBuild) {
   // #9869
   test('should only hmr files with exported react components', async () => {
-    browserLogs.length = 0
-    editFile('hmr/no-exported-comp.jsx', (code) =>
-      code.replace('An Object', 'Updated')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmr/no-exported-comp.jsx', (code) =>
+          code.replace('An Object', 'Updated')
+        ),
+      [
+        '[vite] invalidate /hmr/no-exported-comp.jsx',
+        '[vite] hot updated: /hmr/no-exported-comp.jsx',
+        '[vite] hot updated: /hmr/parent.jsx',
+        'Parent rendered'
+      ],
+      true
     )
     await untilUpdated(() => page.textContent('#parent'), 'Updated')
-    expect(browserLogs).toMatchObject([
-      '[vite] invalidate /hmr/no-exported-comp.jsx',
-      '[vite] hot updated: /hmr/no-exported-comp.jsx',
-      '[vite] hot updated: /hmr/parent.jsx',
-      'Parent rendered'
-    ])
-    browserLogs.length = 0
   })
 
   // #3301
   test('should hmr react context', async () => {
-    browserLogs.length = 0
     expect(await page.textContent('#context-button')).toMatch(
       'context-based count is: 0'
     )
@@ -72,20 +73,24 @@ if (!isBuild) {
     expect(await page.textContent('#context-button')).toMatch(
       'context-based count is: 1'
     )
-    editFile('context/CountProvider.jsx', (code) =>
-      code.replace('context provider', 'context provider updated')
+
+    await untilBrowserLogAfter(
+      () =>
+        editFile('context/CountProvider.jsx', (code) =>
+          code.replace('context provider', 'context provider updated')
+        ),
+      [
+        '[vite] invalidate /context/CountProvider.jsx',
+        '[vite] hot updated: /context/CountProvider.jsx',
+        '[vite] hot updated: /App.jsx',
+        '[vite] hot updated: /context/ContextButton.jsx',
+        'Parent rendered'
+      ],
+      true
     )
     await untilUpdated(
       () => page.textContent('#context-provider'),
       'context provider updated'
     )
-    expect(browserLogs).toMatchObject([
-      '[vite] invalidate /context/CountProvider.jsx',
-      '[vite] hot updated: /context/CountProvider.jsx',
-      '[vite] hot updated: /App.jsx',
-      '[vite] hot updated: /context/ContextButton.jsx',
-      'Parent rendered'
-    ])
-    browserLogs.length = 0
   })
 }

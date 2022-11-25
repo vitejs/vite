@@ -187,12 +187,29 @@ export async function withRetry(
   await func()
 }
 
+type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
+
 export async function untilBrowserLogAfter(
   operation: () => any,
   target: string | RegExp | Array<string | RegExp>,
-  callback?: (logs: string[]) => PromiseLike<void> | void
+  expectOrder?: boolean,
+  callback?: UntilBrowserLogAfterCallback
+): Promise<string[]>
+export async function untilBrowserLogAfter(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  callback?: UntilBrowserLogAfterCallback
+): Promise<string[]>
+export async function untilBrowserLogAfter(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  arg3?: boolean | UntilBrowserLogAfterCallback,
+  arg4?: UntilBrowserLogAfterCallback
 ): Promise<string[]> {
-  const promise = untilBrowserLog(target, false)
+  const expectOrder = typeof arg3 === 'boolean' ? arg3 : false
+  const callback = typeof arg3 === 'boolean' ? arg4 : arg3
+
+  const promise = untilBrowserLog(target, expectOrder)
   await operation()
   const logs = await promise
   if (callback) {

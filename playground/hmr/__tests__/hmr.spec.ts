@@ -25,135 +25,148 @@ if (!isBuild) {
 
   test('self accept', async () => {
     const el = await page.$('.app')
-    browserLogs.length = 0
-    editFile('hmr.ts', (code) => code.replace('const foo = 1', 'const foo = 2'))
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmr.ts', (code) =>
+          code.replace('const foo = 1', 'const foo = 2')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        'foo was: 1',
+        '(self-accepting 1) foo is now: 2',
+        '(self-accepting 2) foo is now: 2',
+        '[vite] hot updated: /hmr.ts',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
+    )
     await untilUpdated(() => el.textContent(), '2')
 
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      'foo was: 1',
-      '(self-accepting 1) foo is now: 2',
-      '(self-accepting 2) foo is now: 2',
-      '[vite] hot updated: /hmr.ts',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
-
-    editFile('hmr.ts', (code) => code.replace('const foo = 2', 'const foo = 3'))
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmr.ts', (code) =>
+          code.replace('const foo = 2', 'const foo = 3')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        'foo was: 2',
+        '(self-accepting 1) foo is now: 3',
+        '(self-accepting 2) foo is now: 3',
+        '[vite] hot updated: /hmr.ts',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
+    )
     await untilUpdated(() => el.textContent(), '3')
-
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      'foo was: 2',
-      '(self-accepting 1) foo is now: 3',
-      '(self-accepting 2) foo is now: 3',
-      '[vite] hot updated: /hmr.ts',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
   })
 
   test('accept dep', async () => {
     const el = await page.$('.dep')
-
-    editFile('hmrDep.js', (code) =>
-      code.replace('const foo = 1', 'const foo = 2')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmrDep.js', (code) =>
+          code.replace('const foo = 1', 'const foo = 2')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(dep) foo was: 1',
+        '(dep) foo from dispose: 1',
+        '(single dep) foo is now: 2',
+        '(single dep) nested foo is now: 1',
+        '(multi deps) foo is now: 2',
+        '(multi deps) nested foo is now: 1',
+        '[vite] hot updated: /hmrDep.js via /hmr.ts',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
     )
     await untilUpdated(() => el.textContent(), '2')
 
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      '(dep) foo was: 1',
-      '(dep) foo from dispose: 1',
-      '(single dep) foo is now: 2',
-      '(single dep) nested foo is now: 1',
-      '(multi deps) foo is now: 2',
-      '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
-
-    editFile('hmrDep.js', (code) =>
-      code.replace('const foo = 2', 'const foo = 3')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmrDep.js', (code) =>
+          code.replace('const foo = 2', 'const foo = 3')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(dep) foo was: 2',
+        '(dep) foo from dispose: 2',
+        '(single dep) foo is now: 3',
+        '(single dep) nested foo is now: 1',
+        '(multi deps) foo is now: 3',
+        '(multi deps) nested foo is now: 1',
+        '[vite] hot updated: /hmrDep.js via /hmr.ts',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
     )
     await untilUpdated(() => el.textContent(), '3')
-
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      '(dep) foo was: 2',
-      '(dep) foo from dispose: 2',
-      '(single dep) foo is now: 3',
-      '(single dep) nested foo is now: 1',
-      '(multi deps) foo is now: 3',
-      '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
   })
 
   test('nested dep propagation', async () => {
     const el = await page.$('.nested')
-    browserLogs.length = 0
-
-    editFile('hmrNestedDep.js', (code) =>
-      code.replace('const foo = 1', 'const foo = 2')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmrNestedDep.js', (code) =>
+          code.replace('const foo = 1', 'const foo = 2')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(dep) foo was: 3',
+        '(dep) foo from dispose: 3',
+        '(single dep) foo is now: 3',
+        '(single dep) nested foo is now: 2',
+        '(multi deps) foo is now: 3',
+        '(multi deps) nested foo is now: 2',
+        '[vite] hot updated: /hmrDep.js via /hmr.ts',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
     )
     await untilUpdated(() => el.textContent(), '2')
 
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      '(dep) foo was: 3',
-      '(dep) foo from dispose: 3',
-      '(single dep) foo is now: 3',
-      '(single dep) nested foo is now: 2',
-      '(multi deps) foo is now: 3',
-      '(multi deps) nested foo is now: 2',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
-
-    editFile('hmrNestedDep.js', (code) =>
-      code.replace('const foo = 2', 'const foo = 3')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmrNestedDep.js', (code) =>
+          code.replace('const foo = 2', 'const foo = 3')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(dep) foo was: 3',
+        '(dep) foo from dispose: 3',
+        '(single dep) foo is now: 3',
+        '(single dep) nested foo is now: 3',
+        '(multi deps) foo is now: 3',
+        '(multi deps) nested foo is now: 3',
+        '[vite] hot updated: /hmrDep.js via /hmr.ts',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
     )
     await untilUpdated(() => el.textContent(), '3')
-
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      '(dep) foo was: 3',
-      '(dep) foo from dispose: 3',
-      '(single dep) foo is now: 3',
-      '(single dep) nested foo is now: 3',
-      '(multi deps) foo is now: 3',
-      '(multi deps) nested foo is now: 3',
-      '[vite] hot updated: /hmrDep.js via /hmr.ts',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
   })
 
   test('invalidate', async () => {
-    browserLogs.length = 0
     const el = await page.$('.invalidation')
-
-    editFile('invalidation/child.js', (code) =>
-      code.replace('child', 'child updated')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('invalidation/child.js', (code) =>
+          code.replace('child', 'child updated')
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '>>> vite:invalidate -- /invalidation/child.js',
+        '[vite] invalidate /invalidation/child.js',
+        '[vite] hot updated: /invalidation/child.js',
+        '>>> vite:afterUpdate -- update',
+        '>>> vite:beforeUpdate -- update',
+        '(invalidation) parent is executing',
+        '[vite] hot updated: /invalidation/parent.js',
+        '>>> vite:afterUpdate -- update'
+      ],
+      true
     )
     await untilUpdated(() => el.textContent(), 'child updated')
-    expect(browserLogs).toMatchObject([
-      '>>> vite:beforeUpdate -- update',
-      '>>> vite:invalidate -- /invalidation/child.js',
-      '[vite] invalidate /invalidation/child.js',
-      '[vite] hot updated: /invalidation/child.js',
-      '>>> vite:afterUpdate -- update',
-      '>>> vite:beforeUpdate -- update',
-      '(invalidation) parent is executing',
-      '[vite] hot updated: /invalidation/parent.js',
-      '>>> vite:afterUpdate -- update'
-    ])
-    browserLogs.length = 0
   })
 
   test('plugin hmr handler + custom event', async () => {
@@ -688,19 +701,16 @@ if (!isBuild) {
 
     await page.goto(viteTestUrl + '/missing-import/index.html')
 
-    browserLogs.length = 0
-    expect(browserLogs).toMatchObject([])
+    await untilBrowserLogAfter(async () => {
+      const navigationPromise = page.waitForNavigation({ timeout })
+      editFile(file, (code) => code.replace(importCode, unImportCode))
+      await navigationPromise
+    }, 'missing test')
 
-    editFile(file, (code) => code.replace(importCode, unImportCode))
-
-    await page.waitForNavigation({ timeout })
-    expect(browserLogs.some((msg) => msg.match('missing test'))).toBe(true)
-    browserLogs.length = 0
-
-    editFile(file, (code) => code.replace(unImportCode, importCode))
-
-    await page.waitForNavigation({ timeout })
-    expect(browserLogs.some((msg) => msg.includes('500'))).toBe(true)
-    browserLogs.length = 0
+    await untilBrowserLogAfter(async () => {
+      const navigationPromise = page.waitForNavigation({ timeout })
+      editFile(file, (code) => code.replace(unImportCode, importCode))
+      await navigationPromise
+    }, /500/)
   })
 }
