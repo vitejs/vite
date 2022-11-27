@@ -205,7 +205,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const pureCssId = getPureCssId(id, config.root)
 
         if (config.command === 'serve') {
-          return `export default "${pureCssId}"`
+          return `export default "${config.base}${pureCssId}"`
         }
 
         this.emitFile({
@@ -607,7 +607,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // connect css id with css file name
             pureCssIdMapAssetUrl.set(
               getPureCssId(chunk.facadeModuleId, config.root),
-              fileName
+              config.base + fileName
             )
           }
           chunk.viteMetadata.importedCss.add(fileName)
