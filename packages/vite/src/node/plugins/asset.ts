@@ -18,6 +18,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
+import { isCSSRequest } from './css'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
@@ -148,6 +149,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (id.startsWith('\0')) {
         // Rollup convention, this id should be handled by the
         // plugin that marked it with \0
+        return
+      }
+
+      if (isCSSRequest(id) && urlRE.test(id)) {
+        // leave css?url to css plugin
         return
       }
 

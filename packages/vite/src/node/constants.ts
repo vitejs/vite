@@ -50,6 +50,8 @@ export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
 
 export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
 
+export const URL_RE = /(\?|&)url(?:&|$)/
+
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
  */
