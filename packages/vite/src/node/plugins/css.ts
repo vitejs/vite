@@ -168,7 +168,7 @@ export function getDynamicCssAssetUrl(importUrl: string): string | undefined {
  * remove ?url from module id
  */
 export function getPureCssId(id: string, root: string): string {
-  return path.relative(root, id.replace(URL_RE, ''))
+  return path.relative(root, id.replace(/\?.+$/, ''))
 }
 
 const postcssConfigCache: Record<
