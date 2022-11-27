@@ -443,8 +443,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     },
 
     transformIndexHtml(html, { chunk }) {
-      if (config.build.ssr) return
-      if (!chunk) return
+      if (config.build.ssr || !chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
         // emitted. Here we simply record its corresponding legacy chunk.
@@ -569,16 +568,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     },
 
     generateBundle(opts, bundle) {
-      if (config.build.ssr) {
+      if (config.build.ssr || !isLegacyBundle(bundle, opts)) {
         return
       }
 
-      if (isLegacyBundle(bundle, opts)) {
-        // avoid emitting duplicate assets
-        for (const name in bundle) {
-          if (bundle[name].type === 'asset') {
-            delete bundle[name]
-          }
+      // avoid emitting duplicate assets
+      for (const name in bundle) {
+        if (bundle[name].type === 'asset') {
+          delete bundle[name]
         }
       }
     }
@@ -605,14 +602,15 @@ export async function detectPolyfills(
     ]
   })
   for (const node of ast!.program.body) {
-    if (node.type === 'ImportDeclaration') {
-      const source = node.source.value
-      if (
-        source.startsWith('core-js/') ||
-        source.startsWith('regenerator-runtime/')
-      ) {
-        list.add(source)
-      }
+    if (node.type !== 'ImportDeclaration') {
+      continue
+    }
+    const source = node.source.value
+    if (
+      source.startsWith('core-js/') ||
+      source.startsWith('regenerator-runtime/')
+    ) {
+      list.add(source)
     }
   }
 }
@@ -736,15 +734,15 @@ function isLegacyBundle(
   bundle: OutputBundle,
   options: NormalizedOutputOptions
 ) {
-  if (options.format === 'system') {
-    const entryChunk = Object.values(bundle).find(
-      (output) => output.type === 'chunk' && output.isEntry
-    )
-
-    return !!entryChunk && entryChunk.fileName.includes('-legacy')
+  if (options.format !== 'system') {
+    return false
   }
 
-  return false
+  const entryChunk = Object.values(bundle).find(
+    (output) => output.type === 'chunk' && output.isEntry
+  )
+
+  return !!entryChunk && entryChunk.fileName.includes('-legacy')
 }
 
 function recordAndRemovePolyfillBabelPlugin(
