@@ -19,7 +19,12 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
+import { URL_RE } from '../constants'
+import {
+  getDynamicCssAssetUrl,
+  isCSSRequest,
+  removedPureCssFilesCache
+} from './css'
 import { interopNamedImports } from './importAnalysis'
 
 /**
@@ -291,7 +296,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().remove(end + 1, expEnd)
         }
 
-        if (isDynamicImport && insertPreload) {
+        // css?url should not wrapped with preloadMethod
+        const isCssUrl =
+          !!specifier && isCSSRequest(specifier) && URL_RE.test(specifier)
+
+        if (isDynamicImport && insertPreload && !isCssUrl) {
           needPreloadHelper = true
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
@@ -467,6 +476,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   path.posix.dirname(chunk.fileName),
                   url
                 )
+
+                // change dynamic import to local Promise
+                const cssAssetUrl = getDynamicCssAssetUrl(normalizedFile)
+                if (cssAssetUrl) {
+                  s.update(
+                    expStart,
+                    expEnd,
+                    `Promise.resolve({default:"${cssAssetUrl}"})`
+                  )
+                }
 
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps

@@ -157,6 +157,12 @@ export const removedPureCssFilesCache = new WeakMap<
 >()
 
 export const pureCssIdMapAssetUrl = new Map<string, string>()
+export const removedDynamicCssUrlsCache = new Map<string, string>()
+
+export function getDynamicCssAssetUrl(importUrl: string): string | undefined {
+  const pureCssId = removedDynamicCssUrlsCache.get(importUrl)
+  return pureCssId ? pureCssIdMapAssetUrl.get(pureCssId) : undefined
+}
 
 /**
  * remove ?url from module id
@@ -476,6 +482,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
+      if (
+        chunk.facadeModuleId &&
+        isCSSRequest(chunk.facadeModuleId) &&
+        URL_RE.test(chunk.facadeModuleId)
+      ) {
+        // mark css url file
+        // connect fileName with pureCssId
+        const pureCssId = getPureCssId(chunk.facadeModuleId, config.root)
+        removedDynamicCssUrlsCache.set(chunk.fileName, pureCssId)
+      }
       let chunkCSS = ''
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
