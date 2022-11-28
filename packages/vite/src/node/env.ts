@@ -1,12 +1,8 @@
 import fs from 'node:fs'
-import { config, parse } from 'dotenv'
+import { parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
-
-config({
-  debug: process.env.DEBUG?.includes('vite:dotenv')
-})
 
 export function loadEnv(
   mode: string,
