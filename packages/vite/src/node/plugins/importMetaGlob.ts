@@ -1,5 +1,6 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
+import colors from 'picocolors'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
@@ -21,7 +22,14 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash, transformStableResult } from '../utils'
+import {
+  generateCodeFrame,
+  normalizePath,
+  slash,
+  transformStableResult
+} from '../utils'
+import type { Logger } from '../logger'
+import { isCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -68,6 +76,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
+        config.logger,
         config.experimental.importGlobRestoreExtension
       )
       if (result) {
@@ -318,6 +327,7 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
+  logger: Logger,
   restoreQueryExtension = false
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -373,6 +383,23 @@ export async function transformGlobImport(
             : stringifyQuery(options.query as any)
 
           if (query && !query.startsWith('?')) query = `?${query}`
+
+          if (
+            !query.match(/(?:\?|&)inline\b/) &&
+            files.some((file) => isCSSRequest(file))
+          ) {
+            logger.warn(
+              `\n` +
+                colors.cyan(id) +
+                `\n` +
+                colors.reset(generateCodeFrame(code, start)) +
+                `\n` +
+                colors.yellow(
+                  `Globbing CSS files without the ?inline query is deprecated. ` +
+                    `Add the \`{ query: '?inline' }\` glob option to fix this.`
+                )
+            )
+          }
 
           const resolvePaths = (file: string) => {
             if (!dir) {

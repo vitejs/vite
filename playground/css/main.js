@@ -1,19 +1,12 @@
 import './minify.css'
+import './imported.css'
+import './sugarss.sss'
+import './sass.scss'
+import './less.less'
+import './stylus.styl'
 
-import css from './imported.css'
+import css from './imported-inline.css?inline'
 text('.imported-css', css)
-
-import sugarss from './sugarss.sss'
-text('.imported-sugarss', sugarss)
-
-import sass from './sass.scss'
-text('.imported-sass', sass)
-
-import less from './less.less'
-text('.imported-less', less)
-
-import stylus from './stylus.styl'
-text('.imported-stylus', stylus)
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
@@ -44,7 +37,7 @@ text(
 import inlineMod from './inline.module.css?inline'
 text('.modules-inline', inlineMod)
 
-import charset from './charset.css'
+import charset from './charset.css?inline'
 text('.charset-css', charset)
 
 import './layered/index.css'
@@ -90,7 +83,7 @@ import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
 
 // glob
-const glob = import.meta.glob('./glob-import/*.css')
+const glob = import.meta.glob('./glob-import/*.css', { query: '?inline' })
 Promise.all(
   Object.keys(glob).map((key) => glob[key]().then((i) => i.default))
 ).then((res) => {
@@ -98,7 +91,10 @@ Promise.all(
 })
 
 // globEager
-const globEager = import.meta.glob('./glob-import/*.css', { eager: true })
+const globEager = import.meta.glob('./glob-import/*.css', {
+  eager: true,
+  query: '?inline'
+})
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
 import postcssSourceInput from './postcss-source-input.css?query=foo'
