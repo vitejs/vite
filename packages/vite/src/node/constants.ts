@@ -22,7 +22,7 @@ export const ESBUILD_MODULES_TARGET = [
   'edge88',
   'firefox78',
   'chrome87',
-  'safari13' // transpile nullish coalescing
+  'safari14'
 ]
 
 export const DEFAULT_EXTENSIONS = [
