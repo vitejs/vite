@@ -1042,14 +1042,36 @@ function isSingleDefaultExport(exports: readonly string[]) {
 }
 
 const lockfileFormats = [
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  'bun.lockb'
+  { name: 'package-lock.json', patchesDirs: ['patches'] }, // Default of https://github.com/ds300/patch-package
+  { name: 'yarn.lock', patchesDirs: ['patches', '.yarn/patches'] }, // .yarn/patches for v2+
+  { name: 'pnpm-lock.yaml', patchesDirs: [] }, // Included in lockfile
+  { name: 'bun.lockb', patchesDirs: ['patches'] }
 ]
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  let content = lookupFile(config.root, lockfileFormats) || ''
+  const lockfilePath = lookupFile(
+    config.root,
+    lockfileFormats.map((l) => l.name),
+    { pathOnly: true }
+  )
+  let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
+  if (lockfilePath) {
+    const lockfileName = path.basename(lockfilePath)
+    const { patchesDirs } = lockfileFormats.find(
+      (f) => f.name === lockfileName
+    )!
+    const dependenciesRoot = path.dirname(lockfilePath)
+    for (const patchesDir of patchesDirs) {
+      const fullPath = path.join(dependenciesRoot, patchesDir)
+      if (fs.existsSync(fullPath)) {
+        const stats = fs.statSync(fullPath)
+        if (stats.isDirectory()) {
+          content += stats.mtimeMs.toString()
+          break
+        }
+      }
+    }
+  }
   // also take config into account
   // only a subset of config options that can affect dep optimization
   const optimizeDeps = getDepOptimizationConfig(config, ssr)

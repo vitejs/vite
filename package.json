@@ -36,7 +36,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.20.2",
+    "@babel/types": "^7.20.5",
     "@microsoft/api-extractor": "^7.33.6",
     "@rollup/plugin-typescript": "^9.0.2",
     "@types/babel__core": "^7.1.20",
@@ -58,25 +58,25 @@
     "@types/semver": "^7.3.13",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "@typescript-eslint/parser": "^5.43.0",
+    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "@typescript-eslint/parser": "^5.44.0",
     "conventional-changelog-cli": "^2.2.2",
     "esbuild": "^0.15.9",
     "eslint": "^8.28.0",
     "eslint-define-config": "^1.12.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-regexp": "^1.10.0",
+    "eslint-plugin-regexp": "^1.11.0",
     "execa": "^6.1.0",
     "fast-glob": "^3.2.12",
     "fs-extra": "^10.1.0",
-    "lint-staged": "^13.0.3",
+    "lint-staged": "^13.0.4",
     "minimist": "^1.2.7",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.28.0",
-    "pnpm": "^7.17.0",
-    "prettier": "2.7.1",
+    "playwright-chromium": "^1.28.1",
+    "pnpm": "^7.17.1",
+    "prettier": "2.8.0",
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
     "rimraf": "^3.0.2",
@@ -90,7 +90,7 @@
     "unbuild": "^0.9.4",
     "vite": "workspace:*",
     "vitepress": "^1.0.0-alpha.29",
-    "vitest": "^0.25.2",
+    "vitest": "^0.25.3",
     "vue": "^3.2.45"
   },
   "simple-git-hooks": {
@@ -111,7 +111,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.17.0",
+  "packageManager": "pnpm@7.17.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",

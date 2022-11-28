@@ -77,9 +77,10 @@ Both `include` and `exclude` can be used to deal with this. If the dependency is
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- The `dependencies` list in your `package.json`.
-- Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lockb`.
+- Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
+- `NODE_ENV` value.
 
 The pre-bundling step will only need to be re-run when one of the above has changed.
 
