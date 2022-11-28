@@ -9,6 +9,7 @@ import {
   getColor,
   isBuild,
   page,
+  untilBrowserLogAfter,
   untilUpdated,
   viteServer
 } from '~utils'
@@ -26,7 +27,8 @@ test('vuex can be import succeed by named import', async () => {
 })
 
 test('/about', async () => {
-  await page.goto(url + 'about')
+  await untilBrowserLogAfter(() => page.goto(url + 'about'), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('About')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -39,22 +41,23 @@ test('/about', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(aboutHtml).not.toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home-\w{8}\.js"/
     )
     expect(aboutHtml).not.toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home-\w{8}\.css"/
     )
     expect(aboutHtml).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/About\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/About-\w{8}\.js"/
     )
     expect(aboutHtml).toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/About\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/About-\w{8}\.css"/
     )
   }
 })
 
 test('/external', async () => {
-  await page.goto(url + 'external')
+  await untilBrowserLogAfter(() => page.goto(url + 'external'), 'hydrated')
+
   expect(await page.textContent('div')).toMatch(
     'Example external component content'
   )
@@ -69,19 +72,20 @@ test('/external', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(externalHtml).not.toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home-\w{8}\.js"/
     )
     expect(externalHtml).not.toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home-\w{8}\.css"/
     )
     expect(externalHtml).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/External\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/External-\w{8}\.js"/
     )
   }
 })
 
 test('/', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('Home')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -93,23 +97,23 @@ test('/', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home-\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home-\w{8}\.css"/
     )
     // JSX component preload registration
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/Foo\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Foo-\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/Foo\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Foo-\w{8}\.css"/
     )
     expect(html).not.toMatch(
-      /link rel="modulepreload".*?href="\/test\/assets\/About\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/About-\w{8}\.js"/
     )
     expect(html).not.toMatch(
-      /link rel="stylesheet".*?href="\/test\/assets\/About\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/About-\w{8}\.css"/
     )
   }
 })
@@ -135,7 +139,7 @@ test('asset', async () => {
   })
   const img = await page.$('img')
   expect(await img.getAttribute('src')).toMatch(
-    isBuild ? /\/test\/assets\/logo\.\w{8}\.png/ : '/src/assets/logo.png'
+    isBuild ? /\/test\/assets\/logo-\w{8}\.png/ : '/src/assets/logo.png'
   )
 })
 
@@ -155,7 +159,8 @@ test('nested virtual module', async () => {
 })
 
 test('hydration', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
   expect(await page.textContent('button')).toMatch('1')
@@ -175,7 +180,8 @@ test(
 )
 
 test('client navigation', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   await untilUpdated(() => page.textContent('a[href="/test/about"]'), 'About')
   await page.click('a[href="/test/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
@@ -194,7 +200,7 @@ test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
   await page.goto(url)
   const homeHtml = await (await fetch(url)).text()
   const re =
-    /link rel="modulepreload".*?href="\/test\/assets\/(Home\.\w{8}\.js)"/
+    /link rel="modulepreload".*?href="\/test\/assets\/(Home-\w{8}\.js)"/
   const filename = re.exec(homeHtml)[1]
   const manifest = (
     await import(

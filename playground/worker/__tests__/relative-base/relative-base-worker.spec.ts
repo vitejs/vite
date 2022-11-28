@@ -17,7 +17,7 @@ test('normal', async () => {
   )
   await untilUpdated(
     () => page.textContent('.asset-url'),
-    isBuild ? '/worker-assets/worker_asset.vite' : '/vite.svg',
+    isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg',
     true
   )
 })
@@ -65,7 +65,7 @@ describe.runIf(isBuild)('build', () => {
       'dist/relative-base/worker-entries'
     )
     const workerFiles = fs.readdirSync(workerEntriesDir)
-    const worker = workerFiles.find((f) => f.includes('worker_entry.my-worker'))
+    const worker = workerFiles.find((f) => f.includes('worker_entry-my-worker'))
     const workerContent = fs.readFileSync(
       path.resolve(workerEntriesDir, worker),
       'utf-8'
