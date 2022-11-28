@@ -9,6 +9,7 @@ import {
   getColor,
   isBuild,
   page,
+  untilBrowserLogAfter,
   untilUpdated,
   viteServer
 } from '~utils'
@@ -26,7 +27,8 @@ test('vuex can be import succeed by named import', async () => {
 })
 
 test('/about', async () => {
-  await page.goto(url + 'about')
+  await untilBrowserLogAfter(() => page.goto(url + 'about'), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('About')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -54,7 +56,8 @@ test('/about', async () => {
 })
 
 test('/external', async () => {
-  await page.goto(url + 'external')
+  await untilBrowserLogAfter(() => page.goto(url + 'external'), 'hydrated')
+
   expect(await page.textContent('div')).toMatch(
     'Example external component content'
   )
@@ -81,7 +84,8 @@ test('/external', async () => {
 })
 
 test('/', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   expect(await page.textContent('h1')).toMatch('Home')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -155,7 +159,8 @@ test('nested virtual module', async () => {
 })
 
 test('hydration', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
   expect(await page.textContent('button')).toMatch('1')
@@ -175,7 +180,8 @@ test(
 )
 
 test('client navigation', async () => {
-  await page.goto(url)
+  await untilBrowserLogAfter(() => page.goto(url), 'hydrated')
+
   await untilUpdated(() => page.textContent('a[href="/test/about"]'), 'About')
   await page.click('a[href="/test/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')

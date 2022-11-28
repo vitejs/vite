@@ -242,8 +242,7 @@ cli
             configFile: options.config,
             logLevel: options.logLevel
           },
-          'build',
-          'development'
+          'build'
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {

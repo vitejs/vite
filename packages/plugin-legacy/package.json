@@ -38,7 +38,7 @@
     "@babel/standalone": "^7.20.4",
     "core-js": "^3.26.1",
     "magic-string": "^0.26.7",
-    "regenerator-runtime": "^0.13.10",
+    "regenerator-runtime": "^0.13.11",
     "systemjs": "^6.13.0"
   },
   "peerDependencies": {
