@@ -501,7 +501,8 @@ async function doBuild(
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
 
-  const userExternal = options.rollupOptions?.external
+  const userExternal =
+    (ssr && config.ssr?.external) || options.rollupOptions?.external
   let external = userExternal
 
   // In CJS, we can pass the externals to rollup as is. In ESM, we need to
