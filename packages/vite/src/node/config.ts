@@ -497,8 +497,17 @@ export async function resolveConfig(
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // development-like behavior is expected. This is indicated by NODE_ENV=development
   // loaded from `.staging.env` and set by us as VITE_USER_NODE_ENV
-  if (!isNodeEnvSet && process.env.VITE_USER_NODE_ENV === 'development') {
-    process.env.NODE_ENV = 'development'
+  const userNodeEnv = process.env.VITE_USER_NODE_ENV
+  if (!isNodeEnvSet && userNodeEnv) {
+    if (userNodeEnv === 'development') {
+      process.env.NODE_ENV = 'development'
+    } else {
+      logger.warn(
+        `NODE_ENV=${userNodeEnv} is not supported in the .env file. ` +
+          `This is only used to control the NODE_ENV of a build. ` +
+          `If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.`
+      )
+    }
   }
 
   const isProduction = process.env.NODE_ENV === 'production'
