@@ -30,7 +30,7 @@ import {
   transformStableResult
 } from '../utils'
 import type { Logger } from '../logger'
-import { isCSSRequest } from './css'
+import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -380,8 +380,10 @@ export async function transformGlobImport(
           if (query && !query.startsWith('?')) query = `?${query}`
 
           if (
-            !query.match(/(?:\?|&)inline\b/) &&
-            files.some((file) => isCSSRequest(file))
+            !query && // ignore custom queries
+            files.some(
+              (file) => isCSSRequest(file) && !isModuleCSSRequest(file)
+            )
           ) {
             logger.warn(
               `\n` +
