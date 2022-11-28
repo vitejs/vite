@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
-import type { Logger} from '../../../logger';
+import type { Logger } from '../../../logger'
 import { createLogger } from '../../../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
