@@ -13,7 +13,8 @@ import type { Plugin } from '../plugin'
 const CSS_LANGS_RE =
   // eslint-disable-next-line regexp/no-unused-capturing-group
   /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\\?)/
-const isCSSRequest = (request: string): boolean => CSS_LANGS_RE.test(request)
+export const isCSSRequest = (request: string): boolean =>
+  CSS_LANGS_RE.test(request)
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
 // We don't recommend using this strategy as a general solution moving forward
