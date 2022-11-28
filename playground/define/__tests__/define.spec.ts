@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import viteConfig from '../vite.config'
-import { page } from '~utils'
+import { isBuild, page } from '~utils'
 
 test('string', async () => {
   const defines = viteConfig.define
@@ -43,5 +43,11 @@ test('string', async () => {
   expect(await page.textContent('.import-json')).toBe('__EXP__')
   expect(await page.textContent('.define-in-dep')).toBe(
     defines.__STRINGIFIED_OBJ__
+  )
+  expect(await page.textContent('.import-meta-env-undefined')).toBe(
+    isBuild ? '({}).UNDEFINED' : 'import.meta.env.UNDEFINED'
+  )
+  expect(await page.textContent('.process-env-undefined')).toBe(
+    isBuild ? '({}).UNDEFINED' : 'process.env.UNDEFINED'
   )
 })
