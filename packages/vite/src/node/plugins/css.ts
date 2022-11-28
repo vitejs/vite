@@ -26,7 +26,11 @@ import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
 import { toOutputFilePathInCss } from '../build'
-import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
+import {
+  CLIENT_PUBLIC_PATH,
+  CSS_LANGS_RE,
+  SPECIAL_QUERY_RE
+} from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
@@ -102,10 +106,7 @@ export interface CSSModulesOptions {
   localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
 }
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
-// eslint-disable-next-line regexp/no-unused-capturing-group
-const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
+const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
 const directRequestRE = /(?:\?|&)direct\b/
 const htmlProxyRE = /(?:\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
@@ -135,10 +136,13 @@ type CssLang =
   | keyof typeof PostCssDialectLang
 
 export const isCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request)
+  CSS_LANGS_RE.test(request)
+
+export const isModuleCSSRequest = (request: string): boolean =>
+  cssModuleRE.test(request)
 
 export const isDirectCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request) && directRequestRE.test(request)
+  CSS_LANGS_RE.test(request) && directRequestRE.test(request)
 
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
@@ -773,7 +777,7 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
+  const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
   const postcssConfig = await resolvePostcssConfig(config, getCssDialect(lang))
 
   // 1. plain css that needs no processing

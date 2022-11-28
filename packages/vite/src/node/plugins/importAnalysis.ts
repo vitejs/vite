@@ -63,7 +63,7 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest
 } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest } from './css'
+import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
 const isDebug = !!process.env.DEBUG
@@ -436,6 +436,35 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().remove(end + 1, expEnd)
         }
 
+        if (
+          !isDynamicImport &&
+          specifier &&
+          isCSSRequest(specifier) &&
+          !isModuleCSSRequest(specifier) &&
+          !specifier.includes('?') // ignore custom queries
+        ) {
+          const sourceExp = source.slice(expStart, start)
+          if (
+            sourceExp.includes('from') && // check default and named imports
+            !sourceExp.includes('__vite_glob_') // glob handles deprecation message itself
+          ) {
+            const newImport =
+              sourceExp + specifier + `?inline` + source.slice(end, expEnd)
+            this.warn(
+              `\n` +
+                colors.cyan(importerModule.file) +
+                `\n` +
+                colors.reset(generateCodeFrame(source, start)) +
+                `\n` +
+                colors.yellow(
+                  `Default and named imports from CSS files are deprecated. ` +
+                    `Use the ?inline query instead. ` +
+                    `For example: ${newImport}`
+                )
+            )
+          }
+        }
+
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
         if (specifier) {
@@ -567,14 +596,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 `\n` +
                   colors.cyan(importerModule.file) +
                   `\n` +
-                  generateCodeFrame(source, start) +
-                  `\nThe above dynamic import cannot be analyzed by Vite.\n` +
-                  `See ${colors.blue(
-                    `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-                  )} ` +
-                  `for supported dynamic import formats. ` +
-                  `If this is intended to be left as-is, you can use the ` +
-                  `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+                  colors.reset(generateCodeFrame(source, start)) +
+                  colors.yellow(
+                    `\nThe above dynamic import cannot be analyzed by Vite.\n` +
+                      `See ${colors.blue(
+                        `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                      )} ` +
+                      `for supported dynamic import formats. ` +
+                      `If this is intended to be left as-is, you can use the ` +
+                      `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+                  )
               )
             }
           }
