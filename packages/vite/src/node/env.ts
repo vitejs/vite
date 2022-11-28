@@ -36,10 +36,17 @@ export function loadEnv(
   )
 
   // let environment variables use each other
-  expand({
-    parsed,
+  const expandParsed = expand({
+    parsed: {
+      ...(process.env as any),
+      ...parsed
+    },
     // prevent process.env mutation
     ignoreProcessEnv: true
+  }).parsed!
+
+  Object.keys(parsed).forEach((key) => {
+    parsed[key] = expandParsed[key]
   })
 
   // only keys that start with prefix are exposed to client
