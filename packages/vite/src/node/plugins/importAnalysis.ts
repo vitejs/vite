@@ -439,9 +439,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (
           !isDynamicImport &&
           specifier &&
+          !specifier.includes('?') && // ignore custom queries
           isCSSRequest(specifier) &&
-          !isModuleCSSRequest(specifier) &&
-          !specifier.includes('?') // ignore custom queries
+          !isModuleCSSRequest(specifier)
         ) {
           const sourceExp = source.slice(expStart, start)
           if (
