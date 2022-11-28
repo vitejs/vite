@@ -1,24 +1,12 @@
 import './minify.css'
-
 import './imported.css'
-import css from './imported.css?inline'
-text('.imported-css', css)
-
 import './sugarss.sss'
-import sugarss from './sugarss.sss?inline'
-text('.imported-sugarss', sugarss)
-
 import './sass.scss'
-import sass from './sass.scss?inline'
-text('.imported-sass', sass)
-
 import './less.less'
-import less from './less.less?inline'
-text('.imported-less', less)
-
 import './stylus.styl'
-import stylus from './stylus.styl?inline'
-text('.imported-stylus', stylus)
+
+import css from './imported-inline.css?inline'
+text('.imported-css', css)
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
