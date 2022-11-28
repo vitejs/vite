@@ -226,29 +226,11 @@ async function nodeImport(
   importer: string,
   resolveOptions: InternalResolveOptions
 ) {
-  // Node's module resolution is hi-jacked so Vite can ensure the
-  // configured `resolve.dedupe` and `mode` options are respected.
-  const viteResolve = (
-    id: string,
-    importer: string,
-    options = resolveOptions
-  ) => {
-    const resolved = tryNodeResolve(id, importer, options, false)
-    if (!resolved) {
-      const err: any = new Error(
-        `Cannot find module '${id}' imported from '${importer}'`
-      )
-      err.code = 'ERR_MODULE_NOT_FOUND'
-      throw err
-    }
-    return resolved.id
-  }
-
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = viteResolve(
+    const resolved = tryNodeResolve(
       id,
       importer,
       // Non-external modules can import ESM-only modules, but only outside
@@ -256,8 +238,17 @@ async function nodeImport(
       // @ts-expect-error
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
-        : resolveOptions
+        : resolveOptions,
+      false
     )
+    if (!resolved) {
+      const err: any = new Error(
+        `Cannot find module '${id}' imported from '${importer}'`
+      )
+      err.code = 'ERR_MODULE_NOT_FOUND'
+      throw err
+    }
+    url = resolved.id
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
