@@ -8,11 +8,12 @@ import {
   isServe,
   page,
   readManifest,
+  untilBrowserLogAfter,
   untilUpdated
 } from '~utils'
 
 const outerAssetMatch = isBuild
-  ? /\/dev\/assets\/logo\.\w{8}\.png/
+  ? /\/dev\/assets\/logo-\w{8}\.png/
   : /\/dev\/@fs\/.+?\/images\/logo\.png/
 
 test('should have no 404s', () => {
@@ -71,12 +72,13 @@ describe.runIf(isServe)('serve', () => {
 
   test('CSS dependencies are tracked for HMR', async () => {
     const el = await page.$('h1')
-    browserLogs.length = 0
-
-    editFile('frontend/entrypoints/main.ts', (code) =>
-      code.replace('text-black', 'text-[rgb(204,0,0)]')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('frontend/entrypoints/main.ts', (code) =>
+          code.replace('text-black', 'text-[rgb(204,0,0)]')
+        ),
+      '[vite] css hot updated: /global.css'
     )
     await untilUpdated(() => getColor(el), 'rgb(204, 0, 0)')
-    expect(browserLogs).toContain('[vite] css hot updated: /global.css')
   })
 })

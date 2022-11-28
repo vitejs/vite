@@ -46,11 +46,11 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 ## Contribution
 
-See [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
+See [Contributing Guide](CONTRIBUTING.md).
 
 ## License
 
-MIT
+[MIT](LICENSE).
 
 ## Sponsors
 

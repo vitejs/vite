@@ -298,7 +298,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           | string
           | ((chunkInfo: PreRenderedChunk) => string)
           | undefined,
-        defaultFileName = '[name]-legacy.[hash].js'
+        defaultFileName = '[name]-legacy-[hash].js'
       ): string | ((chunkInfo: PreRenderedChunk) => string) => {
         if (!fileNames) {
           return path.posix.join(config.build.assetsDir, defaultFileName)
@@ -720,7 +720,7 @@ function polyfillsPlugin(
     load(id) {
       if (id === polyfillId) {
         return (
-          [...imports].map((i) => `import "${i}";`).join('') +
+          [...imports].map((i) => `import ${JSON.stringify(i)};`).join('') +
           (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }

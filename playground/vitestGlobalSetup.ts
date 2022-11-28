@@ -9,6 +9,10 @@ const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
 let browserServer: BrowserServer | undefined
 
 export async function setup(): Promise<void> {
+  process.env.NODE_ENV = process.env.VITE_TEST_BUILD
+    ? 'production'
+    : 'development'
+
   browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI

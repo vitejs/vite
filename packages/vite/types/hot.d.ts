@@ -15,15 +15,15 @@ export interface ViteHotContext {
     cb: (mods: Array<ModuleNamespace | undefined>) => void
   ): void
 
-  acceptExports(exportNames: string | readonly string[]): void
   acceptExports(
     exportNames: string | readonly string[],
-    cb: (mod: ModuleNamespace | undefined) => void
+    cb?: (mod: ModuleNamespace | undefined) => void
   ): void
 
   dispose(cb: (data: any) => void): void
+  prune(cb: (data: any) => void): void
   decline(): void
-  invalidate(): void
+  invalidate(message?: string): void
 
   on<T extends string>(
     event: T,

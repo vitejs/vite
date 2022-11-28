@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
@@ -5,9 +7,12 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   getPotentialTsSrcPaths,
   injectQuery,
+  isFileReadable,
   isWindows,
   posToNumber,
-  resolveHostname
+  processSrcSetSync,
+  resolveHostname,
+  shouldServe
 } from '../utils'
 
 describe('injectQuery', () => {
@@ -234,5 +239,48 @@ describe('asyncFlatten', () => {
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])])
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  })
+})
+
+describe('shouldServe', () => {
+  test('returns false for malformed URLs', () => {
+    expect(shouldServe('/%c0%ae%c0%ae/etc/passwd', '/assets/dir')).toBe(false)
+  })
+})
+
+describe('isFileReadable', () => {
+  test("file doesn't exist", async () => {
+    expect(isFileReadable('/does_not_exist')).toBe(false)
+  })
+
+  const testFile = require.resolve(
+    './utils/isFileReadable/permission-test-file'
+  )
+  test('file with normal permission', async () => {
+    expect(isFileReadable(testFile)).toBe(true)
+  })
+
+  if (process.platform !== 'win32') {
+    test('file with read-only permission', async () => {
+      fs.chmodSync(testFile, '400')
+      expect(isFileReadable(testFile)).toBe(true)
+    })
+    test('file without read permission', async () => {
+      fs.chmodSync(testFile, '044')
+      expect(isFileReadable(testFile)).toBe(false)
+      fs.chmodSync(testFile, '644')
+    })
+  }
+})
+
+describe('processSrcSetSync', () => {
+  test('prepend base URL to srcset', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        './nested/asset.png 1x, ./nested/asset.png 2x',
+        ({ url }) => path.posix.join(devBase, url)
+      )
+    ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
   })
 })

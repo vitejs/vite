@@ -1,3 +1,68 @@
+## 4.0.0-alpha.5 (2022-11-22)
+
+* fix(html): transform relative path with long base in /index.html (#10990) ([752740c](https://github.com/vitejs/vite/commit/752740c)), closes [#10990](https://github.com/vitejs/vite/issues/10990)
+* fix(mpa): support mpa fallback (#10985) ([61165f0](https://github.com/vitejs/vite/commit/61165f0)), closes [#10985](https://github.com/vitejs/vite/issues/10985)
+* feat(build): Use kB in build reporter (#10982) ([b57acfa](https://github.com/vitejs/vite/commit/b57acfa)), closes [#10982](https://github.com/vitejs/vite/issues/10982)
+* feat(css): upgrade postcss-modules (#10987) ([892916d](https://github.com/vitejs/vite/commit/892916d)), closes [#10987](https://github.com/vitejs/vite/issues/10987)
+* feat(hmr): invalidate message (#10946) ([0d73473](https://github.com/vitejs/vite/commit/0d73473)), closes [#10946](https://github.com/vitejs/vite/issues/10946)
+* chore: proxy bypass do nothing with object result (#10209) ([934a304](https://github.com/vitejs/vite/commit/934a304)), closes [#10209](https://github.com/vitejs/vite/issues/10209)
+* chore(deps): update all non-major dependencies (#11006) ([96f2e98](https://github.com/vitejs/vite/commit/96f2e98)), closes [#11006](https://github.com/vitejs/vite/issues/11006)
+* chore(deps): update dependency @rollup/plugin-typescript to v9 (#11007) ([0e271ff](https://github.com/vitejs/vite/commit/0e271ff)), closes [#11007](https://github.com/vitejs/vite/issues/11007)
+
+
+
+## 4.0.0-alpha.4 (2022-11-17)
+
+* feat: align default chunk and asset file names with rollup (#10927) ([cc2adb3](https://github.com/vitejs/vite/commit/cc2adb3)), closes [#10927](https://github.com/vitejs/vite/issues/10927)
+* refactor: import version from rollup (#10964) ([9f54c6a](https://github.com/vitejs/vite/commit/9f54c6a)), closes [#10964](https://github.com/vitejs/vite/issues/10964)
+* test: improve node/build.ts ut coverage (#10786) ([411cc3d](https://github.com/vitejs/vite/commit/411cc3d)), closes [#10786](https://github.com/vitejs/vite/issues/10786)
+* chore: use isArray to check array (#10953) ([02c334a](https://github.com/vitejs/vite/commit/02c334a)), closes [#10953](https://github.com/vitejs/vite/issues/10953)
+* fix: make `addWatchFile()` work (fix #7024) (#9723) ([34db08b](https://github.com/vitejs/vite/commit/34db08b)), closes [#7024](https://github.com/vitejs/vite/issues/7024) [#9723](https://github.com/vitejs/vite/issues/9723)
+* fix(config): exclude config.assetsInclude empty array (#10941) ([18c71dc](https://github.com/vitejs/vite/commit/18c71dc)), closes [#10941](https://github.com/vitejs/vite/issues/10941)
+
+
+
+## 4.0.0-alpha.3 (2022-11-15)
+
+* fix(ssr): skip optional peer dep resolve (#10593) ([0a69985](https://github.com/vitejs/vite/commit/0a69985)), closes [#10593](https://github.com/vitejs/vite/issues/10593)
+* chore(deps): update all non-major dependencies (#10910) ([f6ad607](https://github.com/vitejs/vite/commit/f6ad607)), closes [#10910](https://github.com/vitejs/vite/issues/10910)
+* chore(deps): update dependency @rollup/plugin-node-resolve to v15 (#10911) ([65f1e4d](https://github.com/vitejs/vite/commit/65f1e4d)), closes [#10911](https://github.com/vitejs/vite/issues/10911)
+* perf: regexp perf issues, refactor regexp stylistic issues (#10905) ([fc007df](https://github.com/vitejs/vite/commit/fc007df)), closes [#10905](https://github.com/vitejs/vite/issues/10905)
+* refactor: move CSS emitFile logic closer to rollup (#10909) ([92a206b](https://github.com/vitejs/vite/commit/92a206b)), closes [#10909](https://github.com/vitejs/vite/issues/10909)
+
+
+
+## 4.0.0-alpha.2 (2022-11-13)
+
+* refactor: use rollup hashing when emitting assets (#10878) ([78c77be](https://github.com/vitejs/vite/commit/78c77be)), closes [#10878](https://github.com/vitejs/vite/issues/10878)
+* fix: don't throw on malformed URLs (#10901) ([feb9b10](https://github.com/vitejs/vite/commit/feb9b10)), closes [#10901](https://github.com/vitejs/vite/issues/10901)
+* fix: gracefully handle forbidden filesystem access (#10793) ([92637a2](https://github.com/vitejs/vite/commit/92637a2)), closes [#10793](https://github.com/vitejs/vite/issues/10793)
+* fix(types): remove `null` from `CSSModulesOptions.localsConvention` (#10904) ([a9978dd](https://github.com/vitejs/vite/commit/a9978dd)), closes [#10904](https://github.com/vitejs/vite/issues/10904)
+* refactor(types)!: remove facade type files (#10903) ([a309058](https://github.com/vitejs/vite/commit/a309058)), closes [#10903](https://github.com/vitejs/vite/issues/10903)
+* chore: cleanup PluginContext Omit (#10902) ([361c3cd](https://github.com/vitejs/vite/commit/361c3cd)), closes [#10902](https://github.com/vitejs/vite/issues/10902)
+* feat(hmr): deduplicate paths and join them with commas (#10891) ([967299a](https://github.com/vitejs/vite/commit/967299a)), closes [#10891](https://github.com/vitejs/vite/issues/10891)
+
+
+
+## 4.0.0-alpha.1 (2022-11-12)
+
+* feat: base without trailing slash (#10723) ([8f87282](https://github.com/vitejs/vite/commit/8f87282)), closes [#10723](https://github.com/vitejs/vite/issues/10723)
+* feat: handle static assets in case-sensitive manner (#10475) ([c1368c3](https://github.com/vitejs/vite/commit/c1368c3)), closes [#10475](https://github.com/vitejs/vite/issues/10475)
+* feat(cli): build --profile (#10719) ([9c808cd](https://github.com/vitejs/vite/commit/9c808cd)), closes [#10719](https://github.com/vitejs/vite/issues/10719)
+* feat(env): support dotenv-expand to contains process env (#10370) ([d5fe92c](https://github.com/vitejs/vite/commit/d5fe92c)), closes [#10370](https://github.com/vitejs/vite/issues/10370)
+* chore: remove parameters that are not used (#10747) ([df8e476](https://github.com/vitejs/vite/commit/df8e476)), closes [#10747](https://github.com/vitejs/vite/issues/10747)
+* chore(deps): update dependency @rollup/plugin-json to v5 (#10805) ([c22f50c](https://github.com/vitejs/vite/commit/c22f50c)), closes [#10805](https://github.com/vitejs/vite/issues/10805)
+* chore(deps): update to rollup 3.3 (#10890) ([2d17aa2](https://github.com/vitejs/vite/commit/2d17aa2)), closes [#10890](https://github.com/vitejs/vite/issues/10890)
+* fix: inconsistent handling of non-ASCII `base` in `resolveConfig` and dev server (#10247) ([16e4123](https://github.com/vitejs/vite/commit/16e4123)), closes [#10247](https://github.com/vitejs/vite/issues/10247)
+* fix: prevent cache on optional package resolve (#10812) ([c599a2e](https://github.com/vitejs/vite/commit/c599a2e)), closes [#10812](https://github.com/vitejs/vite/issues/10812)
+* fix: relocated logger to respect config. (#10787) ([52e64eb](https://github.com/vitejs/vite/commit/52e64eb)), closes [#10787](https://github.com/vitejs/vite/issues/10787)
+* fix: throw missing name error only when 'umd' or 'iife' are used (#9886) ([b8aa825](https://github.com/vitejs/vite/commit/b8aa825)), closes [#9886](https://github.com/vitejs/vite/issues/9886)
+* fix(deps): update all non-major dependencies (#10804) ([f686afa](https://github.com/vitejs/vite/commit/f686afa)), closes [#10804](https://github.com/vitejs/vite/issues/10804)
+* fix(ssr): improve missing file error (#10880) ([5451a34](https://github.com/vitejs/vite/commit/5451a34)), closes [#10880](https://github.com/vitejs/vite/issues/10880)
+* feat!: set esbuild default charset to utf8 (#10753) ([4caf4b6](https://github.com/vitejs/vite/commit/4caf4b6)), closes [#10753](https://github.com/vitejs/vite/issues/10753)
+
+
+
 ## 4.0.0-alpha.0 (2022-11-07)
 
 * feat: rollup 3 (#9870) ([beb7166](https://github.com/vitejs/vite/commit/beb7166)), closes [#9870](https://github.com/vitejs/vite/issues/9870)

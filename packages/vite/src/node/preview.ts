@@ -15,7 +15,7 @@ import {
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls } from './utils'
+import { resolveHostname, resolveServerUrls, shouldServe } from './utils'
 import { printServerUrls } from './logger'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
@@ -76,7 +76,12 @@ export type PreviewServerHook = (
 export async function preview(
   inlineConfig: InlineConfig = {}
 ): Promise<PreviewServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+  const config = await resolveConfig(
+    inlineConfig,
+    'serve',
+    'production',
+    'production'
+  )
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
@@ -112,21 +117,24 @@ export async function preview(
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
-  app.use(
-    previewBase,
-    sirv(distDir, {
-      etag: true,
-      dev: true,
-      single: config.appType === 'spa',
-      setHeaders(res) {
-        if (headers) {
-          for (const name in headers) {
-            res.setHeader(name, headers[name]!)
-          }
+  const assetServer = sirv(distDir, {
+    etag: true,
+    dev: true,
+    single: config.appType === 'spa',
+    setHeaders(res) {
+      if (headers) {
+        for (const name in headers) {
+          res.setHeader(name, headers[name]!)
         }
       }
-    })
-  )
+    }
+  })
+  app.use(previewBase, async (req, res, next) => {
+    if (shouldServe(req.url!, distDir)) {
+      return assetServer(req, res, next)
+    }
+    next()
+  })
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())

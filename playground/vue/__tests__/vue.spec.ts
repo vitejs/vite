@@ -116,7 +116,7 @@ describe('css modules', () => {
 
 describe('asset reference', () => {
   const assetMatch = isBuild
-    ? /\/assets\/asset\.\w{8}\.png/
+    ? /\/assets\/asset-\w{8}\.png/
     : '/assets/asset.png'
 
   test('should not 404', () => {
@@ -153,7 +153,7 @@ describe('asset reference', () => {
 
   test('relative url from <style>', async () => {
     const assetMatch = isBuild
-      ? /\/assets\/asset\.\w{8}\.png/
+      ? /\/assets\/asset-\w{8}\.png/
       : '/assets/asset.png'
     expect(await getBg('.relative-style-url')).toMatch(assetMatch)
   })
@@ -188,8 +188,16 @@ describe('hmr', () => {
   })
 
   test('should re-render when template is emptied', async () => {
-    editFile('Hmr.vue', () => '')
+    editFile('Hmr.vue', (code) => code.replace(/<template>.+<\/template>/s, ''))
     await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
+  })
+
+  test('should re-render when template and tsx script both changed', async () => {
+    editFile('HmrTsx.vue', (code) => code.replace(/count/g, 'updatedCount'))
+    await untilUpdated(
+      () => page.innerHTML('.hmr-tsx-block .hmr-tsx-inc'),
+      'updatedCount is 0'
+    )
   })
 })
 
@@ -261,5 +269,13 @@ describe('setup import template', () => {
 describe('vue worker', () => {
   test('should work', async () => {
     expect(await page.textContent('.vue-worker')).toMatch('worker load!')
+  })
+})
+
+describe('import with ?url', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.import-with-url-query')).toMatch(
+      isBuild ? /^data:/ : '/Null.vue'
+    )
   })
 })

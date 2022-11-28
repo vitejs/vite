@@ -415,7 +415,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      buildReporterPlugin(config),
+      ...(!config.isWorker ? [buildReporterPlugin(config)] : []),
       loadFallbackPlugin()
     ]
   }
@@ -452,7 +452,12 @@ export async function build(
 async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfig(inlineConfig, 'build', 'production')
+  const config = await resolveConfig(
+    inlineConfig,
+    'build',
+    'production',
+    'production'
+  )
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib
@@ -576,13 +581,13 @@ async function doBuild(
           : libOptions
           ? ({ name }) =>
               resolveLibFilename(libOptions, format, name, config.root, jsExt)
-          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
+          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
-          ? `[name].[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
+          ? `[name]-[hash].${jsExt}`
+          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         assetFileNames: libOptions
           ? `[name].[ext]`
-          : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
+          : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
@@ -783,41 +788,49 @@ export function resolveBuildOutputs(
   logger: Logger
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
-    const hasMultipleEntries =
+    const libHasMultipleEntries =
       typeof libOptions.entry !== 'string' &&
       Object.values(libOptions.entry).length > 1
+    const libFormats =
+      libOptions.formats ||
+      (libHasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
 
-    const formats =
-      libOptions.formats || (hasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
+    if (!Array.isArray(outputs)) {
+      if (libFormats.includes('umd') || libFormats.includes('iife')) {
+        if (libHasMultipleEntries) {
+          throw new Error(
+            'Multiple entry points are not supported when output formats include "umd" or "iife".'
+          )
+        }
 
-    if (formats.includes('umd') || formats.includes('iife')) {
-      if (hasMultipleEntries) {
-        throw new Error(
-          `Multiple entry points are not supported when output formats include "umd" or "iife".`
-        )
+        if (!libOptions.name) {
+          throw new Error(
+            'Option "build.lib.name" is required when output formats include "umd" or "iife".'
+          )
+        }
       }
 
-      if (!libOptions.name) {
-        throw new Error(
-          `Option "build.lib.name" is required when output formats ` +
-            `include "umd" or "iife".`
-        )
-      }
+      return libFormats.map((format) => ({ ...outputs, format }))
     }
-    if (!outputs) {
-      return formats.map((format) => ({ format }))
-    } else if (!Array.isArray(outputs)) {
-      return formats.map((format) => ({ ...outputs, format }))
-    } else if (libOptions.formats) {
-      // user explicitly specifying own output array
+
+    // By this point, we know "outputs" is an Array.
+    if (libOptions.formats) {
       logger.warn(
         colors.yellow(
-          `"build.lib.formats" will be ignored because ` +
-            `"build.rollupOptions.output" is already an array format`
+          '"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.'
         )
       )
     }
+
+    outputs.forEach((output) => {
+      if (['umd', 'iife'].includes(output.format!) && !output.name) {
+        throw new Error(
+          'Entries in "build.rollupOptions.output" must specify "name" when the format is "umd" or "iife".'
+        )
+      }
+    })
   }
+
   return outputs
 }
 
@@ -1130,7 +1143,7 @@ export function toOutputFilePathWithoutRuntime(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return config.base + filename
+    return joinUrlSegments(config.base, filename)
   }
 }
 

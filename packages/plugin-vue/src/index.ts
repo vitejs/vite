@@ -128,6 +128,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     config(config) {
       return {
+        resolve: {
+          dedupe: config.build?.ssr ? [] : ['vue']
+        },
         define: {
           __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
           __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
@@ -207,7 +210,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     transform(code, id, opt) {
       const ssr = opt?.ssr === true
       const { filename, query } = parseVueRequest(id)
-      if (query.raw) {
+      if (query.raw || query.url) {
         return
       }
       if (!filter(filename) && !query.vue) {
