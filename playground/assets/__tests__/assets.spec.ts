@@ -1,3 +1,5 @@
+import path from 'node:path'
+import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
@@ -12,11 +14,12 @@ import {
   readFile,
   readManifest,
   untilUpdated,
+  viteTestUrl,
   watcher
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/assets\/asset\.\w{8}\.png/
+  ? /\/foo\/assets\/asset-\w{8}\.png/
   : '/foo/nested/asset.png'
 
 const iconMatch = `/foo/icon.png`
@@ -25,6 +28,15 @@ test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
+})
+
+test('should get a 404 when using incorrect case', async () => {
+  expect((await fetch(path.posix.join(viteTestUrl, 'icon.png'))).status).toBe(
+    200
+  )
+  expect((await fetch(path.posix.join(viteTestUrl, 'ICON.png'))).status).toBe(
+    404
+  )
 })
 
 describe('injected scripts', () => {
@@ -197,8 +209,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset\.\w{8}\.png \d{1}x/
-          : /\/foo\/nested\/asset\.png \d{1}x/
+          ? /\/foo\/assets\/asset-\w{8}\.png \dx/
+          : /\/foo\/nested\/asset.png \dx/
       )
     })
   })
@@ -272,13 +284,23 @@ describe.runIf(isBuild)('encodeURI', () => {
   test('img src with encodeURI', async () => {
     const img = await page.$('.encodeURI')
     expect(
-      await (await img.getAttribute('src')).startsWith('data:image/png;base64')
+      (await img.getAttribute('src')).startsWith('data:image/png;base64')
     ).toBe(true)
   })
 })
 
 test('new URL(..., import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+})
+
+test('new URL("@/...", import.meta.url)', async () => {
+  expect(await page.textContent('.import-meta-url-dep')).toMatch(assetMatch)
+})
+
+test('new URL("/...", import.meta.url)', async () => {
+  expect(await page.textContent('.import-meta-url-base-path')).toMatch(
+    iconMatch
+  )
 })
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
@@ -288,11 +310,14 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
     assetMatch
   )
+  expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
+    isBuild ? 'data:application/javascript;base64' : '/foo/nested/test.js'
+  )
 })
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    '/foo/non-existent'
+    new URL('non-existent', page.url()).pathname
   )
 })
 
@@ -313,7 +338,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })
@@ -363,4 +388,15 @@ test('html import word boundary', async () => {
 test('relative path in html asset', async () => {
   expect(await page.textContent('.relative-js')).toMatch('hello')
   expect(await getColor('.relative-css')).toMatch('red')
+})
+
+test('url() contains file in publicDir, in <style> tag', async () => {
+  expect(await getBg('.style-public-assets')).toContain(iconMatch)
+})
+
+test.skip('url() contains file in publicDir, as inline style', async () => {
+  // TODO: To investigate why `await getBg('.inline-style-public') === "url("http://localhost:5173/icon.png")"`
+  // It supposes to be `url("http://localhost:5173/foo/icon.png")`
+  // (I built the playground to verify)
+  expect(await getBg('.inline-style-public')).toContain(iconMatch)
 })

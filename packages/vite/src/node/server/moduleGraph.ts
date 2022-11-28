@@ -1,5 +1,4 @@
 import { extname } from 'node:path'
-import { parse as parseUrl } from 'node:url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
@@ -186,7 +185,7 @@ export class ModuleGraph {
     setIsSelfAccepting = true
   ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.urlToModuleMap.get(url)
+    let mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -200,6 +199,11 @@ export class ModuleGraph {
         this.fileToModulesMap.set(file, fileMappedModules)
       }
       fileMappedModules.add(mod)
+    }
+    // multiple urls can map to the same module and id, make sure we register
+    // the url to the existing module in that case
+    else if (!this.urlToModuleMap.has(url)) {
+      this.urlToModuleMap.set(url, mod)
     }
     return mod
   }
@@ -237,10 +241,16 @@ export class ModuleGraph {
     url = removeImportQuery(removeTimestampQuery(url))
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
-    const ext = extname(cleanUrl(resolvedId))
-    const { pathname, search, hash } = parseUrl(url)
-    if (ext && !pathname!.endsWith(ext)) {
-      url = pathname + ext + (search || '') + (hash || '')
+    if (
+      url !== resolvedId &&
+      !url.includes('\0') &&
+      !url.startsWith(`virtual:`)
+    ) {
+      const ext = extname(cleanUrl(resolvedId))
+      const { pathname, search, hash } = new URL(url, 'relative://')
+      if (ext && !pathname!.endsWith(ext)) {
+        url = pathname + ext + search + hash
+      }
     }
     return [url, resolvedId, resolved?.meta]
   }

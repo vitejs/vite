@@ -272,8 +272,38 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob(`hi ${hey}`)')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Invalid glob import syntax: Expected glob to be a string, but got dynamic template literal]'
     )
+  })
+
+  it('template with unicode', async () => {
+    expect(await run('import.meta.glob(`/\u0068\u0065\u006c\u006c\u006f`)'))
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "globs": [
+            "/hello",
+          ],
+          "options": {},
+          "start": 0,
+        },
+      ]
+    `)
+  })
+
+  it('template without expressions', async () => {
+    expect(await run('import.meta.glob(`/**/*.page.client.*([a-zA-Z0-9])`)'))
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "globs": [
+            "/**/*.page.client.*([a-zA-Z0-9])",
+          ],
+          "options": {},
+          "start": 0,
+        },
+      ]
+    `)
   })
 
   it('be string', async () => {

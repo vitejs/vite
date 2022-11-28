@@ -1,12 +1,12 @@
 // @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITEST
 
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
@@ -35,12 +35,33 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal: ['no-external-cjs', 'import-builtin-cjs', 'no-external-css'],
-      external: ['nested-external'],
+      noExternal: [
+        'no-external-cjs',
+        'import-builtin-cjs',
+        'no-external-css',
+        'external-entry'
+      ],
+      external: ['nested-external', 'external-entry/entry'],
       optimizeDeps: {
         disabled: 'build'
       }
-    }
+    },
+    plugins: [
+      {
+        name: 'dep-virtual',
+        enforce: 'pre',
+        resolveId(id) {
+          if (id === 'pkg-exports/virtual') {
+            return 'pkg-exports/virtual'
+          }
+        },
+        load(id) {
+          if (id === 'pkg-exports/virtual') {
+            return 'export default "[success]"'
+          }
+        }
+      }
+    ]
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)

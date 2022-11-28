@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import type * as net from 'node:net'
 import type * as http from 'node:http'
@@ -7,12 +6,20 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
-import type { FSWatcher, WatchOptions } from 'types/chokidar'
-import type { Connect } from 'types/connect'
+import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
+import picomatch from 'picomatch'
+import type { Matcher } from 'picomatch'
+import type { InvalidatePayload } from 'types/customEvent'
 import type { CommonServerOptions } from '../http'
-import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
+import {
+  httpServerStart,
+  resolveHttpServer,
+  resolveHttpsConfig,
+  setClientErrorHandler
+} from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
@@ -38,13 +45,14 @@ import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
+import { resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
-import { spaFallbackMiddleware } from './middlewares/spaFallback'
+import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
@@ -56,10 +64,16 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
+import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
-import { handleFileAddUnlink, handleHMRUpdate } from './hmr'
+import {
+  getShortName,
+  handleFileAddUnlink,
+  handleHMRUpdate,
+  updateModules
+} from './hmr'
 import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -137,7 +151,7 @@ export interface FileSystemServeOptions {
    * Restrict accessing files that matches the patterns.
    *
    * This will have higher priority than `allow`.
-   * Glob patterns are supported.
+   * picomatch patterns are supported.
    *
    * @default ['.env', '.env.*', '*.crt', '*.pem']
    */
@@ -145,6 +159,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
+  this: void,
   server: ViteDevServer
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -188,8 +203,6 @@ export interface ViteDevServer {
   /**
    * The resolved urls Vite prints on the CLI. null in middleware mode or
    * before `server.listen` is called.
-   *
-   * @experimental
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -214,7 +227,8 @@ export interface ViteDevServer {
   ssrTransform(
     code: string,
     inMap: SourceMap | null,
-    url: string
+    url: string,
+    originalCode?: string
   ): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
@@ -231,6 +245,11 @@ export interface ViteDevServer {
    * Mutates the given SSR error by rewriting the stacktrace
    */
   ssrFixStacktrace(e: Error): void
+  /**
+   * Triggers HMR for a module in the module graph. You can use the `server.moduleGraph`
+   * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
+   */
+  reloadModule(module: ModuleNode): Promise<void>
   /**
    * Start the server.
    */
@@ -277,6 +296,10 @@ export interface ViteDevServer {
       abort: () => void
     }
   >
+  /**
+   * @internal
+   */
+  _fsDenyGlob: Matcher
 }
 
 export interface ResolvedServerUrls {
@@ -287,13 +310,15 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  const config = await resolveConfig(inlineConfig, 'serve')
   const { root, server: serverConfig } = config
-  const httpsOptions = await resolveHttpsConfig(
-    config.server.https,
-    config.cacheDir
-  )
+  const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
+
+  const resolvedWatchOptions = resolveChokidarOptions({
+    disableGlobbing: true,
+    ...serverConfig.watch
+  })
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
@@ -301,19 +326,14 @@ export async function createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
 
-  const { ignored = [], ...watchOptions } = serverConfig.watch || {}
-  const watcher = chokidar.watch(path.resolve(root), {
-    ignored: [
-      '**/.git/**',
-      '**/node_modules/**',
-      '**/test-results/**', // Playwright
-      ...(Array.isArray(ignored) ? ignored : [ignored])
-    ],
-    ignoreInitial: true,
-    ignorePermissionErrors: true,
-    disableGlobbing: true,
-    ...watchOptions
-  }) as FSWatcher
+  if (httpServer) {
+    setClientErrorHandler(httpServer, config.logger)
+  }
+
+  const watcher = chokidar.watch(
+    path.resolve(root),
+    resolvedWatchOptions
+  ) as FSWatcher
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr })
@@ -333,10 +353,13 @@ export async function createServer(
     ws,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
-    ssrTransform(code: string, inMap: SourceMap | null, url: string) {
-      return ssrTransform(code, inMap, url, code, {
-        json: { stringify: server.config.json?.stringify }
-      })
+    ssrTransform(
+      code: string,
+      inMap: SourceMap | null,
+      url: string,
+      originalCode = code
+    ) {
+      return ssrTransform(code, inMap, url, originalCode, server.config)
     },
     transformRequest(url, options) {
       return transformRequest(url, server, options)
@@ -364,6 +387,11 @@ export async function createServer(
     ssrRewriteStacktrace(stack: string) {
       return ssrRewriteStacktrace(stack, moduleGraph)
     },
+    async reloadModule(module) {
+      if (serverConfig.hmr !== false && module.file) {
+        updateModules(module.file, [module], Date.now(), server)
+      }
+    },
     async listen(port?: number, isRestart?: boolean) {
       await startServer(server, port, isRestart)
       if (httpServer) {
@@ -386,6 +414,8 @@ export async function createServer(
         watcher.close(),
         ws.close(),
         container.close(),
+        getDepsOptimizer(server.config)?.close(),
+        getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer()
       ])
       server.resolvedUrls = null
@@ -420,7 +450,8 @@ export async function createServer(
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
-    _pendingRequests: new Map()
+    _pendingRequests: new Map(),
+    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true })
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -474,6 +505,26 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server)
   })
 
+  ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
+    const mod = moduleGraph.urlToModuleMap.get(path)
+    if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+      config.logger.info(
+        colors.yellow(`hmr invalidate `) +
+          colors.dim(path) +
+          (message ? ` ${message}` : ''),
+        { timestamp: true }
+      )
+      const file = getShortName(mod.file!, config.root)
+      updateModules(
+        file,
+        [...mod.importers],
+        mod.lastHMRTimestamp,
+        server,
+        true
+      )
+    }
+  })
+
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
@@ -483,10 +534,8 @@ export async function createServer(
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of config.plugins) {
-    if (plugin.configureServer) {
-      postHooks.push(await plugin.configureServer(server))
-    }
+  for (const hook of config.getSortedPluginHooks('configureServer')) {
+    postHooks.push(await hook(server))
   }
 
   // Internal middlewares ------------------------------------------------------
@@ -509,8 +558,7 @@ export async function createServer(
   }
 
   // base
-  const devBase = config.base
-  if (devBase !== '/') {
+  if (config.base !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
@@ -533,9 +581,9 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
-  // spa fallback
-  if (config.appType === 'spa') {
-    middlewares.use(spaFallbackMiddleware(root))
+  // html fallback
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks
@@ -613,8 +661,6 @@ async function startServer(
   const hostname = await resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
-  const info = server.config.logger.info
-  const devBase = server.config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -623,27 +669,9 @@ async function startServer(
     logger: server.config.logger
   })
 
-  // @ts-ignore
-  const profileSession = global.__vite_profile_session
-  if (profileSession) {
-    profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
-      // Write profile to disk, upload, etc.
-      if (!err) {
-        const outPath = path.resolve('./vite-profile.cpuprofile')
-        fs.writeFileSync(outPath, JSON.stringify(profile))
-        info(
-          colors.yellow(
-            `  CPU profile written to ${colors.white(colors.dim(outPath))}\n`
-          )
-        )
-      } else {
-        throw err
-      }
-    })
-  }
-
   if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : devBase
+    const path =
+      typeof options.open === 'string' ? options.open : server.config.base
     openBrowser(
       path.startsWith('http')
         ? path

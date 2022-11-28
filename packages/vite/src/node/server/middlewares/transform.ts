@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
 import {
@@ -18,7 +18,7 @@ import {
   unwrapId
 } from '../../utils'
 import { send } from '../send'
-import { transformRequest } from '../transformRequest'
+import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import {
   DEP_VERSION_RE,
@@ -218,11 +218,15 @@ export function transformMiddleware(
         }
         // We don't need to log an error in this case, the request
         // is outdated because new dependencies were discovered and
-        // the new pre-bundle dependendencies have changed.
+        // the new pre-bundle dependencies have changed.
         // A full-page reload has been issued, and these old requests
-        // can't be properly fullfilled. This isn't an unexpected
+        // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
         return
+      }
+      if (e?.code === ERR_LOAD_URL) {
+        // Let other middleware handle if we can't load the url via transformRequest
+        return next()
       }
       return next(e)
     }

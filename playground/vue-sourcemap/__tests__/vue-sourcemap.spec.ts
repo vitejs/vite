@@ -1,4 +1,5 @@
 import { URL } from 'node:url'
+import { describe, expect, test } from 'vitest'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,

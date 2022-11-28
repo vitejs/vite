@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import {
   isBuild,
   isServe,
@@ -23,7 +24,7 @@ describe.runIf(isBuild)('build', () => {
     expect(await page.textContent('.iife')).toBe('It works')
     const code = readFile('dist/my-lib-custom-filename.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^const MyLib=function\(\){"use strict";/)
+    expect(code).toMatch(/^var MyLib=function\(\)\{"use strict";/)
   })
 
   test('Library mode does not include `preload`', async () => {
@@ -35,7 +36,7 @@ describe.runIf(isBuild)('build', () => {
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
-    expect(code).toMatch(/await import\("\.\/message.[a-z\d]{8}.mjs"\)/)
+    expect(code).toMatch(/await import\("\.\/message-[a-z\d]{8}.mjs"\)/)
   })
 
   test('@import hoist', async () => {

@@ -29,6 +29,9 @@
 <h2>CommonJS w/ browser field mapping (axios)</h2>
 <div>This should show pong: <span class="cjs-browser-field"></span></div>
 
+<h2>CommonJS w/ bare id browser field mapping</h2>
+<div>This should show pong: <span class="cjs-browser-field-bare"></span></div>
+
 <h2>Detecting linked src package and optimizing its deps (lodash-es)</h2>
 <div>This should show fooBarBaz: <span class="deps-linked"></span></div>
 
@@ -59,6 +62,9 @@
 <h2>Import from dependency with dynamic import</h2>
 <div class="dep-with-dynamic-import"></div>
 
+<h2>Import from dependency with optional peer dep</h2>
+<div class="dep-with-optional-peer-dep"></div>
+
 <h2>Dep w/ special file format supported via plugins</h2>
 <div class="plugin"></div>
 
@@ -84,6 +90,9 @@
 <div class="clonedeep-slash"></div>
 <div class="clonedeep-dot"></div>
 
+<h2>Non Optimized Module isn't duplicated</h2>
+<div class="non-optimized-module-is-not-duplicated"></div>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -93,6 +102,9 @@
 <script type="module">
   // test dep detection in globbed files
   const globbed = import.meta.glob('./glob/*.js', { eager: true })
+
+  import cjsBrowerFieldBare from 'dep-cjs-browser-field-bare'
+  text('.cjs-browser-field-bare', cjsBrowerFieldBare)
 
   import { camelCase } from 'dep-linked'
   text('.deps-linked', camelCase('foo-bar-baz'))
@@ -142,6 +154,18 @@
   text('.url', parse('https://vitejs.dev').hostname)
 
   import './index.astro'
+
+  // All these imports should end up resolved to the same URL (same ?v= injected on them)
+  import { add as addFromDirectAbsolutePath } from '/node_modules/dep-non-optimized/index.js'
+  import { add as addFromDirectRelativePath } from './node_modules/dep-non-optimized/index.js'
+  import { get as getFromBareImport } from 'dep-non-optimized'
+
+  addFromDirectAbsolutePath('from-absolute-path')
+  addFromDirectRelativePath('from-relative-path')
+  text(
+    '.non-optimized-module-is-not-duplicated',
+    getFromBareImport().join(', ')
+  )
 </script>
 
 <script type="module">
@@ -150,6 +174,13 @@
 <script type="module">
   const reusedName = 'reused'
   text('.reused-variable-names', reusedName)
+</script>
+
+<script type="module">
+  import { callItself, callPeerDep } from 'dep-with-optional-peer-dep'
+  text('.dep-with-optional-peer-dep', callItself())
+  // expect error as optional peer dep not installed
+  callPeerDep()
 </script>
 
 <script type="module">

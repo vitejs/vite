@@ -2,8 +2,7 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'types/connect'
-import micromatch from 'micromatch'
+import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -15,10 +14,9 @@ import {
   isInternalRequest,
   isParentDirectory,
   isWindows,
+  shouldServe,
   slash
 } from '../../utils'
-
-const { isMatch } = micromatch
 
 const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
   return {
@@ -55,7 +53,10 @@ export function servePublicMiddleware(
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    serve(req, res, next)
+    if (shouldServe(req.url!, dir)) {
+      return serve(req, res, next)
+    }
+    next()
   }
 }
 
@@ -80,36 +81,40 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = decodeURIComponent(req.url!)
+    const url = new URL(req.url!, 'http://example.com')
+    const pathname = decodeURIComponent(url.pathname)
 
     // apply aliases to static requests as well
-    let redirected: string | undefined
+    let redirectedPathname: string | undefined
     for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
-        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+        typeof find === 'string'
+          ? pathname.startsWith(find)
+          : find.test(pathname)
       if (matches) {
-        redirected = url.replace(find, replacement)
+        redirectedPathname = pathname.replace(find, replacement)
         break
       }
     }
-    if (redirected) {
+    if (redirectedPathname) {
       // dir is pre-normalized to posix style
-      if (redirected.startsWith(dir)) {
-        redirected = redirected.slice(dir.length)
+      if (redirectedPathname.startsWith(dir)) {
+        redirectedPathname = redirectedPathname.slice(dir.length)
       }
     }
 
-    const resolvedUrl = redirected || url
-    let fileUrl = path.resolve(dir, resolvedUrl.replace(/^\//, ''))
-    if (resolvedUrl.endsWith('/') && !fileUrl.endsWith('/')) {
+    const resolvedPathname = redirectedPathname || pathname
+    let fileUrl = path.resolve(dir, resolvedPathname.replace(/^\//, ''))
+    if (resolvedPathname.endsWith('/') && !fileUrl.endsWith('/')) {
       fileUrl = fileUrl + '/'
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {
       return
     }
 
-    if (redirected) {
-      req.url = encodeURIComponent(redirected)
+    if (redirectedPathname) {
+      url.pathname = encodeURIComponent(redirectedPathname)
+      req.url = url.href.slice(url.origin.length)
     }
 
     serve(req, res, next)
@@ -123,16 +128,17 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    let url = decodeURIComponent(req.url!)
+    const url = new URL(req.url!, 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.startsWith(FS_PREFIX)) {
+    if (url.pathname.startsWith(FS_PREFIX)) {
+      const pathname = decodeURIComponent(url.pathname)
       // restrict files outside of `fs.allow`
       if (
         !ensureServingAccess(
-          slash(path.resolve(fsPathFromId(url))),
+          slash(path.resolve(fsPathFromId(pathname))),
           server,
           res,
           next
@@ -141,18 +147,17 @@ export function serveRawFsMiddleware(
         return
       }
 
-      url = url.slice(FS_PREFIX.length)
-      if (isWindows) url = url.replace(/^[A-Z]:/i, '')
+      let newPathname = pathname.slice(FS_PREFIX.length)
+      if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
 
-      req.url = encodeURIComponent(url)
+      url.pathname = encodeURIComponent(newPathname)
+      req.url = url.href.slice(url.origin.length)
       serveFromRoot(req, res, next)
     } else {
       next()
     }
   }
 }
-
-const _matchOptions = { matchBase: true }
 
 export function isFileServingAllowed(
   url: string,
@@ -162,8 +167,7 @@ export function isFileServingAllowed(
 
   const file = fsPathFromUrl(url)
 
-  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
-    return false
+  if (server._fsDenyGlob(file)) return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
@@ -187,7 +191,7 @@ function ensureServingAccess(
     const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+Refer to docs https://vitejs.dev/config/server-options.html#server-fs-allow for configurations and more details.`
 
     server.config.logger.error(urlMessage)
     server.config.logger.warnOnce(hintMessage + '\n')

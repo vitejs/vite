@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browserLogs,
   findAssetFile,
@@ -10,7 +10,7 @@ import {
 } from '~utils'
 
 const absoluteAssetMatch = isBuild
-  ? /http.*\/other-assets\/asset\.\w{8}\.png/
+  ? /http.*\/other-assets\/asset-\w{8}\.png/
   : '/nested/asset.png'
 
 // Asset URLs in CSS are relative to the same dir, the computed
@@ -20,7 +20,7 @@ const cssBgAssetMatch = absoluteAssetMatch
 const iconMatch = `/icon.png`
 
 const absoluteIconMatch = isBuild
-  ? /http.*\/icon\.\w{8}\.png/
+  ? /http.*\/icon-\w{8}\.png/
   : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild ? /http.*\/icon\.png/ : '/icon.png'
@@ -143,7 +143,7 @@ describe.runIf(isBuild)('index.css URLs', () => {
   })
 
   test('relative asset URL', () => {
-    expect(css).toMatch(`./asset.`)
+    expect(css).toMatch(`./asset-`)
   })
 
   test('preserve postfix query/hash', () => {
@@ -158,8 +158,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /other-assets\/asset\.\w{8}\.png \d{1}x/
-          : /\.\/nested\/asset\.png \d{1}x/
+          ? /other-assets\/asset-\w{8}\.png \dx/
+          : /\.\/nested\/asset\.png \dx/
       )
     })
   })
@@ -191,14 +191,14 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /http.*\/other-assets\/foo\.\w{8}\.js/ : `/foo.js`
+    isBuild ? /http.*\/other-assets\/foo-\w{8}\.js/ : `/foo.js`
   )
 })
 
 test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
-    isBuild ? /http.*\/other-assets\/icons\.\w{8}\.css/ : '/css/icons.css'
+    isBuild ? /http.*\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css'
   )
 })
 

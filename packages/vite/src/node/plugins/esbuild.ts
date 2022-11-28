@@ -27,9 +27,9 @@ import { searchForWorkspaceRoot } from '..'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /^(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)/s
+  /^(.*?)((?:const|var) \S+=function\([^)]*\)\{"use strict";)/s
 const INJECT_HELPERS_UMD_RE =
-  /^(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)/s
+  /^(.*?)(\(function\([^)]*\)\{.+amd.+function\([^)]*\)\{"use strict";)/s
 
 let server: ViteDevServer
 
@@ -78,6 +78,8 @@ export async function transformWithEsbuild(
 
     if (ext === 'cjs' || ext === 'mjs') {
       loader = 'js'
+    } else if (ext === 'cts' || ext === 'mts') {
+      loader = 'ts'
     } else {
       loader = ext as Loader
     }
@@ -85,7 +87,7 @@ export async function transformWithEsbuild(
 
   let tsconfigRaw = options?.tsconfigRaw
 
-  // if options provide tsconfigraw in string, it takes highest precedence
+  // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
@@ -170,19 +172,25 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.(tsx?|jsx)$/,
+    options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/
   )
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
+    target: 'esnext',
+    charset: 'utf8',
     ...options,
     minify: false,
     minifyIdentifiers: false,
     minifySyntax: false,
     minifyWhitespace: false,
-    treeShaking: false
+    treeShaking: false,
+    // keepNames is not needed when minify is disabled.
+    // Also transforming multiple times with keepNames enabled breaks
+    // tree-shaking. (#9164)
+    keepNames: false
   }
 
   return {
@@ -298,10 +306,21 @@ export function resolveEsbuildTranspileOptions(
   // pure annotations and break tree-shaking
   // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
   const isEsLibBuild = config.build.lib && format === 'es'
+  const esbuildOptions = config.esbuild || {}
+
   const options: TransformOptions = {
-    ...config.esbuild,
+    charset: 'utf8',
+    ...esbuildOptions,
     target: target || undefined,
-    format: rollupToEsbuildFormatMap[format]
+    format: rollupToEsbuildFormatMap[format],
+    // the final build should always support dynamic import and import.meta.
+    // if they need to be polyfilled, plugin-legacy should be used.
+    // plugin-legacy detects these two features when checking for modern code.
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   }
 
   // If no minify, disable all minify options
@@ -388,14 +407,17 @@ const tsconfckParseOptions: TSConfckParseOptions = {
 }
 
 async function initTSConfck(config: ResolvedConfig) {
-  tsconfckParseOptions.cache!.clear()
   const workspaceRoot = searchForWorkspaceRoot(config.root)
+  debug(`init tsconfck (root: ${colors.cyan(workspaceRoot)})`)
+
+  tsconfckParseOptions.cache!.clear()
   tsconfckParseOptions.root = workspaceRoot
   tsconfckParseOptions.tsConfigPaths = new Set([
     ...(await findAll(workspaceRoot, {
       skip: (dir) => dir === 'node_modules' || dir === '.git'
     }))
   ])
+  debug(`init tsconfck end`)
 }
 
 async function loadTsconfigJsonForFile(
@@ -428,7 +450,7 @@ function reloadOnTsconfigChange(changedFile: string) {
       tsconfckParseOptions?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
       { clear: server.config.clearScreen, timestamp: true }
     )
 
@@ -437,11 +459,14 @@ function reloadOnTsconfigChange(changedFile: string) {
 
     // reset tsconfck so that recompile works with up2date configs
     initTSConfck(server.config).finally(() => {
-      // force full reload
-      server.ws.send({
-        type: 'full-reload',
-        path: '*'
-      })
+      // server may not be available if vite config is updated at the same time
+      if (server) {
+        // force full reload
+        server.ws.send({
+          type: 'full-reload',
+          path: '*'
+        })
+      }
     })
   }
 }

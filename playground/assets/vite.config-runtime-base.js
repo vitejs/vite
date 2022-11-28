@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 
 const dynamicBaseAssetsCode = `
 globalThis.__toAssetUrl = url => '/' + url
@@ -22,8 +22,8 @@ module.exports = {
     rollupOptions: {
       output: {
         entryFileNames: 'entries/[name].js',
-        chunkFileNames: 'chunks/[name].[hash].js',
-        assetFileNames: 'other-assets/[name].[hash][extname]'
+        chunkFileNames: 'chunks/[name]-[hash].js',
+        assetFileNames: 'other-assets/[name]-[hash][extname]'
       }
     }
   },

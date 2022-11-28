@@ -20,6 +20,10 @@ export interface Update {
   path: string
   acceptedPath: string
   timestamp: number
+  /**
+   * @experimental internal
+   */
+  explicitImportRequired?: boolean | undefined
 }
 
 export interface PrunePayload {

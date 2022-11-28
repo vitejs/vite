@@ -1,4 +1,5 @@
 // @ts-check
+const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
 
 module.exports = defineConfig({
@@ -6,9 +7,10 @@ module.exports = defineConfig({
   extends: [
     'eslint:recommended',
     'plugin:node/recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:@typescript-eslint/recommended',
+    'plugin:regexp/recommended'
   ],
-  plugins: ['import'],
+  plugins: ['import', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
@@ -41,18 +43,6 @@ module.exports = defineConfig({
         allowModules: ['pnpapi', 'vite'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
-    ],
-    'node/no-restricted-require': [
-      'error',
-      Object.keys(require('./packages/vite/package.json').devDependencies).map(
-        (d) => ({
-          name: d,
-          message:
-            `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rollup bundle. If you are trying to ` +
-            `lazy load a dependency, use (await import('dependency')).default instead.`
-        })
-      )
     ],
     'node/no-extraneous-import': [
       'error',
@@ -93,6 +83,10 @@ module.exports = defineConfig({
       { prefer: 'type-imports' }
     ],
 
+    'import/no-nodejs-modules': [
+      'error',
+      { allow: builtinModules.map((mod) => `node:${mod}`) }
+    ],
     'import/no-duplicates': 'error',
     'import/order': 'error',
     'sort-imports': [
@@ -104,9 +98,35 @@ module.exports = defineConfig({
         memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
         allowSeparatedGroups: false
       }
-    ]
+    ],
+
+    'regexp/no-contradiction-with-assertion': 'error'
   },
   overrides: [
+    {
+      files: ['packages/**'],
+      excludedFiles: '**/__tests__/**',
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+      }
+    },
+    {
+      files: 'packages/vite/**/*.*',
+      rules: {
+        'node/no-restricted-require': [
+          'error',
+          Object.keys(
+            require('./packages/vite/package.json').devDependencies
+          ).map((d) => ({
+            name: d,
+            message:
+              `devDependencies can only be imported using ESM syntax so ` +
+              `that they are included in the rollup bundle. If you are trying to ` +
+              `lazy load a dependency, use (await import('dependency')).default instead.`
+          }))
+        ]
+      }
+    },
     {
       files: ['packages/vite/src/node/**'],
       rules: {
@@ -114,15 +134,17 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**', '*.spec.ts'],
+      files: ['packages/vite/src/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }
     },
     {
-      files: ['packages/plugin-*/**/*'],
+      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
       rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+        'no-undef': 'off',
+        'node/no-missing-import': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
     },
     {
@@ -132,30 +154,34 @@ module.exports = defineConfig({
         'node/no-extraneous-require': 'off',
         'node/no-missing-import': 'off',
         'node/no-missing-require': 'off',
-        'no-undef': 'off',
         // engine field doesn't exist in playgrounds
         'node/no-unsupported-features/es-builtins': [
           'error',
           {
-            version: '>=14.18.0'
+            version: '^14.18.0 || >=16.0.0'
           }
         ],
         'node/no-unsupported-features/node-builtins': [
           'error',
           {
-            version: '>=14.18.0'
+            version: '^14.18.0 || >=16.0.0'
           }
-        ]
+        ],
+        '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
     },
     {
-      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
+      files: ['playground/**'],
+      excludedFiles: '**/__tests__/**',
       rules: {
-        'node/no-missing-import': 'off'
+        'no-undef': 'off',
+        'no-empty': 'off',
+        'no-constant-condition': 'off',
+        '@typescript-eslint/no-empty-function': 'off'
       }
     },
     {
-      files: ['playground/**', '*.js'],
+      files: ['*.js', '*.mjs', '*.cjs'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
@@ -164,12 +190,6 @@ module.exports = defineConfig({
       files: ['*.d.ts'],
       rules: {
         '@typescript-eslint/triple-slash-reference': 'off'
-      }
-    },
-    {
-      files: 'packages/vite/**/*.*',
-      rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     }
   ],

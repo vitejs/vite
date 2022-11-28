@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { isBuild, page } from '~utils'
 
 const mode = isBuild ? `production` : `development`
@@ -42,6 +43,10 @@ test('bool', async () => {
 
 test('NODE_ENV', async () => {
   expect(await page.textContent('.node-env')).toBe(process.env.NODE_ENV)
+})
+
+test('expand', async () => {
+  expect(await page.textContent('.expand')).toBe('expand')
 })
 
 test('env object', async () => {

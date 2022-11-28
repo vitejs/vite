@@ -17,11 +17,16 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: 'es2020',
       format: 'esm',
       keepNames: true,
       minify: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -55,6 +60,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: undefined,
       format: 'esm',
       keepNames: true,
@@ -62,7 +68,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: false,
       minifySyntax: true,
       minifyWhitespace: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -80,6 +90,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: 'es2020',
       format: 'esm',
       keepNames: true,
@@ -87,7 +98,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: false,
       minifySyntax: false,
       minifyWhitespace: false,
-      treeShaking: false
+      treeShaking: false,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -107,6 +122,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: undefined,
       format: 'esm',
       keepNames: true,
@@ -114,7 +130,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: true,
       minifyWhitespace: false,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -134,11 +154,16 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: undefined,
       format: 'cjs',
       keepNames: true,
       minify: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -160,6 +185,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       'es'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: undefined,
       format: 'esm',
       keepNames: true,
@@ -167,7 +193,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: true,
       minifyWhitespace: false,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -190,6 +220,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       'cjs'
     )
     expect(options).toEqual({
+      charset: 'utf8',
       target: undefined,
       format: 'cjs',
       keepNames: true,
@@ -197,7 +228,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: false,
       minifyWhitespace: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 })

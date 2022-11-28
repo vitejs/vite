@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import vuePlugin from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
@@ -9,6 +9,11 @@ const nestedVirtualFile = '@nested-virtual-file'
 const nestedVirtualId = '\0' + nestedVirtualFile
 
 const base = '/test/'
+
+// preserve this to test loading __filename & __dirname in ESM as Vite polyfills them.
+// if Vite incorrectly load this file, node.js would error out.
+globalThis.__vite_test_filename = __filename
+globalThis.__vite_test_dirname = __dirname
 
 export default defineConfig(({ command, ssrBuild }) => ({
   base,
@@ -80,14 +85,15 @@ export default defineConfig(({ command, ssrBuild }) => ({
           }
         },
         transform(code, id) {
+          const cleanId = cleanUrl(id)
           if (
             config.build.ssr &&
-            cleanUrl(id).endsWith('.js') &&
+            (cleanId.endsWith('.js') || cleanId.endsWith('.vue')) &&
             !code.includes('__ssr_vue_processAssetPath')
           ) {
             return {
               code:
-                `import { __ssr_vue_processAssetPath } from '${virtualId}';` +
+                `import { __ssr_vue_processAssetPath } from '${virtualId}';__ssr_vue_processAssetPath;` +
                 code,
               sourcemap: null // no sourcemap support to speed up CI
             }

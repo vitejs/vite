@@ -1,12 +1,17 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
+import colors from 'picocolors'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
   CallExpression,
+  Expression,
   Literal,
+  MemberExpression,
   Node,
-  SequenceExpression
+  SequenceExpression,
+  SpreadElement,
+  TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
@@ -17,7 +22,14 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash, transformStableResult } from '../utils'
+import {
+  generateCodeFrame,
+  normalizePath,
+  slash,
+  transformStableResult
+} from '../utils'
+import type { Logger } from '../logger'
+import { isCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -64,16 +76,13 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
+        config.logger,
         config.experimental.importGlobRestoreExtension
       )
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
           server._importGlobMap.set(id, allGlobs)
-          result.files.forEach((file) => {
-            // update watcher
-            server!.watcher.add(dirname(file))
-          })
         }
         return transformStableResult(result.s, id, config)
       }
@@ -118,7 +127,7 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression | SequenceExpression
+    let ast: CallExpression | SequenceExpression | MemberExpression
     let lastTokenPos: number | undefined
 
     try {
@@ -157,35 +166,47 @@ export async function parseImportGlob(
     if (ast.type === 'SequenceExpression')
       ast = ast.expressions[0] as CallExpression
 
+    // immediate property access, call expression is nested
+    // import.meta.glob(...)['prop']
+    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
+
     if (ast.type !== 'CallExpression')
       throw err(`Expect CallExpression, got ${ast.type}`)
 
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
-    const arg1 = ast.arguments[0] as ArrayExpression | Literal
+    const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
     const arg2 = ast.arguments[1] as Node | undefined
 
     const globs: string[] = []
-    if (arg1.type === 'ArrayExpression') {
-      for (const element of arg1.elements) {
-        if (!element) continue
-        if (element.type !== 'Literal') throw err('Could only use literals')
+
+    const validateLiteral = (element: Expression | SpreadElement | null) => {
+      if (!element) return
+      if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
           throw err(
             `Expected glob to be a string, but got "${typeof element.value}"`
           )
-
         globs.push(element.value)
+      } else if (element.type === 'TemplateLiteral') {
+        if (element.expressions.length !== 0) {
+          throw err(
+            `Expected glob to be a string, but got dynamic template literal`
+          )
+        }
+        globs.push(element.quasis[0].value.raw)
+      } else {
+        throw err('Could only use literals')
       }
-    } else if (arg1.type === 'Literal') {
-      if (typeof arg1.value !== 'string')
-        throw err(
-          `Expected glob to be a string, but got "${typeof arg1.value}"`
-        )
-      globs.push(arg1.value)
+    }
+
+    if (arg1.type === 'ArrayExpression') {
+      for (const element of arg1.elements) {
+        validateLiteral(element)
+      }
     } else {
-      throw err('Could only use literals')
+      validateLiteral(arg1)
     }
 
     // arg2
@@ -306,6 +327,7 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
+  logger: Logger,
   restoreQueryExtension = false
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -361,6 +383,23 @@ export async function transformGlobImport(
             : stringifyQuery(options.query as any)
 
           if (query && !query.startsWith('?')) query = `?${query}`
+
+          if (
+            !query.match(/(?:\?|&)inline\b/) &&
+            files.some((file) => isCSSRequest(file))
+          ) {
+            logger.warn(
+              `\n` +
+                colors.cyan(id) +
+                `\n` +
+                colors.reset(generateCodeFrame(code, start)) +
+                `\n` +
+                colors.yellow(
+                  `Globbing CSS files without the ?inline query is deprecated. ` +
+                    `Add the \`{ query: '?inline' }\` glob option to fix this.`
+                )
+            )
+          }
 
           const resolvePaths = (file: string) => {
             if (!dir) {
@@ -426,7 +465,9 @@ export async function transformGlobImport(
 
           files.forEach((i) => matchedFiles.add(i))
 
-          const replacement = `Object.assign({${objectProps.join(',')}})`
+          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+            ','
+          )}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
@@ -449,6 +490,34 @@ type IdResolver = (
   importer?: string
 ) => Promise<string | undefined> | string | undefined
 
+function globSafePath(path: string) {
+  // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
+  // see https://github.com/mrmlnc/fast-glob#advanced-syntax
+  return fg.escapePath(normalizePath(path))
+}
+
+function lastNthChar(str: string, n: number) {
+  return str.charAt(str.length - 1 - n)
+}
+
+function globSafeResolvedPath(resolved: string, glob: string) {
+  // we have to escape special glob characters in the resolved path, but keep the user specified globby suffix
+  // walk back both strings until a character difference is found
+  // then slice up the resolved path at that pos and escape the first part
+  let numEqual = 0
+  const maxEqual = Math.min(resolved.length, glob.length)
+  while (
+    numEqual < maxEqual &&
+    lastNthChar(resolved, numEqual) === lastNthChar(glob, numEqual)
+  ) {
+    numEqual += 1
+  }
+  const staticPartEnd = resolved.length - numEqual
+  const staticPart = resolved.slice(0, staticPartEnd)
+  const dynamicPart = resolved.slice(staticPartEnd)
+  return globSafePath(staticPart) + dynamicPart
+}
+
 export async function toAbsoluteGlob(
   glob: string,
   root: string,
@@ -460,18 +529,20 @@ export async function toAbsoluteGlob(
     pre = '!'
     glob = glob.slice(1)
   }
-
-  const dir = importer ? dirname(importer) : root
+  root = globSafePath(root)
+  const dir = importer ? globSafePath(dirname(importer)) : root
   if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
   const resolved = normalizePath((await resolveId(glob, importer)) || glob)
-  if (isAbsolute(resolved)) return pre + resolved
+  if (isAbsolute(resolved)) {
+    return pre + globSafeResolvedPath(resolved, glob)
+  }
 
   throw new Error(
-    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must starts with '/' or './'`
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
   )
 }
 

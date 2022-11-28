@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import {
   findAssetFile,
   getColor,
@@ -8,22 +9,32 @@ import {
   untilUpdated
 } from '~utils'
 
+test('should load the worker', async () => {
+  await untilUpdated(() => page.textContent('.worker-message'), 'module', true)
+})
+
 test('should work', async () => {
-  expect(await page.textContent('#app')).toMatch('Hello')
+  await untilUpdated(() => page.textContent('#app'), 'Hello', true)
 })
 
 test('import.meta.env.LEGACY', async () => {
-  expect(await page.textContent('#env')).toMatch(isBuild ? 'true' : 'false')
+  await untilUpdated(
+    () => page.textContent('#env'),
+    isBuild ? 'true' : 'false',
+    true
+  )
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
-  expect(await page.textContent('#iterators')).toMatch('hello')
+  await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
 })
 
 test('wraps with iife', async () => {
-  expect(await page.textContent('#babel-helpers')).toMatch(
-    'exposed babel helpers: false'
+  await untilUpdated(
+    () => page.textContent('#babel-helpers'),
+    'exposed babel helpers: false',
+    true
   )
 })
 
@@ -63,6 +74,12 @@ test('should load dynamic import with css', async () => {
   await untilUpdated(() => getColor('#dynamic-css'), 'red', true)
 })
 
+test('asset url', async () => {
+  expect(await page.textContent('#asset-path')).toMatch(
+    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg'
+  )
+})
+
 describe.runIf(isBuild)('build', () => {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
@@ -81,7 +98,7 @@ describe.runIf(isBuild)('build', () => {
   test('should minify legacy chunks with terser', async () => {
     // This is a ghetto heuristic, but terser output seems to reliably start
     // with one of the following, and non-terser output (including unminified or
-    // ebuild-minified) does not!
+    // esbuild-minified) does not!
     const terserPattern = /^(?:!function|System.register)/
 
     expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
@@ -99,6 +116,6 @@ describe.runIf(isBuild)('build', () => {
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
   })
 })

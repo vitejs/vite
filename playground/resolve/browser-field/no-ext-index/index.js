@@ -1,2 +1,2 @@
-import jsdom from 'jsdom' // should be redireted to empty module
+import jsdom from 'jsdom' // should be redirected to empty module
 export default ''

@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest'
 import { transformWithEsbuild } from '../../plugins/esbuild'
-import { traverseHtml } from '../../plugins/html'
 import { ssrTransform } from '../ssrTransform'
 
 const ssrTransformSimple = async (code: string, url = '') =>
@@ -123,6 +122,18 @@ test('export default', async () => {
   expect(
     await ssrTransformSimpleCode(`export default {}`)
   ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = {}"`)
+})
+
+test('export then import minified', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `export * from 'vue';import {createApp} from 'vue';`
+    )
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "
+  `)
 })
 
 test('import.meta', async () => {
@@ -388,6 +399,30 @@ const a = () => {
     }
     "
   `)
+
+  // #9585
+  expect(
+    await ssrTransformSimpleCode(
+      `
+import { n, m } from 'foo'
+const foo = {}
+
+{
+  const { [n]: m } = foo
+}
+`
+    )
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+    const foo = {}
+
+    {
+      const { [__vite_ssr_import_0__.n]: m } = foo
+    }
+    "
+  `)
 })
 
 test('nested object destructure alias', async () => {
@@ -447,6 +482,45 @@ objRest()
     __vite_ssr_import_0__.set()
     __vite_ssr_import_0__.rest()
     __vite_ssr_import_0__.objRest()
+    "
+  `)
+})
+
+test('object props and methods', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `
+import foo from 'foo'
+
+const bar = 'bar'
+
+const obj = {
+  foo() {},
+  [foo]() {},
+  [bar]() {},
+  foo: () => {},
+  [foo]: () => {},
+  [bar]: () => {},
+  bar(foo) {}
+}
+`
+    )
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+
+    const bar = 'bar'
+
+    const obj = {
+      foo() {},
+      [__vite_ssr_import_0__.default]() {},
+      [bar]() {},
+      foo: () => {},
+      [__vite_ssr_import_0__.default]: () => {},
+      [bar]: () => {},
+      bar(foo) {}
+    }
     "
   `)
 })
@@ -651,5 +725,89 @@ console.log("it can parse the hashbang")`
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node
     console.log(\\"it can parse the hashbang\\")"
+  `)
+})
+
+// #10289
+test('track scope by class, function, condition blocks', async () => {
+  const code = `
+import { foo, bar } from 'foobar'
+if (false) {
+  const foo = 'foo'
+  console.log(foo)
+} else if (false) {
+  const [bar] = ['bar']
+  console.log(bar)
+} else {
+  console.log(foo)
+  console.log(bar)
+}
+export class Test {
+  constructor() {
+    if (false) {
+      const foo = 'foo'
+      console.log(foo)
+    } else if (false) {
+      const [bar] = ['bar']
+      console.log(bar)
+    } else {
+      console.log(foo)
+      console.log(bar)
+    }
+  }
+};`.trim()
+
+  expect(await ssrTransformSimpleCode(code)).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
+    if (false) {
+      const foo = 'foo'
+      console.log(foo)
+    } else if (false) {
+      const [bar] = ['bar']
+      console.log(bar)
+    } else {
+      console.log(__vite_ssr_import_0__.foo)
+      console.log(__vite_ssr_import_0__.bar)
+    }
+    class Test {
+      constructor() {
+        if (false) {
+          const foo = 'foo'
+          console.log(foo)
+        } else if (false) {
+          const [bar] = ['bar']
+          console.log(bar)
+        } else {
+          console.log(__vite_ssr_import_0__.foo)
+          console.log(__vite_ssr_import_0__.bar)
+        }
+      }
+    }
+    Object.defineProperty(__vite_ssr_exports__, \\"Test\\", { enumerable: true, configurable: true, get(){ return Test }});;"
+  `)
+})
+
+// #10386
+test('track var scope by function', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { foo, bar } from 'foobar'
+function test() {
+  if (true) {
+    var foo = () => { var why = 'would' }, bar = 'someone'
+  }
+  return [foo, bar]
+}`)
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
+    function test() {
+      if (true) {
+        var foo = () => { var why = 'would' }, bar = 'someone'
+      }
+      return [foo, bar]
+    }"
   `)
 })

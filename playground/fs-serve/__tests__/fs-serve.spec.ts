@@ -1,3 +1,5 @@
+import fetch from 'node-fetch'
+import { beforeAll, describe, expect, test } from 'vitest'
 import testJSON from '../safe.json'
 import { isServe, page, viteTestUrl } from '~utils'
 
@@ -19,6 +21,11 @@ describe.runIf(isServe)('main', () => {
   test('safe fetch', async () => {
     expect(await page.textContent('.safe-fetch')).toMatch('KEY=safe')
     expect(await page.textContent('.safe-fetch-status')).toBe('200')
+  })
+
+  test('safe fetch with query', async () => {
+    expect(await page.textContent('.safe-fetch-query')).toMatch('KEY=safe')
+    expect(await page.textContent('.safe-fetch-query-status')).toBe('200')
   })
 
   test('safe fetch with special characters', async () => {
@@ -50,6 +57,11 @@ describe.runIf(isServe)('main', () => {
   test('safe fs fetch', async () => {
     expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
+  })
+
+  test('safe fs fetch', async () => {
+    expect(await page.textContent('.safe-fs-fetch-query')).toBe(stringified)
+    expect(await page.textContent('.safe-fs-fetch-query-status')).toBe('200')
   })
 
   test('safe fs fetch with special characters', async () => {
@@ -84,5 +96,13 @@ describe.runIf(isServe)('main', () => {
 
   test('denied', async () => {
     expect(await page.textContent('.unsafe-dotenv')).toBe('404')
+  })
+})
+
+describe('fetch', () => {
+  // Note: this should pass in build too, but the test setup doesn't use Vite preview
+  test.runIf(isServe)('serve with configured headers', async () => {
+    const res = await fetch(viteTestUrl + '/src/')
+    expect(res.headers.get('x-served-by')).toBe('vite')
   })
 })

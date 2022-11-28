@@ -11,6 +11,8 @@ export default {
 }
 ```
 
+For JSX / TSX support, [`@vitejs/plugin-vue-jsx`](https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx) is also needed.
+
 ## Options
 
 ```ts
@@ -45,9 +47,18 @@ export interface Options {
   reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   // options to pass on to vue/compiler-sfc
-  script?: Partial<SFCScriptCompileOptions>
-  template?: Partial<SFCTemplateCompileOptions>
-  style?: Partial<SFCStyleCompileOptions>
+  script?: Partial<Pick<SFCScriptCompileOptions, 'babelParserPlugins'>>
+  template?: Partial<
+    Pick<
+      SFCTemplateCompileOptions,
+      | 'compiler'
+      | 'compilerOptions'
+      | 'preprocessOptions'
+      | 'preprocessCustomRequire'
+      | 'transformAssetUrls'
+    >
+  >
+  style?: Partial<Pick<SFCStyleCompileOptions, 'trim'>>
 }
 ```
 
@@ -68,7 +79,7 @@ Is the same as:
 import _imports_0 from '../image.png'
 </script>
 
-<img src="_imports_0" />
+<img :src="_imports_0" />
 ```
 
 By default the following tag/attribute combinations are transformed, and can be configured using the `template.transformAssetUrls` option.

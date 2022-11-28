@@ -5,6 +5,9 @@
   <div class="hmr-block">
     <Hmr />
   </div>
+  <div class="hmr-tsx-block">
+    <HmrTsx />
+  </div>
   <Syntax />
   <PreProcessors />
   <CssModules />
@@ -22,10 +25,12 @@
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
   <WorkerTest />
+  <Url />
 </template>
 
 <script setup lang="ts">
 import Hmr from './Hmr.vue'
+import HmrTsx from './HmrTsx.vue'
 import Syntax from './Syntax.vue'
 import PreProcessors from './PreProcessors.vue'
 import CssModules from './CssModules.vue'
@@ -40,6 +45,7 @@ import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 import WorkerTest from './worker.vue'
 import { ref } from 'vue'
+import Url from './Url.vue'
 
 const time = ref('loading...')
 

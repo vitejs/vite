@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
-import { URL, URLSearchParams, pathToFileURL } from 'node:url'
+import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -14,7 +14,7 @@ import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
-import type { Alias, AliasOptions } from 'types/alias'
+import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
@@ -25,6 +25,7 @@ import {
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER,
   OPTIMIZABLE_ENTRY_RE,
   VALID_ID_PREFIX,
   loopbackHosts,
@@ -53,16 +54,30 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// Strip valid id prefix. This is prepended to resolved Ids that are
-// not valid browser import specifiers by the importAnalysis plugin.
+/**
+ * Prepend `/@id/` and replace null byte so the id is URL-safe.
+ * This is prepended to resolved ids that are not valid browser
+ * import specifiers by the importAnalysis plugin.
+ */
+export function wrapId(id: string): string {
+  return id.startsWith(VALID_ID_PREFIX)
+    ? id
+    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
+}
+
+/**
+ * Undo {@link wrapId}'s `/@id/` and null byte replacements.
+ */
 export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX) ? id.slice(VALID_ID_PREFIX.length) : id
+  return id.startsWith(VALID_ID_PREFIX)
+    ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
+    : id
 }
 
 export const flattenId = (id: string): string =>
   id
-    .replace(/[\/:]/g, '_')
-    .replace(/[\.]/g, '__')
+    .replace(/[/:]/g, '_')
+    .replace(/\./g, '__')
     .replace(/(\s*>\s*)/g, '___')
 
 export const normalizeId = (id: string): string =>
@@ -261,7 +276,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
+const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -273,8 +288,8 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const knownTsRE = /\.(ts|mts|cts|tsx)$/
-const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
+const knownTsRE = /\.(?:ts|mts|cts|tsx)$/
+const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
@@ -288,6 +303,7 @@ export function getPotentialTsSrcPaths(filePath: string): string[] {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
+const directRequestRE = /(\?|&)direct=?(?:&|$)/
 const internalPrefixes = [
   FS_PREFIX,
   VALID_ID_PREFIX,
@@ -295,7 +311,7 @@ const internalPrefixes = [
   ENV_PUBLIC_PATH
 ]
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
-const trailingSeparatorRE = /[\?&]$/
+const trailingSeparatorRE = /[?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
@@ -303,19 +319,17 @@ export const isInternalRequest = (url: string): boolean =>
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
+export function removeDirectQuery(url: string): string {
+  return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
+}
 
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  let resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
-  if (resolvedUrl.protocol !== 'relative:') {
-    resolvedUrl = pathToFileURL(url)
-  }
-  let { protocol, pathname, search, hash } = resolvedUrl
-  if (protocol === 'file:') {
-    pathname = pathname.slice(1)
-  }
-  pathname = decodeURIComponent(pathname)
+  const resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
+  const { search, hash } = resolvedUrl
+  let pathname = cleanUrl(url)
+  pathname = isWindows ? slash(pathname) : pathname
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash ?? ''
   }`
@@ -390,6 +404,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 interface LookupFileOptions {
   pathOnly?: boolean
   rootDir?: string
+  predicate?: (file: string) => boolean
 }
 
 export function lookupFile(
@@ -400,7 +415,12 @@ export function lookupFile(
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
+      const result = options?.pathOnly
+        ? fullPath
+        : fs.readFileSync(fullPath, 'utf-8')
+      if (!options?.predicate || options.predicate(result)) {
+        return result
+      }
     }
   }
   const parentDir = path.dirname(dir)
@@ -429,10 +449,8 @@ export function posToNumber(
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
-  for (let i = 0; i < line - 1; i++) {
-    if (lines[i]) {
-      start += lines[i].length + 1
-    }
+  for (let i = 0; i < line - 1 && i < lines.length; i++) {
+    start += lines[i].length + 1
   }
   return start + column
 }
@@ -517,31 +535,54 @@ export function writeFile(
   fs.writeFileSync(filename, content)
 }
 
-/**
- * Use fs.statSync(filename) instead of fs.existsSync(filename)
- * #2051 if we don't have read permission on a directory, existsSync() still
- * works and will result in massively slow subsequent checks (which are
- * unnecessary in the first place)
- */
 export function isFileReadable(filename: string): boolean {
   try {
-    const stat = fs.statSync(filename, { throwIfNoEntry: false })
-    return !!stat
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
   } catch {
     return false
   }
 }
 
+const splitFirstDirRE = /(.+?)[\\/](.+)/
+
 /**
  * Delete every file and subdirectory. **The given directory must exist.**
- * Pass an optional `skip` array to preserve files in the root directory.
+ * Pass an optional `skip` array to preserve files under the root directory.
  */
 export function emptyDir(dir: string, skip?: string[]): void {
+  const skipInDir: string[] = []
+  let nested: Map<string, string[]> | null = null
+  if (skip?.length) {
+    for (const file of skip) {
+      if (path.dirname(file) !== '.') {
+        const matched = file.match(splitFirstDirRE)
+        if (matched) {
+          nested ??= new Map()
+          const [, nestedDir, skipPath] = matched
+          let nestedSkip = nested.get(nestedDir)
+          if (!nestedSkip) {
+            nestedSkip = []
+            nested.set(nestedDir, nestedSkip)
+          }
+          if (!nestedSkip.includes(skipPath)) {
+            nestedSkip.push(skipPath)
+          }
+        }
+      } else {
+        skipInDir.push(file)
+      }
+    }
+  }
   for (const file of fs.readdirSync(dir)) {
-    if (skip?.includes(file)) {
+    if (skipInDir.includes(file)) {
       continue
     }
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    if (nested?.has(file)) {
+      emptyDir(path.resolve(dir, file), nested.get(file))
+    } else {
+      fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+    }
   }
 }
 
@@ -643,7 +684,7 @@ function splitSrcSet(srcs: string) {
   const parts: string[] = []
   // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
   const cleanedSrcs = srcs.replace(
-    /(?:url|image|gradient|cross-fade)\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
+    /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
     blankReplacer
   )
   let startIndex = 0
@@ -821,7 +862,8 @@ export async function resolveServerUrls(
   const hostname = await resolveHostname(options.host)
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
-  const base = config.base === './' || config.base === '' ? '/' : config.base
+  const base =
+    config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
@@ -865,9 +907,10 @@ export function toUpperCaseDriveLetter(pathName: string): string {
   return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
-export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+// Taken from https://stackoverflow.com/a/36328890
+export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
-export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
+export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
 // @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'
@@ -903,12 +946,17 @@ export const requireResolveFromRootWithFallback = (
   root: string,
   id: string
 ): string => {
+  const paths = _require.resolve.paths?.(id) || []
   // Search in the root directory first, and fallback to the default require paths.
-  const fallbackPaths = _require.resolve.paths?.(id) || []
-  const path = _require.resolve(id, {
-    paths: [root, ...fallbackPaths]
-  })
-  return path
+  paths.unshift(root)
+
+  // Use `resolve` package to check existence first, so if the package is not found,
+  // it won't be cached by nodejs, since there isn't a way to invalidate them:
+  // https://github.com/nodejs/node/issues/44663
+  resolve.sync(id, { basedir: root, paths })
+
+  // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
+  return _require.resolve(id, { paths })
 }
 
 // Based on node-graceful-fs
@@ -982,6 +1030,10 @@ function gracefulRemoveDir(
 
 export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+}
+
+export function removeComments(raw: string): string {
+  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
 }
 
 function mergeConfigRecursively(
@@ -1130,8 +1182,6 @@ export function stripBomTag(content: string): string {
   return content
 }
 
-export const isTS = (filename: string): boolean => /\.[cm]?ts$/.test(filename)
-
 const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 
 /**
@@ -1141,4 +1191,79 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
+}
+
+/**
+ * Determine if a file is being requested with the correct case, to ensure
+ * consistent behaviour between dev and prod and across operating systems.
+ */
+export function shouldServe(url: string, assetsDir: string): boolean {
+  try {
+    // viteTestUrl is set to something like http://localhost:4173/ and then many tests make calls
+    // like `await page.goto(viteTestUrl + '/example')` giving us URLs beginning with a double slash
+    const pathname = decodeURI(
+      new URL(
+        url.startsWith('//') ? url.substring(1) : url,
+        'http://example.com'
+      ).pathname
+    )
+    const file = path.join(assetsDir, pathname)
+    if (
+      !fs.existsSync(file) ||
+      (isCaseInsensitiveFS && // can skip case check on Linux
+        !fs.statSync(file).isDirectory() &&
+        !hasCorrectCase(file, assetsDir))
+    ) {
+      return false
+    }
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
+/**
+ * Note that we can't use realpath here, because we don't want to follow
+ * symlinks.
+ */
+function hasCorrectCase(file: string, assets: string): boolean {
+  if (file === assets) return true
+
+  const parent = path.dirname(file)
+
+  if (fs.readdirSync(parent).includes(path.basename(file))) {
+    return hasCorrectCase(parent, assets)
+  }
+
+  return false
+}
+
+export function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a.endsWith('/')) {
+    a = a.substring(0, a.length - 1)
+  }
+  if (!b.startsWith('/')) {
+    b = '/' + b
+  }
+  return a + b
+}
+
+export function stripBase(path: string, base: string): string {
+  if (path === base) {
+    return '/'
+  }
+  const devBase = base.endsWith('/') ? base : base + '/'
+  return path.replace(RegExp('^' + devBase), '/')
+}
+
+export function arrayEqual(a: any[], b: any[]): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }

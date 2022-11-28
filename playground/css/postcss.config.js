@@ -2,9 +2,9 @@ module.exports = {
   plugins: [require('postcss-nested'), testDirDep, testSourceInput]
 }
 
-const fs = require('fs')
+const fs = require('node:fs')
+const path = require('node:path')
 const glob = require('fast-glob')
-const path = require('path')
 const { normalizePath } = require('vite')
 
 /**

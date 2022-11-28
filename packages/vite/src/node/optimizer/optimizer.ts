@@ -55,7 +55,7 @@ export async function initDepsOptimizer(
   server?: ViteDevServer
 ): Promise<void> {
   // Non Dev SSR Optimizer
-  const ssr = !!config.build.ssr
+  const ssr = config.command === 'build' && !!config.build.ssr
   if (!getDepsOptimizer(config, ssr)) {
     await createDepsOptimizer(config, server)
   }
@@ -95,13 +95,15 @@ async function createDepsOptimizer(
 ): Promise<void> {
   const { logger } = config
   const isBuild = config.command === 'build'
-  const ssr = !!config.build.ssr // safe as Dev SSR don't use this optimizer
+  const ssr = isBuild && !!config.build.ssr // safe as Dev SSR don't use this optimizer
 
   const sessionTimestamp = Date.now().toString()
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config, ssr)
 
   let handle: NodeJS.Timeout | undefined
+
+  let closed = false
 
   let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, ssr, sessionTimestamp)
@@ -118,6 +120,7 @@ async function createDepsOptimizer(
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     ensureFirstRun,
+    close,
     options: getDepOptimizationConfig(config, ssr)
   }
 
@@ -158,6 +161,13 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   let postScanOptimizationResult: Promise<DepOptimizationResult> | undefined
+
+  let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
+  async function close() {
+    closed = true
+    await postScanOptimizationResult
+    await optimizingNewDeps
+  }
 
   if (!cachedMetadata) {
     // Enter processing state until crawl of static imports ends
@@ -232,7 +242,7 @@ async function createDepsOptimizer(
     }
   }
 
-  async function startNextDiscoveredBatch() {
+  function startNextDiscoveredBatch() {
     newDepsDiscovered = false
 
     // Add the current depOptimizationProcessing to the queue, these
@@ -240,12 +250,12 @@ async function createDepsOptimizer(
     depOptimizationProcessingQueue.push(depOptimizationProcessing)
 
     // Create a new promise for the next rerun, discovered missing
-    // dependencies will be asigned this promise from this point
+    // dependencies will be assigned this promise from this point
     depOptimizationProcessing = newDepOptimizationProcessing()
   }
 
   async function optimizeNewDeps() {
-    // a succesful completion of the optimizeDeps rerun will end up
+    // a successful completion of the optimizeDeps rerun will end up
     // creating new bundled version of all current and discovered deps
     // in the cache dir and a new metadata info object assigned
     // to _metadata. A fullReload is only issued if the previous bundled
@@ -288,7 +298,7 @@ async function createDepsOptimizer(
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
 
-    if (Object.keys(metadata.discovered).length === 0) {
+    if (closed || Object.keys(metadata.discovered).length === 0) {
       currentlyProcessing = false
       return
     }
@@ -296,7 +306,16 @@ async function createDepsOptimizer(
     currentlyProcessing = true
 
     try {
-      const processingResult = preRunResult ?? (await optimizeNewDeps())
+      const processingResult =
+        preRunResult ?? (await (optimizingNewDeps = optimizeNewDeps()))
+      optimizingNewDeps = undefined
+
+      if (closed) {
+        currentlyProcessing = false
+        processingResult.cancel()
+        resolveEnqueuedProcessingPromises()
+        return
+      }
 
       const newData = processingResult.metadata
 
@@ -391,7 +410,7 @@ async function createDepsOptimizer(
       } else {
         if (newDepsDiscovered) {
           // There are newly discovered deps, and another rerun is about to be
-          // excecuted. Avoid the current full reload discarding this rerun result
+          // executed. Avoid the current full reload discarding this rerun result
           // We don't resolve the processing promise, as they will be resolved
           // once a rerun is committed
           processingResult.cancel()
@@ -528,7 +547,7 @@ async function createDepsOptimizer(
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
-      // doesn't alter the bundled files of previous known dependendencies,
+      // doesn't alter the bundled files of previous known dependencies,
       // we don't need a full reload and this browserHash will be kept
       browserHash: getDiscoveredBrowserHash(
         metadata.hash,
@@ -665,7 +684,7 @@ async function createDepsOptimizer(
   function ensureFirstRun() {
     if (!firstRunEnsured && !firstRunCalled && registeredIds.length === 0) {
       setTimeout(() => {
-        if (registeredIds.length === 0) {
+        if (!closed && registeredIds.length === 0) {
           onCrawlEnd()
         }
       }, runOptimizerIfIdleAfterMs)
@@ -699,7 +718,7 @@ async function createDepsOptimizer(
         waitingOn = next.id
         const afterLoad = () => {
           waitingOn = undefined
-          if (!workersSources.has(next.id)) {
+          if (!closed && !workersSources.has(next.id)) {
             if (registeredIds.length > 0) {
               runOptimizerWhenIdle()
             } else {
@@ -745,6 +764,8 @@ async function createDevSsrDepsOptimizer(
     delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
     resetRegisteredIds: () => {},
     ensureFirstRun: () => {},
+
+    close: async () => {},
     options: config.ssr.optimizeDeps
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)

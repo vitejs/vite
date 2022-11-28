@@ -1,10 +1,10 @@
 // @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITEST
 
 export async function createServer(
   root = process.cwd(),
@@ -19,8 +19,9 @@ export async function createServer(
     : ''
 
   const manifest = isProd
-    ? // @ts-ignore
-      (await import('./dist/client/ssr-manifest.json')).default
+    ? JSON.parse(
+        fs.readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8')
+      )
     : {}
 
   const app = express()

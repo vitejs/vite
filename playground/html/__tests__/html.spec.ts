@@ -1,5 +1,13 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  getColor,
+  isBuild,
+  isServe,
+  page,
+  viteTestUrl
+} from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -212,6 +220,13 @@ describe('Unicode path', () => {
   })
 })
 
+describe('link with props', () => {
+  test('separate links with different media props', async () => {
+    await page.goto(viteTestUrl + '/link-props/index.html')
+    expect(await getColor('h1')).toBe('red')
+  })
+})
+
 describe.runIf(isServe)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
@@ -233,5 +248,22 @@ describe.runIf(isServe)('invalid', () => {
     })
     const content = await page.waitForSelector('text=Good HTML')
     expect(content).toBeTruthy()
+  })
+})
+
+test('importmap', () => {
+  expect(browserLogs).not.toContain(
+    'An import map is added after module script load was triggered.'
+  )
+})
+
+describe('Valid HTML', () => {
+  test('valid HTML is parsed', async () => {
+    await page.goto(viteTestUrl + '/valid.html')
+    expect(await page.textContent('#no-quotes-on-attr')).toBe(
+      'No quotes on Attr working'
+    )
+
+    expect(await getColor('#duplicated-attrs')).toBe('green')
   })
 })

@@ -1,17 +1,22 @@
-const path = require('path')
+const path = require('node:path')
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
 
 module.exports = vite.defineConfig({
   base: './',
+  resolve: {
+    alias: {
+      '@': __dirname
+    }
+  },
   worker: {
     format: 'es',
     plugins: [vueJsx()],
     rollupOptions: {
       output: {
-        assetFileNames: 'worker-assets/worker_asset.[name]-[hash].[ext]',
-        chunkFileNames: 'worker-chunks/worker_chunk.[name]-[hash].js',
-        entryFileNames: 'worker-entries/worker_entry.[name]-[hash].js'
+        assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'worker-chunks/worker_chunk-[name]-[hash].js',
+        entryFileNames: 'worker-entries/worker_entry-[name]-[hash].js'
       }
     }
   },

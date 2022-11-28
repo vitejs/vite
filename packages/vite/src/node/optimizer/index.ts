@@ -42,6 +42,7 @@ const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
   hasImports: boolean
+  // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   facade: boolean
   // es-module-lexer has a facade detection but isn't always accurate for our
@@ -64,6 +65,8 @@ export interface DepsOptimizer {
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
   ensureFirstRun: () => void
+
+  close: () => Promise<void>
 
   options: DepOptimizationOptions
 }
@@ -113,7 +116,7 @@ export interface DepOptimizationConfig {
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
    *
-   * By default, Vite can optimize `.mjs`, `.js`, and `.ts` files. This option
+   * By default, Vite can optimize `.mjs`, `.js`, `.ts`, and `.mts` files. This option
    * allows specifying additional extensions.
    *
    * @experimental
@@ -122,8 +125,8 @@ export interface DepOptimizationConfig {
   /**
    * Disables dependencies optimizations, true disables the optimizer during
    * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
-   * one of the modes. Deps optimization is enabled by default in both
-   * @default false
+   * one of the modes. Deps optimization is enabled by default in dev only.
+   * @default 'build'
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
@@ -151,7 +154,7 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
   /**
-   * When doing a re-run, if there are newly discovered dependendencies
+   * When doing a re-run, if there are newly discovered dependencies
    * the page reload will be delayed until the next rerun so we need
    * to be able to discard the result
    */
@@ -224,7 +227,7 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  const ssr = !!config.build.ssr
+  const ssr = config.command === 'build' && !!config.build.ssr
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
@@ -446,7 +449,8 @@ export function depsLogString(qualifiedIds: string[]): string {
 export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
-  ssr: boolean = !!resolvedConfig.build.ssr
+  ssr: boolean = resolvedConfig.command === 'build' &&
+    !!resolvedConfig.build.ssr
 ): Promise<DepOptimizationResult> {
   const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
@@ -576,9 +580,7 @@ export async function runOptimizeDeps(
   if (external.length) {
     plugins.push(esbuildCjsExternalPlugin(external))
   }
-  plugins.push(
-    esbuildDepPlugin(flatIdDeps, flatIdToExports, external, config, ssr)
-  )
+  plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
   const start = performance.now()
 
@@ -608,6 +610,7 @@ export async function runOptimizeDeps(
     ignoreAnnotations: !isBuild,
     metafile: true,
     plugins,
+    charset: 'utf8',
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
@@ -748,7 +751,7 @@ export function depsFromOptimizedDepInfo(
 export function getOptimizedDepPath(
   id: string,
   config: ResolvedConfig,
-  ssr: boolean = !!config.build.ssr
+  ssr: boolean
 ): string {
   return normalizePath(
     path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js')
@@ -909,12 +912,22 @@ function esbuildOutputFromId(
   id: string,
   cacheDirOutputPath: string
 ): any {
+  const cwd = process.cwd()
   const flatId = flattenId(id) + '.js'
-  return outputs[
-    normalizePath(
-      path.relative(process.cwd(), path.join(cacheDirOutputPath, flatId))
-    )
-  ]
+  const normalizedOutputPath = normalizePath(
+    path.relative(cwd, path.join(cacheDirOutputPath, flatId))
+  )
+  const output = outputs[normalizedOutputPath]
+  if (output) {
+    return output
+  }
+  // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
+  // Normalize keys to support this case too
+  for (const [key, value] of Object.entries(outputs)) {
+    if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
+      return value
+    }
+  }
 }
 
 export async function extractExportsData(
@@ -940,7 +953,7 @@ export async function extractExportsData(
     const [imports, exports, facade] = parse(result.outputFiles[0].text)
     return {
       hasImports: imports.length > 0,
-      exports,
+      exports: exports.map((e) => e.n),
       facade
     }
   }
@@ -972,7 +985,7 @@ export async function extractExportsData(
   const [imports, exports, facade] = parseResult
   const exportsData: ExportsData = {
     hasImports: imports.length > 0,
-    exports,
+    exports: exports.map((e) => e.n),
     facade,
     hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)
@@ -1008,7 +1021,7 @@ function needsInterop(
   }
 
   if (output) {
-    // if a peer dependency used require() on a ESM dependency, esbuild turns the
+    // if a peer dependency used require() on an ESM dependency, esbuild turns the
     // ESM dependency's entry chunk into a single default export... detect
     // such cases by checking exports mismatch, and force interop.
     const generatedExports: string[] = output.exports
@@ -1028,10 +1041,37 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
+const lockfileFormats = [
+  { name: 'package-lock.json', patchesDirs: ['patches'] }, // Default of https://github.com/ds300/patch-package
+  { name: 'yarn.lock', patchesDirs: ['patches', '.yarn/patches'] }, // .yarn/patches for v2+
+  { name: 'pnpm-lock.yaml', patchesDirs: [] }, // Included in lockfile
+  { name: 'bun.lockb', patchesDirs: ['patches'] }
+]
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  let content = lookupFile(config.root, lockfileFormats) || ''
+  const lockfilePath = lookupFile(
+    config.root,
+    lockfileFormats.map((l) => l.name),
+    { pathOnly: true }
+  )
+  let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
+  if (lockfilePath) {
+    const lockfileName = path.basename(lockfilePath)
+    const { patchesDirs } = lockfileFormats.find(
+      (f) => f.name === lockfileName
+    )!
+    const dependenciesRoot = path.dirname(lockfilePath)
+    for (const patchesDir of patchesDirs) {
+      const fullPath = path.join(dependenciesRoot, patchesDir)
+      if (fs.existsSync(fullPath)) {
+        const stats = fs.statSync(fullPath)
+        if (stats.isDirectory()) {
+          content += stats.mtimeMs.toString()
+          break
+        }
+      }
+    }
+  }
   // also take config into account
   // only a subset of config options that can affect dep optimization
   const optimizeDeps = getDepOptimizationConfig(config, ssr)

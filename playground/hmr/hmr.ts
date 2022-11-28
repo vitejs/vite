@@ -1,9 +1,21 @@
+// @ts-ignore
+import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
+import './importing-updated'
+import './invalidation/parent'
 
 export const foo = 1
 text('.app', foo)
 text('.dep', depFoo)
 text('.nested', nestedFoo)
+text('.virtual', virtual)
+
+const btn = document.querySelector('.virtual-update') as HTMLButtonElement
+btn.onclick = () => {
+  if (import.meta.hot) {
+    import.meta.hot.send('virtual:increment')
+  }
+}
 
 if (import.meta.hot) {
   import.meta.hot.accept(({ foo }) => {
@@ -33,6 +45,10 @@ if (import.meta.hot) {
     console.log(`foo was:`, foo)
   })
 
+  import.meta.hot.on('vite:afterUpdate', (event) => {
+    console.log(`>>> vite:afterUpdate -- ${event.type}`)
+  })
+
   import.meta.hot.on('vite:beforeUpdate', (event) => {
     console.log(`>>> vite:beforeUpdate -- ${event.type}`)
 
@@ -46,9 +62,8 @@ if (import.meta.hot) {
         (document.querySelector('.global-css') as HTMLLinkElement).href
       )
 
-      // We don't have a vite:afterUpdate event.
-      // We need to wait until the tag has been swapped out, which
-      // includes the time taken to download and parse the new stylesheet.
+      // Wait until the tag has been swapped out, which includes the time taken
+      // to download and parse the new stylesheet. Assert the swapped link.
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
@@ -81,7 +96,11 @@ if (import.meta.hot) {
   })
 
   import.meta.hot.on('vite:error', (event) => {
-    console.log(`>>> vite:error -- ${event.type}`)
+    console.log(`>>> vite:error -- ${event.err.message}`)
+  })
+
+  import.meta.hot.on('vite:invalidate', ({ path }) => {
+    console.log(`>>> vite:invalidate -- ${path}`)
   })
 
   import.meta.hot.on('custom:foo', ({ msg }) => {
