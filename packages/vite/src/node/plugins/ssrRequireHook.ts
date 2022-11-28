@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module'
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
@@ -67,18 +66,6 @@ function dedupeRequire(dedupe: string[]) {
       }
     }
     return resolveFilename!(request, parent, isMain, options)
-  }
-}
-
-const _require = createRequire(import.meta.url)
-export function hookNodeResolve(
-  getResolver: (resolveFilename: NodeResolveFilename) => NodeResolveFilename
-): () => void {
-  const Module = _require('module') as { _resolveFilename: NodeResolveFilename }
-  const prevResolver = Module._resolveFilename
-  Module._resolveFilename = getResolver(prevResolver)
-  return () => {
-    Module._resolveFilename = prevResolver
   }
 }
 
