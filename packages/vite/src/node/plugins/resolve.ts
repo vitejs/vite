@@ -105,8 +105,6 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
-  // Check this resolve is called from `hookNodeResolve` in SSR
-  isHookNodeResolve?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -689,7 +687,6 @@ export function tryNodeResolve(
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
-      !options.isHookNodeResolve &&
       basedir !== root && // root has no peer dep
       !isBuiltin(nestedPath) &&
       !nestedPath.includes('\0') &&

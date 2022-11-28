@@ -2,7 +2,6 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ViteDevServer } from '../server'
 import {
-  bareImportRE,
   dynamicImport,
   isBuiltin,
   unwrapId,
@@ -11,7 +10,6 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { hookNodeResolve } from '../plugins/ssrRequireHook'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -114,9 +112,6 @@ async function instantiateModule(
     root
   } = server.config
 
-  // The `extensions` and `mainFields` options are used to ensure that
-  // CommonJS modules are preferred. We want to avoid ESM->ESM imports
-  // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
     mainFields: ['main'],
     browserField: true,
@@ -124,11 +119,9 @@ async function instantiateModule(
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
-    isBuild: true,
+    isBuild: false,
     isProduction,
-    isRequire: true,
-    root,
-    isHookNodeResolve: true
+    root
   }
 
   // Since dynamic imports can happen in parallel, we need to
@@ -227,72 +220,17 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-// `nodeImport` may run in parallel on multiple `ssrLoadModule` calls.
-// We keep track of the current importing count so that the first import
-// would `hookNodeResolve`, and the last import would `unhookNodeResolve`.
-let importingCount = 0
-let unhookNodeResolve: ReturnType<typeof hookNodeResolve> | undefined
-
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
   importer: string,
   resolveOptions: InternalResolveOptions
 ) {
-  // Node's module resolution is hi-jacked so Vite can ensure the
-  // configured `resolve.dedupe` and `mode` options are respected.
-  const viteResolve = (
-    id: string,
-    importer: string,
-    options = resolveOptions
-  ) => {
-    const resolved = tryNodeResolve(id, importer, options, false)
-    if (!resolved) {
-      const err: any = new Error(
-        `Cannot find module '${id}' imported from '${importer}'`
-      )
-      err.code = 'ERR_MODULE_NOT_FOUND'
-      throw err
-    }
-    return resolved.id
-  }
-
-  if (importingCount === 0) {
-    // When an ESM module imports an ESM dependency, this hook is *not* used.
-    unhookNodeResolve = hookNodeResolve(
-      (nodeResolve) => (id, parent, isMain, options) => {
-        // Use the Vite resolver only for bare imports while skipping
-        // any absolute paths, built-in modules and binary modules.
-        if (
-          !bareImportRE.test(id) ||
-          path.isAbsolute(id) ||
-          isBuiltin(id) ||
-          id.endsWith('.node')
-        ) {
-          return nodeResolve(id, parent, isMain, options)
-        }
-        if (parent) {
-          let resolved = viteResolve(id, parent.id)
-          if (resolved) {
-            // hookNodeResolve must use platform-specific path.normalize
-            // to be compatible with dynamicImport (#6080)
-            resolved = path.normalize(resolved)
-          }
-          return resolved
-        }
-        // Importing a CJS module from an ESM module. In this case, the import
-        // specifier is already an absolute path, so this is a no-op.
-        // Options like `resolve.dedupe` and `mode` are not respected.
-        return id
-      }
-    )
-  }
-
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = viteResolve(
+    const resolved = tryNodeResolve(
       id,
       importer,
       // Non-external modules can import ESM-only modules, but only outside
@@ -300,23 +238,26 @@ async function nodeImport(
       // @ts-expect-error
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
-        : resolveOptions
+        : resolveOptions,
+      false
     )
+    if (!resolved) {
+      const err: any = new Error(
+        `Cannot find module '${id}' imported from '${importer}'`
+      )
+      err.code = 'ERR_MODULE_NOT_FOUND'
+      throw err
+    }
+    url = resolved.id
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
   }
 
   try {
-    importingCount++
     const mod = await dynamicImport(url)
     return proxyESM(mod)
-  } finally {
-    importingCount--
-    if (importingCount === 0) {
-      unhookNodeResolve?.()
-    }
-  }
+  } catch {}
 }
 
 // rollup-style default import interop for cjs
