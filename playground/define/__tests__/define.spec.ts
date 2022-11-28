@@ -1,9 +1,8 @@
 import { expect, test } from 'vitest'
 import viteConfig from '../vite.config'
-import { page } from '~utils'
+import { isBuild, page } from '~utils'
 
 test('string', async () => {
-  const isBuild = !!process.env.VITE_TEST_BUILD
   const defines = viteConfig.define
 
   expect(await page.textContent('.exp')).toBe(
