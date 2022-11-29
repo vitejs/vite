@@ -1,5 +1,10 @@
 const path = require('node:path')
 
+// trigger scss bug: https://github.com/sass/dart-sass/issues/710
+// make sure Vite handles safely
+globalThis.window = {}
+globalThis.location = new URL('http://localhost/')
+
 /**
  * @type {import('vite').UserConfig}
  */
