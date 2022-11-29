@@ -502,9 +502,10 @@ export async function resolveConfig(
     if (userNodeEnv === 'development') {
       process.env.NODE_ENV = 'development'
     } else {
+      // NODE_ENV=production is not supported as it could break HMR in dev for frameworks like Vue
       logger.warn(
         `NODE_ENV=${userNodeEnv} is not supported in the .env file. ` +
-          `This is only used to control the NODE_ENV of a build. ` +
+          `Only NODE_ENV=development is supported to create a development build of your project. ` +
           `If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.`
       )
     }
