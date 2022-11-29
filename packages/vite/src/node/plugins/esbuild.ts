@@ -145,9 +145,10 @@ export async function transformWithEsbuild(
         inMap as RawSourceMap
       ]) as SourceMap
     } else {
-      map = resolvedOptions.sourcemap
-        ? JSON.parse(result.map)
-        : { mappings: '' }
+      map =
+        resolvedOptions.sourcemap && resolvedOptions.sourcemap !== 'inline'
+          ? JSON.parse(result.map)
+          : { mappings: '' }
     }
     if (Array.isArray(map.sources)) {
       map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
