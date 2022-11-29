@@ -462,9 +462,15 @@ export async function transformGlobImport(
 
           files.forEach((i) => matchedFiles.add(i))
 
+          const originalLineBreakCount =
+            code.slice(start, end).match(/\n/g)?.length ?? 0
+          const lineBreaks =
+            originalLineBreakCount > 0
+              ? '\n'.repeat(originalLineBreakCount)
+              : ''
           const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
             ','
-          )}})`
+          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
