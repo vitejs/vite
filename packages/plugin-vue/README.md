@@ -20,31 +20,7 @@ export interface Options {
   include?: string | RegExp | (string | RegExp)[]
   exclude?: string | RegExp | (string | RegExp)[]
 
-  ssr?: boolean
   isProduction?: boolean
-
-  /**
-   * Transform Vue SFCs into custom elements (requires vue@^3.2.0)
-   * - `true` -> all `*.vue` imports are converted into custom elements
-   * - `string | RegExp` -> matched files are converted into custom elements
-   *
-   * @default /\.ce\.vue$/
-   */
-  customElement?: boolean | string | RegExp | (string | RegExp)[]
-
-  /**
-   * Enable Vue reactivity transform (experimental, requires vue@^3.2.25).
-   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
-   *
-   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
-   *           those inside node_modules
-   * - `string | RegExp`: apply to vue + only matched files (will include
-   *                      node_modules, so specify directories in necessary)
-   * - `false`: disable in all cases
-   *
-   * @default false
-   */
-  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   // options to pass on to vue/compiler-sfc
   script?: Partial<Pick<SFCScriptCompileOptions, 'babelParserPlugins'>>
@@ -59,6 +35,33 @@ export interface Options {
     >
   >
   style?: Partial<Pick<SFCStyleCompileOptions, 'trim'>>
+
+  /**
+   * Transform Vue SFCs into custom elements.
+   * - `true`: all `*.vue` imports are converted into custom elements
+   * - `string | RegExp`: matched files are converted into custom elements
+   *
+   * @default /\.ce\.vue$/
+   */
+  customElement?: boolean | string | RegExp | (string | RegExp)[]
+
+  /**
+   * Enable Vue reactivity transform (experimental).
+   * https://vuejs.org/guide/extras/reactivity-transform.html
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
+   *           those inside node_modules
+   * - `string | RegExp`: apply to vue + only matched files (will include
+   *                      node_modules, so specify directories if necessary)
+   * - `false`: disable in all cases
+   *
+   * @default false
+   */
+  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
+
+  /**
+   * Use custom compiler-sfc instance. Can be used to force a specific version.
+   */
+  compiler?: typeof _compiler
 }
 ```
 
