@@ -707,7 +707,8 @@ export async function addManuallyIncludedOptimizeDeps(
     const resolve = config.createResolver({
       asSrc: false,
       scan: true,
-      ssrOptimizeCheck: ssr
+      ssrOptimizeCheck: ssr,
+      ssrConfig: config.ssr
     })
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
