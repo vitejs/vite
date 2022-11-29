@@ -120,20 +120,22 @@ VITE_APP_TITLE=My App
 
 In your app, you can render the title using `import.meta.env.VITE_APP_TITLE`.
 
-However, it is important to understand that **mode** is a wider concept than just development vs. production. A typical example is you may want to have a "staging" mode where it should have production-like behavior, but with slightly different env variables from production.
-
-You can overwrite the default mode used for a command by passing the `--mode` option flag. For example, if you want to build your app for our hypothetical staging mode:
+In some cases, you may want to run `vite build` with a different mode to render a different title. You can overwrite the default mode used for a command by passing the `--mode` option flag. For example, if you want to build your app for a staging mode:
 
 ```bash
 vite build --mode staging
 ```
 
-And to get the behavior we want, we need a `.env.staging` file:
+And create a `.env.staging` file:
 
 ```
 # .env.staging
-NODE_ENV=production
 VITE_APP_TITLE=My App (staging)
 ```
 
-Now your staging app should have production-like behavior, but display a different title from production.
+As `vite build` runs a production build by default, you can also change this and run a development build by using a different mode and `.env` file configuration:
+
+```
+# .env.testing
+NODE_ENV=development
+```

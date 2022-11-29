@@ -378,10 +378,11 @@ export async function resolveConfig(
   let config = inlineConfig
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
+  const isNodeEnvSet = !!process.env.NODE_ENV
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it early on
-  if (!process.env.NODE_ENV) {
+  if (!isNodeEnvSet) {
     process.env.NODE_ENV = defaultNodeEnv
   }
 
@@ -494,15 +495,23 @@ export async function resolveConfig(
     loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
-  // production-like behavior is expected. This is indicated by NODE_ENV=production
+  // development-like behavior is expected. This is indicated by NODE_ENV=development
   // loaded from `.staging.env` and set by us as VITE_USER_NODE_ENV
-  const isProduction =
-    (process.env.NODE_ENV || process.env.VITE_USER_NODE_ENV || mode) ===
-    'production'
-  if (isProduction) {
-    // in case default mode was not production and is overwritten
-    process.env.NODE_ENV = 'production'
+  const userNodeEnv = process.env.VITE_USER_NODE_ENV
+  if (!isNodeEnvSet && userNodeEnv) {
+    if (userNodeEnv === 'development') {
+      process.env.NODE_ENV = 'development'
+    } else {
+      // NODE_ENV=production is not supported as it could break HMR in dev for frameworks like Vue
+      logger.warn(
+        `NODE_ENV=${userNodeEnv} is not supported in the .env file. ` +
+          `Only NODE_ENV=development is supported to create a development build of your project. ` +
+          `If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.`
+      )
+    }
   }
+
+  const isProduction = process.env.NODE_ENV === 'production'
 
   // resolve public base url
   const isBuild = command === 'build'
