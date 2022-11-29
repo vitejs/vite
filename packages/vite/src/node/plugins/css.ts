@@ -1499,9 +1499,20 @@ function loadPreprocessor(
   }
 }
 
-// in unix, scss might append http://localhost in environments that shim `location`
+// in unix, scss might append `location.href` in environments that shim `location`
 // see https://github.com/sass/dart-sass/issues/710
-const cleanScssBugUrl = (url: string) => url.replace(/^http:\/\/localhost/, '')
+function cleanScssBugUrl(url: string) {
+  if (
+    // check bug via `window` and `location` global
+    typeof window !== 'undefined' &&
+    typeof location !== 'undefined'
+  ) {
+    const prefix = location.href.replace(/\/$/, '')
+    return url.replace(prefix, '')
+  } else {
+    return url
+  }
+}
 
 function fixScssBugImportValue(
   data: Sass.ImporterReturnType
