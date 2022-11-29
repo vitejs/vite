@@ -7,6 +7,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isServe,
   page,
   removeFile,
   untilBrowserLogAfter,
@@ -207,7 +208,7 @@ test('warn CSS default import', async () => {
     `expected logs to include a message including ${JSON.stringify(
       noTreeshakeCSSMessage
     )}`
-  ).toBe(true)
+  ).toBe(isServe)
   expect(
     logs.every((log) => !log.includes(treeshakeCSSMessage)),
     `expected logs not to include a message including ${JSON.stringify(
