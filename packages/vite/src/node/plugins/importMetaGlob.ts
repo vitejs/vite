@@ -14,6 +14,7 @@ import type {
   TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
+import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
@@ -29,7 +30,7 @@ import {
   transformStableResult
 } from '../utils'
 import type { Logger } from '../logger'
-import { isCSSRequest } from './css'
+import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -163,15 +164,9 @@ export async function parseImportGlob(
       }
     }
 
-    if (ast.type === 'SequenceExpression')
-      ast = ast.expressions[0] as CallExpression
-
-    // immediate property access, call expression is nested
-    // import.meta.glob(...)['prop']
-    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
-
-    if (ast.type !== 'CallExpression')
-      throw err(`Expect CallExpression, got ${ast.type}`)
+    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
+    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
+    ast = found.node as unknown as CallExpression
 
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
@@ -385,8 +380,10 @@ export async function transformGlobImport(
           if (query && !query.startsWith('?')) query = `?${query}`
 
           if (
-            !query.match(/(?:\?|&)inline\b/) &&
-            files.some((file) => isCSSRequest(file))
+            !query && // ignore custom queries
+            files.some(
+              (file) => isCSSRequest(file) && !isModuleCSSRequest(file)
+            )
           ) {
             logger.warn(
               `\n` +
