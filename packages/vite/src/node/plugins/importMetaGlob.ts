@@ -1,5 +1,6 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
+import colors from 'picocolors'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
@@ -13,6 +14,7 @@ import type {
   TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
+import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
@@ -21,7 +23,14 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash, transformStableResult } from '../utils'
+import {
+  generateCodeFrame,
+  normalizePath,
+  slash,
+  transformStableResult
+} from '../utils'
+import type { Logger } from '../logger'
+import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -68,6 +77,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
+        config.logger,
         config.experimental.importGlobRestoreExtension
       )
       if (result) {
@@ -154,15 +164,9 @@ export async function parseImportGlob(
       }
     }
 
-    if (ast.type === 'SequenceExpression')
-      ast = ast.expressions[0] as CallExpression
-
-    // immediate property access, call expression is nested
-    // import.meta.glob(...)['prop']
-    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
-
-    if (ast.type !== 'CallExpression')
-      throw err(`Expect CallExpression, got ${ast.type}`)
+    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
+    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
+    ast = found.node as unknown as CallExpression
 
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
@@ -318,6 +322,7 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
+  logger: Logger,
   restoreQueryExtension = false
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -373,6 +378,25 @@ export async function transformGlobImport(
             : stringifyQuery(options.query as any)
 
           if (query && !query.startsWith('?')) query = `?${query}`
+
+          if (
+            !query && // ignore custom queries
+            files.some(
+              (file) => isCSSRequest(file) && !isModuleCSSRequest(file)
+            )
+          ) {
+            logger.warn(
+              `\n` +
+                colors.cyan(id) +
+                `\n` +
+                colors.reset(generateCodeFrame(code, start)) +
+                `\n` +
+                colors.yellow(
+                  `Globbing CSS files without the ?inline query is deprecated. ` +
+                    `Add the \`{ query: '?inline' }\` glob option to fix this.`
+                )
+            )
+          }
 
           const resolvePaths = (file: string) => {
             if (!dir) {

@@ -85,7 +85,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
               .join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
-            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
+            ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
           'gu'
         )
       : null
