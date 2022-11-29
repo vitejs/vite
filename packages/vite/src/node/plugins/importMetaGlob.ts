@@ -1,6 +1,5 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
-import colors from 'picocolors'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
@@ -23,13 +22,7 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import {
-  generateCodeFrame,
-  normalizePath,
-  slash,
-  transformStableResult
-} from '../utils'
-import type { Logger } from '../logger'
+import { normalizePath, slash, transformStableResult } from '../utils'
 import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
@@ -77,7 +70,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
-        config.logger,
+        config.isProduction,
         config.experimental.importGlobRestoreExtension
       )
       if (result) {
@@ -308,6 +301,24 @@ const importPrefix = '__vite_glob_'
 
 const { basename, dirname, relative, join } = posix
 
+const warnedCSSDefaultImportVarName = '__vite_warned_css_default_import'
+const jsonStringifyInOneline = (input: any) =>
+  JSON.stringify(input).replace(/[{,:]/g, '$& ').replace(/\}/g, ' }')
+const createCssDefaultImportWarning = (
+  globs: string[],
+  options: GeneralImportGlobOptions
+) =>
+  `if (!${warnedCSSDefaultImportVarName}) {` +
+  `${warnedCSSDefaultImportVarName} = true;` +
+  `console.warn(${JSON.stringify(
+    'Default import of CSS without `?inline` is deprecated. ' +
+      "Add the `{ query: '?inline' }` glob option to fix this.\n" +
+      `For example: \`import.meta.glob(${jsonStringifyInOneline(
+        globs.length === 1 ? globs[0] : globs
+      )}, ${jsonStringifyInOneline({ ...options, query: '?inline' })})\``
+  )});` +
+  `}`
+
 export interface TransformGlobImportResult {
   s: MagicString
   matches: ParsedImportGlob[]
@@ -322,7 +333,7 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
-  logger: Logger,
+  isProduction: boolean,
   restoreQueryExtension = false
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -353,7 +364,15 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globs,
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await fg(globsResolved, {
@@ -379,25 +398,6 @@ export async function transformGlobImport(
 
           if (query && !query.startsWith('?')) query = `?${query}`
 
-          if (
-            !query && // ignore custom queries
-            files.some(
-              (file) => isCSSRequest(file) && !isModuleCSSRequest(file)
-            )
-          ) {
-            logger.warn(
-              `\n` +
-                colors.cyan(id) +
-                `\n` +
-                colors.reset(generateCodeFrame(code, start)) +
-                `\n` +
-                colors.yellow(
-                  `Globbing CSS files without the ?inline query is deprecated. ` +
-                    `Add the \`{ query: '?inline' }\` glob option to fix this.`
-                )
-            )
-          }
-
           const resolvePaths = (file: string) => {
             if (!dir) {
               if (isRelative)
@@ -422,6 +422,7 @@ export async function transformGlobImport(
             return { filePath, importPath }
           }
 
+          let includesCSS = false
           files.forEach((file, i) => {
             const paths = resolvePaths(file)
             const filePath = paths.filePath
@@ -436,6 +437,10 @@ export async function transformGlobImport(
 
             importPath = `${importPath}${importQuery}`
 
+            const isCSS =
+              !query && isCSSRequest(file) && !isModuleCSSRequest(file)
+            includesCSS ||= isCSS
+
             const importKey =
               options.import && options.import !== '*'
                 ? options.import
@@ -449,22 +454,55 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`
               )
-              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              if (!isProduction && isCSS) {
+                objectProps.push(
+                  `get ${JSON.stringify(
+                    filePath
+                  )}() { ${createCssDefaultImportWarning(
+                    globs,
+                    options
+                  )} return ${variableName} }`
+                )
+              } else {
+                objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              }
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
-              objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`
-              )
+              if (!isProduction && isCSS) {
+                objectProps.push(
+                  `${JSON.stringify(
+                    filePath
+                  )}: () => { ${createCssDefaultImportWarning(
+                    globs,
+                    options
+                  )} return ${importStatement}}`
+                )
+              } else {
+                objectProps.push(
+                  `${JSON.stringify(filePath)}: () => ${importStatement}`
+                )
+              }
             }
           })
 
           files.forEach((i) => matchedFiles.add(i))
 
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ','
-          )}})`
+          let replacement: string
+          if (!isProduction && includesCSS) {
+            replacement =
+              '/* #__PURE__ */ Object.assign(' +
+              '(() => {' +
+              `let ${warnedCSSDefaultImportVarName} = false;` +
+              `return {${objectProps.join(',')}};` +
+              '})()' +
+              ')'
+          } else {
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+              ','
+            )}})`
+          }
           s.overwrite(start, end, replacement)
 
           return staticImports
