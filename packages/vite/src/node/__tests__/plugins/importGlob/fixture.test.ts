@@ -25,13 +25,7 @@ describe('fixture', async () => {
   it('preserve line count', async () => {
     const getTransformedLineCount = async (code: string) =>
       (
-        await transformGlobImport(
-          code,
-          'virtual:module',
-          root,
-          resolveId,
-          logger
-        )
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
       )?.s
         .toString()
         .split('\n').length
