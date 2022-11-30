@@ -534,11 +534,8 @@ function extractImportPaths(code: string) {
 
   let js = ''
   let m
+  importsRE.lastIndex = 0
   while ((m = importsRE.exec(code)) != null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if (m.index === importsRE.lastIndex) {
-      importsRE.lastIndex++
-    }
     js += `\nimport ${m[1]}`
   }
   return js
