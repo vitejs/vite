@@ -25,12 +25,10 @@ describe('vue component library', () => {
 
   test('should inject css when cssCodeSplit = true', async () => {
     // Build lib
-    const { output } = (
-      await build({
-        logLevel: 'silent',
-        configFile: path.resolve(__dirname, '../vite.config.lib-css.ts')
-      })
-    )[0]
+    const { output } = (await build({
+      logLevel: 'silent',
+      configFile: path.resolve(__dirname, '../vite.config.lib-css.ts')
+    })) as RollupOutput
     expect(output[0].code).toContain('.card{padding:4rem}')
   })
 })

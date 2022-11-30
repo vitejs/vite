@@ -68,6 +68,12 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:reporter',
 
+    buildStart() {
+      hasTransformed = false
+      hasRenderedChunk = false
+      transformedCount = 0
+    },
+
     transform(_, id) {
       transformedCount++
       if (shouldLogInfo) {

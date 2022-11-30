@@ -37,6 +37,7 @@ import {
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
+import { LogLevels } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import {
@@ -523,7 +524,6 @@ async function doBuild(
       ? 'strict'
       : false,
     ...options.rollupOptions,
-    input,
     plugins,
     external,
     onwarn(warning, warn) {
@@ -545,75 +545,74 @@ async function doBuild(
   }
 
   try {
-    const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
-      // See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
-      // @ts-ignore
-      if (output.output) {
-        config.logger.warn(
-          `You've set "rollupOptions.output.output" in your config. ` +
-            `This is deprecated and will override all Vite.js default output options. ` +
-            `Please use "rollupOptions.output" instead.`
-        )
-      }
+    const buildOutputOptions =
+      (input: InputOption) =>
+      (output: OutputOptions): OutputOptions => {
+        // See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
+        // @ts-ignore
+        if (output.output) {
+          config.logger.warn(
+            `You've set "rollupOptions.output.output" in your config. ` +
+              `This is deprecated and will override all Vite.js default output options. ` +
+              `Please use "rollupOptions.output" instead.`
+          )
+        }
 
-      const ssrNodeBuild = ssr && config.ssr.target === 'node'
-      const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
-      const cjsSsrBuild = ssr && config.ssr.format === 'cjs'
+        const ssrNodeBuild = ssr && config.ssr.target === 'node'
+        const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
+        const cjsSsrBuild = ssr && config.ssr.format === 'cjs'
 
-      const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
-      const jsExt =
-        ssrNodeBuild || libOptions
-          ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
-          : 'js'
-      return {
-        dir: outDir,
-        // Default format is 'es' for regular and for SSR builds
-        format,
-        exports: cjsSsrBuild ? 'named' : 'auto',
-        sourcemap: options.sourcemap,
-        name: libOptions ? libOptions.name : undefined,
-        // es2015 enables `generatedCode.symbols`
-        // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
-        // - #1048 add `Symbol.toStringTag` for module default export
-        generatedCode: 'es2015',
-        entryFileNames: ssr
-          ? `[name].${jsExt}`
-          : libOptions
-          ? ({ name }) =>
-              resolveLibFilename(libOptions, format, name, config.root, jsExt)
-          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
-        chunkFileNames: libOptions
-          ? `[name]-[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
-        assetFileNames: libOptions
-          ? `[name].[ext]`
-          : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
-        inlineDynamicImports:
-          output.format === 'umd' ||
-          output.format === 'iife' ||
-          (ssrWorkerBuild &&
-            (typeof input === 'string' || Object.keys(input).length === 1)),
-        ...output
+        const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
+        const jsExt =
+          ssrNodeBuild || libOptions
+            ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
+            : 'js'
+        return {
+          dir: outDir,
+          // Default format is 'es' for regular and for SSR builds
+          format,
+          exports: cjsSsrBuild ? 'named' : 'auto',
+          sourcemap: options.sourcemap,
+          name: libOptions ? resolveLibName(libOptions, input) : undefined,
+          // es2015 enables `generatedCode.symbols`
+          // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
+          // - #1048 add `Symbol.toStringTag` for module default export
+          generatedCode: 'es2015',
+          entryFileNames: ssr
+            ? `[name].${jsExt}`
+            : libOptions
+            ? ({ name }) =>
+                resolveLibFilename(libOptions, format, name, config.root, jsExt)
+            : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+          chunkFileNames: libOptions
+            ? `[name]-[hash].${jsExt}`
+            : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+          assetFileNames: libOptions
+            ? `[name].[ext]`
+            : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
+          inlineDynamicImports:
+            output.format === 'umd' ||
+            output.format === 'iife' ||
+            (ssrWorkerBuild &&
+              (typeof input === 'string' || Object.keys(input).length === 1)),
+          ...output
+        }
       }
-    }
 
     // resolve lib mode outputs
-    const outputs = resolveBuildOutputs(
-      options.rollupOptions?.output,
+    const builds = resolveBuilds(
+      input,
+      options.rollupOptions.output,
       libOptions,
+      buildOutputOptions,
       config.logger
     )
-    const normalizedOutputs: OutputOptions[] = []
 
-    if (Array.isArray(outputs)) {
-      for (const resolvedOutput of outputs) {
-        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
-      }
-    } else {
-      normalizedOutputs.push(buildOutputOptions(outputs))
-    }
+    const outDirs = builds.flatMap((build) =>
+      build.output.map(({ dir }) => resolve(dir!))
+    )
 
-    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
+    const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
 
     // watch file changes with rollup
     if (config.build.watch) {
@@ -624,18 +623,28 @@ async function doBuild(
       )
 
       const { watch } = await import('rollup')
-      const watcher = watch({
-        ...rollupOptions,
-        output: normalizedOutputs,
-        watch: {
-          ...config.build.watch,
-          chokidar: resolvedChokidarOptions
-        }
-      })
+      const watcher = watch(
+        builds.map(({ input, output }) => ({
+          ...rollupOptions,
+          input,
+          output,
+          watch: {
+            ...config.build.watch,
+            chokidar: resolvedChokidarOptions
+          }
+        }))
+      )
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          config.logger.info(colors.cyan(`\nbuild started...`))
+          const label = builds.find(
+            (build) =>
+              JSON.stringify(build.input) === JSON.stringify(event.input)
+          )?.label
+
+          config.logger.info(
+            colors.cyan(`\nbuild started${label ? ` (${label})` : ''}...`)
+          )
           if (options.write) {
             prepareOutDir(outDirs, options.emptyOutDir, config)
           }
@@ -652,22 +661,36 @@ async function doBuild(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
-    const bundle = await rollup(rollupOptions)
-    parallelBuilds.push(bundle)
-
-    const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](output)
-    }
 
     if (options.write) {
       prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
     const res = []
-    for (const output of normalizedOutputs) {
-      res.push(await generate(output))
+
+    for (const { input, output, label } of builds) {
+      if (shouldLogInfo && label) {
+        config.logger.info(`\n${label}`)
+      }
+
+      const bundle = await rollup({
+        ...rollupOptions,
+        input,
+        output
+      })
+
+      parallelBuilds.push(bundle)
+
+      const generate = (output: OutputOptions = {}) => {
+        return bundle[options.write ? 'write' : 'generate'](output)
+      }
+
+      for (const part of output) {
+        res.push(await generate(part))
+      }
     }
-    return Array.isArray(outputs) ? res : res[0]
+
+    return res.length > 1 ? res : res[0]
   } catch (e) {
     outputBuildError(e)
     throw e
@@ -750,6 +773,23 @@ function resolveOutputJsExtension(
   }
 }
 
+export function resolveLibName(
+  libOptions: LibraryOptions,
+  input: InputOption
+): string | undefined {
+  if (libOptions.name !== undefined) {
+    return libOptions.name
+  }
+
+  if (
+    typeof input !== 'string' &&
+    !Array.isArray(input) &&
+    Object.keys(input).length === 1
+  ) {
+    return Object.keys(input)[0]
+  }
+}
+
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
@@ -783,55 +823,142 @@ export function resolveLibFilename(
 }
 
 export function resolveBuildOutputs(
+  input: InputOption,
   outputs: OutputOptions | OutputOptions[] | undefined,
   libOptions: LibraryOptions | false,
   logger: Logger
-): OutputOptions | OutputOptions[] | undefined {
+): OutputOptions[] {
+  const hasMultipleEntries =
+    typeof input !== 'string' && Object.values(input).length > 1
+
   if (libOptions) {
-    const libHasMultipleEntries =
-      typeof libOptions.entry !== 'string' &&
-      Object.values(libOptions.entry).length > 1
-    const libFormats =
-      libOptions.formats ||
-      (libHasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
-
     if (!Array.isArray(outputs)) {
-      if (libFormats.includes('umd') || libFormats.includes('iife')) {
-        if (libHasMultipleEntries) {
-          throw new Error(
-            'Multiple entry points are not supported when output formats include "umd" or "iife".'
-          )
-        }
+      const libFormats =
+        libOptions.formats ||
+        (hasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
 
-        if (!libOptions.name) {
-          throw new Error(
-            'Option "build.lib.name" is required when output formats include "umd" or "iife".'
-          )
-        }
-      }
-
-      return libFormats.map((format) => ({ ...outputs, format }))
-    }
-
-    // By this point, we know "outputs" is an Array.
-    if (libOptions.formats) {
+      outputs = libFormats.map((format) => ({ ...outputs, format }))
+    } else if (libOptions.formats) {
       logger.warn(
         colors.yellow(
           '"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.'
         )
       )
     }
+  }
 
-    outputs.forEach((output) => {
-      if (['umd', 'iife'].includes(output.format!) && !output.name) {
+  if (!Array.isArray(outputs)) {
+    outputs = [outputs ?? {}]
+  }
+
+  outputs.forEach((output) => {
+    if (output.format === 'umd' || output.format === 'iife') {
+      if (hasMultipleEntries && Array.isArray(input)) {
         throw new Error(
-          'Entries in "build.rollupOptions.output" must specify "name" when the format is "umd" or "iife".'
+          `"build.lib.entry"/"build.rollupOptions.input" must be defined as object when there are multiple ` +
+            `inputs and output formats include "umd" or "iife".`
         )
       }
+      if (
+        (typeof input === 'string' || Array.isArray(input)) &&
+        !output.name &&
+        !(libOptions && libOptions.name)
+      ) {
+        throw new Error(
+          `"build.lib.entry"/"build.rollupOptions.input" must be defined as object or option ` +
+            `"build.lib.name"/"build.rollupOptions.output.name" must be provided when output formats include "umd" or "iife".`
+        )
+      }
+    }
+  })
+
+  return outputs
+}
+
+export function resolveBuilds(
+  input: InputOption,
+  output: OutputOptions | OutputOptions[] | undefined,
+  libOptions: LibraryOptions | false,
+  buildOutputOptions: (
+    input: InputOption
+  ) => (output: OutputOptions) => OutputOptions,
+  logger: Logger
+): {
+  input: InputOption
+  output: OutputOptions[]
+  label?: string
+}[] {
+  const resolvedOutput = resolveBuildOutputs(input, output, libOptions, logger)
+
+  // For umd and iife formats, one separate build per entrypoint is needed
+  // because rollup doesn't support code splitting builds for them
+  // https://github.com/rollup/rollup/issues/2072
+  // All other formats and entry points will be one build
+
+  const hasMultipleEntries =
+    typeof input !== 'string' && Object.values(input).length > 1
+  const canUseCodeSplitting = (output: OutputOptions) =>
+    output.format !== 'umd' && output.format !== 'iife'
+
+  const mainBuild = hasMultipleEntries
+    ? resolvedOutput.filter(canUseCodeSplitting)
+    : resolvedOutput
+
+  const outputsWithoutCodeSplitting = hasMultipleEntries
+    ? resolvedOutput.filter((output) => !canUseCodeSplitting(output))
+    : []
+
+  const builds: {
+    input: InputOption
+    output: OutputOptions[]
+    label?: string
+  }[] = []
+
+  // One build for all formats, with code splitting if needed
+  if (mainBuild.length > 0) {
+    builds.push({
+      input,
+      output: mainBuild
     })
   }
 
-  return outputs
+  const nonCodeSplittingLabel = (name: string) =>
+    `Extra non code splitting build for entry: ${name}`
+
+  // One build per entry point for formats without code splitting
+  if (outputsWithoutCodeSplitting.length > 0) {
+    // TODO first block needed?
+    if (typeof input === 'string' || !input) {
+      builds.push({
+        input,
+        output: outputsWithoutCodeSplitting,
+        label: nonCodeSplittingLabel(
+          libOptions ? libOptions.name ?? input : input
+        )
+      })
+    } else if (Array.isArray(input)) {
+      for (const i of input) {
+        builds.push({
+          input: i,
+          output: outputsWithoutCodeSplitting,
+          label: nonCodeSplittingLabel(libOptions ? libOptions.name ?? i : i)
+        })
+      }
+    } else if (input) {
+      for (const [key, value] of Object.entries(input)) {
+        builds.push({
+          input: { [key]: value },
+          output: outputsWithoutCodeSplitting,
+          label: nonCodeSplittingLabel(key)
+        })
+      }
+    }
+  }
+
+  return builds.map((build) => ({
+    ...build,
+    output: build.output.map(buildOutputOptions(build.input))
+  }))
 }
 
 const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
