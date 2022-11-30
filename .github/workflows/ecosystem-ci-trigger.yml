@@ -26,7 +26,8 @@ jobs:
               'poyoho',
               'sapphi-red',
               'ygj6',
-              'Niputi'
+              'Niputi',
+              'dominikg'
             ])
 
             if (allowedUsers.has(user)) {
