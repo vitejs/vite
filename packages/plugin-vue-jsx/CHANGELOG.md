@@ -1,3 +1,11 @@
+## 3.0.0-alpha.0 (2022-11-30)
+
+* fix(deps): update all non-major dependencies (#10804) ([f686afa](https://github.com/vitejs/vite/commit/f686afa)), closes [#10804](https://github.com/vitejs/vite/issues/10804)
+* fix(deps): update all non-major dependencies (#11091) ([073a4bf](https://github.com/vitejs/vite/commit/073a4bf)), closes [#11091](https://github.com/vitejs/vite/issues/11091)
+* feat(plugin-vue-jsx): add `jsx` pure flag (#10205) ([333bacb](https://github.com/vitejs/vite/commit/333bacb)), closes [#10205](https://github.com/vitejs/vite/issues/10205)
+
+
+
 ## <small>2.1.1 (2022-11-07)</small>
 
 * chore(deps): update all non-major dependencies (#10725) ([22cfad8](https://github.com/vitejs/vite/commit/22cfad8)), closes [#10725](https://github.com/vitejs/vite/issues/10725)
