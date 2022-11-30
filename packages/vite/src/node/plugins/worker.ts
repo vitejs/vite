@@ -336,6 +336,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
         let match: RegExpExecArray | null
         s = new MagicString(code)
+        workerAssetUrlRE.lastIndex = 0
 
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!

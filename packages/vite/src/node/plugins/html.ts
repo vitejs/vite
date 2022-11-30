@@ -398,6 +398,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               const cleanCode = stripLiteral(scriptNode.value)
 
               let match: RegExpExecArray | null
+              inlineImportRE.lastIndex = 0
               while ((match = inlineImportRE.exec(cleanCode))) {
                 const { 1: url, index } = match
                 const startUrl = cleanCode.indexOf(url, index)
@@ -779,6 +780,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // no use assets plugin because it will emit file
         let match: RegExpExecArray | null
         let s: MagicString | undefined
+        inlineCSSRE.lastIndex = 0
         while ((match = inlineCSSRE.exec(result))) {
           s ||= new MagicString(result)
           const { 0: full, 1: scopedName } = match
