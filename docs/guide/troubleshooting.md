@@ -53,7 +53,7 @@ Note that these settings persist but a **restart is required**.
 
 ### Randomly stops working
 
-When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content.  Vite relies on these caching directives.
+When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content. Vite relies on these caching directives.
 
 To resolve the problem use a trusted SSL cert.
 
