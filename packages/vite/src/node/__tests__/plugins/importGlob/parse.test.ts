@@ -327,28 +327,26 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob("hey", hey)')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Expected the second argument o to be a object literal, but got "Identifier"]'
+      '[Error: Invalid glob import syntax: Expected the second argument to be an object literal, but got "Identifier"]'
     )
     expect(await runError('import.meta.glob("hey", [])')).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Expected the second argument o to be a object literal, but got "ArrayExpression"]'
+      '[Error: Invalid glob import syntax: Expected the second argument to be an object literal, but got "ArrayExpression"]'
     )
   })
 
   it('options props', async () => {
     expect(
       await runError('import.meta.glob("hey", { hey: 1 })')
-    ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Unknown options hey]'
-    )
+    ).toMatchInlineSnapshot('[Error: Unknown glob option "hey"]')
     expect(
       await runError('import.meta.glob("hey", { import: hey })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Vite is unable to parse the glob options as the value is not static]'
     )
     expect(
       await runError('import.meta.glob("hey", { eager: 123 })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Expected the type of option "eager" to be "boolean", but got "number"]'
+      '[Error: Expected glob option "eager" to be of type boolean, but got number]'
     )
   })
 
@@ -356,29 +354,29 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob("./*.js", { as: "raw", query: "hi" })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Options "as" and "query" cannot be used together]'
+      '[Error: Options "as" and "query" cannot be used together]'
     )
     expect(
       await runError('import.meta.glob("./*.js", { query: 123 })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Expected query to be a string, but got "number"]'
+      '[Error: Expected glob option "query" to be of type object or string, but got number]'
     )
     expect(
       await runError('import.meta.glob("./*.js", { query: { foo: {} } })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Expected glob option "query.foo" to be of type string, number, or boolean, but got object]'
     )
     expect(
       await runError('import.meta.glob("./*.js", { query: { foo: hey } })')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Vite is unable to parse the glob options as the value is not static]'
     )
     expect(
       await runError(
         'import.meta.glob("./*.js", { query: { foo: 123, ...a } })'
       )
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Vite is unable to parse the glob options as the value is not static]'
     )
   })
 })

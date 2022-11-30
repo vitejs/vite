@@ -14,6 +14,7 @@ import type {
   TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
+import type { RollupError } from 'rollup'
 import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
@@ -24,6 +25,7 @@ import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import {
+  evalValue,
   generateCodeFrame,
   normalizePath,
   slash,
@@ -95,13 +97,86 @@ const importGlobRE =
   /\bimport\.meta\.(glob|globEager|globEagerDefault)(?:<\w+>)?\s*\(/g
 
 const knownOptions = {
-  as: 'string',
-  eager: 'boolean',
-  import: 'string',
-  exhaustive: 'boolean'
-} as const
+  as: ['string'],
+  eager: ['boolean'],
+  import: ['string'],
+  exhaustive: ['boolean'],
+  query: ['object', 'string']
+}
 
 const forceDefaultAs = ['raw', 'url']
+
+function err(e: string, pos: number) {
+  const error = new Error(e) as RollupError
+  error.pos = pos
+  return error
+}
+
+function parseGlobOptions(
+  rawOpts: string,
+  optsStartIndex: number
+): GeneralImportGlobOptions {
+  let opts: GeneralImportGlobOptions = {}
+  try {
+    opts = evalValue(rawOpts)
+  } catch {
+    throw err(
+      'Vite is unable to parse the glob options as the value is not static',
+      optsStartIndex
+    )
+  }
+
+  if (opts == null) {
+    return {}
+  }
+
+  for (const key in opts) {
+    if (!(key in knownOptions)) {
+      throw err(`Unknown glob option "${key}"`, optsStartIndex)
+    }
+    const allowedTypes = knownOptions[key as keyof typeof knownOptions]
+    const valueType = typeof opts[key as keyof GeneralImportGlobOptions]
+    if (!allowedTypes.includes(valueType)) {
+      throw err(
+        `Expected glob option "${key}" to be of type ${allowedTypes.join(
+          ' or '
+        )}, but got ${valueType}`,
+        optsStartIndex
+      )
+    }
+  }
+
+  if (typeof opts.query === 'object') {
+    for (const key in opts.query) {
+      const value = opts.query[key]
+      if (!['string', 'number', 'boolean'].includes(typeof value)) {
+        throw err(
+          `Expected glob option "query.${key}" to be of type string, number, or boolean, but got ${typeof value}`,
+          optsStartIndex
+        )
+      }
+    }
+  }
+
+  if (opts.as && forceDefaultAs.includes(opts.as)) {
+    if (opts.import && opts.import !== 'default' && opts.import !== '*')
+      throw err(
+        `Option "import" can only be "default" or "*" when "as" is "${opts.as}", but got "${opts.import}"`,
+        optsStartIndex
+      )
+    opts.import = opts.import || 'default'
+  }
+
+  if (opts.as && opts.query)
+    throw err(
+      'Options "as" and "query" cannot be used together',
+      optsStartIndex
+    )
+
+  if (opts.as) opts.query = opts.as
+
+  return opts
+}
 
 export async function parseImportGlob(
   code: string,
@@ -205,81 +280,18 @@ export async function parseImportGlob(
     }
 
     // arg2
-    const options: GeneralImportGlobOptions = {}
+    let options: GeneralImportGlobOptions = {}
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
-          `Expected the second argument o to be a object literal, but got "${arg2.type}"`
+          `Expected the second argument to be an object literal, but got "${arg2.type}"`
         )
 
-      for (const property of arg2.properties) {
-        if (
-          property.type === 'SpreadElement' ||
-          (property.key.type !== 'Identifier' &&
-            property.key.type !== 'Literal')
-        )
-          throw err('Could only use literals')
-
-        const name = ((property.key as any).name ||
-          (property.key as any).value) as keyof GeneralImportGlobOptions
-        if (name === 'query') {
-          if (property.value.type === 'ObjectExpression') {
-            const data: Record<string, string> = {}
-            for (const prop of property.value.properties) {
-              if (
-                prop.type === 'SpreadElement' ||
-                prop.key.type !== 'Identifier' ||
-                prop.value.type !== 'Literal'
-              )
-                throw err('Could only use literals')
-              data[prop.key.name] = prop.value.value as any
-            }
-            options.query = data
-          } else if (property.value.type === 'Literal') {
-            if (typeof property.value.value !== 'string')
-              throw err(
-                `Expected query to be a string, but got "${typeof property.value
-                  .value}"`
-              )
-            options.query = property.value.value
-          } else {
-            throw err('Could only use literals')
-          }
-          continue
-        }
-
-        if (!(name in knownOptions)) throw err(`Unknown options ${name}`)
-
-        if (property.value.type !== 'Literal')
-          throw err('Could only use literals')
-
-        const valueType = typeof property.value.value
-        if (valueType === 'undefined') continue
-
-        if (valueType !== knownOptions[name])
-          throw err(
-            `Expected the type of option "${name}" to be "${knownOptions[name]}", but got "${valueType}"`
-          )
-        options[name] = property.value.value as any
-      }
-    }
-
-    if (options.as && forceDefaultAs.includes(options.as)) {
-      if (
-        options.import &&
-        options.import !== 'default' &&
-        options.import !== '*'
+      options = parseGlobOptions(
+        code.slice(arg2.range![0], arg2.range![1]),
+        arg2.range![0]
       )
-        throw err(
-          `Option "import" can only be "default" or "*" when "as" is "${options.as}", but got "${options.import}"`
-        )
-      options.import = options.import || 'default'
     }
-
-    if (options.as && options.query)
-      throw err('Options "as" and "query" cannot be used together')
-
-    if (options.as) options.query = options.as
 
     const end = ast.range![1]
 
