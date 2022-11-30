@@ -63,13 +63,7 @@ export async function createServer(
         render = (await import('./dist/entry-server.js')).render
       }
 
-      const context = {}
-      const appHtml = await render(url, context)
-
-      if (context.url) {
-        // Somewhere a `<Redirect>` was rendered
-        return res.redirect(301, context.url)
-      }
+      const appHtml = await render(url)
 
       const html = template.replace(`<!--app-html-->`, appHtml)
 
