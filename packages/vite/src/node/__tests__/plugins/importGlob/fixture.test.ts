@@ -4,15 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
-import type { Logger } from '../../../logger'
-import { createLogger } from '../../../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id
   const root = resolve(__dirname, '..')
-  const logger = createLogger()
 
   it('transform', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
@@ -21,22 +18,14 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (
-        await transformGlobImport(code, id, root, resolveId, logger)
-      )?.s.toString()
+      (await transformGlobImport(code, id, root, resolveId, true))?.s.toString()
     ).toMatchSnapshot()
   })
 
   it('preserve line count', async () => {
     const getTransformedLineCount = async (code: string) =>
       (
-        await transformGlobImport(
-          code,
-          'virtual:module',
-          root,
-          resolveId,
-          logger
-        )
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
       )?.s
         .toString()
         .split('\n').length
@@ -61,13 +50,7 @@ describe('fixture', async () => {
     ].join('\n')
     expect(
       (
-        await transformGlobImport(
-          code,
-          'virtual:module',
-          root,
-          resolveId,
-          logger
-        )
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
       )?.s.toString()
     ).toMatchSnapshot()
 
@@ -77,7 +60,7 @@ describe('fixture', async () => {
         'virtual:module',
         root,
         resolveId,
-        logger
+        true
       )
       expect('no error').toBe('should throw an error')
     } catch (err) {
@@ -95,47 +78,8 @@ describe('fixture', async () => {
 
     expect(
       (
-        await transformGlobImport(code, id, root, resolveId, logger, true)
+        await transformGlobImport(code, id, root, resolveId, true, true)
       )?.s.toString()
     ).toMatchSnapshot()
-  })
-
-  it('warn when glob css without ?inline', async () => {
-    const logs: string[] = []
-    const logger = {
-      warn(msg: string) {
-        logs.push(msg)
-      }
-    } as Logger
-
-    await transformGlobImport(
-      "import.meta.glob('./fixture-c/*.css', { query: '?inline' })",
-      fileURLToPath(import.meta.url),
-      root,
-      resolveId,
-      logger
-    )
-    expect(logs).toHaveLength(0)
-
-    await transformGlobImport(
-      "import.meta.glob('./fixture-c/*.module.css')",
-      fileURLToPath(import.meta.url),
-      root,
-      resolveId,
-      logger
-    )
-    expect(logs).toHaveLength(0)
-
-    await transformGlobImport(
-      "import.meta.glob('./fixture-c/*.css')",
-      fileURLToPath(import.meta.url),
-      root,
-      resolveId,
-      logger
-    )
-    expect(logs).toHaveLength(1)
-    expect(logs[0]).to.include(
-      'Globbing CSS files without the ?inline query is deprecated'
-    )
   })
 })

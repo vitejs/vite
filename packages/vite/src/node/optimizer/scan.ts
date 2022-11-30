@@ -223,7 +223,7 @@ function esbuildScanPlugin(
       id,
       config.root,
       resolve,
-      config.logger
+      config.isProduction
     )
 
     return result?.s.toString() || transpiledContents
