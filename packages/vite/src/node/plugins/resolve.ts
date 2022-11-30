@@ -800,11 +800,11 @@ export function tryNodeResolve(
     : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
-  let include = depsOptimizer?.options.exclude
+  let include = depsOptimizer?.options.include
   if (options.ssrOptimizeCheck) {
     // we don't have the depsOptimizer
     exclude = options.ssrConfig?.optimizeDeps?.exclude
-    include = options.ssrConfig?.optimizeDeps?.exclude
+    include = options.ssrConfig?.optimizeDeps?.include
   }
 
   const skipOptimization =
@@ -813,7 +813,10 @@ export function tryNodeResolve(
     exclude?.includes(pkgId) ||
     exclude?.includes(nestedPath) ||
     SPECIAL_QUERY_RE.test(resolved) ||
-    (!isBuild && ssr) ||
+    // During dev SSR, we don't have a way to reload the module graph if
+    // a non-optimized dep is found. So we need to skip optimization here.
+    // The only optimized deps are the ones explicitly listed in the config.
+    (!options.ssrOptimizeCheck && !isBuild && ssr) ||
     // Only optimize non-external CJS deps during SSR by default
     (ssr &&
       !isCJS &&

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import type { ResolvedConfig, UserConfig } from '../../config'
-import { resolveEsbuildTranspileOptions } from '../../plugins/esbuild'
+import {
+  ESBuildTransformResult,
+  resolveEsbuildTranspileOptions,
+  transformWithEsbuild
+} from '../../plugins/esbuild'
 
 describe('resolveEsbuildTranspileOptions', () => {
   test('resolve default', () => {
@@ -234,6 +238,16 @@ describe('resolveEsbuildTranspileOptions', () => {
         'import-meta': true
       }
     })
+  })
+})
+
+describe('transformWithEsbuild', () => {
+  test('not throw on inline sourcemap', async () => {
+    const result = await transformWithEsbuild(`const foo = 'bar'`, '', {
+      sourcemap: 'inline'
+    })
+    expect(result?.code).toBeTruthy()
+    expect(result?.map).toBeTruthy()
   })
 })
 
