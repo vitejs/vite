@@ -112,7 +112,7 @@ export interface Plugin extends RollupPlugin {
    *
    * By default the transform is applied **after** vite's internal html
    * transform. If you need to apply the transform before vite, use an object:
-   * `{ enforce: 'pre', transform: hook }`
+   * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
   /**
