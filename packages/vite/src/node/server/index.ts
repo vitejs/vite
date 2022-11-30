@@ -54,6 +54,7 @@ import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
 import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
 import { transformMiddleware } from './middlewares/transform'
+import type { DevHtmlTransformFn } from './middlewares/indexHtml'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware
@@ -216,11 +217,7 @@ export interface ViteDevServer {
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
    */
-  transformIndexHtml(
-    url: string,
-    html: string,
-    originalUrl?: string
-  ): Promise<string>
+  transformIndexHtml: DevHtmlTransformFn
   /**
    * Transform module code into SSR format.
    */

@@ -4,7 +4,10 @@ import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
 import type { Connect } from 'dep-types/connect'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
-import type { IndexHtmlTransformHook } from '../../plugins/html'
+import type {
+  IndexHtmlTransformHook,
+  IndexHtmlTransformMetadata
+} from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
@@ -39,11 +42,18 @@ interface AssetNode {
   code: string
 }
 
+export type DevHtmlTransformFn = (
+  url: string,
+  html: string,
+  originalUrl?: string,
+  meta?: IndexHtmlTransformMetadata
+) => Promise<string>
+
 export function createDevHtmlTransformFn(
   server: ViteDevServer
-): (url: string, html: string, originalUrl: string) => Promise<string> {
+): DevHtmlTransformFn {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
-  return (url: string, html: string, originalUrl: string): Promise<string> => {
+  return (url, html, originalUrl, meta = {}) => {
     return applyHtmlTransforms(
       html,
       [
@@ -57,7 +67,8 @@ export function createDevHtmlTransformFn(
         path: url,
         filename: getHtmlFilename(url, server),
         server,
-        originalUrl
+        originalUrl,
+        meta
       }
     )
   }

@@ -64,6 +64,7 @@ export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
   IndexHtmlTransformContext,
+  IndexHtmlTransformMetadata,
   IndexHtmlTransformResult,
   HtmlTagDescriptor
 } from './plugins/html'
