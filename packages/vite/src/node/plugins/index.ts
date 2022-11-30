@@ -18,7 +18,6 @@ import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
-import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
@@ -88,7 +87,6 @@ export async function resolvePlugins(
     wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBuild && config.build.ssr ? ssrRequireHookPlugin(config) : null,
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),

@@ -22,7 +22,7 @@ export const ESBUILD_MODULES_TARGET = [
   'edge88',
   'firefox78',
   'chrome87',
-  'safari13' // transpile nullish coalescing
+  'safari14'
 ]
 
 export const DEFAULT_EXTENSIONS = [
@@ -45,6 +45,9 @@ export const DEFAULT_CONFIG_FILES = [
 ]
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
+
+export const CSS_LANGS_RE =
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)/
 
 export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
 
