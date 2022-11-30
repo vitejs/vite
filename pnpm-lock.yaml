@@ -244,7 +244,6 @@ importers:
       fast-glob: ^3.2.12
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
-      json5: ^2.2.1
       launch-editor-middleware: ^2.6.0
       magic-string: ^0.26.7
       micromatch: ^4.0.5
@@ -310,7 +309,6 @@ importers:
       etag: 1.8.1
       fast-glob: 3.2.12
       http-proxy: 1.18.1_debug@4.3.4
-      json5: 2.2.1
       launch-editor-middleware: 2.6.0
       magic-string: 0.26.7
       micromatch: 4.0.5
