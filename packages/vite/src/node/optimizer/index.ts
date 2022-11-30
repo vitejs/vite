@@ -578,7 +578,7 @@ export async function runOptimizeDeps(
 
   const plugins = [...pluginsFromConfig]
   if (external.length) {
-    plugins.push(esbuildCjsExternalPlugin(external))
+    plugins.push(esbuildCjsExternalPlugin(external, platform))
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
