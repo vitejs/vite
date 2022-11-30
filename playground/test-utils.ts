@@ -24,10 +24,11 @@ export const ports = {
   'legacy/client-and-ssr': 9523,
   'ssr-deps': 9600,
   'ssr-html': 9601,
-  'ssr-pug': 9602,
-  'ssr-react': 9603,
-  'ssr-vue': 9604,
-  'ssr-webworker': 9605,
+  'ssr-noexternal': 9602,
+  'ssr-pug': 9603,
+  'ssr-react': 9604,
+  'ssr-vue': 9605,
+  'ssr-webworker': 9606,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007
@@ -36,9 +37,10 @@ export const hmrPorts = {
   'optimize-missing-deps': 24680,
   'ssr-deps': 24681,
   'ssr-html': 24682,
-  'ssr-pug': 24683,
-  'ssr-react': 24684,
-  'ssr-vue': 24685
+  'ssr-noexternal': 24683,
+  'ssr-pug': 24684,
+  'ssr-react': 24685,
+  'ssr-vue': 24686
 }
 
 const hexToNameMap: Record<string, string> = {}
