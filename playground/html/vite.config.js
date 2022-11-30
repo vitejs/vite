@@ -36,8 +36,8 @@ module.exports = {
     {
       name: 'pre-transform',
       transformIndexHtml: {
-        enforce: 'pre',
-        transform(html, { filename }) {
+        order: 'pre',
+        handler(html, { filename }) {
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
