@@ -7,8 +7,11 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isServe,
   page,
   removeFile,
+  untilBrowserLogAfter,
+  viteTestUrl,
   withRetry
 } from '~utils'
 
@@ -188,6 +191,30 @@ test('tree-shake eager css', async () => {
     const content = findAssetFile(/index-\w+\.js/)
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
+})
+
+test('warn CSS default import', async () => {
+  const logs = await untilBrowserLogAfter(
+    () => page.goto(viteTestUrl),
+    'Ran scripts'
+  )
+  const noTreeshakeCSSMessage =
+    'For example: `import.meta.glob("/no-tree-shake.css", { "eager": true, "query": "?inline" })`'
+  const treeshakeCSSMessage =
+    'For example: `import.meta.glob("/tree-shake.css", { "eager": true, "query": "?inline" })`'
+
+  expect(
+    logs.some((log) => log.includes(noTreeshakeCSSMessage)),
+    `expected logs to include a message including ${JSON.stringify(
+      noTreeshakeCSSMessage
+    )}`
+  ).toBe(isServe)
+  expect(
+    logs.every((log) => !log.includes(treeshakeCSSMessage)),
+    `expected logs not to include a message including ${JSON.stringify(
+      treeshakeCSSMessage
+    )}`
+  ).toBe(true)
 })
 
 test('escapes special chars in globs without mangling user supplied glob suffix', async () => {
