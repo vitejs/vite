@@ -235,8 +235,8 @@ importers:
       cross-spawn: ^7.0.3
       debug: ^4.3.4
       dep-types: link:./src/types
-      dotenv: ^14.3.2
-      dotenv-expand: ^5.1.0
+      dotenv: ^16.0.3
+      dotenv-expand: ^9.0.0
       es-module-lexer: ^1.1.0
       esbuild: ^0.15.9
       estree-walker: ^3.0.1
@@ -302,8 +302,8 @@ importers:
       cross-spawn: 7.0.3
       debug: 4.3.4
       dep-types: link:src/types
-      dotenv: 14.3.2
-      dotenv-expand: 5.1.0
+      dotenv: 16.0.3
+      dotenv-expand: 9.0.0
       es-module-lexer: 1.1.0
       estree-walker: 3.0.1
       etag: 1.8.1
@@ -4097,12 +4097,13 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand/5.1.0:
-    resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
+  /dotenv-expand/9.0.0:
+    resolution: {integrity: sha512-uW8Hrhp5ammm9x7kBLR6jDfujgaDarNA02tprvZdyrJ7MpdzD1KyrIHG4l+YoC2fJ2UcdFdNWNWIjt+sexBHJw==}
+    engines: {node: '>=12'}
     dev: true
 
-  /dotenv/14.3.2:
-    resolution: {integrity: sha512-vwEppIphpFdvaMCaHfCEv9IgwcxMljMw2TnAQBB4VWPvzXQLTb82jwmdOKzlEVUL3gNFT4l4TPKO+Bn+sqcrVQ==}
+  /dotenv/16.0.3:
+    resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
     engines: {node: '>=12'}
     dev: true
 
