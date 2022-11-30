@@ -1086,6 +1086,7 @@ Repository: git://github.com/motdotla/dotenv.git
 ## dotenv-expand
 License: BSD-2-Clause
 By: motdotla
+Repository: https://github.com/motdotla/dotenv-expand
 
 > Copyright (c) 2016, Scott Motte
 > All rights reserved.
