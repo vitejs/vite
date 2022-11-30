@@ -1,3 +1,11 @@
+## 4.0.0-alpha.2 (2022-11-30)
+
+* docs(plugin-vue): update options in README (#11125) ([23d79b8](https://github.com/vitejs/vite/commit/23d79b8)), closes [#11125](https://github.com/vitejs/vite/issues/11125)
+* fix(plugin-vue): invalidate script module cache when it changed in hot update (#11059) ([9d0b9d8](https://github.com/vitejs/vite/commit/9d0b9d8)), closes [#11059](https://github.com/vitejs/vite/issues/11059)
+* fix(plugin-vue): support scss/sass/less... hmr on custom template languages (fix #10677) (#10844) ([d413848](https://github.com/vitejs/vite/commit/d413848)), closes [#10677](https://github.com/vitejs/vite/issues/10677) [#10844](https://github.com/vitejs/vite/issues/10844)
+
+
+
 ## 4.0.0-alpha.1 (2022-11-22)
 
 * feat: dedupe the `vue` in client bundle by default (#11032) ([fae0e23](https://github.com/vitejs/vite/commit/fae0e23)), closes [#11032](https://github.com/vitejs/vite/issues/11032)
