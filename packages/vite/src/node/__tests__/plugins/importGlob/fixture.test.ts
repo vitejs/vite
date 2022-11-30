@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
+import type { Logger } from '../../../logger'
 import { createLogger } from '../../../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
@@ -24,6 +25,32 @@ describe('fixture', async () => {
         await transformGlobImport(code, id, root, resolveId, logger)
       )?.s.toString()
     ).toMatchSnapshot()
+  })
+
+  it('preserve line count', async () => {
+    const getTransformedLineCount = async (code: string) =>
+      (
+        await transformGlobImport(
+          code,
+          'virtual:module',
+          root,
+          resolveId,
+          logger
+        )
+      )?.s
+        .toString()
+        .split('\n').length
+
+    expect(await getTransformedLineCount("import.meta.glob('./*.js')")).toBe(1)
+    expect(
+      await getTransformedLineCount(
+        `
+          import.meta.glob(
+            './*.js'
+          )
+        `.trim()
+      )
+    ).toBe(3)
   })
 
   it('virtual modules', async () => {
@@ -71,5 +98,44 @@ describe('fixture', async () => {
         await transformGlobImport(code, id, root, resolveId, logger, true)
       )?.s.toString()
     ).toMatchSnapshot()
+  })
+
+  it('warn when glob css without ?inline', async () => {
+    const logs: string[] = []
+    const logger = {
+      warn(msg: string) {
+        logs.push(msg)
+      }
+    } as Logger
+
+    await transformGlobImport(
+      "import.meta.glob('./fixture-c/*.css', { query: '?inline' })",
+      fileURLToPath(import.meta.url),
+      root,
+      resolveId,
+      logger
+    )
+    expect(logs).toHaveLength(0)
+
+    await transformGlobImport(
+      "import.meta.glob('./fixture-c/*.module.css')",
+      fileURLToPath(import.meta.url),
+      root,
+      resolveId,
+      logger
+    )
+    expect(logs).toHaveLength(0)
+
+    await transformGlobImport(
+      "import.meta.glob('./fixture-c/*.css')",
+      fileURLToPath(import.meta.url),
+      root,
+      resolveId,
+      logger
+    )
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).to.include(
+      'Globbing CSS files without the ?inline query is deprecated'
+    )
   })
 })

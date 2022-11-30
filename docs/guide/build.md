@@ -8,7 +8,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 - Chrome >=87
 - Firefox >=78
-- Safari >=13
+- Safari >=14
 - Edge >=88
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.

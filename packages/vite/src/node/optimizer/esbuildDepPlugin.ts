@@ -263,7 +263,10 @@ module.exports = Object.create(new Proxy({}, {
 
 // esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
-export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
+export function esbuildCjsExternalPlugin(
+  externals: string[],
+  platform: 'node' | 'browser'
+): Plugin {
   return {
     name: 'cjs-external',
     setup(build) {
@@ -279,7 +282,8 @@ export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
       })
 
       build.onResolve({ filter }, (args) => {
-        if (args.kind === 'require-call') {
+        // preserve `require` for node because it's more accurate than converting it to import
+        if (args.kind === 'require-call' && platform !== 'node') {
           return {
             path: args.path,
             namespace: cjsExternalFacadeNamespace
