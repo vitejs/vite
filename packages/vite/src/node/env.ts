@@ -1,6 +1,6 @@
 import fs from 'node:fs'
-import dotenv from 'dotenv'
-import dotenvExpand from 'dotenv-expand'
+import { parse } from 'dotenv'
+import { expand } from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
 
@@ -31,23 +31,19 @@ export function loadEnv(
         rootDir: envDir
       })
       if (!path) return []
-      return Object.entries(
-        dotenv.parse(fs.readFileSync(path), {
-          debug: process.env.DEBUG?.includes('vite:dotenv')
-        })
-      )
+      return Object.entries(parse(fs.readFileSync(path)))
     })
   )
 
   // let environment variables use each other
-  const expandParsed = dotenvExpand({
+  const expandParsed = expand({
     parsed: {
       ...(process.env as any),
       ...parsed
     },
     // prevent process.env mutation
     ignoreProcessEnv: true
-  } as any).parsed!
+  }).parsed!
 
   Object.keys(parsed).forEach((key) => {
     parsed[key] = expandParsed[key]

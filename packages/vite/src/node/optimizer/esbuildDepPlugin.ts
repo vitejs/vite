@@ -16,6 +16,9 @@ const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
 
+const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
+const nonFacadePrefix = 'vite-cjs-external-facade:'
+
 const externalTypes = [
   'css',
   // supported pre-processor types
@@ -260,7 +263,10 @@ module.exports = Object.create(new Proxy({}, {
 
 // esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
-export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
+export function esbuildCjsExternalPlugin(
+  externals: string[],
+  platform: 'node' | 'browser'
+): Plugin {
   return {
     name: 'cjs-external',
     setup(build) {
@@ -268,19 +274,37 @@ export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
         `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
       const filter = new RegExp(externals.map(escape).join('|'))
 
-      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
-        path: args.path,
-        external: true
-      }))
+      build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
+        return {
+          path: args.path.slice(nonFacadePrefix.length),
+          external: true
+        }
+      })
 
-      build.onResolve({ filter }, (args) => ({
-        path: args.path,
-        namespace: 'external'
-      }))
+      build.onResolve({ filter }, (args) => {
+        // preserve `require` for node because it's more accurate than converting it to import
+        if (args.kind === 'require-call' && platform !== 'node') {
+          return {
+            path: args.path,
+            namespace: cjsExternalFacadeNamespace
+          }
+        }
 
-      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-        contents: `export * from ${JSON.stringify(args.path)}`
-      }))
+        return {
+          path: args.path,
+          external: true
+        }
+      })
+
+      build.onLoad(
+        { filter: /.*/, namespace: cjsExternalFacadeNamespace },
+        (args) => ({
+          contents:
+            `import * as m from ${JSON.stringify(
+              nonFacadePrefix + args.path
+            )};` + `module.exports = m;`
+        })
+      )
     }
   }
 }

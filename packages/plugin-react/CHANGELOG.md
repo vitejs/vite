@@ -1,3 +1,9 @@
+## 3.0.0-alpha.2 (2022-11-30)
+
+* fix(deps): update all non-major dependencies (#11091) ([073a4bf](https://github.com/vitejs/vite/commit/073a4bf)), closes [#11091](https://github.com/vitejs/vite/issues/11091)
+
+
+
 ## 3.0.0-alpha.1 (2022-11-15)
 
 * fix(plugin-react): jsxDev is not a function when is set NODE_ENV in env files (#10861) ([be1ba4a](https://github.com/vitejs/vite/commit/be1ba4a)), closes [#10861](https://github.com/vitejs/vite/issues/10861)

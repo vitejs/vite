@@ -282,7 +282,9 @@ function handleParseError(
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
-  const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
+  const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
+    config.plugins
+  )
   preHooks.unshift(preImportMapHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
@@ -396,6 +398,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               const cleanCode = stripLiteral(scriptNode.value)
 
               let match: RegExpExecArray | null
+              inlineImportRE.lastIndex = 0
               while ((match = inlineImportRE.exec(cleanCode))) {
                 const { 1: url, index } = match
                 const startUrl = cleanCode.indexOf(url, index)
@@ -777,6 +780,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // no use assets plugin because it will emit file
         let match: RegExpExecArray | null
         let s: MagicString | undefined
+        inlineCSSRE.lastIndex = 0
         while ((match = inlineCSSRE.exec(result))) {
           s ||= new MagicString(result)
           const { 0: full, 1: scopedName } = match
@@ -786,12 +790,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           result = s.toString()
         }
-        result = await applyHtmlTransforms(result, postHooks, {
-          path: '/' + relativeUrlPath,
-          filename: id,
-          bundle,
-          chunk
-        })
+        result = await applyHtmlTransforms(
+          result,
+          [...normalHooks, ...postHooks],
+          {
+            path: '/' + relativeUrlPath,
+            filename: id,
+            bundle,
+            chunk
+          }
+        )
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return toOutputAssetFilePath(this.getFileName(fileHash)) + postfix
@@ -863,8 +871,23 @@ export type IndexHtmlTransformHook = (
 export type IndexHtmlTransform =
   | IndexHtmlTransformHook
   | {
+      order?: 'pre' | 'post' | null
+      /**
+       * @deprecated renamed to `order`
+       */
       enforce?: 'pre' | 'post'
+      /**
+       * @deprecated renamed to `handler`
+       */
       transform: IndexHtmlTransformHook
+    }
+  | {
+      order?: 'pre' | 'post' | null
+      /**
+       * @deprecated renamed to `order`
+       */
+      enforce?: 'pre' | 'post'
+      handler: IndexHtmlTransformHook
     }
 
 export function preImportMapHook(
@@ -914,24 +937,40 @@ export function postImportMapHook(): IndexHtmlTransformHook {
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[]
-): [IndexHtmlTransformHook[], IndexHtmlTransformHook[]] {
+): [
+  IndexHtmlTransformHook[],
+  IndexHtmlTransformHook[],
+  IndexHtmlTransformHook[]
+] {
   const preHooks: IndexHtmlTransformHook[] = []
+  const normalHooks: IndexHtmlTransformHook[] = []
   const postHooks: IndexHtmlTransformHook[] = []
 
   for (const plugin of plugins) {
     const hook = plugin.transformIndexHtml
-    if (hook) {
-      if (typeof hook === 'function') {
-        postHooks.push(hook)
-      } else if (hook.enforce === 'pre') {
-        preHooks.push(hook.transform)
+    if (!hook) continue
+
+    if (typeof hook === 'function') {
+      normalHooks.push(hook)
+    } else {
+      // `enforce` had only two possible values for the `transformIndexHtml` hook
+      // `'pre'` and `'post'` (the default). `order` now works with three values
+      // to align with other hooks (`'pre'`, normal, and `'post'`). We map
+      // both `enforce: 'post'` to `order: undefined` to avoid a breaking change
+      const order = hook.order ?? (hook.enforce === 'pre' ? 'pre' : undefined)
+      // @ts-expect-error union type
+      const handler = hook.handler ?? hook.transform
+      if (order === 'pre') {
+        preHooks.push(handler)
+      } else if (order === 'post') {
+        postHooks.push(handler)
       } else {
-        postHooks.push(hook.transform)
+        normalHooks.push(handler)
       }
     }
   }
 
-  return [preHooks, postHooks]
+  return [preHooks, normalHooks, postHooks]
 }
 
 export async function applyHtmlTransforms(

@@ -13,6 +13,8 @@ import type {
   TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
+import type { RollupError } from 'rollup'
+import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
@@ -21,7 +23,13 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash, transformStableResult } from '../utils'
+import {
+  evalValue,
+  normalizePath,
+  slash,
+  transformStableResult
+} from '../utils'
+import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -68,6 +76,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
+        config.isProduction,
         config.experimental.importGlobRestoreExtension
       )
       if (result) {
@@ -85,13 +94,86 @@ const importGlobRE =
   /\bimport\.meta\.(glob|globEager|globEagerDefault)(?:<\w+>)?\s*\(/g
 
 const knownOptions = {
-  as: 'string',
-  eager: 'boolean',
-  import: 'string',
-  exhaustive: 'boolean'
-} as const
+  as: ['string'],
+  eager: ['boolean'],
+  import: ['string'],
+  exhaustive: ['boolean'],
+  query: ['object', 'string']
+}
 
 const forceDefaultAs = ['raw', 'url']
+
+function err(e: string, pos: number) {
+  const error = new Error(e) as RollupError
+  error.pos = pos
+  return error
+}
+
+function parseGlobOptions(
+  rawOpts: string,
+  optsStartIndex: number
+): GeneralImportGlobOptions {
+  let opts: GeneralImportGlobOptions = {}
+  try {
+    opts = evalValue(rawOpts)
+  } catch {
+    throw err(
+      'Vite is unable to parse the glob options as the value is not static',
+      optsStartIndex
+    )
+  }
+
+  if (opts == null) {
+    return {}
+  }
+
+  for (const key in opts) {
+    if (!(key in knownOptions)) {
+      throw err(`Unknown glob option "${key}"`, optsStartIndex)
+    }
+    const allowedTypes = knownOptions[key as keyof typeof knownOptions]
+    const valueType = typeof opts[key as keyof GeneralImportGlobOptions]
+    if (!allowedTypes.includes(valueType)) {
+      throw err(
+        `Expected glob option "${key}" to be of type ${allowedTypes.join(
+          ' or '
+        )}, but got ${valueType}`,
+        optsStartIndex
+      )
+    }
+  }
+
+  if (typeof opts.query === 'object') {
+    for (const key in opts.query) {
+      const value = opts.query[key]
+      if (!['string', 'number', 'boolean'].includes(typeof value)) {
+        throw err(
+          `Expected glob option "query.${key}" to be of type string, number, or boolean, but got ${typeof value}`,
+          optsStartIndex
+        )
+      }
+    }
+  }
+
+  if (opts.as && forceDefaultAs.includes(opts.as)) {
+    if (opts.import && opts.import !== 'default' && opts.import !== '*')
+      throw err(
+        `Option "import" can only be "default" or "*" when "as" is "${opts.as}", but got "${opts.import}"`,
+        optsStartIndex
+      )
+    opts.import = opts.import || 'default'
+  }
+
+  if (opts.as && opts.query)
+    throw err(
+      'Options "as" and "query" cannot be used together',
+      optsStartIndex
+    )
+
+  if (opts.as) opts.query = opts.as
+
+  return opts
+}
 
 export async function parseImportGlob(
   code: string,
@@ -154,15 +236,9 @@ export async function parseImportGlob(
       }
     }
 
-    if (ast.type === 'SequenceExpression')
-      ast = ast.expressions[0] as CallExpression
-
-    // immediate property access, call expression is nested
-    // import.meta.glob(...)['prop']
-    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
-
-    if (ast.type !== 'CallExpression')
-      throw err(`Expect CallExpression, got ${ast.type}`)
+    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
+    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
+    ast = found.node as unknown as CallExpression
 
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
@@ -201,81 +277,18 @@ export async function parseImportGlob(
     }
 
     // arg2
-    const options: GeneralImportGlobOptions = {}
+    let options: GeneralImportGlobOptions = {}
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
-          `Expected the second argument o to be a object literal, but got "${arg2.type}"`
+          `Expected the second argument to be an object literal, but got "${arg2.type}"`
         )
 
-      for (const property of arg2.properties) {
-        if (
-          property.type === 'SpreadElement' ||
-          (property.key.type !== 'Identifier' &&
-            property.key.type !== 'Literal')
-        )
-          throw err('Could only use literals')
-
-        const name = ((property.key as any).name ||
-          (property.key as any).value) as keyof GeneralImportGlobOptions
-        if (name === 'query') {
-          if (property.value.type === 'ObjectExpression') {
-            const data: Record<string, string> = {}
-            for (const prop of property.value.properties) {
-              if (
-                prop.type === 'SpreadElement' ||
-                prop.key.type !== 'Identifier' ||
-                prop.value.type !== 'Literal'
-              )
-                throw err('Could only use literals')
-              data[prop.key.name] = prop.value.value as any
-            }
-            options.query = data
-          } else if (property.value.type === 'Literal') {
-            if (typeof property.value.value !== 'string')
-              throw err(
-                `Expected query to be a string, but got "${typeof property.value
-                  .value}"`
-              )
-            options.query = property.value.value
-          } else {
-            throw err('Could only use literals')
-          }
-          continue
-        }
-
-        if (!(name in knownOptions)) throw err(`Unknown options ${name}`)
-
-        if (property.value.type !== 'Literal')
-          throw err('Could only use literals')
-
-        const valueType = typeof property.value.value
-        if (valueType === 'undefined') continue
-
-        if (valueType !== knownOptions[name])
-          throw err(
-            `Expected the type of option "${name}" to be "${knownOptions[name]}", but got "${valueType}"`
-          )
-        options[name] = property.value.value as any
-      }
-    }
-
-    if (options.as && forceDefaultAs.includes(options.as)) {
-      if (
-        options.import &&
-        options.import !== 'default' &&
-        options.import !== '*'
+      options = parseGlobOptions(
+        code.slice(arg2.range![0], arg2.range![1]),
+        arg2.range![0]
       )
-        throw err(
-          `Option "import" can only be "default" or "*" when "as" is "${options.as}", but got "${options.import}"`
-        )
-      options.import = options.import || 'default'
     }
-
-    if (options.as && options.query)
-      throw err('Options "as" and "query" cannot be used together')
-
-    if (options.as) options.query = options.as
 
     const end = ast.range![1]
 
@@ -304,6 +317,24 @@ const importPrefix = '__vite_glob_'
 
 const { basename, dirname, relative, join } = posix
 
+const warnedCSSDefaultImportVarName = '__vite_warned_css_default_import'
+const jsonStringifyInOneline = (input: any) =>
+  JSON.stringify(input).replace(/[{,:]/g, '$& ').replace(/\}/g, ' }')
+const createCssDefaultImportWarning = (
+  globs: string[],
+  options: GeneralImportGlobOptions
+) =>
+  `if (!${warnedCSSDefaultImportVarName}) {` +
+  `${warnedCSSDefaultImportVarName} = true;` +
+  `console.warn(${JSON.stringify(
+    'Default import of CSS without `?inline` is deprecated. ' +
+      "Add the `{ query: '?inline' }` glob option to fix this.\n" +
+      `For example: \`import.meta.glob(${jsonStringifyInOneline(
+        globs.length === 1 ? globs[0] : globs
+      )}, ${jsonStringifyInOneline({ ...options, query: '?inline' })})\``
+  )});` +
+  `}`
+
 export interface TransformGlobImportResult {
   s: MagicString
   matches: ParsedImportGlob[]
@@ -318,6 +349,7 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
+  isProduction: boolean,
   restoreQueryExtension = false
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -348,7 +380,15 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globs,
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await fg(globsResolved, {
@@ -398,6 +438,7 @@ export async function transformGlobImport(
             return { filePath, importPath }
           }
 
+          let includesCSS = false
           files.forEach((file, i) => {
             const paths = resolvePaths(file)
             const filePath = paths.filePath
@@ -412,6 +453,10 @@ export async function transformGlobImport(
 
             importPath = `${importPath}${importQuery}`
 
+            const isCSS =
+              !query && isCSSRequest(file) && !isModuleCSSRequest(file)
+            includesCSS ||= isCSS
+
             const importKey =
               options.import && options.import !== '*'
                 ? options.import
@@ -425,22 +470,62 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`
               )
-              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              if (!isProduction && isCSS) {
+                objectProps.push(
+                  `get ${JSON.stringify(
+                    filePath
+                  )}() { ${createCssDefaultImportWarning(
+                    globs,
+                    options
+                  )} return ${variableName} }`
+                )
+              } else {
+                objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              }
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
-              objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`
-              )
+              if (!isProduction && isCSS) {
+                objectProps.push(
+                  `${JSON.stringify(
+                    filePath
+                  )}: () => { ${createCssDefaultImportWarning(
+                    globs,
+                    options
+                  )} return ${importStatement}}`
+                )
+              } else {
+                objectProps.push(
+                  `${JSON.stringify(filePath)}: () => ${importStatement}`
+                )
+              }
             }
           })
 
           files.forEach((i) => matchedFiles.add(i))
 
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ','
-          )}})`
+          const originalLineBreakCount =
+            code.slice(start, end).match(/\n/g)?.length ?? 0
+          const lineBreaks =
+            originalLineBreakCount > 0
+              ? '\n'.repeat(originalLineBreakCount)
+              : ''
+
+          let replacement: string
+          if (!isProduction && includesCSS) {
+            replacement =
+              '/* #__PURE__ */ Object.assign(' +
+              '(() => {' +
+              `let ${warnedCSSDefaultImportVarName} = false;` +
+              `return {${objectProps.join(',')}${lineBreaks}};` +
+              '})()' +
+              ')'
+          } else {
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+              ','
+            )}${lineBreaks}})`
+          }
           s.overwrite(start, end, replacement)
 
           return staticImports
