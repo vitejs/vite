@@ -23,6 +23,7 @@ import {
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
+import { getNodeAssetAttributes } from '../assetSource'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -118,16 +119,6 @@ export function addToHTMLProxyTransformResult(
   code: string
 ): void {
   htmlProxyResult.set(hash, code)
-}
-
-// this extends the config in @vue/compiler-sfc with <link href>
-export const assetAttrsConfig: Record<string, string[]> = {
-  link: ['href'],
-  video: ['src', 'poster'],
-  source: ['src', 'srcset'],
-  img: ['src', 'srcset'],
-  image: ['xlink:href', 'href'],
-  use: ['xlink:href', 'href']
 }
 
 export const isAsyncScriptMap = new WeakMap<
@@ -416,48 +407,37 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttrs = assetAttrsConfig[node.nodeName]
-          if (assetAttrs) {
-            for (const p of node.attrs) {
-              const attrKey = getAttrKey(p)
-              if (p.value && assetAttrs.includes(attrKey)) {
-                const attrSourceCodeLocation =
-                  node.sourceCodeLocation!.attrs![attrKey]
-                // assetsUrl may be encodeURI
-                const url = decodeURI(p.value)
-                if (!isExcludedUrl(url)) {
-                  if (
-                    node.nodeName === 'link' &&
-                    isCSSRequest(url) &&
-                    // should not be converted if following attributes are present (#6748)
-                    !node.attrs.some(
-                      (p) =>
-                        p.prefix === undefined &&
-                        (p.name === 'media' || p.name === 'disabled')
-                    )
-                  ) {
-                    // CSS references, convert to import
-                    const importExpression = `\nimport ${JSON.stringify(url)}`
-                    styleUrls.push({
-                      url,
-                      start: node.sourceCodeLocation!.startOffset,
-                      end: node.sourceCodeLocation!.endOffset
-                    })
-                    js += importExpression
-                  } else {
-                    assetUrls.push({
-                      attr: p,
-                      sourceCodeLocation: attrSourceCodeLocation
-                    })
-                  }
-                } else if (checkPublicFile(url, config)) {
-                  overwriteAttrValue(
-                    s,
-                    attrSourceCodeLocation,
-                    toOutputPublicFilePath(url)
-                  )
-                }
+          const assetAttrs = getNodeAssetAttributes(node)
+          for (const attr of assetAttrs) {
+            // assetsUrl may be encodeURI
+            const url = decodeURI(attr.attribute.value)
+            if (!isExcludedUrl(url)) {
+              if (
+                node.nodeName === 'link' &&
+                isCSSRequest(url) &&
+                // should not be converted if following attributes are present (#6748)
+                !node.attrs.some(
+                  (p) =>
+                    p.prefix === undefined &&
+                    (p.name === 'media' || p.name === 'disabled')
+                )
+              ) {
+                // CSS references, convert to import
+                const importExpression = `\nimport ${JSON.stringify(url)}`
+                styleUrls.push({
+                  url,
+                  start: node.sourceCodeLocation!.startOffset,
+                  end: node.sourceCodeLocation!.endOffset
+                })
+                js += importExpression
+              } else {
+                assetUrls.push({
+                  attr: attr.attribute,
+                  sourceCodeLocation: attr.location
+                })
               }
+            } else if (checkPublicFile(url, config)) {
+              overwriteAttrValue(s, attr.location, toOutputPublicFilePath(url))
             }
           }
           // <tag style="... url(...) ..."></tag>
@@ -1179,8 +1159,4 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
-}
-
-export function getAttrKey(attr: Token.Attribute): string {
-  return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
 }

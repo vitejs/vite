@@ -8,8 +8,6 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
-  getAttrKey,
   getScriptInfo,
   nodeIsElement,
   overwriteAttrValue,
@@ -32,6 +30,7 @@ import {
   wrapId
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
+import { getNodeAssetAttributes } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -227,21 +226,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          processNodeUrl(
-            p,
-            node.sourceCodeLocation!.attrs![attrKey],
-            s,
-            config,
-            htmlPath,
-            originalUrl
-          )
-        }
-      }
+    const assetAttrs = getNodeAssetAttributes(node)
+    for (const attr of assetAttrs) {
+      processNodeUrl(
+        attr.attribute,
+        attr.location,
+        s,
+        config,
+        htmlPath,
+        originalUrl
+      )
     }
   })
 
