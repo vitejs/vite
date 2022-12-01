@@ -127,6 +127,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
+  const assumptions = options.assumptions || {}
+
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
@@ -253,6 +255,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         await detectPolyfills(
           `Promise.resolve(); Promise.all();`,
           targets,
+          assumptions,
           legacyPolyfills
         )
 
@@ -351,7 +354,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           !Array.isArray(options.modernPolyfills)
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, { esmodules: true }, modernPolyfills)
+          await detectPolyfills(
+            raw,
+            assumptions,
+            { esmodules: true },
+            modernPolyfills
+          )
         }
 
         const ms = new MagicString(raw)
@@ -430,7 +438,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             'env',
-            createBabelPresetEnvOptions(targets, {
+            createBabelPresetEnvOptions(targets, assumptions, {
               needPolyfills,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
             })
@@ -590,6 +598,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 export async function detectPolyfills(
   code: string,
   targets: any,
+  assumptions: { [key: string]: boolean } = {},
   list: Set<string>
 ): Promise<void> {
   const babel = await loadBabel()
@@ -600,7 +609,9 @@ export async function detectPolyfills(
     presets: [
       [
         'env',
-        createBabelPresetEnvOptions(targets, { ignoreBrowserslistConfig: true })
+        createBabelPresetEnvOptions(targets, assumptions, {
+          ignoreBrowserslistConfig: true
+        })
       ]
     ]
   })
@@ -619,6 +630,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
+  assumptions: { [key: string]: boolean } = {},
   {
     needPolyfills = true,
     ignoreBrowserslistConfig
@@ -637,7 +649,8 @@ function createBabelPresetEnvOptions(
         }
       : undefined,
     shippedProposals: true,
-    ignoreBrowserslistConfig
+    ignoreBrowserslistConfig,
+    assumptions
   }
 }
 
