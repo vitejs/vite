@@ -445,6 +445,21 @@ export async function createPluginContainer(
           }
         }
       }
+    } else if (err.loc) {
+      if (!err.frame) {
+        let code = err.pluginCode
+        if (err.loc.file) {
+          err.id = normalizePath(err.loc.file)
+          if (!code) {
+            try {
+              code = fs.readFileSync(err.loc.file, 'utf-8')
+            } catch {}
+          }
+        }
+        if (code) {
+          err.frame = generateCodeFrame(code, err.loc)
+        }
+      }
     }
     return err
   }
