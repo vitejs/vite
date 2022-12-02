@@ -1,3 +1,5 @@
+<meta charset="utf-8" />
+
 <h1>Define</h1>
 
 <p>Raw Expression <code class="exp"></code></p>
@@ -17,10 +19,52 @@
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
 <p>define in dep: <code class="define-in-dep"></code></p>
-<p>
-  import.meta.env.UNDEFINED: <code class="import-meta-env-undefined"></code>
-</p>
-<p>process.env.UNDEFINED: <code class="process-env-undefined"></code></p>
+
+<h2>Define ignores string literals</h2>
+<section class="ignores-string-literals">
+  <p>process.env. <code class="process-env-dot"></code></p>
+  <p>global.process.env. <code class="global-process-env-dot"></code></p>
+  <p>
+    globalThis.process.env. <code class="globalThis-process-env-dot"></code>
+  </p>
+  <p>process.env.NODE_ENV <code class="process-env-NODE_ENV"></code></p>
+  <p>
+    global.process.env.NODE_ENV
+    <code class="global-process-env-NODE_ENV"></code>
+  </p>
+  <p>
+    globalThis.process.env.NODE_ENV
+    <code class="globalThis-process-env-NODE_ENV"></code>
+  </p>
+  <p>
+    __vite_process_env_NODE_ENV
+    <code class="__vite_process_env_NODE_ENV"></code>
+  </p>
+  <p>import.meta.hot <code class="import-meta-hot"></code></p>
+</section>
+
+<h2>Define replaces constants in template literal expressions</h2>
+<section class="replaces-constants-in-template-literal-expressions">
+  <p>process.env. <code class="process-env-dot"></code></p>
+  <p>global.process.env. <code class="global-process-env-dot"></code></p>
+  <p>
+    globalThis.process.env. <code class="globalThis-process-env-dot"></code>
+  </p>
+  <p>process.env.NODE_ENV <code class="process-env-NODE_ENV"></code></p>
+  <p>
+    global.process.env.NODE_ENV
+    <code class="global-process-env-NODE_ENV"></code>
+  </p>
+  <p>
+    globalThis.process.env.NODE_ENV
+    <code class="globalThis-process-env-NODE_ENV"></code>
+  </p>
+  <p>
+    __vite_process_env_NODE_ENV
+    <code class="__vite_process_env_NODE_ENV"></code>
+  </p>
+  <p>import.meta.hot <code class="import-meta-hot"></code></p>
+</section>
 
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
@@ -56,10 +100,41 @@
     document.querySelector(el).textContent = text
   }
 
-  import { defined, importMetaEnvUndefined, processEnvUndefined } from 'dep'
+  import { defined } from 'dep'
   text('.define-in-dep', JSON.stringify(defined))
-  text('.import-meta-env-undefined', importMetaEnvUndefined)
-  text('.process-env-undefined', processEnvUndefined)
+
+  text('.ignores-string-literals .process-env-dot', 'process.env.')
+  text(
+    '.ignores-string-literals .global-process-env-dot',
+    'global.process.env.'
+  )
+  text(
+    '.ignores-string-literals .globalThis-process-env-dot',
+    'globalThis.process.env.'
+  )
+  text('.ignores-string-literals .process-env-NODE_ENV', 'process.env.NODE_ENV')
+  text(
+    '.ignores-string-literals .global-process-env-NODE_ENV',
+    'global.process.env.NODE_ENV'
+  )
+  text(
+    '.ignores-string-literals .globalThis-process-env-NODE_ENV',
+    'globalThis.process.env.NODE_ENV'
+  )
+  text(
+    '.ignores-string-literals .__vite_process_env_NODE_ENV',
+    '__vite_process_env_NODE_ENV'
+  )
+  text('.ignores-string-literals .import-meta-hot', 'import.meta.hot')
+
+  text(
+    '.replaces-constants-in-template-literal-expressions .process-env-dot',
+    `${process.env.SOMEVAR}`
+  )
+  text(
+    '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV',
+    `${process.env.NODE_ENV}`
+  )
 </script>
 
 <style>

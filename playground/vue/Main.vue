@@ -26,6 +26,7 @@
   <SetupImportTemplate />
   <WorkerTest />
   <Url />
+  <DefineVariable />
 </template>
 
 <script setup lang="ts">
@@ -44,8 +45,9 @@ import AsyncComponent from './AsyncComponent.vue'
 import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 import WorkerTest from './worker.vue'
-import { ref } from 'vue'
 import Url from './Url.vue'
+import DefineVariable from './DefineVariable.vue'
+import { ref } from 'vue'
 
 const time = ref('loading...')
 

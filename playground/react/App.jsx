@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Button from 'jsx-entry'
+import DefineVariable from './components/DefineVariables'
 import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
 import Parent from './hmr/parent'
 import { CountProvider } from './context/CountProvider'
@@ -35,6 +36,7 @@ function App() {
         </a>
       </header>
 
+      <DefineVariable />
       <Dummy />
       <Parent />
       <Button>button</Button>

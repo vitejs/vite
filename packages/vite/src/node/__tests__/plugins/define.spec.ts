@@ -10,6 +10,7 @@ async function createDefinePluginTransform(
   const config = await resolveConfig({ define }, build ? 'build' : 'serve')
   const instance = definePlugin(config)
   return async (code: string) => {
+    // @ts-expect-error
     const result = await instance.transform.call({}, code, 'foo.ts', { ssr })
     return result?.code || result
   }
@@ -20,21 +21,15 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform({
       __APP_VERSION__: JSON.stringify('1.0')
     })
-    expect(await transform('const version = __APP_VERSION__ ;')).toBe(
-      'const version = "1.0" ;'
-    )
     expect(await transform('const version = __APP_VERSION__;')).toBe(
-      'const version = "1.0";'
+      'const version = "1.0";\n'
     )
   })
 
   test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const isSSR = import.meta.env.SSR ;')).toBe(
-      'const isSSR = false ;'
-    )
     expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
-      'const isSSR = false;'
+      'const isSSR = false;\n'
     )
   })
 })

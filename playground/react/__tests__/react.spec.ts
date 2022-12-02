@@ -45,6 +45,10 @@ test.runIf(isServe)(
   }
 )
 
+test('defined/reserved words are preserved in string literals', async () => {
+  expect(await page.textContent('.define-variable')).toBe('import.meta.env')
+})
+
 if (!isBuild) {
   // #9869
   test('should only hmr files with exported react components', async () => {

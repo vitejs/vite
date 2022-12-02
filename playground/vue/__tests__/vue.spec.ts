@@ -279,3 +279,9 @@ describe('import with ?url', () => {
     )
   })
 })
+
+describe('defined/reserved words', () => {
+  test('are preserved in string literals', async () => {
+    expect(await page.textContent('.define-variable')).toBe('import.meta.env')
+  })
+})
