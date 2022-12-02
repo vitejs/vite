@@ -211,7 +211,7 @@ export function checkPublicFile(
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
   if (!publicFile.startsWith(publicDir)) {
-    // can happen if e.g. url starts with '/../node_modules/', see #11145
+    // can happen if URL starts with '../'
     return
   }
   if (fs.existsSync(publicFile)) {
