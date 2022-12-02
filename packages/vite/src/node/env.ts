@@ -49,6 +49,8 @@ export function loadEnv(
     // let environment variables use each other
     expandParsed = expand(expandOptions).parsed!
   } catch (e) {
+    // custom error handling until https://github.com/motdotla/dotenv-expand/issues/65 is fixed upstream
+    // check for message "TypeError: Cannot read properties of undefined (reading 'split')"
     if (e.message.includes('split')) {
       throw new Error(
         'dotenv-expand failed to expand env vars. Maybe you need to escape `$`?'
