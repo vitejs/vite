@@ -37,17 +37,7 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
-- Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
-
-- To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
-
-- Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
-
-::: warning
-Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
-
-For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
-:::
+Vite uses [esbuild defines](https://esbuild.github.io/api/#define) to perform replacements, so value expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier. For example, if defining a string constant, it needs to be explicitly quoted with `JSON.stringify`.
 
 ::: tip NOTE
 For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
