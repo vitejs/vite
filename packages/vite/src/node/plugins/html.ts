@@ -30,7 +30,7 @@ import {
   publicAssetUrlRE,
   urlToBuiltUrl
 } from './asset'
-import { isCSSRequest } from './css'
+import { defaultCssBundleName, isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -295,6 +295,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     checkPublicFile(url, config)
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+
+  const cssBundleName = config.css?.bundleName || defaultCssBundleName
 
   return {
     name: 'vite:build-html',
@@ -762,7 +764,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // inject css link when cssCodeSplit is false
         if (!config.build.cssCodeSplit) {
           const cssChunk = Object.values(bundle).find(
-            (chunk) => chunk.type === 'asset' && chunk.name === 'style.css'
+            (chunk) => chunk.type === 'asset' && chunk.name === cssBundleName
           ) as OutputAsset | undefined
           if (cssChunk) {
             result = injectToHead(result, [

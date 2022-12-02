@@ -86,6 +86,11 @@ export interface CSSOptions {
    * @experimental
    */
   devSourcemap?: boolean
+  /**
+   * css bundle name.
+   * @default style.css
+   */
+  bundleName?: string
 }
 
 export interface CSSModulesOptions {
@@ -115,7 +120,7 @@ const inlineCSSRE = /(?:\?|&)inline-css\b/
 const usedRE = /(?:\?|&)used\b/
 const varRE = /^var\(/i
 
-const cssBundleName = 'style.css'
+export const defaultCssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',
@@ -331,6 +336,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       )
     }
   }
+
+  const cssBundleName = config.css?.bundleName || defaultCssBundleName
 
   return {
     name: 'vite:css-post',
