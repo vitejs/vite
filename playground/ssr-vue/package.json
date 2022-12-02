@@ -21,8 +21,8 @@
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
-    "@vitejs/plugin-vue-jsx": "workspace:*",
+    "@vitejs/plugin-vue": "^4.0.0-alpha.0",
+    "@vitejs/plugin-vue-jsx": "^3.0.0-alpha.0",
     "compression": "^1.7.4",
     "dep-import-type": "link:./dep-import-type",
     "express": "^4.18.2",

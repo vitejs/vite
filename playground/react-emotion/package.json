@@ -17,7 +17,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-pipeline-operator": "^7.18.9",
     "@emotion/babel-plugin": "^11.10.5",
-    "@vitejs/plugin-react": "workspace:*"
+    "@vitejs/plugin-react": "^3.0.0-alpha.0"
   },
   "babel": {
     "presets": [

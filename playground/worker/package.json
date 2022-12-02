@@ -27,6 +27,6 @@
     "dep-to-optimize": "file:./dep-to-optimize"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue-jsx": "workspace:*"
+    "@vitejs/plugin-vue-jsx": "^3.0.0-alpha.0"
   }
 }

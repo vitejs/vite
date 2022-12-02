@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^4.0.0-alpha.0",
     "less": "^4.1.3",
     "postcss-nested": "^5.0.6",
     "sass": "^1.56.1"

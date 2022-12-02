@@ -13,7 +13,7 @@
     "vue": "^3.2.45"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^4.0.0-alpha.0",
     "js-yaml": "^4.1.0",
     "less": "^4.1.3",
     "pug": "^3.0.2",
