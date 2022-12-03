@@ -718,6 +718,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (
         cssResolve ||
         (cssResolve = config.createResolver({
+          plugins: config.plugins,
           extensions: ['.css'],
           mainFields: ['style'],
           tryIndex: false,
@@ -730,6 +731,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (
         sassResolve ||
         (sassResolve = config.createResolver({
+          plugins: config.plugins,
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
           tryIndex: true,
@@ -743,6 +745,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (
         lessResolve ||
         (lessResolve = config.createResolver({
+          plugins: config.plugins,
           extensions: ['.less', '.css'],
           mainFields: ['less', 'style'],
           tryIndex: false,

@@ -345,7 +345,11 @@ export type ResolvedConfig = Readonly<
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
     logger: Logger
-    createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+    createResolver: (
+      options?: Partial<InternalResolveOptions> & {
+        plugins?: readonly Plugin[]
+      }
+    ) => ResolveFn
     optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
@@ -549,6 +553,12 @@ export async function resolveConfig(
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
     let aliasContainer: PluginContainer | undefined
     let resolverContainer: PluginContainer | undefined
+
+    const plugins =
+      options?.plugins?.filter(
+        (p) => p.resolveId && p.name !== 'alias' && !p.name.startsWith('vite:')
+      ) || []
+
     return async (id, importer, aliasOnly, ssr) => {
       let container: PluginContainer
       if (aliasOnly) {
@@ -556,7 +566,10 @@ export async function resolveConfig(
           aliasContainer ||
           (aliasContainer = await createPluginContainer({
             ...resolved,
-            plugins: [aliasPlugin({ entries: resolved.resolve.alias })]
+            plugins: [
+              ...plugins,
+              aliasPlugin({ entries: resolved.resolve.alias })
+            ]
           }))
       } else {
         container =
@@ -564,6 +577,7 @@ export async function resolveConfig(
           (resolverContainer = await createPluginContainer({
             ...resolved,
             plugins: [
+              ...plugins,
               aliasPlugin({ entries: resolved.resolve.alias }),
               resolvePlugin({
                 ...resolved.resolve,
