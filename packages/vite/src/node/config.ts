@@ -530,11 +530,13 @@ export async function resolveConfig(
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
-  const cacheDir = config.cacheDir
-    ? path.resolve(resolvedRoot, config.cacheDir)
-    : pkgPath
-    ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
-    : path.join(resolvedRoot, `.vite`)
+  const cacheDir = normalizePath(
+    config.cacheDir
+      ? path.resolve(resolvedRoot, config.cacheDir)
+      : pkgPath
+      ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
+      : path.join(resolvedRoot, `.vite`)
+  )
 
   const assetsFilter =
     config.assetsInclude &&

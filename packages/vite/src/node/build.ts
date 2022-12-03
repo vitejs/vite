@@ -620,6 +620,7 @@ async function doBuild(
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
+        config,
         config.build.watch.chokidar
       )
 
