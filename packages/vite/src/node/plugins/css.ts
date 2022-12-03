@@ -103,7 +103,16 @@ export interface CSSModulesOptions {
   /**
    * default: undefined
    */
-  localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
+  localsConvention?:
+    | 'camelCase'
+    | 'camelCaseOnly'
+    | 'dashes'
+    | 'dashesOnly'
+    | ((
+        originalClassName: string,
+        generatedClassName: string,
+        inputFile: string
+      ) => string)
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
