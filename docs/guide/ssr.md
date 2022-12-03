@@ -19,7 +19,7 @@ If you have questions, the community is usually helpful at [Vite Discord's #ssr 
 Vite provides built-in support for server-side rendering (SSR). The Vite playground contains example SSR setups for Vue 3 and React, which can be used as references for this guide:
 
 - [Vue 3](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue)
-- [React](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-react)
+- [React](https://github.com/vitejs/vite-plugin-react/tree/main/playground/ssr-react)
 
 ## Source Structure
 
