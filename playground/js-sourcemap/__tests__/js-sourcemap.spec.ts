@@ -9,32 +9,11 @@ import {
 } from '~utils'
 
 if (!isBuild) {
-  test('js without import', async () => {
+  test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
     const lines = js.split('\n')
     expect(lines[lines.length - 1].includes('//')).toBe(false) // expect no sourcemap
-  })
-
-  test('js', async () => {
-    const res = await page.request.get(new URL('./qux.js', page.url()).href)
-    const js = await res.text()
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAAA;AACA;AACA;",
-        "sources": [
-          "/root/qux.js",
-        ],
-        "sourcesContent": [
-          "import { foo } from './foo'
-
-export const qux = 'qux'
-",
-        ],
-        "version": 3,
-      }
-    `)
   })
 
   test('ts', async () => {

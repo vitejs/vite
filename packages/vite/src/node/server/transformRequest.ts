@@ -5,7 +5,6 @@ import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import {
   blankReplacer,
@@ -19,8 +18,6 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
-import { isCSSRequest } from '../plugins/css'
-import { SPECIAL_QUERY_RE } from '../constants'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
@@ -257,26 +254,11 @@ async function loadAndTransform(
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
     code = transformResult.code!
     map = transformResult.map
-
-    // To enable IDE debugging, add a minimal sourcemap for modified JS files without one
-    if (
-      !map &&
-      mod.file &&
-      mod.type === 'js' &&
-      code !== originalCode &&
-      !(isCSSRequest(id) && !SPECIAL_QUERY_RE.test(id)) // skip CSS : #9914
-    ) {
-      map = new MagicString(code).generateMap({ source: mod.file })
-    }
   }
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (
-      map.mappings &&
-      (!map.sourcesContent ||
-        (map.sourcesContent as Array<string | null>).includes(null))
-    ) {
+    if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }
   }
