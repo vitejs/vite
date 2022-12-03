@@ -191,6 +191,14 @@ describe('hmr', () => {
     editFile('Hmr.vue', (code) => code.replace(/<template>.+<\/template>/s, ''))
     await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
   })
+
+  test('should re-render when template and tsx script both changed', async () => {
+    editFile('HmrTsx.vue', (code) => code.replace(/count/g, 'updatedCount'))
+    await untilUpdated(
+      () => page.innerHTML('.hmr-tsx-block .hmr-tsx-inc'),
+      'updatedCount is 0'
+    )
+  })
 })
 
 describe('src imports', () => {

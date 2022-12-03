@@ -18,8 +18,28 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transformGlobImport(code, id, root, resolveId))?.s.toString()
+      (await transformGlobImport(code, id, root, resolveId, true))?.s.toString()
     ).toMatchSnapshot()
+  })
+
+  it('preserve line count', async () => {
+    const getTransformedLineCount = async (code: string) =>
+      (
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
+      )?.s
+        .toString()
+        .split('\n').length
+
+    expect(await getTransformedLineCount("import.meta.glob('./*.js')")).toBe(1)
+    expect(
+      await getTransformedLineCount(
+        `
+          import.meta.glob(
+            './*.js'
+          )
+        `.trim()
+      )
+    ).toBe(3)
   })
 
   it('virtual modules', async () => {
@@ -30,7 +50,7 @@ describe('fixture', async () => {
     ].join('\n')
     expect(
       (
-        await transformGlobImport(code, 'virtual:module', root, resolveId)
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
       )?.s.toString()
     ).toMatchSnapshot()
 
@@ -39,7 +59,8 @@ describe('fixture', async () => {
         "import.meta.glob('./modules/*.ts')",
         'virtual:module',
         root,
-        resolveId
+        resolveId,
+        true
       )
       expect('no error').toBe('should throw an error')
     } catch (err) {
@@ -56,7 +77,9 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transformGlobImport(code, id, root, resolveId, true))?.s.toString()
+      (
+        await transformGlobImport(code, id, root, resolveId, true, true)
+      )?.s.toString()
     ).toMatchSnapshot()
   })
 })
