@@ -10,7 +10,7 @@ import type {
   Node,
   SequenceExpression,
   SpreadElement,
-  TemplateLiteral
+  TemplateLiteral,
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
 import type { RollupError } from 'rollup'
@@ -27,7 +27,7 @@ import {
   evalValue,
   normalizePath,
   slash,
-  transformStableResult
+  transformStableResult,
 } from '../utils'
 import { isCSSRequest, isModuleCSSRequest } from './css'
 
@@ -47,7 +47,7 @@ export interface ParsedImportGlob {
 
 export function getAffectedGlobModules(
   file: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
   for (const [id, allGlobs] of server._importGlobMap!) {
@@ -77,7 +77,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
         config.isProduction,
-        config.experimental.importGlobRestoreExtension
+        config.experimental.importGlobRestoreExtension,
       )
       if (result) {
         if (server) {
@@ -86,7 +86,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         }
         return transformStableResult(result.s, id, config)
       }
-    }
+    },
   }
 }
 
@@ -98,7 +98,7 @@ const knownOptions = {
   eager: ['boolean'],
   import: ['string'],
   exhaustive: ['boolean'],
-  query: ['object', 'string']
+  query: ['object', 'string'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -111,7 +111,7 @@ function err(e: string, pos: number) {
 
 function parseGlobOptions(
   rawOpts: string,
-  optsStartIndex: number
+  optsStartIndex: number,
 ): GeneralImportGlobOptions {
   let opts: GeneralImportGlobOptions = {}
   try {
@@ -119,7 +119,7 @@ function parseGlobOptions(
   } catch {
     throw err(
       'Vite is unable to parse the glob options as the value is not static',
-      optsStartIndex
+      optsStartIndex,
     )
   }
 
@@ -136,9 +136,9 @@ function parseGlobOptions(
     if (!allowedTypes.includes(valueType)) {
       throw err(
         `Expected glob option "${key}" to be of type ${allowedTypes.join(
-          ' or '
+          ' or ',
         )}, but got ${valueType}`,
-        optsStartIndex
+        optsStartIndex,
       )
     }
   }
@@ -149,7 +149,7 @@ function parseGlobOptions(
       if (!['string', 'number', 'boolean'].includes(typeof value)) {
         throw err(
           `Expected glob option "query.${key}" to be of type string, number, or boolean, but got ${typeof value}`,
-          optsStartIndex
+          optsStartIndex,
         )
       }
     }
@@ -159,7 +159,7 @@ function parseGlobOptions(
     if (opts.import && opts.import !== 'default' && opts.import !== '*')
       throw err(
         `Option "import" can only be "default" or "*" when "as" is "${opts.as}", but got "${opts.import}"`,
-        optsStartIndex
+        optsStartIndex,
       )
     opts.import = opts.import || 'default'
   }
@@ -167,7 +167,7 @@ function parseGlobOptions(
   if (opts.as && opts.query)
     throw err(
       'Options "as" and "query" cannot be used together',
-      optsStartIndex
+      optsStartIndex,
     )
 
   if (opts.as) opts.query = opts.as
@@ -179,7 +179,7 @@ export async function parseImportGlob(
   code: string,
   importer: string | undefined,
   root: string,
-  resolveId: IdResolver
+  resolveId: IdResolver,
 ): Promise<ParsedImportGlob[]> {
   let cleanCode
   try {
@@ -210,7 +210,7 @@ export async function parseImportGlob(
         ranges: true,
         onToken: (token) => {
           lastTokenPos = token.end
-        }
+        },
       }) as any
     } catch (e) {
       const _e = e as any
@@ -228,8 +228,8 @@ export async function parseImportGlob(
           {
             ecmaVersion: 'latest',
             sourceType: 'module',
-            ranges: true
-          }
+            ranges: true,
+          },
         ) as any
       } catch {
         throw _e
@@ -253,13 +253,13 @@ export async function parseImportGlob(
       if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
           throw err(
-            `Expected glob to be a string, but got "${typeof element.value}"`
+            `Expected glob to be a string, but got "${typeof element.value}"`,
           )
         globs.push(element.value)
       } else if (element.type === 'TemplateLiteral') {
         if (element.expressions.length !== 0) {
           throw err(
-            `Expected glob to be a string, but got dynamic template literal`
+            `Expected glob to be a string, but got dynamic template literal`,
           )
         }
         globs.push(element.quasis[0].value.raw)
@@ -281,19 +281,19 @@ export async function parseImportGlob(
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
-          `Expected the second argument to be an object literal, but got "${arg2.type}"`
+          `Expected the second argument to be an object literal, but got "${arg2.type}"`,
         )
 
       options = parseGlobOptions(
         code.slice(arg2.range![0], arg2.range![1]),
-        arg2.range![0]
+        arg2.range![0],
       )
     }
 
     const end = ast.range![1]
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId))
+      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
 
@@ -306,7 +306,7 @@ export async function parseImportGlob(
       options,
       type,
       start,
-      end
+      end,
     }
   })
 
@@ -322,7 +322,7 @@ const jsonStringifyInOneline = (input: any) =>
   JSON.stringify(input).replace(/[{,:]/g, '$& ').replace(/\}/g, ' }')
 const createCssDefaultImportWarning = (
   globs: string[],
-  options: GeneralImportGlobOptions
+  options: GeneralImportGlobOptions,
 ) =>
   `if (!${warnedCSSDefaultImportVarName}) {` +
   `${warnedCSSDefaultImportVarName} = true;` +
@@ -330,8 +330,8 @@ const createCssDefaultImportWarning = (
     'Default import of CSS without `?inline` is deprecated. ' +
       "Add the `{ query: '?inline' }` glob option to fix this.\n" +
       `For example: \`import.meta.glob(${jsonStringifyInOneline(
-        globs.length === 1 ? globs[0] : globs
-      )}, ${jsonStringifyInOneline({ ...options, query: '?inline' })})\``
+        globs.length === 1 ? globs[0] : globs,
+      )}, ${jsonStringifyInOneline({ ...options, query: '?inline' })})\``,
   )});` +
   `}`
 
@@ -350,7 +350,7 @@ export async function transformGlobImport(
   root: string,
   resolveId: IdResolver,
   isProduction: boolean,
-  restoreQueryExtension = false
+  restoreQueryExtension = false,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -360,7 +360,7 @@ export async function transformGlobImport(
     code,
     isVirtual ? undefined : id,
     root,
-    resolveId
+    resolveId,
   )
   const matchedFiles = new Set<string>()
 
@@ -387,7 +387,7 @@ export async function transformGlobImport(
           options,
           index,
           start,
-          end
+          end,
         }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
@@ -397,7 +397,7 @@ export async function transformGlobImport(
               dot: !!options.exhaustive,
               ignore: options.exhaustive
                 ? []
-                : [join(cwd, '**/node_modules/**')]
+                : [join(cwd, '**/node_modules/**')],
             })
           )
             .filter((file) => file !== id)
@@ -418,7 +418,7 @@ export async function transformGlobImport(
             if (!dir) {
               if (isRelative)
                 throw new Error(
-                  "In virtual modules, all globs must start with '/'"
+                  "In virtual modules, all globs must start with '/'",
                 )
               const filePath = `/${relative(root, file)}`
               return { filePath, importPath: filePath }
@@ -468,16 +468,16 @@ export async function transformGlobImport(
                 ? `{ ${importKey} as ${variableName} }`
                 : `* as ${variableName}`
               staticImports.push(
-                `import ${expression} from ${JSON.stringify(importPath)}`
+                `import ${expression} from ${JSON.stringify(importPath)}`,
               )
               if (!isProduction && isCSS) {
                 objectProps.push(
                   `get ${JSON.stringify(
-                    filePath
+                    filePath,
                   )}() { ${createCssDefaultImportWarning(
                     globs,
-                    options
-                  )} return ${variableName} }`
+                    options,
+                  )} return ${variableName} }`,
                 )
               } else {
                 objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
@@ -489,15 +489,15 @@ export async function transformGlobImport(
               if (!isProduction && isCSS) {
                 objectProps.push(
                   `${JSON.stringify(
-                    filePath
+                    filePath,
                   )}: () => { ${createCssDefaultImportWarning(
                     globs,
-                    options
-                  )} return ${importStatement}}`
+                    options,
+                  )} return ${importStatement}}`,
                 )
               } else {
                 objectProps.push(
-                  `${JSON.stringify(filePath)}: () => ${importStatement}`
+                  `${JSON.stringify(filePath)}: () => ${importStatement}`,
                 )
               }
             }
@@ -523,14 +523,14 @@ export async function transformGlobImport(
               ')'
           } else {
             replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-              ','
+              ',',
             )}${lineBreaks}})`
           }
           s.overwrite(start, end, replacement)
 
           return staticImports
-        }
-      )
+        },
+      ),
     )
   ).flat()
 
@@ -539,13 +539,13 @@ export async function transformGlobImport(
   return {
     s,
     matches,
-    files: matchedFiles
+    files: matchedFiles,
   }
 }
 
 type IdResolver = (
   id: string,
-  importer?: string
+  importer?: string,
 ) => Promise<string | undefined> | string | undefined
 
 function globSafePath(path: string) {
@@ -580,7 +580,7 @@ export async function toAbsoluteGlob(
   glob: string,
   root: string,
   importer: string | undefined,
-  resolveId: IdResolver
+  resolveId: IdResolver,
 ): Promise<string> {
   let pre = ''
   if (glob.startsWith('!')) {
@@ -600,7 +600,7 @@ export async function toAbsoluteGlob(
   }
 
   throw new Error(
-    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`,
   )
 }
 

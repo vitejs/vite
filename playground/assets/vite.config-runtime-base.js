@@ -23,9 +23,9 @@ module.exports = {
       output: {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        assetFileNames: 'other-assets/[name]-[hash][extname]'
-      }
-    }
+        assetFileNames: 'other-assets/[name]-[hash][extname]',
+      },
+    },
   },
   plugins: [
     {
@@ -37,28 +37,28 @@ module.exports = {
             {
               tag: 'script',
               attrs: { type: 'module' },
-              children: dynamicBaseAssetsCode
-            }
+              children: dynamicBaseAssetsCode,
+            },
           ]
         }
-      }
-    }
+      },
+    },
   ],
   experimental: {
     renderBuiltUrl(filename, { hostType, type }) {
       if (type === 'asset') {
         if (hostType === 'js') {
           return {
-            runtime: `globalThis.__toAssetUrl(${JSON.stringify(filename)})`
+            runtime: `globalThis.__toAssetUrl(${JSON.stringify(filename)})`,
           }
         }
       } else if (type === 'public') {
         if (hostType === 'js') {
           return {
-            runtime: `globalThis.__publicBase+${JSON.stringify(filename)}`
+            runtime: `globalThis.__publicBase+${JSON.stringify(filename)}`,
           }
         }
       }
-    }
-  }
+    },
+  },
 }

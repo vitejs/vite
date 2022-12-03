@@ -21,18 +21,18 @@ export namespace Connect {
 
   export type SimpleHandleFunction = (
     req: IncomingMessage,
-    res: http.ServerResponse
+    res: http.ServerResponse,
   ) => void
   export type NextHandleFunction = (
     req: IncomingMessage,
     res: http.ServerResponse,
-    next: NextFunction
+    next: NextFunction,
   ) => void
   export type ErrorHandleFunction = (
     err: any,
     req: IncomingMessage,
     res: http.ServerResponse,
-    next: NextFunction
+    next: NextFunction,
   ) => void
   export type HandleFunction =
     | SimpleHandleFunction
@@ -73,7 +73,7 @@ export namespace Connect {
     handle(
       req: http.IncomingMessage,
       res: http.ServerResponse,
-      next: Function
+      next: Function,
     ): void
 
     /**
@@ -102,7 +102,7 @@ export namespace Connect {
       port: number,
       hostname?: string,
       backlog?: number,
-      callback?: Function
+      callback?: Function,
     ): http.Server
     listen(port: number, hostname?: string, callback?: Function): http.Server
     listen(path: string, callback?: Function): http.Server

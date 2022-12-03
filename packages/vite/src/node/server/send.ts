@@ -1,7 +1,7 @@
 import type {
   IncomingMessage,
   OutgoingHttpHeaders,
-  ServerResponse
+  ServerResponse,
 } from 'node:http'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
@@ -11,7 +11,7 @@ const alias: Record<string, string | undefined> = {
   js: 'application/javascript',
   css: 'text/css',
   html: 'text/html',
-  json: 'application/json'
+  json: 'application/json',
 }
 
 export interface SendOptions {
@@ -26,13 +26,13 @@ export function send(
   res: ServerResponse,
   content: string | Buffer,
   type: string,
-  options: SendOptions
+  options: SendOptions,
 ): void {
   const {
     etag = getEtag(content, { weak: true }),
     cacheControl = 'no-cache',
     headers,
-    map
+    map,
   } = options
 
   if (res.writableEnded) {

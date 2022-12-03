@@ -17,9 +17,9 @@ const transformPlugin = {
         ${code}
       `
     }
-  }
+  },
 }
 
 module.exports = {
-  plugins: [transformPlugin]
+  plugins: [transformPlugin],
 }

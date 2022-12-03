@@ -23,7 +23,7 @@ import { VITE_PACKAGE_DIR } from '../constants'
 export function openBrowser(
   url: string,
   opt: string | true,
-  logger: Logger
+  logger: Logger,
 ): boolean {
   // The browser executable to open.
   // See https://github.com/sindresorhus/open#app for documentation.
@@ -39,17 +39,17 @@ export function openBrowser(
 function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   const extraArgs = process.argv.slice(2)
   const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
-    stdio: 'inherit'
+    stdio: 'inherit',
   })
   child.on('close', (code) => {
     if (code !== 0) {
       logger.error(
         colors.red(
           `\nThe script specified as BROWSER environment variable failed.\n\n${colors.cyan(
-            scriptPath
-          )} exited with code ${code}.`
+            scriptPath,
+          )} exited with code ${code}.`,
         ),
-        { error: null }
+        { error: null },
       )
     }
   })
@@ -64,7 +64,7 @@ const supportedChromiumBrowsers = [
   'Microsoft Edge',
   'Brave Browser',
   'Vivaldi',
-  'Chromium'
+  'Chromium',
 ]
 
 function startBrowserProcess(browser: string | undefined, url: string) {
@@ -89,12 +89,12 @@ function startBrowserProcess(browser: string | undefined, url: string) {
       // Try our best to reuse existing tab with AppleScript
       execSync(
         `osascript openChrome.applescript "${encodeURI(
-          url
+          url,
         )}" "${openedBrowser}"`,
         {
           cwd: join(VITE_PACKAGE_DIR, 'bin'),
-          stdio: 'ignore'
-        }
+          stdio: 'ignore',
+        },
       )
       return true
     } catch (err) {

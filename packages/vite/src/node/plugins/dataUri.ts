@@ -41,7 +41,7 @@ export function dataURIPlugin(): Plugin {
       const [, mime, format, data] = match
       if (mime !== 'text/javascript') {
         throw new Error(
-          `data URI with non-JavaScript mime type is not supported.`
+          `data URI with non-JavaScript mime type is not supported.`,
         )
       }
 
@@ -59,6 +59,6 @@ export function dataURIPlugin(): Plugin {
         id = id.slice(dataUriPrefix.length)
         return resolved[id] || null
       }
-    }
+    },
   }
 }

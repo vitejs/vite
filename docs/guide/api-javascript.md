@@ -24,8 +24,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
     configFile: false,
     root: __dirname,
     server: {
-      port: 1337
-    }
+      port: 1337,
+    },
   })
   await server.listen()
 
@@ -102,7 +102,7 @@ interface ViteDevServer {
    */
   transformRequest(
     url: string,
-    options?: TransformOptions
+    options?: TransformOptions,
   ): Promise<TransformResult | null>
   /**
    * Apply Vite built-in HTML transforms and any plugin HTML transforms.
@@ -113,7 +113,7 @@ interface ViteDevServer {
    */
   ssrLoadModule(
     url: string,
-    options?: { fixStacktrace?: boolean }
+    options?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace.
@@ -147,7 +147,7 @@ interface ViteDevServer {
 
 ```ts
 async function build(
-  inlineConfig?: InlineConfig
+  inlineConfig?: InlineConfig,
 ): Promise<RollupOutput | RollupOutput[]>
 ```
 
@@ -167,8 +167,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
     build: {
       rollupOptions: {
         // ...
-      }
-    }
+      },
+    },
   })
 })()
 ```
@@ -190,8 +190,8 @@ import { preview } from 'vite'
     // any valid user config options, plus `mode` and `configFile`
     preview: {
       port: 8080,
-      open: true
-    }
+      open: true,
+    },
   })
 
   previewServer.printUrls()
@@ -206,7 +206,7 @@ import { preview } from 'vite'
 async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
-  defaultMode = 'development'
+  defaultMode = 'development',
 ): Promise<ResolvedConfig>
 ```
 
@@ -220,7 +220,7 @@ The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite 
 function mergeConfig(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
-  isRoot = true
+  isRoot = true,
 ): Record<string, any>
 ```
 
@@ -233,7 +233,7 @@ Deeply merge two Vite configs. `isRoot` represents the level within the Vite con
 ```ts
 function searchForWorkspaceRoot(
   current: string,
-  root = searchForPackageRoot(current)
+  root = searchForPackageRoot(current),
 ): string
 ```
 
@@ -254,7 +254,7 @@ Search for the root of the potential workspace if it meets the following conditi
 function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string | string[] = 'VITE_'
+  prefixes: string | string[] = 'VITE_',
 ): Record<string, string>
 ```
 
@@ -283,7 +283,7 @@ async function transformWithEsbuild(
   code: string,
   filename: string,
   options?: EsbuildTransformOptions,
-  inMap?: object
+  inMap?: object,
 ): Promise<ESBuildTransformResult>
 ```
 
@@ -298,7 +298,7 @@ async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configFile?: string,
   configRoot: string = process.cwd(),
-  logLevel?: LogLevel
+  logLevel?: LogLevel,
 ): Promise<{
   path: string
   config: UserConfig

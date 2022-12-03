@@ -4,7 +4,7 @@ function text(el, text) {
 }
 
 let classicWorker = new Worker(
-  new URL('../classic-worker.js', import.meta.url) /* , */
+  new URL('../classic-worker.js', import.meta.url) /* , */,
   // test comment
 )
 

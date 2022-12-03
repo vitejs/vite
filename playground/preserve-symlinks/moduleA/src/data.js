@@ -1,3 +1,3 @@
 export const data = {
-  msg: 'hello vite'
+  msg: 'hello vite',
 }

@@ -27,11 +27,11 @@ export async function createServer(root = process.cwd(), hmrPort) {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
+        interval: 100,
       },
       hmr: {
-        port: hmrPort
-      }
+        port: hmrPort,
+      },
     },
     appType: 'custom',
     ssr: {
@@ -39,12 +39,12 @@ export async function createServer(root = process.cwd(), hmrPort) {
         'no-external-cjs',
         'import-builtin-cjs',
         'no-external-css',
-        'external-entry'
+        'external-entry',
       ],
       external: ['nested-external', 'external-entry/entry'],
       optimizeDeps: {
-        disabled: 'build'
-      }
+        disabled: 'build',
+      },
     },
     plugins: [
       {
@@ -59,9 +59,9 @@ export async function createServer(root = process.cwd(), hmrPort) {
           if (id === 'pkg-exports/virtual') {
             return 'export default "[success]"'
           }
-        }
-      }
-    ]
+        },
+      },
+    ],
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -94,6 +94,6 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }

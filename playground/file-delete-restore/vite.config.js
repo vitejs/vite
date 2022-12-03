@@ -7,6 +7,6 @@ module.exports = {
   plugins: [react()],
   build: {
     // to make tests faster
-    minify: false
-  }
+    minify: false,
+  },
 }

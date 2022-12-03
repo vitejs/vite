@@ -29,14 +29,14 @@ export const ports = {
   'ssr-webworker': 9606,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
-  'css/dynamic-import': 5007
+  'css/dynamic-import': 5007,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
   'ssr-deps': 24681,
   'ssr-html': 24682,
   'ssr-noexternal': 24683,
-  'ssr-pug': 24684
+  'ssr-pug': 24684,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -96,7 +96,7 @@ export function readFile(filename: string): string {
 export function editFile(
   filename: string,
   replacer: (str: string) => string,
-  runInBuild: boolean = false
+  runInBuild: boolean = false,
 ): void {
   if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
@@ -121,7 +121,7 @@ export function listAssets(base = ''): string[] {
 export function findAssetFile(
   match: string | RegExp,
   base = '',
-  assets = 'assets'
+  assets = 'assets',
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
@@ -141,7 +141,7 @@ export function findAssetFile(
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8')
+    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
   )
 }
 
@@ -151,7 +151,7 @@ export function readManifest(base = ''): Manifest {
 export async function untilUpdated(
   poll: () => string | Promise<string>,
   expected: string,
-  runInBuild = false
+  runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
@@ -171,7 +171,7 @@ export async function untilUpdated(
  */
 export async function withRetry(
   func: () => Promise<void>,
-  runInBuild = false
+  runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
@@ -191,18 +191,18 @@ export async function untilBrowserLogAfter(
   operation: () => any,
   target: string | RegExp | Array<string | RegExp>,
   expectOrder?: boolean,
-  callback?: UntilBrowserLogAfterCallback
+  callback?: UntilBrowserLogAfterCallback,
 ): Promise<string[]>
 export async function untilBrowserLogAfter(
   operation: () => any,
   target: string | RegExp | Array<string | RegExp>,
-  callback?: UntilBrowserLogAfterCallback
+  callback?: UntilBrowserLogAfterCallback,
 ): Promise<string[]>
 export async function untilBrowserLogAfter(
   operation: () => any,
   target: string | RegExp | Array<string | RegExp>,
   arg3?: boolean | UntilBrowserLogAfterCallback,
-  arg4?: UntilBrowserLogAfterCallback
+  arg4?: UntilBrowserLogAfterCallback,
 ): Promise<string[]> {
   const expectOrder = typeof arg3 === 'boolean' ? arg3 : false
   const callback = typeof arg3 === 'boolean' ? arg4 : arg3
@@ -218,7 +218,7 @@ export async function untilBrowserLogAfter(
 
 async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
-  expectOrder = true
+  expectOrder = true,
 ): Promise<string[]> {
   let resolve: () => void
   let reject: (reason: any) => void
@@ -249,7 +249,7 @@ async function untilBrowserLog(
         const remainingMatchers = target.map(isMatch)
         processMsg = (text: string) => {
           const nextIndex = remainingMatchers.findIndex((matcher) =>
-            matcher(text)
+            matcher(text),
           )
           if (nextIndex >= 0) {
             remainingMatchers.splice(nextIndex, 1)
@@ -300,7 +300,7 @@ export const formatSourcemapForSnapshot = (map: any): any => {
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaChildProcess
+  serverProcess: ExecaChildProcess,
 ): Promise<void> {
   if (isWindows) {
     try {
