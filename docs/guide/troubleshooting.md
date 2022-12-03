@@ -51,7 +51,7 @@ If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as 
 
 Note that these settings persist but a **restart is required**.
 
-### Randomly stops working
+### Network requests stop loading
 
 When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content. Vite relies on these caching directives.
 
@@ -100,6 +100,10 @@ If you are running Vite with WSL2, Vite cannot watch file changes in some condit
 If HMR is not handled by Vite or a plugin, a full reload will happen.
 
 Also if there is a dependency loop, a full reload will happen. To solve this, try removing the loop.
+
+### High number of HMR updates in console
+
+This can be caused by a dependency loop,. To solve this, try removing the loop.
 
 ## Build
 
