@@ -80,7 +80,7 @@
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
     "rimraf": "^3.0.2",
-    "rollup": "~3.3.0",
+    "rollup": "~3.5.1",
     "rollup-plugin-license": "^2.9.1",
     "semver": "^7.3.8",
     "simple-git-hooks": "^2.8.1",
