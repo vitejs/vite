@@ -26,8 +26,6 @@ export const ports = {
   'ssr-html': 9601,
   'ssr-noexternal': 9602,
   'ssr-pug': 9603,
-  'ssr-react': 9604,
-  'ssr-vue': 9605,
   'ssr-webworker': 9606,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
@@ -38,9 +36,7 @@ export const hmrPorts = {
   'ssr-deps': 24681,
   'ssr-html': 24682,
   'ssr-noexternal': 24683,
-  'ssr-pug': 24684,
-  'ssr-react': 24685,
-  'ssr-vue': 24686
+  'ssr-pug': 24684
 }
 
 const hexToNameMap: Record<string, string> = {}

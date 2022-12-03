@@ -114,8 +114,7 @@
   "packageManager": "pnpm@7.17.1",
   "pnpm": {
     "overrides": {
-      "vite": "workspace:*",
-      "@vitejs/plugin-vue": "workspace:*"
+      "vite": "workspace:*"
     },
     "packageExtensions": {
       "postcss-load-config": {
