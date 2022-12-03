@@ -13,7 +13,7 @@ export function resolveChokidarOptions(
       '**/.git/**',
       '**/node_modules/**',
       '**/test-results/**', // Playwright
-      escapePath(config.cacheDir + '/**'),
+      escapePath(config.cacheDir) + '/**',
       ...(Array.isArray(ignored) ? ignored : [ignored])
     ],
     ignoreInitial: true,
