@@ -20,14 +20,7 @@ if (isDryRun) {
   console.log()
 }
 
-export const packages = [
-  'vite',
-  'create-vite',
-  'plugin-legacy',
-  'plugin-react',
-  'plugin-vue',
-  'plugin-vue-jsx'
-]
+export const packages = ['vite', 'create-vite', 'plugin-legacy']
 
 export const versionIncrements: ReleaseType[] = [
   'patch',
