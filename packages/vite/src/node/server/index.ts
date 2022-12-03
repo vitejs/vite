@@ -315,7 +315,7 @@ export async function createServer(
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
-  const resolvedWatchOptions = resolveChokidarOptions({
+  const resolvedWatchOptions = resolveChokidarOptions(config, {
     disableGlobbing: true,
     ...serverConfig.watch
   })
