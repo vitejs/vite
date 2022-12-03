@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Vite Plugin React Issues
+    url: https://github.com/vitejs/vite-plugin-react/issues/new/choose
+    about: React related issues should be reported on the vite-plugin-react repository.
+  - name: Vite Plugin Vue Issues
+    url: https://github.com/vitejs/vite-plugin-vue/issues/new/choose
+    about: Vue related issues should be reported on the vite-plugin-vue repository.
   - name: Discord Chat
     url: https://chat.vitejs.dev
     about: Ask questions and discuss with other Vite users in real time.
