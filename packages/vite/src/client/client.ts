@@ -550,7 +550,8 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       pruneMap.set(ownerPath, cb)
     },
 
-    // TODO
+    // Kept for backward compatibility (#11036)
+    // @ts-expect-error untyped
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
