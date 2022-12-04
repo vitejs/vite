@@ -360,37 +360,6 @@ export function resolveBuildOptions(
         : defaultModulePreload,
   }
 
-  // Auto-resolve dependencies if not explicitly specified
-  if (raw && raw.lib !== false && raw.rollupOptions?.external == null) {
-    const formats = raw.lib?.formats ?? []
-    // If umd or iife is specified, we need to bundle all dependencies and cannot use external automatically
-    const isUMD = formats.includes('umd')
-    const isIIFE = formats.includes('iife')
-    if (!isUMD && !isIIFE) {
-      const libEntry = raw.lib?.entry
-      const configRoot = typeof libEntry === 'string' ? libEntry : process.cwd()
-      const pkg = lookupFile(configRoot, ['package.json'])
-      if (pkg) {
-        const pkgData = JSON.parse(pkg)
-        const dependencies: string[] = Object.keys(pkgData.dependencies || {})
-        const peerDependencies: string[] = Object.keys(
-          pkgData.peerDependencies || {},
-        )
-        const optionalDependencies: string[] = Object.keys(
-          pkgData.optionalDependencies || {},
-        )
-        const allDependencies = [
-          ...dependencies,
-          ...peerDependencies,
-          ...optionalDependencies,
-        ]
-        if (allDependencies.length > 0) {
-          resolved.rollupOptions.external = allDependencies
-        }
-      }
-    }
-  }
-
   // handle special build targets
   if (resolved.target === 'modules') {
     resolved.target = ESBUILD_MODULES_TARGET
@@ -644,6 +613,43 @@ async function doBuild(
       normalizedOutputs.push(buildOutputOptions(outputs))
     }
 
+    if (libOptions) {
+      const { libFormats } = resolveLibFormats(libOptions)
+
+      // Auto-resolve dependencies if not explicitly specified
+      if (rollupOptions.external == null && libFormats.length > 0) {
+        // If umd or iife is specified, we need to bundle all dependencies and cannot use external automatically
+        const isUMD = libFormats.includes('umd')
+        const isIIFE = libFormats.includes('iife')
+        if (!isUMD && !isIIFE) {
+          const libEntry = libOptions.entry
+          const configRoot =
+            typeof libEntry === 'string' ? libEntry : process.cwd()
+          const pkg = lookupFile(configRoot, ['package.json'])
+          if (pkg) {
+            const pkgData = JSON.parse(pkg)
+            const dependencies: string[] = Object.keys(
+              pkgData.dependencies || {},
+            )
+            const peerDependencies: string[] = Object.keys(
+              pkgData.peerDependencies || {},
+            )
+            const optionalDependencies: string[] = Object.keys(
+              pkgData.optionalDependencies || {},
+            )
+            const allDependencies = [
+              ...dependencies,
+              ...peerDependencies,
+              ...optionalDependencies,
+            ]
+            if (allDependencies.length > 0) {
+              rollupOptions.external = allDependencies
+            }
+          }
+        }
+      }
+    }
+
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
@@ -814,18 +820,28 @@ export function resolveLibFilename(
   return `${name}.${format}.${extension}`
 }
 
+export function resolveLibFormats(libOptions: LibraryOptions): {
+  libFormats: LibraryFormats[]
+  libHasMultipleEntries: boolean
+} {
+  const libHasMultipleEntries =
+    typeof libOptions.entry !== 'string' &&
+    Object.values(libOptions.entry).length > 1
+
+  const libFormats =
+    libOptions.formats ||
+    (libHasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
+
+  return { libFormats, libHasMultipleEntries }
+}
+
 export function resolveBuildOutputs(
   outputs: OutputOptions | OutputOptions[] | undefined,
   libOptions: LibraryOptions | false,
   logger: Logger,
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
-    const libHasMultipleEntries =
-      typeof libOptions.entry !== 'string' &&
-      Object.values(libOptions.entry).length > 1
-    const libFormats =
-      libOptions.formats ||
-      (libHasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
+    const { libHasMultipleEntries, libFormats } = resolveLibFormats(libOptions)
 
     if (!Array.isArray(outputs)) {
       if (libFormats.includes('umd') || libFormats.includes('iife')) {
