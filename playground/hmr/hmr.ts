@@ -3,6 +3,7 @@ import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
 import './invalidation/parent'
+import './file-delete-restore'
 
 export const foo = 1
 text('.app', foo)
