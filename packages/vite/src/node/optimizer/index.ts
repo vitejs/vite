@@ -1043,10 +1043,10 @@ function isSingleDefaultExport(exports: readonly string[]) {
 }
 
 const lockfileFormats = [
-  { name: 'package-lock.json', patchesDirs: ['patches'] }, // Default of https://github.com/ds300/patch-package
-  { name: 'yarn.lock', patchesDirs: ['patches', '.yarn/patches'] }, // .yarn/patches for v2+
-  { name: 'pnpm-lock.yaml', patchesDirs: [] }, // Included in lockfile
-  { name: 'bun.lockb', patchesDirs: ['patches'] },
+  { name: 'package-lock.json', checkPatches: true },
+  { name: 'yarn.lock', checkPatches: true }, // Included in lockfile for v2+
+  { name: 'pnpm-lock.yaml', checkPatches: false }, // Included in lockfile
+  { name: 'bun.lockb', checkPatches: true },
 ]
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
@@ -1058,17 +1058,16 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)
-    const { patchesDirs } = lockfileFormats.find(
+    const { checkPatches } = lockfileFormats.find(
       (f) => f.name === lockfileName,
     )!
-    const dependenciesRoot = path.dirname(lockfilePath)
-    for (const patchesDir of patchesDirs) {
-      const fullPath = path.join(dependenciesRoot, patchesDir)
+    if (checkPatches) {
+      // Default of https://github.com/ds300/patch-package
+      const fullPath = path.join(path.dirname(lockfilePath), 'patches')
       if (fs.existsSync(fullPath)) {
         const stats = fs.statSync(fullPath)
         if (stats.isDirectory()) {
           content += stats.mtimeMs.toString()
-          break
         }
       }
     }
