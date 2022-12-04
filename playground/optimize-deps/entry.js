@@ -1,4 +1,4 @@
-import msg from 'added-in-entries'
+import msg from '@vitejs/test-added-in-entries'
 
 // This is an entry file that is added to optimizeDeps.entries
 // When the deps aren't cached, these entries are also processed

@@ -1,5 +1,5 @@
 {
-  "name": "test-json",
+  "name": "@vitejs/test-json",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "express": "^4.18.2",
-    "json-module": "file:./json-module",
+    "@vitejs/test-json-module": "file:./json-module",
     "vue": "^3.2.45"
   }
 }

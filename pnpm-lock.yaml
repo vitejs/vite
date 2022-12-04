@@ -296,16 +296,16 @@ importers:
 
   playground/alias:
     specifiers:
+      '@vitejs/test-resolve-linked': workspace:*
       '@vue/shared': ^3.2.45
       aliased-module: file:./dir/module
-      resolve-linked: workspace:*
       vue: ^3.2.45
     dependencies:
       '@vue/shared': 3.2.45
       aliased-module: file:playground/alias/dir/module
       vue: 3.2.45
     devDependencies:
-      resolve-linked: link:../resolve-linked
+      '@vitejs/test-resolve-linked': link:../resolve-linked
 
   playground/alias/dir/module:
     specifiers: {}
@@ -357,8 +357,8 @@ importers:
 
   playground/css:
     specifiers:
-      css-dep: link:./css-dep
-      css-js-dep: file:./css-js-dep
+      '@vitejs/test-css-dep': link:./css-dep
+      '@vitejs/test-css-js-dep': file:./css-js-dep
       fast-glob: ^3.2.12
       less: ^4.1.3
       postcss-nested: ^5.0.6
@@ -366,8 +366,8 @@ importers:
       stylus: ^0.59.0
       sugarss: ^4.0.1
     devDependencies:
-      css-dep: link:css-dep
-      css-js-dep: file:playground/css/css-js-dep
+      '@vitejs/test-css-dep': link:css-dep
+      '@vitejs/test-css-js-dep': file:playground/css/css-js-dep
       fast-glob: 3.2.12
       less: 4.1.3
       postcss-nested: 5.0.6
@@ -415,18 +415,18 @@ importers:
 
   playground/define:
     specifiers:
-      dep: file:./commonjs-dep
+      '@vitejs/test-commonjs-dep': file:./commonjs-dep
     dependencies:
-      dep: file:playground/define/commonjs-dep
+      '@vitejs/test-commonjs-dep': file:playground/define/commonjs-dep
 
   playground/define/commonjs-dep:
     specifiers: {}
 
   playground/dynamic-import:
     specifiers:
-      pkg: file:./pkg
+      '@vitejs/test-pkg': file:./pkg
     dependencies:
-      pkg: file:playground/dynamic-import/pkg
+      '@vitejs/test-pkg': file:playground/dynamic-import/pkg
 
   playground/dynamic-import/pkg:
     specifiers: {}
@@ -445,15 +445,15 @@ importers:
 
   playground/external:
     specifiers:
-      '@vitejs/dep-that-imports': file:./dep-that-imports
-      '@vitejs/dep-that-requires': file:./dep-that-requires
+      '@vitejs/test-dep-that-imports': file:./dep-that-imports
+      '@vitejs/test-dep-that-requires': file:./dep-that-requires
       slash3: npm:slash@^3.0.0
       slash5: npm:slash@^5.0.0
       vite: workspace:*
       vue: ^3.2.45
     dependencies:
-      '@vitejs/dep-that-imports': file:playground/external/dep-that-imports
-      '@vitejs/dep-that-requires': file:playground/external/dep-that-requires
+      '@vitejs/test-dep-that-imports': file:playground/external/dep-that-imports
+      '@vitejs/test-dep-that-requires': file:playground/external/dep-that-requires
     devDependencies:
       slash3: /slash/3.0.0
       slash5: /slash/5.0.0
@@ -505,9 +505,9 @@ importers:
 
   playground/import-assertion:
     specifiers:
-      '@vitejs/import-assertion-dep': file:./import-assertion-dep
+      '@vitejs/test-import-assertion-dep': file:./import-assertion-dep
     dependencies:
-      '@vitejs/import-assertion-dep': file:playground/import-assertion/import-assertion-dep
+      '@vitejs/test-import-assertion-dep': file:playground/import-assertion/import-assertion-dep
 
   playground/import-assertion/import-assertion-dep:
     specifiers: {}
@@ -517,12 +517,12 @@ importers:
 
   playground/json:
     specifiers:
+      '@vitejs/test-json-module': file:./json-module
       express: ^4.18.2
-      json-module: file:./json-module
       vue: ^3.2.45
     devDependencies:
+      '@vitejs/test-json-module': file:playground/json/json-module
       express: 4.18.2
-      json-module: file:playground/json/json-module
       vue: 3.2.45
 
   playground/json/json-module:
@@ -554,17 +554,17 @@ importers:
 
   playground/nested-deps:
     specifiers:
-      test-package-a: link:./test-package-a
-      test-package-b: link:./test-package-b
-      test-package-c: link:./test-package-c
-      test-package-d: link:./test-package-d
-      test-package-e: link:./test-package-e
+      '@vitejs/test-package-a': link:./test-package-a
+      '@vitejs/test-package-b': link:./test-package-b
+      '@vitejs/test-package-c': link:./test-package-c
+      '@vitejs/test-package-d': link:./test-package-d
+      '@vitejs/test-package-e': link:./test-package-e
     dependencies:
-      test-package-a: link:test-package-a
-      test-package-b: link:test-package-b
-      test-package-c: link:test-package-c
-      test-package-d: link:test-package-d
-      test-package-e: link:test-package-e
+      '@vitejs/test-package-a': link:test-package-a
+      '@vitejs/test-package-b': link:test-package-b
+      '@vitejs/test-package-c': link:test-package-c
+      '@vitejs/test-package-d': link:test-package-d
+      '@vitejs/test-package-e': link:test-package-e
 
   playground/nested-deps/test-package-a:
     specifiers: {}
@@ -577,20 +577,20 @@ importers:
 
   playground/nested-deps/test-package-d:
     specifiers:
-      test-package-d-nested: link:./test-package-d-nested
+      '@vitejs/test-package-d-nested': link:./test-package-d-nested
     dependencies:
-      test-package-d-nested: link:test-package-d-nested
+      '@vitejs/test-package-d-nested': link:test-package-d-nested
 
   playground/nested-deps/test-package-d/test-package-d-nested:
     specifiers: {}
 
   playground/nested-deps/test-package-e:
     specifiers:
-      test-package-e-excluded: link:./test-package-e-excluded
-      test-package-e-included: link:./test-package-e-included
+      '@vitejs/test-package-e-excluded': link:./test-package-e-excluded
+      '@vitejs/test-package-e-included': link:./test-package-e-included
     dependencies:
-      test-package-e-excluded: link:test-package-e-excluded
-      test-package-e-included: link:test-package-e-included
+      '@vitejs/test-package-e-excluded': link:test-package-e-excluded
+      '@vitejs/test-package-e-included': link:test-package-e-included
 
   playground/nested-deps/test-package-e/test-package-e-excluded:
     specifiers: {}
@@ -610,62 +610,62 @@ importers:
   playground/optimize-deps:
     specifiers:
       '@vitejs/plugin-vue': ^4.0.0-alpha.0
-      added-in-entries: file:./added-in-entries
+      '@vitejs/test-added-in-entries': file:./added-in-entries
+      '@vitejs/test-dep-cjs-browser-field-bare': file:./dep-cjs-browser-field-bare
+      '@vitejs/test-dep-cjs-compiled-from-cjs': file:./dep-cjs-compiled-from-cjs
+      '@vitejs/test-dep-cjs-compiled-from-esm': file:./dep-cjs-compiled-from-esm
+      '@vitejs/test-dep-cjs-with-assets': file:./dep-cjs-with-assets
+      '@vitejs/test-dep-esbuild-plugin-transform': file:./dep-esbuild-plugin-transform
+      '@vitejs/test-dep-linked': link:./dep-linked
+      '@vitejs/test-dep-linked-include': link:./dep-linked-include
+      '@vitejs/test-dep-node-env': file:./dep-node-env
+      '@vitejs/test-dep-non-optimized': file:./dep-non-optimized
+      '@vitejs/test-dep-not-js': file:./dep-not-js
+      '@vitejs/test-dep-relative-to-main': file:./dep-relative-to-main
+      '@vitejs/test-dep-with-builtin-module-cjs': file:./dep-with-builtin-module-cjs
+      '@vitejs/test-dep-with-builtin-module-esm': file:./dep-with-builtin-module-esm
+      '@vitejs/test-dep-with-dynamic-import': file:./dep-with-dynamic-import
+      '@vitejs/test-dep-with-optional-peer-dep': file:./dep-with-optional-peer-dep
+      '@vitejs/test-nested-exclude': file:./nested-exclude
+      '@vitejs/test-resolve-linked': workspace:0.0.0
       axios: ^0.27.2
       clipboard: ^2.0.11
-      dep-cjs-browser-field-bare: file:./dep-cjs-browser-field-bare
-      dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
-      dep-cjs-compiled-from-esm: file:./dep-cjs-compiled-from-esm
-      dep-cjs-with-assets: file:./dep-cjs-with-assets
-      dep-esbuild-plugin-transform: file:./dep-esbuild-plugin-transform
-      dep-linked: link:./dep-linked
-      dep-linked-include: link:./dep-linked-include
-      dep-node-env: file:./dep-node-env
-      dep-non-optimized: file:./dep-non-optimized
-      dep-not-js: file:./dep-not-js
-      dep-relative-to-main: file:./dep-relative-to-main
-      dep-with-builtin-module-cjs: file:./dep-with-builtin-module-cjs
-      dep-with-builtin-module-esm: file:./dep-with-builtin-module-esm
-      dep-with-dynamic-import: file:./dep-with-dynamic-import
-      dep-with-optional-peer-dep: file:./dep-with-optional-peer-dep
       lodash: ^4.17.21
       lodash-es: ^4.17.21
       lodash.clonedeep: ^4.5.0
-      nested-exclude: file:./nested-exclude
       phoenix: ^1.6.15
       react: ^18.2.0
       react-dom: ^18.2.0
-      resolve-linked: workspace:0.0.0
       url: ^0.11.0
       vue: ^3.2.45
       vuex: ^4.1.0
     dependencies:
-      added-in-entries: file:playground/optimize-deps/added-in-entries
+      '@vitejs/test-added-in-entries': file:playground/optimize-deps/added-in-entries
+      '@vitejs/test-dep-cjs-browser-field-bare': file:playground/optimize-deps/dep-cjs-browser-field-bare
+      '@vitejs/test-dep-cjs-compiled-from-cjs': file:playground/optimize-deps/dep-cjs-compiled-from-cjs
+      '@vitejs/test-dep-cjs-compiled-from-esm': file:playground/optimize-deps/dep-cjs-compiled-from-esm
+      '@vitejs/test-dep-cjs-with-assets': file:playground/optimize-deps/dep-cjs-with-assets
+      '@vitejs/test-dep-esbuild-plugin-transform': file:playground/optimize-deps/dep-esbuild-plugin-transform
+      '@vitejs/test-dep-linked': link:dep-linked
+      '@vitejs/test-dep-linked-include': link:dep-linked-include
+      '@vitejs/test-dep-node-env': file:playground/optimize-deps/dep-node-env
+      '@vitejs/test-dep-non-optimized': file:playground/optimize-deps/dep-non-optimized
+      '@vitejs/test-dep-not-js': file:playground/optimize-deps/dep-not-js
+      '@vitejs/test-dep-relative-to-main': file:playground/optimize-deps/dep-relative-to-main
+      '@vitejs/test-dep-with-builtin-module-cjs': file:playground/optimize-deps/dep-with-builtin-module-cjs
+      '@vitejs/test-dep-with-builtin-module-esm': file:playground/optimize-deps/dep-with-builtin-module-esm
+      '@vitejs/test-dep-with-dynamic-import': file:playground/optimize-deps/dep-with-dynamic-import
+      '@vitejs/test-dep-with-optional-peer-dep': file:playground/optimize-deps/dep-with-optional-peer-dep
+      '@vitejs/test-nested-exclude': file:playground/optimize-deps/nested-exclude
+      '@vitejs/test-resolve-linked': link:../resolve-linked
       axios: 0.27.2
       clipboard: 2.0.11
-      dep-cjs-browser-field-bare: file:playground/optimize-deps/dep-cjs-browser-field-bare
-      dep-cjs-compiled-from-cjs: file:playground/optimize-deps/dep-cjs-compiled-from-cjs
-      dep-cjs-compiled-from-esm: file:playground/optimize-deps/dep-cjs-compiled-from-esm
-      dep-cjs-with-assets: file:playground/optimize-deps/dep-cjs-with-assets
-      dep-esbuild-plugin-transform: file:playground/optimize-deps/dep-esbuild-plugin-transform
-      dep-linked: link:dep-linked
-      dep-linked-include: link:dep-linked-include
-      dep-node-env: file:playground/optimize-deps/dep-node-env
-      dep-non-optimized: file:playground/optimize-deps/dep-non-optimized
-      dep-not-js: file:playground/optimize-deps/dep-not-js
-      dep-relative-to-main: file:playground/optimize-deps/dep-relative-to-main
-      dep-with-builtin-module-cjs: file:playground/optimize-deps/dep-with-builtin-module-cjs
-      dep-with-builtin-module-esm: file:playground/optimize-deps/dep-with-builtin-module-esm
-      dep-with-dynamic-import: file:playground/optimize-deps/dep-with-dynamic-import
-      dep-with-optional-peer-dep: file:playground/optimize-deps/dep-with-optional-peer-dep
       lodash: 4.17.21
       lodash-es: 4.17.21
       lodash.clonedeep: 4.5.0
-      nested-exclude: file:playground/optimize-deps/nested-exclude
       phoenix: 1.6.15
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      resolve-linked: link:../resolve-linked
       url: 0.11.0
       vue: 3.2.45
       vuex: 4.1.0_vue@3.2.45
@@ -728,9 +728,9 @@ importers:
 
   playground/optimize-deps/nested-exclude:
     specifiers:
-      nested-include: file:../nested-include
+      '@vitejs/test-nested-include': file:../nested-include
     dependencies:
-      nested-include: file:playground/optimize-deps/nested-include
+      '@vitejs/test-nested-include': file:playground/optimize-deps/nested-include
 
   playground/optimize-deps/nested-include:
     specifiers: {}
@@ -740,18 +740,18 @@ importers:
 
   playground/optimize-missing-deps:
     specifiers:
+      '@vitejs/test-missing-dep': file:./missing-dep
       express: ^4.18.2
-      missing-dep: file:./missing-dep
     dependencies:
-      missing-dep: file:playground/optimize-missing-deps/missing-dep
+      '@vitejs/test-missing-dep': file:playground/optimize-missing-deps/missing-dep
     devDependencies:
       express: 4.18.2
 
   playground/optimize-missing-deps/missing-dep:
     specifiers:
-      multi-entry-dep: file:../multi-entry-dep
+      '@vitejs/test-multi-entry-dep': file:../multi-entry-dep
     dependencies:
-      multi-entry-dep: file:playground/optimize-missing-deps/multi-entry-dep
+      '@vitejs/test-multi-entry-dep': file:playground/optimize-missing-deps/multi-entry-dep
 
   playground/optimize-missing-deps/multi-entry-dep:
     specifiers: {}
@@ -759,8 +759,8 @@ importers:
   playground/preload:
     specifiers:
       '@vitejs/plugin-vue': ^4.0.0-alpha.0
-      dep-a: file:./dep-a
-      dep-including-a: file:./dep-including-a
+      '@vitejs/test-dep-a': file:./dep-a
+      '@vitejs/test-dep-including-a': file:./dep-including-a
       terser: ^5.16.0
       vue: ^3.2.45
       vue-router: ^4.1.6
@@ -769,8 +769,8 @@ importers:
       vue-router: 4.1.6_vue@3.2.45
     devDependencies:
       '@vitejs/plugin-vue': 4.0.0-alpha.2_vue@3.2.45
-      dep-a: file:playground/preload/dep-a
-      dep-including-a: file:playground/preload/dep-including-a
+      '@vitejs/test-dep-a': file:playground/preload/dep-a
+      '@vitejs/test-dep-including-a': file:playground/preload/dep-including-a
       terser: 5.16.0
 
   playground/preload/dep-a:
@@ -778,50 +778,50 @@ importers:
 
   playground/preload/dep-including-a:
     specifiers:
-      dep-a: file:../dep-a
+      '@vitejs/test-dep-a': file:../dep-a
     dependencies:
-      dep-a: file:playground/preload/dep-a
+      '@vitejs/test-dep-a': file:playground/preload/dep-a
 
   playground/preserve-symlinks:
     specifiers:
-      '@symlinks/moduleA': link:./moduleA
+      '@vitejs/test-module-a': link:./module-a
     dependencies:
-      '@symlinks/moduleA': link:moduleA
+      '@vitejs/test-module-a': link:module-a
 
-  playground/preserve-symlinks/moduleA:
+  playground/preserve-symlinks/module-a:
     specifiers: {}
 
   playground/resolve:
     specifiers:
       '@babel/runtime': ^7.20.6
+      '@vitejs/test-require-pkg-with-module-field': link:./require-pkg-with-module-field
+      '@vitejs/test-resolve-browser-field': link:./browser-field
+      '@vitejs/test-resolve-browser-module-field1': link:./browser-module-field1
+      '@vitejs/test-resolve-browser-module-field2': link:./browser-module-field2
+      '@vitejs/test-resolve-browser-module-field3': link:./browser-module-field3
+      '@vitejs/test-resolve-custom-condition': link:./custom-condition
+      '@vitejs/test-resolve-custom-main-field': link:./custom-main-field
+      '@vitejs/test-resolve-exports-env': link:./exports-env
+      '@vitejs/test-resolve-exports-legacy-fallback': link:./exports-legacy-fallback
+      '@vitejs/test-resolve-exports-path': link:./exports-path
+      '@vitejs/test-resolve-linked': workspace:*
       es5-ext: 0.10.62
       normalize.css: ^8.0.1
-      require-pkg-with-module-field: link:./require-pkg-with-module-field
-      resolve-browser-field: link:./browser-field
-      resolve-browser-module-field1: link:./browser-module-field1
-      resolve-browser-module-field2: link:./browser-module-field2
-      resolve-browser-module-field3: link:./browser-module-field3
-      resolve-custom-condition: link:./custom-condition
-      resolve-custom-main-field: link:./custom-main-field
-      resolve-exports-env: link:./exports-env
-      resolve-exports-legacy-fallback: link:./exports-legacy-fallback
-      resolve-exports-path: link:./exports-path
-      resolve-linked: workspace:*
     dependencies:
       '@babel/runtime': 7.20.6
+      '@vitejs/test-require-pkg-with-module-field': link:require-pkg-with-module-field
+      '@vitejs/test-resolve-browser-field': link:browser-field
+      '@vitejs/test-resolve-browser-module-field1': link:browser-module-field1
+      '@vitejs/test-resolve-browser-module-field2': link:browser-module-field2
+      '@vitejs/test-resolve-browser-module-field3': link:browser-module-field3
+      '@vitejs/test-resolve-custom-condition': link:custom-condition
+      '@vitejs/test-resolve-custom-main-field': link:custom-main-field
+      '@vitejs/test-resolve-exports-env': link:exports-env
+      '@vitejs/test-resolve-exports-legacy-fallback': link:exports-legacy-fallback
+      '@vitejs/test-resolve-exports-path': link:exports-path
+      '@vitejs/test-resolve-linked': link:../resolve-linked
       es5-ext: 0.10.62
       normalize.css: 8.0.1
-      require-pkg-with-module-field: link:require-pkg-with-module-field
-      resolve-browser-field: link:browser-field
-      resolve-browser-module-field1: link:browser-module-field1
-      resolve-browser-module-field2: link:browser-module-field2
-      resolve-browser-module-field3: link:browser-module-field3
-      resolve-custom-condition: link:custom-condition
-      resolve-custom-main-field: link:custom-main-field
-      resolve-exports-env: link:exports-env
-      resolve-exports-legacy-fallback: link:exports-legacy-fallback
-      resolve-exports-path: link:exports-path
-      resolve-linked: link:../resolve-linked
 
   playground/resolve-config:
     specifiers: {}
@@ -870,50 +870,50 @@ importers:
 
   playground/ssr-deps:
     specifiers:
-      '@vitejs/css-lib': file:./css-lib
+      '@vitejs/test-css-lib': file:./css-lib
+      '@vitejs/test-define-properties-exports': file:./define-properties-exports
+      '@vitejs/test-define-property-exports': file:./define-property-exports
+      '@vitejs/test-external-entry': file:./external-entry
+      '@vitejs/test-external-using-external-entry': file:./external-using-external-entry
+      '@vitejs/test-forwarded-export': file:./forwarded-export
+      '@vitejs/test-import-builtin-cjs': file:./import-builtin-cjs
+      '@vitejs/test-linked-no-external': link:./linked-no-external
+      '@vitejs/test-no-external-cjs': file:./no-external-cjs
+      '@vitejs/test-no-external-css': file:./no-external-css
+      '@vitejs/test-non-optimized-with-nested-external': file:./non-optimized-with-nested-external
+      '@vitejs/test-object-assigned-exports': file:./object-assigned-exports
+      '@vitejs/test-only-object-assigned-exports': file:./only-object-assigned-exports
+      '@vitejs/test-optimized-cjs-with-nested-external': file:./optimized-with-nested-external
+      '@vitejs/test-optimized-with-nested-external': file:./optimized-with-nested-external
+      '@vitejs/test-pkg-exports': file:./pkg-exports
+      '@vitejs/test-primitive-export': file:./primitive-export
+      '@vitejs/test-read-file-content': file:./read-file-content
+      '@vitejs/test-require-absolute': file:./require-absolute
+      '@vitejs/test-ts-transpiled-exports': file:./ts-transpiled-exports
       bcrypt: ^5.1.0
-      define-properties-exports: file:./define-properties-exports
-      define-property-exports: file:./define-property-exports
       express: ^4.18.2
-      external-entry: file:./external-entry
-      external-using-external-entry: file:./external-using-external-entry
-      forwarded-export: file:./forwarded-export
-      import-builtin-cjs: file:./import-builtin-cjs
-      linked-no-external: link:./linked-no-external
-      no-external-cjs: file:./no-external-cjs
-      no-external-css: file:./no-external-css
-      non-optimized-with-nested-external: file:./non-optimized-with-nested-external
-      object-assigned-exports: file:./object-assigned-exports
-      only-object-assigned-exports: file:./only-object-assigned-exports
-      optimized-cjs-with-nested-external: file:./optimized-with-nested-external
-      optimized-with-nested-external: file:./optimized-with-nested-external
-      pkg-exports: file:./pkg-exports
-      primitive-export: file:./primitive-export
-      read-file-content: file:./read-file-content
-      require-absolute: file:./require-absolute
-      ts-transpiled-exports: file:./ts-transpiled-exports
     dependencies:
-      '@vitejs/css-lib': file:playground/ssr-deps/css-lib
+      '@vitejs/test-css-lib': file:playground/ssr-deps/css-lib
+      '@vitejs/test-define-properties-exports': file:playground/ssr-deps/define-properties-exports
+      '@vitejs/test-define-property-exports': file:playground/ssr-deps/define-property-exports
+      '@vitejs/test-external-entry': file:playground/ssr-deps/external-entry
+      '@vitejs/test-external-using-external-entry': file:playground/ssr-deps/external-using-external-entry
+      '@vitejs/test-forwarded-export': file:playground/ssr-deps/forwarded-export
+      '@vitejs/test-import-builtin-cjs': file:playground/ssr-deps/import-builtin-cjs
+      '@vitejs/test-linked-no-external': link:linked-no-external
+      '@vitejs/test-no-external-cjs': file:playground/ssr-deps/no-external-cjs
+      '@vitejs/test-no-external-css': file:playground/ssr-deps/no-external-css
+      '@vitejs/test-non-optimized-with-nested-external': file:playground/ssr-deps/non-optimized-with-nested-external
+      '@vitejs/test-object-assigned-exports': file:playground/ssr-deps/object-assigned-exports
+      '@vitejs/test-only-object-assigned-exports': file:playground/ssr-deps/only-object-assigned-exports
+      '@vitejs/test-optimized-cjs-with-nested-external': file:playground/ssr-deps/optimized-with-nested-external
+      '@vitejs/test-optimized-with-nested-external': file:playground/ssr-deps/optimized-with-nested-external
+      '@vitejs/test-pkg-exports': file:playground/ssr-deps/pkg-exports
+      '@vitejs/test-primitive-export': file:playground/ssr-deps/primitive-export
+      '@vitejs/test-read-file-content': file:playground/ssr-deps/read-file-content
+      '@vitejs/test-require-absolute': file:playground/ssr-deps/require-absolute
+      '@vitejs/test-ts-transpiled-exports': file:playground/ssr-deps/ts-transpiled-exports
       bcrypt: 5.1.0
-      define-properties-exports: file:playground/ssr-deps/define-properties-exports
-      define-property-exports: file:playground/ssr-deps/define-property-exports
-      external-entry: file:playground/ssr-deps/external-entry
-      external-using-external-entry: file:playground/ssr-deps/external-using-external-entry
-      forwarded-export: file:playground/ssr-deps/forwarded-export
-      import-builtin-cjs: file:playground/ssr-deps/import-builtin-cjs
-      linked-no-external: link:linked-no-external
-      no-external-cjs: file:playground/ssr-deps/no-external-cjs
-      no-external-css: file:playground/ssr-deps/no-external-css
-      non-optimized-with-nested-external: file:playground/ssr-deps/non-optimized-with-nested-external
-      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
-      only-object-assigned-exports: file:playground/ssr-deps/only-object-assigned-exports
-      optimized-cjs-with-nested-external: file:playground/ssr-deps/optimized-with-nested-external
-      optimized-with-nested-external: file:playground/ssr-deps/optimized-with-nested-external
-      pkg-exports: file:playground/ssr-deps/pkg-exports
-      primitive-export: file:playground/ssr-deps/primitive-export
-      read-file-content: file:playground/ssr-deps/read-file-content
-      require-absolute: file:playground/ssr-deps/require-absolute
-      ts-transpiled-exports: file:playground/ssr-deps/ts-transpiled-exports
     devDependencies:
       express: 4.18.2
 
@@ -1003,12 +1003,12 @@ importers:
 
   playground/ssr-noexternal:
     specifiers:
-      '@vitejs/external-cjs': file:./external-cjs
-      '@vitejs/require-external-cjs': file:./require-external-cjs
+      '@vitejs/test-external-cjs': file:./external-cjs
+      '@vitejs/test-require-external-cjs': file:./require-external-cjs
       express: ^4.18.2
     dependencies:
-      '@vitejs/external-cjs': file:playground/ssr-noexternal/external-cjs
-      '@vitejs/require-external-cjs': file:playground/ssr-noexternal/require-external-cjs
+      '@vitejs/test-external-cjs': file:playground/ssr-noexternal/external-cjs
+      '@vitejs/test-require-external-cjs': file:playground/ssr-noexternal/require-external-cjs
       express: 4.18.2
 
   playground/ssr-noexternal/external-cjs:
@@ -1016,9 +1016,9 @@ importers:
 
   playground/ssr-noexternal/require-external-cjs:
     specifiers:
-      '@vitejs/external-cjs': file:../external-cjs
+      '@vitejs/test-external-cjs': file:../external-cjs
     dependencies:
-      '@vitejs/external-cjs': file:playground/ssr-noexternal/external-cjs
+      '@vitejs/test-external-cjs': file:playground/ssr-noexternal/external-cjs
 
   playground/ssr-pug:
     specifiers:
@@ -1030,11 +1030,11 @@ importers:
 
   playground/ssr-resolve:
     specifiers:
-      entries: file:./entries
-      pkg-exports: file:./pkg-exports
+      '@vitejs/test-entries': file:./entries
+      '@vitejs/test-pkg-exports': file:./pkg-exports
     dependencies:
-      entries: file:playground/ssr-resolve/entries
-      pkg-exports: file:playground/ssr-resolve/pkg-exports
+      '@vitejs/test-entries': file:playground/ssr-resolve/entries
+      '@vitejs/test-pkg-exports': file:playground/ssr-resolve/pkg-exports
 
   playground/ssr-resolve/entries:
     specifiers: {}
@@ -1044,14 +1044,14 @@ importers:
 
   playground/ssr-webworker:
     specifiers:
+      '@vitejs/test-resolve-linked': workspace:*
       miniflare: ^1.4.1
       react: ^18.2.0
-      resolve-linked: workspace:*
     dependencies:
       react: 18.2.0
     devDependencies:
+      '@vitejs/test-resolve-linked': link:../resolve-linked
       miniflare: 1.4.1
-      resolve-linked: link:../resolve-linked
 
   playground/tailwind:
     specifiers:
@@ -1091,9 +1091,9 @@ importers:
   playground/worker:
     specifiers:
       '@vitejs/plugin-vue-jsx': ^3.0.0-alpha.0
-      dep-to-optimize: file:./dep-to-optimize
+      '@vitejs/test-dep-to-optimize': file:./dep-to-optimize
     dependencies:
-      dep-to-optimize: file:playground/worker/dep-to-optimize
+      '@vitejs/test-dep-to-optimize': file:playground/worker/dep-to-optimize
     devDependencies:
       '@vitejs/plugin-vue-jsx': 3.0.0-alpha.0
 
@@ -8705,31 +8705,31 @@ packages:
 
   file:playground/alias/dir/module:
     resolution: {directory: playground/alias/dir/module, type: directory}
-    name: '@vite/aliased-module'
+    name: '@vitejs/test-aliased-module'
     version: 0.0.0
     dev: false
 
   file:playground/css/css-js-dep:
     resolution: {directory: playground/css/css-js-dep, type: directory}
-    name: css-js-dep
+    name: '@vitejs/test-css-js-dep'
     version: 1.0.0
     dev: true
 
   file:playground/define/commonjs-dep:
     resolution: {directory: playground/define/commonjs-dep, type: directory}
-    name: commonjs-dep
+    name: '@vitejs/test-commonjs-dep'
     version: 1.0.0
     dev: false
 
   file:playground/dynamic-import/pkg:
     resolution: {directory: playground/dynamic-import/pkg, type: directory}
-    name: pkg
+    name: '@vitejs/test-pkg'
     version: 1.0.0
     dev: false
 
   file:playground/external/dep-that-imports:
     resolution: {directory: playground/external/dep-that-imports, type: directory}
-    name: '@vitejs/dep-that-imports'
+    name: '@vitejs/test-dep-that-imports'
     version: 0.0.0
     dependencies:
       slash3: /slash/3.0.0
@@ -8739,7 +8739,7 @@ packages:
 
   file:playground/external/dep-that-requires:
     resolution: {directory: playground/external/dep-that-requires, type: directory}
-    name: '@vitejs/dep-that-requires'
+    name: '@vitejs/test-dep-that-requires'
     version: 0.0.0
     dependencies:
       slash3: /slash/3.0.0
@@ -8749,97 +8749,97 @@ packages:
 
   file:playground/import-assertion/import-assertion-dep:
     resolution: {directory: playground/import-assertion/import-assertion-dep, type: directory}
-    name: '@vitejs/import-assertion-dep'
+    name: '@vitejs/test-import-assertion-dep'
     version: 0.0.0
     dev: false
 
   file:playground/json/json-module:
     resolution: {directory: playground/json/json-module, type: directory}
-    name: json-module
+    name: '@vitejs/test-json-module'
     version: 0.0.0
     dev: true
 
   file:playground/optimize-deps/added-in-entries:
     resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
-    name: added-in-entries
+    name: '@vitejs/test-added-in-entries'
     version: 1.0.0
     dev: false
 
   file:playground/optimize-deps/dep-cjs-browser-field-bare:
     resolution: {directory: playground/optimize-deps/dep-cjs-browser-field-bare, type: directory}
-    name: dep-cjs-browser-field-bare
+    name: '@vitejs/test-dep-cjs-browser-field-bare'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-cjs-compiled-from-cjs:
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-cjs, type: directory}
-    name: dep-cjs-compiled-from-cjs
+    name: '@vitejs/test-dep-cjs-compiled-from-cjs'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-cjs-compiled-from-esm:
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-esm, type: directory}
-    name: dep-cjs-compiled-from-esm
+    name: '@vitejs/test-dep-cjs-compiled-from-esm'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-cjs-with-assets:
     resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
-    name: dep-cjs-with-assets
+    name: '@vitejs/test-dep-cjs-with-assets'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-esbuild-plugin-transform:
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
-    name: dep-esbuild-plugin-transform
+    name: '@vitejs/test-dep-esbuild-plugin-transform'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-node-env:
     resolution: {directory: playground/optimize-deps/dep-node-env, type: directory}
-    name: dep-node-env
+    name: '@vitejs/test-dep-node-env'
     version: 1.0.0
     dev: false
 
   file:playground/optimize-deps/dep-non-optimized:
     resolution: {directory: playground/optimize-deps/dep-non-optimized, type: directory}
-    name: dep-non-optimized
+    name: '@vitejs/test-dep-non-optimized'
     version: 1.0.0
     dev: false
 
   file:playground/optimize-deps/dep-not-js:
     resolution: {directory: playground/optimize-deps/dep-not-js, type: directory}
-    name: dep-not-js
+    name: '@vitejs/test-dep-not-js'
     version: 1.0.0
     dev: false
 
   file:playground/optimize-deps/dep-relative-to-main:
     resolution: {directory: playground/optimize-deps/dep-relative-to-main, type: directory}
-    name: dep-relative-to-main
+    name: '@vitejs/test-dep-relative-to-main'
     version: 1.0.0
     dev: false
 
   file:playground/optimize-deps/dep-with-builtin-module-cjs:
     resolution: {directory: playground/optimize-deps/dep-with-builtin-module-cjs, type: directory}
-    name: dep-with-builtin-module-cjs
+    name: '@vitejs/test-dep-with-builtin-module-cjs'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-with-builtin-module-esm:
     resolution: {directory: playground/optimize-deps/dep-with-builtin-module-esm, type: directory}
-    name: dep-with-builtin-module-esm
+    name: '@vitejs/test-dep-with-builtin-module-esm'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-with-dynamic-import:
     resolution: {directory: playground/optimize-deps/dep-with-dynamic-import, type: directory}
-    name: dep-with-dynamic-import
+    name: '@vitejs/test-dep-with-dynamic-import'
     version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-with-optional-peer-dep:
     resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep, type: directory}
-    name: dep-with-optional-peer-dep
+    name: '@vitejs/test-dep-with-optional-peer-dep'
     version: 0.0.0
     peerDependencies:
       foobar: 0.0.0
@@ -8850,72 +8850,75 @@ packages:
 
   file:playground/optimize-deps/nested-exclude:
     resolution: {directory: playground/optimize-deps/nested-exclude, type: directory}
-    name: nested-exclude
+    name: '@vitejs/test-nested-exclude'
     version: 1.0.0
     dependencies:
+      '@vitejs/test-nested-include': file:playground/optimize-deps/nested-include
       nested-include: file:playground/optimize-deps/nested-include
     dev: false
 
   file:playground/optimize-deps/nested-include:
     resolution: {directory: playground/optimize-deps/nested-include, type: directory}
-    name: nested-include
+    name: '@vitejs/test-nested-include'
     version: 1.0.0
     dev: false
 
   file:playground/optimize-missing-deps/missing-dep:
     resolution: {directory: playground/optimize-missing-deps/missing-dep, type: directory}
-    name: missing-dep
+    name: '@vitejs/test-missing-dep'
     version: 0.0.0
     dependencies:
+      '@vitejs/test-multi-entry-dep': file:playground/optimize-missing-deps/multi-entry-dep
       multi-entry-dep: file:playground/optimize-missing-deps/multi-entry-dep
     dev: false
 
   file:playground/optimize-missing-deps/multi-entry-dep:
     resolution: {directory: playground/optimize-missing-deps/multi-entry-dep, type: directory}
-    name: multi-entry-dep
+    name: '@vitejs/test-multi-entry-dep'
     version: 0.0.0
     dev: false
 
   file:playground/preload/dep-a:
     resolution: {directory: playground/preload/dep-a, type: directory}
-    name: dep-a
+    name: '@vitejs/test-dep-a'
     version: 0.0.0
 
   file:playground/preload/dep-including-a:
     resolution: {directory: playground/preload/dep-including-a, type: directory}
-    name: dep-including-a
+    name: '@vitejs/test-dep-including-a'
     version: 0.0.0
     dependencies:
+      '@vitejs/test-dep-a': file:playground/preload/dep-a
       dep-a: file:playground/preload/dep-a
     dev: true
 
   file:playground/ssr-deps/css-lib:
     resolution: {directory: playground/ssr-deps/css-lib, type: directory}
-    name: '@vitejs/css-lib'
+    name: '@vitejs/test-css-lib'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/define-properties-exports:
     resolution: {directory: playground/ssr-deps/define-properties-exports, type: directory}
-    name: define-properties-exports
+    name: '@vitejs/test-define-properties-exports'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/define-property-exports:
     resolution: {directory: playground/ssr-deps/define-property-exports, type: directory}
-    name: define-property-exports
+    name: '@vitejs/test-define-property-exports'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/external-entry:
     resolution: {directory: playground/ssr-deps/external-entry, type: directory}
-    name: external-entry
+    name: '@vitejs/test-external-entry'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/external-using-external-entry:
     resolution: {directory: playground/ssr-deps/external-using-external-entry, type: directory}
-    name: external-using-external-entry
+    name: '@vitejs/test-external-using-external-entry'
     version: 0.0.0
     dependencies:
       external-entry: file:playground/ssr-deps/external-entry
@@ -8923,7 +8926,7 @@ packages:
 
   file:playground/ssr-deps/forwarded-export:
     resolution: {directory: playground/ssr-deps/forwarded-export, type: directory}
-    name: forwarded-export
+    name: '@vitejs/test-forwarded-export'
     version: 0.0.0
     dependencies:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
@@ -8931,31 +8934,31 @@ packages:
 
   file:playground/ssr-deps/import-builtin-cjs:
     resolution: {directory: playground/ssr-deps/import-builtin-cjs, type: directory}
-    name: import-builtin
+    name: '@vitejs/test-import-builtin'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/nested-external:
     resolution: {directory: playground/ssr-deps/nested-external, type: directory}
-    name: nested-external
+    name: '@vitejs/test-nested-external'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/no-external-cjs:
     resolution: {directory: playground/ssr-deps/no-external-cjs, type: directory}
-    name: no-external-cjs
+    name: '@vitejs/test-no-external-cjs'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/no-external-css:
     resolution: {directory: playground/ssr-deps/no-external-css, type: directory}
-    name: no-external-css
+    name: '@vitejs/test-no-external-css'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/non-optimized-with-nested-external:
     resolution: {directory: playground/ssr-deps/non-optimized-with-nested-external, type: directory}
-    name: non-optimized-with-nested-external
+    name: '@vitejs/test-non-optimized-with-nested-external'
     version: 0.0.0
     dependencies:
       nested-external: file:playground/ssr-deps/nested-external
@@ -8963,19 +8966,19 @@ packages:
 
   file:playground/ssr-deps/object-assigned-exports:
     resolution: {directory: playground/ssr-deps/object-assigned-exports, type: directory}
-    name: object-assigned-exports
+    name: '@vitejs/test-object-assigned-exports'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/only-object-assigned-exports:
     resolution: {directory: playground/ssr-deps/only-object-assigned-exports, type: directory}
-    name: only-object-assigned-exports
+    name: '@vitejs/test-only-object-assigned-exports'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/optimized-with-nested-external:
     resolution: {directory: playground/ssr-deps/optimized-with-nested-external, type: directory}
-    name: optimized-with-nested-external
+    name: '@vitejs/test-optimized-with-nested-external'
     version: 0.0.0
     dependencies:
       nested-external: file:playground/ssr-deps/nested-external
@@ -8983,62 +8986,63 @@ packages:
 
   file:playground/ssr-deps/pkg-exports:
     resolution: {directory: playground/ssr-deps/pkg-exports, type: directory}
-    name: pkg-exports
+    name: '@vitejs/test-pkg-exports'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/primitive-export:
     resolution: {directory: playground/ssr-deps/primitive-export, type: directory}
-    name: primitive-export
+    name: '@vitejs/test-primitive-export'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/read-file-content:
     resolution: {directory: playground/ssr-deps/read-file-content, type: directory}
-    name: read-file-content
+    name: '@vitejs/test-read-file-content'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/require-absolute:
     resolution: {directory: playground/ssr-deps/require-absolute, type: directory}
-    name: require-absolute
+    name: '@vitejs/test-require-absolute'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/ts-transpiled-exports:
     resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
-    name: ts-transpiled-exports
+    name: '@vitejs/test-ts-transpiled-exports'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-noexternal/external-cjs:
     resolution: {directory: playground/ssr-noexternal/external-cjs, type: directory}
-    name: '@vitejs/external-cjs'
+    name: '@vitejs/test-external-cjs'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-noexternal/require-external-cjs:
     resolution: {directory: playground/ssr-noexternal/require-external-cjs, type: directory}
-    name: '@vitejs/require-external-cjs'
+    name: '@vitejs/test-require-external-cjs'
     version: 0.0.0
     dependencies:
       '@vitejs/external-cjs': file:playground/ssr-noexternal/external-cjs
+      '@vitejs/test-external-cjs': file:playground/ssr-noexternal/external-cjs
     dev: false
 
   file:playground/ssr-resolve/entries:
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
-    name: entries
+    name: '@vitejs/test-entries'
     version: 0.0.0
     dev: false
 
   file:playground/ssr-resolve/pkg-exports:
     resolution: {directory: playground/ssr-resolve/pkg-exports, type: directory}
-    name: pkg-exports
+    name: '@vitejs/test-pkg-exports'
     version: 0.0.0
     dev: false
 
   file:playground/worker/dep-to-optimize:
     resolution: {directory: playground/worker/dep-to-optimize, type: directory}
-    name: dep-to-optimize
+    name: '@vitejs/test-dep-to-optimize'
     version: 1.0.0
     dev: false

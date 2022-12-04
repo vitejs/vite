@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/dep-that-requires",
+  "name": "@vitejs/test-dep-that-requires",
   "private": true,
   "version": "0.0.0",
   "dependencies": {

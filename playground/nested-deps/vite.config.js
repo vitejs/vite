@@ -4,13 +4,13 @@
 module.exports = {
   optimizeDeps: {
     include: [
-      'test-package-a',
-      'test-package-b',
-      'test-package-c',
-      'test-package-c/side',
-      'test-package-d    > test-package-d-nested',
-      'test-package-e > test-package-e-included',
+      '@vitejs/test-package-a',
+      '@vitejs/test-package-b',
+      '@vitejs/test-package-c',
+      '@vitejs/test-package-c/side',
+      '@vitejs/test-package-d    > @vitejs/test-package-d-nested',
+      '@vitejs/test-package-e > @vitejs/test-package-e-included',
     ],
-    exclude: ['test-package-d', 'test-package-e-excluded'],
+    exclude: ['@vitejs/test-package-d', '@vitejs/test-package-e-excluded'],
   },
 }

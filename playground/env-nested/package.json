@@ -1,5 +1,5 @@
 {
-  "name": "test-env-nested",
+  "name": "@vitejs/test-env-nested",
   "private": true,
   "version": "0.0.0",
   "scripts": {

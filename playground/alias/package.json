@@ -1,5 +1,5 @@
 {
-  "name": "test-alias",
+  "name": "@vitejs/test-alias",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -14,6 +14,6 @@
     "@vue/shared": "^3.2.45"
   },
   "devDependencies": {
-    "resolve-linked": "workspace:*"
+    "@vitejs/test-resolve-linked": "workspace:*"
   }
 }

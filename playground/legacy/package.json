@@ -1,5 +1,5 @@
 {
-  "name": "test-legacy",
+  "name": "@vitejs/test-legacy",
   "private": true,
   "version": "0.0.0",
   "scripts": {

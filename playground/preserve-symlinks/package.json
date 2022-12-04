@@ -1,5 +1,5 @@
 {
-  "name": "preserve-symlinks",
+  "name": "@vitejs/test-preserve-symlinks",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -8,6 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@symlinks/moduleA": "link:./moduleA"
+    "@vitejs/test-module-a": "link:./module-a"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "test-tailwind-sourcemap",
+  "name": "@vitejs/test-tailwind-sourcemap",
   "private": true,
   "version": "0.0.0",
   "scripts": {

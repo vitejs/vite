@@ -1,5 +1,5 @@
 {
-  "name": "test-file-delete-restore",
+  "name": "@vitejs/test-file-delete-restore",
   "private": true,
   "version": "0.0.0",
   "scripts": {

@@ -1,1 +1,1 @@
-module.exports = require('@vitejs/external-cjs')
+module.exports = require('@vitejs/test-external-cjs')

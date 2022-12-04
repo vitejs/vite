@@ -1,5 +1,5 @@
 {
-  "name": "resolve-config",
+  "name": "@vitejs/test-resolve-config",
   "private": true,
   "version": "0.0.0",
   "scripts": {

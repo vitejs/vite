@@ -10,8 +10,8 @@
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
-    "@vitejs/external-cjs": "file:./external-cjs",
-    "@vitejs/require-external-cjs": "file:./require-external-cjs",
+    "@vitejs/test-external-cjs": "file:./external-cjs",
+    "@vitejs/test-require-external-cjs": "file:./require-external-cjs",
     "express": "^4.18.2"
   }
 }

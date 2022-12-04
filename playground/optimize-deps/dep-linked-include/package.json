@@ -1,5 +1,5 @@
 {
-  "name": "dep-linked-include",
+  "name": "@vitejs/test-dep-linked-include",
   "private": true,
   "version": "0.0.0",
   "main": "index.mjs",

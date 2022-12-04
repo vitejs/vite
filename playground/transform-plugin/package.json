@@ -1,5 +1,5 @@
 {
-  "name": "test-transform-plugin",
+  "name": "@vitejs/test-transform-plugin",
   "private": true,
   "version": "0.0.0",
   "scripts": {

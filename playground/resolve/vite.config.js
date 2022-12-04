@@ -101,6 +101,6 @@ module.exports = {
     },
   ],
   optimizeDeps: {
-    include: ['require-pkg-with-module-field'],
+    include: ['@vitejs/test-require-pkg-with-module-field'],
   },
 }

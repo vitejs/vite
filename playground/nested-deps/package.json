@@ -1,5 +1,5 @@
 {
-  "name": "@test/nested-deps",
+  "name": "@vitejs/test-nested-deps",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "test-package-a": "link:./test-package-a",
-    "test-package-b": "link:./test-package-b",
-    "test-package-c": "link:./test-package-c",
-    "test-package-d": "link:./test-package-d",
-    "test-package-e": "link:./test-package-e"
+    "@vitejs/test-package-a": "link:./test-package-a",
+    "@vitejs/test-package-b": "link:./test-package-b",
+    "@vitejs/test-package-c": "link:./test-package-c",
+    "@vitejs/test-package-d": "link:./test-package-d",
+    "@vitejs/test-package-e": "link:./test-package-e"
   }
 }

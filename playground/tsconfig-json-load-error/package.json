@@ -1,5 +1,5 @@
 {
-  "name": "tsconfig-json-load-error",
+  "name": "@vitejs/test-tsconfig-json-load-error",
   "private": true,
   "version": "0.0.0",
   "scripts": {

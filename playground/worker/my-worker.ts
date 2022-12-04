@@ -1,4 +1,4 @@
-import { msg as msgFromDep } from 'dep-to-optimize'
+import { msg as msgFromDep } from '@vitejs/test-dep-to-optimize'
 import { mode, msg } from './modules/workerImport.js'
 import { bundleWithPlugin } from './modules/test-plugin'
 import viteSvg from './vite.svg'

@@ -23,12 +23,12 @@
 <div>nested module instance count: <span class="nested-e"></span></div>
 
 <script type="module">
-  import A from 'test-package-a'
-  import B, { A as nestedA } from 'test-package-b'
-  import C from 'test-package-c'
-  import { C as sideC } from 'test-package-c/side'
-  import D, { nestedD } from 'test-package-d'
-  // import { testExcluded } from 'test-package-e'
+  import A from '@vitejs/test-package-a'
+  import B, { A as nestedA } from '@vitejs/test-package-b'
+  import C from '@vitejs/test-package-c'
+  import { C as sideC } from '@vitejs/test-package-c/side'
+  import D, { nestedD } from '@vitejs/test-package-d'
+  // import { testExcluded } from '@vitejs/test-package-e'
 
   text('.a', A)
   text('.b', B)
