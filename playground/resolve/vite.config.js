@@ -14,24 +14,24 @@ const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
   {
     specifier: normalizePath(
-      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, '')
+      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, ''),
     ),
-    elementQuery: '.drive-relative'
+    elementQuery: '.drive-relative',
   },
   {
     specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
-    elementQuery: '.absolute'
-  }
+    elementQuery: '.absolute',
+  },
 ]
 
 module.exports = {
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
     mainFields: ['custom', 'module'],
-    conditions: ['custom']
+    conditions: ['custom'],
   },
   define: {
-    VITE_CONFIG_DEP_TEST: a
+    VITE_CONFIG_DEP_TEST: a,
   },
   plugins: [
     {
@@ -45,7 +45,7 @@ module.exports = {
         if (id === virtualId) {
           return `export const msg = "[success] from conventional virtual file"`
         }
-      }
+      },
     },
     {
       name: 'virtual-module-9036',
@@ -58,7 +58,7 @@ module.exports = {
         if (id === virtualId9036) {
           return `export const msg = "[success] from virtual file #9036"`
         }
-      }
+      },
     },
     {
       name: 'custom-resolve',
@@ -71,7 +71,7 @@ module.exports = {
         if (id === customVirtualFile) {
           return `export const msg = "[success] from custom virtual file"`
         }
-      }
+      },
     },
     {
       name: 'generated-content',
@@ -86,7 +86,7 @@ module.exports = {
             .map(
               ({ specifier, elementQuery }, i) =>
                 `import content${i} from ${JSON.stringify(specifier)}\n` +
-                `text(${JSON.stringify(elementQuery)}, content${i})`
+                `text(${JSON.stringify(elementQuery)}, content${i})`,
             )
             .join('\n')
 
@@ -97,10 +97,10 @@ module.exports = {
             tests
           )
         }
-      }
-    }
+      },
+    },
   ],
   optimizeDeps: {
-    include: ['require-pkg-with-module-field']
-  }
+    include: ['require-pkg-with-module-field'],
+  },
 }

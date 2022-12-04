@@ -7,7 +7,7 @@ import {
   page,
   untilBrowserLogAfter,
   untilUpdated,
-  viteTestUrl
+  viteTestUrl,
 } from '~utils'
 
 test('should render', async () => {
@@ -28,7 +28,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
-          code.replace('const foo = 1', 'const foo = 2')
+          code.replace('const foo = 1', 'const foo = 2'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -36,16 +36,16 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 2',
         '(self-accepting 2) foo is now: 2',
         '[vite] hot updated: /hmr.ts',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '2')
 
     await untilBrowserLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
-          code.replace('const foo = 2', 'const foo = 3')
+          code.replace('const foo = 2', 'const foo = 3'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -53,9 +53,9 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 3',
         '(self-accepting 2) foo is now: 3',
         '[vite] hot updated: /hmr.ts',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '3')
   })
@@ -65,7 +65,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2')
+          code.replace('const foo = 1', 'const foo = 2'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -76,16 +76,16 @@ if (!isBuild) {
         '(multi deps) foo is now: 2',
         '(multi deps) nested foo is now: 1',
         '[vite] hot updated: /hmrDep.js via /hmr.ts',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '2')
 
     await untilBrowserLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
-          code.replace('const foo = 2', 'const foo = 3')
+          code.replace('const foo = 2', 'const foo = 3'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -96,9 +96,9 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 1',
         '[vite] hot updated: /hmrDep.js via /hmr.ts',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '3')
   })
@@ -108,7 +108,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
-          code.replace('const foo = 1', 'const foo = 2')
+          code.replace('const foo = 1', 'const foo = 2'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -119,16 +119,16 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 2',
         '[vite] hot updated: /hmrDep.js via /hmr.ts',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '2')
 
     await untilBrowserLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
-          code.replace('const foo = 2', 'const foo = 3')
+          code.replace('const foo = 2', 'const foo = 3'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -139,9 +139,9 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 3',
         '[vite] hot updated: /hmrDep.js via /hmr.ts',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '3')
   })
@@ -151,7 +151,7 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('invalidation/child.js', (code) =>
-          code.replace('child', 'child updated')
+          code.replace('child', 'child updated'),
         ),
       [
         '>>> vite:beforeUpdate -- update',
@@ -162,9 +162,9 @@ if (!isBuild) {
         '>>> vite:beforeUpdate -- update',
         '(invalidation) parent is executing',
         '[vite] hot updated: /invalidation/parent.js',
-        '>>> vite:afterUpdate -- update'
+        '>>> vite:afterUpdate -- update',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), 'child updated')
   })
@@ -182,17 +182,17 @@ if (!isBuild) {
 
   test('full-reload encodeURI path', async () => {
     await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
     )
     const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
     editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-      code.replace('title', 'title2')
+      code.replace('title', 'title2'),
     )
     await page.waitForEvent('load')
     await untilUpdated(
       async () => (await page.$('#app')).textContent(),
-      'title2'
+      'title2',
     )
   })
 
@@ -273,16 +273,16 @@ if (!isBuild) {
     editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
     await untilUpdated(
       getOutput,
-      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>')
+      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>'),
     )
 
     editFile('importing-updated/b.js', (code) =>
-      code.replace('`b0,${a}`', '`b1,${a}`')
+      code.replace('`b0,${a}`', '`b1,${a}`'),
     )
     // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
     await untilUpdated(
       getOutput,
-      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>')
+      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>'),
     )
   })
 
@@ -308,7 +308,7 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toContain(`<<<<<< A0 B0 D0 ; ${dep}`)
             expect(logs).toContain('>>>>>> A0 D0')
-          }
+          },
         )
       })
 
@@ -321,16 +321,16 @@ if (!isBuild) {
             editFile(callbackFile, (code) =>
               code
                 .replace("x = 'X'", "x = 'Y'")
-                .replace('reloaded >>>', 'reloaded (2) >>>')
+                .replace('reloaded >>>', 'reloaded (2) >>>'),
             )
           },
           HOT_UPDATED,
           (logs) => {
             expect(logs).toEqual([
               'reloaded >>> Y',
-              `[vite] hot updated: ${callbackUrl}`
+              `[vite] hot updated: ${callbackUrl}`,
             ])
-          }
+          },
         )
 
         await untilBrowserLogAfter(
@@ -341,9 +341,9 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toEqual([
               'reloaded (2) >>> Z',
-              `[vite] hot updated: ${callbackUrl}`
+              `[vite] hot updated: ${callbackUrl}`,
             ])
-          }
+          },
         )
       })
 
@@ -359,9 +359,9 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toEqual([
               `<<<<<< A0 B0 D0 ; ${dep}`,
-              `[vite] hot updated: ${url}`
+              `[vite] hot updated: ${url}`,
             ])
-          }
+          },
         )
       })
 
@@ -374,9 +374,9 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toEqual([
               `<<<<<< A1 B1 D1 ; ${dep}`,
-              `[vite] hot updated: ${url}`
+              `[vite] hot updated: ${url}`,
             ])
-          }
+          },
         )
       })
 
@@ -388,17 +388,17 @@ if (!isBuild) {
                 .replace(/(\b[A-Z])1/g, '$12')
                 .replace(
                   "acceptExports(['a', 'default']",
-                  "acceptExports(['b', 'default']"
-                )
+                  "acceptExports(['b', 'default']",
+                ),
             )
           },
           HOT_UPDATED,
           (logs) => {
             expect(logs).toEqual([
               `<<<<<< A2 B2 D2 ; ${dep}`,
-              `[vite] hot updated: ${url}`
+              `[vite] hot updated: ${url}`,
             ])
-          }
+          },
         )
       })
 
@@ -412,7 +412,7 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toContain(`<<<<<< A3 B3 D3 ; ${dep}`)
             expect(logs).toContain('>>>>>> A3 D3')
-          }
+          },
         )
       })
     })
@@ -438,7 +438,7 @@ if (!isBuild) {
             expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
             expect(logs).toContain(`<<< default: def0`)
             expect(logs).toContain(`>>>>>> ${a} def0`)
-          }
+          },
         )
       })
 
@@ -451,7 +451,7 @@ if (!isBuild) {
           [CONNECTED, />>>>>>/],
           (logs) => {
             expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
-          }
+          },
         )
       })
 
@@ -465,7 +465,7 @@ if (!isBuild) {
             [CONNECTED, />>>>>>/],
             (logs) => {
               expect(logs).toContain(`<<< named: A1 ; ${dep}`)
-            }
+            },
           )
         })
 
@@ -478,7 +478,7 @@ if (!isBuild) {
             [CONNECTED, />>>>>>/],
             (logs) => {
               expect(logs).toContain(`<<< default: def1`)
-            }
+            },
           )
         })
       })
@@ -493,22 +493,22 @@ if (!isBuild) {
         [CONNECTED, />>>/],
         (logs) => {
           expect(logs).toContain('>>> side FX')
-        }
+        },
       )
 
       await untilBrowserLogAfter(
         () => {
           editFile(`${testDir}/${file}`, (code) =>
-            code.replace('>>> side FX', '>>> side FX !!')
+            code.replace('>>> side FX', '>>> side FX !!'),
           )
         },
         HOT_UPDATED,
         (logs) => {
           expect(logs).toEqual([
             '>>> side FX !!',
-            `[vite] hot updated: /${testDir}/${file}`
+            `[vite] hot updated: /${testDir}/${file}`,
           ])
-        }
+        },
       )
     })
 
@@ -525,19 +525,19 @@ if (!isBuild) {
           [CONNECTED, '-- unused --'],
           (logs) => {
             expect(logs).toContain('-- unused --')
-          }
+          },
         )
 
         await untilBrowserLogAfter(
           () => {
             editFile(file, (code) =>
-              code.replace('-- unused --', '-> unused <-')
+              code.replace('-- unused --', '-> unused <-'),
             )
           },
           HOT_UPDATED,
           (logs) => {
             expect(logs).toEqual(['-> unused <-', `[vite] hot updated: ${url}`])
-          }
+          },
         )
       })
 
@@ -551,13 +551,13 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toContain('-- used --')
             expect(logs).toContain('used:foo0')
-          }
+          },
         )
 
         await untilBrowserLogAfter(
           async () => {
             editFile(file, (code) =>
-              code.replace('foo0', 'foo1').replace('-- used --', '-> used <-')
+              code.replace('foo0', 'foo1').replace('-- used --', '-> used <-'),
             )
             await page.waitForEvent('load')
           },
@@ -565,7 +565,7 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toContain('-> used <-')
             expect(logs).toContain('used:foo1')
-          }
+          },
         )
       })
     })
@@ -585,7 +585,7 @@ if (!isBuild) {
             (logs) => {
               expect(logs).toContain('loaded:all:a0b0c0default0')
               expect(logs).toContain('all >>>>>> a0, b0, c0')
-            }
+            },
           )
 
           await untilBrowserLogAfter(
@@ -596,9 +596,9 @@ if (!isBuild) {
             (logs) => {
               expect(logs).toEqual([
                 'all >>>>>> a1, b1, c1',
-                `[vite] hot updated: ${url}`
+                `[vite] hot updated: ${url}`,
               ])
-            }
+            },
           )
 
           await untilBrowserLogAfter(
@@ -609,9 +609,9 @@ if (!isBuild) {
             (logs) => {
               expect(logs).toEqual([
                 'all >>>>>> a2, b2, c2',
-                `[vite] hot updated: ${url}`
+                `[vite] hot updated: ${url}`,
               ])
-            }
+            },
           )
         })
 
@@ -625,7 +625,7 @@ if (!isBuild) {
             (logs) => {
               expect(logs).toContain('loaded:some:a0b0c0default0')
               expect(logs).toContain('some >>>>>> a0, b0, c0')
-            }
+            },
           )
 
           await untilBrowserLogAfter(
@@ -637,7 +637,7 @@ if (!isBuild) {
             (logs) => {
               expect(logs).toContain('loaded:some:a1b1c1default0')
               expect(logs).toContain('some >>>>>> a1, b1, c1')
-            }
+            },
           )
         })
       }
@@ -663,7 +663,7 @@ if (!isBuild) {
     let btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
     editFile('counter/index.html', (code) =>
-      code.replace('Counter', 'Compteur')
+      code.replace('Counter', 'Compteur'),
     )
     await page.waitForNavigation()
     btn = await page.$('button')

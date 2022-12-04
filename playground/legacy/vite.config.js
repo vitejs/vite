@@ -7,8 +7,8 @@ module.exports = {
   plugins: [
     legacy({
       targets: 'IE 11',
-      modernPolyfills: true
-    })
+      modernPolyfills: true,
+    }),
   ],
 
   build: {
@@ -17,7 +17,7 @@ module.exports = {
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'index.html'),
-        nested: path.resolve(__dirname, 'nested/index.html')
+        nested: path.resolve(__dirname, 'nested/index.html'),
       },
       output: {
         chunkFileNames(chunkInfo) {
@@ -25,9 +25,9 @@ module.exports = {
             return `assets/${chunkInfo.name}.js`
           }
           return `assets/chunk-[name].[hash].js`
-        }
-      }
-    }
+        },
+      },
+    },
   },
 
   // special test only hook
@@ -40,5 +40,5 @@ module.exports = {
       .replace(/<script type="module".*?<\/script>/g, '')
       .replace(/<script nomodule/g, '<script')
     fs.writeFileSync(indexPath, index)
-  }
+  },
 }

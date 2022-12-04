@@ -6,7 +6,7 @@ import type {
   Pattern,
   Property,
   VariableDeclaration,
-  Node as _Node
+  Node as _Node,
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 // `eslint-plugin-node` doesn't support package without main
@@ -40,7 +40,7 @@ export async function ssrTransform(
   inMap: SourceMap | null,
   url: string,
   originalCode: string,
-  options?: TransformOptions
+  options?: TransformOptions,
 ): Promise<TransformResult | null> {
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
@@ -50,13 +50,13 @@ export async function ssrTransform(
 
 async function ssrTransformJSON(
   code: string,
-  inMap: SourceMap | null
+  inMap: SourceMap | null,
 ): Promise<TransformResult> {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
     map: inMap,
     deps: [],
-    dynamicDeps: []
+    dynamicDeps: [],
   }
 }
 
@@ -64,7 +64,7 @@ async function ssrTransformScript(
   code: string,
   inMap: SourceMap | null,
   url: string,
-  originalCode: string
+  originalCode: string,
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
@@ -74,7 +74,7 @@ async function ssrTransformScript(
       sourceType: 'module',
       ecmaVersion: 'latest',
       locations: true,
-      allowHashBang: true
+      allowHashBang: true,
     })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
@@ -82,7 +82,7 @@ async function ssrTransformScript(
     throw new Error(
       `Parse failure: ${err.message}\nContents of line ${line}: ${
         code.split('\n')[line - 1]
-      }`
+      }`,
     )
   }
 
@@ -97,7 +97,7 @@ async function ssrTransformScript(
     const importId = `__vite_ssr_import_${uid++}__`
     s.appendRight(
       node.start,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`
+      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`,
     )
     return importId
   }
@@ -106,7 +106,7 @@ async function ssrTransformScript(
     s.appendLeft(
       position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});`
+        `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
     )
   }
 
@@ -122,7 +122,7 @@ async function ssrTransformScript(
         if (spec.type === 'ImportSpecifier') {
           idToImportMap.set(
             spec.local.name,
-            `${importId}.${spec.imported.name}`
+            `${importId}.${spec.imported.name}`,
           )
         } else if (spec.type === 'ImportDefaultSpecifier') {
           idToImportMap.set(spec.local.name, `${importId}.default`)
@@ -164,7 +164,7 @@ async function ssrTransformScript(
             defineExport(
               node.end,
               spec.exported.name,
-              `${importId}.${spec.local.name}`
+              `${importId}.${spec.local.name}`,
             )
           }
         } else {
@@ -193,14 +193,14 @@ async function ssrTransformScript(
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
         s.append(
           `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`
+            `{ enumerable: true, configurable: true, value: ${name} });`,
         )
       } else {
         // anonymous default exports
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`
+          `${ssrModuleExportsKey}.default =`,
         )
       }
     }
@@ -258,7 +258,7 @@ async function ssrTransformScript(
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }
-    }
+    },
   })
 
   let map = s.generateMap({ hires: true })
@@ -269,11 +269,11 @@ async function ssrTransformScript(
         {
           ...map,
           sources: inMap.sources,
-          sourcesContent: inMap.sourcesContent
+          sourcesContent: inMap.sourcesContent,
         } as RawSourceMap,
-        inMap as RawSourceMap
+        inMap as RawSourceMap,
       ],
-      false
+      false,
     ) as SourceMap
   } else {
     map.sources = [url]
@@ -286,7 +286,7 @@ async function ssrTransformScript(
     code: s.toString(),
     map,
     deps: [...deps],
-    dynamicDeps: [...dynamicDeps]
+    dynamicDeps: [...dynamicDeps],
   }
 }
 
@@ -297,7 +297,7 @@ interface Visitors {
       end: number
     },
     parent: Node,
-    parentStack: Node[]
+    parentStack: Node[],
   ) => void
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
@@ -314,7 +314,7 @@ const isNodeInPattern = (node: _Node): node is Property =>
  */
 function walk(
   root: Node,
-  { onIdentifier, onImportMeta, onDynamicImport }: Visitors
+  { onIdentifier, onImportMeta, onDynamicImport }: Visitors,
 ) {
   const parentStack: Node[] = []
   const varKindStack: VariableDeclaration['kind'][] = []
@@ -434,7 +434,7 @@ function walk(
                 return
               }
               setScope(node, child.name)
-            }
+            },
           })
         })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
@@ -443,7 +443,7 @@ function walk(
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentScope(
           parentStack,
-          varKindStack[0] === 'var'
+          varKindStack[0] === 'var',
         )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
@@ -463,7 +463,7 @@ function walk(
       if (node.type === 'VariableDeclaration') {
         varKindStack.shift()
       }
-    }
+    },
   })
 
   // emit the identifier events in BFS so the hoisted declarations
@@ -554,7 +554,7 @@ const scopeNodeTypeRE =
   /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
 function findParentScope(
   parentStack: _Node[],
-  isVar = false
+  isVar = false,
 ): _Node | undefined {
   const regex = isVar ? functionNodeTypeRE : scopeNodeTypeRE
   return parentStack.find((i) => regex.test(i.type))
@@ -562,7 +562,7 @@ function findParentScope(
 
 function isInDestructuringAssignment(
   parent: _Node,
-  parentStack: _Node[]
+  parentStack: _Node[],
 ): boolean {
   if (
     parent &&

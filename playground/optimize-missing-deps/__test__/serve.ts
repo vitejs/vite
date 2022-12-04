@@ -10,7 +10,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   const { createServer } = require(path.resolve(rootDir, 'server.js'))
   const { app, vite } = await createServer(
     rootDir,
-    hmrPorts['optimize-missing-deps']
+    hmrPorts['optimize-missing-deps'],
   )
 
   return new Promise((resolve, reject) => {
@@ -25,7 +25,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
             if (vite) {
               await vite.close()
             }
-          }
+          },
         })
       })
     } catch (e) {

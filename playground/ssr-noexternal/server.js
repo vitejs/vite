@@ -10,7 +10,7 @@ const isTest = process.env.VITEST
 export async function createServer(
   root = process.cwd(),
   isProd = process.env.NODE_ENV === 'production',
-  hmrPort
+  hmrPort,
 ) {
   const resolve = (p) => path.resolve(__dirname, p)
 
@@ -36,13 +36,13 @@ export async function createServer(
           // During tests we edit the files too fast and sometimes chokidar
           // misses change events, so enforce polling for consistency
           usePolling: true,
-          interval: 100
+          interval: 100,
         },
         hmr: {
-          port: hmrPort
-        }
+          port: hmrPort,
+        },
       },
-      appType: 'custom'
+      appType: 'custom',
     })
     app.use(vite.middlewares)
   }
@@ -82,6 +82,6 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }

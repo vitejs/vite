@@ -11,7 +11,7 @@ import { defineConfig } from 'rollup'
 import licensePlugin from '../../scripts/rollupLicensePlugin.mjs'
 
 const pkg = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url)).toString()
+  readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -20,13 +20,13 @@ const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
-      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json')
-    })
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
+    }),
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
-    sourcemap: true
-  }
+    sourcemap: true,
+  },
 })
 
 const clientConfig = defineConfig({
@@ -34,20 +34,20 @@ const clientConfig = defineConfig({
   external: ['./env', '@vite/env'],
   plugins: [
     typescript({
-      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json')
-    })
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
+    }),
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
-    sourcemap: true
-  }
+    sourcemap: true,
+  },
 })
 
 const sharedNodeOptions = defineConfig({
   treeshake: {
     moduleSideEffects: 'no-external',
     propertyReadSideEffects: false,
-    tryCatchDeoptimization: false
+    tryCatchDeoptimization: false,
   },
   output: {
     dir: path.resolve(__dirname, 'dist'),
@@ -56,7 +56,7 @@ const sharedNodeOptions = defineConfig({
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
-    freeze: false
+    freeze: false,
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
@@ -71,13 +71,13 @@ const sharedNodeOptions = defineConfig({
       return
     }
     warn(warning)
-  }
+  },
 })
 
 function createNodePlugins(
   isProduction: boolean,
   sourceMap: boolean,
-  declarationDir: string | false
+  declarationDir: string | false,
 ): Plugin[] {
   return [
     nodeResolve({ preferBuiltins: true }),
@@ -85,7 +85,7 @@ function createNodePlugins(
       tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
       sourceMap,
       declaration: declarationDir !== false,
-      declarationDir: declarationDir !== false ? declarationDir : undefined
+      declarationDir: declarationDir !== false ? declarationDir : undefined,
     }),
 
     // Some deps have try...catch require of optional deps, but rollup will
@@ -96,38 +96,38 @@ function createNodePlugins(
         // chokidar -> fsevents
         'fsevents-handler.js': {
           src: `require('fsevents')`,
-          replacement: `__require('fsevents')`
+          replacement: `__require('fsevents')`,
         },
         // postcss-import -> sugarss
         'process-content.js': {
           src: 'require("sugarss")',
-          replacement: `__require('sugarss')`
+          replacement: `__require('sugarss')`,
         },
         'lilconfig/dist/index.js': {
           pattern: /: require,/g,
-          replacement: `: __require,`
+          replacement: `: __require,`,
         },
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
           pattern: /require(?=\((configFile|'ts-node')\))/g,
-          replacement: `eval('require')`
-        }
+          replacement: `eval('require')`,
+        },
       }),
 
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
       // Since ws is not that perf critical for us, just ignore these deps.
-      ignore: ['bufferutil', 'utf-8-validate']
+      ignore: ['bufferutil', 'utf-8-validate'],
     }),
     json(),
     isProduction &&
       licensePlugin(
         path.resolve(__dirname, 'LICENSE.md'),
         'Vite core license',
-        'Vite'
+        'Vite',
       ),
-    cjsPatchPlugin()
+    cjsPatchPlugin(),
   ]
 }
 
@@ -137,24 +137,24 @@ function createNodeConfig(isProduction: boolean) {
     input: {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts'),
-      constants: path.resolve(__dirname, 'src/node/constants.ts')
+      constants: path.resolve(__dirname, 'src/node/constants.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
-      sourcemap: !isProduction
+      sourcemap: !isProduction,
     },
     external: [
       'fsevents',
       ...Object.keys(pkg.dependencies),
-      ...(isProduction ? [] : Object.keys(pkg.devDependencies))
+      ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
       // in production we use api-extractor for dts generation
       // in development we need to rely on the rollup ts plugin
-      isProduction ? false : path.resolve(__dirname, 'dist/node')
-    )
+      isProduction ? false : path.resolve(__dirname, 'dist/node'),
+    ),
   })
 }
 
@@ -162,7 +162,7 @@ function createCjsConfig(isProduction: boolean) {
   return defineConfig({
     ...sharedNodeOptions,
     input: {
-      publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts')
+      publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
     },
     output: {
       dir: path.resolve(__dirname, 'dist'),
@@ -172,14 +172,14 @@ function createCjsConfig(isProduction: boolean) {
       format: 'cjs',
       externalLiveBindings: false,
       freeze: false,
-      sourcemap: false
+      sourcemap: false,
     },
     external: [
       'fsevents',
       ...Object.keys(pkg.dependencies),
-      ...(isProduction ? [] : Object.keys(pkg.devDependencies))
+      ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)]
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)],
   })
 }
 
@@ -191,7 +191,7 @@ export default (commandLineArgs: any): RollupOptions[] => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
-    createCjsConfig(isProduction)
+    createCjsConfig(isProduction),
   ])
 }
 
@@ -218,7 +218,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             const pos = code.indexOf(src)
             if (pos < 0) {
               this.error(
-                `Could not find expected src "${src}" in file "${file}"`
+                `Could not find expected src "${src}" in file "${file}"`,
               )
             }
             transformed[file] = true
@@ -236,7 +236,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             }
             if (!transformed[file]) {
               this.error(
-                `Could not find expected pattern "${pattern}" in file "${file}"`
+                `Could not find expected pattern "${pattern}" in file "${file}"`,
               )
             }
             console.log(`shimmed: ${file}`)
@@ -244,7 +244,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
 
           return {
             code: magicString.toString(),
-            map: magicString.generateMap({ hires: true })
+            map: magicString.generateMap({ hires: true }),
           }
         }
       }
@@ -254,12 +254,12 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
         for (const file in deps) {
           if (!transformed[file]) {
             this.error(
-              `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`
+              `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`,
             )
           }
         }
       }
-    }
+    },
   }
 }
 
@@ -292,9 +292,9 @@ const __require = require;
 
       return {
         code: s.toString(),
-        map: s.generateMap()
+        map: s.generateMap(),
       }
-    }
+    },
   }
 }
 
@@ -311,15 +311,17 @@ function bundleSizeLimit(limit: number): Plugin {
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
           .join(''),
-        'utf-8'
+        'utf-8',
       )
       const kb = size / 1024
       if (kb > limit) {
         throw new Error(
-          `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(2)}kb.`
+          `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(
+            2,
+          )}kb.`,
         )
       }
-    }
+    },
   }
 }
 

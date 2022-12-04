@@ -24,12 +24,12 @@ module.exports = {
         inline3: resolve(__dirname, 'inline/unique.html'),
         unicodePath: resolve(
           __dirname,
-          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
         ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
-        valid: resolve(__dirname, 'valid.html')
-      }
-    }
+        valid: resolve(__dirname, 'valid.html'),
+      },
+    },
   },
 
   plugins: [
@@ -58,14 +58,14 @@ ${
 }
 </html>
   `
-        }
-      }
+        },
+      },
     },
     {
       name: 'string-transform',
       transformIndexHtml(html) {
         return html.replace('Hello', 'Transformed')
-      }
+      },
     },
     {
       name: 'tags-transform',
@@ -73,16 +73,16 @@ ${
         return [
           {
             tag: 'meta',
-            attrs: { name: 'description', content: 'a vite app' }
+            attrs: { name: 'description', content: 'a vite app' },
             // default injection is head-prepend
           },
           {
             tag: 'meta',
             attrs: { name: 'keywords', content: 'es modules' },
-            injectTo: 'head'
-          }
+            injectTo: 'head',
+          },
         ]
-      }
+      },
     },
     {
       name: 'combined-transform',
@@ -94,11 +94,11 @@ ${
               tag: 'p',
               attrs: { class: 'inject' },
               children: 'This is injected',
-              injectTo: 'body'
-            }
-          ]
+              injectTo: 'body',
+            },
+          ],
         }
-      }
+      },
     },
     {
       name: 'serve-only-transform',
@@ -109,11 +109,11 @@ ${
               tag: 'p',
               attrs: { class: 'server' },
               children: 'This is injected only during dev',
-              injectTo: 'body'
-            }
+              injectTo: 'body',
+            },
           ]
         }
-      }
+      },
     },
     {
       name: 'build-only-transform',
@@ -124,11 +124,11 @@ ${
               tag: 'p',
               attrs: { class: 'build' },
               children: 'This is injected only during build',
-              injectTo: 'body'
-            }
+              injectTo: 'body',
+            },
           ]
         }
-      }
+      },
     },
     {
       name: 'path-conditional-transform',
@@ -139,11 +139,11 @@ ${
               tag: 'p',
               attrs: { class: 'conditional' },
               children: 'This is injected only for /nested/index.html',
-              injectTo: 'body'
-            }
+              injectTo: 'body',
+            },
           ]
         }
-      }
+      },
     },
     {
       name: 'body-prepend-transform',
@@ -152,15 +152,15 @@ ${
           {
             tag: 'noscript',
             children: '<!-- this is appended to body -->',
-            injectTo: 'body'
+            injectTo: 'body',
           },
           {
             tag: 'noscript',
             children: '<!-- this is prepended to body -->',
-            injectTo: 'body-prepend'
-          }
+            injectTo: 'body-prepend',
+          },
         ]
-      }
+      },
     },
     {
       name: 'head-prepend-importmap',
@@ -176,10 +176,10 @@ ${
                 }
               }
             `,
-            injectTo: 'head'
-          }
+            injectTo: 'head',
+          },
         ]
-      }
-    }
-  ]
+      },
+    },
+  ],
 }

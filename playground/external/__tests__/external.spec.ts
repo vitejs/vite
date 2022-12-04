@@ -3,7 +3,7 @@ import { browserLogs, isBuild, page } from '~utils'
 
 test('importmap', () => {
   expect(browserLogs).not.toContain(
-    'An import map is added after module script load was triggered.'
+    'An import map is added after module script load was triggered.',
   )
 })
 
