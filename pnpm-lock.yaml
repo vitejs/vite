@@ -359,7 +359,6 @@ importers:
     specifiers:
       '@vitejs/test-css-dep': link:./css-dep
       '@vitejs/test-css-js-dep': file:./css-js-dep
-      css-dep: link:./css-dep
       fast-glob: ^3.2.12
       less: ^4.1.3
       postcss-nested: ^5.0.6
@@ -369,7 +368,6 @@ importers:
     devDependencies:
       '@vitejs/test-css-dep': link:css-dep
       '@vitejs/test-css-js-dep': file:playground/css/css-js-dep
-      css-dep: link:css-dep
       fast-glob: 3.2.12
       less: 4.1.3
       postcss-nested: 5.0.6
