@@ -69,7 +69,7 @@ Example:
 ```js
 const obj = {
   __NAME__, // Don't define object shorthand property names
-  __KEY__: value // Don't define object key
+  __KEY__: value, // Don't define object key
 }
 ```
 
@@ -233,13 +233,13 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `$injectedColor: orange;`
+        additionalData: `$injectedColor: orange;`,
       },
       styl: {
-        additionalData: `$injectedColor ?= orange`
-      }
-    }
-  }
+        additionalData: `$injectedColor ?= orange`,
+      },
+    },
+  },
 })
 ```
 
@@ -277,8 +277,8 @@ Enabling this disables named imports.
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
-    jsxFragment: 'Fragment'
-  }
+    jsxFragment: 'Fragment',
+  },
 })
 ```
 
@@ -289,8 +289,8 @@ In addition, you can also use `esbuild.jsxInject` to automatically inject JSX he
 ```js
 export default defineConfig({
   esbuild: {
-    jsxInject: `import React from 'react'`
-  }
+    jsxInject: `import React from 'react'`,
+  },
 })
 ```
 
@@ -315,7 +315,7 @@ The built-in asset type list can be found [here](https://github.com/vitejs/vite/
 
 ```js
 export default defineConfig({
-  assetsInclude: ['**/*.gltf']
+  assetsInclude: ['**/*.gltf'],
 })
 ```
 

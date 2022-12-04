@@ -26,8 +26,8 @@ export default defineComponent({
 
     return {
       name,
-      val
+      val,
     }
-  }
+  },
 })
 </script>

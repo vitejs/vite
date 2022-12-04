@@ -24,7 +24,7 @@ export async function serve() {
       const conf = await fs.readFile(pathToConf, 'utf8')
       await fs.writeFile(
         pathToConf,
-        conf.replace('export default', 'module.exports = ')
+        conf.replace('export default', 'module.exports = '),
       )
     }
 
@@ -37,7 +37,7 @@ export async function serve() {
     // copy directory and add package.json with "type": "module"
     await fs.copy(fromTestDir(configName), fromTestDir(`${configName}-module`))
     await fs.writeJSON(fromTestDir(`${configName}-module`, 'package.json'), {
-      type: 'module'
+      type: 'module',
     })
   }
 }

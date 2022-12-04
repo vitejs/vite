@@ -16,7 +16,7 @@ import {
   postImportMapHook,
   preImportMapHook,
   resolveHtmlTransforms,
-  traverseHtml
+  traverseHtml,
 } from '../../plugins/html'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
@@ -29,7 +29,7 @@ import {
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
-  wrapId
+  wrapId,
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -40,10 +40,10 @@ interface AssetNode {
 }
 
 export function createDevHtmlTransformFn(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
-    server.config.plugins
+    server.config.plugins,
   )
   return (url: string, html: string, originalUrl: string): Promise<string> => {
     return applyHtmlTransforms(
@@ -54,14 +54,14 @@ export function createDevHtmlTransformFn(
         devHtmlHook,
         ...normalHooks,
         ...postHooks,
-        postImportMapHook()
+        postImportMapHook(),
       ],
       {
         path: url,
         filename: getHtmlFilename(url, server),
         server,
-        originalUrl
-      }
+        originalUrl,
+      },
     )
   }
 }
@@ -71,7 +71,7 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
     return decodeURIComponent(
-      normalizePath(path.join(server.config.root, url.slice(1)))
+      normalizePath(path.join(server.config.root, url.slice(1))),
     )
   }
 }
@@ -84,7 +84,7 @@ const processNodeUrl = (
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
-  moduleGraph?: ModuleGraph
+  moduleGraph?: ModuleGraph,
 ) => {
   let url = attr.value || ''
 
@@ -122,7 +122,7 @@ const processNodeUrl = (
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: htmlPath, filename, server, originalUrl }
+  { path: htmlPath, filename, server, originalUrl },
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
@@ -149,13 +149,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let inlineModuleIndex = -1
   const proxyCacheUrl = cleanUrl(proxyModulePath).replace(
     normalizePath(config.root),
-    ''
+    '',
   )
   const styleUrl: AssetNode[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
-    ext: 'js'
+    ext: 'js',
   ) => {
     inlineModuleIndex++
 
@@ -168,7 +168,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       map = new MagicString(html)
         .snip(
           contentNode.sourceCodeLocation!.startOffset,
-          contentNode.sourceCodeLocation!.endOffset
+          contentNode.sourceCodeLocation!.endOffset,
         )
         .generateMap({ hires: true })
       map.sources = [filename]
@@ -189,7 +189,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"></script>`
+      `<script type="module" src="${modulePath}"></script>`,
     )
   }
 
@@ -210,7 +210,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
-          moduleGraph
+          moduleGraph,
         )
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
@@ -222,7 +222,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       styleUrl.push({
         start: children.sourceCodeLocation!.startOffset,
         end: children.sourceCodeLocation!.endOffset,
-        code: children.value
+        code: children.value,
       })
     }
 
@@ -238,7 +238,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             s,
             config,
             htmlPath,
-            originalUrl
+            originalUrl,
           )
         }
       }
@@ -255,7 +255,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
       s.overwrite(start, end, result?.code || '')
-    })
+    }),
   )
 
   html = s.toString()
@@ -267,16 +267,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         tag: 'script',
         attrs: {
           type: 'module',
-          src: path.posix.join(base, CLIENT_PUBLIC_PATH)
+          src: path.posix.join(base, CLIENT_PUBLIC_PATH),
         },
-        injectTo: 'head-prepend'
-      }
-    ]
+        injectTo: 'head-prepend',
+      },
+    ],
   }
 }
 
 export function indexHtmlMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -293,7 +293,7 @@ export function indexHtmlMiddleware(
           let html = fs.readFileSync(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
           return send(req, res, html, 'html', {
-            headers: server.config.server.headers
+            headers: server.config.server.headers,
           })
         } catch (e) {
           return next(e)

@@ -20,26 +20,26 @@ test('deep import with exports field', async () => {
 test('deep import with query with exports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild ? /base64/ : '/exports-path/deep.json'
+    isBuild ? /base64/ : '/exports-path/deep.json',
   )
 })
 
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
 test('deep import with exports field + mapped dir', async () => {
   expect(await page.textContent('.exports-deep-mapped-dir')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
 // this is how Svelte 3 is packaged
 test('deep import with exports and legacy fallback', async () => {
   expect(await page.textContent('.exports-legacy-fallback')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
@@ -49,7 +49,7 @@ test('Respect exports field env key priority', async () => {
 
 test('Respect production/development conditionals', async () => {
   expect(await page.textContent('.exports-env')).toMatch(
-    isBuild ? `browser.prod.mjs` : `browser.mjs`
+    isBuild ? `browser.prod.mjs` : `browser.mjs`,
   )
 })
 
@@ -71,7 +71,7 @@ test('dont add extension to directory name (./dir-with-ext.js/index.js)', async 
 
 test('do not resolve to the `module` field if the importer is a `require` call', async () => {
   expect(await page.textContent('.require-pkg-with-module-field')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
@@ -141,6 +141,6 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success]'
+    '[success]',
   )
 })

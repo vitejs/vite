@@ -5,7 +5,7 @@ import {
   isBuild,
   page,
   removeFile,
-  untilUpdated
+  untilUpdated,
 } from '~utils'
 
 test.runIf(isBuild)(
@@ -14,7 +14,7 @@ test.runIf(isBuild)(
     await untilUpdated(() => page.textContent('p'), 'Child state 1')
 
     editFile('Child.jsx', (code) =>
-      code.replace('Child state 1', 'Child state 2')
+      code.replace('Child state 1', 'Child state 2'),
     )
 
     await untilUpdated(() => page.textContent('p'), 'Child state 2')
@@ -22,7 +22,7 @@ test.runIf(isBuild)(
     editFile('App.jsx', (code) =>
       code
         .replace(`import Child from './Child'`, '')
-        .replace(`<Child />`, '<p>Child deleted</p>')
+        .replace(`<Child />`, '<p>Child deleted</p>'),
     )
     removeFile('Child.jsx')
     await untilUpdated(() => page.textContent('p'), 'Child deleted')
@@ -33,7 +33,7 @@ test.runIf(isBuild)(
       ` export default function Child() {
           return <p>Child state 1</p>
         }
-      `
+      `,
     )
 
     // restore App.jsx
@@ -52,9 +52,9 @@ test.runIf(isBuild)(
       }
 
       export default App
-      `
+      `,
     )
 
     await untilUpdated(() => page.textContent('p'), 'Child state 1')
-  }
+  },
 )

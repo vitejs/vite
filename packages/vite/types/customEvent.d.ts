@@ -2,7 +2,7 @@ import type {
   ErrorPayload,
   FullReloadPayload,
   PrunePayload,
-  UpdatePayload
+  UpdatePayload,
 } from './hmrPayload'
 
 export interface CustomEventMap {

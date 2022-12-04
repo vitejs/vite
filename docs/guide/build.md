@@ -39,8 +39,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       // https://rollupjs.org/guide/en/#big-list-of-options
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -54,7 +54,7 @@ You can configure how chunks are split using `build.rollupOptions.output.manualC
 // vite.config.js
 import { splitVendorChunkPlugin } from 'vite'
 export default defineConfig({
-  plugins: [splitVendorChunkPlugin()]
+  plugins: [splitVendorChunkPlugin()],
 })
 ```
 
@@ -70,8 +70,8 @@ export default defineConfig({
   build: {
     watch: {
       // https://rollupjs.org/guide/en/#watch-options
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -105,10 +105,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        nested: resolve(__dirname, 'nested/index.html')
-      }
-    }
-  }
+        nested: resolve(__dirname, 'nested/index.html'),
+      },
+    },
+  },
 })
 ```
 
@@ -132,7 +132,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
       // the proper extensions will be added
-      fileName: 'my-lib'
+      fileName: 'my-lib',
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
@@ -142,11 +142,11 @@ export default defineConfig({
         // Provide global variables to use in the UMD build
         // for externalized deps
         globals: {
-          vue: 'Vue'
-        }
-      }
-    }
-  }
+          vue: 'Vue',
+        },
+      },
+    },
+  },
 })
 ```
 

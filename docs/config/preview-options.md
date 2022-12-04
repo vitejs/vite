@@ -29,11 +29,11 @@ Specify server port. Note if the port is already being used, Vite will automatic
 ```js
 export default defineConfig({
   server: {
-    port: 3030
+    port: 3030,
   },
   preview: {
-    port: 8080
-  }
+    port: 8080,
+  },
 })
 ```
 

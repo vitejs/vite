@@ -12,8 +12,8 @@ module.exports = vite.defineConfig((sourcemap) => {
     }/`,
     resolve: {
       alias: {
-        '@': __dirname
-      }
+        '@': __dirname,
+      },
     },
     worker: {
       format: 'iife',
@@ -22,9 +22,9 @@ module.exports = vite.defineConfig((sourcemap) => {
         output: {
           assetFileNames: 'assets/[name]-worker_asset[hash].[ext]',
           chunkFileNames: 'assets/[name]-worker_chunk[hash].js',
-          entryFileNames: 'assets/[name]-worker_entry[hash].js'
-        }
-      }
+          entryFileNames: 'assets/[name]-worker_entry[hash].js',
+        },
+      },
     },
     build: {
       outDir: `dist/iife-${
@@ -35,9 +35,9 @@ module.exports = vite.defineConfig((sourcemap) => {
         output: {
           assetFileNames: 'assets/[name]-[hash].[ext]',
           chunkFileNames: 'assets/[name]-[hash].js',
-          entryFileNames: 'assets/[name]-[hash].js'
-        }
-      }
-    }
+          entryFileNames: 'assets/[name]-[hash].js',
+        },
+      },
+    },
   }
 })

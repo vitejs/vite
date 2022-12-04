@@ -6,8 +6,8 @@ module.exports = vite.defineConfig({
   base: './',
   resolve: {
     alias: {
-      '@': __dirname
-    }
+      '@': __dirname,
+    },
   },
   worker: {
     format: 'es',
@@ -16,9 +16,9 @@ module.exports = vite.defineConfig({
       output: {
         assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
         chunkFileNames: 'worker-chunks/worker_chunk-[name]-[hash].js',
-        entryFileNames: 'worker-entries/worker_entry-[name]-[hash].js'
-      }
-    }
+        entryFileNames: 'worker-entries/worker_entry-[name]-[hash].js',
+      },
+    },
   },
   build: {
     outDir: 'dist/relative-base',
@@ -26,12 +26,12 @@ module.exports = vite.defineConfig({
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        entryFileNames: 'entries/[name]-[hash].js'
-      }
-    }
+        entryFileNames: 'entries/[name]-[hash].js',
+      },
+    },
   },
   testConfig: {
-    baseRoute: '/relative-base/'
+    baseRoute: '/relative-base/',
   },
   plugins: [
     {
@@ -40,10 +40,10 @@ module.exports = vite.defineConfig({
         if (id.includes('main.js')) {
           return code.replace(
             `/* flag: will replace in vite config import("./format-es.js") */`,
-            `import("./main-format-es")`
+            `import("./main-format-es")`,
           )
         }
-      }
-    }
-  ]
+      },
+    },
+  ],
 })

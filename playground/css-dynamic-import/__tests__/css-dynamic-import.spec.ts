@@ -5,7 +5,7 @@ import { getColor, isBuild, isServe, page, ports, rootDir } from '~utils'
 
 const baseOptions = [
   { base: '', label: 'relative' },
-  { base: '/', label: 'absolute' }
+  { base: '/', label: 'absolute' },
 ]
 
 const getConfig = (base: string): InlineConfig => ({
@@ -13,7 +13,7 @@ const getConfig = (base: string): InlineConfig => ({
   root: rootDir,
   logLevel: 'silent',
   preview: { port: ports['css/dynamic-import'] },
-  build: { assetsInlineLimit: 0 }
+  build: { assetsInlineLimit: 0 },
 })
 
 async function withBuild(base: string, fn: () => Promise<void>) {
@@ -50,9 +50,9 @@ async function getLinks() {
       return handle.evaluate((link) => ({
         pathname: new URL(link.href).pathname,
         rel: link.rel,
-        as: link.as
+        as: link.as,
       }))
-    })
+    }),
   )
 }
 
@@ -68,37 +68,37 @@ baseOptions.forEach(({ base, label }) => {
           {
             pathname: expect.stringMatching(/^\/assets\/index-.+\.css$/),
             rel: 'stylesheet',
-            as: ''
+            as: '',
           },
           {
             pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
             rel: 'preload',
-            as: 'style'
+            as: 'style',
           },
           {
             pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.js$/),
             rel: 'modulepreload',
-            as: 'script'
+            as: 'script',
           },
           {
             pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
             rel: 'stylesheet',
-            as: ''
+            as: '',
           },
           {
             pathname: expect.stringMatching(/^\/assets\/static-.+\.js$/),
             rel: 'modulepreload',
-            as: 'script'
+            as: 'script',
           },
           {
             pathname: expect.stringMatching(/^\/assets\/index-.+\.js$/),
             rel: 'modulepreload',
-            as: 'script'
-          }
+            as: 'script',
+          },
         ])
       })
     },
-    { retry: 3 }
+    { retry: 3 },
   )
 
   test.runIf(isServe)(
@@ -113,11 +113,11 @@ baseOptions.forEach(({ base, label }) => {
           {
             pathname: '/dynamic.css',
             rel: 'preload',
-            as: 'style'
-          }
+            as: 'style',
+          },
         ])
       })
     },
-    { retry: 3 }
+    { retry: 3 },
   )
 })
