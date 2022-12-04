@@ -1,5 +1,5 @@
 {
-  "name": "forwarded-export",
+  "name": "@vitejs/test-forwarded-export",
   "private": true,
   "version": "0.0.0",
   "dependencies": {

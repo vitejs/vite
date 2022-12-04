@@ -1,5 +1,5 @@
 {
-  "name": "optimized-with-nested-external",
+  "name": "@vitejs/test-optimized-with-nested-external",
   "private": true,
   "version": "0.0.0",
   "type": "module",

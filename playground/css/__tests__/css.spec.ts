@@ -284,10 +284,6 @@ test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
 })
 
-test('@import dependency w/ stylus entry', async () => {
-  expect(await getColor('.css-dep-stylus')).toBe('red')
-})
-
 test('@import dependency w/out package scss', async () => {
   expect(await getColor('.sass-dep')).toBe('lavender')
 })

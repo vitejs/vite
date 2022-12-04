@@ -1,5 +1,5 @@
 {
-  "name": "test-resolve",
+  "name": "@vitejs/test-resolve",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -12,16 +12,16 @@
     "@babel/runtime": "^7.20.6",
     "es5-ext": "0.10.62",
     "normalize.css": "^8.0.1",
-    "require-pkg-with-module-field": "link:./require-pkg-with-module-field",
-    "resolve-browser-field": "link:./browser-field",
-    "resolve-browser-module-field1": "link:./browser-module-field1",
-    "resolve-browser-module-field2": "link:./browser-module-field2",
-    "resolve-browser-module-field3": "link:./browser-module-field3",
-    "resolve-custom-condition": "link:./custom-condition",
-    "resolve-custom-main-field": "link:./custom-main-field",
-    "resolve-exports-env": "link:./exports-env",
-    "resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
-    "resolve-exports-path": "link:./exports-path",
-    "resolve-linked": "workspace:*"
+    "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
+    "@vitejs/test-resolve-browser-field": "link:./browser-field",
+    "@vitejs/test-resolve-browser-module-field1": "link:./browser-module-field1",
+    "@vitejs/test-resolve-browser-module-field2": "link:./browser-module-field2",
+    "@vitejs/test-resolve-browser-module-field3": "link:./browser-module-field3",
+    "@vitejs/test-resolve-custom-condition": "link:./custom-condition",
+    "@vitejs/test-resolve-custom-main-field": "link:./custom-main-field",
+    "@vitejs/test-resolve-exports-env": "link:./exports-env",
+    "@vitejs/test-resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
+    "@vitejs/test-resolve-exports-path": "link:./exports-path",
+    "@vitejs/test-resolve-linked": "workspace:*"
   }
 }

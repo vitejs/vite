@@ -1,5 +1,5 @@
 {
-  "name": "external-entry",
+  "name": "@vitejs/test-external-entry",
   "private": true,
   "version": "0.0.0",
   "exports": {

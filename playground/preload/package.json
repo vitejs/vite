@@ -1,5 +1,5 @@
 {
-  "name": "test-preload",
+  "name": "@vitejs/test-preload",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0-alpha.0",
     "terser": "^5.16.0",
-    "dep-a": "file:./dep-a",
-    "dep-including-a": "file:./dep-including-a"
+    "@vitejs/test-dep-a": "file:./dep-a",
+    "@vitejs/test-dep-including-a": "file:./dep-including-a"
   }
 }

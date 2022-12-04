@@ -17,12 +17,12 @@ module.exports = {
   optimizeDeps: {
     disabled: false,
     include: [
-      'dep-linked-include',
-      'nested-exclude > nested-include',
+      '@vitejs/test-dep-linked-include',
+      '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
       // will throw if optimized (should log warning instead)
-      'non-optimizable-include',
+      '@vitejs/test-non-optimizable-include',
     ],
-    exclude: ['nested-exclude', 'dep-non-optimized'],
+    exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],
     esbuildOptions: {
       plugins: [
         {

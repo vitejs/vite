@@ -1,5 +1,5 @@
 {
-  "name": "dep-with-builtin-module-cjs",
+  "name": "@vitejs/test-dep-with-builtin-module-cjs",
   "private": true,
   "version": "0.0.0",
   "main": "index.js"

@@ -1,5 +1,5 @@
 {
-  "name": "test-backend-integration",
+  "name": "@vitejs/test-backend-integration",
   "private": true,
   "version": "0.0.0",
   "scripts": {

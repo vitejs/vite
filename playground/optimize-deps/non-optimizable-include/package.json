@@ -1,5 +1,5 @@
 {
-  "name": "non-optimizable-include",
+  "name": "@vitejs/test-non-optimizable-include",
   "private": true,
   "type": "module",
   "version": "0.0.0",

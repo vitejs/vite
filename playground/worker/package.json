@@ -1,5 +1,5 @@
 {
-  "name": "test-worker",
+  "name": "@vitejs/test-worker",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -24,7 +24,7 @@
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "dependencies": {
-    "dep-to-optimize": "file:./dep-to-optimize"
+    "@vitejs/test-dep-to-optimize": "file:./dep-to-optimize"
   },
   "devDependencies": {
     "@vitejs/plugin-vue-jsx": "^3.0.0-alpha.0"

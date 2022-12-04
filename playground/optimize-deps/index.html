@@ -103,34 +103,34 @@
   // test dep detection in globbed files
   const globbed = import.meta.glob('./glob/*.js', { eager: true })
 
-  import cjsBrowerFieldBare from 'dep-cjs-browser-field-bare'
+  import cjsBrowerFieldBare from '@vitejs/test-dep-cjs-browser-field-bare'
   text('.cjs-browser-field-bare', cjsBrowerFieldBare)
 
-  import { camelCase } from 'dep-linked'
+  import { camelCase } from '@vitejs/test-dep-linked'
   text('.deps-linked', camelCase('foo-bar-baz'))
 
-  import { msg, VueSFC } from 'dep-linked-include'
+  import { msg, VueSFC } from '@vitejs/test-dep-linked-include'
   text('.force-include', msg)
   text('.plugin', VueSFC.render())
 
-  import * as linked from 'dep-linked-include'
+  import * as linked from '@vitejs/test-dep-linked-include'
   const keys = Object.keys(linked)
   if (keys.length) {
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
 
-  import 'dep-cjs-with-assets'
+  import '@vitejs/test-dep-cjs-with-assets'
 
-  import { env } from 'dep-node-env'
+  import { env } from '@vitejs/test-dep-node-env'
   text('.node-env', env)
 
-  import { notjsValue } from 'dep-not-js'
+  import { notjsValue } from '@vitejs/test-dep-not-js'
   text('.not-js', notjsValue)
 
-  import foo from 'dep-relative-to-main/entry'
+  import foo from '@vitejs/test-dep-relative-to-main/entry'
   text('.relative-to-main', foo)
 
-  import { lazyFoo } from 'dep-with-dynamic-import'
+  import { lazyFoo } from '@vitejs/test-dep-with-dynamic-import'
   lazyFoo().then((foo) => {
     text('.dep-with-dynamic-import', foo)
   })
@@ -141,13 +141,13 @@
     text('.vue', '[success]')
   }
 
-  import { hello } from 'dep-esbuild-plugin-transform'
+  import { hello } from '@vitejs/test-dep-esbuild-plugin-transform'
   text('.esbuild-plugin', hello())
 
   import { greeting } from './.hidden-dir/foo.js'
   text('.hidden-dir', greeting)
 
-  import { nestedInclude } from 'nested-exclude'
+  import { nestedInclude } from '@vitejs/test-nested-exclude'
   text('.nested-include', nestedInclude)
 
   import { parse } from 'node:url'
@@ -156,9 +156,9 @@
   import './index.astro'
 
   // All these imports should end up resolved to the same URL (same ?v= injected on them)
-  import { add as addFromDirectAbsolutePath } from '/node_modules/dep-non-optimized/index.js'
-  import { add as addFromDirectRelativePath } from './node_modules/dep-non-optimized/index.js'
-  import { get as getFromBareImport } from 'dep-non-optimized'
+  import { add as addFromDirectAbsolutePath } from '/node_modules/@vitejs/test-dep-non-optimized/index.js'
+  import { add as addFromDirectRelativePath } from './node_modules/@vitejs/test-dep-non-optimized/index.js'
+  import { get as getFromBareImport } from '@vitejs/test-dep-non-optimized'
 
   addFromDirectAbsolutePath('from-absolute-path')
   addFromDirectRelativePath('from-relative-path')
@@ -177,7 +177,10 @@
 </script>
 
 <script type="module">
-  import { callItself, callPeerDep } from 'dep-with-optional-peer-dep'
+  import {
+    callItself,
+    callPeerDep,
+  } from '@vitejs/test-dep-with-optional-peer-dep'
   text('.dep-with-optional-peer-dep', callItself())
   // expect error as optional peer dep not installed
   callPeerDep()
@@ -202,7 +205,7 @@
 
 <script type="module">
   // should error on builtin modules from dep
-  import { read } from 'dep-with-builtin-module-esm'
+  import { read } from '@vitejs/test-dep-with-builtin-module-esm'
   if (import.meta.env.DEV) {
     read()
   }
@@ -210,7 +213,7 @@
 
 <script type="module">
   // should error on builtin modules from dep
-  import { read } from 'dep-with-builtin-module-cjs'
+  import { read } from '@vitejs/test-dep-with-builtin-module-cjs'
   if (import.meta.env.DEV) {
     read()
   }

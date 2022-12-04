@@ -1,5 +1,5 @@
 {
-  "name": "test-css-sourcemap",
+  "name": "@vitejs/test-css-sourcemap",
   "private": true,
   "version": "0.0.0",
   "scripts": {

@@ -1,5 +1,5 @@
 {
-  "name": "ts-transpiled-exports",
+  "name": "@vitejs/test-ts-transpiled-exports",
   "private": true,
   "version": "0.0.0"
 }

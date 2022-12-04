@@ -1,5 +1,5 @@
 {
-  "name": "resolve-custom-main-field",
+  "name": "@vitejs/test-resolve-custom-main-field",
   "private": true,
   "version": "1.0.0",
   "main": "index.js",
