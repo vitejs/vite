@@ -9,7 +9,7 @@ import {
   killProcess,
   ports,
   rootDir,
-  viteBinPath
+  viteBinPath,
 } from '~utils'
 
 export const port = ports.cli
@@ -18,7 +18,7 @@ export async function serve() {
   // collect stdout and stderr streams from child processes here to avoid interfering with regular vitest output
   const streams = {
     build: { out: [], err: [] },
-    server: { out: [], err: [] }
+    server: { out: [], err: [] },
   }
   // helpers to collect streams
   const collectStreams = (name, process) => {
@@ -47,7 +47,7 @@ export async function serve() {
     try {
       const buildProcess = execaCommand(buildCommand, {
         cwd: rootDir,
-        stdio: 'pipe'
+        stdio: 'pipe',
       })
       collectStreams('build', buildProcess)
       await buildProcess
@@ -69,7 +69,7 @@ export async function serve() {
   const serverCommand = `${viteBinPath} ${viteServerArgs.join(' ')}`
   const serverProcess = execaCommand(serverCommand, {
     cwd: rootDir,
-    stdio: 'pipe'
+    stdio: 'pipe',
   })
   collectStreams('server', serverProcess)
 
@@ -85,7 +85,7 @@ export async function serve() {
           collectErrorStreams('server', e)
           console.error(
             `error while killing cli command "${serverCommand}":`,
-            e
+            e,
           )
           await printStreamsToConsole('server')
         }
@@ -105,7 +105,7 @@ export async function serve() {
     } catch (e1) {
       console.error(
         `error while killing cli command after failed execute "${serverCommand}":`,
-        e1
+        e1,
       )
     }
   }
@@ -120,7 +120,7 @@ async function startedOnPort(serverProcess, port, timeout) {
       // hack, console output may contain color code gibberish
       // skip gibberish between localhost: and port number
       const match = str.match(
-        /(http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):).*(\d{4})/
+        /(http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):).*(\d{4})/,
       )
       if (match) {
         const startedPort = parseInt(match[2], 10)
@@ -137,7 +137,7 @@ async function startedOnPort(serverProcess, port, timeout) {
   return resolvedOrTimeout(
     startedPromise,
     timeout,
-    `failed to start within ${timeout}ms`
+    `failed to start within ${timeout}ms`,
   ).finally(() => serverProcess.stdout.off('data', checkPort))
 }
 
@@ -148,7 +148,7 @@ async function resolvedOrTimeout(promise, ms, errorMessage) {
     promise,
     new Promise((_, reject) => {
       timer = setTimeout(() => reject(errorMessage), ms)
-    })
+    }),
   ]).finally(() => {
     clearTimeout(timer)
     timer = null

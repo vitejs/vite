@@ -16,8 +16,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
       root: rootDir,
       logLevel: 'silent',
       build: {
-        ssr: 'src/entry-server.js'
-      }
+        ssr: 'src/entry-server.js',
+      },
     })
   }
 
@@ -27,7 +27,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   const { app, vite } = await createServer(
     rootDir,
     isBuild,
-    hmrPorts['ssr-noexternal']
+    hmrPorts['ssr-noexternal'],
   )
 
   return new Promise((resolve, reject) => {
@@ -42,7 +42,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
             if (vite) {
               await vite.close()
             }
-          }
+          },
         })
       })
     } catch (e) {

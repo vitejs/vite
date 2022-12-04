@@ -17,7 +17,7 @@ test('ssrLoad', async () => {
     await server.ssrLoadModule('/fixtures/modules/has-invalid-import.js')
   } catch (e) {
     expect(e.message).toBe(
-      'Failed to load url ./non-existent.js (resolved id: ./non-existent.js). Does the file exist?'
+      'Failed to load url ./non-existent.js (resolved id: ./non-existent.js). Does the file exist?',
     )
   }
 })

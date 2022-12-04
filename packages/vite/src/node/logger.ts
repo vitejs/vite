@@ -30,7 +30,7 @@ export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
-  info: 3
+  info: 3,
 }
 
 let lastType: LogType | undefined
@@ -53,7 +53,7 @@ export interface LoggerOptions {
 
 export function createLogger(
   level: LogLevel = 'info',
-  options: LoggerOptions = {}
+  options: LoggerOptions = {},
 ): Logger {
   if (options.customLogger) {
     return options.customLogger
@@ -133,7 +133,7 @@ export function createLogger(
     },
     hasErrorLogged(error) {
       return loggedErrors.has(error)
-    }
+    },
   }
 
   return logger
@@ -142,7 +142,7 @@ export function createLogger(
 export function printServerUrls(
   urls: ResolvedServerUrls,
   optionsHost: string | boolean | undefined,
-  info: Logger['info']
+  info: Logger['info'],
 ): void {
   const colorUrl = (url: string) =>
     colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
@@ -155,7 +155,7 @@ export function printServerUrls(
   if (urls.network.length === 0 && optionsHost === undefined) {
     const note = `use ${colors.reset(colors.bold('--host'))} to expose`
     info(
-      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${note}`)
+      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${note}`),
     )
   }
 }

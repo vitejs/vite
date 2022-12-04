@@ -17,7 +17,7 @@ if (!isBuild) {
     expect(await page.textContent('.plus-circle')).toMatch(plusCircleAsset)
     expect(await getBg('.underscore-circle')).toMatch(underscoreCircleAsset)
     expect(await page.textContent('.underscore-circle')).toMatch(
-      underscoreCircleAsset
+      underscoreCircleAsset,
     )
     expect(plusCircleAsset).toMatch('/_circle')
     expect(underscoreCircleAsset).toMatch('/_circle')

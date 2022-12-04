@@ -12,7 +12,7 @@ async function run(input: string) {
       input,
       normalizePath(resolve(__dirname, 'index.js')),
       (id) => id.replace('@', resolve(__dirname, './mods/')),
-      __dirname
+      __dirname,
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
@@ -52,7 +52,7 @@ describe('parse positives', () => {
 
   it('with multi ../ and itself', async () => {
     expect(
-      await run('`../../plugins/dynamicImportVar/${name}.js`')
+      await run('`../../plugins/dynamicImportVar/${name}.js`'),
     ).toMatchSnapshot()
   })
 })

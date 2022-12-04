@@ -14,7 +14,7 @@ rewriteImports(tempDir, (importPath, currentFile) => {
   if (importPath.startsWith('dep-types/')) {
     const absoluteTypePath = resolve(
       depTypesDir,
-      importPath.slice('dep-types/'.length)
+      importPath.slice('dep-types/'.length),
     )
     return slash(relative(dirname(currentFile), absoluteTypePath))
   }

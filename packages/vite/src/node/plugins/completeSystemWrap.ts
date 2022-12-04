@@ -13,11 +13,11 @@ export function completeSystemWrapPlugin(): Plugin {
       if (opts.format === 'system') {
         return {
           code: code.replace(SystemJSWrapRE, (s, s1) =>
-            s.replace(s1, '(exports, module)')
+            s.replace(s1, '(exports, module)'),
           ),
-          map: null
+          map: null,
         }
       }
-    }
+    },
   }
 }

@@ -40,13 +40,13 @@
       document.querySelector(selector).textContent = JSON.stringify(
         res,
         null,
-        2
+        2,
       )
     })
   }
 
   const modules = import.meta.glob(
-    '/dir/**'
+    '/dir/**',
     // for test: annotation contain ")"
     /*
      * for test: annotation contain ")"
@@ -57,7 +57,7 @@
   document.querySelector('.result-eager').textContent = JSON.stringify(
     eagerModules,
     null,
-    2
+    2,
   )
 
   const nodeModules = import.meta.glob('/dir/node_modules/**')
@@ -67,7 +67,7 @@
 <script type="module">
   const rawModules = import.meta.glob('/dir/*.json', {
     as: 'raw',
-    eager: true
+    eager: true,
   })
   const globraw = {}
   Object.keys(rawModules).forEach((key) => {
@@ -76,26 +76,26 @@
   document.querySelector('.globraw').textContent = JSON.stringify(
     globraw,
     null,
-    2
+    2,
   )
 </script>
 
 <script type="module">
   const bazJson = import.meta.glob('/dir/*.json', {
     as: 'raw',
-    eager: true
+    eager: true,
   })['/dir/baz.json']
   document.querySelector('.property-access').textContent = JSON.stringify(
     JSON.parse(bazJson),
     null,
-    2
+    2,
   )
 </script>
 
 <script type="module">
   const relativeRawModules = import.meta.glob('../glob-import/dir/*.json', {
     as: 'raw',
-    eager: true
+    eager: true,
   })
   const relativeGlobRaw = {}
   Object.keys(relativeRawModules).forEach((key) => {
@@ -104,7 +104,7 @@
   document.querySelector('.relative-glob-raw').textContent = JSON.stringify(
     relativeGlobRaw,
     null,
-    2
+    2,
   )
 </script>
 
@@ -125,7 +125,7 @@
 
 <script type="module">
   const globs = import.meta.glob('/escape/**/glob.js', {
-    eager: true
+    eager: true,
   })
   console.log(globs)
   globalThis.globs = globs

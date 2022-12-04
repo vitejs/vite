@@ -6,17 +6,17 @@ export default defineConfig({
     noExternal: ['@vitejs/require-external-cjs'],
     external: ['@vitejs/external-cjs'],
     optimizeDeps: {
-      disabled: false
-    }
+      disabled: false,
+    },
   },
   build: {
     target: 'esnext',
     minify: false,
     rollupOptions: {
-      external: ['@vitejs/external-cjs']
+      external: ['@vitejs/external-cjs'],
     },
     commonjsOptions: {
-      include: []
-    }
-  }
+      include: [],
+    },
+  },
 })

@@ -5,7 +5,7 @@ import { joinUrlSegments, stripBase } from '../../utils'
 // this middleware is only active when (base !== '/')
 
 export function baseMiddleware({
-  config
+  config,
 }: ViteDevServer): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
@@ -29,7 +29,7 @@ export function baseMiddleware({
     if (path === '/' || path === '/index.html') {
       // redirect root visit to based url with search and hash
       res.writeHead(302, {
-        Location: base + (parsed.search || '') + (parsed.hash || '')
+        Location: base + (parsed.search || '') + (parsed.hash || ''),
       })
       res.end()
       return
@@ -38,11 +38,11 @@ export function baseMiddleware({
       const redirectPath =
         url + '/' !== base ? joinUrlSegments(base, url) : base
       res.writeHead(404, {
-        'Content-Type': 'text/html'
+        'Content-Type': 'text/html',
       })
       res.end(
         `The server is configured with a public base URL of ${base} - ` +
-          `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`
+          `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`,
       )
       return
     }

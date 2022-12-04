@@ -14,12 +14,12 @@ function App() {
     {
       onClick() {
         setCount(count + 1)
-      }
+      },
     },
-    `count is ${count}`
+    `count is ${count}`,
   )
 }
 
 ReactDOM.createRoot(document.querySelector('.dedupe')).render(
-  React.createElement(App)
+  React.createElement(App),
 )

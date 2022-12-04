@@ -18,7 +18,9 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transformGlobImport(code, id, root, resolveId, true))?.s.toString()
+      (
+        await transformGlobImport(code, id, root, resolveId, true)
+      )?.s.toString(),
     ).toMatchSnapshot()
   })
 
@@ -37,8 +39,8 @@ describe('fixture', async () => {
           import.meta.glob(
             './*.js'
           )
-        `.trim()
-      )
+        `.trim(),
+      ),
     ).toBe(3)
   })
 
@@ -46,12 +48,12 @@ describe('fixture', async () => {
     const root = resolve(__dirname, './fixture-a')
     const code = [
       "import.meta.glob('/modules/*.ts')",
-      "import.meta.glob(['/../fixture-b/*.ts'])"
+      "import.meta.glob(['/../fixture-b/*.ts'])",
     ].join('\n')
     expect(
       (
         await transformGlobImport(code, 'virtual:module', root, resolveId, true)
-      )?.s.toString()
+      )?.s.toString(),
     ).toMatchSnapshot()
 
     try {
@@ -60,12 +62,12 @@ describe('fixture', async () => {
         'virtual:module',
         root,
         resolveId,
-        true
+        true,
       )
       expect('no error').toBe('should throw an error')
     } catch (err) {
       expect(err).toMatchInlineSnapshot(
-        "[Error: In virtual modules, all globs must start with '/']"
+        "[Error: In virtual modules, all globs must start with '/']",
       )
     }
   })
@@ -79,7 +81,7 @@ describe('fixture', async () => {
     expect(
       (
         await transformGlobImport(code, id, root, resolveId, true, true)
-      )?.s.toString()
+      )?.s.toString(),
     ).toMatchSnapshot()
   })
 })

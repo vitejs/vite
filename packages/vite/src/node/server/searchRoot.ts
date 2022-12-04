@@ -17,7 +17,7 @@ const ROOT_FILES = [
   // 'nx.json',
 
   // https://github.com/lerna/lerna#lernajson
-  'lerna.json'
+  'lerna.json',
 ]
 
 // npm: https://docs.npmjs.com/cli/v7/using-npm/workspaces#installing-workspaces
@@ -58,7 +58,7 @@ export function searchForPackageRoot(current: string, root = current): string {
  */
 export function searchForWorkspaceRoot(
   current: string,
-  root = searchForPackageRoot(current)
+  root = searchForPackageRoot(current),
 ): string {
   if (hasRootFile(current)) return current
   if (hasWorkspacePackageJSON(current)) return current

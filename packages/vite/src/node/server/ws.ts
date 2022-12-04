@@ -16,7 +16,7 @@ export const HMR_HEADER = 'vite-hmr'
 
 export type WebSocketCustomListener<T> = (
   data: T,
-  client: WebSocketClient
+  client: WebSocketClient,
 ) => void
 
 export interface WebSocketServer {
@@ -42,7 +42,7 @@ export interface WebSocketServer {
   on: WebSocketTypes.Server['on'] & {
     <T extends string>(
       event: T,
-      listener: WebSocketCustomListener<InferCustomEventPayload<T>>
+      listener: WebSocketCustomListener<InferCustomEventPayload<T>>,
     ): void
   }
   /**
@@ -74,13 +74,13 @@ const wsServerEvents = [
   'error',
   'headers',
   'listening',
-  'message'
+  'message',
 ]
 
 export function createWebSocketServer(
   server: Server | null,
   config: ResolvedConfig,
-  httpsOptions?: HttpsServerOptions
+  httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
   let wss: WebSocketServerRaw
   let httpsServer: Server | undefined = undefined
@@ -115,12 +115,12 @@ export function createWebSocketServer(
         const body = STATUS_CODES[statusCode]
         if (!body)
           throw new Error(
-            `No body text found for the ${statusCode} status code`
+            `No body text found for the ${statusCode} status code`,
           )
 
         res.writeHead(statusCode, {
           'Content-Length': body.length,
-          'Content-Type': 'text/plain'
+          'Content-Type': 'text/plain',
         })
         res.end(body)
       })
@@ -163,12 +163,12 @@ export function createWebSocketServer(
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
         colors.red(`WebSocket server error: Port is already in use`),
-        { error: e }
+        { error: e },
       )
     } else {
       config.logger.error(
         colors.red(`WebSocket server error:\n${e.stack || e.message}`),
-        { error: e }
+        { error: e },
       )
     }
   })
@@ -184,14 +184,14 @@ export function createWebSocketServer(
             payload = {
               type: 'custom',
               event: args[0],
-              data: args[1]
+              data: args[1],
             }
           } else {
             payload = args[0]
           }
           socket.send(JSON.stringify(payload))
         },
-        socket
+        socket,
       })
     }
     return clientsMap.get(socket)!
@@ -231,7 +231,7 @@ export function createWebSocketServer(
         payload = {
           type: 'custom',
           event: args[0],
-          data: args[1]
+          data: args[1],
         }
       } else {
         payload = args[0]
@@ -274,6 +274,6 @@ export function createWebSocketServer(
           }
         })
       })
-    }
+    },
   }
 }

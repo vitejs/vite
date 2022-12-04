@@ -177,7 +177,7 @@
 
   // outside root with special characters 2 #8498
   fetch(
-    '/@fs/' + ROOT + '/root/src/%252e%252e%252f%252e%252e%252funsafe%252ejson'
+    '/@fs/' + ROOT + '/root/src/%252e%252e%252f%252e%252e%252funsafe%252ejson',
   )
     .then((r) => {
       text('.unsafe-fs-fetch-8498-2-status', r.status)
@@ -191,7 +191,7 @@
   fetch(
     '/@fs/' +
       ROOT +
-      '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json'
+      '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json',
   )
     .then((r) => {
       text('.safe-fs-fetch-special-characters-status', r.status)

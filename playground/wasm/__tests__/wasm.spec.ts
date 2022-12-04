@@ -15,13 +15,13 @@ test('init function returns WebAssembly.Instance', async () => {
   await page.click('.init-returns-instance .run')
   await untilUpdated(
     () => page.textContent('.init-returns-instance .result'),
-    'true'
+    'true',
   )
 })
 
 test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? 'data:application/wasm' : '/light.wasm'
+    isBuild ? 'data:application/wasm' : '/light.wasm',
   )
 })
 

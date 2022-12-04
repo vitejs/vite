@@ -15,7 +15,7 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId
+  unwrapId,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
@@ -23,16 +23,16 @@ import { isHTMLProxy } from '../../plugins/html'
 import {
   DEP_VERSION_RE,
   FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
 } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
-  isDirectRequest
+  isDirectRequest,
 } from '../../plugins/css'
 import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP
+  ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
 import { getDepsOptimizer } from '../../optimizer'
 
@@ -42,11 +42,11 @@ const isDebug = !!process.env.DEBUG
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
 export function transformMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   const {
     config: { root, logger },
-    moduleGraph
+    moduleGraph,
   } = server
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -59,7 +59,7 @@ export function transformMiddleware(
     try {
       url = decodeURI(removeTimestampQuery(req.url!)).replace(
         NULL_BYTE_PLACEHOLDER,
-        '\0'
+        '\0',
       )
     } catch (e) {
       return next(e)
@@ -78,12 +78,12 @@ export function transformMiddleware(
           const mapFile = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(
-                ensureVolumeInPath(path.resolve(root, url.slice(1)))
+                ensureVolumeInPath(path.resolve(root, url.slice(1))),
               )
           try {
             const map = await fs.readFile(mapFile, 'utf-8')
             return send(req, res, map, 'json', {
-              headers: server.config.server.headers
+              headers: server.config.server.headers,
             })
           } catch (e) {
             // Outdated source map request for optimized deps, this isn't an error
@@ -95,11 +95,11 @@ export function transformMiddleware(
               sources: [],
               sourcesContent: [],
               names: [],
-              mappings: ';;;;;;;;;'
+              mappings: ';;;;;;;;;',
             }
             return send(req, res, JSON.stringify(dummySourceMap), 'json', {
               cacheControl: 'no-cache',
-              headers: server.config.server.headers
+              headers: server.config.server.headers,
             })
           }
         } else {
@@ -108,7 +108,7 @@ export function transformMiddleware(
             ?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
-              headers: server.config.server.headers
+              headers: server.config.server.headers,
             })
           } else {
             return next()
@@ -131,15 +131,15 @@ export function transformMiddleware(
             warning =
               'Assets in public cannot be imported from JavaScript.\n' +
               `Instead of ${colors.cyan(
-                rawUrl
+                rawUrl,
               )}, put the file in the src directory, and use ${colors.cyan(
-                rawUrl.replace(publicPath, '/src/')
+                rawUrl.replace(publicPath, '/src/'),
               )} instead.`
           } else {
             warning =
               `files in the public directory are served at the root path.\n` +
               `Instead of ${colors.cyan(url)}, use ${colors.cyan(
-                url.replace(publicPath, '/')
+                url.replace(publicPath, '/'),
               )}.`
           }
 
@@ -183,7 +183,7 @@ export function transformMiddleware(
 
         // resolve, load and transform using the plugin container
         const result = await transformRequest(url, server, {
-          html: req.headers.accept?.includes('text/html')
+          html: req.headers.accept?.includes('text/html'),
         })
         if (result) {
           const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
@@ -195,7 +195,7 @@ export function transformMiddleware(
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
-            map: result.map
+            map: result.map,
           })
         }
       }

@@ -25,14 +25,14 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   bypass?: (
     req: http.IncomingMessage,
     res: http.ServerResponse,
-    options: ProxyOptions
+    options: ProxyOptions,
   ) => void | null | undefined | false | string
 }
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
   options: NonNullable<CommonServerOptions['proxy']>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
 ): Connect.NextHandleFunction {
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
@@ -57,20 +57,20 @@ export function proxyMiddleware(
           }`,
           {
             timestamp: true,
-            error: err
-          }
+            error: err,
+          },
         )
         if (!res.headersSent && !res.writableEnded) {
           res
             .writeHead(500, {
-              'Content-Type': 'text/plain'
+              'Content-Type': 'text/plain',
             })
             .end()
         }
       } else {
         config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
           timestamp: true,
-          error: err
+          error: err,
         })
         res.end()
       }

@@ -54,12 +54,12 @@ if (import.meta.hot) {
 
     const cssUpdate = event.updates.find(
       (update) =>
-        update.type === 'css-update' && update.path.match('global.css')
+        update.type === 'css-update' && update.path.match('global.css'),
     )
     if (cssUpdate) {
       text(
         '.css-prev',
-        (document.querySelector('.global-css') as HTMLLinkElement).href
+        (document.querySelector('.global-css') as HTMLLinkElement).href,
       )
 
       // Wait until the tag has been swapped out, which includes the time taken
@@ -82,7 +82,7 @@ if (import.meta.hot) {
               text('.link-tag-removed', 'yes')
               text(
                 '.css-post',
-                (document.querySelector('.global-css') as HTMLLinkElement).href
+                (document.querySelector('.global-css') as HTMLLinkElement).href,
               )
             }
           })
@@ -90,7 +90,7 @@ if (import.meta.hot) {
       })
 
       observer.observe(document.querySelector('#style-tags-wrapper'), {
-        childList: true
+        childList: true,
       })
     }
   })

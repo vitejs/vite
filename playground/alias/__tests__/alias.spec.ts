@@ -7,13 +7,13 @@ test('fs', async () => {
 
 test('fs directory', async () => {
   expect(await page.textContent('.fs-dir')).toMatch(
-    '[success] alias to directory'
+    '[success] alias to directory',
   )
 })
 
 test('regex', async () => {
   expect(await page.textContent('.regex')).toMatch(
-    '[success] alias to directory via regex'
+    '[success] alias to directory via regex',
   )
 })
 
@@ -23,7 +23,7 @@ test('dependency', async () => {
 
 test('js via script src', async () => {
   expect(await page.textContent('.from-script-src')).toMatch(
-    '[success] from script src'
+    '[success] from script src',
   )
 })
 
@@ -35,18 +35,18 @@ test('css via link', async () => {
 
 test('optimized dep', async () => {
   expect(await page.textContent('.optimized')).toMatch(
-    '[success] alias optimized'
+    '[success] alias optimized',
   )
 })
 
 test('aliased module', async () => {
   expect(await page.textContent('.aliased-module')).toMatch(
-    '[success] aliased module'
+    '[success] aliased module',
   )
 })
 
 test('custom resolver', async () => {
   expect(await page.textContent('.custom-resolver')).toMatch(
-    '[success] alias to custom-resolver path'
+    '[success] alias to custom-resolver path',
   )
 })

@@ -6,6 +6,6 @@ module.exports = defineConfig({
     minify: false,
     target: 'esnext',
     assetsInlineLimit: 0,
-    manifest: true
-  }
+    manifest: true,
+  },
 })

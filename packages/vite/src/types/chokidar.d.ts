@@ -69,7 +69,7 @@ export class FSWatcher extends EventEmitter implements fs.FSWatcher {
 
   on(
     event: 'add' | 'addDir' | 'change',
-    listener: (path: string, stats?: fs.Stats) => void
+    listener: (path: string, stats?: fs.Stats) => void,
   ): this
 
   on(
@@ -77,8 +77,8 @@ export class FSWatcher extends EventEmitter implements fs.FSWatcher {
     listener: (
       eventName: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir',
       path: string,
-      stats?: fs.Stats
-    ) => void
+      stats?: fs.Stats,
+    ) => void,
   ): this
 
   /**
@@ -91,7 +91,7 @@ export class FSWatcher extends EventEmitter implements fs.FSWatcher {
    */
   on(
     event: 'raw',
-    listener: (eventName: string, path: string, details: any) => void
+    listener: (eventName: string, path: string, details: any) => void,
   ): this
 
   /**
@@ -225,5 +225,5 @@ export interface AwaitWriteFinishOptions {
  */
 export function watch(
   paths: string | ReadonlyArray<string>,
-  options?: WatchOptions
+  options?: WatchOptions,
 ): FSWatcher

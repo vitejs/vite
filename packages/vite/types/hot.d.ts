@@ -12,12 +12,12 @@ export interface ViteHotContext {
   accept(dep: string, cb: (mod: ModuleNamespace | undefined) => void): void
   accept(
     deps: readonly string[],
-    cb: (mods: Array<ModuleNamespace | undefined>) => void
+    cb: (mods: Array<ModuleNamespace | undefined>) => void,
   ): void
 
   acceptExports(
     exportNames: string | readonly string[],
-    cb?: (mod: ModuleNamespace | undefined) => void
+    cb?: (mod: ModuleNamespace | undefined) => void,
   ): void
 
   dispose(cb: (data: any) => void): void
@@ -26,7 +26,7 @@ export interface ViteHotContext {
 
   on<T extends string>(
     event: T,
-    cb: (payload: InferCustomEventPayload<T>) => void
+    cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }

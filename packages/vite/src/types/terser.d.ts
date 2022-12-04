@@ -106,7 +106,7 @@ export namespace Terser {
     Disabled = 0,
     SimpleFunctions = 1,
     WithArguments = 2,
-    WithArgumentsAndVariables = 3
+    WithArgumentsAndVariables = 3,
   }
 
   export interface MangleOptions {
@@ -182,7 +182,7 @@ export namespace Terser {
             pos: number
             line: number
             col: number
-          }
+          },
         ) => boolean)
     ecma?: ECMA
     ie8?: boolean
@@ -211,7 +211,7 @@ export namespace Terser {
     PreferDouble = 0,
     AlwaysSingle = 1,
     AlwaysDouble = 2,
-    AlwaysOriginal = 3
+    AlwaysOriginal = 3,
   }
 
   export interface MinifyOptions {

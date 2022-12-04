@@ -18,7 +18,7 @@ import {
   httpServerStart,
   resolveHttpServer,
   resolveHttpsConfig,
-  setClientErrorHandler
+  setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
@@ -27,19 +27,19 @@ import {
   mergeConfig,
   normalizePath,
   resolveHostname,
-  resolveServerUrls
+  resolveServerUrls,
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import {
   rebindErrorStacktrace,
-  ssrRewriteStacktrace
+  ssrRewriteStacktrace,
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
   getDepsOptimizer,
   initDepsOptimizer,
-  initDevSsrDepsOptimizer
+  initDevSsrDepsOptimizer,
 } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
@@ -56,12 +56,12 @@ import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
-  indexHtmlMiddleware
+  indexHtmlMiddleware,
 } from './middlewares/indexHtml'
 import {
   servePublicMiddleware,
   serveRawFsMiddleware,
-  serveStaticMiddleware
+  serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
@@ -72,7 +72,7 @@ import {
   getShortName,
   handleFileAddUnlink,
   handleHMRUpdate,
-  updateModules
+  updateModules,
 } from './hmr'
 import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
@@ -160,7 +160,7 @@ export interface FileSystemServeOptions {
 
 export type ServerHook = (
   this: void,
-  server: ViteDevServer
+  server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
 export interface ViteDevServer {
@@ -211,7 +211,7 @@ export interface ViteDevServer {
    */
   transformRequest(
     url: string,
-    options?: TransformOptions
+    options?: TransformOptions,
   ): Promise<TransformResult | null>
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
@@ -219,7 +219,7 @@ export interface ViteDevServer {
   transformIndexHtml(
     url: string,
     html: string,
-    originalUrl?: string
+    originalUrl?: string,
   ): Promise<string>
   /**
    * Transform module code into SSR format.
@@ -228,14 +228,14 @@ export interface ViteDevServer {
     code: string,
     inMap: SourceMap | null,
     url: string,
-    originalCode?: string
+    originalCode?: string,
   ): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
    */
   ssrLoadModule(
     url: string,
-    opts?: { fixStacktrace?: boolean }
+    opts?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
   /**
    * Returns a fixed version of the given stack
@@ -308,7 +308,7 @@ export interface ResolvedServerUrls {
 }
 
 export async function createServer(
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
   const { root, server: serverConfig } = config
@@ -317,7 +317,7 @@ export async function createServer(
 
   const resolvedWatchOptions = resolveChokidarOptions(config, {
     disableGlobbing: true,
-    ...serverConfig.watch
+    ...serverConfig.watch,
   })
 
   const middlewares = connect() as Connect.Server
@@ -332,11 +332,11 @@ export async function createServer(
 
   const watcher = chokidar.watch(
     path.resolve(root),
-    resolvedWatchOptions
+    resolvedWatchOptions,
   ) as FSWatcher
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
-    container.resolveId(url, undefined, { ssr })
+    container.resolveId(url, undefined, { ssr }),
   )
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
@@ -357,7 +357,7 @@ export async function createServer(
       code: string,
       inMap: SourceMap | null,
       url: string,
-      originalCode = code
+      originalCode = code,
     ) {
       return ssrTransform(code, inMap, url, originalCode, server.config)
     },
@@ -375,7 +375,7 @@ export async function createServer(
         server,
         undefined,
         undefined,
-        opts?.fixStacktrace
+        opts?.fixStacktrace,
       )
     },
     ssrFixStacktrace(e) {
@@ -398,7 +398,7 @@ export async function createServer(
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
-          config
+          config,
         )
       }
       return server
@@ -416,7 +416,7 @@ export async function createServer(
         container.close(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
-        closeHttpServer()
+        closeHttpServer(),
       ])
       server.resolvedUrls = null
     },
@@ -425,13 +425,13 @@ export async function createServer(
         printServerUrls(
           server.resolvedUrls,
           serverConfig.host,
-          config.logger.info
+          config.logger.info,
         )
       } else if (middlewareMode) {
         throw new Error('cannot print server URLs in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.'
+          'cannot print server URLs before server.listen is called.',
         )
       }
     },
@@ -451,7 +451,7 @@ export async function createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true })
+    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -492,7 +492,7 @@ export async function createServer(
       } catch (err) {
         ws.send({
           type: 'error',
-          err: prepareError(err)
+          err: prepareError(err),
         })
       }
     }
@@ -512,7 +512,7 @@ export async function createServer(
         colors.yellow(`hmr invalidate `) +
           colors.dim(path) +
           (message ? ` ${message}` : ''),
-        { timestamp: true }
+        { timestamp: true },
       )
       const file = getShortName(mod.file!, config.root)
       updateModules(
@@ -520,7 +520,7 @@ export async function createServer(
         [...mod.importers],
         mod.lastHMRTimestamp,
         server,
-        true
+        true,
       )
     }
   })
@@ -570,7 +570,7 @@ export async function createServer(
   // as-is without transforms.
   if (config.publicDir) {
     middlewares.use(
-      servePublicMiddleware(config.publicDir, config.server.headers)
+      servePublicMiddleware(config.publicDir, config.server.headers),
     )
   }
 
@@ -649,7 +649,7 @@ export async function createServer(
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
-  isRestart: boolean = false
+  isRestart: boolean = false,
 ): Promise<void> {
   const httpServer = server.httpServer
   if (!httpServer) {
@@ -666,7 +666,7 @@ async function startServer(
     port,
     strictPort: options.strictPort,
     host: hostname.host,
-    logger: server.config.logger
+    logger: server.config.logger,
   })
 
   if (options.open && !isRestart) {
@@ -677,7 +677,7 @@ async function startServer(
         ? path
         : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
-      server.config.logger
+      server.config.logger,
     )
   }
 }
@@ -725,12 +725,12 @@ function resolvedAllowDir(root: string, dir: string): string {
 export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
-  logger: Logger
+  logger: Logger,
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
     ...(raw as ResolvedServerOptions),
-    middlewareMode: !!raw?.middlewareMode
+    middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
@@ -750,7 +750,7 @@ export function resolveServerOptions(
   server.fs = {
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
-    deny
+    deny,
   }
 
   if (server.origin?.endsWith('/')) {
@@ -759,8 +759,8 @@ export function resolveServerOptions(
       colors.yellow(
         `${colors.bold('(!)')} server.origin should not end with "/". Using "${
           server.origin
-        }" instead.`
-      )
+        }" instead.`,
+      ),
     )
   }
 
@@ -778,8 +778,8 @@ async function restartServer(server: ViteDevServer) {
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
       optimizeDeps: {
-        force: true
-      }
+        force: true,
+      },
     })
   }
 
@@ -788,7 +788,7 @@ async function restartServer(server: ViteDevServer) {
     newServer = await createServer(inlineConfig)
   } catch (err: any) {
     server.config.logger.error(err.message, {
-      timestamp: true
+      timestamp: true,
     })
     return
   }
@@ -806,7 +806,7 @@ async function restartServer(server: ViteDevServer) {
 
   const {
     logger,
-    server: { port, host, middlewareMode }
+    server: { port, host, middlewareMode },
   } = server.config
   if (!middlewareMode) {
     await server.listen(port, true)
@@ -839,7 +839,7 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
       await depsOptimizer.scanProcessing
       knownImports = [
         ...Object.keys(depsOptimizer.metadata.optimized),
-        ...Object.keys(depsOptimizer.metadata.discovered)
+        ...Object.keys(depsOptimizer.metadata.discovered),
       ]
     }
     server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)

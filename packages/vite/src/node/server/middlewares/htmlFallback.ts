@@ -6,7 +6,7 @@ import { createDebugger } from '../../utils'
 
 export function htmlFallbackMiddleware(
   root: string,
-  spaFallback: boolean
+  spaFallback: boolean,
 ): Connect.NextHandleFunction {
   const historyHtmlFallbackMiddleware = history({
     logger: createDebugger('vite:html-fallback'),
@@ -23,9 +23,9 @@ export function htmlFallbackMiddleware(
           }
 
           return spaFallback ? `/index.html` : request.url
-        }
-      }
-    ]
+        },
+      },
+    ],
   })
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`

@@ -5,7 +5,7 @@ import {
   cleanUrl,
   normalizePath,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
@@ -61,7 +61,7 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
 export type ResolvedUrl = [
   url: string,
   resolvedId: string,
-  meta: object | null | undefined
+  meta: object | null | undefined,
 ]
 
 export class ModuleGraph {
@@ -74,13 +74,13 @@ export class ModuleGraph {
   constructor(
     private resolveId: (
       url: string,
-      ssr: boolean
-    ) => Promise<PartialResolvedId | null>
+      ssr: boolean,
+    ) => Promise<PartialResolvedId | null>,
   ) {}
 
   async getModuleByUrl(
     rawUrl: string,
-    ssr?: boolean
+    ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     const [url] = await this.resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
@@ -107,7 +107,7 @@ export class ModuleGraph {
   invalidateModule(
     mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
-    timestamp: number = Date.now()
+    timestamp: number = Date.now(),
   ): void {
     // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
     // processing being done for this module
@@ -139,7 +139,7 @@ export class ModuleGraph {
     acceptedModules: Set<string | ModuleNode>,
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
-    ssr?: boolean
+    ssr?: boolean,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
@@ -182,7 +182,7 @@ export class ModuleGraph {
   async ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
-    setIsSelfAccepting = true
+    setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.idToModuleMap.get(resolvedId)

@@ -8,13 +8,13 @@ import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
 describe('search css url function', () => {
   test('some spaces before it', () => {
     expect(
-      cssUrlRE.test("list-style-image: url('../images/bullet.jpg');")
+      cssUrlRE.test("list-style-image: url('../images/bullet.jpg');"),
     ).toBe(true)
   })
 
   test('no space after colon', () => {
     expect(cssUrlRE.test("list-style-image:url('../images/bullet.jpg');")).toBe(
-      true
+      true,
     )
   })
 
@@ -26,23 +26,23 @@ describe('search css url function', () => {
     expect(
       cssUrlRE.test(`@function svg-url($string) {
       @return "";
-    }`)
+    }`),
     ).toBe(false)
   })
 
   test('after parenthesis', () => {
     expect(
       cssUrlRE.test(
-        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
-      )
+        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
+      ),
     ).toBe(true)
   })
 
   test('after comma', () => {
     expect(
       cssUrlRE.test(
-        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
-      )
+        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
+      ),
     ).toBe(true)
   })
 })
@@ -56,18 +56,18 @@ describe('css modules', () => {
 .bar {
 display: block;
 background: #f0f;
-}`
+}`,
       },
       {
         resolve: {
           alias: [
             {
               find: '@',
-              replacement: mockedProjectPath
-            }
-          ]
-        }
-      }
+              replacement: mockedProjectPath,
+            },
+          ],
+        },
+      },
     )
 
     const result = await transform(
@@ -76,7 +76,7 @@ background: #f0f;
 position: fixed;
 composes: bar from '@/css/bar.module.css';
 }`,
-      '/css/foo.module.css'
+      '/css/foo.module.css',
     )
 
     expect(result.code).toBe(
@@ -87,7 +87,7 @@ background: #f0f;
 }
 ._foo_86148_1 {
 position: fixed;
-}`
+}`,
     )
 
     resetMock()
@@ -97,9 +97,9 @@ position: fixed;
     const { transform, resetMock } = await createCssPluginTransform(undefined, {
       css: {
         modules: {
-          generateScopedName: 'custom__[hash:base64:5]'
-        }
-      }
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+      },
     })
     const css = `\
 .foo {
@@ -129,7 +129,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}@import url(data:image/png;base64,iRxVB0);`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`
+      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`,
     )
   })
 
@@ -155,7 +155,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}@import "bla";@charset "utf-8";.bar{color:green;}@import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`
+      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`,
     )
   })
 
@@ -169,7 +169,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}/* @charset "utf-8"; */@charset "utf-8";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`
+      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`,
     )
   })
 
@@ -204,7 +204,7 @@ describe('hoist @ rules', () => {
 
 async function createCssPluginTransform(
   files?: Record<string, string>,
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
 ) {
   const config = await resolveConfig(inlineConfig, 'serve')
   const { transform, buildStart } = cssPlugin(config)
@@ -226,14 +226,14 @@ async function createCssPluginTransform(
         {
           addWatchFile() {
             return
-          }
+          },
         },
         code,
-        id
+        id,
       )
     },
     resetMock() {
       mockFs.mockReset()
-    }
+    },
   }
 }

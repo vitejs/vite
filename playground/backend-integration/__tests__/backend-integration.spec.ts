@@ -9,7 +9,7 @@ import {
   page,
   readManifest,
   untilBrowserLogAfter,
-  untilUpdated
+  untilUpdated,
 } from '~utils'
 
 const outerAssetMatch = isBuild
@@ -25,7 +25,7 @@ test('should have no 404s', () => {
 describe('asset imports from js', () => {
   test('file outside root', async () => {
     expect(
-      await page.textContent('.asset-reference.outside-root .asset-url')
+      await page.textContent('.asset-reference.outside-root .asset-url'),
     ).toMatch(outerAssetMatch)
   })
 })
@@ -61,7 +61,7 @@ describe.runIf(isServe)('serve', () => {
   test('preserve the base in CSS HMR', async () => {
     await untilUpdated(() => getColor('body'), 'black') // sanity check
     editFile('frontend/entrypoints/global.css', (code) =>
-      code.replace('black', 'red')
+      code.replace('black', 'red'),
     )
     await untilUpdated(() => getColor('body'), 'red') // successful HMR
 
@@ -75,9 +75,9 @@ describe.runIf(isServe)('serve', () => {
     await untilBrowserLogAfter(
       () =>
         editFile('frontend/entrypoints/main.ts', (code) =>
-          code.replace('text-black', 'text-[rgb(204,0,0)]')
+          code.replace('text-black', 'text-[rgb(204,0,0)]'),
         ),
-      '[vite] css hot updated: /global.css'
+      '[vite] css hot updated: /global.css',
     )
     await untilUpdated(() => getColor(el), 'rgb(204, 0, 0)')
   })

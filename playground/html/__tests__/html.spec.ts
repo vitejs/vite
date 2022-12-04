@@ -6,7 +6,7 @@ import {
   isBuild,
   isServe,
   page,
-  viteTestUrl
+  viteTestUrl,
 } from '~utils'
 
 function testPage(isNested: boolean) {
@@ -16,7 +16,7 @@ function testPage(isNested: boolean) {
 
   test('string transform', async () => {
     expect(await page.textContent('h1')).toBe(
-      isNested ? 'Nested' : 'Transformed'
+      isNested ? 'Nested' : 'Transformed',
     )
   })
 
@@ -37,7 +37,7 @@ function testPage(isNested: boolean) {
   test('server only transform', async () => {
     if (!isBuild) {
       expect(await page.textContent('body p.server')).toMatch(
-        'injected only during dev'
+        'injected only during dev',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="server"')
@@ -47,7 +47,7 @@ function testPage(isNested: boolean) {
   test('build only transform', async () => {
     if (isBuild) {
       expect(await page.textContent('body p.build')).toMatch(
-        'injected only during build'
+        'injected only during build',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="build"')
@@ -57,7 +57,7 @@ function testPage(isNested: boolean) {
   test('conditional transform', async () => {
     if (isNested) {
       expect(await page.textContent('body p.conditional')).toMatch(
-        'injected only for /nested/'
+        'injected only for /nested/',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="conditional"')
@@ -66,7 +66,7 @@ function testPage(isNested: boolean) {
 
   test('body prepend/append transform', async () => {
     expect(await page.innerHTML('body')).toMatch(
-      /prepended to body(.*)appended to body/s
+      /prepended to body(.*)appended to body/s,
     )
   })
 
@@ -164,14 +164,14 @@ describe.runIf(isBuild)('build', () => {
     test('execution order when inlined', async () => {
       await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
       expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 dep3 shared'
+        'dep1 common dep2 dep3 shared',
       )
     })
 
     test('execution order when not inlined', async () => {
       await page.goto(viteTestUrl + '/inline/unique.html?v=1')
       expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 unique'
+        'dep1 common dep2 unique',
       )
     })
   })
@@ -209,7 +209,7 @@ describe('noBody', () => {
 describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
     )
     expect(await page.textContent('h1')).toBe('Unicode path')
   })
@@ -253,7 +253,7 @@ describe.runIf(isServe)('invalid', () => {
 
 test('importmap', () => {
   expect(browserLogs).not.toContain(
-    'An import map is added after module script load was triggered.'
+    'An import map is added after module script load was triggered.',
   )
 })
 
@@ -261,7 +261,7 @@ describe('Valid HTML', () => {
   test('valid HTML is parsed', async () => {
     await page.goto(viteTestUrl + '/valid.html')
     expect(await page.textContent('#no-quotes-on-attr')).toBe(
-      'No quotes on Attr working'
+      'No quotes on Attr working',
     )
 
     expect(await getColor('#duplicated-attrs')).toBe('green')

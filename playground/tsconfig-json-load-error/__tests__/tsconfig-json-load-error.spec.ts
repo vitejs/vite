@@ -7,14 +7,14 @@ import {
   isServe,
   page,
   readFile,
-  untilUpdated
+  untilUpdated,
 } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
     expect(serveError).toBeTruthy()
     expect(serveError.message).toMatch(
-      /^parsing .* failed: SyntaxError: Unexpected token \} in JSON at position \d+$/
+      /^parsing .* failed: SyntaxError: Unexpected token \} in JSON at position \d+$/,
     )
     clearServeError() // got expected error, null it here so testsuite does not fail from rethrow in afterAll
   })
@@ -46,7 +46,7 @@ describe.runIf(isServe)('server', () => {
     })
     // use regex with variable filename and position values because they are different on win
     expect(message).toMatch(
-      /^parsing .* failed: SyntaxError: Unexpected token \} in JSON at position \d+$/
+      /^parsing .* failed: SyntaxError: Unexpected token \} in JSON at position \d+$/,
     )
   })
 

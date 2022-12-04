@@ -21,9 +21,9 @@ import legacy from '@vitejs/plugin-legacy'
 export default {
   plugins: [
     legacy({
-      targets: ['defaults', 'not IE 11']
-    })
-  ]
+      targets: ['defaults', 'not IE 11'],
+    }),
+  ],
 }
 ```
 
@@ -104,9 +104,9 @@ npm add -D terser
         modernPolyfills: [
           /* ... */
         ],
-        renderLegacyChunks: false
-      })
-    ]
+        renderLegacyChunks: false,
+      }),
+    ],
   }
   ```
 
@@ -141,9 +141,9 @@ export default {
   plugins: [
     legacy({
       polyfills: ['es.promise.finally', 'es/map', 'es/set'],
-      modernPolyfills: ['es.promise.finally']
-    })
-  ]
+      modernPolyfills: ['es.promise.finally'],
+    }),
+  ],
 }
 ```
 

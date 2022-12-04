@@ -30,10 +30,10 @@ describe.runIf(isServe)('main', () => {
 
   test('safe fetch with special characters', async () => {
     expect(
-      await page.textContent('.safe-fetch-subdir-special-characters')
+      await page.textContent('.safe-fetch-subdir-special-characters'),
     ).toMatch('KEY=safe')
     expect(
-      await page.textContent('.safe-fetch-subdir-special-characters-status')
+      await page.textContent('.safe-fetch-subdir-special-characters-status'),
     ).toBe('200')
   })
 
@@ -44,7 +44,7 @@ describe.runIf(isServe)('main', () => {
 
   test('unsafe fetch with special characters (#8498)', async () => {
     expect(await page.textContent('.unsafe-fetch-8498')).toMatch(
-      '403 Restricted'
+      '403 Restricted',
     )
     expect(await page.textContent('.unsafe-fetch-8498-status')).toBe('403')
   })
@@ -66,7 +66,7 @@ describe.runIf(isServe)('main', () => {
 
   test('safe fs fetch with special characters', async () => {
     expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
-      stringified
+      stringified,
     )
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
   })

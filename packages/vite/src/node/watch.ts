@@ -4,7 +4,7 @@ import type { ResolvedConfig } from '.'
 
 export function resolveChokidarOptions(
   config: ResolvedConfig,
-  options: WatchOptions | undefined
+  options: WatchOptions | undefined,
 ): WatchOptions {
   const { ignored = [], ...otherOptions } = options ?? {}
 
@@ -14,11 +14,11 @@ export function resolveChokidarOptions(
       '**/node_modules/**',
       '**/test-results/**', // Playwright
       escapePath(config.cacheDir) + '/**',
-      ...(Array.isArray(ignored) ? ignored : [ignored])
+      ...(Array.isArray(ignored) ? ignored : [ignored]),
     ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
-    ...otherOptions
+    ...otherOptions,
   }
 
   return resolvedWatchOptions

@@ -16,57 +16,57 @@ describe.runIf(isBuild)('build', () => {
     const worker = files.find((f) => /^my-worker-\w+\.js$/.test(f))
     const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
-      'utf-8'
+      'utf-8',
     )
     const workerSourcemap = getSourceMapUrl(workerContent)
     const sharedWorker = files.find((f) => /^my-shared-worker-\w+\.js$/.test(f))
     const sharedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, sharedWorker),
-      'utf-8'
+      'utf-8',
     )
     const sharedWorkerSourcemap = getSourceMapUrl(sharedWorkerContent)
     const possibleTsOutputWorker = files.find((f) =>
-      /^possible-ts-output-worker-\w+\.js$/.test(f)
+      /^possible-ts-output-worker-\w+\.js$/.test(f),
     )
     const possibleTsOutputWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, possibleTsOutputWorker),
-      'utf-8'
+      'utf-8',
     )
     const possibleTsOutputWorkerSourcemap = getSourceMapUrl(
-      possibleTsOutputWorkerContent
+      possibleTsOutputWorkerContent,
     )
     const workerNestedWorker = files.find((f) =>
-      /^worker-nested-worker-\w+\.js$/.test(f)
+      /^worker-nested-worker-\w+\.js$/.test(f),
     )
     const workerNestedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, workerNestedWorker),
-      'utf-8'
+      'utf-8',
     )
     const workerNestedWorkerSourcemap = getSourceMapUrl(
-      workerNestedWorkerContent
+      workerNestedWorkerContent,
     )
     const subWorker = files.find((f) => /^sub-worker-\w+\.js$/.test(f))
     const subWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, subWorker),
-      'utf-8'
+      'utf-8',
     )
     const subWorkerSourcemap = getSourceMapUrl(subWorkerContent)
 
     expect(files).toContainEqual(expect.stringMatching(/^index-\w+\.js\.map$/))
     expect(files).toContainEqual(
-      expect.stringMatching(/^my-worker-\w+\.js\.map$/)
+      expect.stringMatching(/^my-worker-\w+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^my-shared-worker-\w+\.js\.map$/)
+      expect.stringMatching(/^my-shared-worker-\w+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^possible-ts-output-worker-\w+\.js\.map$/)
+      expect.stringMatching(/^possible-ts-output-worker-\w+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^worker-nested-worker-\w+\.js\.map$/)
+      expect.stringMatching(/^worker-nested-worker-\w+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^sub-worker-\w+\.js\.map$/)
+      expect.stringMatching(/^sub-worker-\w+\.js\.map$/),
     )
 
     // sourcemap should exist and have a data URL
@@ -74,10 +74,10 @@ describe.runIf(isBuild)('build', () => {
     expect(workerSourcemap).toMatch(/^my-worker-\w+\.js\.map$/)
     expect(sharedWorkerSourcemap).toMatch(/^my-shared-worker-\w+\.js\.map$/)
     expect(possibleTsOutputWorkerSourcemap).toMatch(
-      /^possible-ts-output-worker-\w+\.js\.map$/
+      /^possible-ts-output-worker-\w+\.js\.map$/,
     )
     expect(workerNestedWorkerSourcemap).toMatch(
-      /^worker-nested-worker-\w+\.js\.map$/
+      /^worker-nested-worker-\w+\.js\.map$/,
     )
     expect(subWorkerSourcemap).toMatch(/^sub-worker-\w+\.js\.map$/)
 
@@ -93,13 +93,13 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`new Worker("/iife-sourcemap/assets/my-worker`)
     expect(content).toMatch(`new Worker("data:application/javascript;base64`)
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap/assets/possible-ts-output-worker`
+      `new Worker("/iife-sourcemap/assets/possible-ts-output-worker`,
     )
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap/assets/worker-nested-worker`
+      `new Worker("/iife-sourcemap/assets/worker-nested-worker`,
     )
     expect(content).toMatch(
-      `new SharedWorker("/iife-sourcemap/assets/my-shared-worker`
+      `new SharedWorker("/iife-sourcemap/assets/my-shared-worker`,
     )
 
     // inlined
@@ -107,7 +107,7 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`window.Blob`)
 
     expect(workerNestedWorkerContent).toMatch(
-      `new Worker("/iife-sourcemap/assets/sub-worker`
+      `new Worker("/iife-sourcemap/assets/sub-worker`,
     )
   })
 })

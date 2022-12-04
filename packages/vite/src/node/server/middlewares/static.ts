@@ -15,7 +15,7 @@ import {
   isParentDirectory,
   isWindows,
   shouldServe,
-  slash
+  slash,
 } from '../../utils'
 
 const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
@@ -37,13 +37,13 @@ const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
           res.setHeader(name, headers[name]!)
         }
       }
-    }
+    },
   }
 }
 
 export function servePublicMiddleware(
   dir: string,
-  headers?: OutgoingHttpHeaders
+  headers?: OutgoingHttpHeaders,
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions(headers))
 
@@ -62,7 +62,7 @@ export function servePublicMiddleware(
 
 export function serveStaticMiddleware(
   dir: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions(server.config.server.headers))
 
@@ -122,7 +122,7 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv('/', sirvOptions(server.config.server.headers))
 
@@ -141,7 +141,7 @@ export function serveRawFsMiddleware(
           slash(path.resolve(fsPathFromId(pathname))),
           server,
           res,
-          next
+          next,
         )
       ) {
         return
@@ -161,7 +161,7 @@ export function serveRawFsMiddleware(
 
 export function isFileServingAllowed(
   url: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
@@ -181,7 +181,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction
+  next: Connect.NextFunction,
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true

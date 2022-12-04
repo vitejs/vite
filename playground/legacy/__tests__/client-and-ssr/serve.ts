@@ -14,8 +14,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     logLevel: 'silent',
     build: {
       target: 'esnext',
-      outDir: 'dist/client'
-    }
+      outDir: 'dist/client',
+    },
   })
 
   await build({
@@ -25,8 +25,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     build: {
       target: 'esnext',
       ssr: 'entry-server-sequential.js',
-      outDir: 'dist/server'
-    }
+      outDir: 'dist/server',
+    },
   })
 
   const { default: express } = await import('express')
@@ -49,7 +49,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
             await new Promise((resolve) => {
               server.close(resolve)
             })
-          }
+          },
         })
       })
     } catch (e) {

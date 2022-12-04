@@ -17,9 +17,9 @@ addEventListener('fetch', function (event) {
     `,
       {
         headers: {
-          'content-type': 'text/html'
-        }
-      }
-    )
+          'content-type': 'text/html',
+        },
+      },
+    ),
   )
 })

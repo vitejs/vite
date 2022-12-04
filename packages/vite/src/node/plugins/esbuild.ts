@@ -4,7 +4,7 @@ import type {
   Loader,
   Message,
   TransformOptions,
-  TransformResult
+  TransformResult,
 } from 'esbuild'
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -18,7 +18,7 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
-  toUpperCaseDriveLetter
+  toUpperCaseDriveLetter,
 } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
@@ -65,7 +65,7 @@ export async function transformWithEsbuild(
   code: string,
   filename: string,
   options?: TransformOptions,
-  inMap?: object
+  inMap?: object,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -97,7 +97,7 @@ export async function transformWithEsbuild(
       'jsxFragmentFactory',
       'useDefineForClassFields',
       'importsNotUsedAsValues',
-      'preserveValueImports'
+      'preserveValueImports',
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
@@ -116,8 +116,8 @@ export async function transformWithEsbuild(
       ...tsconfigRaw,
       compilerOptions: {
         ...compilerOptionsForFile,
-        ...tsconfigRaw?.compilerOptions
-      }
+        ...tsconfigRaw?.compilerOptions,
+      },
     }
   }
 
@@ -127,7 +127,7 @@ export async function transformWithEsbuild(
     sourcefile: filename,
     ...options,
     loader,
-    tsconfigRaw
+    tsconfigRaw,
   } as ESBuildOptions
 
   delete resolvedOptions.include
@@ -142,7 +142,7 @@ export async function transformWithEsbuild(
       nextMap.sourcesContent = []
       map = combineSourcemaps(filename, [
         nextMap as RawSourceMap,
-        inMap as RawSourceMap
+        inMap as RawSourceMap,
       ]) as SourceMap
     } else {
       map =
@@ -155,7 +155,7 @@ export async function transformWithEsbuild(
     }
     return {
       ...result,
-      map
+      map,
     }
   } catch (e: any) {
     debug(`esbuild error with options used: `, resolvedOptions)
@@ -174,7 +174,7 @@ export async function transformWithEsbuild(
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
     options.include || /\.(m?ts|[jt]sx)$/,
-    options.exclude || /\.js$/
+    options.exclude || /\.js$/,
   )
 
   // Remove optimization options for dev as we only need to transpile them,
@@ -191,7 +191,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     // keepNames is not needed when minify is disabled.
     // Also transforming multiple times with keepNames enabled breaks
     // tree-shaking. (#9164)
-    keepNames: false
+    keepNames: false,
   }
 
   return {
@@ -223,10 +223,10 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
         }
         return {
           code: result.code,
-          map: result.map
+          map: result.map,
         }
       }
-    }
+    },
   }
 }
 
@@ -245,7 +245,7 @@ const rollupToEsbuildFormatMap: Record<
   // that `{ treeShaking: true }` removes a top-level no-side-effect variable
   // like: `var Lib = 1`, which becomes `` after esbuild transforming,
   // but thankfully rollup does not do this optimization now
-  iife: undefined
+  iife: undefined,
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
@@ -283,18 +283,18 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         if (injectHelpers) {
           res.code = res.code.replace(
             injectHelpers,
-            (_, helpers, header) => header + helpers
+            (_, helpers, header) => header + helpers,
           )
         }
       }
       return res
-    }
+    },
   }
 }
 
 export function resolveEsbuildTranspileOptions(
   config: ResolvedConfig,
-  format: InternalModuleFormat
+  format: InternalModuleFormat,
 ): TransformOptions | null {
   const target = config.build.target
   const minify = config.build.minify === 'esbuild'
@@ -320,8 +320,8 @@ export function resolveEsbuildTranspileOptions(
     supported: {
       'dynamic-import': true,
       'import-meta': true,
-      ...esbuildOptions.supported
-    }
+      ...esbuildOptions.supported,
+    },
   }
 
   // If no minify, disable all minify options
@@ -332,7 +332,7 @@ export function resolveEsbuildTranspileOptions(
       minifyIdentifiers: false,
       minifySyntax: false,
       minifyWhitespace: false,
-      treeShaking: false
+      treeShaking: false,
     }
   }
 
@@ -350,7 +350,7 @@ export function resolveEsbuildTranspileOptions(
         minifyIdentifiers: options.minifyIdentifiers ?? true,
         minifySyntax: options.minifySyntax ?? true,
         minifyWhitespace: false,
-        treeShaking: true
+        treeShaking: true,
       }
     } else {
       return {
@@ -359,7 +359,7 @@ export function resolveEsbuildTranspileOptions(
         minifyIdentifiers: options.minifyIdentifiers ?? true,
         minifySyntax: options.minifySyntax ?? true,
         minifyWhitespace: options.minifyWhitespace ?? true,
-        treeShaking: true
+        treeShaking: true,
       }
     }
   }
@@ -373,13 +373,13 @@ export function resolveEsbuildTranspileOptions(
       minifyIdentifiers: true,
       minifySyntax: true,
       minifyWhitespace: false,
-      treeShaking: true
+      treeShaking: true,
     }
   } else {
     return {
       ...options,
       minify: true,
-      treeShaking: true
+      treeShaking: true,
     }
   }
 }
@@ -404,7 +404,7 @@ const tsconfckParseOptions: TSConfckParseOptions = {
   cache: new Map<string, TSConfckParseResult>(),
   tsConfigPaths: undefined,
   root: undefined,
-  resolveWithEmptyIfConfigNotFound: true
+  resolveWithEmptyIfConfigNotFound: true,
 }
 
 async function initTSConfck(config: ResolvedConfig) {
@@ -415,14 +415,14 @@ async function initTSConfck(config: ResolvedConfig) {
   tsconfckParseOptions.root = workspaceRoot
   tsconfckParseOptions.tsConfigPaths = new Set([
     ...(await findAll(workspaceRoot, {
-      skip: (dir) => dir === 'node_modules' || dir === '.git'
-    }))
+      skip: (dir) => dir === 'node_modules' || dir === '.git',
+    })),
   ])
   debug(`init tsconfck end`)
 }
 
 async function loadTsconfigJsonForFile(
-  filename: string
+  filename: string,
 ): Promise<TSConfigJSON> {
   try {
     const result = await parse(filename, tsconfckParseOptions)
@@ -452,7 +452,7 @@ function reloadOnTsconfigChange(changedFile: string) {
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-      { clear: server.config.clearScreen, timestamp: true }
+      { clear: server.config.clearScreen, timestamp: true },
     )
 
     // clear module graph to remove code compiled with outdated config
@@ -465,7 +465,7 @@ function reloadOnTsconfigChange(changedFile: string) {
         // force full reload
         server.ws.send({
           type: 'full-reload',
-          path: '*'
+          path: '*',
         })
       }
     })

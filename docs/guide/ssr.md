@@ -107,7 +107,7 @@ app.use('*', async (req, res, next) => {
     // 1. Read index.html
     let template = fs.readFileSync(
       path.resolve(__dirname, 'index.html'),
-      'utf-8'
+      'utf-8',
     )
 
     // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
@@ -237,7 +237,7 @@ export function mySSRPlugin() {
       if (options?.ssr) {
         // perform ssr-specific transform...
       }
-    }
+    },
   }
 }
 ```

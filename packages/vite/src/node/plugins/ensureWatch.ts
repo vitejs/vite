@@ -12,6 +12,6 @@ export function ensureWatchPlugin(): Plugin {
         this.addWatchFile(cleanUrl(id))
       }
       return null
-    }
+    },
   }
 }

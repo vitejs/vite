@@ -13,7 +13,7 @@ global.__vite_start_time = performance.now()
 // check debug mode first before requiring the CLI.
 const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))
 const filterIndex = process.argv.findIndex((arg) =>
-  /^(?:-f|--filter)$/.test(arg)
+  /^(?:-f|--filter)$/.test(arg),
 )
 const profileIndex = process.argv.indexOf('--profile')
 

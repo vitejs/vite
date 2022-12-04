@@ -8,14 +8,14 @@ module.exports = {
   publicDir: 'static',
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'nested')
-    }
+      '@': path.resolve(__dirname, 'nested'),
+    },
   },
   assetsInclude: ['**/*.unknown'],
   build: {
     outDir: 'dist/foo',
     assetsInlineLimit: 8192, // 8kb
     manifest: true,
-    watch: {}
-  }
+    watch: {},
+  },
 }

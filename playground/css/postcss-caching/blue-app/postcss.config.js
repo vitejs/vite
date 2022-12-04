@@ -1,5 +1,5 @@
 module.exports = {
-  plugins: [replacePinkWithBlue]
+  plugins: [replacePinkWithBlue],
 }
 
 function replacePinkWithBlue() {
@@ -9,7 +9,7 @@ function replacePinkWithBlue() {
       if (decl.value === 'pink') {
         decl.value = 'blue'
       }
-    }
+    },
   }
 }
 replacePinkWithBlue.postcss = true

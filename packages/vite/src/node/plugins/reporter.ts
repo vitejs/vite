@@ -10,7 +10,7 @@ import { LogLevels } from '../logger'
 const groups = [
   { name: 'Assets', color: colors.green },
   { name: 'CSS', color: colors.magenta },
-  { name: 'JS', color: colors.cyan }
+  { name: 'JS', color: colors.cyan },
 ]
 type LogEntry = {
   name: string
@@ -34,7 +34,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   let compressedCount = 0
 
   async function getCompressedSize(
-    code: string | Uint8Array
+    code: string | Uint8Array,
   ): Promise<number | null> {
     if (config.build.ssr || !config.build.reportCompressedSize) {
       return null
@@ -48,7 +48,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       hasCompressChunk = true
     }
     const compressed = await compress(
-      typeof code === 'string' ? code : Buffer.from(code)
+      typeof code === 'string' ? code : Buffer.from(code),
     )
     compressedCount++
     if (shouldLogInfo && tty) {
@@ -60,8 +60,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const logTransform = throttle((id: string) => {
     writeLine(
       `transforming (${transformedCount}) ${colors.dim(
-        path.relative(config.root, id)
-      )}`
+        path.relative(config.root, id),
+      )}`,
     )
   })
 
@@ -91,7 +91,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           process.stdout.cursorTo(0)
         }
         config.logger.info(
-          `${colors.green(`✓`)} ${transformedCount} modules transformed.`
+          `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
         )
       }
     },
@@ -134,7 +134,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     group: 'JS',
                     size: chunk.code.length,
                     compressedSize: await getCompressedSize(chunk.code),
-                    mapSize: chunk.map ? chunk.map.toString().length : null
+                    mapSize: chunk.map ? chunk.map.toString().length : null,
                   }
                 } else {
                   if (chunk.fileName.endsWith('.map')) return null
@@ -146,11 +146,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     mapSize: null, // Rollup doesn't support CSS maps?
                     compressedSize: isCSS
                       ? await getCompressedSize(chunk.source)
-                      : null
+                      : null,
                   }
                 }
-              }
-            )
+              },
+            ),
           )
         ).filter(isDefined)
         if (tty) clearLine()
@@ -180,8 +180,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         const relativeOutDir = normalizePath(
           path.relative(
             config.root,
-            path.resolve(config.root, outDir ?? config.build.outDir)
-          )
+            path.resolve(config.root, outDir ?? config.build.outDir),
+          ),
         )
         const assetsDir = `${config.build.assetsDir}/`
 
@@ -199,22 +199,22 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                 group.color(
                   entry.name
                     .slice(assetsDir.length)
-                    .padEnd(longest + 2 - assetsDir.length)
+                    .padEnd(longest + 2 - assetsDir.length),
                 )
               : group.color(entry.name.padEnd(longest + 2))
             log += colors.bold(
-              sizeColor(displaySize(entry.size).padStart(sizePad))
+              sizeColor(displaySize(entry.size).padStart(sizePad)),
             )
             if (entry.compressedSize) {
               log += colors.dim(
                 ` │ gzip: ${displaySize(entry.compressedSize).padStart(
-                  compressPad
-                )}`
+                  compressPad,
+                )}`,
               )
             }
             if (entry.mapSize) {
               log += colors.dim(
-                ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`
+                ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
               )
             }
             config.logger.info(log)
@@ -237,11 +237,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             `\n(!) Some chunks are larger than ${chunkLimit} kBs after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
-              `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`
-          )
+              `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,
+          ),
         )
       }
-    }
+    },
   }
 }
 
@@ -273,6 +273,6 @@ function throttle(fn: Function) {
 function displaySize(bytes: number) {
   return `${(bytes / 1000).toLocaleString('en', {
     maximumFractionDigits: 2,
-    minimumFractionDigits: 2
+    minimumFractionDigits: 2,
   })} kB`
 }

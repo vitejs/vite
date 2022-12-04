@@ -3,9 +3,9 @@
  */
 module.exports = {
   css: {
-    devSourcemap: true
+    devSourcemap: true,
   },
   build: {
-    sourcemap: true
-  }
+    sourcemap: true,
+  },
 }

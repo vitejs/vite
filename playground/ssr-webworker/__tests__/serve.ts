@@ -21,8 +21,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     build: {
       target: 'esnext',
       ssr: 'src/entry-worker.jsx',
-      outDir: 'dist/worker'
-    }
+      outDir: 'dist/worker',
+    },
   })
 
   const { createServer } = await import(path.resolve(rootDir, 'worker.js'))
@@ -37,7 +37,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
             await new Promise((resolve) => {
               server.close(resolve)
             })
-          }
+          },
         })
       })
     } catch (e) {

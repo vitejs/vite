@@ -5,7 +5,7 @@ const chunks = [
   'chunk-async-legacy',
   'immutable-chunk',
   'immutable-chunk-legacy',
-  'polyfills-legacy'
+  'polyfills-legacy',
 ]
 
 export function fn() {
@@ -13,6 +13,6 @@ export function fn() {
     chunks.map(async (name) => {
       const response = await fetch(`/assets/${name}.js`)
       return `${name}: ${response.status}`
-    })
+    }),
   )
 }

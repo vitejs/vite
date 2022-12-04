@@ -11,12 +11,12 @@ export default defineBuildConfig({
   rollup: {
     inlineDependencies: true,
     esbuild: {
-      minify: true
-    }
+      minify: true,
+    },
   },
   alias: {
     // we can always use non-transpiled code since we support 14.18.0+
-    prompts: 'prompts/lib/index.js'
+    prompts: 'prompts/lib/index.js',
   },
   hooks: {
     'rollup:options'(ctx, options) {
@@ -27,9 +27,9 @@ export default defineBuildConfig({
         licensePlugin(
           path.resolve(__dirname, './LICENSE'),
           'create-vite license',
-          'create-vite'
-        )
+          'create-vite',
+        ),
       )
-    }
-  }
+    },
+  },
 })

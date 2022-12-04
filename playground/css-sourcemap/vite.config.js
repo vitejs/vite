@@ -6,14 +6,14 @@ const MagicString = require('magic-string')
 module.exports = {
   resolve: {
     alias: {
-      '@': __dirname
-    }
+      '@': __dirname,
+    },
   },
   css: {
     devSourcemap: true,
     preprocessorOptions: {
       less: {
-        additionalData: '@color: red;'
+        additionalData: '@color: red;',
       },
       styl: {
         additionalData: (content, filename) => {
@@ -29,14 +29,14 @@ module.exports = {
 
           return {
             content: ms.toString(),
-            map
+            map,
           }
-        }
-      }
-    }
+        },
+      },
+    },
   },
   build: {
-    sourcemap: true
+    sourcemap: true,
   },
   plugins: [
     {
@@ -46,7 +46,7 @@ module.exports = {
           if (req.url === '/virtual.html') {
             const t = await server.transformIndexHtml(
               '/virtual.html',
-              '<style> .foo { color: red; } </style> <p class="foo">virtual html</p>'
+              '<style> .foo { color: red; } </style> <p class="foo">virtual html</p>',
             )
             res.setHeader('Content-Type', 'text/html')
             res.statusCode = 200
@@ -55,7 +55,7 @@ module.exports = {
           }
           next()
         })
-      }
-    }
-  ]
+      },
+    },
+  ],
 }

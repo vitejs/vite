@@ -35,8 +35,8 @@
   text(
     '.spread-object',
     JSON.stringify({
-      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {})
-    })
+      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {}),
+    }),
   )
   text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
   text('.dollar-identifier', $DOLLAR)
