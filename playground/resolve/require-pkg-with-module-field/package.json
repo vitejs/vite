@@ -1,5 +1,5 @@
 {
-  "name": "require-pkg-with-module-field",
+  "name": "@vitejs/test-require-pkg-with-module-field",
   "private": true,
   "version": "1.0.0",
   "main": "./index.cjs",

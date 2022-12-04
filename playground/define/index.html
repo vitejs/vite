@@ -56,7 +56,11 @@
     document.querySelector(el).textContent = text
   }
 
-  import { defined, importMetaEnvUndefined, processEnvUndefined } from 'dep'
+  import {
+    defined,
+    importMetaEnvUndefined,
+    processEnvUndefined,
+  } from '@vitejs/test-commonjs-dep'
   text('.define-in-dep', JSON.stringify(defined))
   text('.import-meta-env-undefined', importMetaEnvUndefined)
   text('.process-env-undefined', processEnvUndefined)

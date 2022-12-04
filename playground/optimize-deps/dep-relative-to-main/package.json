@@ -1,5 +1,5 @@
 {
-  "name": "dep-relative-to-main",
+  "name": "@vitejs/test-dep-relative-to-main",
   "private": true,
   "version": "1.0.0",
   "main": "lib/main.js"

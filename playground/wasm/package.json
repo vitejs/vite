@@ -1,5 +1,5 @@
 {
-  "name": "test-wasm",
+  "name": "@vitejs/test-wasm",
   "private": true,
   "version": "0.0.0",
   "scripts": {

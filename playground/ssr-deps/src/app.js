@@ -1,31 +1,33 @@
 import path from 'node:path'
-import readFileContent from 'read-file-content'
-import primitiveExport from 'primitive-export'
-import tsDefaultExport, { hello as tsNamedExport } from 'ts-transpiled-exports'
-import objectAssignedExports from 'object-assigned-exports'
-import forwardedExport from 'forwarded-export'
+import readFileContent from '@vitejs/test-read-file-content'
+import primitiveExport from '@vitejs/test-primitive-export'
+import tsDefaultExport, {
+  hello as tsNamedExport,
+} from '@vitejs/test-ts-transpiled-exports'
+import objectAssignedExports from '@vitejs/test-object-assigned-exports'
+import forwardedExport from '@vitejs/test-forwarded-export'
 import bcrypt from 'bcrypt'
-import definePropertiesExports from 'define-properties-exports'
-import definePropertyExports from 'define-property-exports'
-import onlyObjectAssignedExports from 'only-object-assigned-exports'
-import requireAbsolute from 'require-absolute'
-import noExternalCjs from 'no-external-cjs'
-import importBuiltinCjs from 'import-builtin-cjs'
-import { hello as linkedNoExternal } from 'linked-no-external'
-import virtualMessage from 'pkg-exports/virtual'
-import '@vitejs/css-lib'
+import definePropertiesExports from '@vitejs/test-define-properties-exports'
+import definePropertyExports from '@vitejs/test-define-property-exports'
+import onlyObjectAssignedExports from '@vitejs/test-only-object-assigned-exports'
+import requireAbsolute from '@vitejs/test-require-absolute'
+import noExternalCjs from '@vitejs/test-no-external-cjs'
+import importBuiltinCjs from '@vitejs/test-import-builtin-cjs'
+import { hello as linkedNoExternal } from '@vitejs/test-linked-no-external'
+import virtualMessage from '@vitejs/test-pkg-exports/virtual'
+import '@vitejs/test-css-lib'
 
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
-import 'non-optimized-with-nested-external'
+import '@vitejs/test-non-optimized-with-nested-external'
 
 // These two are optimized and get the message from nested-external, if the dependency is
 // not properly externalized and ends up bundled, the message will be undefined
-import optimizedWithNestedExternal from 'optimized-with-nested-external'
-import optimizedCjsWithNestedExternal from 'optimized-cjs-with-nested-external'
+import optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
+import optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
 
-import { setMessage } from 'external-entry/entry'
+import { setMessage } from '@vitejs/test-external-entry/entry'
 setMessage('Hello World!')
-import externalUsingExternalEntry from 'external-using-external-entry'
+import externalUsingExternalEntry from '@vitejs/test-external-using-external-entry'
 
 export async function render(url, rootDir) {
   let html = ''

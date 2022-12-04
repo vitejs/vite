@@ -1,5 +1,5 @@
 {
-  "name": "test-css-codesplit-cjs",
+  "name": "@vitejs/test-css-codesplit-cjs",
   "private": true,
   "version": "0.0.0",
   "scripts": {

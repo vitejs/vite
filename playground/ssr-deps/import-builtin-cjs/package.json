@@ -1,5 +1,5 @@
 {
-  "name": "import-builtin",
+  "name": "@vitejs/test-import-builtin",
   "private": true,
   "type": "commonjs",
   "version": "0.0.0"

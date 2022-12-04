@@ -1,5 +1,5 @@
 {
-  "name": "test-assets-sanitize",
+  "name": "@vitejs/test-assets-sanitize",
   "private": true,
   "version": "0.0.0",
   "scripts": {
