@@ -374,15 +374,15 @@ export function resolveBuildOptions(
         const pkgData = JSON.parse(pkg)
         const dependencies: string[] = Object.keys(pkgData.dependencies || {})
         const peerDependencies: string[] = Object.keys(
-          pkgData.peerDependencies || {}
+          pkgData.peerDependencies || {},
         )
         const optionalDependencies: string[] = Object.keys(
-          pkgData.optionalDependencies || {}
+          pkgData.optionalDependencies || {},
         )
         const allDependencies = [
           ...dependencies,
           ...peerDependencies,
-          ...optionalDependencies
+          ...optionalDependencies,
         ]
         if (allDependencies.length > 0) {
           resolved.rollupOptions.external = allDependencies
