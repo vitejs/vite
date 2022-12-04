@@ -12,7 +12,7 @@ const getConfig = (base: string): InlineConfig => ({
   base,
   root: rootDir,
   logLevel: 'silent',
-  preview: { port: ports['css/dynamic-import'] },
+  server: { port: ports['css/dynamic-import'] },
   build: { assetsInlineLimit: 0 },
 })
 
@@ -98,7 +98,6 @@ baseOptions.forEach(({ base, label }) => {
         ])
       })
     },
-    { retry: 3 },
   )
 
   test.runIf(isServe)(
@@ -118,6 +117,5 @@ baseOptions.forEach(({ base, label }) => {
         ])
       })
     },
-    { retry: 3 },
   )
 })
