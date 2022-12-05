@@ -50,7 +50,7 @@
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^17.0.42",
+    "@types/node": "^18.11.10",
     "@types/picomatch": "^2.3.0",
     "@types/prompts": "^2.4.1",
     "@types/resolve": "^1.20.2",

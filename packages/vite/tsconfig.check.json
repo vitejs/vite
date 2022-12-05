@@ -1,37 +1,12 @@
 {
   "compilerOptions": {
     "noEmit": true,
-    "moduleResolution": "classic",
-    "noResolve": true,
-    "typeRoots": [],
-    // Only add entries to `paths` when you are adding/updating dependencies (not devDependencies)
-    // See CONTRIBUTING.md "Ensure type support" for more details
-    "paths": {
-      // direct
-      "rollup": ["./node_modules/rollup/dist/rollup.d.ts"],
-      // direct
-      "esbuild": ["./node_modules/esbuild/lib/main.d.ts"],
-      // direct
-      "postcss": ["./node_modules/postcss/lib/postcss.d.ts"],
-      // indirect: postcss depends on it
-      "source-map-js": ["./node_modules/source-map-js/source-map.d.ts"]
-    },
     "strict": true,
     "exactOptionalPropertyTypes": true
   },
   "include": [
-    "../../node_modules/@types/node/**/*",
-    // dependencies
-    "./node_modules/rollup/**/*",
-    "./node_modules/esbuild/**/*",
-    "./node_modules/postcss/**/*",
-    "./node_modules/source-map-js/**/*",
     // dist
     "dist/**/*",
-    "types/customEvent.d.ts",
-    "types/hmrPayload.d.ts",
-    "types/importGlob.d.ts",
-    "types/importMeta.d.ts",
-    "types/hot.d.ts"
+    "types/**/*"
   ]
 }
