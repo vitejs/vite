@@ -15,9 +15,9 @@ export function metadataPlugin(): Plugin {
     async renderChunk(_code, chunk) {
       chunk.viteMetadata = {
         importedAssets: new Set(),
-        importedCss: new Set()
+        importedCss: new Set(),
       }
       return null
-    }
+    },
   }
 }

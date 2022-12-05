@@ -31,7 +31,7 @@ document
   .classList.add(...composesPathResolvingMod['path-resolving-less'].split(' '))
 text(
   '.path-resolved-modules-code',
-  JSON.stringify(composesPathResolvingMod, null, 2)
+  JSON.stringify(composesPathResolvingMod, null, 2),
 )
 
 import inlineMod from './inline.module.css?inline'
@@ -46,7 +46,7 @@ import './dep.css'
 import './glob-dep.css'
 
 // eslint-disable-next-line import/order
-import { barModuleClasses } from 'css-js-dep'
+import { barModuleClasses } from '@vitejs/test-css-js-dep'
 document
   .querySelector('.css-js-dep-module')
   .classList.add(barModuleClasses.cssJsDepModule)
@@ -85,7 +85,7 @@ text('.inlined-code', inlined)
 // glob
 const glob = import.meta.glob('./glob-import/*.css', { query: '?inline' })
 Promise.all(
-  Object.keys(glob).map((key) => glob[key]().then((i) => i.default))
+  Object.keys(glob).map((key) => glob[key]().then((i) => i.default)),
 ).then((res) => {
   text('.imported-css-glob', JSON.stringify(res, null, 2))
 })
@@ -93,7 +93,7 @@ Promise.all(
 // globEager
 const globEager = import.meta.glob('./glob-import/*.css', {
   eager: true,
-  query: '?inline'
+  query: '?inline',
 })
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 

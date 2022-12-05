@@ -1,5 +1,5 @@
 {
-  "name": "test-define",
+  "name": "@vitejs/test-define",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "dep": "file:./commonjs-dep"
+    "@vitejs/test-commonjs-dep": "file:./commonjs-dep"
   }
 }

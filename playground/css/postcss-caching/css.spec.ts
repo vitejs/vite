@@ -11,12 +11,12 @@ test('postcss config', async () => {
       logLevel: 'silent',
       server: {
         port,
-        strictPort: true
+        strictPort: true,
       },
       build: {
         // skip transpilation during tests to make it faster
-        target: 'esnext'
-      }
+        target: 'esnext',
+      },
     })
     await server.listen()
     return server

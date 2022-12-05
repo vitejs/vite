@@ -43,7 +43,7 @@ export namespace HttpProxy {
     err: Error,
     req: http.IncomingMessage,
     res: http.ServerResponse,
-    target?: ProxyTargetUrl
+    target?: ProxyTargetUrl,
   ) => void
 
   export class Server extends events.EventEmitter {
@@ -63,7 +63,7 @@ export namespace HttpProxy {
       req: http.IncomingMessage,
       res: http.ServerResponse,
       options?: ServerOptions,
-      callback?: ErrorCallback
+      callback?: ErrorCallback,
     ): void
 
     /**
@@ -78,7 +78,7 @@ export namespace HttpProxy {
       socket: unknown,
       head: unknown,
       options?: ServerOptions,
-      callback?: ErrorCallback
+      callback?: ErrorCallback,
     ): void
 
     /**
@@ -121,8 +121,8 @@ export namespace HttpProxy {
       listener: (
         req: http.IncomingMessage,
         res: http.ServerResponse,
-        target: ProxyTargetUrl
-      ) => void
+        target: ProxyTargetUrl,
+      ) => void,
     ): this
     on(
       event: 'proxyReq',
@@ -130,16 +130,16 @@ export namespace HttpProxy {
         proxyReq: http.ClientRequest,
         req: http.IncomingMessage,
         res: http.ServerResponse,
-        options: ServerOptions
-      ) => void
+        options: ServerOptions,
+      ) => void,
     ): this
     on(
       event: 'proxyRes',
       listener: (
         proxyRes: http.IncomingMessage,
         req: http.IncomingMessage,
-        res: http.ServerResponse
-      ) => void
+        res: http.ServerResponse,
+      ) => void,
     ): this
     on(
       event: 'proxyReqWs',
@@ -148,8 +148,8 @@ export namespace HttpProxy {
         req: http.IncomingMessage,
         socket: net.Socket,
         options: ServerOptions,
-        head: any
-      ) => void
+        head: any,
+      ) => void,
     ): this
     on(
       event: 'econnreset',
@@ -157,24 +157,24 @@ export namespace HttpProxy {
         err: Error,
         req: http.IncomingMessage,
         res: http.ServerResponse,
-        target: ProxyTargetUrl
-      ) => void
+        target: ProxyTargetUrl,
+      ) => void,
     ): this
     on(
       event: 'end',
       listener: (
         req: http.IncomingMessage,
         res: http.ServerResponse,
-        proxyRes: http.IncomingMessage
-      ) => void
+        proxyRes: http.IncomingMessage,
+      ) => void,
     ): this
     on(
       event: 'close',
       listener: (
         proxyRes: http.IncomingMessage,
         proxySocket: net.Socket,
-        proxyHead: any
-      ) => void
+        proxyHead: any,
+      ) => void,
     ): this
 
     once(event: string, listener: () => void): this

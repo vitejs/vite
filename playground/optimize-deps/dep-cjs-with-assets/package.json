@@ -1,5 +1,5 @@
 {
-  "name": "dep-cjs-with-assets",
+  "name": "@vitejs/test-dep-cjs-with-assets",
   "private": true,
   "version": "0.0.0",
   "main": "index.js"

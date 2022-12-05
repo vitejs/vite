@@ -1,5 +1,5 @@
 {
-  "name": "dep-to-optimize",
+  "name": "@vitejs/test-dep-to-optimize",
   "private": true,
   "version": "1.0.0",
   "type": "module",

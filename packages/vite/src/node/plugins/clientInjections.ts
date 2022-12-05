@@ -67,10 +67,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         return code.replace(
           /\bprocess\.env\.NODE_ENV\b/g,
           config.define?.['process.env.NODE_ENV'] ||
-            JSON.stringify(process.env.NODE_ENV || config.mode)
+            JSON.stringify(process.env.NODE_ENV || config.mode),
         )
       }
-    }
+    },
   }
 }
 

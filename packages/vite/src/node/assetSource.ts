@@ -20,7 +20,7 @@ interface AssetAttribute {
 }
 
 export function getNodeAssetAttributes(
-  node: DefaultTreeAdapterMap['element']
+  node: DefaultTreeAdapterMap['element'],
 ): AssetAttribute[] {
   const assetAttrs: AssetAttribute[] = []
 
@@ -44,13 +44,13 @@ export function getNodeAssetAttributes(
           assetSource.filter({
             attribute: attrNames[i],
             value: attr.value,
-            attributes
+            attributes,
           }))
       ) {
         assetAttrs.push({
           attribute: attr,
           type: assetSource.type,
-          location: node.sourceCodeLocation!.attrs![attrNames[i]]
+          location: node.sourceCodeLocation!.attrs![attrNames[i]],
         })
       }
     }
@@ -73,7 +73,7 @@ const ALLOWED_REL = [
   'apple-touch-startup-image',
   'manifest',
   'prefetch',
-  'preload'
+  'preload',
 ]
 
 const ALLOWED_ITEMPROP = [
@@ -86,7 +86,7 @@ const ALLOWED_ITEMPROP = [
   'duringmedia',
   'embedurl',
   'installurl',
-  'layoutimage'
+  'layoutimage',
 ]
 
 const ALLOWED_META_NAME = [
@@ -96,7 +96,7 @@ const ALLOWED_META_NAME = [
   'msapplication-wide310x150logo',
   'msapplication-square310x310logo',
   'msapplication-config',
-  'twitter:image'
+  'twitter:image',
 ]
 
 const ALLOWED_META_PROPERTY = [
@@ -107,69 +107,69 @@ const ALLOWED_META_PROPERTY = [
   'og:audio:secure_url',
   'og:video',
   'og:video:secure_url',
-  'vk:image'
+  'vk:image',
 ]
 
 const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
   {
     tag: 'audio',
     type: 'src',
-    attributes: ['src']
+    attributes: ['src'],
   },
   {
     tag: 'embed',
     type: 'src',
-    attributes: ['src']
+    attributes: ['src'],
   },
   {
     tag: 'img',
     type: 'src',
-    attributes: ['src']
+    attributes: ['src'],
   },
   {
     tag: 'img',
     type: 'srcset',
-    attributes: ['srcset']
+    attributes: ['srcset'],
   },
   {
     tag: 'input',
     type: 'src',
-    attributes: ['src']
+    attributes: ['src'],
   },
   {
     tag: 'object',
     type: 'src',
-    attributes: ['data']
+    attributes: ['data'],
   },
   {
     tag: 'source',
     type: 'src',
-    attributes: ['src']
+    attributes: ['src'],
   },
   {
     tag: 'source',
     type: 'srcset',
-    attributes: ['srcset']
+    attributes: ['srcset'],
   },
   {
     tag: 'track',
     type: 'src',
-    attributes: ['src']
+    attributes: ['src'],
   },
   {
     tag: 'video',
     type: 'src',
-    attributes: ['poster', 'src']
+    attributes: ['poster', 'src'],
   },
   {
     tag: 'image',
     type: 'src',
-    attributes: ['href', 'xlink:href']
+    attributes: ['href', 'xlink:href'],
   },
   {
     tag: 'use',
     type: 'src',
-    attributes: ['href', 'xlink:href']
+    attributes: ['href', 'xlink:href'],
   },
   {
     tag: 'link',
@@ -188,7 +188,7 @@ const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
       }
 
       return false
-    }
+    },
   },
   {
     tag: 'link',
@@ -200,7 +200,7 @@ const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
       }
 
       return false
-    }
+    },
   },
   {
     tag: 'meta',
@@ -226,6 +226,6 @@ const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
       }
 
       return false
-    }
-  }
+    },
+  },
 ]

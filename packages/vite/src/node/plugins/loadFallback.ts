@@ -15,6 +15,6 @@ export function loadFallbackPlugin(): Plugin {
       } catch (e) {
         return fs.readFile(id, 'utf-8')
       }
-    }
+    },
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "test-cli",
+  "name": "@vitejs/test-cli",
   "private": true,
   "version": "0.0.0",
   "scripts": {

@@ -1,4 +1,4 @@
-import requireExternalCjs from '@vitejs/require-external-cjs'
+import requireExternalCjs from '@vitejs/test-require-external-cjs'
 
 export async function render(url) {
   let html = ''

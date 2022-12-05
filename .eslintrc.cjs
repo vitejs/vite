@@ -8,13 +8,13 @@ module.exports = defineConfig({
     'eslint:recommended',
     'plugin:node/recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:regexp/recommended'
+    'plugin:regexp/recommended',
   ],
   plugins: ['import', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 2021
+    ecmaVersion: 2021,
   },
   rules: {
     eqeqeq: ['warn', 'always', { null: 'never' }],
@@ -25,36 +25,36 @@ module.exports = defineConfig({
     'prefer-const': [
       'warn',
       {
-        destructuring: 'all'
-      }
+        destructuring: 'all',
+      },
     ],
 
     'node/no-missing-import': [
       'error',
       {
         allowModules: ['types', 'estree', 'less', 'sass', 'stylus'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
-      }
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
     ],
     'node/no-missing-require': [
       'error',
       {
         // for try-catching yarn pnp
         allowModules: ['pnpapi', 'vite'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
-      }
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
     ],
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass', 'vitest']
-      }
+        allowModules: ['vite', 'less', 'sass', 'vitest'],
+      },
     ],
     'node/no-extraneous-require': [
       'error',
       {
-        allowModules: ['vite']
-      }
+        allowModules: ['vite'],
+      },
     ],
     'node/no-deprecated-api': 'off',
     'node/no-unpublished-import': 'off',
@@ -65,11 +65,11 @@ module.exports = defineConfig({
     '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
     '@typescript-eslint/explicit-module-boundary-types': [
       'error',
-      { allowArgumentsExplicitlyTypedAsAny: true }
+      { allowArgumentsExplicitlyTypedAsAny: true },
     ],
     '@typescript-eslint/no-empty-function': [
       'error',
-      { allow: ['arrowFunctions'] }
+      { allow: ['arrowFunctions'] },
     ],
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
@@ -80,12 +80,12 @@ module.exports = defineConfig({
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/consistent-type-imports': [
       'error',
-      { prefer: 'type-imports' }
+      { prefer: 'type-imports' },
     ],
 
     'import/no-nodejs-modules': [
       'error',
-      { allow: builtinModules.map((mod) => `node:${mod}`) }
+      { allow: builtinModules.map((mod) => `node:${mod}`) },
     ],
     'import/no-duplicates': 'error',
     'import/order': 'error',
@@ -96,19 +96,24 @@ module.exports = defineConfig({
         ignoreDeclarationSort: true,
         ignoreMemberSort: false,
         memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-        allowSeparatedGroups: false
-      }
+        allowSeparatedGroups: false,
+      },
     ],
 
-    'regexp/no-contradiction-with-assertion': 'error'
+    'regexp/no-contradiction-with-assertion': 'error',
   },
   overrides: [
     {
       files: ['packages/**'],
       excludedFiles: '**/__tests__/**',
       rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
-      }
+        'no-restricted-globals': [
+          'error',
+          'require',
+          '__dirname',
+          '__filename',
+        ],
+      },
     },
     {
       files: 'packages/vite/**/*.*',
@@ -116,36 +121,36 @@ module.exports = defineConfig({
         'node/no-restricted-require': [
           'error',
           Object.keys(
-            require('./packages/vite/package.json').devDependencies
+            require('./packages/vite/package.json').devDependencies,
           ).map((d) => ({
             name: d,
             message:
               `devDependencies can only be imported using ESM syntax so ` +
               `that they are included in the rollup bundle. If you are trying to ` +
-              `lazy load a dependency, use (await import('dependency')).default instead.`
-          }))
-        ]
-      }
+              `lazy load a dependency, use (await import('dependency')).default instead.`,
+          })),
+        ],
+      },
     },
     {
       files: ['packages/vite/src/node/**'],
       rules: {
-        'no-console': ['error']
-      }
+        'no-console': ['error'],
+      },
     },
     {
       files: ['packages/vite/src/types/**', '*.spec.ts'],
       rules: {
-        'node/no-extraneous-import': 'off'
-      }
+        'node/no-extraneous-import': 'off',
+      },
     },
     {
       files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
       rules: {
         'no-undef': 'off',
         'node/no-missing-import': 'off',
-        '@typescript-eslint/explicit-module-boundary-types': 'off'
-      }
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+      },
     },
     {
       files: ['playground/**'],
@@ -158,17 +163,17 @@ module.exports = defineConfig({
         'node/no-unsupported-features/es-builtins': [
           'error',
           {
-            version: '^14.18.0 || >=16.0.0'
-          }
+            version: '^14.18.0 || >=16.0.0',
+          },
         ],
         'node/no-unsupported-features/node-builtins': [
           'error',
           {
-            version: '^14.18.0 || >=16.0.0'
-          }
+            version: '^14.18.0 || >=16.0.0',
+          },
         ],
-        '@typescript-eslint/explicit-module-boundary-types': 'off'
-      }
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+      },
     },
     {
       files: ['playground/**'],
@@ -177,21 +182,21 @@ module.exports = defineConfig({
         'no-undef': 'off',
         'no-empty': 'off',
         'no-constant-condition': 'off',
-        '@typescript-eslint/no-empty-function': 'off'
-      }
+        '@typescript-eslint/no-empty-function': 'off',
+      },
     },
     {
       files: ['*.js', '*.mjs', '*.cjs'],
       rules: {
-        '@typescript-eslint/explicit-module-boundary-types': 'off'
-      }
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+      },
     },
     {
       files: ['*.d.ts'],
       rules: {
-        '@typescript-eslint/triple-slash-reference': 'off'
-      }
-    }
+        '@typescript-eslint/triple-slash-reference': 'off',
+      },
+    },
   ],
-  reportUnusedDisableDirectives: true
+  reportUnusedDisableDirectives: true,
 })
