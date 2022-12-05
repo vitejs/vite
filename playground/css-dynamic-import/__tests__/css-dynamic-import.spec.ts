@@ -33,12 +33,12 @@ async function withServe(base: string, fn: () => Promise<void>) {
   const config = getConfig(base)
   const server = await createServer(config)
   await server.listen()
-  await new Promise((r) => setTimeout(r, 500))
 
   try {
     await page.goto(server.resolvedUrls.local[0])
     await fn()
   } finally {
+    await page.goto('about:blank') // move to a different page to avoid auto-refresh after server start
     await server.close()
   }
 }

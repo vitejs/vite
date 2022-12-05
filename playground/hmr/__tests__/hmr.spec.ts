@@ -1,10 +1,12 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
 import {
+  addFile,
   browserLogs,
   editFile,
   getBg,
   isBuild,
   page,
+  removeFile,
   untilBrowserLogAfter,
   untilUpdated,
   viteTestUrl,
@@ -712,5 +714,64 @@ if (!isBuild) {
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await navigationPromise
     }, /500/)
+  })
+
+  test('should hmr when file is deleted and restored', async () => {
+    await page.goto(viteTestUrl)
+
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
+
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child',
+    )
+
+    editFile(childFile, (code) =>
+      code.replace("value = 'child'", "value = 'child1'"),
+    )
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child1',
+    )
+
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export { value as childValue } from './child'",
+        "export const childValue = 'not-child'",
+      ),
+    )
+    removeFile(childFile)
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:not-child',
+    )
+
+    addFile(
+      childFile,
+      `
+import { rerender } from './runtime'
+
+export const value = 'child'
+
+if (import.meta.hot) {
+  import.meta.hot.accept((newMod) => {
+    if (!newMod) return
+
+    rerender({ child: newMod.value })
+  })
+}
+`,
+    )
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export const childValue = 'not-child'",
+        "export { value as childValue } from './child'",
+      ),
+    )
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child',
+    )
   })
 }
