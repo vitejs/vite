@@ -35,8 +35,12 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
     case 'local':
       return [
         {
-          text: 'Vite 3 Docs (release)',
+          text: 'Vite 4 Docs (release)',
           link: 'https://vitejs.dev',
+        },
+        {
+          text: 'Vite 3 Docs',
+          link: 'https://v3.vitejs.dev',
         },
         {
           text: 'Vite 2 Docs',
@@ -45,6 +49,10 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
       ]
     case 'release':
       return [
+        {
+          text: 'Vite 3 Docs',
+          link: 'https://v3.vitejs.dev',
+        },
         {
           text: 'Vite 2 Docs',
           link: 'https://v2.vitejs.dev',
