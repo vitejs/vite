@@ -222,7 +222,7 @@ Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it sh
 
 To get around this, we inline some of these dependencies' types in `packages/vite/src/types`. This way, we can still expose the typing but bundle the dependency's source code.
 
-Use `pnpm run check-dist-types` to check that the bundled types do not rely on types in `devDependencies`. If you are adding `dependencies`, make sure to configure `tsconfig.check.json`.
+Use `pnpm run build-types-check` to check that the bundled types do not rely on types in `devDependencies`.
 
 For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal). Dependency types within this directory (e.g. `packages/vite/types/chokidar.d.ts`) are deprecated and should be added to `packages/vite/src/types` instead.
 
