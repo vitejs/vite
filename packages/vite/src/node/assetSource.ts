@@ -42,7 +42,7 @@ export function getNodeAssetAttributes(
         assetSource.attributes.includes(attrNames[i]) &&
         (!assetSource.filter ||
           assetSource.filter({
-            attribute: attr.name,
+            attribute: attrNames[i],
             value: attr.value,
             attributes
           }))
