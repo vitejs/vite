@@ -13,6 +13,7 @@ import type {
   TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
+import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
@@ -154,15 +155,9 @@ export async function parseImportGlob(
       }
     }
 
-    if (ast.type === 'SequenceExpression')
-      ast = ast.expressions[0] as CallExpression
-
-    // immediate property access, call expression is nested
-    // import.meta.glob(...)['prop']
-    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
-
-    if (ast.type !== 'CallExpression')
-      throw err(`Expect CallExpression, got ${ast.type}`)
+    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
+    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
+    ast = found.node as unknown as CallExpression
 
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
@@ -438,9 +433,15 @@ export async function transformGlobImport(
 
           files.forEach((i) => matchedFiles.add(i))
 
+          const originalLineBreakCount =
+            code.slice(start, end).match(/\n/g)?.length ?? 0
+          const lineBreaks =
+            originalLineBreakCount > 0
+              ? '\n'.repeat(originalLineBreakCount)
+              : ''
           const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
             ','
-          )}})`
+          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports

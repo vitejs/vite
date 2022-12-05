@@ -79,6 +79,7 @@
     "@rollup/plugin-typescript": "^8.5.0",
     "@rollup/pluginutils": "^4.2.1",
     "acorn": "^8.8.1",
+    "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",

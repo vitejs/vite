@@ -22,6 +22,24 @@ describe('fixture', async () => {
     ).toMatchSnapshot()
   })
 
+  it('preserve line count', async () => {
+    const getTransformedLineCount = async (code: string) =>
+      (await transformGlobImport(code, 'virtual:module', root, resolveId))?.s
+        .toString()
+        .split('\n').length
+
+    expect(await getTransformedLineCount("import.meta.glob('./*.js')")).toBe(1)
+    expect(
+      await getTransformedLineCount(
+        `
+          import.meta.glob(
+            './*.js'
+          )
+        `.trim()
+      )
+    ).toBe(3)
+  })
+
   it('virtual modules', async () => {
     const root = resolve(__dirname, './fixture-a')
     const code = [

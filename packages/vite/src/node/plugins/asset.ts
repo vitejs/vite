@@ -75,6 +75,7 @@ export function renderAssetUrlInJS(
 
   // In both cases, the wrapping should already be fine
 
+  assetUrlRE.lastIndex = 0
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
     const [full, hash, postfix = ''] = match
@@ -101,6 +102,7 @@ export function renderAssetUrlInJS(
   // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
 
   const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+  publicAssetUrlRE.lastIndex = 0
   while ((match = publicAssetUrlRE.exec(code))) {
     s ||= new MagicString(code)
     const [full, hash] = match
