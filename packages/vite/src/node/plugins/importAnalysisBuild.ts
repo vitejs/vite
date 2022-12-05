@@ -68,7 +68,11 @@ function preload(
 ) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
-    return baseModule()
+    return baseModule().then((m: any) =>
+      m.default && m.default.__esModule
+        ? m.default
+        : { ...m.default, default: m.default },
+    )
   }
 
   const links = document.getElementsByTagName('link')
