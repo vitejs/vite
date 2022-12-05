@@ -1,3 +1,18 @@
+## 4.0.0-beta.0 (2022-12-05)
+
+* chore: enable prettier trailing commas (#11167) ([134ce68](https://github.com/vitejs/vite/commit/134ce68)), closes [#11167](https://github.com/vitejs/vite/issues/11167)
+* chore: update @types/node to v18 (#11195) ([4ec9f53](https://github.com/vitejs/vite/commit/4ec9f53)), closes [#11195](https://github.com/vitejs/vite/issues/11195)
+* chore(deps): update all non-major dependencies (#11182) ([8b83089](https://github.com/vitejs/vite/commit/8b83089)), closes [#11182](https://github.com/vitejs/vite/issues/11182)
+* chore(deps): update to rollup 3.5 (#11165) ([859fe05](https://github.com/vitejs/vite/commit/859fe05)), closes [#11165](https://github.com/vitejs/vite/issues/11165)
+* fix: add type for function localsConvention value (#11152) ([c9274b4](https://github.com/vitejs/vite/commit/c9274b4)), closes [#11152](https://github.com/vitejs/vite/issues/11152)
+* fix: cacheDir should be ignored from watch (#10242) ([75dbca2](https://github.com/vitejs/vite/commit/75dbca2)), closes [#10242](https://github.com/vitejs/vite/issues/10242)
+* fix: don't check .yarn/patches for computing dependencies hash (#11168) ([65bcccf](https://github.com/vitejs/vite/commit/65bcccf)), closes [#11168](https://github.com/vitejs/vite/issues/11168)
+* fix: formatError() outside rollup context (#11156) ([2aee2eb](https://github.com/vitejs/vite/commit/2aee2eb)), closes [#11156](https://github.com/vitejs/vite/issues/11156)
+* fix: Revert "fix: missing js sourcemaps with rewritten imports broke debugging (#7767) (#9476)" (#11 ([fdc6f3a](https://github.com/vitejs/vite/commit/fdc6f3a)), closes [#7767](https://github.com/vitejs/vite/issues/7767) [#9476](https://github.com/vitejs/vite/issues/9476) [#11144](https://github.com/vitejs/vite/issues/11144)
+* chore(client)!: remove never implemented hot.decline (#11036) ([e257e3b](https://github.com/vitejs/vite/commit/e257e3b)), closes [#11036](https://github.com/vitejs/vite/issues/11036)
+
+
+
 ## 4.0.0-alpha.6 (2022-11-30)
 
 * fix: Dev SSR dep optimization + respect optimizeDeps.include (#11123) ([515caa5](https://github.com/vitejs/vite/commit/515caa5)), closes [#11123](https://github.com/vitejs/vite/issues/11123)
