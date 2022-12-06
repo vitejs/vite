@@ -1,3 +1,17 @@
+## 4.0.0-beta.1 (2022-12-06)
+
+* fix: serialize bundleWorkerEntry (#11218) ([306bed0](https://github.com/vitejs/vite/commit/306bed0)), closes [#11218](https://github.com/vitejs/vite/issues/11218)
+* fix(config): resolve dynamic import as esm (#11220) ([f8c1ed0](https://github.com/vitejs/vite/commit/f8c1ed0)), closes [#11220](https://github.com/vitejs/vite/issues/11220)
+* fix(env): prevent env expand on process.env (#11213) ([d4a1e2b](https://github.com/vitejs/vite/commit/d4a1e2b)), closes [#11213](https://github.com/vitejs/vite/issues/11213)
+* docs: fix grammar in changelog (#11224) ([f1b891f](https://github.com/vitejs/vite/commit/f1b891f)), closes [#11224](https://github.com/vitejs/vite/issues/11224)
+* chore: fix test run in dev (#11214) ([c747a3f](https://github.com/vitejs/vite/commit/c747a3f)), closes [#11214](https://github.com/vitejs/vite/issues/11214)
+* chore: improve v4 beta release notes (#11215) ([f24679c](https://github.com/vitejs/vite/commit/f24679c)), closes [#11215](https://github.com/vitejs/vite/issues/11215)
+* chore: unpin rollup (#11204) ([014e4aa](https://github.com/vitejs/vite/commit/014e4aa)), closes [#11204](https://github.com/vitejs/vite/issues/11204)
+* chore: vite 4 beta changelog cleanup and release notes (#11200) ([cf6c175](https://github.com/vitejs/vite/commit/cf6c175)), closes [#11200](https://github.com/vitejs/vite/issues/11200)
+* feat: improve the error message of `expand` (#11141) ([825c793](https://github.com/vitejs/vite/commit/825c793)), closes [#11141](https://github.com/vitejs/vite/issues/11141)
+
+
+
 ## 4.0.0-beta.0 (2022-12-05)
 
 ### Main Changes
