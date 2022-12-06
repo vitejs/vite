@@ -5,6 +5,11 @@ overrides:
 
 packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
+patchedDependencies:
+  dotenv-expand@9.0.0:
+    hash: 6vdpvodnfhahap67xag6diqqtu
+    path: patches/dotenv-expand@9.0.0.patch
+
 importers:
 
   .:
@@ -248,7 +253,7 @@ importers:
       debug: 4.3.4
       dep-types: link:src/types
       dotenv: 16.0.3
-      dotenv-expand: 9.0.0
+      dotenv-expand: 9.0.0_6vdpvodnfhahap67xag6diqqtu
       es-module-lexer: 1.1.0
       estree-walker: 3.0.1
       etag: 1.8.1
@@ -3479,10 +3484,11 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand/9.0.0:
+  /dotenv-expand/9.0.0_6vdpvodnfhahap67xag6diqqtu:
     resolution: {integrity: sha512-uW8Hrhp5ammm9x7kBLR6jDfujgaDarNA02tprvZdyrJ7MpdzD1KyrIHG4l+YoC2fJ2UcdFdNWNWIjt+sexBHJw==}
     engines: {node: '>=12'}
     dev: true
+    patched: true
 
   /dotenv/16.0.3:
     resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
@@ -4705,6 +4711,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5086,7 +5105,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
