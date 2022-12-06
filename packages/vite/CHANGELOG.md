@@ -36,7 +36,7 @@ In Vite 3, importing the default export of a `.css` file could introduce a doubl
 import cssString from './global.css';
 ```
 
-Since `.css` file will be emitted, but it's likely that the CSS string will also be used by the application code, for example, injected by the framework runtime. From Vite 4, the `.css` default export [has been deprecated](https://github.com/vitejs/vite/issues/11094). The `?inline` query suffix modifier needs to be used in this case, as that doesn't emit the imported `.css` styles.
+This double loading could occur since a `.css` file will be emitted and it's likely that the CSS string will also be used by the application code — for example, injected by the framework runtime. From Vite 4, the `.css` default export [has been deprecated](https://github.com/vitejs/vite/issues/11094). The `?inline` query suffix modifier needs to be used in this case, as that doesn't emit the imported `.css` styles.
 
 ```ts
 import stuff from './global.css?inline'
