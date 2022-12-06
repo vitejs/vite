@@ -108,9 +108,7 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     key: 'm',
     description: 'toggle hmr on/off',
     action({ config }: ViteDevServer): void {
-      if (initialHmrOptions === undefined) {
-        initialHmrOptions = config.server.hmr ?? true
-      }
+      initialHmrOptions ??= config.server.hmr ?? true
       /**
        * Mutating the server config works because Vite reads from
        * it on every file change, instead of caching its value.
