@@ -35,19 +35,9 @@ export function loadEnv(
     }),
   )
 
-  const expandOptions = {
-    parsed: {
-      ...(process.env as any),
-      ...parsed,
-    },
-    // prevent process.env mutation
-    ignoreProcessEnv: true,
-  }
-
-  let expandParsed: NonNullable<ReturnType<typeof expand>['parsed']>
   try {
     // let environment variables use each other
-    expandParsed = expand(expandOptions).parsed!
+    expand({ parsed })
   } catch (e) {
     // custom error handling until https://github.com/motdotla/dotenv-expand/issues/65 is fixed upstream
     // check for message "TypeError: Cannot read properties of undefined (reading 'split')"
@@ -58,10 +48,6 @@ export function loadEnv(
     }
     throw e
   }
-
-  Object.keys(parsed).forEach((key) => {
-    parsed[key] = expandParsed[key]
-  })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
