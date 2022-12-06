@@ -7,12 +7,12 @@ import type { UserConfig } from './config'
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string | string[] = 'VITE_'
+  prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
-        `the .local postfix for .env files.`
+        `the .local postfix for .env files.`,
     )
   }
   prefixes = arraify(prefixes)
@@ -21,27 +21,27 @@ export function loadEnv(
     /** default file */ `.env`,
     /** local file */ `.env.local`,
     /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`
+    /** mode local file */ `.env.${mode}.local`,
   ]
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((file) => {
       const path = lookupFile(envDir, [file], {
         pathOnly: true,
-        rootDir: envDir
+        rootDir: envDir,
       })
       if (!path) return []
       return Object.entries(parse(fs.readFileSync(path)))
-    })
+    }),
   )
 
   const expandOptions = {
     parsed: {
       ...(process.env as any),
-      ...parsed
+      ...parsed,
     },
     // prevent process.env mutation
-    ignoreProcessEnv: true
+    ignoreProcessEnv: true,
   }
 
   let expandParsed: NonNullable<ReturnType<typeof expand>['parsed']>
@@ -53,7 +53,7 @@ export function loadEnv(
     // check for message "TypeError: Cannot read properties of undefined (reading 'split')"
     if (e.message.includes('split')) {
       throw new Error(
-        'dotenv-expand failed to expand env vars. Maybe you need to escape `$`?'
+        'dotenv-expand failed to expand env vars. Maybe you need to escape `$`?',
       )
     }
     throw e
@@ -88,12 +88,12 @@ export function loadEnv(
 }
 
 export function resolveEnvPrefix({
-  envPrefix = 'VITE_'
+  envPrefix = 'VITE_',
 }: UserConfig): string[] {
   envPrefix = arraify(envPrefix)
   if (envPrefix.some((prefix) => prefix === '')) {
     throw new Error(
-      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`
+      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
     )
   }
   return envPrefix

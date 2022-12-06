@@ -1,5 +1,5 @@
 {
-  "name": "test-tailwind",
+  "name": "@vitejs/test-tailwind",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -15,7 +15,7 @@
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^4.0.0-alpha.2",
     "ts-node": "^10.9.1"
   }
 }

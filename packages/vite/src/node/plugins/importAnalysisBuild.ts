@@ -11,7 +11,7 @@ import {
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
-  moduleListContains
+  moduleListContains,
 } from '../utils'
 import type { Plugin } from '../plugin'
 import { getDepOptimizationConfig } from '../config'
@@ -64,7 +64,7 @@ declare const scriptRel: string
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
-  importerUrl?: string
+  importerUrl?: string,
 ) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
@@ -116,11 +116,11 @@ function preload(
         return new Promise((res, rej) => {
           link.addEventListener('load', res)
           link.addEventListener('error', () =>
-            rej(new Error(`Unable to preload CSS for ${dep}`))
+            rej(new Error(`Unable to preload CSS for ${dep}`)),
           )
         })
       }
-    })
+    }),
   ).then(() => baseModule())
 }
 
@@ -215,7 +215,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const normalizeUrl = async (
         url: string,
-        pos: number
+        pos: number,
       ): Promise<[string, string]> => {
         let importerFile = importer
 
@@ -247,9 +247,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
-              importerFile
+              importerFile,
             )}". Does the file exist?`,
-            pos
+            pos,
           )
         }
 
@@ -281,7 +281,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           se: expEnd,
           n: specifier,
           d: dynamicIndex,
-          a: assertIndex
+          a: assertIndex,
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
@@ -300,7 +300,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               optimizeModulePreloadRelativePaths || customModulePreloadPaths
                 ? ',import.meta.url'
                 : ''
-            })`
+            })`,
           )
         }
 
@@ -326,7 +326,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 depsOptimizer.metadata,
                 file,
                 config,
-                ssr
+                ssr,
               )
 
               let rewriteDone = false
@@ -338,8 +338,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (!file.match(optimizedDepDynamicRE)) {
                   config.logger.error(
                     colors.red(
-                      `Vite Error, ${url} optimized info should be defined`
-                    )
+                      `Vite Error, ${url} optimized info should be defined`,
+                    ),
                   )
                 }
               } else if (needsInterop) {
@@ -387,7 +387,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null,
         }
       }
     },
@@ -405,7 +405,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           return {
             code: s.toString(),
-            map: s.generateMap({ hires: true })
+            map: s.generateMap({ hires: true }),
           }
         } else {
           return code.replace(re, isModern)
@@ -448,7 +448,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s: start,
                 e: end,
                 ss: expStart,
-                se: expEnd
+                se: expEnd,
               } = imports[index]
               // check the chunk being imported
               let url = name
@@ -465,7 +465,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (url) {
                 normalizedFile = path.posix.join(
                   path.posix.dirname(chunk.fileName),
-                  url
+                  url,
                 )
 
                 const ownerFilename = chunk.fileName
@@ -535,9 +535,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     resolvedDeps = [
                       ...resolveDependencies(normalizedFile, otherDeps, {
                         hostId: file,
-                        hostType: 'js'
+                        hostType: 'js',
                       }),
-                      ...cssDeps
+                      ...cssDeps,
                     ]
                   } else {
                     resolvedDeps = depsArray
@@ -550,7 +550,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       chunk.fileName,
                       'js',
                       config,
-                      toRelativePath
+                      toRelativePath,
                     )
                     const replacementString =
                       typeof replacement === 'string'
@@ -566,15 +566,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     JSON.stringify(
                       optimizeModulePreloadRelativePaths
                         ? toRelativePath(d, file)
-                        : d
-                    )
+                        : d,
+                    ),
                   )
                 }
 
                 s.update(
                   markerStartPos,
                   markerStartPos + preloadMarkerWithQuote.length,
-                  `[${renderedDeps.join(',')}]`
+                  `[${renderedDeps.join(',')}]`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
@@ -589,13 +589,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               s.update(
                 markerStartPos,
                 markerStartPos + preloadMarkerWithQuote.length,
-                'void 0'
+                'void 0',
               )
             }
 
             markerStartPos = code.indexOf(
               preloadMarkerWithQuote,
-              markerStartPos + preloadMarkerWithQuote.length
+              markerStartPos + preloadMarkerWithQuote.length,
             )
           }
 
@@ -604,12 +604,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (config.build.sourcemap && chunk.map) {
               const nextMap = s.generateMap({
                 source: chunk.fileName,
-                hires: true
+                hires: true,
               })
               const map = combineSourcemaps(
                 chunk.fileName,
                 [nextMap as RawSourceMap, chunk.map as RawSourceMap],
-                false
+                false,
               ) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
@@ -617,6 +617,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
       }
-    }
+    },
   }
 }

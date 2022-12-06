@@ -1,5 +1,5 @@
 {
-  "name": "pkg",
+  "name": "@vitejs/test-pkg",
   "type": "module",
   "private": true,
   "version": "1.0.0",

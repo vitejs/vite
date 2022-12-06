@@ -6,7 +6,7 @@ import {
   getColor,
   isBuild,
   page,
-  viteConfig
+  viteConfig,
 } from '~utils'
 
 const absoluteAssetMatch = isBuild
@@ -43,26 +43,26 @@ describe('raw references from /public', () => {
 
 test('import-expression from simple script', async () => {
   expect(await page.textContent('.import-expression')).toMatch(
-    '[success][success]'
+    '[success][success]',
   )
 })
 
 describe('asset imports from js', () => {
   test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(
-      cssBgAssetMatch
+      cssBgAssetMatch,
     )
   })
 
   test('absolute', async () => {
     expect(await page.textContent('.asset-import-absolute')).toMatch(
-      cssBgAssetMatch
+      cssBgAssetMatch,
     )
   })
 
   test('from /public', async () => {
     expect(await page.textContent('.public-import')).toMatch(
-      absolutePublicIconMatch
+      absolutePublicIconMatch,
     )
   })
 })
@@ -72,7 +72,7 @@ describe('css url() references', () => {
     expect(
       await page.evaluate(() => {
         return (document as any).fonts.check('700 32px Inter')
-      })
+      }),
     ).toBe(true)
   })
 
@@ -111,7 +111,7 @@ describe('css url() references', () => {
 
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(
-      cssBgAssetMatch
+      cssBgAssetMatch,
     )
   })
 
@@ -159,7 +159,7 @@ describe('image', () => {
       expect(s).toMatch(
         isBuild
           ? /other-assets\/asset-\w{8}\.png \dx/
-          : /\.\/nested\/asset\.png \dx/
+          : /\.\/nested\/asset\.png \dx/,
       )
     })
   })
@@ -191,14 +191,14 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /http.*\/other-assets\/foo-\w{8}\.js/ : `/foo.js`
+    isBuild ? /http.*\/other-assets\/foo-\w{8}\.js/ : `/foo.js`,
   )
 })
 
 test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
-    isBuild ? /http.*\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css'
+    isBuild ? /http.*\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css',
   )
 })
 
@@ -215,7 +215,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    '/non-existent'
+    '/non-existent',
   )
 })
 
@@ -226,7 +226,7 @@ test('inline style test', async () => {
 
 test('html import word boundary', async () => {
   expect(await page.textContent('.obj-import-express')).toMatch(
-    'ignore object import prop'
+    'ignore object import prop',
   )
   expect(await page.textContent('.string-import-express')).toMatch('no load')
 })

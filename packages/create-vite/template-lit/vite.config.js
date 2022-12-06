@@ -5,10 +5,10 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/my-element.js',
-      formats: ['es']
+      formats: ['es'],
     },
     rollupOptions: {
-      external: /^lit/
-    }
-  }
+      external: /^lit/,
+    },
+  },
 })

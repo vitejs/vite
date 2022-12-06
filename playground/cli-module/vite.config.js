@@ -8,11 +8,11 @@ globalThis.__test_url = URL
 
 export default defineConfig({
   server: {
-    host: 'localhost'
+    host: 'localhost',
   },
   build: {
     //speed up build
     minify: false,
-    target: 'esnext'
-  }
+    target: 'esnext',
+  },
 })

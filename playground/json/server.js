@@ -7,7 +7,7 @@ const isTest = process.env.VITEST
 
 async function createServer(
   root = process.cwd(),
-  isProd = process.env.NODE_ENV === 'production'
+  isProd = process.env.NODE_ENV === 'production',
 ) {
   const resolve = (p) => path.resolve(__dirname, p)
   const app = express()
@@ -24,13 +24,13 @@ async function createServer(
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
-      }
+        interval: 100,
+      },
     },
     appType: 'custom',
     json: {
-      stringify: true
-    }
+      stringify: true,
+    },
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -54,7 +54,7 @@ async function createServer(
         const json = await vite.ssrTransform(
           `export default ${source}`,
           null,
-          './output.json'
+          './output.json',
         )
         console.timeEnd('transform module')
         res.status(200).end(String(json.code.length))
@@ -80,7 +80,7 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }
 

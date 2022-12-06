@@ -65,7 +65,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   }
                 }
                 const normalizedFile = normalizePath(
-                  join(dirname(chunk.fileName), url.slice(1, -1))
+                  join(dirname(chunk.fileName), url.slice(1, -1)),
                 )
                 addDeps(normalizedFile)
                 ssrManifest[basename(name!)] = deps
@@ -81,8 +81,8 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             ? config.build.ssrManifest
             : 'ssr-manifest.json',
         type: 'asset',
-        source: JSON.stringify(ssrManifest, null, 2)
+        source: JSON.stringify(ssrManifest, null, 2),
       })
-    }
+    },
   }
 }

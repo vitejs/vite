@@ -147,6 +147,8 @@ test('?raw import', async () => {
 
 In many test cases, we need to mock dependencies using `link:` and `file:` protocols. `pnpm` treats `link:` as symlinks and `file:` as hardlinks. To test dependencies as if they were copied into `node_modules`, use the `file:` protocol. Otherwise, use the `link:` protocol.
 
+For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package name. This will avoid possible issues like false-positive alerts.
+
 ## Debug Logging
 
 You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DEBUG="vite:resolve"`). To see all debug logs, you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
@@ -220,7 +222,7 @@ Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it sh
 
 To get around this, we inline some of these dependencies' types in `packages/vite/src/types`. This way, we can still expose the typing but bundle the dependency's source code.
 
-Use `pnpm run check-dist-types` to check that the bundled types do not rely on types in `devDependencies`. If you are adding `dependencies`, make sure to configure `tsconfig.check.json`.
+Use `pnpm run build-types-check` to check that the bundled types do not rely on types in `devDependencies`.
 
 For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal). Dependency types within this directory (e.g. `packages/vite/types/chokidar.d.ts`) are deprecated and should be added to `packages/vite/src/types` instead.
 

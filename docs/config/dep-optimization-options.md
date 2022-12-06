@@ -22,8 +22,8 @@ CommonJS dependencies should not be excluded from optimization. If an ESM depend
 ```js
 export default defineConfig({
   optimizeDeps: {
-    include: ['esm-dep > cjs-dep']
-  }
+    include: ['esm-dep > cjs-dep'],
+  },
 })
 ```
 

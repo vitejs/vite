@@ -1,5 +1,5 @@
 {
-  "name": "test-build-old",
+  "name": "@vitejs/test-build-old",
   "private": true,
   "version": "0.0.0",
   "scripts": {

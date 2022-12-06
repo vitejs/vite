@@ -10,7 +10,7 @@
   import * as data from './data.json' assert { type: 'json' }
   text('.src', data.foo)
 
-  import * as depData from '@vitejs/import-assertion-dep'
+  import * as depData from '@vitejs/test-import-assertion-dep'
   text('.dep', depData.hello)
 
   function text(el, text) {

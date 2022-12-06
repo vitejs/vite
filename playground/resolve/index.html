@@ -144,29 +144,29 @@
   text('.deep-import', JSON.stringify(slicedToArray(iterable, 2)))
 
   // exports field
-  import { msg } from 'resolve-exports-path'
+  import { msg } from '@vitejs/test-resolve-exports-path'
   text('.exports-entry', msg)
 
   // deep import w/ exports
-  import { msg as deepMsg } from 'resolve-exports-path/deep.js'
+  import { msg as deepMsg } from '@vitejs/test-resolve-exports-path/deep.js'
   text('.exports-deep', deepMsg)
 
   // deep import w/ exports w/ query
-  import deepPath from 'resolve-exports-path/deep.json?url'
+  import deepPath from '@vitejs/test-resolve-exports-path/deep.json?url'
   text('.exports-deep-query', deepPath)
 
   // deep import w/ exposed dir
-  import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'
+  import { msg as exposedDirMsg } from '@vitejs/test-resolve-exports-path/dir/dir'
   text('.exports-deep-exposed-dir', exposedDirMsg)
 
   // deep import w/ mapped dir
-  import { msg as mappedDirMsg } from 'resolve-exports-path/dir-mapped/dir'
+  import { msg as mappedDirMsg } from '@vitejs/test-resolve-exports-path/dir-mapped/dir'
   text('.exports-deep-mapped-dir', mappedDirMsg)
 
-  import { msg as exportsEnvMsg } from 'resolve-exports-env'
+  import { msg as exportsEnvMsg } from '@vitejs/test-resolve-exports-env'
   text('.exports-env', exportsEnvMsg)
 
-  import { msg as exportsLegacyFallbackMsg } from 'resolve-exports-legacy-fallback/dir'
+  import { msg as exportsLegacyFallbackMsg } from '@vitejs/test-resolve-exports-legacy-fallback/dir'
   text('.exports-legacy-fallback', exportsLegacyFallbackMsg)
 
   // implicit index resolving
@@ -205,18 +205,26 @@
   text('.dot', bar())
 
   // browser field
-  import main from 'resolve-browser-field'
+  import main from '@vitejs/test-resolve-browser-field'
 
-  import a from 'resolve-browser-field/no-ext'
-  import b from 'resolve-browser-field/no-ext.js' // no substitution
-  import c from 'resolve-browser-field/ext'
-  import d from 'resolve-browser-field/ext.js'
-  import e from 'resolve-browser-field/ext-index/index.js'
-  import f from 'resolve-browser-field/ext-index'
-  import g from 'resolve-browser-field/no-ext-index/index.js' // no substitution
-  import h from 'resolve-browser-field/no-ext?query'
+  import a from '@vitejs/test-resolve-browser-field/no-ext'
+  import b from '@vitejs/test-resolve-browser-field/no-ext.js' // no substitution
+  import c from '@vitejs/test-resolve-browser-field/ext'
+  import d from '@vitejs/test-resolve-browser-field/ext.js'
+  import e from '@vitejs/test-resolve-browser-field/ext-index/index.js'
+  import f from '@vitejs/test-resolve-browser-field/ext-index'
+  import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
+  import h from '@vitejs/test-resolve-browser-field/no-ext?query'
 
-  import { ra, rb, rc, rd, re, rf, rg } from 'resolve-browser-field/relative'
+  import {
+    ra,
+    rb,
+    rc,
+    rd,
+    re,
+    rf,
+    rg,
+  } from '@vitejs/test-resolve-browser-field/relative'
 
   const success = [main, a, c, d, e, f, h, ra, rc, rd, re, rf]
   const noSuccess = [b, g, rb, rg]
@@ -228,30 +236,30 @@
     text('.browser', main)
   }
 
-  import browserModule1 from 'resolve-browser-module-field1'
+  import browserModule1 from '@vitejs/test-resolve-browser-module-field1'
   text('.browser-module1', browserModule1)
 
-  import browserModule2 from 'resolve-browser-module-field2'
+  import browserModule2 from '@vitejs/test-resolve-browser-module-field2'
   text('.browser-module2', browserModule2)
 
-  import browserModule3 from 'resolve-browser-module-field3'
+  import browserModule3 from '@vitejs/test-resolve-browser-module-field3'
   text('.browser-module3', browserModule3)
 
-  import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-module-field'
+  import { msg as requireButWithModuleFieldMsg } from '@vitejs/test-require-pkg-with-module-field'
   text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)
 
-  import { msg as customMainMsg } from 'resolve-custom-main-field'
+  import { msg as customMainMsg } from '@vitejs/test-resolve-custom-main-field'
   text('.custom-main-fields', customMainMsg)
 
-  import { msg as customConditionMsg } from 'resolve-custom-condition'
+  import { msg as customConditionMsg } from '@vitejs/test-resolve-custom-condition'
   text('.custom-condition', customConditionMsg)
 
   // should be ok to import a file marked with browser: false
-  import 'resolve-browser-field/not-browser'
-  import 'resolve-browser-field/multiple.dot.path'
+  import '@vitejs/test-resolve-browser-field/not-browser'
+  import '@vitejs/test-resolve-browser-field/multiple.dot.path'
 
   // css entry
   import css from 'normalize.css'
@@ -260,7 +268,7 @@
   }
 
   // monorepo linked dep w/ upper directory import
-  import { msg as linkedMsg } from 'resolve-linked'
+  import { msg as linkedMsg } from '@vitejs/test-resolve-linked'
   text('.monorepo', linkedMsg)
 
   import { msg as virtualMsg } from '@virtual-file'

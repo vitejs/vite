@@ -6,7 +6,7 @@ it('loadConfigFromFile', async () => {
   const { config } = await loadConfigFromFile(
     {} as any,
     resolve(__dirname, '../packages/entry/vite.config.ts'),
-    resolve(__dirname, '../packages/entry')
+    resolve(__dirname, '../packages/entry'),
   )
   expect(config).toMatchInlineSnapshot(`
     {

@@ -1,10 +1,10 @@
 {
-  "name": "dep-including-a",
+  "name": "@vitejs/test-dep-including-a",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "dep-a": "file:../dep-a"
+    "@vitejs/test-dep-a": "file:../dep-a"
   }
 }

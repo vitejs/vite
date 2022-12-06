@@ -48,7 +48,7 @@ import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
 export default defineConfig({
-  plugins: [vitePlugin(), rollupPlugin()]
+  plugins: [vitePlugin(), rollupPlugin()],
 })
 ```
 
@@ -72,7 +72,7 @@ import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
 export default defineConfig({
-  plugins: [framework()]
+  plugins: [framework()],
 })
 ```
 
@@ -95,10 +95,10 @@ export default function myPlugin() {
       if (fileRegex.test(id)) {
         return {
           code: compileFileToJS(src),
-          map: null // provide source map if available
+          map: null, // provide source map if available
         }
       }
-    }
+    },
   }
 }
 ```
@@ -127,7 +127,7 @@ export default function myPlugin() {
       if (id === resolvedVirtualModuleId) {
         return `export const msg = "from virtual module"`
       }
-    }
+    },
   }
 }
 ```
@@ -188,10 +188,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     config: () => ({
       resolve: {
         alias: {
-          foo: 'bar'
-        }
-      }
-    })
+          foo: 'bar',
+        },
+      },
+    }),
   })
 
   // mutate the config directly (use only when merging doesn't work)
@@ -201,7 +201,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       if (command === 'build') {
         config.root = 'foo'
       }
-    }
+    },
   })
   ```
 
@@ -237,7 +237,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
         } else {
           // build: plugin invoked by Rollup
         }
-      }
+      },
     }
   }
   ```
@@ -259,7 +259,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       server.middlewares.use((req, res, next) => {
         // custom handle request...
       })
-    }
+    },
   })
   ```
 
@@ -278,7 +278,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           // custom handle request...
         })
       }
-    }
+    },
   })
   ```
 
@@ -298,7 +298,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
         if (server) {
           // use server...
         }
-      }
+      },
     }
   }
   ```
@@ -323,7 +323,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           // custom handle request...
         })
       }
-    }
+    },
   })
   ```
 
@@ -349,9 +349,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       transformIndexHtml(html) {
         return html.replace(
           /<title>(.*?)<\/title>/,
-          `<title>Title replaced!</title>`
+          `<title>Title replaced!</title>`,
         )
-      }
+      },
     }
   }
   ```
@@ -367,7 +367,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       server?: ViteDevServer
       bundle?: import('rollup').OutputBundle
       chunk?: import('rollup').OutputChunk
-    }
+    },
   ) =>
     | IndexHtmlTransformResult
     | void
@@ -459,7 +459,7 @@ By default plugins are invoked for both serve and build. In cases where a plugin
 function myPlugin() {
   return {
     name: 'build-only',
-    apply: 'build' // or 'serve'
+    apply: 'build', // or 'serve'
   }
 }
 ```
@@ -496,9 +496,9 @@ export default defineConfig({
     {
       ...example(),
       enforce: 'post',
-      apply: 'build'
-    }
-  ]
+      apply: 'build',
+    },
+  ],
 })
 ```
 
@@ -537,9 +537,9 @@ export default defineConfig({
       // ...
       configureServer(server) {
         server.ws.send('my:greetings', { msg: 'hello' })
-      }
-    }
-  ]
+      },
+    },
+  ],
 })
 ```
 
@@ -583,9 +583,9 @@ export default defineConfig({
           // reply only to the client (if needed)
           client.send('my:ack', { msg: 'Hi! I got your message!' })
         })
-      }
-    }
-  ]
+      },
+    },
+  ],
 })
 ```
 

@@ -57,7 +57,7 @@ document.querySelector('.issue-2658-1').addEventListener('click', async () => {
 // data URLs (`data:`)
 const code2 = 'export const msg = "data";'
 const dataURL = `data:text/javascript;charset=utf-8,${encodeURIComponent(
-  code2
+  code2,
 )}`
 document.querySelector('.issue-2658-2').addEventListener('click', async () => {
   const { msg } = await import(/*@vite-ignore*/ dataURL)

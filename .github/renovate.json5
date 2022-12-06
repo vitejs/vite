@@ -8,8 +8,8 @@
   "packageRules": [
     {
       "depTypeList": ["peerDependencies"],
-      "enabled": false
-    }
+      "enabled": false,
+    },
   ],
   "ignoreDeps": [
     // manually bumping
@@ -22,6 +22,6 @@
     "source-map", // `source-map:v0.7.0+` needs more investigation
     "dotenv-expand", // `dotenv-expand:6.0.0+` has breaking changes (#6858)
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
-    "miniflare" // `miniflare:v2.0.0+` only supports node 16.7
-  ]
+    "miniflare", // `miniflare:v2.0.0+` only supports node 16.7
+  ],
 }
