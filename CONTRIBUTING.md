@@ -18,6 +18,15 @@ You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vi
 
 > Vite uses pnpm v7. If you are working on multiple projects with different versions of pnpm, it's recommended to enable [Corepack](https://github.com/nodejs/corepack) by running `corepack enable`.
 
+### Ignoring commits when running `git blame`
+
+We have a `.git-blame-ignore-revs` file to ignore formatting changes.
+To make this file used by `git blame`, you need to run the following command.
+
+```sh
+git config --local blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
 ## Debugging
 
 To use breakpoints and explore code execution, you can use the ["Run and Debug"](https://code.visualstudio.com/docs/editor/debugging) feature from VS Code.
