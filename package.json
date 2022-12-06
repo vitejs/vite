@@ -75,7 +75,7 @@
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.28.1",
-    "pnpm": "^7.18.0",
+    "pnpm": "^7.18.1",
     "prettier": "2.8.0",
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
@@ -111,7 +111,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.18.0",
+  "packageManager": "pnpm@7.18.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
