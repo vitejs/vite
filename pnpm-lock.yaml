@@ -53,7 +53,7 @@ importers:
       npm-run-all: ^4.1.5
       picocolors: ^1.0.0
       playwright-chromium: ^1.28.1
-      pnpm: ^7.18.0
+      pnpm: ^7.18.1
       prettier: 2.8.0
       prompts: ^2.4.2
       resolve: ^1.22.1
@@ -110,7 +110,7 @@ importers:
       npm-run-all: 4.1.5
       picocolors: 1.0.0
       playwright-chromium: 1.28.1
-      pnpm: 7.18.0
+      pnpm: 7.18.1
       prettier: 2.8.0
       prompts: 2.4.2
       resolve: 1.22.1
@@ -4711,19 +4711,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
-
-  /follow-redirects/1.15.0_debug@4.3.4:
-    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.4
-    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5105,7 +5092,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0_debug@4.3.4
+      follow-redirects: 1.15.0
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -6567,8 +6554,8 @@ packages:
     hasBin: true
     dev: true
 
-  /pnpm/7.18.0:
-    resolution: {integrity: sha512-igZRB0ip8cn9f1glYzsPTJblxQcidY7/fSfJ++j6GYLT0pqIlijsdW9ZI4Waaxhi22SC4HZHe5vMiSa2IKoIoA==}
+  /pnpm/7.18.1:
+    resolution: {integrity: sha512-GulnWxFW1dej1sSiju1FlYtvWIYa35ZvbTk9F8jOo+1GgJEVdx1ObLaZCApd2I4IB+jozyNWzInEdV0hQgUq0Q==}
     engines: {node: '>=14.6'}
     hasBin: true
     dev: true
