@@ -1,6 +1,6 @@
 const path = require('node:path')
-const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
 
 module.exports = vite.defineConfig({
   base: './',
@@ -11,7 +11,7 @@ module.exports = vite.defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: [vueJsx()],
+    plugins: [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
         assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
@@ -34,6 +34,7 @@ module.exports = vite.defineConfig({
     baseRoute: '/relative-base/',
   },
   plugins: [
+    workerPluginTestPlugin(),
     {
       name: 'resolve-format-es',
       transform(code, id) {

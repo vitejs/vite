@@ -1,5 +1,5 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
 
 module.exports = vite.defineConfig({
   base: '/es/',
@@ -11,7 +11,7 @@ module.exports = vite.defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: [vueJsx()],
+    plugins: [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
         assetFileNames: 'assets/worker_asset-[name].[ext]',
@@ -31,6 +31,7 @@ module.exports = vite.defineConfig({
     },
   },
   plugins: [
+    workerPluginTestPlugin(),
     {
       name: 'resolve-format-es',
 
