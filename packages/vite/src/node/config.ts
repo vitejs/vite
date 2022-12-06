@@ -973,7 +973,6 @@ async function bundleConfigFile(
             root: path.dirname(fileName),
             isBuild: true,
             isProduction: true,
-            isRequire: !isESM,
             preferRelative: false,
             tryIndex: true,
             mainFields: [],
@@ -1001,8 +1000,15 @@ async function bundleConfigFile(
               if (id.startsWith('npm:')) {
                 return { external: true }
               }
-              let idFsPath = tryNodeResolve(id, importer, options, false)?.id
-              if (idFsPath && (isESM || kind === 'dynamic-import')) {
+
+              const isIdESM = isESM || kind === 'dynamic-import'
+              let idFsPath = tryNodeResolve(
+                id,
+                importer,
+                { ...options, isRequire: !isIdESM },
+                false,
+              )?.id
+              if (idFsPath && isIdESM) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
               return {
