@@ -1,5 +1,5 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
 
 module.exports = vite.defineConfig((sourcemap) => {
   sourcemap = process.env.WORKER_MODE || sourcemap
@@ -17,7 +17,7 @@ module.exports = vite.defineConfig((sourcemap) => {
     },
     worker: {
       format: 'iife',
-      plugins: [vueJsx()],
+      plugins: [workerPluginTestPlugin()],
       rollupOptions: {
         output: {
           assetFileNames: 'assets/[name]-worker_asset[hash].[ext]',
@@ -39,5 +39,6 @@ module.exports = vite.defineConfig((sourcemap) => {
         },
       },
     },
+    plugins: [workerPluginTestPlugin()],
   }
 })

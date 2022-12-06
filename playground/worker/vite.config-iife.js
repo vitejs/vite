@@ -1,5 +1,5 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
 
 module.exports = vite.defineConfig({
   base: '/iife/',
@@ -11,7 +11,7 @@ module.exports = vite.defineConfig({
   worker: {
     format: 'iife',
     plugins: [
-      vueJsx(),
+      workerPluginTestPlugin(),
       {
         name: 'config-test',
         config() {
@@ -46,4 +46,5 @@ module.exports = vite.defineConfig({
       },
     },
   },
+  plugins: [workerPluginTestPlugin()],
 })
