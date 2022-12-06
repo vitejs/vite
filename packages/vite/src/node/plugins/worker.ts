@@ -50,7 +50,7 @@ function saveEmitWorkerAsset(
 }
 
 // Ensure that only one rollup build is called at the same time to avoid
-// leaking state in plugins between worker builds. 
+// leaking state in plugins between worker builds.
 // TODO: Review if we can parallelize the bundling of workers.
 const workerConfigSemaphore = new WeakMap<
   ResolvedConfig,
