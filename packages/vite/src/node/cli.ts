@@ -152,7 +152,7 @@ cli
       server.printUrls()
       server.bindShortcuts({
         print: true,
-        additionalShortCuts: [
+        customShortcuts: [
           profileSession && {
             key: 's',
             description: 'stop the profiler',

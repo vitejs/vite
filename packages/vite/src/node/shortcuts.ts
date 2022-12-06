@@ -9,7 +9,7 @@ export type BindShortcutsOptions = {
    * Print a one line hint to the terminal.
    */
   print?: boolean
-  additionalShortCuts?: (CLIShortcut | undefined | null)[]
+  customShortcuts?: (CLIShortcut | undefined | null)[]
 }
 
 export type CLIShortcut = {
@@ -33,7 +33,7 @@ export function bindShortcuts(
     )
   }
 
-  const shortcuts = (opts.additionalShortCuts ?? [])
+  const shortcuts = (opts.customShortcuts ?? [])
     .filter(isDefined)
     .concat(BASE_SHORTCUTS)
 
