@@ -1,4 +1,4 @@
-import { escapePath } from 'fast-glob'
+import glob from 'fast-glob'
 import type { WatchOptions } from 'dep-types/chokidar'
 import type { ResolvedConfig } from '.'
 
@@ -13,7 +13,7 @@ export function resolveChokidarOptions(
       '**/.git/**',
       '**/node_modules/**',
       '**/test-results/**', // Playwright
-      escapePath(config.cacheDir) + '/**',
+      glob.escapePath(config.cacheDir) + '/**',
       ...(Array.isArray(ignored) ? ignored : [ignored]),
     ],
     ignoreInitial: true,
