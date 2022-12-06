@@ -302,7 +302,7 @@ async function fileToBuiltUrl(
     return publicFileToBuiltUrl(id, config)
   }
 
-  const cache = assetCache.get(config)!
+  const cache = assetCache.get(config.mainConfig || config)!
   const cached = cache.get(id)
   if (cached) {
     return cached
