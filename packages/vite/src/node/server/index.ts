@@ -41,6 +41,8 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
+import { bindShortcuts } from '../shortcuts'
+import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -263,6 +265,10 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
+   * Listen to `process.stdin` for keyboard shortcuts.
+   */
+  bindShortcuts(opts?: BindShortcutsOptions): void
+  /**
    * Restart the server.
    *
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
@@ -300,6 +306,10 @@ export interface ViteDevServer {
    * @internal
    */
   _fsDenyGlob: Matcher
+  /**
+   * @internal
+   */
+  _shortcutsBound: boolean
 }
 
 export interface ResolvedServerUrls {
@@ -435,6 +445,10 @@ export async function createServer(
         )
       }
     },
+    bindShortcuts(opts = {}) {
+      bindShortcuts(server, opts)
+      server._shortcutsBound = true
+    },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
@@ -452,6 +466,7 @@ export async function createServer(
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
+    _shortcutsBound: false,
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -771,6 +786,7 @@ async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
+  const bindShortcuts = server._shortcutsBound
 
   await server.close()
 
@@ -817,6 +833,10 @@ async function restartServer(server: ViteDevServer) {
     }
   } else {
     logger.info('server restarted.', { timestamp: true })
+  }
+
+  if (bindShortcuts) {
+    newServer.bindShortcuts()
   }
 
   // new server (the current server) can restart now

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
+import type { Session } from 'node:inspector'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
@@ -30,9 +31,10 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
+// @ts-ignore
+const profileSession: Session | undefined = global.__vite_profile_session
+
 export const stopProfiler = (log: (message: string) => void): void => {
-  // @ts-ignore
-  const profileSession = global.__vite_profile_session
   if (profileSession) {
     profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
       // Write profile to disk, upload, etc.
@@ -148,7 +150,18 @@ cli
       )
 
       server.printUrls()
-      stopProfiler((message) => server.config.logger.info(`  ${message}`))
+      server.bindShortcuts({
+        print: true,
+        additionalShortCuts: [
+          profileSession && {
+            key: 's',
+            description: 'stop the profiler',
+            action(server) {
+              stopProfiler(server.config.logger.info)
+            },
+          },
+        ],
+      })
     } catch (e) {
       const logger = createLogger(options.logLevel)
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
