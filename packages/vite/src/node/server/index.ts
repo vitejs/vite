@@ -418,7 +418,6 @@ export async function createServer(
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
       ])
-
       server.resolvedUrls = null
     },
     printUrls() {
