@@ -50,12 +50,15 @@ export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
 type TSConfigJSON = {
   extends?: string
   compilerOptions?: {
-    target?: string
+    alwaysStrict?: boolean
+    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    jsx?: 'preserve' | 'react' | 'react-jsx' | 'react-jsxdev'
     jsxFactory?: string
     jsxFragmentFactory?: string
-    useDefineForClassFields?: boolean
-    importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    jsxImportSource?: string
     preserveValueImports?: boolean
+    target?: string
+    useDefineForClassFields?: boolean
   }
   [key: string]: any
 }
@@ -92,12 +95,15 @@ export async function transformWithEsbuild(
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
-      'target',
+      'alwaysStrict',
+      'importsNotUsedAsValues',
+      'jsx',
       'jsxFactory',
       'jsxFragmentFactory',
-      'useDefineForClassFields',
-      'importsNotUsedAsValues',
+      'jsxImportSource',
       'preserveValueImports',
+      'target',
+      'useDefineForClassFields',
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
@@ -129,6 +135,25 @@ export async function transformWithEsbuild(
     loader,
     tsconfigRaw,
   } as ESBuildOptions
+
+  // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+  // but we want to prioritize the normal options
+  if (
+    options &&
+    typeof resolvedOptions.tsconfigRaw === 'object' &&
+    resolvedOptions.tsconfigRaw.compilerOptions
+  ) {
+    options.jsx && (resolvedOptions.tsconfigRaw.compilerOptions.jsx = undefined)
+    options.jsxFactory &&
+      (resolvedOptions.tsconfigRaw.compilerOptions.jsxFactory = undefined)
+    options.jsxFragment &&
+      (resolvedOptions.tsconfigRaw.compilerOptions.jsxFragmentFactory =
+        undefined)
+    options.jsxImportSource &&
+      (resolvedOptions.tsconfigRaw.compilerOptions.jsxImportSource = undefined)
+    options.target &&
+      (resolvedOptions.tsconfigRaw.compilerOptions.target = undefined)
+  }
 
   delete resolvedOptions.include
   delete resolvedOptions.exclude
