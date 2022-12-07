@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/dep-that-imports",
+  "name": "@vitejs/test-dep-that-imports",
   "private": true,
   "version": "0.0.0",
   "dependencies": {

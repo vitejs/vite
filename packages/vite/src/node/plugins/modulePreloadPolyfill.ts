@@ -26,7 +26,7 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
         }
         return polyfillString
       }
-    }
+    },
   }
 }
 

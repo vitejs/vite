@@ -1,5 +1,5 @@
 {
-  "name": "commonjs-dep",
+  "name": "@vitejs/test-commonjs-dep",
   "private": true,
   "version": "1.0.0",
   "type": "commonjs"

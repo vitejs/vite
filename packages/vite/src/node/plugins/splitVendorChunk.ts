@@ -2,7 +2,7 @@ import type {
   GetManualChunk,
   GetModuleInfo,
   ManualChunkMeta,
-  OutputOptions
+  OutputOptions,
 } from 'rollup'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
@@ -36,7 +36,7 @@ export class SplitVendorChunkCache {
 }
 
 export function splitVendorChunk(
-  options: { cache?: SplitVendorChunkCache } = {}
+  options: { cache?: SplitVendorChunkCache } = {},
 ): GetManualChunk {
   const cache = options.cache ?? new SplitVendorChunkCache()
   return (id, { getModuleInfo }) => {
@@ -54,7 +54,7 @@ function staticImportedByEntry(
   id: string,
   getModuleInfo: GetModuleInfo,
   cache: Map<string, boolean>,
-  importStack: string[] = []
+  importStack: string[] = [],
 ): boolean {
   if (cache.has(id)) {
     return cache.get(id) as boolean
@@ -79,8 +79,8 @@ function staticImportedByEntry(
       importer,
       getModuleInfo,
       cache,
-      importStack.concat(id)
-    )
+      importStack.concat(id),
+    ),
   )
   cache.set(id, someImporterIs)
   return someImporterIs
@@ -125,15 +125,15 @@ export function splitVendorChunkPlugin(): Plugin {
           build: {
             rollupOptions: {
               output: {
-                manualChunks: createSplitVendorChunk({}, config)
-              }
-            }
-          }
+                manualChunks: createSplitVendorChunk({}, config),
+              },
+            },
+          },
         }
       }
     },
     buildStart() {
       caches.forEach((cache) => cache.reset())
-    }
+    },
   }
 }

@@ -3,7 +3,7 @@ import type { Plugin } from 'vite'
 
 export default defineConfig({
   experimental: {
-    hmrPartialAccept: true
+    hmrPartialAccept: true,
   },
   plugins: [
     {
@@ -19,10 +19,10 @@ export default defineConfig({
         server.ws.on('custom:remote-add', ({ a, b }, client) => {
           client.send('custom:remote-add-result', { result: a + b })
         })
-      }
+      },
     },
-    virtualPlugin()
-  ]
+    virtualPlugin(),
+  ],
 })
 
 function virtualPlugin(): Plugin {
@@ -49,6 +49,6 @@ export const virtual = _virtual + '${num}';`
           server.reloadModule(mod)
         }
       })
-    }
+    },
   }
 }

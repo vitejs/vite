@@ -10,7 +10,7 @@ const sponsors = computed(() => {
     data?.value.map((sponsor) => {
       return {
         size: sponsor.size === 'big' ? 'mini' : 'xmini',
-        items: sponsor.items
+        items: sponsor.items,
       }
     }) ?? []
   )

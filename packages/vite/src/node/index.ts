@@ -18,20 +18,20 @@ export type {
   FileSystemServeOptions,
   ServerHook,
   ResolvedServerOptions,
-  ResolvedServerUrls
+  ResolvedServerUrls,
 } from './server'
 export type {
   BuildOptions,
   LibraryOptions,
   LibraryFormats,
   RenderBuiltAssetUrl,
-  ResolvedBuildOptions
+  ResolvedBuildOptions,
 } from './build'
 export type {
   PreviewOptions,
   PreviewServer,
   PreviewServerHook,
-  ResolvedPreviewOptions
+  ResolvedPreviewOptions,
 } from './preview'
 export type {
   DepOptimizationMetadata,
@@ -41,14 +41,14 @@ export type {
   DepOptimizationProcessing,
   OptimizedDepInfo,
   DepsOptimizer,
-  ExportsData
+  ExportsData,
 } from './optimizer'
 export type {
   ResolvedSSROptions,
   SsrDepOptimizationOptions,
   SSROptions,
   SSRFormat,
-  SSRTarget
+  SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
 export type { PackageCache, PackageData } from './packages'
@@ -58,19 +58,19 @@ export type {
   LogErrorOptions,
   LogLevel,
   LogType,
-  LoggerOptions
+  LoggerOptions,
 } from './logger'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
   IndexHtmlTransformContext,
   IndexHtmlTransformResult,
-  HtmlTagDescriptor
+  HtmlTagDescriptor,
 } from './plugins/html'
 export type {
   CSSOptions,
   CSSModulesOptions,
-  PreprocessCSSResult
+  PreprocessCSSResult,
 } from './plugins/css'
 export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
@@ -84,7 +84,7 @@ import type { ChunkMetadata } from './plugins/metadata'
 export type {
   WebSocketServer,
   WebSocketClient,
-  WebSocketCustomListener
+  WebSocketCustomListener,
 } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
@@ -92,7 +92,7 @@ export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
-  TransformResult
+  TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 
@@ -104,19 +104,19 @@ export type {
   FullReloadPayload,
   CustomPayload,
   PrunePayload,
-  ErrorPayload
+  ErrorPayload,
 } from 'types/hmrPayload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,
-  InvalidatePayload
+  InvalidatePayload,
 } from 'types/customEvent'
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
-  KnownAsTypeMap
+  KnownAsTypeMap,
 } from 'types/importGlob'
 
 // dep types
@@ -125,7 +125,7 @@ export type {
   MapToFunction,
   ResolverFunction,
   ResolverObject,
-  Alias
+  Alias,
 } from 'dep-types/alias'
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
@@ -133,7 +133,7 @@ export type { HttpProxy } from 'dep-types/http-proxy'
 export type {
   FSWatcher,
   WatchOptions,
-  AwaitWriteFinishOptions
+  AwaitWriteFinishOptions,
 } from 'dep-types/chokidar'
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'

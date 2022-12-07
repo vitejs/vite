@@ -1,4 +1,4 @@
-import { msg as linkedMsg } from 'resolve-linked'
+import { msg as linkedMsg } from '@vitejs/test-resolve-linked'
 import React from 'react'
 
 let loaded = false
@@ -17,9 +17,9 @@ addEventListener('fetch', function (event) {
     `,
       {
         headers: {
-          'content-type': 'text/html'
-        }
-      }
-    )
+          'content-type': 'text/html',
+        },
+      },
+    ),
   )
 })

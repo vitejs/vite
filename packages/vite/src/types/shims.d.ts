@@ -29,7 +29,7 @@ declare module 'postcss-import' {
     resolve: (
       id: string,
       basedir: string,
-      importOptions: any
+      importOptions: any,
     ) => string | string[] | Promise<string | string[]>
     nameLayer: (index: number, rootFilename: string) => string
   }) => Plugin

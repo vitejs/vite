@@ -10,7 +10,7 @@ import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
   KNOWN_ASSET_TYPES,
-  SPECIAL_QUERY_RE
+  SPECIAL_QUERY_RE,
 } from '../constants'
 import {
   cleanUrl,
@@ -24,7 +24,7 @@ import {
   normalizePath,
   singlelineCommentsRE,
   virtualModulePrefix,
-  virtualModuleRE
+  virtualModuleRE,
 } from '../utils'
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
@@ -80,7 +80,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
   entries = entries.filter(
-    (entry) => isScannable(entry) && fs.existsSync(entry)
+    (entry) => isScannable(entry) && fs.existsSync(entry),
   )
 
   if (!entries.length) {
@@ -89,8 +89,8 @@ export async function scanImports(config: ResolvedConfig): Promise<{
         colors.yellow(
           '(!) Could not auto-determine entry point from rollupOptions or html files ' +
             'and there are no explicit optimizeDeps.include patterns. ' +
-            'Skipping dependency pre-bundling.'
-        )
+            'Skipping dependency pre-bundling.',
+        ),
       )
     }
     return { deps: {}, missing: {} }
@@ -116,9 +116,9 @@ export async function scanImports(config: ResolvedConfig): Promise<{
         format: 'esm',
         logLevel: 'error',
         plugins: [...plugins, plugin],
-        ...esbuildOptions
-      })
-    )
+        ...esbuildOptions,
+      }),
+    ),
   )
 
   debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
@@ -126,7 +126,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   return {
     // Ensure a fixed order so hashes are stable and improve logs
     deps: orderedDependencies(deps),
-    missing
+    missing,
   }
 }
 
@@ -146,10 +146,10 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
       // if there aren't explicit entries, also ignore other common folders
       ...(config.optimizeDeps.entries
         ? []
-        : [`**/__tests__/**`, `**/coverage/**`])
+        : [`**/__tests__/**`, `**/coverage/**`]),
     ],
     absolute: true,
-    suppressErrors: true // suppress EACCES errors
+    suppressErrors: true, // suppress EACCES errors
   })
 }
 
@@ -167,14 +167,14 @@ function esbuildScanPlugin(
   container: PluginContainer,
   depImports: Record<string, string>,
   missing: Record<string, string>,
-  entries: string[]
+  entries: string[],
 ): Plugin {
   const seen = new Map<string, string | undefined>()
 
   const resolve = async (
     id: string,
     importer?: string,
-    options?: ResolveIdOptions
+    options?: ResolveIdOptions,
   ) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
@@ -185,8 +185,8 @@ function esbuildScanPlugin(
       importer && normalizePath(importer),
       {
         ...options,
-        scan: true
-      }
+        scan: true,
+      },
     )
     const res = resolved?.id
     seen.set(key, res)
@@ -197,18 +197,18 @@ function esbuildScanPlugin(
   const exclude = [
     ...(config.optimizeDeps?.exclude || []),
     '@vite/client',
-    '@vite/env'
+    '@vite/env',
   ]
 
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
-    external: !entries.includes(path)
+    external: !entries.includes(path),
   })
 
   const doTransformGlobImport = async (
     contents: string,
     id: string,
-    loader: Loader
+    loader: Loader,
   ) => {
     let transpiledContents
     // transpile because `transformGlobImport` only expects js
@@ -223,7 +223,7 @@ function esbuildScanPlugin(
       id,
       config.root,
       resolve,
-      config.isProduction
+      config.isProduction,
     )
 
     return result?.s.toString() || transpiledContents
@@ -237,13 +237,13 @@ function esbuildScanPlugin(
       // external urls
       build.onResolve({ filter: externalRE }, ({ path }) => ({
         path,
-        external: true
+        external: true,
       }))
 
       // data urls
       build.onResolve({ filter: dataUrlRE }, ({ path }) => ({
         path,
-        external: true
+        external: true,
       }))
 
       // local scripts (`<script>` in Svelte and `<script setup>` in Vue)
@@ -251,7 +251,7 @@ function esbuildScanPlugin(
         return {
           // strip prefix to get valid filesystem path so esbuild can resolve imports in the file
           path: path.replace(virtualModulePrefix, ''),
-          namespace: 'script'
+          namespace: 'script',
         }
       })
 
@@ -273,7 +273,7 @@ function esbuildScanPlugin(
           return
         return {
           path: resolved,
-          namespace: 'html'
+          namespace: 'html',
         }
       })
 
@@ -338,21 +338,21 @@ function esbuildScanPlugin(
                   loader: 'js', // since it is transpiled
                   contents: await doTransformGlobImport(contents, path, loader),
                   pluginData: {
-                    htmlType: { loader }
-                  }
+                    htmlType: { loader },
+                  },
                 }
               } else {
                 scripts[key] = {
                   loader,
                   contents,
                   pluginData: {
-                    htmlType: { loader }
-                  }
+                    htmlType: { loader },
+                  },
                 }
               }
 
               const virtualModulePath = JSON.stringify(
-                virtualModulePrefix + key
+                virtualModulePrefix + key,
               )
 
               const contextMatch = openTag.match(contextRE)
@@ -381,16 +381,16 @@ function esbuildScanPlugin(
 
           return {
             loader: 'js',
-            contents: js
+            contents: js,
           }
-        }
+        },
       )
 
       // bare imports: record and externalize ----------------------------------
       build.onResolve(
         {
           // avoid matching windows volume
-          filter: /^[\w@][^:]/
+          filter: /^[\w@][^:]/,
         },
         async ({ path: id, importer, pluginData }) => {
           if (moduleListContains(exclude, id)) {
@@ -401,8 +401,8 @@ function esbuildScanPlugin(
           }
           const resolved = await resolve(id, importer, {
             custom: {
-              depScan: { loader: pluginData?.htmlType?.loader }
-            }
+              depScan: { loader: pluginData?.htmlType?.loader },
+            },
           })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
@@ -419,7 +419,7 @@ function esbuildScanPlugin(
               // linked package, keep crawling
               return {
                 path: path.resolve(resolved),
-                namespace
+                namespace,
               }
             } else {
               return externalUnlessEntry({ path: id })
@@ -427,7 +427,7 @@ function esbuildScanPlugin(
           } else {
             missing[id] = normalizePath(importer)
           }
-        }
+        },
       )
 
       // Externalized file types -----------------------------------------------
@@ -445,29 +445,29 @@ function esbuildScanPlugin(
       // known asset types
       build.onResolve(
         {
-          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`)
+          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
         },
-        externalUnlessEntry
+        externalUnlessEntry,
       )
 
       // known vite query types: ?worker, ?raw
       build.onResolve({ filter: SPECIAL_QUERY_RE }, ({ path }) => ({
         path,
-        external: true
+        external: true,
       }))
 
       // catch all -------------------------------------------------------------
 
       build.onResolve(
         {
-          filter: /.*/
+          filter: /.*/,
         },
         async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer, {
             custom: {
-              depScan: { loader: pluginData?.htmlType?.loader }
-            }
+              depScan: { loader: pluginData?.htmlType?.loader },
+            },
           })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
@@ -478,13 +478,13 @@ function esbuildScanPlugin(
 
             return {
               path: path.resolve(cleanUrl(resolved)),
-              namespace
+              namespace,
             }
           } else {
             // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
           }
-        }
+        },
       )
 
       // for jsx/tsx, we need to access the content and check for
@@ -506,16 +506,16 @@ function esbuildScanPlugin(
         if (contents.includes('import.meta.glob')) {
           return {
             loader: 'js', // since it is transpiled,
-            contents: await doTransformGlobImport(contents, id, loader)
+            contents: await doTransformGlobImport(contents, id, loader),
           }
         }
 
         return {
           loader,
-          contents
+          contents,
         }
       })
-    }
+    },
   }
 }
 

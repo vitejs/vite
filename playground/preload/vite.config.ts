@@ -7,11 +7,11 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       format: {
-        beautify: true
+        beautify: true,
       },
       compress: {
-        passes: 3
-      }
-    }
-  }
+        passes: 3,
+      },
+    },
+  },
 })

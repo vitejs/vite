@@ -26,7 +26,7 @@ text('#iterators', [...new Set(['hello'])].join(''))
 // structuredClone is supported core.js v3.20.0+
 text(
   '#features-after-corejs-3',
-  JSON.stringify(structuredClone({ foo: 'foo' }))
+  JSON.stringify(structuredClone({ foo: 'foo' })),
 )
 
 // babel-helpers
@@ -34,7 +34,7 @@ text(
 // helpers.
 text(
   '#babel-helpers',
-  String.raw`exposed babel helpers: ${window._templateObject != null}`
+  String.raw`exposed babel helpers: ${window._templateObject != null}`,
 )
 
 // dynamic chunk names
