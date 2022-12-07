@@ -41,6 +41,8 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
+import { bindShortcuts } from '../shortcuts'
+import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -300,6 +302,13 @@ export interface ViteDevServer {
    * @internal
    */
   _fsDenyGlob: Matcher
+  /**
+   * @internal
+   * Actually BindShortcutsOptions | undefined but api-extractor checks for
+   * export before trimming internal types :(
+   * And I don't want to complexity prePatchTypes for that
+   */
+  _shortcutsOptions: any | undefined
 }
 
 export interface ResolvedServerUrls {
@@ -452,6 +461,7 @@ export async function createServer(
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
+    _shortcutsOptions: undefined,
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -771,6 +781,7 @@ async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
+  const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
 
   await server.close()
 
@@ -817,6 +828,11 @@ async function restartServer(server: ViteDevServer) {
     }
   } else {
     logger.info('server restarted.', { timestamp: true })
+  }
+
+  if (shortcutsOptions) {
+    shortcutsOptions.print = false
+    bindShortcuts(newServer, shortcutsOptions)
   }
 
   // new server (the current server) can restart now
