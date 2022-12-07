@@ -419,9 +419,6 @@ export async function createServer(
         closeHttpServer(),
       ])
 
-      // Testing esbuild not closing properly on CI issue
-      await new Promise((resolve) => setTimeout(resolve, 1))
-
       server.resolvedUrls = null
     },
     printUrls() {

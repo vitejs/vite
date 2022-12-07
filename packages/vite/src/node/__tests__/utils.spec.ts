@@ -260,7 +260,6 @@ describe('isFileReadable', () => {
     expect(isFileReadable(testFile)).toBe(true)
   })
 
-  /* TODO: avoid modifying permissions of file in the repo
   if (process.platform !== 'win32') {
     test('file with read-only permission', async () => {
       fs.chmodSync(testFile, '400')
@@ -272,7 +271,6 @@ describe('isFileReadable', () => {
       fs.chmodSync(testFile, '644')
     })
   }
-  */
 })
 
 describe('processSrcSetSync', () => {
