@@ -52,7 +52,7 @@ export function bindShortcuts(
       server.config.logger.info(
         [
           '',
-          colors.bold('  Watch Usage'),
+          colors.bold('  Shortcuts'),
           ...shortcuts.map(
             (shortcut) =>
               colors.dim('  press ') +
