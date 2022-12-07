@@ -1,3 +1,12 @@
+## 4.0.0-beta.2 (2022-12-07)
+
+* feat(node/plugins): esbuild options (#11049) ([735b98b](https://github.com/vitejs/vite/commit/735b98b)), closes [#11049](https://github.com/vitejs/vite/issues/11049)
+* fix: don't print urls on restart with default port (#11230) ([5aaecb6](https://github.com/vitejs/vite/commit/5aaecb6)), closes [#11230](https://github.com/vitejs/vite/issues/11230)
+* chore(deps): typescript 4.9 (#11229) ([6b4c4e2](https://github.com/vitejs/vite/commit/6b4c4e2)), closes [#11229](https://github.com/vitejs/vite/issues/11229)
+* chore(deps): update esbuild to 0.15.18 (#11227) ([a08ca07](https://github.com/vitejs/vite/commit/a08ca07)), closes [#11227](https://github.com/vitejs/vite/issues/11227)
+
+
+
 ## 4.0.0-beta.1 (2022-12-06)
 
 * fix: serialize bundleWorkerEntry (#11218) ([306bed0](https://github.com/vitejs/vite/commit/306bed0)), closes [#11218](https://github.com/vitejs/vite/issues/11218)
