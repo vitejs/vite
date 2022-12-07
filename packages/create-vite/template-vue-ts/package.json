@@ -12,9 +12,9 @@
     "vue": "^3.2.45"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.0.0-alpha.2",
+    "@vitejs/plugin-vue": "^4.0.0-beta.0",
     "typescript": "^4.9.3",
-    "vite": "^3.2.4",
+    "vite": "^4.0.0-beta.3",
     "vue-tsc": "^1.0.11"
   }
 }

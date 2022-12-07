@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^3.2.4"
+    "vite": "^4.0.0-beta.3"
   }
 }
