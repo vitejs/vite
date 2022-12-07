@@ -12,7 +12,7 @@ import type { Plugin } from '../plugin'
 // copy from constants.ts
 const CSS_LANGS_RE =
   // eslint-disable-next-line regexp/no-unused-capturing-group
-  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\\?)/
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 export const isCSSRequest = (request: string): boolean =>
   CSS_LANGS_RE.test(request)
 
