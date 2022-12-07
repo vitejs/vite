@@ -811,7 +811,7 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
-    if (port !== prevPort || host !== prevHost) {
+    if ((port ?? 5173) !== (prevPort ?? 5173) || host !== prevHost) {
       logger.info('')
       server.printUrls()
     }
