@@ -302,7 +302,9 @@ export const formatSourcemapForSnapshot = (map: any): any => {
 export async function killProcess(
   serverProcess: ExecaChildProcess,
 ): Promise<void> {
-  if (isWindows) {
+  // TODO: revert to isWindows, esbuild 0.15.13+ process fails to terminate on linux too
+  const useTaskkill = true
+  if (useTaskkill) {
     try {
       const { execaCommandSync } = await import('execa')
       execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
