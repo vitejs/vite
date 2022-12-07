@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [vuePlugin()],
   build: {
+    outDir: 'dist/normal',
     minify: 'terser',
     terserOptions: {
       format: {
