@@ -201,6 +201,7 @@ export async function createPluginContainer(
     for (const plugin of getSortedPlugins(hookName)) {
       const hook = plugin[hookName]
       if (!hook) continue
+      // @ts-expect-error
       const handler: Function = 'handler' in hook ? hook.handler : hook
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
