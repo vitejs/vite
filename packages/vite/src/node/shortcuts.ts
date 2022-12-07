@@ -22,6 +22,7 @@ export function bindShortcuts(
   opts: BindShortcutsOptions,
 ): void {
   if (!server.httpServer) return
+  server._shortcutsOptions = opts
 
   if (opts.print) {
     server.config.logger.info(

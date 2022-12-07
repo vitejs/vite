@@ -9,6 +9,7 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
+import { bindShortcuts } from './shortcuts'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -32,25 +33,33 @@ interface GlobalCLIOptions {
 }
 
 // @ts-ignore
-const profileSession: Session | undefined = global.__vite_profile_session
+let profileSession: Session | undefined = global.__vite_profile_session
+let profileCount = 0
 
-export const stopProfiler = (log: (message: string) => void): void => {
-  if (profileSession) {
-    profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
+export const stopProfiler = (
+  log: (message: string) => void,
+): void | Promise<void> => {
+  if (!profileSession) return
+  return new Promise((res, rej) => {
+    profileSession!.post('Profiler.stop', (err: any, { profile }: any) => {
       // Write profile to disk, upload, etc.
       if (!err) {
-        const outPath = path.resolve('./vite-profile.cpuprofile')
+        const outPath = path.resolve(
+          `./vite-profile-${profileCount++}.cpuprofile`,
+        )
         fs.writeFileSync(outPath, JSON.stringify(profile))
         log(
           colors.yellow(
             `CPU profile written to ${colors.white(colors.dim(outPath))}`,
           ),
         )
+        profileSession = undefined
+        res()
       } else {
-        throw err
+        rej(err)
       }
     })
-  }
+  })
 }
 
 const filterDuplicateOptions = <T extends object>(options: T) => {
@@ -150,14 +159,30 @@ cli
       )
 
       server.printUrls()
-      server.bindShortcuts({
+      bindShortcuts(server, {
         print: true,
         customShortcuts: [
           profileSession && {
-            key: 's',
-            description: 'stop the profiler',
-            action(server) {
-              stopProfiler(server.config.logger.info)
+            key: 'p',
+            description: 'start/stop the profiler',
+            async action(server) {
+              if (profileSession) {
+                await stopProfiler(server.config.logger.info)
+              } else {
+                const inspector = await import('node:inspector').then(
+                  (r) => r.default,
+                )
+                await new Promise<void>((res) => {
+                  profileSession = new inspector.Session()
+                  profileSession.connect()
+                  profileSession.post('Profiler.enable', () => {
+                    profileSession!.post('Profiler.start', () => {
+                      server.config.logger.info('Profiler started')
+                      res()
+                    })
+                  })
+                })
+              }
             },
           },
         ],

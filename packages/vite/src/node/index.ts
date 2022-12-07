@@ -61,7 +61,6 @@ export type {
   LogType,
   LoggerOptions,
 } from './logger'
-export type { BindShortcutsOptions, CLIShortcut } from './shortcuts'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,

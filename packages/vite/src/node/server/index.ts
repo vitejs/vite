@@ -265,10 +265,6 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
-   * Listen to `process.stdin` for keyboard shortcuts.
-   */
-  bindShortcuts(opts?: BindShortcutsOptions): void
-  /**
    * Restart the server.
    *
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
@@ -308,8 +304,11 @@ export interface ViteDevServer {
   _fsDenyGlob: Matcher
   /**
    * @internal
+   * Actually BindShortcutsOptions | undefined but api-extractor checks for
+   * export before trimming internal types :(
+   * And I don't want to complexity prePatchTypes for that
    */
-  _shortcutsBound: boolean
+  _shortcutsOptions: any | undefined
 }
 
 export interface ResolvedServerUrls {
@@ -445,10 +444,6 @@ export async function createServer(
         )
       }
     },
-    bindShortcuts(opts = {}) {
-      bindShortcuts(server, opts)
-      server._shortcutsBound = true
-    },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
@@ -466,7 +461,7 @@ export async function createServer(
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
-    _shortcutsBound: false,
+    _shortcutsOptions: undefined,
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -786,7 +781,7 @@ async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
-  const bindShortcuts = server._shortcutsBound
+  const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
 
   await server.close()
 
@@ -835,8 +830,9 @@ async function restartServer(server: ViteDevServer) {
     logger.info('server restarted.', { timestamp: true })
   }
 
-  if (bindShortcuts) {
-    newServer.bindShortcuts()
+  if (shortcutsOptions) {
+    shortcutsOptions.print = false
+    bindShortcuts(newServer, shortcutsOptions)
   }
 
   // new server (the current server) can restart now
