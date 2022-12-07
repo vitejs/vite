@@ -106,20 +106,19 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await Promise.all(
-    entries.map((entry) =>
-      build({
-        absWorkingDir: process.cwd(),
-        write: false,
-        entryPoints: [entry],
-        bundle: true,
-        format: 'esm',
-        logLevel: 'error',
-        plugins: [...plugins, plugin],
-        ...esbuildOptions,
-      }),
-    ),
-  )
+  await build({
+    absWorkingDir: process.cwd(),
+    write: false,
+    stdin: {
+      contents: entries.map((e) => `import '${e}'`).join('\n'),
+      loader: 'js',
+    },
+    bundle: true,
+    format: 'esm',
+    logLevel: 'error',
+    plugins: [...plugins, plugin],
+    ...esbuildOptions,
+  })
 
   debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
 

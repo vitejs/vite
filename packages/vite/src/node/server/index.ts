@@ -419,7 +419,7 @@ export async function createServer(
           process.stdin.off('end', exitProcess)
         }
       }
-      await Promise.all([
+      await Promise.allSettled([
         watcher.close(),
         ws.close(),
         container.close(),
