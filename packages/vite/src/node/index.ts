@@ -7,6 +7,7 @@ export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'
+export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'
 
 // additional types
