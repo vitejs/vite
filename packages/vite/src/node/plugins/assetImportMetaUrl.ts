@@ -48,30 +48,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const urlStart = cleanString.indexOf(emptyUrl, index)
           const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
+          const url = rawUrl.slice(1, -1)
+          let file: string | undefined
 
           if (!s) s = new MagicString(code)
 
-          // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
-            const ast = this.parse(rawUrl)
-            const templateLiteral = (ast as any).body[0].expression
-            if (templateLiteral.expressions.length) {
-              const pattern = JSON.stringify(buildGlobPattern(templateLiteral))
-              // Note: native import.meta.url is not supported in the baseline
-              // target so we use the global location here. It can be
-              // window.location or self.location in case it is used in a Web Worker.
-              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
-              s.update(
-                index,
-                index + exp.length,
-                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
-              )
-              continue
-            }
-          }
-
-          const url = rawUrl.slice(1, -1)
-          let file: string | undefined
           if (url.startsWith('.')) {
             file = slash(path.resolve(path.dirname(id), url))
           } else {
@@ -110,11 +91,30 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             )
             builtUrl = url
           }
-          s.update(
-            index,
-            index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
-          )
+
+          // potential dynamic template string
+          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+            const ast = this.parse(rawUrl)
+            const templateLiteral = (ast as any).body[0].expression
+            if (templateLiteral.expressions.length) {
+              const pattern = JSON.stringify(buildGlobPattern(templateLiteral))
+              // Note: native import.meta.url is not supported in the baseline
+              // target so we use the global location here. It can be
+              // window.location or self.location in case it is used in a Web Worker.
+              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
+              s.update(
+                index,
+                index + exp.length,
+                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}] || \`${builtUrl}\`, self.location)`,
+              )
+            }
+          } else {
+            s.update(
+              index,
+              index + exp.length,
+              `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            )
+          }
         }
         if (s) {
           return transformStableResult(s, id, config)

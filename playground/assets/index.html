@@ -221,6 +221,11 @@
   <code class="dynamic-import-meta-url-2-comma"></code>
 </p>
 
+<h2>new URL(`./${nonExistent}`, import.meta.url)</h2>
+<p>
+  <code class="dynamic-import-meta-url-non-existent"></code>
+</p>
+
 <h2>new URL(`non-existent`, import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
@@ -395,6 +400,13 @@
 
   const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
+
+  const nonExistentName = 'non-existent'
+  const metaUrlNonExistentDynamic = new URL(
+    `./nested/${nonExistentName}.png`,
+    import.meta.url,
+  )
+  text('.dynamic-import-meta-url-non-existent', metaUrlNonExistentDynamic)
 
   /**
    * don't process the code in the comment
