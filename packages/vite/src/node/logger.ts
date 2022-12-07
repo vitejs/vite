@@ -153,9 +153,10 @@ export function printServerUrls(
     info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
   }
   if (urls.network.length === 0 && optionsHost === undefined) {
-    const note = `use ${colors.reset(colors.bold('--host'))} to expose`
     info(
-      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${note}`),
+      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +
+        colors.bold('--host') +
+        colors.dim(' to expose'),
     )
   }
 }
