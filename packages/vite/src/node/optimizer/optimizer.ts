@@ -168,7 +168,9 @@ async function createDepsOptimizer(
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
-    await discoverProjectDependenciesPromise
+    await discoverProjectDependenciesPromise?.catch(() => {
+      /* ignore error for scanner because it's not important */
+    })
     await postScanOptimizationResult
     await optimizingNewDeps
   }
