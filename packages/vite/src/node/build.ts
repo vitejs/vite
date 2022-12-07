@@ -949,7 +949,7 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
 function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   if (!hook) return
 
-  const fn = typeof hook === 'object' ? hook.handler : hook
+  const fn = 'handler' in hook ? hook.handler : hook
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
@@ -967,7 +967,7 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
 function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   if (!hook) return
 
-  const fn = typeof hook === 'object' ? hook.handler : hook
+  const fn = 'handler' in hook ? hook.handler : hook
   const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
@@ -986,7 +986,7 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
 function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   if (!hook) return
 
-  const fn = typeof hook === 'object' ? hook.handler : hook
+  const fn = 'handler' in hook ? hook.handler : hook
   const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))

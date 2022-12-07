@@ -121,7 +121,9 @@ export function createPluginHookUtils(
     return plugins
       .map((p) => {
         const hook = p[hookName]!
-        return typeof hook === 'object' ? hook.handler : hook
+        return typeof hook === 'object' && 'handler' in hook
+          ? hook.handler
+          : hook
       })
       .filter(Boolean)
   }

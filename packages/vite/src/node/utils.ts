@@ -884,7 +884,7 @@ export async function resolveServerUrls(
           // Node < v18
           ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
             // Node >= v18
-            // @ts-ignore
+            // @ts-expect-error
             (typeof detail.family === 'number' && detail.family === 4)),
       )
       .forEach((detail) => {

@@ -1107,7 +1107,7 @@ async function runConfigHook(
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
-    const handler = typeof hook === 'object' ? hook.handler : hook
+    const handler = hook && 'handler' in hook ? hook.handler : hook
     if (handler) {
       const res = await handler(conf, configEnv)
       if (res) {
