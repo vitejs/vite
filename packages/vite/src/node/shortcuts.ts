@@ -1,7 +1,6 @@
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
 import { openBrowser } from './server/openBrowser'
-import type { HmrOptions } from './server/hmr'
 import { isDefined } from './utils'
 
 export type BindShortcutsOptions = {
@@ -80,8 +79,6 @@ export function bindShortcuts(
   })
 }
 
-let initialHmrOptions: HmrOptions | boolean
-
 const BASE_SHORTCUTS: CLIShortcut[] = [
   {
     key: 'r',
@@ -102,26 +99,6 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
       }
 
       openBrowser(url, true, server.config.logger)
-    },
-  },
-  {
-    key: 'm',
-    description: 'toggle hmr on/off',
-    action({ config }: ViteDevServer): void {
-      initialHmrOptions ??= config.server.hmr ?? true
-      /**
-       * Mutating the server config works because Vite reads from
-       * it on every file change, instead of caching its value.
-       */
-      config.server.hmr =
-        config.server.hmr === false
-          ? initialHmrOptions === false
-            ? true
-            : initialHmrOptions
-          : false
-      config.logger.info(
-        colors.cyan(`hmr ${config.server.hmr ? `enabled` : `disabled`}`),
-      )
     },
   },
   {
