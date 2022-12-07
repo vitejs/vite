@@ -161,18 +161,20 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   let postScanOptimizationResult: Promise<DepOptimizationResult> | undefined
-  let discoverProjectDependenciesPromise:
-    | Promise<Record<string, string>>
-    | undefined
+  let discover: {
+    cancel: () => void
+    depsPromise: Promise<Record<string, string>>
+  }
 
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
-    await discoverProjectDependenciesPromise?.catch(() => {
-      /* ignore error for scanner because it's not important */
-    })
-    await postScanOptimizationResult
-    await optimizingNewDeps
+    discover?.cancel()
+    await Promise.allSettled([
+      discover?.depsPromise ?? Promise.resolve(),
+      postScanOptimizationResult,
+      optimizingNewDeps,
+    ])
   }
 
   if (!cachedMetadata) {
@@ -208,9 +210,8 @@ async function createDepsOptimizer(
         try {
           debug(colors.green(`scanning for dependencies...`))
 
-          discoverProjectDependenciesPromise =
-            discoverProjectDependencies(config)
-          const deps = await discoverProjectDependenciesPromise
+          discover = await discoverProjectDependencies(config)
+          const deps = await discover.depsPromise
 
           debug(
             colors.green(

@@ -48,8 +48,12 @@ export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
-  deps: Record<string, string>
-  missing: Record<string, string>
+  cancel: () => void
+  resultsPromise: Promise<{
+    deps: Record<string, string>
+    missing: Record<string, string>
+    cancelled?: boolean
+  }>
 }> {
   // Only used to scan non-ssr code
 
@@ -93,7 +97,10 @@ export async function scanImports(config: ResolvedConfig): Promise<{
         ),
       )
     }
-    return { deps: {}, missing: {} }
+    return {
+      cancel: () => {},
+      resultsPromise: Promise.resolve({ deps: {}, missing: {} }),
+    }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
@@ -102,11 +109,11 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   const missing: Record<string, string> = {}
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
-
+  const { cancel, plugin: cancelPlugin } = esbuildCancelPlugin()
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await build({
+  const resultsPromise = build({
     absWorkingDir: process.cwd(),
     write: false,
     stdin: {
@@ -116,16 +123,29 @@ export async function scanImports(config: ResolvedConfig): Promise<{
     bundle: true,
     format: 'esm',
     logLevel: 'error',
-    plugins: [...plugins, plugin],
+    plugins: [...plugins, plugin, cancelPlugin],
     ...esbuildOptions,
   })
-
-  debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
-
+    .then(() => ({
+      // Ensure a fixed order so hashes are stable and improve logs
+      deps: orderedDependencies(deps),
+      missing,
+    }))
+    .catch((e) => {
+      if (e.message === 'vite:cancel') {
+        return { deps: {}, missing: {}, cancelled: true }
+      }
+      throw e
+    })
+    .finally(() => {
+      debug(
+        `Scan completed in ${(performance.now() - start).toFixed(2)}ms:`,
+        deps,
+      )
+    })
   return {
-    // Ensure a fixed order so hashes are stable and improve logs
-    deps: orderedDependencies(deps),
-    missing,
+    cancel,
+    resultsPromise,
   }
 }
 
@@ -516,6 +536,26 @@ function esbuildScanPlugin(
       })
     },
   }
+}
+
+function esbuildCancelPlugin(): { plugin: Plugin; cancel: () => void } {
+  let cancelled = false
+  const plugin: Plugin = {
+    name: 'vite:cancel',
+    setup(build) {
+      // external urls
+      build.onResolve({ filter: /.*/ }, () => {
+        if (cancelled) {
+          throw new Error('vite:cancel')
+        }
+        return null
+      })
+    },
+  }
+  const cancel = () => {
+    cancelled = true
+  }
+  return { plugin, cancel }
 }
 
 /**
