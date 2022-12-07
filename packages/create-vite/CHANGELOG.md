@@ -1,3 +1,19 @@
+## 4.0.0-beta.0 (2022-12-07)
+
+* chore: enable prettier trailing commas (#11167) ([134ce68](https://github.com/vitejs/vite/commit/134ce68)), closes [#11167](https://github.com/vitejs/vite/issues/11167)
+* chore: update create-vite to use beta versions (#11244) ([f7cfab9](https://github.com/vitejs/vite/commit/f7cfab9)), closes [#11244](https://github.com/vitejs/vite/issues/11244)
+* chore(create-vite): align vue template with create-vue (#11128) ([1a54e58](https://github.com/vitejs/vite/commit/1a54e58)), closes [#11128](https://github.com/vitejs/vite/issues/11128)
+* chore(deps): typescript 4.9 (#11229) ([6b4c4e2](https://github.com/vitejs/vite/commit/6b4c4e2)), closes [#11229](https://github.com/vitejs/vite/issues/11229)
+* chore(deps): update all non-major dependencies (#10910) ([f6ad607](https://github.com/vitejs/vite/commit/f6ad607)), closes [#10910](https://github.com/vitejs/vite/issues/10910)
+* chore(deps): update all non-major dependencies (#11006) ([96f2e98](https://github.com/vitejs/vite/commit/96f2e98)), closes [#11006](https://github.com/vitejs/vite/issues/11006)
+* chore(deps): update all non-major dependencies (#11182) ([8b83089](https://github.com/vitejs/vite/commit/8b83089)), closes [#11182](https://github.com/vitejs/vite/issues/11182)
+* refactor: move framework plugins out of core (#11158) ([5935619](https://github.com/vitejs/vite/commit/5935619)), closes [#11158](https://github.com/vitejs/vite/issues/11158)
+* fix(deps): update all non-major dependencies (#10804) ([f686afa](https://github.com/vitejs/vite/commit/f686afa)), closes [#10804](https://github.com/vitejs/vite/issues/10804)
+* fix(deps): update all non-major dependencies (#11091) ([073a4bf](https://github.com/vitejs/vite/commit/073a4bf)), closes [#11091](https://github.com/vitejs/vite/issues/11091)
+* perf: regexp perf issues, refactor regexp stylistic issues (#10905) ([fc007df](https://github.com/vitejs/vite/commit/fc007df)), closes [#10905](https://github.com/vitejs/vite/issues/10905)
+
+
+
 ## <small>3.2.1 (2022-11-07)</small>
 
 * chore(deps): update all non-major dependencies (#10725) ([22cfad8](https://github.com/vitejs/vite/commit/22cfad8)), closes [#10725](https://github.com/vitejs/vite/issues/10725)
