@@ -201,7 +201,7 @@ export async function createPluginContainer(
     for (const plugin of getSortedPlugins(hookName)) {
       const hook = plugin[hookName]
       if (!hook) continue
-      const handler: Function = 'handler' in hook ? hook.handler : hook
+      const handler: Function = typeof hook === 'object' ? hook.handler : hook
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0

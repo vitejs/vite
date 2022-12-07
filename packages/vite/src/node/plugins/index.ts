@@ -121,8 +121,7 @@ export function createPluginHookUtils(
     return plugins
       .map((p) => {
         const hook = p[hookName]!
-        // @ts-expect-error cast
-        return 'handler' in hook ? hook.handler : hook
+        return typeof hook === 'object' ? hook.handler : hook
       })
       .filter(Boolean)
   }
