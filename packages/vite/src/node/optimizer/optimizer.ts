@@ -168,11 +168,13 @@ async function createDepsOptimizer(
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
-    await discoverProjectDependenciesPromise?.catch(() => {
-      /* ignore error for scanner because it's not important */
-    })
-    await postScanOptimizationResult
-    await optimizingNewDeps
+    await Promise.allSettled([
+      discoverProjectDependenciesPromise?.catch(() => {
+        /* ignore error for scanner because it's not important */
+      }),
+      postScanOptimizationResult,
+      optimizingNewDeps,
+    ])
   }
 
   if (!cachedMetadata) {
