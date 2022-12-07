@@ -50,14 +50,16 @@ export function bindShortcuts(
 
     if (input === 'h') {
       server.config.logger.info(
-        shortcuts
-          .map(
+        [
+          '',
+          colors.bold('  Shortcuts'),
+          ...shortcuts.map(
             (shortcut) =>
               colors.dim('  press ') +
               colors.bold(shortcut.key) +
               colors.dim(` to ${shortcut.description}`),
-          )
-          .join('\n'),
+          ),
+        ].join('\n'),
       )
     }
 

@@ -306,7 +306,7 @@ export interface ViteDevServer {
    * @internal
    * Actually BindShortcutsOptions | undefined but api-extractor checks for
    * export before trimming internal types :(
-   * And I don't want to complexity prePatchTypes for that
+   * And I don't want to add complexity to prePatchTypes for that
    */
   _shortcutsOptions: any | undefined
 }
