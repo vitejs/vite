@@ -1,3 +1,13 @@
+## 4.0.0-beta.3 (2022-12-07)
+
+* feat: export error message generator (#11155) ([493ba1e](https://github.com/vitejs/vite/commit/493ba1e)), closes [#11155](https://github.com/vitejs/vite/issues/11155)
+* fix: await scanner (#11242) ([52a6732](https://github.com/vitejs/vite/commit/52a6732)), closes [#11242](https://github.com/vitejs/vite/issues/11242)
+* fix(css): fix css lang regex (#11237) ([a55d0b3](https://github.com/vitejs/vite/commit/a55d0b3)), closes [#11237](https://github.com/vitejs/vite/issues/11237)
+* fix(resolve): ensure exports has precedence over mainFields (#11234) ([d6eb4f2](https://github.com/vitejs/vite/commit/d6eb4f2)), closes [#11234](https://github.com/vitejs/vite/issues/11234)
+* chore(deps)!: update esbuild to 0.16.1 (#11235) ([d90a262](https://github.com/vitejs/vite/commit/d90a262)), closes [#11235](https://github.com/vitejs/vite/issues/11235)
+
+
+
 ## 4.0.0-beta.2 (2022-12-07)
 
 * feat(node/plugins): esbuild options (#11049) ([735b98b](https://github.com/vitejs/vite/commit/735b98b)), closes [#11049](https://github.com/vitejs/vite/issues/11049)
