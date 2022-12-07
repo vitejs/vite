@@ -347,27 +347,12 @@
   <code class="dynamic-import-meta-url-2-comma"></code>
 </p>
 
-<h2>new URL(`./${dynamic}?abc`, import.meta.url)</h2>
+<h2>new URL(`./${nonExistent}`, import.meta.url)</h2>
 <p>
-  <img class="dynamic-import-meta-url-img-1-query" />
-  <code class="dynamic-import-meta-url-1-query"></code>
-</p>
-<p>
-  <img class="dynamic-import-meta-url-img-2-query" />
-  <code class="dynamic-import-meta-url-2-query"></code>
+  <code class="dynamic-import-meta-url-non-existent"></code>
 </p>
 
-<h2>new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)</h2>
-<p>
-  <img class="dynamic-import-meta-url-img-1-ternary" />
-  <code class="dynamic-import-meta-url-1-ternary"></code>
-</p>
-<p>
-  <img class="dynamic-import-meta-url-img-2-ternary" />
-  <code class="dynamic-import-meta-url-2-ternary"></code>
-</p>
-
-<h2>new URL(/* @vite-ignore */ 'non-existent', import.meta.url)</h2>
+<h2>new URL(`non-existent`, import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
 </p>
@@ -654,6 +639,13 @@
     '' + import.meta.url,
   ).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
+
+  const nonExistentName = 'non-existent'
+  const metaUrlNonExistentDynamic = new URL(
+    `./nested/${nonExistentName}.png`,
+    import.meta.url,
+  )
+  text('.dynamic-import-meta-url-non-existent', metaUrlNonExistentDynamic)
 
   /**
    * don't process the code in the comment
