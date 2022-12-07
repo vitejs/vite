@@ -136,6 +136,8 @@ export async function transformWithEsbuild(
     tsconfigRaw,
   } as ESBuildOptions
 
+  // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+  // but we want to prioritize the normal options
   if (
     options &&
     typeof resolvedOptions.tsconfigRaw === 'object' &&
