@@ -1,3 +1,9 @@
+## 4.0.0-beta.4 (2022-12-07)
+
+* feat: add CLI keyboard shortcuts (#11228) ([87973f1](https://github.com/vitejs/vite/commit/87973f1)), closes [#11228](https://github.com/vitejs/vite/issues/11228)
+
+
+
 ## 4.0.0-beta.3 (2022-12-07)
 
 * feat: export error message generator (#11155) ([493ba1e](https://github.com/vitejs/vite/commit/493ba1e)), closes [#11155](https://github.com/vitejs/vite/issues/11155)
