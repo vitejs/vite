@@ -418,6 +418,10 @@ export async function createServer(
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
       ])
+
+      // Testing esbuild not closing properly on CI issue
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       server.resolvedUrls = null
     },
     printUrls() {
