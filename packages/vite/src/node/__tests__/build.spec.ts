@@ -421,7 +421,6 @@ describe('resolveBuildOutputs', () => {
   })
 
   test('array outputs: should ignore build.lib.formats', () => {
-    // @ts-expect-error mock Logger
     const log = { warn: vi.fn() } as Logger
     expect(
       resolveBuildOutputs(

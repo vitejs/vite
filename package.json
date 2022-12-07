@@ -86,7 +86,7 @@
     "simple-git-hooks": "^2.8.1",
     "tslib": "^2.4.1",
     "tsx": "^3.12.1",
-    "typescript": "^4.6.4",
+    "typescript": "^4.9.3",
     "unbuild": "^0.9.4",
     "vite": "workspace:*",
     "vitepress": "^1.0.0-alpha.29",

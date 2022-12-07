@@ -646,7 +646,7 @@ function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
   return splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const [url] = imageSetUrlRE.exec(src) || []
+      const [url] = imageSetUrlRE.exec(src) || ['']
 
       return {
         url,
@@ -884,6 +884,7 @@ export async function resolveServerUrls(
           // Node < v18
           ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
             // Node >= v18
+            // @ts-expect-error
             (typeof detail.family === 'number' && detail.family === 4)),
       )
       .forEach((detail) => {

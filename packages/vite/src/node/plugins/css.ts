@@ -1737,7 +1737,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     // normalize error info
     const normalizedError: RollupError = new Error(
       `[less] ${error.message || error.type}`,
-    )
+    ) as RollupError
     normalizedError.loc = {
       file: error.filename || options.filename,
       line: error.line,

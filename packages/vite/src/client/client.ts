@@ -358,12 +358,9 @@ export function updateStyle(id: string, content: string): void {
 
     if (!style) {
       style = new CSSStyleSheet()
-      // @ts-expect-error: using experimental API
       style.replaceSync(content)
-      // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
-      // @ts-expect-error: using experimental API
       style.replaceSync(content)
     }
   } else {
@@ -389,7 +386,6 @@ export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
-      // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style,
       )
