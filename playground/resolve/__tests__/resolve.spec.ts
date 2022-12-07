@@ -53,6 +53,10 @@ test('Respect production/development conditionals', async () => {
   )
 })
 
+test('Respect exports to take precedence over mainFields', async () => {
+  expect(await page.textContent('.exports-with-module')).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })

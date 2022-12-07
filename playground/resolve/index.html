@@ -27,6 +27,9 @@
 <h2>Exports with legacy fallback</h2>
 <p class="exports-legacy-fallback">fail</p>
 
+<h2>Exports with module</h2>
+<p class="exports-with-module">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -168,6 +171,9 @@
 
   import { msg as exportsLegacyFallbackMsg } from '@vitejs/test-resolve-exports-legacy-fallback/dir'
   text('.exports-legacy-fallback', exportsLegacyFallbackMsg)
+
+  import { msg as exportsWithModule } from '@vitejs/test-resolve-exports-with-module'
+  text('.exports-with-module', exportsWithModule)
 
   // implicit index resolving
   import { foo } from './util'

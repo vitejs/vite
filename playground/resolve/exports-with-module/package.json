@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-resolve-exports-with-module",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "module": "./module.mjs",
+  "exports": {
+    "import": "./import.mjs"
+  }
+}
