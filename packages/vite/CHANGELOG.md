@@ -1,3 +1,9 @@
+## 4.0.0-beta.7 (2022-12-08)
+
+* fix(resolve): revert ensure exports has precedence over mainFields (#11234) (#11270) ([8d05daf](https://github.com/vitejs/vite/commit/8d05daf)), closes [#11234](https://github.com/vitejs/vite/issues/11234) [#11270](https://github.com/vitejs/vite/issues/11270)
+
+
+
 ## 4.0.0-beta.6 (2022-12-08)
 
 * chore: update esbuild to 0.16.2 (#11265) ([e1d8d46](https://github.com/vitejs/vite/commit/e1d8d46)), closes [#11265](https://github.com/vitejs/vite/issues/11265)
