@@ -31,10 +31,7 @@ import {
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
-import {
-  rebindErrorStacktrace,
-  ssrRewriteStacktrace,
-} from '../ssr/ssrStacktrace'
+import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
   getDepsOptimizer,
@@ -388,10 +385,7 @@ export async function createServer(
       )
     },
     ssrFixStacktrace(e) {
-      if (e.stack) {
-        const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-        rebindErrorStacktrace(e, stacktrace)
-      }
+      ssrFixStacktrace(e, moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
       return ssrRewriteStacktrace(stack, moduleGraph)

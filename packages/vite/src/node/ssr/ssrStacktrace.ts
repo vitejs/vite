@@ -71,3 +71,16 @@ export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
     e.stack = stacktrace
   }
 }
+
+const rewroteStacktraces = new WeakSet()
+
+export function ssrFixStacktrace(e: Error, moduleGraph: ModuleGraph): void {
+  if (!e.stack) return
+  // stacktrace shouldn't be rewritten more than once
+  if (rewroteStacktraces.has(e)) return
+
+  const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+  rebindErrorStacktrace(e, stacktrace)
+
+  rewroteStacktraces.add(e)
+}

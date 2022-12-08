@@ -21,3 +21,23 @@ test('ssrLoad', async () => {
     )
   }
 })
+
+test('error has same instance', async () => {
+  expect.assertions(3)
+  const s = Symbol()
+
+  const server = await createDevServer()
+  try {
+    await server.ssrLoadModule('/fixtures/modules/has-error.js')
+  } catch (e) {
+    expect(e[s]).toBeUndefined()
+    e[s] = true
+    expect(e[s]).toBe(true)
+  }
+
+  try {
+    await server.ssrLoadModule('/fixtures/modules/has-error.js')
+  } catch (e) {
+    expect(e[s]).toBe(true)
+  }
+})
