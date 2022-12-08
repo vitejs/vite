@@ -111,7 +111,7 @@ export const core = [
     avatar: 'https://github.com/ArnaudBarre.png',
     name: 'Arnaud Barré',
     title: 'Frontend Developer',
-    desc: 'Vite team member.',
+    desc: 'Passionate by tooling around TypeScript and React.',
     links: [{ icon: 'github', link: 'https://github.com/ArnaudBarre' }],
   },
 ]
