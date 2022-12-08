@@ -128,8 +128,6 @@ export async function transformWithEsbuild(
   }
 
   const resolvedOptions = {
-    // esbuild 0.16.0 & 0.16.1 defaults to 'browser': https://github.com/evanw/esbuild/issues/2718
-    platform: 'neutral',
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
