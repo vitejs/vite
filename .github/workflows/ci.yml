@@ -62,20 +62,26 @@ jobs:
         run: pnpm install
 
       # Install playwright's binary under custom directory to cache
-      - name: Set Playwright path (non-windows)
+      - name: (non-windows) Set Playwright path and Get playwright version
         if: runner.os != 'Windows'
-        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
-      - name: Set Playwright path (windows)
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
+          PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
+          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
+      - name: (windows) Set Playwright path and Get playwright version
         if: runner.os == 'Windows'
-        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
+          $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies[\"playwright-chromium\"].version')"
+          echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
-          # Playwright removes unused browsers automatically
-          # So does not need to add playwright version to key
-          key: ${{ runner.os }}-playwright-bin-v1
+          key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-bin-v1-
 
       - name: Install Playwright
         # does not need to explicitly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
