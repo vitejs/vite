@@ -22,7 +22,6 @@
     "@vitejs/test-resolve-exports-env": "link:./exports-env",
     "@vitejs/test-resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
     "@vitejs/test-resolve-exports-path": "link:./exports-path",
-    "@vitejs/test-resolve-exports-with-module": "link:./exports-with-module",
     "@vitejs/test-resolve-linked": "workspace:*"
   }
 }
