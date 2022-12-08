@@ -24,6 +24,9 @@
 <h2>Exports field env priority</h2>
 <p class="exports-env">fail</p>
 
+<h2>Exports field read only from the root package.json</h2>
+<p class="exports-from-root">fail</p>
+
 <h2>Exports with legacy fallback</h2>
 <p class="exports-legacy-fallback">fail</p>
 
@@ -165,6 +168,9 @@
 
   import { msg as exportsEnvMsg } from '@vitejs/test-resolve-exports-env'
   text('.exports-env', exportsEnvMsg)
+
+  import { msg as exportsFromRootMsg } from '@vitejs/test-resolve-exports-from-root/nested'
+  text('.exports-from-root', exportsFromRootMsg)
 
   import { msg as exportsLegacyFallbackMsg } from '@vitejs/test-resolve-exports-legacy-fallback/dir'
   text('.exports-legacy-fallback', exportsLegacyFallbackMsg)

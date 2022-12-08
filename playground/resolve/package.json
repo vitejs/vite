@@ -20,6 +20,7 @@
     "@vitejs/test-resolve-custom-condition": "link:./custom-condition",
     "@vitejs/test-resolve-custom-main-field": "link:./custom-main-field",
     "@vitejs/test-resolve-exports-env": "link:./exports-env",
+    "@vitejs/test-resolve-exports-from-root": "link:./exports-from-root",
     "@vitejs/test-resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
     "@vitejs/test-resolve-exports-path": "link:./exports-path",
     "@vitejs/test-resolve-linked": "workspace:*"

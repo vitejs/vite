@@ -36,6 +36,10 @@ test('deep import with exports field + mapped dir', async () => {
   )
 })
 
+test('exports read from the root package.json', async () => {
+  expect(await page.textContent('.exports-from-root')).toMatch('[success]')
+})
+
 // this is how Svelte 3 is packaged
 test('deep import with exports and legacy fallback', async () => {
   expect(await page.textContent('.exports-legacy-fallback')).toMatch(
