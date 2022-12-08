@@ -39,6 +39,28 @@ export const core = [
     sponsor: 'https://github.com/sponsors/antfu',
   },
   {
+    avatar: 'https://github.com/bluwy.png',
+    name: 'Bjorn Lu',
+    title: 'Frontend Developer',
+    desc: 'Svelte and Vite team member. Something something opinions.',
+    links: [
+      { icon: 'github', link: 'https://github.com/bluwy' },
+      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
+    ],
+    sponsor: 'https://bjornlu.com/sponsor',
+  },
+  {
+    avatar: 'https://github.com/sapphi-red.png',
+    name: 'green',
+    title: 'Web Developer',
+    desc: 'Vite team member. Call me sapphi or green or midori ;)',
+    links: [
+      { icon: 'github', link: 'https://github.com/sapphi-red' },
+      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
+    ],
+    sponsor: 'https://github.com/sponsors/sapphi-red',
+  },
+  {
     avatar: 'https://github.com/sodatea.png',
     name: 'Haoqun Jiang',
     title: 'Developer',
@@ -76,17 +98,6 @@ export const core = [
     sponsor: 'https://github.com/sponsors/aleclarson',
   },
   {
-    avatar: 'https://github.com/bluwy.png',
-    name: 'Bjorn Lu',
-    title: 'Frontend Developer',
-    desc: 'Svelte and Vite team member. Something something opinions.',
-    links: [
-      { icon: 'github', link: 'https://github.com/bluwy' },
-      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
-    ],
-    sponsor: 'https://bjornlu.com/sponsor',
-  },
-  {
     avatar: 'https://github.com/poyoho.png',
     name: 'yoho',
     title: 'Frontend Developer',
@@ -97,16 +108,15 @@ export const core = [
     ],
   },
   {
-    avatar: 'https://github.com/sapphi-red.png',
-    name: 'green',
-    title: 'Web Developer',
-    desc: 'Vite team member. Call me sapphi or green or midori ;)',
-    links: [
-      { icon: 'github', link: 'https://github.com/sapphi-red' },
-      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
-    ],
-    sponsor: 'https://github.com/sponsors/sapphi-red',
+    avatar: 'https://github.com/ArnaudBarre.png',
+    name: 'Arnaud Barré',
+    title: 'Frontend Developer',
+    desc: 'Passionate by tooling around TypeScript and React.',
+    links: [{ icon: 'github', link: 'https://github.com/ArnaudBarre' }],
   },
+]
+
+export const emeriti = [
   {
     avatar: 'https://github.com/ygj6.png',
     name: 'ygj6',
@@ -128,9 +138,6 @@ export const core = [
       { icon: 'twitter', link: 'https://twitter.com/Niputi_' },
     ],
   },
-]
-
-export const emeriti = [
   {
     avatar: 'https://github.com/underfin.png',
     name: 'underfin',
