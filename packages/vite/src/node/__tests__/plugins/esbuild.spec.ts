@@ -250,7 +250,7 @@ describe('transformWithEsbuild', () => {
     expect(result?.map).toBeTruthy()
   })
 
-  test('correctly overrides TS configuration and applies transform', async () => {
+  test('correctly overrides TS configuration and applies automatic transform', async () => {
     const result = await transformWithEsbuild(
       'const foo = () => <></>',
       'baz.jsx',
@@ -284,7 +284,7 @@ describe('transformWithEsbuild', () => {
     expect(result?.code).toContain(foo)
   })
 
-  test('correctly overrides TS configuration and preserves code', async () => {
+  test('correctly overrides TS configuration and transforms code', async () => {
     const jsxFactory = 'h',
       jsxFragment = 'bar'
     const result = await transformWithEsbuild(
