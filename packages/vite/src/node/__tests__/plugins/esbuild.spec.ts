@@ -251,6 +251,7 @@ describe('transformWithEsbuild', () => {
   })
 
   test('correctly overrides TS configuration and applies automatic transform', async () => {
+    const jsxImportSource = 'bar'
     const result = await transformWithEsbuild(
       'const foo = () => <></>',
       'baz.jsx',
@@ -258,14 +259,13 @@ describe('transformWithEsbuild', () => {
         tsconfigRaw: {
           compilerOptions: {
             jsx: 'preserve',
-            jsxImportSource: 'react',
           },
         },
         jsx: 'automatic',
-        jsxImportSource: 'bar',
+        jsxImportSource,
       },
     )
-    expect(result?.code).toContain('bar/jsx-runtime')
+    expect(result?.code).toContain(`${jsxImportSource}/jsx-runtime`)
     expect(result?.code).toContain('/* @__PURE__ */')
   })
 
@@ -275,11 +275,9 @@ describe('transformWithEsbuild', () => {
       tsconfigRaw: {
         compilerOptions: {
           jsx: 'react-jsx',
-          jsxImportSource: 'react',
         },
       },
       jsx: 'preserve',
-      jsxImportSource: 'bar',
     })
     expect(result?.code).toContain(foo)
   })
