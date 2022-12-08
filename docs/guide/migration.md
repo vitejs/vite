@@ -53,6 +53,13 @@ This double loading could occur since a `.css` file will be emitted and it's lik
 import stuff from './global.css?inline'
 ```
 
+### `dotenv` update
+
+Vite is now using dotenv 16 and dotenv-expand 9 (previously dotenv 14 and dotenv-expand 5).
+
+If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
+See their changelog for more details ([`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md), [`dotenv-expand`](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md)).
+
 ## Advanced
 
 There are some changes which only affect plugin/tool creators.
