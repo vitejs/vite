@@ -1,5 +1,5 @@
 {
-  "name": "linked-no-external",
+  "name": "@vitejs/test-linked-no-external",
   "private": true,
   "type": "module",
   "version": "0.0.0"

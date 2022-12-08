@@ -14,7 +14,7 @@ try {
 
 export function ssrRewriteStacktrace(
   stack: string,
-  moduleGraph: ModuleGraph
+  moduleGraph: ModuleGraph,
 ): string {
   return stack
     .split('\n')
@@ -35,7 +35,7 @@ export function ssrRewriteStacktrace(
 
           const pos = originalPositionFor(traced, {
             line: Number(line) - offset,
-            column: Number(column)
+            column: Number(column),
           })
 
           if (!pos.source || pos.line == null || pos.column == null) {
@@ -49,7 +49,7 @@ export function ssrRewriteStacktrace(
           } else {
             return `    at ${trimedVarName} (${source})`
           }
-        }
+        },
       )
     })
     .join('\n')
@@ -58,14 +58,14 @@ export function ssrRewriteStacktrace(
 export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
   const { configurable, writable } = Object.getOwnPropertyDescriptor(
     e,
-    'stack'
+    'stack',
   )!
   if (configurable) {
     Object.defineProperty(e, 'stack', {
       value: stacktrace,
       enumerable: true,
       configurable: true,
-      writable: true
+      writable: true,
     })
   } else if (writable) {
     e.stack = stacktrace

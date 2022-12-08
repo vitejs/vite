@@ -1,5 +1,5 @@
 {
-  "name": "test-fs-serve",
+  "name": "@vitejs/test-fs-serve",
   "private": true,
   "version": "0.0.0",
   "scripts": {

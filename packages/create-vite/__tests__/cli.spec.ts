@@ -11,7 +11,7 @@ const genPath = join(__dirname, projectName)
 
 const run = (
   args: string[],
-  options: SyncOptions = {}
+  options: SyncOptions = {},
 ): ExecaSyncReturnValue => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
 }
@@ -59,7 +59,7 @@ test('prompts for the framework on not supplying a value for --template', () => 
 test('prompts for the framework on supplying an invalid template', () => {
   const { stdout } = run([projectName, '--template', 'unknown'])
   expect(stdout).toContain(
-    `"unknown" isn't a valid template. Please choose from below:`
+    `"unknown" isn't a valid template. Please choose from below:`,
   )
 })
 
@@ -77,7 +77,7 @@ test('asks to overwrite non-empty current directory', () => {
 
 test('successfully scaffolds a project based on vue starter template', () => {
   const { stdout } = run([projectName, '--template', 'vue'], {
-    cwd: __dirname
+    cwd: __dirname,
   })
   const generatedFiles = readdirSync(genPath).sort()
 
@@ -88,7 +88,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
 
 test('works with the -t alias', () => {
   const { stdout } = run([projectName, '-t', 'vue'], {
-    cwd: __dirname
+    cwd: __dirname,
   })
   const generatedFiles = readdirSync(genPath).sort()
 

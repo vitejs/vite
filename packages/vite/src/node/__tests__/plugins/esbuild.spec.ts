@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import type { ResolvedConfig, UserConfig } from '../../config'
-import { resolveEsbuildTranspileOptions } from '../../plugins/esbuild'
+import {
+  ESBuildTransformResult,
+  resolveEsbuildTranspileOptions,
+  transformWithEsbuild,
+} from '../../plugins/esbuild'
 
 describe('resolveEsbuildTranspileOptions', () => {
   test('resolve default', () => {
@@ -8,13 +12,13 @@ describe('resolveEsbuildTranspileOptions', () => {
       defineResolvedConfig({
         build: {
           target: 'es2020',
-          minify: 'esbuild'
+          minify: 'esbuild',
         },
         esbuild: {
-          keepNames: true
-        }
+          keepNames: true,
+        },
       }),
-      'es'
+      'es',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -25,8 +29,8 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: true,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
   })
 
@@ -35,13 +39,13 @@ describe('resolveEsbuildTranspileOptions', () => {
       defineResolvedConfig({
         build: {
           target: 'esnext',
-          minify: false
+          minify: false,
         },
         esbuild: {
-          keepNames: true
-        }
+          keepNames: true,
+        },
       }),
-      'es'
+      'es',
     )
     expect(options).toEqual(null)
   })
@@ -50,14 +54,14 @@ describe('resolveEsbuildTranspileOptions', () => {
     const options = resolveEsbuildTranspileOptions(
       defineResolvedConfig({
         build: {
-          minify: 'esbuild'
+          minify: 'esbuild',
         },
         esbuild: {
           keepNames: true,
-          minifyIdentifiers: false
-        }
+          minifyIdentifiers: false,
+        },
       }),
-      'es'
+      'es',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -71,8 +75,8 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: true,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
   })
 
@@ -81,13 +85,13 @@ describe('resolveEsbuildTranspileOptions', () => {
       defineResolvedConfig({
         build: {
           target: 'es2020',
-          minify: false
+          minify: false,
         },
         esbuild: {
-          keepNames: true
-        }
+          keepNames: true,
+        },
       }),
-      'es'
+      'es',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -101,8 +105,8 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: false,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
   })
 
@@ -112,14 +116,14 @@ describe('resolveEsbuildTranspileOptions', () => {
         build: {
           minify: 'esbuild',
           lib: {
-            entry: './somewhere.js'
-          }
+            entry: './somewhere.js',
+          },
         },
         esbuild: {
-          keepNames: true
-        }
+          keepNames: true,
+        },
       }),
-      'es'
+      'es',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -133,8 +137,8 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: true,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
   })
 
@@ -144,14 +148,14 @@ describe('resolveEsbuildTranspileOptions', () => {
         build: {
           minify: 'esbuild',
           lib: {
-            entry: './somewhere.js'
-          }
+            entry: './somewhere.js',
+          },
         },
         esbuild: {
-          keepNames: true
-        }
+          keepNames: true,
+        },
       }),
-      'cjs'
+      'cjs',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -162,8 +166,8 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: true,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
   })
 
@@ -173,16 +177,16 @@ describe('resolveEsbuildTranspileOptions', () => {
         build: {
           minify: 'esbuild',
           lib: {
-            entry: './somewhere.js'
-          }
+            entry: './somewhere.js',
+          },
         },
         esbuild: {
           keepNames: true,
           minifyIdentifiers: true,
-          minifyWhitespace: true
-        }
+          minifyWhitespace: true,
+        },
       }),
-      'es'
+      'es',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -196,8 +200,8 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: true,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
   })
 
@@ -207,17 +211,17 @@ describe('resolveEsbuildTranspileOptions', () => {
         build: {
           minify: 'esbuild',
           lib: {
-            entry: './somewhere.js'
-          }
+            entry: './somewhere.js',
+          },
         },
         esbuild: {
           keepNames: true,
           minifyIdentifiers: true,
           minifySyntax: false,
-          treeShaking: true
-        }
+          treeShaking: true,
+        },
       }),
-      'cjs'
+      'cjs',
     )
     expect(options).toEqual({
       charset: 'utf8',
@@ -231,9 +235,19 @@ describe('resolveEsbuildTranspileOptions', () => {
       treeShaking: true,
       supported: {
         'dynamic-import': true,
-        'import-meta': true
-      }
+        'import-meta': true,
+      },
     })
+  })
+})
+
+describe('transformWithEsbuild', () => {
+  test('not throw on inline sourcemap', async () => {
+    const result = await transformWithEsbuild(`const foo = 'bar'`, '', {
+      sourcemap: 'inline',
+    })
+    expect(result?.code).toBeTruthy()
+    expect(result?.map).toBeTruthy()
   })
 })
 

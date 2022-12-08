@@ -1,5 +1,5 @@
 {
-  "name": "test-package-e-included",
+  "name": "@vitejs/test-package-e-included",
   "private": true,
   "version": "0.1.0",
   "type": "module",

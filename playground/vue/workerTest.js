@@ -1,1 +1,0 @@
-self.postMessage('worker load!')

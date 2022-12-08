@@ -18,9 +18,9 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [
     legacy({
-      targets: ['defaults', 'not IE 11']
-    })
-  ]
+      targets: ['defaults', 'not IE 11'],
+    }),
+  ],
 })
 ```
 
@@ -55,9 +55,9 @@ export default defineConfig({
   plugins: [
     {
       ...image(),
-      enforce: 'pre'
-    }
-  ]
+      enforce: 'pre',
+    },
+  ],
 })
 ```
 
@@ -76,9 +76,9 @@ export default defineConfig({
   plugins: [
     {
       ...typescript2(),
-      apply: 'build'
-    }
-  ]
+      apply: 'build',
+    },
+  ],
 })
 ```
 
