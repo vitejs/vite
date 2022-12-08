@@ -249,6 +249,37 @@ describe('transformWithEsbuild', () => {
     expect(result?.code).toBeTruthy()
     expect(result?.map).toBeTruthy()
   })
+
+  test('correctly overrides TS configuration and applies transform', async () => {
+    const foo = 'const foo = () => <></>'
+    const result = await transformWithEsbuild(foo, 'baz.jsx', {
+      tsconfigRaw: {
+        compilerOptions: {
+          jsx: 'preserve',
+          jsxImportSource: 'react',
+        },
+      },
+      jsx: 'automatic',
+      jsxImportSource: 'bar',
+    })
+    expect(result?.code).toContain('bar/jsx-runtime')
+    expect(result?.code).toContain('/* @__PURE__ */')
+  })
+
+  test('correctly overrides TS configuration and preserves code', async () => {
+    const foo = 'const foo = () => <></>'
+    const result = await transformWithEsbuild(foo, 'baz.jsx', {
+      tsconfigRaw: {
+        compilerOptions: {
+          jsx: 'react-jsx',
+          jsxImportSource: 'react',
+        },
+      },
+      jsx: 'preserve',
+      jsxImportSource: 'bar',
+    })
+    expect(result?.code).toContain(foo)
+  })
 })
 
 /**
