@@ -67,12 +67,7 @@ import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
-import {
-  getShortName,
-  handleFileAddUnlink,
-  handleHMRUpdate,
-  updateModules,
-} from './hmr'
+import { handleFileAddUnlink, handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -518,9 +513,9 @@ export async function createServer(
           (message ? ` ${message}` : ''),
         { timestamp: true },
       )
-      const file = getShortName(mod.file!, config.root)
+
       updateModules(
-        file,
+        mod.file!,
         [...mod.importers],
         mod.lastHMRTimestamp,
         server,
