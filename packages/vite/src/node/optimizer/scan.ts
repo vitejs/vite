@@ -110,7 +110,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
     absWorkingDir: process.cwd(),
     write: false,
     stdin: {
-      contents: entries.map((e) => `import '${e}'`).join('\n'),
+      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
       loader: 'js',
     },
     bundle: true,
