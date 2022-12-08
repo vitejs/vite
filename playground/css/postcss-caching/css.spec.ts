@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { createServer } from 'vite'
 import { expect, test } from 'vitest'
-import { getColor, page, ports } from '~utils'
+import { getColor, isServe, page, ports } from '~utils'
 
-test('postcss config', async () => {
+test.runIf(isServe)('postcss config', async () => {
   const port = ports['css/postcss-caching']
   const startServer = async (root) => {
     const server = await createServer({
