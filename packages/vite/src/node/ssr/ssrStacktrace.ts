@@ -72,18 +72,15 @@ export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
   }
 }
 
-const rewroteStacktraceSymbol = Symbol('Vite.rewroteStacktrace')
+const rewroteStacktraces = new WeakSet()
 
-export function ssrFixStacktrace(
-  e: Error & { [rewroteStacktraceSymbol]?: true },
-  moduleGraph: ModuleGraph
-): void {
+export function ssrFixStacktrace(e: Error, moduleGraph: ModuleGraph): void {
   if (!e.stack) return
   // stacktrace shouldn't be rewritten more than once
-  if (e[rewroteStacktraceSymbol]) return
+  if (rewroteStacktraces.has(e)) return
 
   const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
   rebindErrorStacktrace(e, stacktrace)
 
-  e[rewroteStacktraceSymbol] = true
+  rewroteStacktraces.add(e)
 }
