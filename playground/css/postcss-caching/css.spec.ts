@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { createServer } from 'vite'
 import { expect, test } from 'vitest'
-import { getColor, page, ports } from '~utils'
+import { getColor, isServe, page, ports } from '~utils'
 
-test('postcss config', async () => {
+test.runIf(isServe)('postcss config', async () => {
   const port = ports['css/postcss-caching']
   const startServer = async (root) => {
     const server = await createServer({
@@ -21,11 +21,16 @@ test('postcss config', async () => {
     await server.listen()
     return server
   }
+
   const blueAppDir = path.join(__dirname, 'blue-app')
   const greenAppDir = path.join(__dirname, 'green-app')
   let blueApp
   let greenApp
   try {
+    const hmrConnectionPromise = page.waitForEvent('console', (msg) =>
+      msg.text().includes('connected'),
+    )
+
     blueApp = await startServer(blueAppDir)
 
     await page.goto(`http://localhost:${port}`)
@@ -33,11 +38,16 @@ test('postcss config', async () => {
     expect(await getColor(blueA)).toBe('blue')
     const blueB = await page.$('.postcss-b')
     expect(await getColor(blueB)).toBe('black')
+
+    // wait for hmr connection because: if server stops before connection, auto reload does not happen
+    await hmrConnectionPromise
     await blueApp.close()
     blueApp = null
 
+    const navigationPromise = page.waitForNavigation() // wait for server restart auto reload
     greenApp = await startServer(greenAppDir)
-    await page.reload() // hmr reloads it automatically but reload here for consistency
+    await navigationPromise
+
     const greenA = await page.$('.postcss-a')
     expect(await getColor(greenA)).toBe('black')
     const greenB = await page.$('.postcss-b')
