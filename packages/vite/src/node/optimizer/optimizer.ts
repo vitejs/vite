@@ -161,17 +161,12 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   let postScanOptimizationResult: Promise<DepOptimizationResult> | undefined
-  let discoverProjectDependenciesPromise:
-    | Promise<Record<string, string>>
-    | undefined
 
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
     await Promise.allSettled([
-      discoverProjectDependenciesPromise?.catch(() => {
-        /* ignore error for scanner because it's not important */
-      }),
+      depsOptimizer.scanProcessing,
       postScanOptimizationResult,
       optimizingNewDeps,
     ])
@@ -203,52 +198,50 @@ async function createDepsOptimizer(
 
     if (!isBuild) {
       // Important, the scanner is dev only
-      const scanPhaseProcessing = newDepOptimizationProcessing()
-      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
-      // Ensure server listen is called before the scanner
-      setTimeout(async () => {
-        try {
-          debug(colors.green(`scanning for dependencies...`))
+      depsOptimizer.scanProcessing = new Promise((resolve) => {
+        // Ensure server listen is called before the scanner
+        setTimeout(async () => {
+          try {
+            debug(colors.green(`scanning for dependencies...`))
 
-          discoverProjectDependenciesPromise =
-            discoverProjectDependencies(config)
-          const deps = await discoverProjectDependenciesPromise
+            const deps = await discoverProjectDependencies(config)
 
-          debug(
-            colors.green(
-              Object.keys(deps).length > 0
-                ? `dependencies found by scanner: ${depsLogString(
-                    Object.keys(deps),
-                  )}`
-                : `no dependencies found by scanner`,
-            ),
-          )
+            debug(
+              colors.green(
+                Object.keys(deps).length > 0
+                  ? `dependencies found by scanner: ${depsLogString(
+                      Object.keys(deps),
+                    )}`
+                  : `no dependencies found by scanner`,
+              ),
+            )
 
-          // Add these dependencies to the discovered list, as these are currently
-          // used by the preAliasPlugin to support aliased and optimized deps.
-          // This is also used by the CJS externalization heuristics in legacy mode
-          for (const id of Object.keys(deps)) {
-            if (!metadata.discovered[id]) {
-              addMissingDep(id, deps[id])
+            // Add these dependencies to the discovered list, as these are currently
+            // used by the preAliasPlugin to support aliased and optimized deps.
+            // This is also used by the CJS externalization heuristics in legacy mode
+            for (const id of Object.keys(deps)) {
+              if (!metadata.discovered[id]) {
+                addMissingDep(id, deps[id])
+              }
             }
-          }
 
-          if (!isBuild) {
-            const knownDeps = prepareKnownDeps()
+            if (!isBuild) {
+              const knownDeps = prepareKnownDeps()
 
-            // For dev, we run the scanner and the first optimization
-            // run on the background, but we wait until crawling has ended
-            // to decide if we send this result to the browser or we need to
-            // do another optimize step
-            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+              // For dev, we run the scanner and the first optimization
+              // run on the background, but we wait until crawling has ended
+              // to decide if we send this result to the browser or we need to
+              // do another optimize step
+              postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+            }
+          } catch (e) {
+            logger.error(e.message)
+          } finally {
+            resolve()
+            depsOptimizer.scanProcessing = undefined
           }
-        } catch (e) {
-          logger.error(e.message)
-        } finally {
-          scanPhaseProcessing.resolve()
-          depsOptimizer.scanProcessing = undefined
-        }
-      }, 0)
+        }, 0)
+      })
     }
   }
 
