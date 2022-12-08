@@ -47,7 +47,7 @@ If you recently started using Vite, we suggest reading the [Why Vite Guide](http
 
 ## Try Vite 4 now
 
-Use `pnpm create vite` to scafold a Vite project with your preferred framework, or open a started template online to play with Vite 4 using [vite.new](https://vite.new).
+Use `pnpm create vite` to scaffold a Vite project with your preferred framework, or open a started template online to play with Vite 4 using [vite.new](https://vite.new).
 
 You can also run `pnpm create vite-extra` to get access to templates from other frameworks and runtimes (ssr templates, Solid, deno, library starter). `create vite-extra` templates are also available when you run `create vite` under the `Others` option.
 
