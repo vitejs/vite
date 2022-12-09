@@ -606,7 +606,7 @@ importers:
 
   playground/optimize-deps:
     specifiers:
-      '@vitejs/plugin-vue': ^4.0.0-alpha.2
+      '@vitejs/plugin-vue': ^4.0.0
       '@vitejs/test-added-in-entries': file:./added-in-entries
       '@vitejs/test-dep-cjs-browser-field-bare': file:./dep-cjs-browser-field-bare
       '@vitejs/test-dep-cjs-compiled-from-cjs': file:./dep-cjs-compiled-from-cjs
@@ -667,7 +667,7 @@ importers:
       vue: 3.2.45
       vuex: 4.1.0_vue@3.2.45
     devDependencies:
-      '@vitejs/plugin-vue': 4.0.0-alpha.2_vue@3.2.45
+      '@vitejs/plugin-vue': 4.0.0_vue@3.2.45
 
   playground/optimize-deps/added-in-entries:
     specifiers: {}
@@ -755,7 +755,7 @@ importers:
 
   playground/preload:
     specifiers:
-      '@vitejs/plugin-vue': ^4.0.0-alpha.2
+      '@vitejs/plugin-vue': ^4.0.0
       '@vitejs/test-dep-a': file:./dep-a
       '@vitejs/test-dep-including-a': file:./dep-including-a
       terser: ^5.16.1
@@ -765,7 +765,7 @@ importers:
       vue: 3.2.45
       vue-router: 4.1.6_vue@3.2.45
     devDependencies:
-      '@vitejs/plugin-vue': 4.0.0-alpha.2_vue@3.2.45
+      '@vitejs/plugin-vue': 4.0.0_vue@3.2.45
       '@vitejs/test-dep-a': file:playground/preload/dep-a
       '@vitejs/test-dep-including-a': file:playground/preload/dep-including-a
       terser: 5.16.1
@@ -1052,7 +1052,7 @@ importers:
 
   playground/tailwind:
     specifiers:
-      '@vitejs/plugin-vue': ^4.0.0-alpha.2
+      '@vitejs/plugin-vue': ^4.0.0
       autoprefixer: ^10.4.13
       tailwindcss: ^3.2.4
       ts-node: ^10.9.1
@@ -1064,7 +1064,7 @@ importers:
       vue: 3.2.45
       vue-router: 4.1.6_vue@3.2.45
     devDependencies:
-      '@vitejs/plugin-vue': 4.0.0-alpha.2_vue@3.2.45
+      '@vitejs/plugin-vue': 4.0.0_vue@3.2.45
       ts-node: 10.9.1
 
   playground/tailwind-sourcemap:
@@ -2412,11 +2412,11 @@ packages:
       vue: 3.2.45
     dev: true
 
-  /@vitejs/plugin-vue/4.0.0-alpha.2_vue@3.2.45:
-    resolution: {integrity: sha512-9HFfWQUIgthEardZqF/p1dK9bF5vvt5r9syNA0BpUPC00UFZHEcJ9CvgXHrzH2oOHcA2MErD4N++n0Ngufat+w==}
+  /@vitejs/plugin-vue/4.0.0_vue@3.2.45:
+    resolution: {integrity: sha512-e0X4jErIxAB5oLtDqbHvHpJe/uWNkdpYV83AOG2xo2tEVSzCzewgJMtREZM30wXnM5ls90hxiOtAuVU6H5JgbA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
-      vite: ^3.0.0
+      vite: ^4.0.0
       vue: ^3.2.25
     dependencies:
       vue: 3.2.45
