@@ -28,6 +28,20 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent. To get inlining, make sure to download the file contents via Git LFS before building.
 
+### With TypeScript
+Static asset imports may not be recognized as valid modules in TypeScript environments. To account for this, declare wildcard modules for needed file extensions in a seperate `.d.ts` file:
+
+```ts
+declare module '*.png' {
+   const value: string;
+   export default value;
+}
+declare module '*.jpg' {
+   const value: string;
+   export default value;
+}
+```
+
 ### Explicit URL Imports
 
 Assets that are not included in the internal list or in `assetsInclude`, can be explicitly imported as a URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
