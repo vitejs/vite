@@ -43,7 +43,7 @@
   },
   "peerDependencies": {
     "terser": "^5.4.0",
-    "vite": "^3.0.0"
+    "vite": "^4.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.5",

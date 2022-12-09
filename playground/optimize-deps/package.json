@@ -40,6 +40,6 @@
     "lodash.clonedeep": "^4.5.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.0.0-alpha.2"
+    "@vitejs/plugin-vue": "^4.0.0"
   }
 }
