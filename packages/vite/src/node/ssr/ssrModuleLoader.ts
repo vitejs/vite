@@ -17,7 +17,7 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './ssrTransform'
-import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
+import { ssrFixStacktrace } from './ssrStacktrace'
 
 interface SSRContext {
   global: typeof globalThis
@@ -203,10 +203,9 @@ async function instantiateModule(
   } catch (e) {
     mod.ssrError = e
     if (e.stack && fixStacktrace) {
-      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-      rebindErrorStacktrace(e, stacktrace)
+      ssrFixStacktrace(e, moduleGraph)
       server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+        `Error when evaluating SSR module ${url}:\n${e.stack}`,
         {
           timestamp: true,
           clear: server.config.clearScreen,
