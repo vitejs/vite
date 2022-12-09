@@ -1,3 +1,10 @@
+## 3.0.0 (2022-12-09)
+
+* chore: enable prettier trailing commas (#11167) ([134ce68](https://github.com/vitejs/vite/commit/134ce68)), closes [#11167](https://github.com/vitejs/vite/issues/11167)
+* chore(deps): update all non-major dependencies (#11182) ([8b83089](https://github.com/vitejs/vite/commit/8b83089)), closes [#11182](https://github.com/vitejs/vite/issues/11182)
+
+
+
 ## 3.0.0-alpha.0 (2022-11-30)
 
 * fix: support polyfill import paths containing an escaping char (e.g. '\') (#10859) ([7ac2535](https://github.com/vitejs/vite/commit/7ac2535)), closes [#10859](https://github.com/vitejs/vite/issues/10859)
