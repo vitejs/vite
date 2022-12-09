@@ -4,20 +4,11 @@
 
 Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases).
 
-Rollup 3 is mostly compatible with Rollup 2. If you are using custom [`rollupOptions`](../config/build-options.md#rollup-options) in your project and encounter issues, refer to Rollup documentation to upgrade your config.
+Rollup 3 is mostly compatible with Rollup 2. If you are using custom [`rollupOptions`](../config/build-options.md#rollup-options) in your project and encounter issues, refer to the [Rollup migration guide](https://rollupjs.org/guide/en/#migration) to upgrade your config.
 
 ## Modern Browser Baseline change
 
-The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
-
-- Chrome >=87
-- Firefox >=78
-- Safari >=14 (bumped from Safari 13 in Vite 4)
-- Edge >=88
-
-A small fraction of users will now require using [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills.
-
-With the new target for modern browsers, modern builds can safely use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and the [nullish coallessing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore.
+The modern browser build now targets `safari14` by default for wider ES2020 compatibility (bumped from `safari13`). This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
 
 ## Config Options Changes
 
@@ -57,8 +48,7 @@ import stuff from './global.css?inline'
 
 Vite is now using dotenv 16 and dotenv-expand 9 (previously dotenv 14 and dotenv-expand 5).
 
-If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
-See their changelog for more details ([`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md), [`dotenv-expand`](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md)).
+If you have a value including `#` or `` ` ``, you will need to wrap them with quotes. See their changelog for more details ([`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md), [`dotenv-expand`](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md)).
 
 ## Advanced
 
