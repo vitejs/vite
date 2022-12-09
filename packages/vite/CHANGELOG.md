@@ -1,3 +1,10 @@
+## 4.0.0 (2022-12-09)
+
+* chore: add `\0` to virtual files id (#11261) ([02cdfa9](https://github.com/vitejs/vite/commit/02cdfa9)), closes [#11261](https://github.com/vitejs/vite/issues/11261)
+* chore(deps): esbuild 0.16.3 (#11271) ([495c0be](https://github.com/vitejs/vite/commit/495c0be)), closes [#11271](https://github.com/vitejs/vite/issues/11271)
+
+
+
 ## 4.0.0-beta.7 (2022-12-08)
 
 * fix(resolve): revert ensure exports has precedence over mainFields (#11234) (#11270) ([8d05daf](https://github.com/vitejs/vite/commit/8d05daf)), closes [#11234](https://github.com/vitejs/vite/issues/11234) [#11270](https://github.com/vitejs/vite/issues/11270)
