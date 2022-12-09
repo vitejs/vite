@@ -20,6 +20,10 @@ Check out [Using Plugins](../guide/using-plugins) for information on how to use 
 
 - Provides all-in-one React Support.
 
+### [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc)
+
+- Provides fast React development via [SWC](https://swc.rs/)
+
 ### [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)
 
 - Provides legacy browsers support for the production build.
