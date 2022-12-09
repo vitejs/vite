@@ -21,7 +21,9 @@ export function bindShortcuts(
   server: ViteDevServer,
   opts: BindShortcutsOptions,
 ): void {
-  if (!server.httpServer) return
+  if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
+    return
+  }
   server._shortcutsOptions = opts
 
   if (opts.print) {
@@ -71,9 +73,7 @@ export function bindShortcuts(
     actionRunning = false
   }
 
-  if (process.stdin.isTTY) {
-    process.stdin.setRawMode(true)
-  }
+  process.stdin.setRawMode(true)
 
   process.stdin.on('data', onInput).setEncoding('utf8').resume()
 
