@@ -1,6 +1,6 @@
 ## <small>3.0.1 (2022-12-09)</small>
 
-* chore: udpate vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)
+* chore: update vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)
 
 
 
