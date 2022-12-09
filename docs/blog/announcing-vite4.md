@@ -37,7 +37,7 @@ Quick links:
 
 - [Docs](/)
 - [Migration Guide](/guide/migration)
-- [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#300-2022-12-09)
+- [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#400-2022-12-09)
 
 Docs in other languages:
 
