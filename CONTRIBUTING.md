@@ -64,7 +64,7 @@ You may wish to test your locally modified copy of Vite against another package 
 ```json
 {
   "dependencies": {
-    "vite": "^2.0.0"
+    "vite": "^4.0.0"
   },
   "pnpm": {
     "overrides": {
