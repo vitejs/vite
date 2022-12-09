@@ -29,7 +29,7 @@ Vite 3 [was released](./announcing-vite3.md) five months ago. npm downloads per 
 
 As a showcase of the growth Vite and related projects have experienced, the Vite ecosystem gathered on October 11th at [ViteConf 2022](https://viteconf.org/2022/replay). We saw representatives from the main web framework and tools tell stories of innovation and collaboration. And in a symbolic move, the Rollup team choose that exact day to release their latest major: [Rollup 3](https://rollupjs.org).
 
-Today, the Vite [team](https://vitejs.dev/team) with the help of our ecosystem partners, is happy to announce the release of Vite 4, powered during build time by Rollup 3. We've worked with the ecosystem to ensure a smooth upgrade path for this new major. Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases).
+Today, the Vite [team](https://vitejs.dev/team) with the help of our ecosystem partners, is happy to announce the release of Vite 4, powered during build time by Rollup 3. We've worked with the ecosystem to ensure a smooth upgrade path for this new major. Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases/tag/v3.0.0).
 
 ![Vite 4 Announcement Cover Image](/og-image-announcing-vite4.png)
 
@@ -51,9 +51,9 @@ If you recently started using Vite, we suggest reading the [Why Vite Guide](http
 
 Use `pnpm create vite` to scaffold a Vite project with your preferred framework, or open a started template online to play with Vite 4 using [vite.new](https://vite.new).
 
-You can also run `pnpm create vite-extra` to get access to templates from other frameworks and runtimes (ssr templates, Solid, Deno, and SSR and library starters). `create vite-extra` templates are also available when you run `create vite` under the `Others` option.
+You can also run `pnpm create vite-extra` to get access to templates from other frameworks and runtimes (Solid, Deno, SSR, and library starters). `create vite-extra` templates are also available when you run `create vite` under the `Others` option.
 
-Note that Vite starter templates are intended to be used to create a playground to test Vite with different frameworks. When building your next project, we recommend reaching out to the starters recommended by each framework. Some frameworks now redirect in `create vite` to their starters too (`create-vue` and `Nuxt 3` for Vue, and `SvelteKit` for Svelte).
+Note that Vite starter templates are intended to be used as a playground to test Vite with different frameworks. When building your next project, we recommend reaching out to the starters recommended by each framework. Some frameworks now redirect in `create vite` to their starters too (`create-vue` and `Nuxt 3` for Vue, and `SvelteKit` for Svelte).
 
 ## New React plugin using SWC during development
 
@@ -61,7 +61,7 @@ Note that Vite starter templates are intended to be used to create a playground 
 
 ### @vitejs/plugin-react
 
-[@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react) is a plugin that uses esbuild and Babel, achieving fast HMR with a small package footprint and the flexibility of being able to use the babel transform pipeline.
+[@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react) is a plugin that uses esbuild and Babel, achieving fast HMR with a small package footprint and the flexibility of being able to use the Babel transform pipeline.
 
 ### @vitejs/plugin-react-swc (new)
 
@@ -69,7 +69,7 @@ Note that Vite starter templates are intended to be used to create a playground 
 
 ## Compatibility
 
-The modern browser build now targets `safari14` by default for wider ES2020 compatibility (https://github.com/vitejs/vite/issues/9063). This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
+The modern browser build now targets `safari14` by default for wider ES2020 compatibility. This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
 
 ## Importing CSS as a string
 
@@ -94,7 +94,7 @@ Learn more in the [Migration Guide](/guide/migration).
 - Cleaner build logs output ([#10895](https://github.com/vitejs/vite/issues/10895)) and switch to `kB` to align with browser dev tools ([#10982](https://github.com/vitejs/vite/issues/10982))
 - Improved error messages during SSR ([#11156](https://github.com/vitejs/vite/issues/11156))
 
-## Reduced Packages Size
+## Reduced Package Size
 
 Vite cares about its footprint, to speed up installation, especially in the use case of playgrounds for documentation and reproductions. And once more, this major brings improvements in Vite's package size. Vite 4 install size is 23% smaller compared to vite 3.2.5 (14.1 MB vs 18.3 MB).
 
@@ -114,7 +114,7 @@ Vite cares about its footprint, to speed up installation, especially in the use 
 
 Vite 4 wouldn't be possible without uncountable hours of work by Vite contributors, many of them maintainers of downstream projects and plugins, and the efforts of the [Vite Team](/team). All of us have worked together to improve Vite's DX once more, for every framework and app using it. We're grateful to be able to improve a common base for such a vibrant ecosystem.
 
-We're also thankful to individuals and companies sponsoring the Vite team, and companies investing directly in Vite's future: [@antfu7](https://twitter.com/antfu7)'s work on Vite and the ecosystem is part of his job at [Nuxt Labs](https://nuxtlabs.com/), [Astro](https://astro.build) is funding [@bluwy](https://twitter.com/bluwy) Vite core work, and [StackBlitz](https://stackblitz.com/) hires [@patak_dev](https://twitter.com/patak_dev) to work full time on Vite.
+We're also thankful to individuals and companies sponsoring the Vite team, and companies investing directly in Vite's future: [@antfu7](https://twitter.com/antfu7)'s work on Vite and the ecosystem is part of his job at [Nuxt Labs](https://nuxtlabs.com/), [Astro](https://astro.build) is funding [@bluwyoo](https://twitter.com/bluwyoo)'s' Vite core work, and [StackBlitz](https://stackblitz.com/) hires [@patak_dev](https://twitter.com/patak_dev) to work full time on Vite.
 
 ## Next steps
 
