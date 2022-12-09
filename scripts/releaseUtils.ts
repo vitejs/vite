@@ -242,24 +242,6 @@ export async function updateTemplateVersions(): Promise<void> {
     const pkgPath = path.join(dir, template, `package.json`)
     const pkg = require(pkgPath)
     pkg.devDependencies.vite = `^` + viteVersion
-    if (template.startsWith('template-vue')) {
-      pkg.devDependencies['@vitejs/plugin-vue'] =
-        `^` +
-        (
-          await fs.readJSON(
-            path.resolve(__dirname, '../packages/plugin-vue/package.json'),
-          )
-        ).version
-    }
-    if (template.startsWith('template-react')) {
-      pkg.devDependencies['@vitejs/plugin-react'] =
-        `^` +
-        (
-          await fs.readJSON(
-            path.resolve(__dirname, '../packages/plugin-react/package.json'),
-          )
-        ).version
-    }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }
 }
