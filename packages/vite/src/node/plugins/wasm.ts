@@ -2,7 +2,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
-const wasmHelperId = '/__vite-wasm-helper'
+const wasmHelperId = '\0vite/wasm-helper'
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
