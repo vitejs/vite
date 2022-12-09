@@ -10,25 +10,11 @@ Rollup 3 is mostly compatible with Rollup 2. If you are using custom [`rollupOpt
 
 The modern browser build now targets `safari14` by default for wider ES2020 compatibility (bumped from `safari13`). This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
 
-## Config Options Changes
-
-The following options that were already deprecated in v3 have been removed:
-
-- `...` (switch to [`...`](../config/shared-options.md#resolve-alias))
-
-### Build Changes
-
-The build default charset is now utf8 [#10753](https://github.com/vitejs/vite/issues/10753)
-
-### Dev Server Changes
-
-...
-
-### SSR Changes
-
-...
-
 ## General Changes
+
+### Encoding
+
+The build default charset is now utf8 (see [#10753](https://github.com/vitejs/vite/issues/10753) for details).
 
 ### Importing CSS as a string
 
