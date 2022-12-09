@@ -77,6 +77,7 @@ import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { notFoundMiddleware } from './middlewares/notFound'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -600,11 +601,7 @@ export async function createServer(
     middlewares.use(indexHtmlMiddleware(server))
 
     // handle 404s
-    // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-    middlewares.use(function vite404Middleware(_, res) {
-      res.statusCode = 404
-      res.end()
-    })
+    middlewares.use(notFoundMiddleware())
   }
 
   // error handler

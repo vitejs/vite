@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { OutgoingHttpHeaders } from 'node:http'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
 import type { Connect } from 'dep-types/connect'
@@ -294,6 +295,35 @@ export function indexHtmlMiddleware(
           html = await server.transformIndexHtml(url, html, req.originalUrl)
           return send(req, res, html, 'html', {
             headers: server.config.server.headers,
+          })
+        } catch (e) {
+          return next(e)
+        }
+      }
+    }
+    next()
+  }
+}
+
+export function indexHtmlPreviewMiddleware(
+  root: string,
+  headers: OutgoingHttpHeaders | undefined,
+): Connect.NextHandleFunction {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return async function viteIndexHtmlPreviewMiddleware(req, res, next) {
+    if (res.writableEnded) {
+      return next()
+    }
+
+    const url = req.url && cleanUrl(req.url)
+    // htmlFallbackMiddleware appends '.html' to URLs
+    if (url?.endsWith('.html')) {
+      const filepath = path.join(root, url.slice(1))
+      if (fs.existsSync(filepath)) {
+        try {
+          const html = fs.readFileSync(filepath, 'utf-8')
+          return send(req, res, html, 'html', {
+            headers,
           })
         } catch (e) {
           return next(e)

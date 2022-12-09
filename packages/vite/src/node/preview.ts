@@ -17,8 +17,11 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServe } from './utils'
 import { printServerUrls } from './logger'
-import { resolveConfig } from '.'
+import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
+import { indexHtmlPreviewMiddleware } from './server/middlewares/indexHtml'
+import { notFoundMiddleware } from './server/middlewares/notFound'
 import type { InlineConfig, ResolvedConfig } from '.'
+import { resolveConfig } from '.'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -120,7 +123,7 @@ export async function preview(
   const assetServer = sirv(distDir, {
     etag: true,
     dev: true,
-    single: config.appType === 'spa',
+    extensions: [],
     setHeaders(res) {
       if (headers) {
         for (const name in headers) {
@@ -129,15 +132,58 @@ export async function preview(
       }
     },
   })
-  app.use(previewBase, async (req, res, next) => {
-    if (shouldServe(req.url!, distDir)) {
-      return assetServer(req, res, next)
+  app.use(
+    previewBase,
+    // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+    async function vitePreviewStaticMiddleware(req, res, next) {
+      if (shouldServe(req.url!, distDir)) {
+        return assetServer(req, res, next)
+      }
+      next()
+    },
+  )
+
+  // html fallback
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    // append trailing slash when base didn't have it
+    if (config.rawBase !== config.base) {
+      // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+      app.use(function viteRewriteBaseAccessWithoutTrailingSlashMiddleware(
+        req,
+        res,
+        next,
+      ) {
+        try {
+          const pathname = decodeURIComponent(
+            new URL(req.url!, 'http://example.com').pathname,
+          )
+          if (pathname === config.rawBase) {
+            req.url = config.base + req.url!.slice(config.rawBase.length)
+          }
+        } catch {}
+        next()
+      })
     }
-    next()
-  })
+
+    app.use(
+      previewBase,
+      htmlFallbackMiddleware(distDir, config.appType === 'spa'),
+    )
+  }
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
+
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    // serve index.html
+    app.use(
+      previewBase,
+      indexHtmlPreviewMiddleware(distDir, config.preview.headers),
+    )
+
+    // handle 404s
+    app.use(previewBase, notFoundMiddleware())
+  }
 
   const options = config.preview
   const hostname = await resolveHostname(options.host)
