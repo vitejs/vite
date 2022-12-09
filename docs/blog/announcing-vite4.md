@@ -71,7 +71,7 @@ Note that Vite starter templates are intended to be used as a playground to test
 
 The modern browser build now targets `safari14` by default for wider ES2020 compatibility. This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
 
-## Importing CSS as a string
+## Importing CSS as a String
 
 In Vite 3, importing the default export of a `.css` file could introduce a double loading of CSS.
 
@@ -87,7 +87,18 @@ import stuff from './global.css?inline'
 
 Learn more in the [Migration Guide](/guide/migration).
 
-## Other features
+## Environment Variables
+
+Vite now uses `dotenv` 16 and `dotenv-expand` 9 (previously `dotenv` 14 and `dotenv-expand` 5). If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
+
+```diff
+-VITE_APP=ab#cd`ef
++VITE_APP="ab#cd`ef"
+```
+
+For more details, see the [`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md) and [`dotenv-expand` changelog](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md).
+
+## Other Features
 
 - CLI Shortcuts (press `h` during dev to see them all) ([#11228](https://github.com/vitejs/vite/pull/11228))
 - Support for patch-package when pre bundling dependencies ([#10286](https://github.com/vitejs/vite/issues/10286))
