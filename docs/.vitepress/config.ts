@@ -238,7 +238,7 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
-              text: 'Migration from v2',
+              text: 'Migration from v3',
               link: '/guide/migration',
             },
           ],
