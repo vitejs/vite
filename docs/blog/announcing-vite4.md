@@ -67,7 +67,7 @@ Note that Vite starter templates are intended to be used as a playground to test
 
 [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) is a new plugin that uses esbuild during build, but replaces Babel with SWC during development. For big projects that don't require non-standard React extensions, cold start and Hot Module Replacement (HMR) can be significantly faster.
 
-## Compatibility
+## Browser Compatibility
 
 The modern browser build now targets `safari14` by default for wider ES2020 compatibility. This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
 
@@ -89,7 +89,7 @@ Learn more in the [Migration Guide](/guide/migration).
 
 ## Other features
 
-- CLI Shortcuts (press `h` during dev to see them all)
+- CLI Shortcuts (press `h` during dev to see them all) ([#11228](https://github.com/vitejs/vite/pull/11228))
 - Support for patch-package when pre bundling dependencies ([#10286](https://github.com/vitejs/vite/issues/10286))
 - Cleaner build logs output ([#10895](https://github.com/vitejs/vite/issues/10895)) and switch to `kB` to align with browser dev tools ([#10982](https://github.com/vitejs/vite/issues/10982))
 - Improved error messages during SSR ([#11156](https://github.com/vitejs/vite/issues/11156))
