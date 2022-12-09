@@ -1,3 +1,12 @@
+## 4.0.0 (2022-12-09)
+
+* fix(create-vite): update react-swc template name (#11281) ([b3b9ac5](https://github.com/vitejs/vite/commit/b3b9ac5)), closes [#11281](https://github.com/vitejs/vite/issues/11281)
+* feat(create-vite): add react-swc templates (#11280) ([348146f](https://github.com/vitejs/vite/commit/348146f)), closes [#11280](https://github.com/vitejs/vite/issues/11280)
+* feat(svelte)!: update svelte templates to vite-plugin-svelte 2.0.0 (#11279) ([2a558ef](https://github.com/vitejs/vite/commit/2a558ef)), closes [#11279](https://github.com/vitejs/vite/issues/11279)
+* chore: udpate vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)
+
+
+
 ## 4.0.0-beta.0 (2022-12-07)
 
 * chore: enable prettier trailing commas (#11167) ([134ce68](https://github.com/vitejs/vite/commit/134ce68)), closes [#11167](https://github.com/vitejs/vite/issues/11167)
