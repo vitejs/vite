@@ -1,74 +1,19 @@
 ## 4.0.0 (2022-12-09)
 
-* chore: add `\0` to virtual files id (#11261) ([02cdfa9](https://github.com/vitejs/vite/commit/02cdfa9)), closes [#11261](https://github.com/vitejs/vite/issues/11261)
-* chore(deps): esbuild 0.16.3 (#11271) ([495c0be](https://github.com/vitejs/vite/commit/495c0be)), closes [#11271](https://github.com/vitejs/vite/issues/11271)
+![Vite 4 Announcement Cover Image](/og-image-announcing-vite4.png)
 
+Read the announcement blog post: [Announcing Vite 4](https://vitejs.dev/blog/announcing-vite4)
 
+Quick links:
 
-## 4.0.0-beta.7 (2022-12-08)
+- [Docs](https://vitejs.dev)
+- [Migration Guide](https://vitejs.dev/guide/migration)
 
-* fix(resolve): revert ensure exports has precedence over mainFields (#11234) (#11270) ([8d05daf](https://github.com/vitejs/vite/commit/8d05daf)), closes [#11234](https://github.com/vitejs/vite/issues/11234) [#11270](https://github.com/vitejs/vite/issues/11270)
+Docs in other languages:
 
-
-
-## 4.0.0-beta.6 (2022-12-08)
-
-* chore: update esbuild to 0.16.2 (#11265) ([e1d8d46](https://github.com/vitejs/vite/commit/e1d8d46)), closes [#11265](https://github.com/vitejs/vite/issues/11265)
-* chore(deps): rollup 3.7 (#11269) ([fe388df](https://github.com/vitejs/vite/commit/fe388df)), closes [#11269](https://github.com/vitejs/vite/issues/11269)
-* fix: skip shortcuts on non-tty stdin (#11263) ([9602686](https://github.com/vitejs/vite/commit/9602686)), closes [#11263](https://github.com/vitejs/vite/issues/11263)
-* fix(ssr): skip rewriting stack trace if it's already rewritten (fixes #11037) (#11070) ([feb8ce0](https://github.com/vitejs/vite/commit/feb8ce0)), closes [#11037](https://github.com/vitejs/vite/issues/11037) [#11070](https://github.com/vitejs/vite/issues/11070)
-
-
-
-## 4.0.0-beta.5 (2022-12-08)
-
-* refactor(optimizer): await depsOptimizer.scanProcessing (#11251) ([fa64c8e](https://github.com/vitejs/vite/commit/fa64c8e)), closes [#11251](https://github.com/vitejs/vite/issues/11251)
-* fix: improve CLI shortcuts help display (#11247) ([bb235b2](https://github.com/vitejs/vite/commit/bb235b2)), closes [#11247](https://github.com/vitejs/vite/issues/11247)
-* fix: less promises for scanning and await with allSettled (#11245) ([45b170e](https://github.com/vitejs/vite/commit/45b170e)), closes [#11245](https://github.com/vitejs/vite/issues/11245)
-* fix(optimizer): escape entrypoints when running scanner (#11250) ([b61894e](https://github.com/vitejs/vite/commit/b61894e)), closes [#11250](https://github.com/vitejs/vite/issues/11250)
-
-
-
-## 4.0.0-beta.4 (2022-12-07)
-
-* feat: add CLI keyboard shortcuts (#11228) ([87973f1](https://github.com/vitejs/vite/commit/87973f1)), closes [#11228](https://github.com/vitejs/vite/issues/11228)
-
-
-
-## 4.0.0-beta.3 (2022-12-07)
-
-* feat: export error message generator (#11155) ([493ba1e](https://github.com/vitejs/vite/commit/493ba1e)), closes [#11155](https://github.com/vitejs/vite/issues/11155)
-* fix: await scanner (#11242) ([52a6732](https://github.com/vitejs/vite/commit/52a6732)), closes [#11242](https://github.com/vitejs/vite/issues/11242)
-* fix(css): fix css lang regex (#11237) ([a55d0b3](https://github.com/vitejs/vite/commit/a55d0b3)), closes [#11237](https://github.com/vitejs/vite/issues/11237)
-* fix(resolve): ensure exports has precedence over mainFields (#11234) ([d6eb4f2](https://github.com/vitejs/vite/commit/d6eb4f2)), closes [#11234](https://github.com/vitejs/vite/issues/11234)
-* chore(deps)!: update esbuild to 0.16.1 (#11235) ([d90a262](https://github.com/vitejs/vite/commit/d90a262)), closes [#11235](https://github.com/vitejs/vite/issues/11235)
-
-
-
-## 4.0.0-beta.2 (2022-12-07)
-
-* feat(node/plugins): esbuild options (#11049) ([735b98b](https://github.com/vitejs/vite/commit/735b98b)), closes [#11049](https://github.com/vitejs/vite/issues/11049)
-* fix: don't print urls on restart with default port (#11230) ([5aaecb6](https://github.com/vitejs/vite/commit/5aaecb6)), closes [#11230](https://github.com/vitejs/vite/issues/11230)
-* chore(deps): typescript 4.9 (#11229) ([6b4c4e2](https://github.com/vitejs/vite/commit/6b4c4e2)), closes [#11229](https://github.com/vitejs/vite/issues/11229)
-* chore(deps): update esbuild to 0.15.18 (#11227) ([a08ca07](https://github.com/vitejs/vite/commit/a08ca07)), closes [#11227](https://github.com/vitejs/vite/issues/11227)
-
-
-
-## 4.0.0-beta.1 (2022-12-06)
-
-* fix: serialize bundleWorkerEntry (#11218) ([306bed0](https://github.com/vitejs/vite/commit/306bed0)), closes [#11218](https://github.com/vitejs/vite/issues/11218)
-* fix(config): resolve dynamic import as esm (#11220) ([f8c1ed0](https://github.com/vitejs/vite/commit/f8c1ed0)), closes [#11220](https://github.com/vitejs/vite/issues/11220)
-* fix(env): prevent env expand on process.env (#11213) ([d4a1e2b](https://github.com/vitejs/vite/commit/d4a1e2b)), closes [#11213](https://github.com/vitejs/vite/issues/11213)
-* docs: fix grammar in changelog (#11224) ([f1b891f](https://github.com/vitejs/vite/commit/f1b891f)), closes [#11224](https://github.com/vitejs/vite/issues/11224)
-* chore: fix test run in dev (#11214) ([c747a3f](https://github.com/vitejs/vite/commit/c747a3f)), closes [#11214](https://github.com/vitejs/vite/issues/11214)
-* chore: improve v4 beta release notes (#11215) ([f24679c](https://github.com/vitejs/vite/commit/f24679c)), closes [#11215](https://github.com/vitejs/vite/issues/11215)
-* chore: unpin rollup (#11204) ([014e4aa](https://github.com/vitejs/vite/commit/014e4aa)), closes [#11204](https://github.com/vitejs/vite/issues/11204)
-* chore: vite 4 beta changelog cleanup and release notes (#11200) ([cf6c175](https://github.com/vitejs/vite/commit/cf6c175)), closes [#11200](https://github.com/vitejs/vite/issues/11200)
-* feat: improve the error message of `expand` (#11141) ([825c793](https://github.com/vitejs/vite/commit/825c793)), closes [#11141](https://github.com/vitejs/vite/issues/11141)
-
-
-
-## 4.0.0-beta.0 (2022-12-05)
+- [简体中文](https://cn.vitejs.dev/)
+- [日本語](https://ja.vitejs.dev/)
+- [Español](https://es.vitejs.dev/)
 
 ### Main Changes
 
@@ -121,6 +66,10 @@ import stuff from './global.css?inline'
 
 ### Features
 
+* feat: add CLI keyboard shortcuts (#11228) ([87973f1](https://github.com/vitejs/vite/commit/87973f1)), closes [#11228](https://github.com/vitejs/vite/issues/11228)
+* feat: export error message generator (#11155) ([493ba1e](https://github.com/vitejs/vite/commit/493ba1e)), closes [#11155](https://github.com/vitejs/vite/issues/11155)
+* feat(node/plugins): esbuild options (#11049) ([735b98b](https://github.com/vitejs/vite/commit/735b98b)), closes [#11049](https://github.com/vitejs/vite/issues/11049)
+* feat: improve the error message of `expand` (#11141) ([825c793](https://github.com/vitejs/vite/commit/825c793)), closes [#11141](https://github.com/vitejs/vite/issues/11141)
 * feat: update @types/node to v18 (#11195) ([4ec9f53](https://github.com/vitejs/vite/commit/4ec9f53)), closes [#11195](https://github.com/vitejs/vite/issues/11195)
 * feat(client)!: remove never implemented hot.decline (#11036) ([e257e3b](https://github.com/vitejs/vite/commit/e257e3b)), closes [#11036](https://github.com/vitejs/vite/issues/11036)
 * feat!: support `safari14` by default for wider ES2020 compatibility (#9063) ([3cc65d7](https://github.com/vitejs/vite/commit/3cc65d7)), closes [#9063](https://github.com/vitejs/vite/issues/9063)
@@ -145,6 +94,19 @@ import stuff from './global.css?inline'
 
 ### Bug Fixes
 
+* fix: add `\0` to virtual files id (#11261) ([02cdfa9](https://github.com/vitejs/vite/commit/02cdfa9)), closes [#11261](https://github.com/vitejs/vite/issues/11261)
+* fix: skip shortcuts on non-tty stdin (#11263) ([9602686](https://github.com/vitejs/vite/commit/9602686)), closes [#11263](https://github.com/vitejs/vite/issues/11263)
+* fix(ssr): skip rewriting stack trace if it's already rewritten (fixes #11037) (#11070) ([feb8ce0](https://github.com/vitejs/vite/commit/feb8ce0)), closes [#11037](https://github.com/vitejs/vite/issues/11037) [#11070](https://github.com/vitejs/vite/issues/11070)
+* refactor(optimizer): await depsOptimizer.scanProcessing (#11251) ([fa64c8e](https://github.com/vitejs/vite/commit/fa64c8e)), closes [#11251](https://github.com/vitejs/vite/issues/11251)
+* fix: improve CLI shortcuts help display (#11247) ([bb235b2](https://github.com/vitejs/vite/commit/bb235b2)), closes [#11247](https://github.com/vitejs/vite/issues/11247)
+* fix: less promises for scanning and await with allSettled (#11245) ([45b170e](https://github.com/vitejs/vite/commit/45b170e)), closes [#11245](https://github.com/vitejs/vite/issues/11245)
+* fix(optimizer): escape entrypoints when running scanner (#11250) ([b61894e](https://github.com/vitejs/vite/commit/b61894e)), closes [#11250](https://github.com/vitejs/vite/issues/11250)
+* fix: await scanner (#11242) ([52a6732](https://github.com/vitejs/vite/commit/52a6732)), closes [#11242](https://github.com/vitejs/vite/issues/11242)
+* fix(css): fix css lang regex (#11237) ([a55d0b3](https://github.com/vitejs/vite/commit/a55d0b3)), closes [#11237](https://github.com/vitejs/vite/issues/11237)
+* fix: don't print urls on restart with default port (#11230) ([5aaecb6](https://github.com/vitejs/vite/commit/5aaecb6)), closes [#11230](https://github.com/vitejs/vite/issues/11230)
+* fix: serialize bundleWorkerEntry (#11218) ([306bed0](https://github.com/vitejs/vite/commit/306bed0)), closes [#11218](https://github.com/vitejs/vite/issues/11218)
+* fix(config): resolve dynamic import as esm (#11220) ([f8c1ed0](https://github.com/vitejs/vite/commit/f8c1ed0)), closes [#11220](https://github.com/vitejs/vite/issues/11220)
+* fix(env): prevent env expand on process.env (#11213) ([d4a1e2b](https://github.com/vitejs/vite/commit/d4a1e2b)), closes [#11213](https://github.com/vitejs/vite/issues/11213)
 * fix: add type for function localsConvention value (#11152) ([c9274b4](https://github.com/vitejs/vite/commit/c9274b4)), closes [#11152](https://github.com/vitejs/vite/issues/11152)
 * fix: cacheDir should be ignored from watch (#10242) ([75dbca2](https://github.com/vitejs/vite/commit/75dbca2)), closes [#10242](https://github.com/vitejs/vite/issues/10242)
 * fix: don't check .yarn/patches for computing dependencies hash (#11168) ([65bcccf](https://github.com/vitejs/vite/commit/65bcccf)), closes [#11168](https://github.com/vitejs/vite/issues/11168)
@@ -192,6 +154,46 @@ import stuff from './global.css?inline'
 
 
 ### Previous Changelogs
+
+
+#### [4.0.0-beta.7](https://github.com/vitejs/vite/compare/v4.0.0-beta.6....v4.0.0-beta.7) (2022-12-08)
+
+See [4.0.0-beta.7 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.6](https://github.com/vitejs/vite/compare/v4.0.0-beta.5....v4.0.0-beta.6) (2022-12-08)
+
+See [4.0.0-beta.6 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.5](https://github.com/vitejs/vite/compare/v4.0.0-beta.4....v4.0.0-beta.5) (2022-12-08)
+
+See [4.0.0-beta.5 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.4](https://github.com/vitejs/vite/compare/v4.0.0-beta.3....v4.0.0-beta.4) (2022-12-07)
+
+See [4.0.0-beta.4 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.3](https://github.com/vitejs/vite/compare/v4.0.0-beta.2....v4.0.0-beta.3) (2022-12-07)
+
+See [4.0.0-beta.3 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.2](https://github.com/vitejs/vite/compare/v4.0.0-beta.1....v4.0.0-beta.2) (2022-12-07)
+
+See [4.0.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.1](https://github.com/vitejs/vite/compare/v4.0.0-beta.0....v4.0.0-beta.1) (2022-12-06)
+
+See [4.0.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
+
+
+#### [4.0.0-beta.0](https://github.com/vitejs/vite/compare/v4.0.0-alpha.6....v4.0.0-beta.0) (2022-12-05)
+
+See [4.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v4.0.0-beta.0/packages/vite/CHANGELOG.md)
 
 
 #### [4.0.0-alpha.6](https://github.com/vitejs/vite/compare/v4.0.0-alpha.5....v4.0.0-alpha.6) (2022-11-30)
