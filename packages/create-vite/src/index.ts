@@ -100,6 +100,16 @@ const FRAMEWORKS: Framework[] = [
         display: 'TypeScript',
         color: blue,
       },
+      {
+        name: 'react-swc',
+        display: 'JavaScript + SWC',
+        color: yellow,
+      },
+      {
+        name: 'react-ts-swc',
+        display: 'TypeScript + SWC',
+        color: blue,
+      },
     ],
   },
   {
@@ -292,7 +302,12 @@ async function init() {
   }
 
   // determine template
-  const template: string = variant || framework?.name || argTemplate
+  let template: string = variant || framework?.name || argTemplate
+  let isReactSwc = false
+  if (template.endsWith('-swc')) {
+    isReactSwc = true
+    template = template.slice(0, -4)
+  }
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
@@ -356,6 +371,10 @@ async function init() {
   pkg.name = packageName || getProjectName()
 
   write('package.json', JSON.stringify(pkg, null, 2))
+
+  if (isReactSwc) {
+    setupReactSwc(root, template.endsWith('-ts'))
+  }
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
@@ -436,6 +455,26 @@ function pkgFromUserAgent(userAgent: string | undefined) {
     name: pkgSpecArr[0],
     version: pkgSpecArr[1],
   }
+}
+
+function setupReactSwc(root: string, isTs: boolean) {
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    return content.replace(
+      /"@vitejs\/plugin-react": ".+?"/,
+      `"@vitejs/plugin-react-swc": "^3.0.0"`,
+    )
+  })
+  editFile(
+    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
+    (content) => {
+      return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
+    },
+  )
+}
+
+function editFile(file: string, callback: (content: string) => string) {
+  const content = fs.readFileSync(file, 'utf-8')
+  fs.writeFileSync(file, callback(content), 'utf-8')
 }
 
 init().catch((e) => {
