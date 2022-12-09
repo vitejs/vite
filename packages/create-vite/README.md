@@ -49,6 +49,8 @@ Currently supported template presets include:
 - `vue-ts`
 - `react`
 - `react-ts`
+- `react-swc`
+- `react-swc-ts`
 - `preact`
 - `preact-ts`
 - `lit`
