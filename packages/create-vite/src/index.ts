@@ -106,7 +106,7 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
-        name: 'react-ts-swc',
+        name: 'react-swc-ts',
         display: 'TypeScript + SWC',
         color: blue,
       },
@@ -304,9 +304,9 @@ async function init() {
   // determine template
   let template: string = variant || framework?.name || argTemplate
   let isReactSwc = false
-  if (template.endsWith('-swc')) {
+  if (template.includes('-swc')) {
     isReactSwc = true
-    template = template.slice(0, -4)
+    template = template.replace('-swc', '')
   }
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
