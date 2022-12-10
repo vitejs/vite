@@ -371,6 +371,13 @@ describe('transformWithEsbuild', () => {
       })
       expect(actual).toBe(defineForClassFieldsFalseTransformedCode)
     })
+
+    test('target: es2022 and tsconfig.target: es2022 => true', async () => {
+      const actual = await transformClassCode('es2022', {
+        target: 'es2022',
+      })
+      expect(actual).toBe(defineForClassFieldsTrueTransformedCode)
+    })
   })
 })
 
