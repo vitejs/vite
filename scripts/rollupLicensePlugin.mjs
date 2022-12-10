@@ -18,7 +18,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
       // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
       // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
       const coreLicense = fs.readFileSync(
-        new URL('../LICENSE', import.meta.url)
+        new URL('../LICENSE', import.meta.url),
       )
       function sortLicenses(licenses) {
         let withParenthesis = []
@@ -49,7 +49,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
             author,
             maintainers,
             contributors,
-            repository
+            repository,
           }) => {
             let text = `## ${name}\n`
             if (license) {
@@ -74,11 +74,11 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
               try {
                 const pkgDir = path.dirname(
                   resolve.sync(path.join(name, 'package.json'), {
-                    preserveSymlinks: false
-                  })
+                    preserveSymlinks: false,
+                  }),
                 )
                 const licenseFile = fg.sync(`${pkgDir}/LICENSE*`, {
-                  caseSensitiveMatch: false
+                  caseSensitiveMatch: false,
                 })[0]
                 if (licenseFile) {
                   licenseText = fs.readFileSync(licenseFile, 'utf-8')
@@ -98,7 +98,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
             }
             licenses.add(license)
             return text
-          }
+          },
         )
         .join('\n---------------------------------------\n\n')
       const licenseText =
@@ -115,11 +115,11 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
         fs.writeFileSync(licenseFilePath, licenseText)
         console.warn(
           colors.yellow(
-            '\nLICENSE.md updated. You should commit the updated file.\n'
-          )
+            '\nLICENSE.md updated. You should commit the updated file.\n',
+          ),
         )
       }
-    }
+    },
   })
 }
 

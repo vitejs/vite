@@ -6,7 +6,7 @@ import {
   isBuild,
   page,
   untilBrowserLogAfter,
-  untilUpdated
+  untilUpdated,
 } from '~utils'
 
 test('should render', async () => {
@@ -22,26 +22,26 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('src/views/Page.vue', (code) =>
-          code.replace('|Page title|', '|Page title updated|')
+          code.replace('|Page title|', '|Page title updated|'),
         ),
       [
         '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/views/Page.vue'
+        '[vite] hot updated: /src/views/Page.vue',
       ],
-      true
+      true,
     )
     await untilUpdated(() => el.textContent(), '|Page title updated|')
 
     await untilBrowserLogAfter(
       () =>
         editFile('src/components/HelloWorld.vue', (code) =>
-          code.replace('text-gray-800', 'text-[rgb(10,20,30)]')
+          code.replace('text-gray-800', 'text-[rgb(10,20,30)]'),
         ),
       [
         '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/components/HelloWorld.vue'
+        '[vite] hot updated: /src/components/HelloWorld.vue',
       ],
-      true
+      true,
     )
     await untilUpdated(() => getColor(el2), 'rgb(10, 20, 30)')
   })
@@ -53,13 +53,13 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('src/App.vue', (code) =>
-          code.replace('text-black', 'text-[rgb(11,22,33)]')
+          code.replace('text-black', 'text-[rgb(11,22,33)]'),
         ),
       [
         '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/App.vue'
+        '[vite] hot updated: /src/App.vue',
       ],
-      true
+      true,
     )
     await untilUpdated(() => getColor(el), 'rgb(11, 22, 33)')
   })
@@ -71,12 +71,12 @@ if (!isBuild) {
     await untilBrowserLogAfter(
       () =>
         editFile('src/components/PugTemplate.vue', (code) =>
-          code.replace('bg-red-400', 'bg-red-600')
+          code.replace('bg-red-400', 'bg-red-600'),
         ),
       [
         '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js'
-      ]
+        '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js',
+      ],
     )
     await untilUpdated(() => getBgColor(el), 'rgb(220, 38, 38)')
   })

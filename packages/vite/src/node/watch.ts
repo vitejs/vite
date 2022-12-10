@@ -1,7 +1,10 @@
+import glob from 'fast-glob'
 import type { WatchOptions } from 'dep-types/chokidar'
+import type { ResolvedConfig } from '.'
 
 export function resolveChokidarOptions(
-  options: WatchOptions | undefined
+  config: ResolvedConfig,
+  options: WatchOptions | undefined,
 ): WatchOptions {
   const { ignored = [], ...otherOptions } = options ?? {}
 
@@ -10,11 +13,12 @@ export function resolveChokidarOptions(
       '**/.git/**',
       '**/node_modules/**',
       '**/test-results/**', // Playwright
-      ...(Array.isArray(ignored) ? ignored : [ignored])
+      glob.escapePath(config.cacheDir) + '/**',
+      ...(Array.isArray(ignored) ? ignored : [ignored]),
     ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
-    ...otherOptions
+    ...otherOptions,
   }
 
   return resolvedWatchOptions

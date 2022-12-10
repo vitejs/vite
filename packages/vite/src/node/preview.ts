@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import type * as http from 'node:http'
 import sirv from 'sirv'
@@ -10,7 +11,7 @@ import {
   httpServerStart,
   resolveHttpServer,
   resolveHttpsConfig,
-  setClientErrorHandler
+  setClientErrorHandler,
 } from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
@@ -26,7 +27,7 @@ export interface ResolvedPreviewOptions extends PreviewOptions {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
-  server: ResolvedServerOptions
+  server: ResolvedServerOptions,
 ): ResolvedPreviewOptions {
   // The preview server inherits every CommonServerOption from the `server` config
   // except for the port to enable having both the dev and preview servers running
@@ -39,7 +40,7 @@ export function resolvePreviewOptions(
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
     cors: preview?.cors ?? server.cors,
-    headers: preview?.headers ?? server.headers
+    headers: preview?.headers ?? server.headers,
   }
 }
 
@@ -67,27 +68,34 @@ export type PreviewServerHook = (
   server: {
     middlewares: Connect.Server
     httpServer: http.Server
-  }
+  },
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
  */
 export async function preview(
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
 ): Promise<PreviewServer> {
   const config = await resolveConfig(
     inlineConfig,
     'serve',
     'production',
-    'production'
+    'production',
   )
+
+  const distDir = path.resolve(config.root, config.build.outDir)
+  if (!fs.existsSync(distDir)) {
+    throw new Error(
+      `"${config.build.outDir}" does not exist. Did you build your project?`
+    )
+  }
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https)
+    await resolveHttpsConfig(config.preview?.https),
   )
   setClientErrorHandler(httpServer, config.logger)
 
@@ -115,7 +123,6 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
   const assetServer = sirv(distDir, {
     etag: true,
@@ -127,7 +134,7 @@ export async function preview(
           res.setHeader(name, headers[name]!)
         }
       }
-    }
+    },
   })
   app.use(previewBase, async (req, res, next) => {
     if (shouldServe(req.url!, distDir)) {
@@ -149,13 +156,13 @@ export async function preview(
     port,
     strictPort: options.strictPort,
     host: hostname.host,
-    logger
+    logger,
   })
 
   const resolvedUrls = await resolveServerUrls(
     httpServer,
     config.preview,
-    config
+    config,
   )
 
   if (options.open) {
@@ -165,7 +172,7 @@ export async function preview(
         ? path
         : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
-      logger
+      logger,
     )
   }
 
@@ -175,6 +182,6 @@ export async function preview(
     resolvedUrls,
     printUrls() {
       printServerUrls(resolvedUrls, options.host, logger.info)
-    }
+    },
   }
 }

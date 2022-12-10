@@ -73,7 +73,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
           throwOutdatedRequest(id)
         }
       }
-    }
+    },
   }
 }
 
@@ -141,14 +141,14 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
         // Outdated non-entry points (CHUNK), loaded after a rerun
         return ''
       }
-    }
+    },
   }
 }
 
 function throwProcessingError(id: string): never {
   const err: any = new Error(
     `Something unexpected happened while optimizing "${id}". ` +
-      `The current page should have reloaded by now`
+      `The current page should have reloaded by now`,
   )
   err.code = ERR_OPTIMIZE_DEPS_PROCESSING_ERROR
   // This error will be caught by the transform middleware that will
@@ -159,7 +159,7 @@ function throwProcessingError(id: string): never {
 export function throwOutdatedRequest(id: string): never {
   const err: any = new Error(
     `There is a new version of the pre-bundle for "${id}", ` +
-      `a page reload is going to ask for it.`
+      `a page reload is going to ask for it.`,
   )
   err.code = ERR_OUTDATED_OPTIMIZED_DEP
   // This error will be caught by the transform middleware that will

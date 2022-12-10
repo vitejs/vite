@@ -5,6 +5,6 @@ export default {
   build: {
     minify: false,
     sourcemap: false,
-    lib: { entry: 'index.js', fileName: 'index', formats: ['es'] }
-  }
+    lib: { entry: 'index.js', fileName: 'index', formats: ['es'] },
+  },
 }

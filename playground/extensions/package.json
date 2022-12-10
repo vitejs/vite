@@ -1,5 +1,5 @@
 {
-  "name": "test-extensions",
+  "name": "@vitejs/test-extensions",
   "private": true,
   "version": "0.0.0",
   "scripts": {

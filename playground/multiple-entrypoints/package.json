@@ -1,5 +1,5 @@
 {
-  "name": "multiple-entrypoints",
+  "name": "@vitejs/test-multiple-entrypoints",
   "private": true,
   "version": "0.0.0",
   "scripts": {

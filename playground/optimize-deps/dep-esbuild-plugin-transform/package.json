@@ -1,5 +1,5 @@
 {
-  "name": "dep-esbuild-plugin-transform",
+  "name": "@vitejs/test-dep-esbuild-plugin-transform",
   "private": true,
   "version": "0.0.0",
   "type": "module",

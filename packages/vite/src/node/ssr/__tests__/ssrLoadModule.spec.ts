@@ -17,7 +17,27 @@ test('ssrLoad', async () => {
     await server.ssrLoadModule('/fixtures/modules/has-invalid-import.js')
   } catch (e) {
     expect(e.message).toBe(
-      'Failed to load url ./non-existent.js (resolved id: ./non-existent.js). Does the file exist?'
+      'Failed to load url ./non-existent.js (resolved id: ./non-existent.js). Does the file exist?',
     )
+  }
+})
+
+test('error has same instance', async () => {
+  expect.assertions(3)
+  const s = Symbol()
+
+  const server = await createDevServer()
+  try {
+    await server.ssrLoadModule('/fixtures/modules/has-error.js')
+  } catch (e) {
+    expect(e[s]).toBeUndefined()
+    e[s] = true
+    expect(e[s]).toBe(true)
+  }
+
+  try {
+    await server.ssrLoadModule('/fixtures/modules/has-error.js')
+  } catch (e) {
+    expect(e[s]).toBe(true)
   }
 })
