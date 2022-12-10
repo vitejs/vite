@@ -249,6 +249,62 @@ describe('transformWithEsbuild', () => {
     expect(result?.code).toBeTruthy()
     expect(result?.map).toBeTruthy()
   })
+
+  test('correctly overrides TS configuration and applies automatic transform', async () => {
+    const jsxImportSource = 'bar'
+    const result = await transformWithEsbuild(
+      'const foo = () => <></>',
+      'baz.jsx',
+      {
+        tsconfigRaw: {
+          compilerOptions: {
+            jsx: 'preserve',
+          },
+        },
+        jsx: 'automatic',
+        jsxImportSource,
+      },
+    )
+    expect(result?.code).toContain(`${jsxImportSource}/jsx-runtime`)
+    expect(result?.code).toContain('/* @__PURE__ */')
+  })
+
+  test('correctly overrides TS configuration and preserves code', async () => {
+    const foo = 'const foo = () => <></>'
+    const result = await transformWithEsbuild(foo, 'baz.jsx', {
+      tsconfigRaw: {
+        compilerOptions: {
+          jsx: 'react-jsx',
+        },
+      },
+      jsx: 'preserve',
+    })
+    expect(result?.code).toContain(foo)
+  })
+
+  test('correctly overrides TS configuration and transforms code', async () => {
+    const jsxFactory = 'h',
+      jsxFragment = 'bar'
+    const result = await transformWithEsbuild(
+      'const foo = () => <></>',
+      'baz.jsx',
+      {
+        tsconfigRaw: {
+          compilerOptions: {
+            jsxFactory: 'g',
+            jsxFragmentFactory: 'foo',
+            jsxImportSource: 'baz',
+          },
+        },
+        jsx: 'transform',
+        jsxFactory,
+        jsxFragment,
+      },
+    )
+    expect(result?.code).toContain(
+      `/* @__PURE__ */ ${jsxFactory}(${jsxFragment}, null)`,
+    )
+  })
 })
 
 /**
