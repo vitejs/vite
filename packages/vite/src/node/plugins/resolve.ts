@@ -872,17 +872,26 @@ export async function tryOptimizedResolve(
   // We should be able to remove this in the future
   await depsOptimizer.scanProcessing
 
+  // resolvedSrc is what the importer wants
+  // we can return a optimizedDep only if optimizedDep.src === resolvedSrc
+  // https://github.com/vitejs/vite/pull/11290
+  let resolvedSrc: string | undefined
+  try {
+    if (importer)
+      // this may throw errors if unable to resolve, e.g. aliased id
+      resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+  } catch {
+    // this is best-effort only so swallow errors
+  }
+  if (!resolvedSrc) return
+
   const metadata = depsOptimizer.metadata
 
   const depInfo = optimizedDepInfoFromId(metadata, id)
-  if (depInfo) {
+  // check if the found optimizedDep comes from the resolvedSrc
+  if (depInfo && depInfo.src === resolvedSrc) {
     return depsOptimizer.getOptimizedDepId(depInfo)
   }
-
-  if (!importer) return
-
-  // further check if id is imported by nested dependency
-  let resolvedSrc: string | undefined
 
   for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
@@ -894,18 +903,7 @@ export async function tryOptimizedResolve(
     // this narrows the need to do a full resolve
     if (!pkgPath.endsWith(id)) continue
 
-    // lazily initialize resolvedSrc
-    if (resolvedSrc == null) {
-      try {
-        // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-      } catch {
-        // this is best-effort only so swallow errors
-        break
-      }
-    }
-
-    // match by src to correctly identify if id belongs to nested dependency
+    // check if the found optimizedDep comes from the resolvedSrc
     if (optimizedData.src === resolvedSrc) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
