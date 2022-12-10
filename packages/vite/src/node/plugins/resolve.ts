@@ -872,22 +872,29 @@ export async function tryOptimizedResolve(
   // We should be able to remove this in the future
   await depsOptimizer.scanProcessing
 
+  const metadata = depsOptimizer.metadata
+
+  const depInfo = optimizedDepInfoFromId(metadata, id)
+  if (!importer) {
+    // no importer. try our best to find an optimized dep
+    if (depInfo) {
+      return depsOptimizer.getOptimizedDepId(depInfo)
+    }
+    return
+  }
+
   // resolvedSrc is what the importer wants
   // we can return a optimizedDep only if optimizedDep.src === resolvedSrc
   // https://github.com/vitejs/vite/pull/11290
   let resolvedSrc: string | undefined
-  const basedir = importer ? path.dirname(importer) : process.cwd()
   try {
     // this may throw errors if unable to resolve, e.g. aliased id
-    resolvedSrc = normalizePath(resolveFrom(id, basedir))
+    resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
   } catch {
     // this is best-effort only so swallow errors
   }
   if (!resolvedSrc) return
 
-  const metadata = depsOptimizer.metadata
-
-  const depInfo = optimizedDepInfoFromId(metadata, id)
   // check if the found optimizedDep comes from the resolvedSrc
   if (depInfo && depInfo.src === resolvedSrc) {
     return depsOptimizer.getOptimizedDepId(depInfo)
