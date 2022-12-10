@@ -876,10 +876,10 @@ export async function tryOptimizedResolve(
   // we can return a optimizedDep only if optimizedDep.src === resolvedSrc
   // https://github.com/vitejs/vite/pull/11290
   let resolvedSrc: string | undefined
+  const basedir = importer ? path.dirname(importer) : process.cwd()
   try {
-    if (importer)
-      // this may throw errors if unable to resolve, e.g. aliased id
-      resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+    // this may throw errors if unable to resolve, e.g. aliased id
+    resolvedSrc = normalizePath(resolveFrom(id, basedir))
   } catch {
     // this is best-effort only so swallow errors
   }
