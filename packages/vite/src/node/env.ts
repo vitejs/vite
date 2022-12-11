@@ -35,6 +35,11 @@ export function loadEnv(
     }),
   )
 
+  // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
+  if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
+    process.env.VITE_USER_NODE_ENV = parsed.NODE_ENV
+  }
+
   try {
     // let environment variables use each other
     expand({ parsed })
@@ -53,12 +58,6 @@ export function loadEnv(
   for (const [key, value] of Object.entries(parsed)) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = value
-    } else if (
-      key === 'NODE_ENV' &&
-      process.env.VITE_USER_NODE_ENV === undefined
-    ) {
-      // NODE_ENV override in .env file
-      process.env.VITE_USER_NODE_ENV = value
     }
   }
 
