@@ -30,6 +30,14 @@ This double loading could occur since a `.css` file will be emitted and it's lik
 import stuff from './global.css?inline'
 ```
 
+### Production Builds by Default
+
+`vite build` will now always build for production regardless of the `--mode` passed. Previously, changing `mode` to other than `production` would result in a development build. If you wish to still build for development, you can set `NODE_ENV=development` in the `.env.{mode}` file.
+
+In part of this change, `vite dev` and `vite build` will not override `process.env.`<wbr>`NODE_ENV` anymore if it is already defined. So if you've set `process.env.`<wbr>`NODE_ENV = 'development'` before building, it will also build for development. This gives more control when running multiple builds or dev servers in parallel.
+
+See the updated [`mode` documentation](https://vitejs.dev/guide/env-and-mode.html#modes) for more details.
+
 ### Environment Variables
 
 Vite now uses `dotenv` 16 and `dotenv-expand` 9 (previously `dotenv` 14 and `dotenv-expand` 5). If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
