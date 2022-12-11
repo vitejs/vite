@@ -49,11 +49,11 @@ describe('plugin container', () => {
         buildEnd() {
           const { meta } = this.getModuleInfo(entryUrl)
           metaArray.push(meta)
-        }
+        },
       }
 
       const container = await getPluginContainer({
-        plugins: [plugin]
+        plugins: [plugin],
       })
 
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
@@ -77,7 +77,7 @@ describe('plugin container', () => {
           if (id === entryUrl) {
             return { id, meta: { x: 1 } }
           }
-        }
+        },
       }
 
       const plugin2: Plugin = {
@@ -88,11 +88,11 @@ describe('plugin container', () => {
             expect(meta).toEqual({ x: 1 })
             return null
           }
-        }
+        },
       }
 
       const container = await getPluginContainer({
-        plugins: [plugin1, plugin2]
+        plugins: [plugin1, plugin2],
       })
 
       await moduleGraph.ensureEntryFromUrl(entryUrl, false)
@@ -110,10 +110,10 @@ describe('plugin container', () => {
           if (id === entryUrl) {
             return this.resolve('foobar', 'notreal', {
               custom: { p1: 'success' },
-              isEntry: true
+              isEntry: true,
             })
           }
-        }
+        },
       }
 
       const plugin2: Plugin = {
@@ -124,8 +124,8 @@ describe('plugin container', () => {
             expect(opts).toEqual(
               expect.objectContaining({
                 custom: { p1: 'success' },
-                isEntry: true
-              })
+                isEntry: true,
+              }),
             )
             return entryUrl
           }
@@ -134,11 +134,11 @@ describe('plugin container', () => {
           if (id === entryUrl) {
             return null
           }
-        }
+        },
       }
 
       const container = await getPluginContainer({
-        plugins: [plugin1, plugin2]
+        plugins: [plugin1, plugin2],
       })
 
       await moduleGraph.ensureEntryFromUrl(entryUrl, false)
@@ -150,11 +150,11 @@ describe('plugin container', () => {
 })
 
 async function getPluginContainer(
-  inlineConfig?: UserConfig
+  inlineConfig?: UserConfig,
 ): Promise<PluginContainer> {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
-    'serve'
+    'serve',
   )
 
   // @ts-ignore: This plugin requires a ViteDevServer instance.

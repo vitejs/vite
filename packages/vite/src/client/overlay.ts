@@ -178,6 +178,7 @@ export class ErrorOverlay extends HTMLElement {
     } else {
       let curIndex = 0
       let match: RegExpExecArray | null
+      fileRE.lastIndex = 0
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
         if (index != null) {

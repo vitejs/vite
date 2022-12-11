@@ -2,7 +2,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
-const wasmHelperId = '/__vite-wasm-helper'
+const wasmHelperId = '\0vite/wasm-helper'
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -20,7 +20,7 @@ const wasmHelper = async (opts = {}, url: string) => {
       }
     } else {
       throw new Error(
-        'Failed to decode base64-encoded data URL, Buffer and atob are not supported'
+        'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
       )
     }
     // @ts-ignore
@@ -77,7 +77,7 @@ export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
 import initWasm from "${wasmHelperId}"
 export default opts => initWasm(opts, ${JSON.stringify(url)})
 `
-    }
+    },
   }
 }
 
@@ -94,8 +94,8 @@ export const wasmFallbackPlugin = (): Plugin => {
         '"ESM integration proposal for Wasm" is not supported currently. ' +
           'Use vite-plugin-wasm or other community plugins to handle this. ' +
           'Alternatively, you can use `.wasm?init` or `.wasm?url`. ' +
-          'See https://vitejs.dev/guide/features.html#webassembly for more details.'
+          'See https://vitejs.dev/guide/features.html#webassembly for more details.',
       )
-    }
+    },
   }
 }

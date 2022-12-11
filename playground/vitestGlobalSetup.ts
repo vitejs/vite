@@ -9,11 +9,15 @@ const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
 let browserServer: BrowserServer | undefined
 
 export async function setup(): Promise<void> {
+  process.env.NODE_ENV = process.env.VITE_TEST_BUILD
+    ? 'production'
+    : 'development'
+
   browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI
       ? ['--no-sandbox', '--disable-setuid-sandbox']
-      : undefined
+      : undefined,
   })
 
   await fs.mkdirp(DIR)
@@ -28,12 +32,12 @@ export async function setup(): Promise<void> {
       filter(file) {
         file = file.replace(/\\/g, '/')
         return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
-      }
+      },
     })
     .catch(async (error) => {
       if (error.code === 'EPERM' && error.syscall === 'symlink') {
         throw new Error(
-          'Could not create symlinks. On Windows, consider activating Developer Mode to allow non-admin users to create symlinks by following the instructions at https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development.'
+          'Could not create symlinks. On Windows, consider activating Developer Mode to allow non-admin users to create symlinks by following the instructions at https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development.',
         )
       } else {
         throw error

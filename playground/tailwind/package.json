@@ -1,5 +1,5 @@
 {
-  "name": "test-tailwind",
+  "name": "@vitejs/test-tailwind",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.13",
-    "tailwindcss": "^3.2.2",
-    "vue": "^3.2.41",
+    "tailwindcss": "^3.2.4",
+    "vue": "^3.2.45",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^4.0.0",
     "ts-node": "^10.9.1"
   }
 }

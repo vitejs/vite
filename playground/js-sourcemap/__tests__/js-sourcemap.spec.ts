@@ -5,7 +5,7 @@ import {
   formatSourcemapForSnapshot,
   isBuild,
   page,
-  serverLogs
+  serverLogs,
 } from '~utils'
 
 if (!isBuild) {

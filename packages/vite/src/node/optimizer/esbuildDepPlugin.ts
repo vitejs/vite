@@ -8,14 +8,16 @@ import {
   isBuiltin,
   isExternalUrl,
   moduleListContains,
-  normalizePath
+  normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
-import type { ExportsData } from '.'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
+
+const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
+const nonFacadePrefix = 'vite-cjs-external-facade:'
 
 const externalTypes = [
   'css',
@@ -39,15 +41,14 @@ const externalTypes = [
   // handles it by default, so exclude them as well
   'jsx',
   'tsx',
-  ...KNOWN_ASSET_TYPES
+  ...KNOWN_ASSET_TYPES,
 ]
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
-  exportsData: Record<string, ExportsData>,
   external: string[],
   config: ResolvedConfig,
-  ssr: boolean
+  ssr: boolean,
 ): Plugin {
   const { extensions } = getDepOptimizationConfig(config, ssr)
 
@@ -63,14 +64,14 @@ export function esbuildDepPlugin(
   const _resolveRequire = config.createResolver({
     asSrc: false,
     isRequire: true,
-    scan: true
+    scan: true,
   })
 
   const resolve = (
     id: string,
     importer: string,
     kind: ImportKind,
-    resolveDir?: string
+    resolveDir?: string,
   ): Promise<string | undefined> => {
     let _importer: string
     // explicit resolveDir - this is passed only during yarn pnp resolve for
@@ -89,13 +90,13 @@ export function esbuildDepPlugin(
     if (resolved.startsWith(browserExternalId)) {
       return {
         path: id,
-        namespace: 'browser-external'
+        namespace: 'browser-external',
       }
     }
     if (resolved.startsWith(optionalPeerDepId)) {
       return {
         path: resolved,
-        namespace: 'optional-peer-dep'
+        namespace: 'optional-peer-dep',
       }
     }
     if (ssr && isBuiltin(resolved)) {
@@ -104,11 +105,11 @@ export function esbuildDepPlugin(
     if (isExternalUrl(resolved)) {
       return {
         path: resolved,
-        external: true
+        external: true,
       }
     }
     return {
-      path: path.resolve(resolved)
+      path: path.resolve(resolved),
     }
   }
 
@@ -119,14 +120,16 @@ export function esbuildDepPlugin(
       // See #8459 for more details about this require-import conversion
       build.onResolve(
         {
-          filter: new RegExp(`\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`)
+          filter: new RegExp(
+            `\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`,
+          ),
         },
         async ({ path: id, importer, kind }) => {
           // if the prefix exist, it is already converted to `import`, so set `external: true`
           if (id.startsWith(convertedExternalPrefix)) {
             return {
               path: id.slice(convertedExternalPrefix.length),
-              external: true
+              external: true,
             }
           }
 
@@ -136,15 +139,15 @@ export function esbuildDepPlugin(
               // here it is not set to `external: true` to convert `require` to `import`
               return {
                 path: resolved,
-                namespace: externalWithConversionNamespace
+                namespace: externalWithConversionNamespace,
               }
             }
             return {
               path: resolved,
-              external: true
+              external: true,
             }
           }
-        }
+        },
       )
       build.onLoad(
         { filter: /./, namespace: externalWithConversionNamespace },
@@ -154,16 +157,16 @@ export function esbuildDepPlugin(
             contents:
               `export { default } from "${convertedExternalPrefix}${args.path}";` +
               `export * from "${convertedExternalPrefix}${args.path}";`,
-            loader: 'js'
+            loader: 'js',
           }
-        }
+        },
       )
 
       function resolveEntry(id: string) {
         const flatId = flattenId(id)
         if (flatId in qualified) {
           return {
-            path: qualified[flatId]
+            path: qualified[flatId],
           }
         }
       }
@@ -174,7 +177,7 @@ export function esbuildDepPlugin(
           if (moduleListContains(external, id)) {
             return {
               path: id,
-              external: true
+              external: true,
             }
           }
 
@@ -195,7 +198,7 @@ export function esbuildDepPlugin(
           if (resolved) {
             return resolveResult(id, resolved)
           }
-        }
+        },
       )
 
       build.onLoad(
@@ -203,7 +206,7 @@ export function esbuildDepPlugin(
         ({ path }) => {
           if (config.isProduction) {
             return {
-              contents: 'module.exports = {}'
+              contents: 'module.exports = {}',
             }
           } else {
             return {
@@ -235,10 +238,10 @@ module.exports = Object.create(new Proxy({}, {
       console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
     }
   }
-}))`
+}))`,
             }
           }
-        }
+        },
       )
 
       build.onLoad(
@@ -246,43 +249,64 @@ module.exports = Object.create(new Proxy({}, {
         ({ path }) => {
           if (config.isProduction) {
             return {
-              contents: 'module.exports = {}'
+              contents: 'module.exports = {}',
             }
           } else {
             const [, peerDep, parentDep] = path.split(':')
             return {
-              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
+              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
             }
           }
-        }
+        },
       )
-    }
+    },
   }
 }
 
 // esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
-export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
+export function esbuildCjsExternalPlugin(
+  externals: string[],
+  platform: 'node' | 'browser',
+): Plugin {
   return {
     name: 'cjs-external',
     setup(build) {
       const escape = (text: string) =>
-        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+        `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
       const filter = new RegExp(externals.map(escape).join('|'))
 
-      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
-        path: args.path,
-        external: true
-      }))
+      build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
+        return {
+          path: args.path.slice(nonFacadePrefix.length),
+          external: true,
+        }
+      })
 
-      build.onResolve({ filter }, (args) => ({
-        path: args.path,
-        namespace: 'external'
-      }))
+      build.onResolve({ filter }, (args) => {
+        // preserve `require` for node because it's more accurate than converting it to import
+        if (args.kind === 'require-call' && platform !== 'node') {
+          return {
+            path: args.path,
+            namespace: cjsExternalFacadeNamespace,
+          }
+        }
 
-      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-        contents: `export * from ${JSON.stringify(args.path)}`
-      }))
-    }
+        return {
+          path: args.path,
+          external: true,
+        }
+      })
+
+      build.onLoad(
+        { filter: /.*/, namespace: cjsExternalFacadeNamespace },
+        (args) => ({
+          contents:
+            `import * as m from ${JSON.stringify(
+              nonFacadePrefix + args.path,
+            )};` + `module.exports = m;`,
+        }),
+      )
+    },
   }
 }

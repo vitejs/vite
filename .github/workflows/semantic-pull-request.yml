@@ -9,6 +9,7 @@ on:
 
 jobs:
   main:
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     name: Semantic Pull Request
     steps:

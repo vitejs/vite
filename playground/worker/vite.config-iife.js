@@ -1,17 +1,17 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
 
 module.exports = vite.defineConfig({
   base: '/iife/',
   resolve: {
     alias: {
-      '@': __dirname
-    }
+      '@': __dirname,
+    },
   },
   worker: {
     format: 'iife',
     plugins: [
-      vueJsx(),
+      workerPluginTestPlugin(),
       {
         name: 'config-test',
         config() {
@@ -19,22 +19,22 @@ module.exports = vite.defineConfig({
             worker: {
               rollupOptions: {
                 output: {
-                  entryFileNames: 'assets/worker_entry.[name].js'
-                }
-              }
-            }
+                  entryFileNames: 'assets/worker_entry-[name].js',
+                },
+              },
+            },
           }
-        }
-      }
+        },
+      },
     ],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/worker_asset.[name].[ext]',
-        chunkFileNames: 'assets/worker_chunk.[name].js',
+        assetFileNames: 'assets/worker_asset-[name].[ext]',
+        chunkFileNames: 'assets/worker_chunk-[name].js',
         // should fix by config-test plugin
-        entryFileNames: 'assets/worker_.[name].js'
-      }
-    }
+        entryFileNames: 'assets/worker_-[name].js',
+      },
+    },
   },
   build: {
     outDir: 'dist/iife',
@@ -42,8 +42,9 @@ module.exports = vite.defineConfig({
       output: {
         assetFileNames: 'assets/[name].[ext]',
         chunkFileNames: 'assets/[name].js',
-        entryFileNames: 'assets/[name].js'
-      }
-    }
-  }
+        entryFileNames: 'assets/[name].js',
+      },
+    },
+  },
+  plugins: [workerPluginTestPlugin()],
 })

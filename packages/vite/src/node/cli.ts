@@ -1,4 +1,7 @@
+import path from 'node:path'
+import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
+import type { Session } from 'node:inspector'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
@@ -6,6 +9,7 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
+import { bindShortcuts } from './shortcuts'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -28,6 +32,36 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
+// @ts-ignore
+let profileSession: Session | undefined = global.__vite_profile_session
+let profileCount = 0
+
+export const stopProfiler = (
+  log: (message: string) => void,
+): void | Promise<void> => {
+  if (!profileSession) return
+  return new Promise((res, rej) => {
+    profileSession!.post('Profiler.stop', (err: any, { profile }: any) => {
+      // Write profile to disk, upload, etc.
+      if (!err) {
+        const outPath = path.resolve(
+          `./vite-profile-${profileCount++}.cpuprofile`,
+        )
+        fs.writeFileSync(outPath, JSON.stringify(profile))
+        log(
+          colors.yellow(
+            `CPU profile written to ${colors.white(colors.dim(outPath))}`,
+          ),
+        )
+        profileSession = undefined
+        res()
+      } else {
+        rej(err)
+      }
+    })
+  })
+}
+
 const filterDuplicateOptions = <T extends object>(options: T) => {
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value)) {
@@ -39,7 +73,7 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
  * removing global flags before passing as command specific sub-configs
  */
 function cleanOptions<Options extends GlobalCLIOptions>(
-  options: Options
+  options: Options,
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
   delete ret['--']
@@ -80,7 +114,7 @@ cli
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option(
     '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     filterDuplicateOptions(options)
@@ -96,7 +130,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        server: cleanOptions(options)
+        server: cleanOptions(options),
       })
 
       if (!server.httpServer) {
@@ -112,24 +146,53 @@ cli
       const startupDurationString = viteStartTime
         ? colors.dim(
             `ready in ${colors.reset(
-              colors.bold(Math.ceil(performance.now() - viteStartTime))
-            )} ms`
+              colors.bold(Math.ceil(performance.now() - viteStartTime)),
+            )} ms`,
           )
         : ''
 
       info(
         `\n  ${colors.green(
-          `${colors.bold('VITE')} v${VERSION}`
+          `${colors.bold('VITE')} v${VERSION}`,
         )}  ${startupDurationString}\n`,
-        { clear: !server.config.logger.hasWarned }
+        { clear: !server.config.logger.hasWarned },
       )
 
       server.printUrls()
+      bindShortcuts(server, {
+        print: true,
+        customShortcuts: [
+          profileSession && {
+            key: 'p',
+            description: 'start/stop the profiler',
+            async action(server) {
+              if (profileSession) {
+                await stopProfiler(server.config.logger.info)
+              } else {
+                const inspector = await import('node:inspector').then(
+                  (r) => r.default,
+                )
+                await new Promise<void>((res) => {
+                  profileSession = new inspector.Session()
+                  profileSession.connect()
+                  profileSession.post('Profiler.enable', () => {
+                    profileSession!.post('Profiler.start', () => {
+                      server.config.logger.info('Profiler started')
+                      res()
+                    })
+                  })
+                })
+              }
+            },
+          },
+        ],
+      })
     } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error when starting dev server:\n${e.stack}`),
-        { error: e }
-      )
+      const logger = createLogger(options.logLevel)
+      logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
+        error: e,
+      })
+      stopProfiler(logger.info)
       process.exit(1)
     }
   })
@@ -141,34 +204,34 @@ cli
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
-    `[string] directory under outDir to place assets in (default: assets)`
+    `[string] directory under outDir to place assets in (default: assets)`,
   )
   .option(
     '--assetsInlineLimit <number>',
-    `[number] static asset base64 inline threshold in bytes (default: 4096)`
+    `[number] static asset base64 inline threshold in bytes (default: 4096)`,
   )
   .option(
     '--ssr [entry]',
-    `[string] build specified entry for server-side rendering`
+    `[string] build specified entry for server-side rendering`,
   )
   .option(
     '--sourcemap',
-    `[boolean] output source maps for build (default: false)`
+    `[boolean] output source maps for build (default: false)`,
   )
   .option(
     '--minify [minifier]',
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
-      `or specify minifier to use (default: esbuild)`
+      `or specify minifier to use (default: esbuild)`,
   )
   .option('--manifest [name]', `[boolean | string] emit build manifest json`)
   .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
   .option(
     '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`
+    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`,
   )
   .option(
     '--emptyOutDir',
-    `[boolean] force empty outDir when it's outside of root`
+    `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
@@ -185,14 +248,16 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        build: buildOptions
+        build: buildOptions,
       })
     } catch (e) {
       createLogger(options.logLevel).error(
         colors.red(`error during build:\n${e.stack}`),
-        { error: e }
+        { error: e },
       )
       process.exit(1)
+    } finally {
+      stopProfiler((message) => createLogger(options.logLevel).info(message))
     }
   })
 
@@ -201,7 +266,7 @@ cli
   .command('optimize [root]', 'pre-bundle dependencies')
   .option(
     '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
@@ -213,20 +278,19 @@ cli
             root,
             base: options.base,
             configFile: options.config,
-            logLevel: options.logLevel
+            logLevel: options.logLevel,
           },
           'build',
-          'development'
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when optimizing deps:\n${e.stack}`),
-          { error: e }
+          { error: e },
         )
         process.exit(1)
       }
-    }
+    },
   )
 
 cli
@@ -247,7 +311,7 @@ cli
         open?: boolean | string
         strictPort?: boolean
         outDir?: string
-      } & GlobalCLIOptions
+      } & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
       const { preview } = await import('./preview')
@@ -259,25 +323,27 @@ cli
           logLevel: options.logLevel,
           mode: options.mode,
           build: {
-            outDir: options.outDir
+            outDir: options.outDir,
           },
           preview: {
             port: options.port,
             strictPort: options.strictPort,
             host: options.host,
             https: options.https,
-            open: options.open
-          }
+            open: options.open,
+          },
         })
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),
-          { error: e }
+          { error: e },
         )
         process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
       }
-    }
+    },
   )
 
 cli.help()

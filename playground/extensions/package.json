@@ -1,5 +1,5 @@
 {
-  "name": "test-extensions",
+  "name": "@vitejs/test-extensions",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.41"
+    "vue": "^3.2.45"
   }
 }

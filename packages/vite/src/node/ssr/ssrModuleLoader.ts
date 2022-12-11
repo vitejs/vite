@@ -2,24 +2,22 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ViteDevServer } from '../server'
 import {
-  bareImportRE,
   dynamicImport,
   isBuiltin,
   unwrapId,
-  usingDynamicImport
+  usingDynamicImport,
 } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { hookNodeResolve } from '../plugins/ssrRequireHook'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
   ssrImportKey,
   ssrImportMetaKey,
-  ssrModuleExportsKey
+  ssrModuleExportsKey,
 } from './ssrTransform'
-import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
+import { ssrFixStacktrace } from './ssrStacktrace'
 
 interface SSRContext {
   global: typeof globalThis
@@ -35,7 +33,7 @@ export async function ssrLoadModule(
   server: ViteDevServer,
   context: SSRContext = { global },
   urlStack: string[] = [],
-  fixStacktrace?: boolean
+  fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   url = unwrapId(url)
 
@@ -53,7 +51,7 @@ export async function ssrLoadModule(
     server,
     context,
     urlStack,
-    fixStacktrace
+    fixStacktrace,
   )
   pendingModules.set(url, modulePromise)
   modulePromise
@@ -71,7 +69,7 @@ async function instantiateModule(
   server: ViteDevServer,
   context: SSRContext = { global },
   urlStack: string[] = [],
-  fixStacktrace?: boolean
+  fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url, true)
@@ -92,7 +90,7 @@ async function instantiateModule(
   }
 
   const ssrModule = {
-    [Symbol.toStringTag]: 'Module'
+    [Symbol.toStringTag]: 'Module',
   }
   Object.defineProperty(ssrModule, '__esModule', { value: true })
 
@@ -102,7 +100,7 @@ async function instantiateModule(
 
   const ssrImportMeta = {
     // The filesystem URL, matching native Node.js modules
-    url: pathToFileURL(mod.file!).toString()
+    url: pathToFileURL(mod.file!).toString(),
   }
 
   urlStack = urlStack.concat(url)
@@ -111,12 +109,9 @@ async function instantiateModule(
   const {
     isProduction,
     resolve: { dedupe, preserveSymlinks },
-    root
+    root,
   } = server.config
 
-  // The `extensions` and `mainFields` options are used to ensure that
-  // CommonJS modules are preferred. We want to avoid ESM->ESM imports
-  // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
     mainFields: ['main'],
     browserField: true,
@@ -124,10 +119,9 @@ async function instantiateModule(
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
-    isBuild: true,
+    isBuild: false,
     isProduction,
-    isRequire: true,
-    root
+    root,
   }
 
   // Since dynamic imports can happen in parallel, we need to
@@ -150,7 +144,7 @@ async function instantiateModule(
         server,
         context,
         urlStack,
-        fixStacktrace
+        fixStacktrace,
       )
       if (pendingDeps.length === 1) {
         pendingImports.delete(url)
@@ -180,7 +174,7 @@ async function instantiateModule(
           configurable: true,
           get() {
             return sourceModule[key]
-          }
+          },
         })
       }
     }
@@ -196,7 +190,7 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`
+      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`,
     )
     await initModule(
       context.global,
@@ -204,20 +198,19 @@ async function instantiateModule(
       ssrImportMeta,
       ssrImport,
       ssrDynamicImport,
-      ssrExportAll
+      ssrExportAll,
     )
   } catch (e) {
     mod.ssrError = e
     if (e.stack && fixStacktrace) {
-      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-      rebindErrorStacktrace(e, stacktrace)
+      ssrFixStacktrace(e, moduleGraph)
       server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+        `Error when evaluating SSR module ${url}:\n${e.stack}`,
         {
           timestamp: true,
           clear: server.config.clearScreen,
-          error: e
-        }
+          error: e,
+        },
       )
     }
     throw e
@@ -226,72 +219,17 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-// `nodeImport` may run in parallel on multiple `ssrLoadModule` calls.
-// We keep track of the current importing count so that the first import
-// would `hookNodeResolve`, and the last import would `unhookNodeResolve`.
-let importingCount = 0
-let unhookNodeResolve: ReturnType<typeof hookNodeResolve> | undefined
-
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
   importer: string,
-  resolveOptions: InternalResolveOptions
+  resolveOptions: InternalResolveOptions,
 ) {
-  // Node's module resolution is hi-jacked so Vite can ensure the
-  // configured `resolve.dedupe` and `mode` options are respected.
-  const viteResolve = (
-    id: string,
-    importer: string,
-    options = resolveOptions
-  ) => {
-    const resolved = tryNodeResolve(id, importer, options, false)
-    if (!resolved) {
-      const err: any = new Error(
-        `Cannot find module '${id}' imported from '${importer}'`
-      )
-      err.code = 'ERR_MODULE_NOT_FOUND'
-      throw err
-    }
-    return resolved.id
-  }
-
-  if (importingCount === 0) {
-    // When an ESM module imports an ESM dependency, this hook is *not* used.
-    unhookNodeResolve = hookNodeResolve(
-      (nodeResolve) => (id, parent, isMain, options) => {
-        // Use the Vite resolver only for bare imports while skipping
-        // any absolute paths, built-in modules and binary modules.
-        if (
-          !bareImportRE.test(id) ||
-          path.isAbsolute(id) ||
-          isBuiltin(id) ||
-          id.endsWith('.node')
-        ) {
-          return nodeResolve(id, parent, isMain, options)
-        }
-        if (parent) {
-          let resolved = viteResolve(id, parent.id)
-          if (resolved) {
-            // hookNodeResolve must use platform-specific path.normalize
-            // to be compatible with dynamicImport (#6080)
-            resolved = path.normalize(resolved)
-          }
-          return resolved
-        }
-        // Importing a CJS module from an ESM module. In this case, the import
-        // specifier is already an absolute path, so this is a no-op.
-        // Options like `resolve.dedupe` and `mode` are not respected.
-        return id
-      }
-    )
-  }
-
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = viteResolve(
+    const resolved = tryNodeResolve(
       id,
       importer,
       // Non-external modules can import ESM-only modules, but only outside
@@ -299,23 +237,26 @@ async function nodeImport(
       // @ts-expect-error
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
-        : resolveOptions
+        : resolveOptions,
+      false,
     )
+    if (!resolved) {
+      const err: any = new Error(
+        `Cannot find module '${id}' imported from '${importer}'`,
+      )
+      err.code = 'ERR_MODULE_NOT_FOUND'
+      throw err
+    }
+    url = resolved.id
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
   }
 
   try {
-    importingCount++
     const mod = await dynamicImport(url)
     return proxyESM(mod)
-  } finally {
-    importingCount--
-    if (importingCount === 0) {
-      unhookNodeResolve?.()
-    }
-  }
+  } catch {}
 }
 
 // rollup-style default import interop for cjs
@@ -336,7 +277,7 @@ function proxyESM(mod: any) {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
       return mod[prop] ?? defaultExport?.[prop]
-    }
+    },
   })
 }
 

@@ -19,13 +19,13 @@ import {
   newDepOptimizationProcessing,
   optimizeServerSsrDeps,
   runOptimizeDeps,
-  toDiscoveredDependencies
+  toDiscoveredDependencies,
 } from '.'
 import type {
   DepOptimizationProcessing,
   DepOptimizationResult,
   DepsOptimizer,
-  OptimizedDepInfo
+  OptimizedDepInfo,
 } from '.'
 
 const isDebugEnabled = _debug('vite:deps').enabled
@@ -41,18 +41,18 @@ const devSsrDepsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 
 export function getDepsOptimizer(
   config: ResolvedConfig,
-  ssr?: boolean
+  ssr?: boolean,
 ): DepsOptimizer | undefined {
   // Workers compilation shares the DepsOptimizer from the main build
   const isDevSsr = ssr && config.command !== 'build'
   return (isDevSsr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(
-    config.mainConfig || config
+    config.mainConfig || config,
   )
 }
 
 export async function initDepsOptimizer(
   config: ResolvedConfig,
-  server?: ViteDevServer
+  server?: ViteDevServer,
 ): Promise<void> {
   // Non Dev SSR Optimizer
   const ssr = config.command === 'build' && !!config.build.ssr
@@ -64,7 +64,7 @@ export async function initDepsOptimizer(
 let creatingDevSsrOptimizer: Promise<void> | undefined
 export async function initDevSsrDepsOptimizer(
   config: ResolvedConfig,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Promise<void> {
   if (getDepsOptimizer(config, true)) {
     // ssr
@@ -91,7 +91,7 @@ export async function initDevSsrDepsOptimizer(
 
 async function createDepsOptimizer(
   config: ResolvedConfig,
-  server?: ViteDevServer
+  server?: ViteDevServer,
 ): Promise<void> {
   const { logger } = config
   const isBuild = config.command === 'build'
@@ -121,7 +121,7 @@ async function createDepsOptimizer(
     resetRegisteredIds,
     ensureFirstRun,
     close,
-    options: getDepOptimizationConfig(config, ssr)
+    options: getDepOptimizationConfig(config, ssr),
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
@@ -134,11 +134,11 @@ async function createDepsOptimizer(
     if (newDepsToLog.length) {
       config.logger.info(
         colors.green(
-          `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`
+          `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`,
         ),
         {
-          timestamp: true
-        }
+          timestamp: true,
+        },
       )
       newDepsToLog = []
     }
@@ -165,8 +165,11 @@ async function createDepsOptimizer(
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
-    await postScanOptimizationResult
-    await optimizingNewDeps
+    await Promise.allSettled([
+      depsOptimizer.scanProcessing,
+      postScanOptimizationResult,
+      optimizingNewDeps,
+    ])
   }
 
   if (!cachedMetadata) {
@@ -182,63 +185,63 @@ async function createDepsOptimizer(
       config,
       deps,
       ssr,
-      sessionTimestamp
+      sessionTimestamp,
     )
 
     for (const depInfo of Object.values(discovered)) {
       addOptimizedDepInfo(metadata, 'discovered', {
         ...depInfo,
-        processing: depOptimizationProcessing.promise
+        processing: depOptimizationProcessing.promise,
       })
       newDepsDiscovered = true
     }
 
     if (!isBuild) {
       // Important, the scanner is dev only
-      const scanPhaseProcessing = newDepOptimizationProcessing()
-      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
-      // Ensure server listen is called before the scanner
-      setTimeout(async () => {
-        try {
-          debug(colors.green(`scanning for dependencies...`))
+      depsOptimizer.scanProcessing = new Promise((resolve) => {
+        // Ensure server listen is called before the scanner
+        setTimeout(async () => {
+          try {
+            debug(colors.green(`scanning for dependencies...`))
 
-          const deps = await discoverProjectDependencies(config)
+            const deps = await discoverProjectDependencies(config)
 
-          debug(
-            colors.green(
-              Object.keys(deps).length > 0
-                ? `dependencies found by scanner: ${depsLogString(
-                    Object.keys(deps)
-                  )}`
-                : `no dependencies found by scanner`
+            debug(
+              colors.green(
+                Object.keys(deps).length > 0
+                  ? `dependencies found by scanner: ${depsLogString(
+                      Object.keys(deps),
+                    )}`
+                  : `no dependencies found by scanner`,
+              ),
             )
-          )
 
-          // Add these dependencies to the discovered list, as these are currently
-          // used by the preAliasPlugin to support aliased and optimized deps.
-          // This is also used by the CJS externalization heuristics in legacy mode
-          for (const id of Object.keys(deps)) {
-            if (!metadata.discovered[id]) {
-              addMissingDep(id, deps[id])
+            // Add these dependencies to the discovered list, as these are currently
+            // used by the preAliasPlugin to support aliased and optimized deps.
+            // This is also used by the CJS externalization heuristics in legacy mode
+            for (const id of Object.keys(deps)) {
+              if (!metadata.discovered[id]) {
+                addMissingDep(id, deps[id])
+              }
             }
-          }
 
-          if (!isBuild) {
-            const knownDeps = prepareKnownDeps()
+            if (!isBuild) {
+              const knownDeps = prepareKnownDeps()
 
-            // For dev, we run the scanner and the first optimization
-            // run on the background, but we wait until crawling has ended
-            // to decide if we send this result to the browser or we need to
-            // do another optimize step
-            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+              // For dev, we run the scanner and the first optimization
+              // run on the background, but we wait until crawling has ended
+              // to decide if we send this result to the browser or we need to
+              // do another optimize step
+              postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+            }
+          } catch (e) {
+            logger.error(e.message)
+          } finally {
+            resolve()
+            depsOptimizer.scanProcessing = undefined
           }
-        } catch (e) {
-          logger.error(e.message)
-        } finally {
-          scanPhaseProcessing.resolve()
-          depsOptimizer.scanProcessing = undefined
-        }
-      }, 0)
+        }, 0)
+      })
     }
   }
 
@@ -321,7 +324,7 @@ async function createDepsOptimizer(
 
       const needsInteropMismatch = findInteropMismatches(
         metadata.discovered,
-        newData.optimized
+        newData.optimized,
       )
 
       // After a re-optimization, if the internal bundled chunks change a full page reload
@@ -378,8 +381,8 @@ async function createDepsOptimizer(
         if (isRerun) {
           newDepsToLog.push(
             ...Object.keys(newData.optimized).filter(
-              (dep) => !metadata.optimized[dep]
-            )
+              (dep) => !metadata.optimized[dep],
+            ),
           )
         }
 
@@ -403,8 +406,8 @@ async function createDepsOptimizer(
                 !isRerun
                   ? `dependencies optimized`
                   : `optimized dependencies unchanged`
-              }`
-            )
+              }`,
+            ),
           )
         }
       } else {
@@ -417,8 +420,8 @@ async function createDepsOptimizer(
 
           debug(
             colors.green(
-              `✨ delaying reload as new dependencies have been found...`
-            )
+              `✨ delaying reload as new dependencies have been found...`,
+            ),
           )
         } else {
           await commitProcessing()
@@ -432,19 +435,19 @@ async function createDepsOptimizer(
           logger.info(
             colors.green(`✨ optimized dependencies changed. reloading`),
             {
-              timestamp: true
-            }
+              timestamp: true,
+            },
           )
           if (needsInteropMismatch.length > 0) {
             config.logger.warn(
               `Mixed ESM and CJS detected in ${colors.yellow(
-                needsInteropMismatch.join(', ')
+                needsInteropMismatch.join(', '),
               )}, add ${
                 needsInteropMismatch.length === 1 ? 'it' : 'them'
               } to optimizeDeps.needsInterop to speed up cold start`,
               {
-                timestamp: true
-              }
+                timestamp: true,
+              },
             )
           }
 
@@ -454,7 +457,7 @@ async function createDepsOptimizer(
     } catch (e) {
       logger.error(
         colors.red(`error while updating dependencies:\n${e.stack}`),
-        { timestamp: true, error: e }
+        { timestamp: true, error: e },
       )
       resolveEnqueuedProcessingPromises()
 
@@ -476,7 +479,7 @@ async function createDepsOptimizer(
 
       server.ws.send({
         type: 'full-reload',
-        path: '*'
+        path: '*',
       })
     }
   }
@@ -494,16 +497,16 @@ async function createDepsOptimizer(
   function getDiscoveredBrowserHash(
     hash: string,
     deps: Record<string, string>,
-    missing: Record<string, string>
+    missing: Record<string, string>,
   ) {
     return getHash(
-      hash + JSON.stringify(deps) + JSON.stringify(missing) + sessionTimestamp
+      hash + JSON.stringify(deps) + JSON.stringify(missing) + sessionTimestamp,
     )
   }
 
   function registerMissingImport(
     id: string,
-    resolved: string
+    resolved: string,
   ): OptimizedDepInfo {
     const optimized = metadata.optimized[id]
     if (optimized) {
@@ -552,12 +555,12 @@ async function createDepsOptimizer(
       browserHash: getDiscoveredBrowserHash(
         metadata.hash,
         depsFromOptimizedDepInfo(metadata.optimized),
-        depsFromOptimizedDepInfo(metadata.discovered)
+        depsFromOptimizedDepInfo(metadata.discovered),
       ),
       // loading of this pre-bundled dep needs to await for its processing
       // promise to be resolved
       processing: depOptimizationProcessing.promise,
-      exportsData: extractExportsData(resolved, config, ssr)
+      exportsData: extractExportsData(resolved, config, ssr),
     })
   }
 
@@ -603,8 +606,8 @@ async function createDepsOptimizer(
       if (scanDeps.length === 0 && crawlDeps.length === 0) {
         debug(
           colors.green(
-            `✨ no dependencies found by the scanner or crawling static imports`
-          )
+            `✨ no dependencies found by the scanner or crawling static imports`,
+          ),
         )
         result.cancel()
         firstRunCalled = true
@@ -613,7 +616,7 @@ async function createDepsOptimizer(
 
       const needsInteropMismatch = findInteropMismatches(
         metadata.discovered,
-        result.metadata.optimized
+        result.metadata.optimized,
       )
       const scannerMissedDeps = crawlDeps.some((dep) => !scanDeps.includes(dep))
       const outdatedResult =
@@ -632,8 +635,8 @@ async function createDepsOptimizer(
         if (scannerMissedDeps) {
           debug(
             colors.yellow(
-              `✨ new dependencies were found while crawling that weren't detected by the scanner`
-            )
+              `✨ new dependencies were found while crawling that weren't detected by the scanner`,
+            ),
           )
         }
         debug(colors.green(`✨ re-running optimizer`))
@@ -641,8 +644,8 @@ async function createDepsOptimizer(
       } else {
         debug(
           colors.green(
-            `✨ using post-scan optimizer result, the scanner found every used dependency`
-          )
+            `✨ using post-scan optimizer result, the scanner found every used dependency`,
+          ),
         )
         startNextDiscoveredBatch()
         runOptimizer(result)
@@ -651,8 +654,8 @@ async function createDepsOptimizer(
       if (crawlDeps.length === 0) {
         debug(
           colors.green(
-            `✨ no dependencies found while crawling the static imports`
-          )
+            `✨ no dependencies found while crawling the static imports`,
+          ),
         )
         firstRunCalled = true
       } else {
@@ -731,7 +734,7 @@ async function createDepsOptimizer(
           .then(() => {
             setTimeout(
               afterLoad,
-              registeredIds.length > 0 ? 0 : runOptimizerIfIdleAfterMs
+              registeredIds.length > 0 ? 0 : runOptimizerIfIdleAfterMs,
             )
           })
           .catch(afterLoad)
@@ -741,7 +744,7 @@ async function createDepsOptimizer(
 }
 
 async function createDevSsrDepsOptimizer(
-  config: ResolvedConfig
+  config: ResolvedConfig,
 ): Promise<void> {
   const metadata = await optimizeServerSsrDeps(config)
 
@@ -754,7 +757,7 @@ async function createDevSsrDepsOptimizer(
 
     registerMissingImport: () => {
       throw new Error(
-        'Vite Internal Error: registerMissingImport is not supported in dev SSR'
+        'Vite Internal Error: registerMissingImport is not supported in dev SSR',
       )
     },
     // noop, there is no scanning during dev SSR
@@ -766,14 +769,14 @@ async function createDevSsrDepsOptimizer(
     ensureFirstRun: () => {},
 
     close: async () => {},
-    options: config.ssr.optimizeDeps
+    options: config.ssr.optimizeDeps,
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)
 }
 
 function findInteropMismatches(
   discovered: Record<string, OptimizedDepInfo>,
-  optimized: Record<string, OptimizedDepInfo>
+  optimized: Record<string, OptimizedDepInfo>,
 ) {
   const needsInteropMismatch = []
   for (const dep in discovered) {
