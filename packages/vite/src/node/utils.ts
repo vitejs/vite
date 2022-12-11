@@ -1223,6 +1223,13 @@ export function shouldServe(url: string, assetsDir: string): boolean {
   }
 }
 
+export function shouldServeFile(filePath: string, root: string): boolean {
+  // can skip case check on Linux
+  if (!isCaseInsensitiveFS) return true
+
+  return hasCorrectCase(filePath, root)
+}
+
 /**
  * Note that we can't use realpath here, because we don't want to follow
  * symlinks.
