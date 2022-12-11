@@ -165,7 +165,6 @@ beforeAll(async (s) => {
         if (serve) {
           server = await serve()
           viteServer = mod.viteServer
-          return
         }
       } else {
         await startDefaultServe()
