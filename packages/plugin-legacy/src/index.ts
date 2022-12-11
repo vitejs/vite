@@ -22,18 +22,9 @@ import type {
   PluginItem as BabelPlugin,
   types as BabelTypes,
 } from '@babel/core'
+import babel from '@babel/core'
 import colors from 'picocolors'
 import type { Options } from './types'
-
-// lazy load babel since it's not used during dev
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
-let babel: typeof import('@babel/standalone') | undefined
-async function loadBabel() {
-  if (!babel) {
-    babel = await import('@babel/standalone')
-  }
-  return babel
-}
 
 // Duplicated from build.ts in Vite Core, at least while the feature is experimental
 // We should later expose this helper for other plugins to use
@@ -122,7 +113,7 @@ const _require = createRequire(import.meta.url)
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
-  const targets = options.targets || 'defaults'
+  const targets = options.targets
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
@@ -411,8 +402,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
-      const babel = await loadBabel()
-      const { code, map } = babel.transform(raw, {
+      const result = babel.transform(raw, {
         babelrc: false,
         configFile: false,
         compact: !!config.build.minify,
@@ -431,7 +421,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             }),
           ],
           [
-            'env',
+            '@babel/preset-env',
             createBabelPresetEnvOptions(targets, {
               needPolyfills,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig,
@@ -440,7 +430,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         ],
       })
 
-      if (code) return { code, map }
+      if (result) return { code: result.code!, map: result.map }
       return null
     },
 
@@ -594,21 +584,20 @@ export async function detectPolyfills(
   targets: any,
   list: Set<string>,
 ): Promise<void> {
-  const babel = await loadBabel()
-  const { ast } = babel.transform(code, {
+  const result = babel.transform(code, {
     ast: true,
     babelrc: false,
     configFile: false,
     presets: [
       [
-        'env',
+        '@babel/preset-env',
         createBabelPresetEnvOptions(targets, {
           ignoreBrowserslistConfig: true,
         }),
       ],
     ],
   })
-  for (const node of ast!.program.body) {
+  for (const node of result!.ast!.program.body) {
     if (node.type === 'ImportDeclaration') {
       const source = node.source.value
       if (
