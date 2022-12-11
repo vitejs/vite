@@ -874,8 +874,8 @@ export async function tryOptimizedResolve(
 
   const metadata = depsOptimizer.metadata
 
-  const depInfo = optimizedDepInfoFromId(metadata, id)
   if (!importer) {
+    const depInfo = optimizedDepInfoFromId(metadata, id)
     // no importer. try our best to find an optimized dep
     if (depInfo) {
       return depsOptimizer.getOptimizedDepId(depInfo)
@@ -884,21 +884,9 @@ export async function tryOptimizedResolve(
   }
 
   // resolvedSrc is what the importer wants
-  // we can return a optimizedDep only if optimizedDep.src === resolvedSrc
+  // we can return an optimizedDep only if optimizedDep.src === resolvedSrc
   // https://github.com/vitejs/vite/pull/11290
   let resolvedSrc: string | undefined
-  try {
-    // this may throw errors if unable to resolve, e.g. aliased id
-    resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-  } catch {
-    // this is best-effort only so swallow errors
-  }
-  if (!resolvedSrc) return
-
-  // check if the found optimizedDep comes from the resolvedSrc
-  if (depInfo && depInfo.src === resolvedSrc) {
-    return depsOptimizer.getOptimizedDepId(depInfo)
-  }
 
   for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
@@ -909,6 +897,17 @@ export async function tryOptimizedResolve(
     //   id       => "foo"
     // this narrows the need to do a full resolve
     if (!pkgPath.endsWith(id)) continue
+
+    try {
+      // compute resolvedSrc lazily because resolveFrom is expensive
+      // this may throw errors if unable to resolve, e.g. aliased id
+      resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+    } catch {
+      // this is best-effort only so swallow errors
+    }
+    // if we can't compute resolvedSrc, return early
+    // no need to try again in next iteration
+    if (!resolvedSrc) return
 
     // check if the found optimizedDep comes from the resolvedSrc
     if (optimizedData.src === resolvedSrc) {
