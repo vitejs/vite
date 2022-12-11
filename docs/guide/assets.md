@@ -28,7 +28,7 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent. To get inlining, make sure to download the file contents via Git LFS before building.
 
-- TypeScript, by default, does not recognize static asset imports as valid modules. To fix this, include the [`vite/client` library](./features#client-types).
+- TypeScript, by default, does not recognize static asset imports as valid modules. To fix this, include [`vite/client`](./features#client-types).
 
 ### Explicit URL Imports
 
