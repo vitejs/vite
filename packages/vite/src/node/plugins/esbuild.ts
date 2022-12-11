@@ -125,6 +125,23 @@ export async function transformWithEsbuild(
         ...tsconfigRaw?.compilerOptions,
       },
     }
+
+    const { compilerOptions } = tsconfigRaw
+    if (compilerOptions) {
+      // esbuild derives `useDefineForClassFields` from `target` instead of `tsconfig.compilerOptions.target`
+      // https://github.com/evanw/esbuild/issues/2584
+      // but we want `useDefineForClassFields` to be derived from `tsconfig.compilerOptions.target`
+      if (compilerOptions.useDefineForClassFields === undefined) {
+        const lowercaseTarget = compilerOptions.target?.toLowerCase() ?? 'es3'
+        if (lowercaseTarget.startsWith('es')) {
+          const esVersion = lowercaseTarget.slice(2)
+          compilerOptions.useDefineForClassFields =
+            esVersion === 'next' || +esVersion >= 2022
+        } else {
+          compilerOptions.useDefineForClassFields = false
+        }
+      }
+    }
   }
 
   const resolvedOptions = {
