@@ -13,15 +13,3 @@ declare module '*.vue' {
   const component: ComponentOptions
   export default component
 }
-
-import 'vite'
-declare module 'vite' {
-  export interface UserConfig {
-    /**
-     * special test only hook
-     *
-     * runs after build and before preview
-     */
-    __test__?: () => void
-  }
-}

@@ -349,3 +349,14 @@ function setupConsoleWarnCollector(logs: string[]) {
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
+
+declare module 'vite' {
+  export interface UserConfig {
+    /**
+     * special test only hook
+     *
+     * runs after build and before preview
+     */
+    __test__?: () => void
+  }
+}
