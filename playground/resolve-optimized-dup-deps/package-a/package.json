@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-resolve-optimized-dup-deps-package-a",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@vitejs/test-resolve-optimized-dup-deps-package-b": "file:../package-b-v2"
+  }
+}

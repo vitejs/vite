@@ -1,0 +1,17 @@
+<h2>direct dependency A</h2>
+<pre class="a"></pre>
+
+<h2>direct dependency B</h2>
+<pre class="b"></pre>
+
+<script type="module">
+  import A from '@vitejs/test-resolve-optimized-dup-deps-package-a'
+  import B from '@vitejs/test-resolve-optimized-dup-deps-package-b'
+
+  text('.a', A)
+  text('.b', B)
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>
