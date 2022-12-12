@@ -438,35 +438,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().remove(end + 1, expEnd)
         }
 
-        if (
-          !isDynamicImport &&
-          specifier &&
-          !specifier.includes('?') && // ignore custom queries
-          isCSSRequest(specifier) &&
-          !isModuleCSSRequest(specifier)
-        ) {
-          const sourceExp = source.slice(expStart, start)
-          if (
-            sourceExp.includes('from') && // check default and named imports
-            !sourceExp.includes('__vite_glob_') // glob handles deprecation message itself
-          ) {
-            const newImport =
-              sourceExp + specifier + `?inline` + source.slice(end, expEnd)
-            this.warn(
-              `\n` +
-                colors.cyan(importerModule.file) +
-                `\n` +
-                colors.reset(generateCodeFrame(source, start)) +
-                `\n` +
-                colors.yellow(
-                  `Default and named imports from CSS files are deprecated. ` +
-                    `Use the ?inline query instead. ` +
-                    `For example: ${newImport}`,
-                ),
-            )
-          }
-        }
-
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
         if (specifier) {
@@ -508,6 +479,35 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // normalize
           const [url, resolvedId] = await normalizeUrl(specifier, start)
+
+          if (
+            !isDynamicImport &&
+            specifier &&
+            !specifier.includes('?') && // ignore custom queries
+            isCSSRequest(resolvedId) &&
+            !isModuleCSSRequest(resolvedId)
+          ) {
+            const sourceExp = source.slice(expStart, start)
+            if (
+              sourceExp.includes('from') && // check default and named imports
+              !sourceExp.includes('__vite_glob_') // glob handles deprecation message itself
+            ) {
+              const newImport =
+                sourceExp + specifier + `?inline` + source.slice(end, expEnd)
+              this.warn(
+                `\n` +
+                  colors.cyan(importerModule.file) +
+                  `\n` +
+                  colors.reset(generateCodeFrame(source, start)) +
+                  `\n` +
+                  colors.yellow(
+                    `Default and named imports from CSS files are deprecated. ` +
+                      `Use the ?inline query instead. ` +
+                      `For example: ${newImport}`,
+                  ),
+              )
+            }
+          }
 
           // record as safe modules
           server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
