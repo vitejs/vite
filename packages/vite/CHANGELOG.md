@@ -1,6 +1,6 @@
 ## 4.0.0 (2022-12-09)
 
-![Vite 4 Announcement Cover Image](/og-image-announcing-vite4.png)
+![Vite 4 Announcement Cover Image](https://vitejs.dev/og-image-announcing-vite4.png)
 
 Read the announcement blog post: [Announcing Vite 4](https://vitejs.dev/blog/announcing-vite4)
 
