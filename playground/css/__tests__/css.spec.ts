@@ -451,6 +451,14 @@ test('PostCSS source.input.from includes query', async () => {
   )
 })
 
+test('js file ending with .css.js', async () => {
+  const message = await page.textContent('.jsfile-css-js')
+  expect(message).toMatch('from jsfile.css.js')
+  serverLogs.forEach((log) => {
+    expect(log).not.toMatch(/Use the \?inline query instead.+jsfile\.css/)
+  })
+})
+
 test('aliased css has content', async () => {
   expect(await getColor('.aliased')).toBe('blue')
   // skipped: currently not supported see #8936

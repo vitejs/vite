@@ -100,6 +100,10 @@ text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 import postcssSourceInput from './postcss-source-input.css?query=foo'
 text('.postcss-source-input', postcssSourceInput)
 
+// The file is jsfile.css.js, and we should be able to import it without extension
+import jsFileMessage from './jsfile.css'
+text('.jsfile-css-js', jsFileMessage)
+
 import aliasContent from '#alias'
 text('.aliased-content', aliasContent)
 import aliasModule from '#alias-module'
