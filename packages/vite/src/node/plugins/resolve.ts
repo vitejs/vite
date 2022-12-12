@@ -874,12 +874,14 @@ export async function tryOptimizedResolve(
 
   const metadata = depsOptimizer.metadata
 
-  const depInfo = optimizedDepInfoFromId(metadata, id)
-  if (depInfo) {
-    return depsOptimizer.getOptimizedDepId(depInfo)
+  if (!importer) {
+    // no importer. try our best to find an optimized dep
+    const depInfo = optimizedDepInfoFromId(metadata, id)
+    if (depInfo) {
+      return depsOptimizer.getOptimizedDepId(depInfo)
+    }
+    return
   }
-
-  if (!importer) return
 
   // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
