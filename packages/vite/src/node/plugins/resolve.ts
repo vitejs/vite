@@ -875,17 +875,15 @@ export async function tryOptimizedResolve(
   const metadata = depsOptimizer.metadata
 
   if (!importer) {
-    const depInfo = optimizedDepInfoFromId(metadata, id)
     // no importer. try our best to find an optimized dep
+    const depInfo = optimizedDepInfoFromId(metadata, id)
     if (depInfo) {
       return depsOptimizer.getOptimizedDepId(depInfo)
     }
     return
   }
 
-  // resolvedSrc is what the importer wants
-  // we can return an optimizedDep only if optimizedDep.src === resolvedSrc
-  // https://github.com/vitejs/vite/pull/11290
+  // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
 
   for (const optimizedData of metadata.depInfoList) {
@@ -898,18 +896,18 @@ export async function tryOptimizedResolve(
     // this narrows the need to do a full resolve
     if (!pkgPath.endsWith(id)) continue
 
-    try {
-      // compute resolvedSrc lazily because resolveFrom is expensive
-      // this may throw errors if unable to resolve, e.g. aliased id
-      resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-    } catch {
-      // this is best-effort only so swallow errors
+    // lazily initialize resolvedSrc
+    if (resolvedSrc == null) {
+      try {
+        // this may throw errors if unable to resolve, e.g. aliased id
+        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+      } catch {
+        // this is best-effort only so swallow errors
+        break
+      }
     }
-    // if we can't compute resolvedSrc, return early
-    // no need to try again in next iteration
-    if (!resolvedSrc) return
 
-    // check if the found optimizedDep comes from the resolvedSrc
+    // match by src to correctly identify if id belongs to nested dependency
     if (optimizedData.src === resolvedSrc) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
