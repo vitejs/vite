@@ -1,5 +1,10 @@
 import type { ErrorPayload } from 'types/hmrPayload'
 
+// injected by the hmr plugin when served
+declare const __BASE__: string
+
+const base = __BASE__ || '/'
+
 // set :host styles to make playwright detect the element as visible
 const template = /*html*/ `
 <style>
@@ -188,7 +193,7 @@ export class ErrorOverlay extends HTMLElement {
           link.textContent = file
           link.className = 'file-link'
           link.onclick = () => {
-            fetch('/__open-in-editor?file=' + encodeURIComponent(file))
+            fetch(`${base}__open-in-editor?file=` + encodeURIComponent(file))
           }
           el.appendChild(link)
           curIndex += frag.length + file.length
