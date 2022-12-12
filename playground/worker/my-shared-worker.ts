@@ -1,6 +1,6 @@
 const ports = new Set()
 
-// @ts-expect-error
+// @ts-expect-error onconnect exists in worker
 self.onconnect = (event) => {
   const port = event.ports[0]
   ports.add(port)

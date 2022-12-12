@@ -15,7 +15,7 @@ import {
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls, shouldServe } from './utils'
+import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
@@ -128,13 +128,11 @@ export async function preview(
         }
       }
     },
+    shouldServe(filePath) {
+      return shouldServeFile(filePath, distDir)
+    },
   })
-  app.use(previewBase, async (req, res, next) => {
-    if (shouldServe(req.url!, distDir)) {
-      return assetServer(req, res, next)
-    }
-    next()
-  })
+  app.use(previewBase, assetServer)
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())

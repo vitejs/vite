@@ -39,3 +39,8 @@ declare module 'postcss-import' {
 // LESS' types somewhat references this which doesn't make sense in Node,
 // so we have to shim it
 declare interface HTMLLinkElement {}
+
+// eslint-disable-next-line no-var, @typescript-eslint/consistent-type-imports
+declare var __vite_profile_session: import('node:inspector').Session | undefined
+// eslint-disable-next-line no-var
+declare var __vite_start_time: number | undefined
