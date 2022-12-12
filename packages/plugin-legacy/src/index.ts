@@ -22,9 +22,18 @@ import type {
   PluginItem as BabelPlugin,
   types as BabelTypes,
 } from '@babel/core'
-import babel from '@babel/core'
 import colors from 'picocolors'
 import type { Options } from './types'
+
+// lazy load babel since it's not used during dev
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+let babel: typeof import('@babel/core') | undefined
+async function loadBabel() {
+  if (!babel) {
+    babel = await import('@babel/core')
+  }
+  return babel
+}
 
 // Duplicated from build.ts in Vite Core, at least while the feature is experimental
 // We should later expose this helper for other plugins to use
@@ -402,7 +411,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
-      const result = babel.transform(raw, {
+      const babel = await loadBabel()
+      const result = babel?.transform(raw, {
         babelrc: false,
         configFile: false,
         compact: !!config.build.minify,
@@ -584,7 +594,8 @@ export async function detectPolyfills(
   targets: any,
   list: Set<string>,
 ): Promise<void> {
-  const result = babel.transform(code, {
+  const babel = await loadBabel()
+  const result = babel?.transform(code, {
     ast: true,
     babelrc: false,
     configFile: false,
