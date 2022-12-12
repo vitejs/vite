@@ -129,7 +129,8 @@
       }
     },
     "patchedDependencies": {
-      "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch"
+      "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch",
+      "sirv@2.0.2": "patches/sirv@2.0.2.patch"
     }
   }
 }

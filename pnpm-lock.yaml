@@ -6,6 +6,9 @@ overrides:
 packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
 patchedDependencies:
+  sirv@2.0.2:
+    hash: w6q35pvk7bmykgqf2hieut43iq
+    path: patches/sirv@2.0.2.patch
   dotenv-expand@9.0.0:
     hash: 6vdpvodnfhahap67xag6diqqtu
     path: patches/dotenv-expand@9.0.0.patch
@@ -274,7 +277,7 @@ importers:
       postcss-load-config: 4.0.1_postcss@8.4.20
       postcss-modules: 6.0.0_postcss@8.4.20
       resolve.exports: 1.1.0
-      sirv: 2.0.2
+      sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 7.0.1
@@ -4707,6 +4710,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5097,7 +5113,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -7385,6 +7401,16 @@ packages:
       mrmime: 1.0.1
       totalist: 3.0.0
     dev: true
+
+  /sirv/2.0.2_w6q35pvk7bmykgqf2hieut43iq:
+    resolution: {integrity: sha512-4Qog6aE29nIjAOKe/wowFTxOdmbEZKb+3tsLljaBRzJwtqto0BChD2zzH0LhgCSXiI+V7X+Y45v14wBZQ1TK3w==}
+    engines: {node: '>= 10'}
+    dependencies:
+      '@polka/url': 1.0.0-next.21
+      mrmime: 1.0.1
+      totalist: 3.0.0
+    dev: true
+    patched: true
 
   /sisteransi/1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}

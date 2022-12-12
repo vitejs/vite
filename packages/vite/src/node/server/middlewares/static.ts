@@ -14,11 +14,17 @@ import {
   isInternalRequest,
   isParentDirectory,
   isWindows,
-  shouldServe,
+  shouldServeFile,
   slash,
 } from '../../utils'
 
-const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
+const sirvOptions = ({
+  headers,
+  shouldServe,
+}: {
+  headers?: OutgoingHttpHeaders
+  shouldServe?: (p: string) => void
+}): Options => {
   return {
     dev: true,
     etag: true,
@@ -38,6 +44,7 @@ const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
         }
       }
     },
+    shouldServe,
   }
 }
 
@@ -45,7 +52,13 @@ export function servePublicMiddleware(
   dir: string,
   headers?: OutgoingHttpHeaders,
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions(headers))
+  const serve = sirv(
+    dir,
+    sirvOptions({
+      headers,
+      shouldServe: (filePath) => shouldServeFile(filePath, dir),
+    }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
@@ -53,10 +66,7 @@ export function servePublicMiddleware(
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    if (shouldServe(req.url!, dir)) {
-      return serve(req, res, next)
-    }
-    next()
+    serve(req, res, next)
   }
 }
 
@@ -64,7 +74,12 @@ export function serveStaticMiddleware(
   dir: string,
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions(server.config.server.headers))
+  const serve = sirv(
+    dir,
+    sirvOptions({
+      headers: server.config.server.headers,
+    }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
@@ -124,7 +139,10 @@ export function serveStaticMiddleware(
 export function serveRawFsMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serveFromRoot = sirv('/', sirvOptions(server.config.server.headers))
+  const serveFromRoot = sirv(
+    '/',
+    sirvOptions({ headers: server.config.server.headers }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
