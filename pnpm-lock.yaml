@@ -47,7 +47,7 @@ importers:
       eslint-plugin-regexp: ^1.11.0
       execa: ^6.1.0
       fast-glob: ^3.2.12
-      fs-extra: ^10.1.0
+      fs-extra: ^11.1.0
       lint-staged: ^13.1.0
       minimist: ^1.2.7
       npm-run-all: ^4.1.5
@@ -104,7 +104,7 @@ importers:
       eslint-plugin-regexp: 1.11.0_eslint@8.29.0
       execa: 6.1.0
       fast-glob: 3.2.12
-      fs-extra: 10.1.0
+      fs-extra: 11.1.0
       lint-staged: 13.1.0
       minimist: 1.2.7
       npm-run-all: 4.1.5
@@ -4727,6 +4727,15 @@ packages:
   /fs-extra/10.1.0:
     resolution: {integrity: sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==}
     engines: {node: '>=12'}
+    dependencies:
+      graceful-fs: 4.2.10
+      jsonfile: 6.1.0
+      universalify: 2.0.0
+    dev: true
+
+  /fs-extra/11.1.0:
+    resolution: {integrity: sha512-0rcTq621PD5jM/e0a3EJoGC/1TC5ZBCERW82LQuwfGnCa1V8w7dpYH1yNu+SLb6E5dkeCBzKEyLGlFrnr+dUyw==}
+    engines: {node: '>=14.14'}
     dependencies:
       graceful-fs: 4.2.10
       jsonfile: 6.1.0
