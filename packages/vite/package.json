@@ -59,7 +59,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.16.3",
-    "postcss": "^8.4.19",
+    "postcss": "^8.4.20",
     "resolve": "^1.22.1",
     "rollup": "^3.7.0"
   },
@@ -72,7 +72,7 @@
     "@babel/types": "^7.20.5",
     "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.2",
-    "@rollup/plugin-commonjs": "^23.0.3",
+    "@rollup/plugin-commonjs": "^23.0.4",
     "@rollup/plugin-dynamic-import-vars": "^2.0.1",
     "@rollup/plugin-json": "^5.0.2",
     "@rollup/plugin-node-resolve": "15.0.1",
@@ -107,7 +107,7 @@
     "periscopic": "^3.0.4",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
-    "postcss-import": "^15.0.1",
+    "postcss-import": "^15.1.0",
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^6.0.0",
     "resolve.exports": "^1.1.0",

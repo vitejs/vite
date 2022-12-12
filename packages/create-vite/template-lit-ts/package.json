@@ -17,7 +17,7 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "lit": "^2.4.1"
+    "lit": "^2.5.0"
   },
   "devDependencies": {
     "typescript": "^4.9.3",

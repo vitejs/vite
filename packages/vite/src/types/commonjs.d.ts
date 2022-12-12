@@ -110,17 +110,17 @@ export interface RollupCommonJSOptions {
    * they should be left unconverted as it requires an optional dependency
    * that may or may not be installed beside the rolled up package.
    * Due to the conversion of `require` to a static `import` - the call is
-   * hoisted to the top of the file, outside of the `try-catch` clause.
+   * hoisted to the top of the file, outside the `try-catch` clause.
    *
-   * - `true`: All `require` calls inside a `try` will be left unconverted.
+   * - `true`: Default. All `require` calls inside a `try` will be left unconverted.
    * - `false`: All `require` calls inside a `try` will be converted as if the
    *   `try-catch` clause is not there.
    * - `remove`: Remove all `require` calls from inside any `try` block.
    * - `string[]`: Pass an array containing the IDs to left unconverted.
-   * - `((id: string) => boolean|'remove')`: Pass a function that control
+   * - `((id: string) => boolean|'remove')`: Pass a function that controls
    *   individual IDs.
    *
-   * @default false
+   * @default true
    */
   ignoreTryCatch?:
     | boolean
@@ -134,14 +134,14 @@ export interface RollupCommonJSOptions {
    * NodeJS where ES modules can only import a default export from a CommonJS
    * dependency.
    *
-   * If you set `esmExternals` to `true`, this plugins assumes that all
+   * If you set `esmExternals` to `true`, this plugin assumes that all
    * external dependencies are ES modules and respect the
    * `requireReturnsDefault` option. If that option is not set, they will be
    * rendered as namespace imports.
    *
    * You can also supply an array of ids to be treated as ES modules, or a
-   * function that will be passed each external id to determine if it is an ES
-   * module.
+   * function that will be passed each external id to determine whether it is
+   * an ES module.
    * @default false
    */
   esmExternals?: boolean | ReadonlyArray<string> | ((id: string) => boolean)
@@ -159,7 +159,7 @@ export interface RollupCommonJSOptions {
    * import * as foo from 'foo';
    * ```
    *
-   * However there are some situations where this may not be desired.
+   * However, there are some situations where this may not be desired.
    * For these situations, you can change Rollup's behaviour either globally or
    * per module. To change it globally, set the `requireReturnsDefault` option
    * to one of the following values:
@@ -210,7 +210,7 @@ export interface RollupCommonJSOptions {
    * Some modules contain dynamic `require` calls, or require modules that
    * contain circular dependencies, which are not handled well by static
    * imports. Including those modules as `dynamicRequireTargets` will simulate a
-   * CommonJS (NodeJS-like)  environment for them with support for dynamic
+   * CommonJS (NodeJS-like) environment for them with support for dynamic
    * dependencies. It also enables `strictRequires` for those modules.
    *
    * Note: In extreme cases, this feature may result in some paths being
@@ -224,7 +224,7 @@ export interface RollupCommonJSOptions {
    * To avoid long paths when using the `dynamicRequireTargets` option, you can use this option to specify a directory
    * that is a common parent for all files that use dynamic require statements. Using a directory higher up such as `/`
    * may lead to unnecessarily long paths in the generated code and may expose directory names on your machine like your
-   * home directory name. By default it uses the current working directory.
+   * home directory name. By default, it uses the current working directory.
    */
   dynamicRequireRoot?: string
 }
