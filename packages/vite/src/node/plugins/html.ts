@@ -228,21 +228,17 @@ export function overwriteAttrValue(
 /**
  * Format parse5 @type {ParserError} to @type {RollupError}
  */
-function formatParseError(
-  parserError: ParserError,
-  id: string,
-  html: string,
-): RollupError {
-  const formattedError: RollupError = {
+function formatParseError(parserError: ParserError, id: string, html: string) {
+  const formattedError = {
     code: parserError.code,
     message: `parse5 error code ${parserError.code}`,
-  }
-  formattedError.frame = generateCodeFrame(html, parserError.startOffset)
-  formattedError.loc = {
-    file: id,
-    line: parserError.startLine,
-    column: parserError.startCol,
-  }
+    frame: generateCodeFrame(html, parserError.startOffset),
+    loc: {
+      file: id,
+      line: parserError.startLine,
+      column: parserError.startCol,
+    },
+  } satisfies RollupError
   return formattedError
 }
 
@@ -266,15 +262,11 @@ function handleParseError(
       // Allow self closing on non-void elements #10439
       return
   }
-  const parseError = {
-    loc: filePath,
-    frame: '',
-    ...formatParseError(parserError, filePath, html),
-  }
+  const parseError = formatParseError(parserError, filePath, html)
   throw new Error(
-    `Unable to parse HTML; ${parseError.message}\n at ${JSON.stringify(
-      parseError.loc,
-    )}\n${parseError.frame}`,
+    `Unable to parse HTML; ${parseError.message}\n` +
+      ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
+      `${parseError.frame}`,
   )
 }
 
