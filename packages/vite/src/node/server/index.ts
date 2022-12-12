@@ -772,7 +772,6 @@ export function resolveServerOptions(
 }
 
 async function restartServer(server: ViteDevServer) {
-  // @ts-ignore
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
@@ -798,16 +797,10 @@ async function restartServer(server: ViteDevServer) {
     return
   }
 
-  for (const key in newServer) {
-    if (key === '_restartPromise') {
-      // prevent new server `restart` function from calling
-      // @ts-ignore
-      newServer[key] = server[key]
-    } else {
-      // @ts-ignore
-      server[key] = newServer[key]
-    }
-  }
+  // prevent new server `restart` function from calling
+  newServer._restartPromise = server._restartPromise
+
+  Object.assign(server, newServer)
 
   const {
     logger,

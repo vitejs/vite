@@ -462,18 +462,13 @@ export async function resolveConfig(
   )
 
   const clientAlias = [
-    { find: /^\/?@vite\/env/, replacement: () => ENV_ENTRY },
-    { find: /^\/?@vite\/client/, replacement: () => CLIENT_ENTRY },
+    { find: /^\/?@vite\/env/, replacement: ENV_ENTRY },
+    { find: /^\/?@vite\/client/, replacement: CLIENT_ENTRY },
   ]
 
   // resolve alias with internal client alias
   const resolvedAlias = normalizeAlias(
-    mergeAlias(
-      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
-      // replacement, but its implementation does work with function values.
-      clientAlias,
-      config.resolve?.alias || [],
-    ),
+    mergeAlias(clientAlias, config.resolve?.alias || []),
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {

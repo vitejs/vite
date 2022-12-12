@@ -1,7 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
-import type { Session } from 'node:inspector'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
@@ -32,8 +31,7 @@ interface GlobalCLIOptions {
   force?: boolean
 }
 
-// @ts-ignore
-let profileSession: Session | undefined = global.__vite_profile_session
+let profileSession = global.__vite_profile_session
 let profileCount = 0
 
 export const stopProfiler = (
@@ -141,7 +139,6 @@ cli
 
       const info = server.config.logger.info
 
-      // @ts-ignore
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
         ? colors.dim(

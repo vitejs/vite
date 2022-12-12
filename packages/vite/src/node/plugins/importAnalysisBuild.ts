@@ -52,21 +52,20 @@ function toRelativePath(filename: string, importer: string) {
  */
 
 function detectScriptRel() {
-  // @ts-ignore
   const relList = document.createElement('link').relList
-  // @ts-ignore
   return relList && relList.supports && relList.supports('modulepreload')
     ? 'modulepreload'
     : 'preload'
 }
 
 declare const scriptRel: string
+declare const seen: Record<string, boolean>
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
   importerUrl?: string,
 ) {
-  // @ts-ignore
+  // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
   }
@@ -75,11 +74,9 @@ function preload(
 
   return Promise.all(
     deps.map((dep) => {
-      // @ts-ignore
+      // @ts-expect-error assetsURL is declared before preload.toString()
       dep = assetsURL(dep, importerUrl)
-      // @ts-ignore
       if (dep in seen) return
-      // @ts-ignore
       seen[dep] = true
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
@@ -101,16 +98,13 @@ function preload(
         return
       }
 
-      // @ts-ignore
       const link = document.createElement('link')
-      // @ts-ignore
       link.rel = isCss ? 'stylesheet' : scriptRel
       if (!isCss) {
         link.as = 'script'
         link.crossOrigin = ''
       }
       link.href = dep
-      // @ts-ignore
       document.head.appendChild(link)
       if (isCss) {
         return new Promise((res, rej) => {

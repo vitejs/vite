@@ -112,7 +112,7 @@ export async function transformWithEsbuild(
 
       for (const field of meaningfulFields) {
         if (field in loadedCompilerOptions) {
-          // @ts-ignore TypeScript can't tell they are of the same type
+          // @ts-expect-error TypeScript can't tell they are of the same type
           compilerOptionsForFile[field] = loadedCompilerOptions[field]
         }
       }
@@ -297,7 +297,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       await initTSConfck(config)
     },
     async renderChunk(code, chunk, opts) {
-      // @ts-ignore injected by @vitejs/plugin-legacy
+      // @ts-expect-error injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
         return null
       }

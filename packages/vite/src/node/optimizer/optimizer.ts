@@ -466,7 +466,7 @@ async function createDepsOptimizer(
     }
 
     currentlyProcessing = false
-    // @ts-ignore
+    // @ts-expect-error `enqueuedRerun` could exist because `debouncedProcessing` may run while awaited
     enqueuedRerun?.()
   }
 

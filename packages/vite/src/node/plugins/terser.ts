@@ -49,7 +49,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // can use terser.
       if (
         config.build.minify !== 'terser' &&
-        // @ts-ignore injected by @vitejs/plugin-legacy
+        // @ts-expect-error injected by @vitejs/plugin-legacy
         !outputOptions.__vite_force_terser__
       ) {
         return null

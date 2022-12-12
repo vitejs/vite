@@ -209,7 +209,7 @@ async function createCssPluginTransform(
   const config = await resolveConfig(inlineConfig, 'serve')
   const { transform, buildStart } = cssPlugin(config)
 
-  // @ts-expect-error
+  // @ts-expect-error buildStart is function
   await buildStart.call({})
 
   const mockFs = vi
@@ -221,7 +221,7 @@ async function createCssPluginTransform(
 
   return {
     async transform(code: string, id: string) {
-      // @ts-expect-error
+      // @ts-expect-error transform is function
       return await transform.call(
         {
           addWatchFile() {

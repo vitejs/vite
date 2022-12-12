@@ -1,5 +1,5 @@
-//@ts-nocheck
 /* eslint-disable */
+//@ts-nocheck
 //TODO: replace this code with https://github.com/lukeed/polka/pull/148 once it's released
 
 // This is based on https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/polkompress.js
@@ -44,7 +44,6 @@ export default function compression() {
 
     function start() {
       started = true
-      // @ts-ignore
       size = res.getHeader('Content-Length') | 0 || size
       const compressible = mimes.test(
         String(res.getHeader('Content-Type') || 'text/plain'),

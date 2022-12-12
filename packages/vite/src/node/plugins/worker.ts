@@ -387,7 +387,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle(opts) {
-      // @ts-ignore asset emits are skipped in legacy bundle
+      // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__ || isWorker) {
         return
       }
