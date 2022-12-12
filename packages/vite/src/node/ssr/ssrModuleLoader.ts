@@ -234,7 +234,7 @@ async function nodeImport(
       importer,
       // Non-external modules can import ESM-only modules, but only outside
       // of test runs, because we use Node `require` in Jest to avoid segfault.
-      // @ts-expect-error
+      // @ts-expect-error jest only exists when running Jest
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,

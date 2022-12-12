@@ -1,4 +1,3 @@
-// @ts-ignore
 import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
