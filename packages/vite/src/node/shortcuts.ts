@@ -91,6 +91,14 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     },
   },
   {
+    key: 'u',
+    description: 'show server url',
+    action(server) {
+      server.config.logger.info('')
+      server.printUrls()
+    },
+  },
+  {
     key: 'o',
     description: 'open in browser',
     action(server) {
