@@ -275,9 +275,7 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    // @ts-ignore
     if (config && config.__test__) {
-      // @ts-ignore
       config.__test__()
     }
     const _nodeEnv = process.env.NODE_ENV
