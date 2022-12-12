@@ -100,8 +100,7 @@ describe.runIf(isServe)('main', () => {
 })
 
 describe('fetch', () => {
-  // Note: this should pass in build too, but the test setup doesn't use Vite preview
-  test.runIf(isServe)('serve with configured headers', async () => {
+  test('serve with configured headers', async () => {
     const res = await fetch(viteTestUrl + '/src/')
     expect(res.headers.get('x-served-by')).toBe('vite')
   })

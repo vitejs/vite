@@ -881,10 +881,8 @@ export async function resolveServerUrls(
         (detail) =>
           detail &&
           detail.address &&
-          // Node < v18
           ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
-            // Node >= v18
-            // @ts-expect-error
+            // @ts-expect-error Node 18.0 - 18.3 returns number
             (typeof detail.family === 'number' && detail.family === 4)),
       )
       .forEach((detail) => {
@@ -913,7 +911,7 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
-// @ts-expect-error
+// @ts-expect-error jest only exists when running Jest
 export const usingDynamicImport = typeof jest === 'undefined'
 
 /**
