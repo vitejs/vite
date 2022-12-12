@@ -23,6 +23,7 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
+const jsSourceMapRE = /\.[cm]?js\.map$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -187,10 +188,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
       if (config.command === 'build' && config.build.ssr) {
-        for (const file in bundle) {
+        const assetFiles = Object.keys(bundle).filter(
+          (file) => bundle[file].type === 'asset',
+        )
+        for (const file of assetFiles) {
           if (
-            bundle[file].type === 'asset' &&
-            !file.includes('ssr-manifest.json')
+            !file.endsWith('ssr-manifest.json') &&
+            !jsSourceMapRE.test(file)
           ) {
             delete bundle[file]
           }
