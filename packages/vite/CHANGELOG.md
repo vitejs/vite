@@ -1,3 +1,24 @@
+## <small>4.0.1 (2022-12-12)</small>
+
+* feat: show server url by pressing `u` (#11319) ([8c0bb7b](https://github.com/vitejs/vite/commit/8c0bb7b)), closes [#11319](https://github.com/vitejs/vite/issues/11319)
+* feat(html): clickable error position for html parse error (#11334) ([2e15f3d](https://github.com/vitejs/vite/commit/2e15f3d)), closes [#11334](https://github.com/vitejs/vite/issues/11334)
+* fix: ?inline warning for .css.js file (#11347) ([729fb1a](https://github.com/vitejs/vite/commit/729fb1a)), closes [#11347](https://github.com/vitejs/vite/issues/11347)
+* fix: check if build exists so preview doesn't show 404s due to nonexistent build (#10564) ([0a1db8c](https://github.com/vitejs/vite/commit/0a1db8c)), closes [#10564](https://github.com/vitejs/vite/issues/10564)
+* fix: derive `useDefineForClassFields` value from `tsconfig.compilerOptions.target` (fixes #10296) (# ([42976d8](https://github.com/vitejs/vite/commit/42976d8)), closes [#10296](https://github.com/vitejs/vite/issues/10296) [#11301](https://github.com/vitejs/vite/issues/11301)
+* fix: preview fallback (#11312) ([cfedf9c](https://github.com/vitejs/vite/commit/cfedf9c)), closes [#11312](https://github.com/vitejs/vite/issues/11312)
+* fix: respect base when using `/__open-in-editor` (#11337) ([8856c2e](https://github.com/vitejs/vite/commit/8856c2e)), closes [#11337](https://github.com/vitejs/vite/issues/11337)
+* fix: wrongly resolve to optimized doppelganger (#11290) ([34fec41](https://github.com/vitejs/vite/commit/34fec41)), closes [#11290](https://github.com/vitejs/vite/issues/11290)
+* fix(env): test NODE_ENV override before expand (#11309) ([d0a9281](https://github.com/vitejs/vite/commit/d0a9281)), closes [#11309](https://github.com/vitejs/vite/issues/11309)
+* fix(preview): Revert #10564 - throw Error on missing outDir (#11335) ([3aaa0ea](https://github.com/vitejs/vite/commit/3aaa0ea)), closes [#10564](https://github.com/vitejs/vite/issues/10564) [#11335](https://github.com/vitejs/vite/issues/11335) [#10564](https://github.com/vitejs/vite/issues/10564)
+* docs: fix banner image in CHANGELOG.md (#11336) ([45b66f4](https://github.com/vitejs/vite/commit/45b66f4)), closes [#11336](https://github.com/vitejs/vite/issues/11336)
+* chore: enable `@typescript-eslint/ban-ts-comment` (#11326) ([e58a4f0](https://github.com/vitejs/vite/commit/e58a4f0)), closes [#11326](https://github.com/vitejs/vite/issues/11326)
+* chore: fix format (#11311) ([9c2b1c0](https://github.com/vitejs/vite/commit/9c2b1c0)), closes [#11311](https://github.com/vitejs/vite/issues/11311)
+* chore: update changelog release notes for 4.0 (#11285) ([83abd37](https://github.com/vitejs/vite/commit/83abd37)), closes [#11285](https://github.com/vitejs/vite/issues/11285)
+* chore(deps): update all non-major dependencies (#11321) ([dcc0004](https://github.com/vitejs/vite/commit/dcc0004)), closes [#11321](https://github.com/vitejs/vite/issues/11321)
+* chore(esbuild): add test for configuration overrides (#11267) ([f897b64](https://github.com/vitejs/vite/commit/f897b64)), closes [#11267](https://github.com/vitejs/vite/issues/11267)
+
+
+
 ## 4.0.0 (2022-12-09)
 
 ![Vite 4 Announcement Cover Image](https://vitejs.dev/og-image-announcing-vite4.png)
