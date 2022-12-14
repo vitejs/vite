@@ -200,7 +200,7 @@ importers:
       launch-editor-middleware: ^2.6.0
       magic-string: ^0.27.0
       micromatch: ^4.0.5
-      mlly: ^0.5.17
+      mlly: ^1.0.0
       mrmime: ^1.0.1
       okie: ^1.0.1
       open: ^8.4.0
@@ -265,7 +265,7 @@ importers:
       launch-editor-middleware: 2.6.0
       magic-string: 0.27.0
       micromatch: 4.0.5
-      mlly: 0.5.17
+      mlly: 1.0.0
       mrmime: 1.0.1
       okie: 1.0.1
       open: 8.4.0
@@ -300,7 +300,7 @@ importers:
       css-color-names: 1.0.1
       kill-port: 1.6.1
       node-fetch: 3.3.0
-      sirv: 2.0.2
+      sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
 
   playground/alias:
     specifiers:
@@ -4730,19 +4730,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
-
-  /follow-redirects/1.15.0_debug@4.3.4:
-    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.4
-    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5133,7 +5120,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0_debug@4.3.4
+      follow-redirects: 1.15.0
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -7411,15 +7398,6 @@ packages:
     resolution: {integrity: sha512-DYpcVR1AGtSfFUNzlBdHrQGPsOhuuEJ/FkmPOOlFysP60AHd3nsEpkGq/QEOdtUyT1Qhk7w9oLmFoMG+75BDog==}
     hasBin: true
     requiresBuild: true
-    dev: true
-
-  /sirv/2.0.2:
-    resolution: {integrity: sha512-4Qog6aE29nIjAOKe/wowFTxOdmbEZKb+3tsLljaBRzJwtqto0BChD2zzH0LhgCSXiI+V7X+Y45v14wBZQ1TK3w==}
-    engines: {node: '>= 10'}
-    dependencies:
-      '@polka/url': 1.0.0-next.21
-      mrmime: 1.0.1
-      totalist: 3.0.0
     dev: true
 
   /sirv/2.0.2_w6q35pvk7bmykgqf2hieut43iq:

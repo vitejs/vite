@@ -99,7 +99,7 @@
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.27.0",
     "micromatch": "^4.0.5",
-    "mlly": "^0.5.17",
+    "mlly": "^1.0.0",
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
