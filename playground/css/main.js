@@ -1,12 +1,14 @@
 import './minify.css'
+// eslint-disable-next-line import/no-duplicates
 import './imported.css'
 import './sugarss.sss'
 import './sass.scss'
 import './less.less'
 import './stylus.styl'
 
-import css from './imported-inline.css?inline'
-text('.imported-css', css)
+// eslint-disable-next-line import/no-duplicates
+import css from './imported.css'
+text('.imported-css', css) // deprecated, but leave this as-is to make sure it works
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
@@ -104,7 +106,8 @@ text('.postcss-source-input', postcssSourceInput)
 import jsFileMessage from './jsfile.css'
 text('.jsfile-css-js', jsFileMessage)
 
-import aliasContent from '#alias'
+import '#alias'
+import aliasContent from '#alias?inline'
 text('.aliased-content', aliasContent)
 import aliasModule from '#alias-module'
 document

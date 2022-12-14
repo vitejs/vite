@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs'
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
+  isServe,
   page,
   removeFile,
   serverLogs,
@@ -451,11 +452,20 @@ test('PostCSS source.input.from includes query', async () => {
   )
 })
 
-test('js file ending with .css.js', async () => {
-  const message = await page.textContent('.jsfile-css-js')
-  expect(message).toMatch('from jsfile.css.js')
-  serverLogs.forEach((log) => {
-    expect(log).not.toMatch(/Use the \?inline query instead.+jsfile\.css/)
+describe.runIf(isServe)('deprecate default/named imports from CSS', () => {
+  test('css file', () => {
+    const actual = serverLogs.some((log) =>
+      /Use the \?inline query instead.+imported\.css/.test(log),
+    )
+    expect(actual).toBe(true)
+  })
+
+  test('js file ending with .css.js', async () => {
+    const message = await page.textContent('.jsfile-css-js')
+    expect(message).toMatch('from jsfile.css.js')
+    serverLogs.forEach((log) => {
+      expect(log).not.toMatch(/Use the \?inline query instead.+jsfile\.css/)
+    })
   })
 })
 
