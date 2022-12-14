@@ -1,6 +1,6 @@
-# Web Worker Options
+# Worker Options
 
-Options for web workers (these are not service workers).
+Options related to Web Workers.
 
 ## worker.format
 
