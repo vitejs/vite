@@ -22,6 +22,7 @@ module.exports = {
       '=': __dirname,
       spacefolder: __dirname + '/folder with space',
       '#alias': __dirname + '/aliased/foo.css',
+      '#alias?inline': __dirname + '/aliased/foo.css?inline',
       '#alias-module': __dirname + '/aliased/bar.module.css',
     },
   },

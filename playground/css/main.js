@@ -104,7 +104,8 @@ text('.postcss-source-input', postcssSourceInput)
 import jsFileMessage from './jsfile.css'
 text('.jsfile-css-js', jsFileMessage)
 
-import aliasContent from '#alias'
+import '#alias'
+import aliasContent from '#alias?inline'
 text('.aliased-content', aliasContent)
 import aliasModule from '#alias-module'
 document
