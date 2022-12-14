@@ -1130,7 +1130,7 @@ export function toOutputFilePathWithoutRuntime(
     if (typeof result === 'object') {
       if (result.runtime) {
         throw new Error(
-          `{ runtime: "${result.runtime} }" is not supported for assets in ${hostType} files: ${filename}`,
+          `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`,
         )
       }
       if (typeof result.relative === 'boolean') {
