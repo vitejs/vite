@@ -223,7 +223,7 @@ importers:
       tsconfck: ^2.0.1
       tslib: ^2.4.1
       types: link:./types
-      ufo: ^0.8.6
+      ufo: ^1.0.1
       ws: ^8.11.0
     dependencies:
       esbuild: 0.16.3
@@ -285,7 +285,7 @@ importers:
       tsconfck: 2.0.1
       tslib: 2.4.1
       types: link:types
-      ufo: 0.8.6
+      ufo: 1.0.1
       ws: 8.11.0
 
   playground:
@@ -6033,7 +6033,7 @@ packages:
       acorn: 8.8.1
       pathe: 1.0.0
       pkg-types: 1.0.1
-      ufo: 1.0.0
+      ufo: 1.0.1
     dev: true
 
   /mlly/1.0.0:
@@ -6042,7 +6042,7 @@ packages:
       acorn: 8.8.1
       pathe: 1.0.0
       pkg-types: 1.0.1
-      ufo: 1.0.0
+      ufo: 1.0.1
     dev: true
 
   /modify-values/1.0.1:
@@ -8071,12 +8071,8 @@ packages:
     resolution: {integrity: sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==}
     dev: true
 
-  /ufo/0.8.6:
-    resolution: {integrity: sha512-fk6CmUgwKCfX79EzcDQQpSCMxrHstvbLswFChHS0Vump+kFkw7nJBfTZoC1j0bOGoY9I7R3n2DGek5ajbcYnOw==}
-    dev: true
-
-  /ufo/1.0.0:
-    resolution: {integrity: sha512-DRty0ZBNlJ2R59y4mEupJRKLbkLQsc4qtxjpQv78AwEDuBkaUogMc2LkeqW3HddFlw6NwnXYfdThEZOiNgkmmQ==}
+  /ufo/1.0.1:
+    resolution: {integrity: sha512-boAm74ubXHY7KJQZLlXrtMz52qFvpsbOxDcZOnw/Wf+LS4Mmyu7JxmzD4tDLtUQtmZECypJ0FrCz4QIe6dvKRA==}
     dev: true
 
   /uglify-js/3.16.1:
