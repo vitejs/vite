@@ -62,7 +62,7 @@ importers:
       resolve: ^1.22.1
       rimraf: ^3.0.2
       rollup: ^3.7.0
-      rollup-plugin-license: ^2.9.1
+      rollup-plugin-license: ^3.0.1
       semver: ^7.3.8
       simple-git-hooks: ^2.8.1
       tslib: ^2.4.1
@@ -119,7 +119,7 @@ importers:
       resolve: 1.22.1
       rimraf: 3.0.2
       rollup: 3.7.0
-      rollup-plugin-license: 2.9.1_rollup@3.7.0
+      rollup-plugin-license: 3.0.1_rollup@3.7.0
       semver: 7.3.8
       simple-git-hooks: 2.8.1
       tslib: 2.4.1
@@ -7195,11 +7195,11 @@ packages:
       '@babel/code-frame': 7.18.6
     dev: true
 
-  /rollup-plugin-license/2.9.1_rollup@3.7.0:
-    resolution: {integrity: sha512-C26f/bFXR52tzpBMllDnf5m2ETqRuyrrj3m8i3YY4imDwbXtunop+Lj1mO9mn/sZF8gKknOycN1Sm+kMGBd6RA==}
-    engines: {node: '>=10.0.0'}
+  /rollup-plugin-license/3.0.1_rollup@3.7.0:
+    resolution: {integrity: sha512-/lec6Y94Y3wMfTDeYTO/jSXII0GQ/XkDZCiqkMKxyU5D5nGPaxr/2JNYvAgYsoCYuOLGOanKDPjCCQiTT96p7A==}
+    engines: {node: '>=14.0.0'}
     peerDependencies:
-      rollup: ^1.0.0 || ^2.0.0
+      rollup: ^1.0.0 || ^2.0.0 || ^3.0.0
     dependencies:
       commenting: 1.1.0
       glob: 7.2.0
@@ -7479,6 +7479,7 @@ packages:
 
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
+    deprecated: Please use @jridgewell/sourcemap-codec instead
 
   /spdx-compare/1.0.0:
     resolution: {integrity: sha512-C1mDZOX0hnu0ep9dfmuoi03+eOdDoz2yvK79RxbcrVEG1NO1Ph35yW102DHWKN4pk80nwCgeMmSY5L25VE4D9A==}
