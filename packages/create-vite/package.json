@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "engines": {
