@@ -198,7 +198,10 @@ async function loadAndTransform(
       try {
         map = (
           convertSourceMap.fromSource(code) ||
-          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+          (await convertSourceMap.fromMapFileSource(
+            code,
+            createConvertSourceMapReadMap(file),
+          ))
         )?.toObject()
 
         code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
@@ -279,4 +282,13 @@ async function loadAndTransform(
   }
 
   return result
+}
+
+function createConvertSourceMapReadMap(originalFileName: string) {
+  return (filename: string) => {
+    return fs.readFile(
+      path.resolve(path.dirname(originalFileName), filename),
+      'utf-8',
+    )
+  }
 }
