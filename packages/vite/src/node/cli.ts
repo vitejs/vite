@@ -277,7 +277,7 @@ cli
             configFile: options.config,
             logLevel: options.logLevel,
           },
-          'build',
+          'serve',
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {
