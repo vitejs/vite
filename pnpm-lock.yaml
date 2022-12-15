@@ -62,7 +62,6 @@ importers:
       resolve: ^1.22.1
       rimraf: ^3.0.2
       rollup: ^3.7.0
-      rollup-plugin-license: ^3.0.1
       semver: ^7.3.8
       simple-git-hooks: ^2.8.1
       tslib: ^2.4.1
@@ -119,7 +118,6 @@ importers:
       resolve: 1.22.1
       rimraf: 3.0.2
       rollup: 3.7.0
-      rollup-plugin-license: 3.0.1_rollup@3.7.0
       semver: 7.3.8
       simple-git-hooks: 2.8.1
       tslib: 2.4.1
@@ -215,6 +213,7 @@ importers:
       resolve: ^1.22.1
       resolve.exports: ^1.1.0
       rollup: ^3.7.0
+      rollup-plugin-license: ^3.0.1
       sirv: ^2.0.2
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
@@ -277,6 +276,7 @@ importers:
       postcss-load-config: 4.0.1_postcss@8.4.20
       postcss-modules: 6.0.0_postcss@8.4.20
       resolve.exports: 1.1.0
+      rollup-plugin-license: 3.0.1_rollup@3.7.0
       sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
       source-map-js: 1.0.2
       source-map-support: 0.5.21
