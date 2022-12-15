@@ -71,6 +71,7 @@ export type {
 export type {
   CSSOptions,
   CSSModulesOptions,
+  PostCSSConfigResolutionOptions,
   PreprocessCSSResult,
 } from './plugins/css'
 export type { ChunkMetadata } from './plugins/metadata'

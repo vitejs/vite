@@ -74,6 +74,7 @@ export interface CSSOptions {
    * https://github.com/css-modules/postcss-modules
    */
   modules?: CSSModulesOptions | false
+  resolveOptions?: PostCSSConfigResolutionOptions
   preprocessorOptions?: Record<string, any>
   postcss?:
     | string
@@ -86,6 +87,18 @@ export interface CSSOptions {
    * @experimental
    */
   devSourcemap?: boolean
+}
+
+/**
+ * Resolve options for postcss config, loaded by cosmicconfig, through
+ * https://github.com/postcss/postcss-load-config
+ */
+export interface PostCSSConfigResolutionOptions {
+  /**
+   * Directory where the search for a PostCSS configuration file will stop.
+   * @default Absolute path to your home directory
+   */
+  stopDir?: string
 }
 
 export interface CSSModulesOptions {
@@ -1149,7 +1162,7 @@ async function resolvePostcssConfig(
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     try {
-      result = await postcssrc({}, searchPath)
+      result = await postcssrc({}, searchPath, config.css?.resolveOptions || {})
     } catch (e) {
       if (!/No PostCSS Config found/.test(e.message)) {
         if (e instanceof Error) {
