@@ -421,7 +421,7 @@ describe('resolveBuildOutputs', () => {
   })
 
   test('array outputs: should ignore build.lib.formats', () => {
-    const log = { warn: vi.fn() } as Logger
+    const log = { warn: vi.fn() } as unknown as Logger
     expect(
       resolveBuildOutputs(
         [{ name: 'A' }],

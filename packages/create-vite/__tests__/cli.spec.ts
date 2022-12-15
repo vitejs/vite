@@ -36,7 +36,7 @@ beforeAll(() => remove(genPath))
 afterEach(() => remove(genPath))
 
 test('prompts for the project name if none supplied', () => {
-  const { stdout, exitCode } = run([])
+  const { stdout } = run([])
   expect(stdout).toContain('Project name:')
 })
 

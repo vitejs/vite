@@ -1,28 +1,26 @@
-// @ts-check
-
 import fs from 'node:fs'
 import path from 'node:path'
 import license from 'rollup-plugin-license'
 import colors from 'picocolors'
 import fg from 'fast-glob'
 import resolve from 'resolve'
+import type { Plugin } from 'rollup'
 
-/**
- * @param {string} licenseFilePath
- * @param {string} licenseTitle
- * @param {string} packageName
- */
-function licensePlugin(licenseFilePath, licenseTitle, packageName) {
+export default function licensePlugin(
+  licenseFilePath: string,
+  licenseTitle: string,
+  packageName: string,
+): Plugin {
   return license({
     thirdParty(dependencies) {
       // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
       // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
       const coreLicense = fs.readFileSync(
-        new URL('../LICENSE', import.meta.url),
+        new URL('../../LICENSE', import.meta.url),
       )
-      function sortLicenses(licenses) {
-        let withParenthesis = []
-        let noParenthesis = []
+      function sortLicenses(licenses: Set<string>) {
+        let withParenthesis: string[] = []
+        let noParenthesis: string[] = []
         licenses.forEach((license) => {
           if (/^\(/.test(license)) {
             withParenthesis.push(license)
@@ -34,12 +32,10 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
         noParenthesis = noParenthesis.sort()
         return [...noParenthesis, ...withParenthesis]
       }
-      const licenses = new Set()
+      const licenses = new Set<string>()
       const dependencyLicenseTexts = dependencies
-        .sort(({ name: _nameA }, { name: _nameB }) => {
-          const nameA = /** @type {string} */ (_nameA)
-          const nameB = /** @type {string} */ (_nameB)
-          return nameA > nameB ? 1 : nameB > nameA ? -1 : 0
+        .sort(({ name: nameA }, { name: nameB }) => {
+          return nameA! > nameB! ? 1 : nameB! > nameA! ? -1 : 0
         })
         .map(
           ({
@@ -96,7 +92,7 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
                   .join('\n') +
                 '\n'
             }
-            licenses.add(license)
+            licenses.add(license!)
             return text
           },
         )
@@ -122,5 +118,3 @@ function licensePlugin(licenseFilePath, licenseTitle, packageName) {
     },
   })
 }
-
-export default licensePlugin
