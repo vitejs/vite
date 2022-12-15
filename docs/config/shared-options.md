@@ -219,6 +219,22 @@ The search is done using [postcss-load-config](https://github.com/postcss/postcs
 
 Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
+## css.resolveOptions
+
+- **Type:** `PostCSSConfigResolutionOptions`
+
+Specify options for postcss config resolution. Currently only the [stopDir](https://github.com/davidtheclark/cosmiconfig#stopdir) option for cosmicconfig is supported.
+
+```js
+export default defineConfig({
+  css: {
+    resolveOptions: {
+      stopDir: process.cwd(),
+    },
+  },
+})
+```
+
 ## css.preprocessorOptions
 
 - **Type:** `Record<string, object>`

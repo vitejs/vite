@@ -98,6 +98,11 @@ export interface CSSOptions {
    * https://github.com/css-modules/postcss-modules
    */
   modules?: CSSModulesOptions | false
+
+  /**
+   * Resolve options for PostCSS configuration
+   */
+  resolveOptions?: PostCSSConfigResolutionOptions
   /**
    * Options for preprocessors.
    *
@@ -129,6 +134,18 @@ export interface CSSOptions {
    * @experimental
    */
   lightningcss?: LightningCSSOptions
+}
+
+/**
+ * Resolve options for postcss config, loaded by cosmicconfig, through
+ * https://github.com/postcss/postcss-load-config
+ */
+export interface PostCSSConfigResolutionOptions {
+  /**
+   * Directory where the search for a PostCSS configuration file will stop.
+   * @default Absolute path to your home directory
+   */
+  stopDir?: string
 }
 
 export interface CSSModulesOptions {
@@ -1575,20 +1592,22 @@ async function resolvePostcssConfig(
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    result = postcssrc({}, searchPath).catch((e) => {
-      if (!e.message.includes('No PostCSS Config found')) {
-        if (e instanceof Error) {
-          const { name, message, stack } = e
-          e.name = 'Failed to load PostCSS config'
-          e.message = `Failed to load PostCSS config (searchPath: ${searchPath}): [${name}] ${message}\n${stack}`
-          e.stack = '' // add stack to message to retain stack
-          throw e
-        } else {
-          throw new Error(`Failed to load PostCSS config: ${e}`)
+    result = postcssrc({}, searchPath, config.css?.resolveOptions || {}).catch(
+      (e) => {
+        if (!e.message.includes('No PostCSS Config found')) {
+          if (e instanceof Error) {
+            const { name, message, stack } = e
+            e.name = 'Failed to load PostCSS config'
+            e.message = `Failed to load PostCSS config (searchPath: ${searchPath}): [${name}] ${message}\n${stack}`
+            e.stack = '' // add stack to message to retain stack
+            throw e
+          } else {
+            throw new Error(`Failed to load PostCSS config: ${e}`)
+          }
         }
-      }
-      return null
-    })
+        return null
+      },
+    )
     // replace cached promise to result object when finished
     result.then((resolved) => {
       postcssConfigCache.set(config, resolved)
