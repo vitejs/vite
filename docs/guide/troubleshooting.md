@@ -103,7 +103,7 @@ Also if there is a dependency loop, a full reload will happen. To solve this, tr
 
 ### High number of HMR updates in console
 
-This can be caused by a dependency loop,. To solve this, try removing the loop.
+This can be caused by a circular dependency. To solve this, try breaking the loop.
 
 ## Build
 
