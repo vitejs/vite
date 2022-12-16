@@ -248,6 +248,7 @@ See [`server.watch`](./server-options.md#server-watch) for more details.
 
 ## build.disabled
 
+- **Experimental**
 - **Type:** `boolean | string`
 - **Default:** `disabled`
 
