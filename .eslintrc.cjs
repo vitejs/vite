@@ -61,7 +61,7 @@ module.exports = defineConfig({
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
 
-    '@typescript-eslint/ban-ts-comment': 'off', // TODO: we should turn this on in a new PR
+    '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
     '@typescript-eslint/explicit-module-boundary-types': [
       'error',
@@ -183,6 +183,16 @@ module.exports = defineConfig({
         'no-empty': 'off',
         'no-constant-condition': 'off',
         '@typescript-eslint/no-empty-function': 'off',
+      },
+    },
+    {
+      files: [
+        'playground/tsconfig-json/**',
+        'playground/tsconfig-json-load-error/**',
+      ],
+      excludedFiles: '**/__tests__/**',
+      rules: {
+        '@typescript-eslint/ban-ts-comment': 'off',
       },
     },
     {

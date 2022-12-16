@@ -10,7 +10,9 @@ async function createDefinePluginTransform(
   const config = await resolveConfig({ define }, build ? 'build' : 'serve')
   const instance = definePlugin(config)
   return async (code: string) => {
-    const result = await instance.transform.call({}, code, 'foo.ts', { ssr })
+    const result = await (instance.transform as any).call({}, code, 'foo.ts', {
+      ssr,
+    })
     return result?.code || result
   }
 }
