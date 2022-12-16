@@ -61,7 +61,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     writeLine(
       `transforming (${transformedCount}) ${colors.dim(
         path.relative(config.root, id),
-      )}`,
+      )}\n`,
     )
   })
 
