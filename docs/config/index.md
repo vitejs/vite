@@ -82,6 +82,25 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
+
+## Monorepos packages
+
+To have your library packages hot reload in local dev, add an alias to resolve to your package.
+
+Example:
+```js
+{
+  resolve: {
+    alias: [
+      {
+        find: /^@pkg\/(utils|components)$/,
+        replacement: join(__dirname, "packages/$1/src/index.ts")
+      }
+    ]
+  }
+```
+
+
 ## Environment Variables
 
 Environmental Variables can be obtained from `process.env` as usual.
