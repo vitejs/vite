@@ -83,7 +83,7 @@ export default defineConfig(async ({ command, mode }) => {
 ```
 
 
-## Monorepos packages
+## Hot reload monorepos packages
 
 To have your library packages hot reload in local dev, add an alias to resolve to your package.
 
