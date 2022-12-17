@@ -194,14 +194,14 @@ Or, if exposing multiple entry points:
   "type": "module",
   "files": ["dist"],
   "main": "./dist/my-lib.cjs",
-  "module": "./dist/my-lib.mjs",
+  "module": "./dist/my-lib.js",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.mjs",
+      "import": "./dist/my-lib.js",
       "require": "./dist/my-lib.cjs"
     },
     "./secondary": {
-      "import": "./dist/secondary.mjs",
+      "import": "./dist/secondary.js",
       "require": "./dist/secondary.cjs"
     }
   }
