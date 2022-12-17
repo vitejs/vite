@@ -193,23 +193,23 @@ Or, if exposing multiple entry points:
   "name": "my-lib",
   "type": "module",
   "files": ["dist"],
-  "main": "./dist/my-lib.cjs",
-  "module": "./dist/my-lib.mjs",
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.mjs",
-      "require": "./dist/my-lib.cjs"
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs"
     },
     "./secondary": {
-      "import": "./dist/secondary.mjs",
-      "require": "./dist/secondary.cjs"
+      "import": "./dist/secondary.js",
+      "require": "./dist/secondary.umd.cjs"
     }
   }
 }
 ```
 
 ::: tip Note
-If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.
+If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.umd.cjs` will become `.umd.js`.
 :::
 
 ::: tip Environment Variables
