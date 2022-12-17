@@ -1,5 +1,5 @@
 <script setup>
-import { msg } from 'dep-including-a'
+import { msg } from '@vitejs/test-dep-including-a'
 </script>
 
 <template>

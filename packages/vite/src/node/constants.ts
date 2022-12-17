@@ -1,14 +1,17 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-// @ts-expect-error
-import { version } from '../../package.json'
+import { readFileSync } from 'node:fs'
+
+const { version } = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url)).toString(),
+)
 
 export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
   'module',
   'jsnext:main', // moment still uses this...
-  'jsnext'
+  'jsnext',
 ]
 
 // Baseline support browserslist
@@ -19,7 +22,7 @@ export const ESBUILD_MODULES_TARGET = [
   'edge88',
   'firefox78',
   'chrome87',
-  'safari13' // transpile nullish coalescing
+  'safari14',
 ]
 
 export const DEFAULT_EXTENSIONS = [
@@ -29,7 +32,7 @@ export const DEFAULT_EXTENSIONS = [
   '.ts',
   '.jsx',
   '.tsx',
-  '.json'
+  '.json',
 ]
 
 export const DEFAULT_CONFIG_FILES = [
@@ -38,14 +41,17 @@ export const DEFAULT_CONFIG_FILES = [
   'vite.config.ts',
   'vite.config.cjs',
   'vite.config.mts',
-  'vite.config.cts'
+  'vite.config.cts',
 ]
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
-export const OPTIMIZABLE_ENTRY_RE = /\.(?:[cm]?[jt]s)$/
+export const CSS_LANGS_RE =
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 
-export const SPECIAL_QUERY_RE = /[\?&](?:worker|sharedworker|raw|url)\b/
+export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
+
+export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
 
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
@@ -75,7 +81,7 @@ export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
   // import.meta.url is `dist/node/constants.js` after bundle
   fileURLToPath(import.meta.url),
-  '../../..'
+  '../../..',
 )
 
 export const CLIENT_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
@@ -119,23 +125,23 @@ export const KNOWN_ASSET_TYPES = [
   // other
   'webmanifest',
   'pdf',
-  'txt'
+  'txt',
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
-  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`
+  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
 )
 
-export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+export const DEP_VERSION_RE = /[?&](v=[\w.-]+)\b/
 
 export const loopbackHosts = new Set([
   'localhost',
   '127.0.0.1',
   '::1',
-  '0000:0000:0000:0000:0000:0000:0000:0001'
+  '0000:0000:0000:0000:0000:0000:0000:0001',
 ])
 export const wildcardHosts = new Set([
   '0.0.0.0',
   '::',
-  '0000:0000:0000:0000:0000:0000:0000:0000'
+  '0000:0000:0000:0000:0000:0000:0000:0000',
 ])

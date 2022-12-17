@@ -1,5 +1,5 @@
 {
-  "name": "multiple-entrypoints",
+  "name": "@vitejs/test-multiple-entrypoints",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -10,6 +10,6 @@
   },
   "devDependencies": {
     "fast-glob": "^3.2.12",
-    "sass": "^1.55.0"
+    "sass": "^1.56.2"
   }
 }

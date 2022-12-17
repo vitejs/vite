@@ -33,7 +33,7 @@ test('mode file override', async () => {
 
 test('inline variables', async () => {
   expect(await page.textContent('.inline')).toBe(
-    isBuild ? `inline-build` : `inline-serve`
+    isBuild ? `inline-build` : `inline-serve`,
   )
 })
 
@@ -45,6 +45,10 @@ test('NODE_ENV', async () => {
   expect(await page.textContent('.node-env')).toBe(process.env.NODE_ENV)
 })
 
+test('expand', async () => {
+  expect(await page.textContent('.expand')).toBe('expand')
+})
+
 test('env object', async () => {
   const envText = await page.textContent('.env-object')
   expect(JSON.parse(envText)).toMatchObject({
@@ -54,7 +58,7 @@ test('env object', async () => {
     BASE_URL: '/env/',
     MODE: mode,
     DEV: !isBuild,
-    PROD: isBuild
+    PROD: isBuild,
   })
 })
 

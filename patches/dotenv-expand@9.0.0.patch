@@ -1,0 +1,18 @@
+diff --git a/lib/main.js b/lib/main.js
+index c873cc77229d4cd0cf9de98ae0970b25d89f312f..ddf570558e985760efde52af37a41b56282d30a6 100644
+--- a/lib/main.js
++++ b/lib/main.js
+@@ -50,9 +50,10 @@ function expand (config) {
+     config.parsed[configKey] = _interpolate(value, environment, config)
+   }
+ 
+-  for (const processKey in config.parsed) {
+-    environment[processKey] = config.parsed[processKey]
+-  }
++  // PATCH: don't write to process.env
++  // for (const processKey in config.parsed) {
++  //   environment[processKey] = config.parsed[processKey]
++  // }
+ 
+   return config
+ }

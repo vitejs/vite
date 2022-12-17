@@ -1,5 +1,5 @@
 {
-  "name": "dep-cjs-compiled-from-esm",
+  "name": "@vitejs/test-dep-cjs-compiled-from-esm",
   "private": true,
   "version": "0.0.0",
   "main": "index.js"

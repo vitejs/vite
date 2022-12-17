@@ -5,15 +5,15 @@ import { getColor, isBuild, isServe, page, ports, rootDir } from '~utils'
 
 const baseOptions = [
   { base: '', label: 'relative' },
-  { base: '/', label: 'absolute' }
+  { base: '/', label: 'absolute' },
 ]
 
 const getConfig = (base: string): InlineConfig => ({
   base,
   root: rootDir,
   logLevel: 'silent',
-  preview: { port: ports['css/dynamic-import'] },
-  build: { assetsInlineLimit: 0 }
+  server: { port: ports['css/dynamic-import'] },
+  build: { assetsInlineLimit: 0 },
 })
 
 async function withBuild(base: string, fn: () => Promise<void>) {
@@ -33,12 +33,12 @@ async function withServe(base: string, fn: () => Promise<void>) {
   const config = getConfig(base)
   const server = await createServer(config)
   await server.listen()
-  await new Promise((r) => setTimeout(r, 500))
 
   try {
     await page.goto(server.resolvedUrls.local[0])
     await fn()
   } finally {
+    await page.goto('about:blank') // move to a different page to avoid auto-refresh after server start
     await server.close()
   }
 }
@@ -50,9 +50,9 @@ async function getLinks() {
       return handle.evaluate((link) => ({
         pathname: new URL(link.href).pathname,
         rel: link.rel,
-        as: link.as
+        as: link.as,
       }))
-    })
+    }),
   )
 }
 
@@ -66,38 +66,38 @@ baseOptions.forEach(({ base, label }) => {
         expect(await getColor('.css-dynamic-import')).toBe('green')
         expect(await getLinks()).toEqual([
           {
-            pathname: expect.stringMatching(/^\/assets\/index\..+\.css$/),
+            pathname: expect.stringMatching(/^\/assets\/index-.+\.css$/),
             rel: 'stylesheet',
-            as: ''
+            as: '',
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.css$/),
+            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
             rel: 'preload',
-            as: 'style'
+            as: 'style',
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.js$/),
+            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.js$/),
             rel: 'modulepreload',
-            as: 'script'
+            as: 'script',
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.css$/),
+            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
             rel: 'stylesheet',
-            as: ''
+            as: '',
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/static\..+\.js$/),
+            pathname: expect.stringMatching(/^\/assets\/static-.+\.js$/),
             rel: 'modulepreload',
-            as: 'script'
+            as: 'script',
           },
           {
-            pathname: expect.stringMatching(/^\/assets\/index\..+\.js$/),
+            pathname: expect.stringMatching(/^\/assets\/index-.+\.js$/),
             rel: 'modulepreload',
-            as: 'script'
-          }
+            as: 'script',
+          },
         ])
       })
-    }
+    },
   )
 
   test.runIf(isServe)(
@@ -112,10 +112,10 @@ baseOptions.forEach(({ base, label }) => {
           {
             pathname: '/dynamic.css',
             rel: 'preload',
-            as: 'style'
-          }
+            as: 'style',
+          },
         ])
       })
-    }
+    },
   )
 })

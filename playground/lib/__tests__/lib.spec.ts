@@ -5,7 +5,7 @@ import {
   page,
   readFile,
   serverLogs,
-  untilUpdated
+  untilUpdated,
 } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
@@ -24,19 +24,19 @@ describe.runIf(isBuild)('build', () => {
     expect(await page.textContent('.iife')).toBe('It works')
     const code = readFile('dist/my-lib-custom-filename.iife.js')
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^var MyLib=function\(\){"use strict";/)
+    expect(code).toMatch(/^var MyLib=function\(\)\{"use strict";/)
   })
 
   test('Library mode does not include `preload`', async () => {
     await untilUpdated(
       () => page.textContent('.dynamic-import-message'),
-      'hello vite'
+      'hello vite',
     )
     const code = readFile('dist/lib/dynamic-import-message.es.mjs')
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
-    expect(code).toMatch(/await import\("\.\/message.[a-z\d]{8}.mjs"\)/)
+    expect(code).toMatch(/await import\("\.\/message-[a-z\d]{8}.mjs"\)/)
   })
 
   test('@import hoist', async () => {

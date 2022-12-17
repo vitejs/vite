@@ -1,10 +1,10 @@
 module.exports = {
   content: [__dirname + '/frontend/**/*.{css,html,ts,js}'],
   theme: {
-    extend: {}
+    extend: {},
   },
   variants: {
-    extend: {}
+    extend: {},
   },
-  plugins: []
+  plugins: [],
 }

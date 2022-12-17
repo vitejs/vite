@@ -8,7 +8,7 @@ import {
   isParentDirectory,
   normalizePath,
   slash,
-  transformStableResult
+  transformStableResult,
 } from '../utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
@@ -38,7 +38,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
@@ -64,7 +64,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               s.update(
                 index,
                 index + exp.length,
-                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`
+                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
               )
               continue
             }
@@ -79,7 +79,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               extensions: [],
               mainFields: [],
               tryIndex: false,
-              preferRelative: true
+              preferRelative: true,
             })
             file = await assetResolver(url, id)
             file ??= url.startsWith('/')
@@ -106,14 +106,14 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (!builtUrl) {
             const rawExp = code.slice(index, index + exp.length)
             config.logger.warnOnce(
-              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
             )
             builtUrl = url
           }
           s.update(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
           )
         }
         if (s) {
@@ -121,7 +121,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
       }
       return null
-    }
+    },
   }
 }
 

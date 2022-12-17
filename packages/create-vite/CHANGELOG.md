@@ -1,3 +1,53 @@
+## 4.0.0 (2022-12-09)
+
+* fix(create-vite): update react-swc template name (#11281) ([b3b9ac5](https://github.com/vitejs/vite/commit/b3b9ac5)), closes [#11281](https://github.com/vitejs/vite/issues/11281)
+* feat(create-vite): add react-swc templates (#11280) ([348146f](https://github.com/vitejs/vite/commit/348146f)), closes [#11280](https://github.com/vitejs/vite/issues/11280)
+* feat(svelte)!: update svelte templates to vite-plugin-svelte 2.0.0 (#11279) ([2a558ef](https://github.com/vitejs/vite/commit/2a558ef)), closes [#11279](https://github.com/vitejs/vite/issues/11279)
+* chore: udpate vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)
+
+
+
+## 4.0.0-beta.0 (2022-12-07)
+
+* chore: enable prettier trailing commas (#11167) ([134ce68](https://github.com/vitejs/vite/commit/134ce68)), closes [#11167](https://github.com/vitejs/vite/issues/11167)
+* chore: update create-vite to use beta versions (#11244) ([f7cfab9](https://github.com/vitejs/vite/commit/f7cfab9)), closes [#11244](https://github.com/vitejs/vite/issues/11244)
+* chore(create-vite): align vue template with create-vue (#11128) ([1a54e58](https://github.com/vitejs/vite/commit/1a54e58)), closes [#11128](https://github.com/vitejs/vite/issues/11128)
+* chore(deps): typescript 4.9 (#11229) ([6b4c4e2](https://github.com/vitejs/vite/commit/6b4c4e2)), closes [#11229](https://github.com/vitejs/vite/issues/11229)
+* chore(deps): update all non-major dependencies (#10910) ([f6ad607](https://github.com/vitejs/vite/commit/f6ad607)), closes [#10910](https://github.com/vitejs/vite/issues/10910)
+* chore(deps): update all non-major dependencies (#11006) ([96f2e98](https://github.com/vitejs/vite/commit/96f2e98)), closes [#11006](https://github.com/vitejs/vite/issues/11006)
+* chore(deps): update all non-major dependencies (#11182) ([8b83089](https://github.com/vitejs/vite/commit/8b83089)), closes [#11182](https://github.com/vitejs/vite/issues/11182)
+* refactor: move framework plugins out of core (#11158) ([5935619](https://github.com/vitejs/vite/commit/5935619)), closes [#11158](https://github.com/vitejs/vite/issues/11158)
+* fix(deps): update all non-major dependencies (#10804) ([f686afa](https://github.com/vitejs/vite/commit/f686afa)), closes [#10804](https://github.com/vitejs/vite/issues/10804)
+* fix(deps): update all non-major dependencies (#11091) ([073a4bf](https://github.com/vitejs/vite/commit/073a4bf)), closes [#11091](https://github.com/vitejs/vite/issues/11091)
+* perf: regexp perf issues, refactor regexp stylistic issues (#10905) ([fc007df](https://github.com/vitejs/vite/commit/fc007df)), closes [#10905](https://github.com/vitejs/vite/issues/10905)
+
+
+
+## <small>3.2.1 (2022-11-07)</small>
+
+* chore(deps): update all non-major dependencies (#10725) ([22cfad8](https://github.com/vitejs/vite/commit/22cfad8)), closes [#10725](https://github.com/vitejs/vite/issues/10725)
+* fix(create-vite): add `rel="noreferrer"` to elements with `target="_blank"` (#10675) ([e8eb67a](https://github.com/vitejs/vite/commit/e8eb67a)), closes [#10675](https://github.com/vitejs/vite/issues/10675)
+
+
+
+## 3.2.0 (2022-10-26)
+
+* fix(create-vite): remove baseUrl from Svelte configs (#10200) ([9c7a331](https://github.com/vitejs/vite/commit/9c7a331)), closes [#10200](https://github.com/vitejs/vite/issues/10200)
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(deps): update all non-major dependencies (#10610) ([bb95467](https://github.com/vitejs/vite/commit/bb95467)), closes [#10610](https://github.com/vitejs/vite/issues/10610)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* chore: remove duplicated logic in vanilla template (#10145) ([f29fef5](https://github.com/vitejs/vite/commit/f29fef5)), closes [#10145](https://github.com/vitejs/vite/issues/10145)
+* chore(create-vite): remove sourcemap, move --noEmit to tsconfig (#10150) ([414d2ef](https://github.com/vitejs/vite/commit/414d2ef)), closes [#10150](https://github.com/vitejs/vite/issues/10150)
+* chore(deps): update all non-major dependencies (#10393) ([f519423](https://github.com/vitejs/vite/commit/f519423)), closes [#10393](https://github.com/vitejs/vite/issues/10393)
+* chore(deps): update all non-major dependencies (#10488) ([15aa827](https://github.com/vitejs/vite/commit/15aa827)), closes [#10488](https://github.com/vitejs/vite/issues/10488)
+* chore(deps): update dependency vue-tsc to v1 (#10547) ([9d0e0af](https://github.com/vitejs/vite/commit/9d0e0af)), closes [#10547](https://github.com/vitejs/vite/issues/10547)
+* feat: Switch to JSX runtime transform in preact-ts template (#10061) ([bf69063](https://github.com/vitejs/vite/commit/bf69063)), closes [#10061](https://github.com/vitejs/vite/issues/10061)
+* feat(create-vite): support create-vite-extra (#10214) ([8116cbd](https://github.com/vitejs/vite/commit/8116cbd)), closes [#10214](https://github.com/vitejs/vite/issues/10214)
+
+
+
 ## 3.1.0 (2022-09-05)
 
 * refactor(create-vite): migrate to TypeScript (#9941) ([85fa2c8](https://github.com/vitejs/vite/commit/85fa2c8)), closes [#9941](https://github.com/vitejs/vite/issues/9941)

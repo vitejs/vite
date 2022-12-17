@@ -1,6 +1,6 @@
 export interface ImportGlobOptions<
   Eager extends boolean,
-  AsType extends string
+  AsType extends string,
 > {
   /**
    * Import type for the import url.
@@ -45,10 +45,10 @@ export interface ImportGlobFunction {
   <
     Eager extends boolean,
     As extends string,
-    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown
+    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown,
   >(
     glob: string | string[],
-    options?: ImportGlobOptions<Eager, As>
+    options?: ImportGlobOptions<Eager, As>,
   ): (Eager extends true ? true : false) extends true
     ? Record<string, T>
     : Record<string, () => Promise<T>>
@@ -59,7 +59,7 @@ export interface ImportGlobFunction {
    */
   <M>(
     glob: string | string[],
-    options?: ImportGlobOptions<false, string>
+    options?: ImportGlobOptions<false, string>,
   ): Record<string, () => Promise<M>>
   /**
    * Import a list of files with a glob pattern.
@@ -68,7 +68,7 @@ export interface ImportGlobFunction {
    */
   <M>(
     glob: string | string[],
-    options: ImportGlobOptions<true, string>
+    options: ImportGlobOptions<true, string>,
   ): Record<string, M>
 }
 
@@ -80,10 +80,10 @@ export interface ImportGlobEagerFunction {
    */
   <
     As extends string,
-    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown
+    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown,
   >(
     glob: string | string[],
-    options?: Omit<ImportGlobOptions<boolean, As>, 'eager'>
+    options?: Omit<ImportGlobOptions<boolean, As>, 'eager'>,
   ): Record<string, T>
   /**
    * Eagerly import a list of files with a glob pattern.
@@ -92,6 +92,6 @@ export interface ImportGlobEagerFunction {
    */
   <M>(
     glob: string | string[],
-    options?: Omit<ImportGlobOptions<boolean, string>, 'eager'>
+    options?: Omit<ImportGlobOptions<boolean, string>, 'eager'>,
   ): Record<string, M>
 }

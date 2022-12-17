@@ -8,7 +8,7 @@ import MagicString from 'magic-string'
 
 export function rewriteImports(
   fileOrDir: string,
-  rewrite: (importPath: string, currentFile: string) => string | void
+  rewrite: (importPath: string, currentFile: string) => string | void,
 ): void {
   walkDir(fileOrDir, (file) => {
     rewriteFileImports(file, (importPath) => {
@@ -21,7 +21,7 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-function walkDir(dir: string, handleFile: (file: string) => void): void {
+export function walkDir(dir: string, handleFile: (file: string) => void): void {
   if (statSync(dir).isDirectory()) {
     const files = readdirSync(dir)
     for (const file of files) {
@@ -35,7 +35,7 @@ function walkDir(dir: string, handleFile: (file: string) => void): void {
 
 function rewriteFileImports(
   file: string,
-  rewrite: (importPath: string) => string | void
+  rewrite: (importPath: string) => string | void,
 ): void {
   const content = readFileSync(file, 'utf-8')
   const str = new MagicString(content)
@@ -43,7 +43,7 @@ function rewriteFileImports(
   try {
     ast = parse(content, {
       sourceType: 'module',
-      plugins: ['typescript', 'classProperties']
+      plugins: ['typescript', 'classProperties'],
     })
   } catch (e) {
     console.log(colors.red(`failed to parse ${file}`))
@@ -62,7 +62,7 @@ function rewriteFileImports(
           str.overwrite(
             source.start!,
             source.end!,
-            JSON.stringify(newImportPath)
+            JSON.stringify(newImportPath),
           )
         }
       }

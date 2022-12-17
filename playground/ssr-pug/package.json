@@ -1,5 +1,5 @@
 {
-  "name": "test-ssr-pug",
+  "name": "@vitejs/test-ssr-pug",
   "private": true,
   "version": "0.0.0",
   "type": "module",

@@ -15,9 +15,9 @@
     "build": "vite build"
   },
   "dependencies": {
-    "lit": "^2.4.0"
+    "lit": "^2.5.0"
   },
   "devDependencies": {
-    "vite": "^3.1.8"
+    "vite": "^4.0.0"
   }
 }

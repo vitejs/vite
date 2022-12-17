@@ -68,8 +68,8 @@ Automatically open the app in the browser on server start. When the value is a s
 ```js
 export default defineConfig({
   server: {
-    open: '/docs/index.html'
-  }
+    open: '/docs/index.html',
+  },
 })
 ```
 
@@ -77,7 +77,9 @@ export default defineConfig({
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
+Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Any requests that request path starts with that key will be proxied to that specified target. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
+
+Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
 
 Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
@@ -89,19 +91,19 @@ In some cases, you might also want to configure the underlying dev server (e.g. 
 export default defineConfig({
   server: {
     proxy: {
-      // string shorthand
+      // string shorthand: http://localhost:5173/foo -> http://localhost:4567/foo
       '/foo': 'http://localhost:4567',
-      // with options
+      // with options: http://localhost:5173/api/bar-> http://jsonplaceholder.typicode.com/bar
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // with RegEx
+      // with RegEx: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/fallback/, '')
+        rewrite: (path) => path.replace(/^\/fallback/, ''),
       },
       // Using the proxy instance
       '/api': {
@@ -109,15 +111,15 @@ export default defineConfig({
         changeOrigin: true,
         configure: (proxy, options) => {
           // proxy will be an instance of 'http-proxy'
-        }
+        },
       },
-      // Proxying websockets or socket.io
+      // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
       '/socket.io': {
-        target: 'ws://localhost:5173',
-        ws: true
-      }
-    }
-  }
+        target: 'ws://localhost:5174',
+        ws: true,
+      },
+    },
+  },
 })
 ```
 
@@ -175,14 +177,14 @@ The Vite server watcher skips `.git/` and `node_modules/` directories by default
 export default defineConfig({
   server: {
     watch: {
-      ignored: ['!**/node_modules/your-package-name/**']
-    }
+      ignored: ['!**/node_modules/your-package-name/**'],
+    },
   },
   // The watched package must be excluded from optimization,
   // so that it can appear in the dependency graph and trigger hot reload.
   optimizeDeps: {
-    exclude: ['your-package-name']
-  }
+    exclude: ['your-package-name'],
+  },
 })
 ```
 
@@ -220,7 +222,7 @@ async function createServer() {
   // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom' // don't include Vite's default HTML handling middlewares
+    appType: 'custom', // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -240,7 +242,7 @@ createServer()
 
 - **Type:** `string | undefined`
 
-Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start and end with the `/` character.
+Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start with the `/` character.
 
 ## server.fs.strict
 
@@ -269,9 +271,9 @@ export default defineConfig({
   server: {
     fs: {
       // Allow serving files from one level up to the project root
-      allow: ['..']
-    }
-  }
+      allow: ['..'],
+    },
+  },
 })
 ```
 
@@ -287,10 +289,10 @@ export default defineConfig({
         // search up for workspace root
         searchForWorkspaceRoot(process.cwd()),
         // your custom rules
-        '/path/to/custom/allow'
-      ]
-    }
-  }
+        '/path/to/custom/allow',
+      ],
+    },
+  },
 })
 ```
 
@@ -310,7 +312,7 @@ Defines the origin of the generated asset URLs during development.
 ```js
 export default defineConfig({
   server: {
-    origin: 'http://127.0.0.1:8080'
-  }
+    origin: 'http://127.0.0.1:8080',
+  },
 })
 ```

@@ -6,7 +6,7 @@ import type {
   ResolveIdResult,
   Plugin as RollupPlugin,
   TransformPluginContext,
-  TransformResult
+  TransformResult,
 } from 'rollup'
 export type { PluginContext } from 'rollup'
 import type { UserConfig } from './config'
@@ -71,7 +71,7 @@ export interface Plugin extends RollupPlugin {
     (
       this: void,
       config: UserConfig,
-      env: ConfigEnv
+      env: ConfigEnv,
     ) => UserConfig | null | void | Promise<UserConfig | null | void>
   >
   /**
@@ -112,7 +112,7 @@ export interface Plugin extends RollupPlugin {
    *
    * By default the transform is applied **after** vite's internal html
    * transform. If you need to apply the transform before vite, use an object:
-   * `{ enforce: 'pre', transform: hook }`
+   * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
   /**
@@ -133,7 +133,7 @@ export interface Plugin extends RollupPlugin {
   handleHotUpdate?: ObjectHook<
     (
       this: void,
-      ctx: HmrContext
+      ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >
 
@@ -146,6 +146,7 @@ export interface Plugin extends RollupPlugin {
       source: string,
       importer: string | undefined,
       options: {
+        assertions: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
@@ -153,14 +154,14 @@ export interface Plugin extends RollupPlugin {
          */
         scan?: boolean
         isEntry: boolean
-      }
+      },
     ) => Promise<ResolveIdResult> | ResolveIdResult
   >
   load?: ObjectHook<
     (
       this: PluginContext,
       id: string,
-      options?: { ssr?: boolean }
+      options?: { ssr?: boolean },
     ) => Promise<LoadResult> | LoadResult
   >
   transform?: ObjectHook<
@@ -168,7 +169,7 @@ export interface Plugin extends RollupPlugin {
       this: TransformPluginContext,
       code: string,
       id: string,
-      options?: { ssr?: boolean }
+      options?: { ssr?: boolean },
     ) => Promise<TransformResult> | TransformResult
   >
 }

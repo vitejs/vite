@@ -4,77 +4,64 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { normalizePath } from '../utils'
+import { isDefined, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
-const enum WriteType {
-  JS,
-  CSS,
-  ASSET,
-  HTML,
-  SOURCE_MAP
-}
-
-const writeColors = {
-  [WriteType.JS]: colors.cyan,
-  [WriteType.CSS]: colors.magenta,
-  [WriteType.ASSET]: colors.green,
-  [WriteType.HTML]: colors.blue,
-  [WriteType.SOURCE_MAP]: colors.gray
+const groups = [
+  { name: 'Assets', color: colors.green },
+  { name: 'CSS', color: colors.magenta },
+  { name: 'JS', color: colors.cyan },
+]
+type LogEntry = {
+  name: string
+  group: typeof groups[number]['name']
+  size: number
+  compressedSize: number | null
+  mapSize: number | null
 }
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
-  function isLarge(code: string | Uint8Array): boolean {
-    // bail out on particularly large chunks
-    return code.length / 1024 > chunkLimit
-  }
-
-  async function getCompressedSize(code: string | Uint8Array): Promise<string> {
-    if (config.build.ssr || !config.build.reportCompressedSize) {
-      return ''
-    }
-    return ` / gzip: ${(
-      (await compress(typeof code === 'string' ? code : Buffer.from(code)))
-        .length / 1024
-    ).toFixed(2)} KiB`
-  }
-
-  function printFileInfo(
-    filePath: string,
-    content: string | Uint8Array,
-    type: WriteType,
-    maxLength: number,
-    outDir = config.build.outDir,
-    compressedSize = ''
-  ) {
-    outDir =
-      normalizePath(
-        path.relative(config.root, path.resolve(config.root, outDir))
-      ) + '/'
-    const kibs = content.length / 1024
-    const sizeColor = kibs > chunkLimit ? colors.yellow : colors.dim
-    config.logger.info(
-      `${colors.gray(colors.white(colors.dim(outDir)))}${writeColors[type](
-        filePath.padEnd(maxLength + 2)
-      )} ${sizeColor(`${kibs.toFixed(2)} KiB${compressedSize}`)}`
-    )
-  }
-
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
   let hasTransformed = false
   let hasRenderedChunk = false
+  let hasCompressChunk = false
   let transformedCount = 0
   let chunkCount = 0
+  let compressedCount = 0
+
+  async function getCompressedSize(
+    code: string | Uint8Array,
+  ): Promise<number | null> {
+    if (config.build.ssr || !config.build.reportCompressedSize) {
+      return null
+    }
+    if (shouldLogInfo && !hasCompressChunk) {
+      if (!tty) {
+        config.logger.info('computing gzip size...')
+      } else {
+        writeLine('computing gzip size (0)...')
+      }
+      hasCompressChunk = true
+    }
+    const compressed = await compress(
+      typeof code === 'string' ? code : Buffer.from(code),
+    )
+    compressedCount++
+    if (shouldLogInfo && tty) {
+      writeLine(`computing gzip size (${compressedCount})...`)
+    }
+    return compressed.length
+  }
 
   const logTransform = throttle((id: string) => {
     writeLine(
       `transforming (${transformedCount}) ${colors.dim(
-        path.relative(config.root, id)
-      )}`
+        path.relative(config.root, id),
+      )}`,
     )
   })
 
@@ -104,13 +91,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           process.stdout.cursorTo(0)
         }
         config.logger.info(
-          `${colors.green(`✓`)} ${transformedCount} modules transformed.`
+          `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
         )
       }
     },
 
     renderStart() {
       chunkCount = 0
+      compressedCount = 0
     },
 
     renderChunk() {
@@ -129,79 +117,112 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle() {
-      if (shouldLogInfo && tty) {
-        process.stdout.clearLine(0)
-        process.stdout.cursorTo(0)
-      }
+      if (shouldLogInfo && tty) clearLine()
     },
 
     async writeBundle({ dir: outDir }, output) {
       let hasLargeChunks = false
 
       if (shouldLogInfo) {
+        const entries = (
+          await Promise.all(
+            Object.values(output).map(
+              async (chunk): Promise<LogEntry | null> => {
+                if (chunk.type === 'chunk') {
+                  return {
+                    name: chunk.fileName,
+                    group: 'JS',
+                    size: chunk.code.length,
+                    compressedSize: await getCompressedSize(chunk.code),
+                    mapSize: chunk.map ? chunk.map.toString().length : null,
+                  }
+                } else {
+                  if (chunk.fileName.endsWith('.map')) return null
+                  const isCSS = chunk.fileName.endsWith('.css')
+                  return {
+                    name: chunk.fileName,
+                    group: isCSS ? 'CSS' : 'Assets',
+                    size: chunk.source.length,
+                    mapSize: null, // Rollup doesn't support CSS maps?
+                    compressedSize: isCSS
+                      ? await getCompressedSize(chunk.source)
+                      : null,
+                  }
+                }
+              },
+            ),
+          )
+        ).filter(isDefined)
+        if (tty) clearLine()
+
         let longest = 0
-        for (const file in output) {
-          const l = output[file].fileName.length
-          if (l > longest) longest = l
+        let biggestSize = 0
+        let biggestMap = 0
+        let biggestCompressSize = 0
+        for (const entry of entries) {
+          if (entry.name.length > longest) longest = entry.name.length
+          if (entry.size > biggestSize) biggestSize = entry.size
+          if (entry.mapSize && entry.mapSize > biggestMap) {
+            biggestMap = entry.mapSize
+          }
+          if (
+            entry.compressedSize &&
+            entry.compressedSize > biggestCompressSize
+          ) {
+            biggestCompressSize = entry.compressedSize
+          }
         }
 
-        // large chunks are deferred to be logged at the end so they are more
-        // visible.
-        const deferredLogs: (() => void)[] = []
+        const sizePad = displaySize(biggestSize).length
+        const mapPad = displaySize(biggestMap).length
+        const compressPad = displaySize(biggestCompressSize).length
 
-        await Promise.all(
-          Object.keys(output).map(async (file) => {
-            const chunk = output[file]
-            if (chunk.type === 'chunk') {
-              const log = async () => {
-                printFileInfo(
-                  chunk.fileName,
-                  chunk.code,
-                  WriteType.JS,
-                  longest,
-                  outDir,
-                  await getCompressedSize(chunk.code)
+        const relativeOutDir = normalizePath(
+          path.relative(
+            config.root,
+            path.resolve(config.root, outDir ?? config.build.outDir),
+          ),
+        )
+        const assetsDir = `${config.build.assetsDir}/`
+
+        for (const group of groups) {
+          const filtered = entries.filter((e) => e.group === group.name)
+          if (!filtered.length) continue
+          for (const entry of filtered.sort((a, z) => a.size - z.size)) {
+            const isLarge =
+              group.name === 'JS' && entry.size / 1000 > chunkLimit
+            if (isLarge) hasLargeChunks = true
+            const sizeColor = isLarge ? colors.yellow : colors.dim
+            let log = colors.dim(relativeOutDir + '/')
+            log += entry.name.startsWith(assetsDir)
+              ? colors.dim(assetsDir) +
+                group.color(
+                  entry.name
+                    .slice(assetsDir.length)
+                    .padEnd(longest + 2 - assetsDir.length),
                 )
-                if (chunk.map) {
-                  printFileInfo(
-                    chunk.fileName + '.map',
-                    chunk.map.toString(),
-                    WriteType.SOURCE_MAP,
-                    longest,
-                    outDir
-                  )
-                }
-              }
-              if (isLarge(chunk.code)) {
-                hasLargeChunks = true
-                deferredLogs.push(log)
-              } else {
-                await log()
-              }
-            } else if (chunk.source) {
-              const isCSS = chunk.fileName.endsWith('.css')
-              const isMap = chunk.fileName.endsWith('.js.map')
-              printFileInfo(
-                chunk.fileName,
-                chunk.source,
-                isCSS
-                  ? WriteType.CSS
-                  : isMap
-                  ? WriteType.SOURCE_MAP
-                  : WriteType.ASSET,
-                longest,
-                outDir,
-                isCSS ? await getCompressedSize(chunk.source) : undefined
+              : group.color(entry.name.padEnd(longest + 2))
+            log += colors.bold(
+              sizeColor(displaySize(entry.size).padStart(sizePad)),
+            )
+            if (entry.compressedSize) {
+              log += colors.dim(
+                ` │ gzip: ${displaySize(entry.compressedSize).padStart(
+                  compressPad,
+                )}`,
               )
             }
-          })
-        )
-
-        await Promise.all(deferredLogs.map((l) => l()))
+            if (entry.mapSize) {
+              log += colors.dim(
+                ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
+              )
+            }
+            config.logger.info(log)
+          }
+        }
       } else {
-        hasLargeChunks = Object.keys(output).some((file) => {
-          const chunk = output[file]
-          return chunk.type === 'chunk' && chunk.code.length / 1024 > chunkLimit
+        hasLargeChunks = Object.values(output).some((chunk) => {
+          return chunk.type === 'chunk' && chunk.code.length / 1000 > chunkLimit
         })
       }
 
@@ -213,25 +234,29 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       ) {
         config.logger.warn(
           colors.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit} KiB after minification. Consider:\n` +
+            `\n(!) Some chunks are larger than ${chunkLimit} kBs after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
-              `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`
-          )
+              `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,
+          ),
         )
       }
-    }
+    },
   }
 }
 
 function writeLine(output: string) {
-  process.stdout.clearLine(0)
-  process.stdout.cursorTo(0)
+  clearLine()
   if (output.length < process.stdout.columns) {
     process.stdout.write(output)
   } else {
     process.stdout.write(output.substring(0, process.stdout.columns - 1))
   }
+}
+
+function clearLine() {
+  process.stdout.clearLine(0)
+  process.stdout.cursorTo(0)
 }
 
 function throttle(fn: Function) {
@@ -243,4 +268,11 @@ function throttle(fn: Function) {
       timerHandle = null
     }, 100)
   }
+}
+
+function displaySize(bytes: number) {
+  return `${(bytes / 1000).toLocaleString('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  })} kB`
 }
