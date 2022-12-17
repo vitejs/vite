@@ -22,6 +22,9 @@ on:
       - v2.*
       - v3.*
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "packages/create-vite/**"
   workflow_dispatch:
 
 concurrency:
@@ -98,40 +101,3 @@ jobs:
 
       - name: Test build
         run: pnpm run test-build
-
-      - name: Test docs
-        run: pnpm run test-docs
-
-  lint:
-    if: github.repository == 'vitejs/vite'
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    name: "Lint: node-16, ubuntu-latest"
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.4
-
-      - name: Set node version to 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "pnpm"
-
-      - name: Install deps
-        run: pnpm install
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Check formatting
-        run: pnpm prettier --check .
-
-      - name: Typecheck
-        run: pnpm run typecheck

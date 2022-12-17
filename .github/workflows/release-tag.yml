@@ -28,7 +28,7 @@ jobs:
             pkgName=${GITHUB_REF_NAME%@*}
           fi
 
-          echo "::set-output name=pkgName::$pkgName"
+          echo "pkgName=$pkgName" >> $GITHUB_OUTPUT
 
       - name: Create Release for Tag
         id: release_tag
