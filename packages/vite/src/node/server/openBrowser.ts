@@ -86,17 +86,19 @@ function startBrowserProcess(browser: string | undefined, url: string) {
         preferredOSXBrowser && ps.includes(preferredOSXBrowser)
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
-      // Try our best to reuse existing tab with AppleScript
-      execSync(
-        `osascript openChrome.applescript "${encodeURI(
-          url,
-        )}" "${openedBrowser}"`,
-        {
-          cwd: join(VITE_PACKAGE_DIR, 'bin'),
-          stdio: 'ignore',
-        },
-      )
-      return true
+      if (openedBrowser) {
+        // Try our best to reuse existing tab with AppleScript
+        execSync(
+          `osascript openChrome.applescript "${encodeURI(
+            url,
+          )}" "${openedBrowser}"`,
+          {
+            cwd: join(VITE_PACKAGE_DIR, 'bin'),
+            stdio: 'ignore',
+          },
+        )
+        return true
+      }
     } catch (err) {
       // Ignore errors
     }
