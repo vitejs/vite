@@ -51,6 +51,24 @@ If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as 
 
 Note that these settings persist but a **restart is required**.
 
+### Network requests stop loading
+
+When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content. Vite relies on these caching directives.
+
+To resolve the problem use a trusted SSL cert.
+
+See: [Cache problems](https://helpx.adobe.com/mt/experience-manager/kb/cache-problems-on-chrome-with-SSL-certificate-errors.html), [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
+
+#### macOS
+
+You can install a trusted cert via the CLI with this command:
+
+```
+security add-trusted-cert -d -r trustRoot -k ~/Library/Keychains/login.keychain-db your-cert.cer
+```
+
+Or, by importing it into the Keychain Access app and updating the trust of your cert to "Always Trust."
+
 ### 431 Request Header Fields Too Large
 
 When the server / WebSocket server receives a large HTTP header, the request will be dropped and the following warning will be shown.
@@ -82,6 +100,10 @@ If you are running Vite with WSL2, Vite cannot watch file changes in some condit
 If HMR is not handled by Vite or a plugin, a full reload will happen.
 
 Also if there is a dependency loop, a full reload will happen. To solve this, try removing the loop.
+
+### High number of HMR updates in console
+
+This can be caused by a circular dependency. To solve this, try breaking the loop.
 
 ## Build
 
