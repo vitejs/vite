@@ -1,0 +1,17 @@
+{
+  "name": "@vitejs/test-resolve-optimized-dup-deps",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-resolve-optimized-package-a": "file:./package-a",
+    "@vitejs/test-resolve-optimized-package-b": "file:./package-b",
+    "@vitejs/test-resolve-optimized-package-custom-condition": "file:./package-custom-condition",
+    "@vitejs/test-resolve-optimized-package-custom-main-field": "file:./package-custom-main-field"
+  }
+}

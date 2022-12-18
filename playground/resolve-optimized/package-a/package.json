@@ -1,0 +1,8 @@
+{
+  "name": "@vitejs/test-resolve-optimized-package-a",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.main.js",
+  "module": "index.module.js",
+  "dependencies": {}
+}

@@ -1,0 +1,46 @@
+<h2>direct dependency A</h2>
+<pre class="a"></pre>
+<pre class="a-count"></pre>
+
+<h2>direct dependency B</h2>
+<pre class="b"></pre>
+
+<h2>direct dependency custom-main-field</h2>
+<pre class="custom-main-field"></pre>
+<pre class="custom-main-field-count"></pre>
+
+<h2>direct dependency custom-condition</h2>
+<pre class="custom-condition"></pre>
+<pre class="custom-condition-count"></pre>
+
+<script type="module">
+  import A from '@vitejs/test-resolve-optimized-package-a'
+  import B from '@vitejs/test-resolve-optimized-package-b'
+
+  import customMain from '@vitejs/test-resolve-optimized-package-custom-main-field'
+  import customCondition from '@vitejs/test-resolve-optimized-package-custom-condition'
+
+  text('.a', A)
+  text('.b', B)
+  text('.custom-main-field', customMain)
+  text('.custom-condition', customCondition)
+
+  const packageACount = globalThis['package-a-module']
+  text('.a-count', packageACount === 1 ? 'success' : 'fail')
+
+  const packageCustomMainFieldCount = globalThis['package-custom-main-field']
+  text(
+    '.custom-main-field-count',
+    packageCustomMainFieldCount === 1 ? 'success' : 'fail',
+  )
+
+  const packageCustomConditionCount = globalThis['package-custom-condition']
+  text(
+    '.custom-condition-count',
+    packageCustomConditionCount === 1 ? 'success' : 'fail',
+  )
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>

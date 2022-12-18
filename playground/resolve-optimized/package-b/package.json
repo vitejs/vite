@@ -1,0 +1,12 @@
+{
+  "name": "@vitejs/test-resolve-optimized-package-b",
+  "private": true,
+  "version": "1.0.0",
+  "module": "index.module.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "@vitejs/test-resolve-optimized-package-a": "*",
+    "@vitejs/test-resolve-optimized-package-custom-condition": "*",
+    "@vitejs/test-resolve-optimized-package-custom-main-field": "*"
+  }
+}
