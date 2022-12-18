@@ -604,26 +604,28 @@ export type InternalResolveOptionsWithOverrideConditions =
 
 export const idToPkgMap = new Map<string, PackageData>()
 
-export function tryNodeResolve(
+export type TryNodeResolveCoreResult =
+  | {
+      resultType: 'success'
+      resolved: string
+      // nestedPath: string
+      pkg: PackageData
+      pkgId: string
+      nearestPkg: PackageData
+      isDeepImport: boolean
+    }
+  | { resultType: 'optional-peer-dep'; resolved: string }
+  | { resultType: 'fail' }
+
+export function tryNodeResolveCore(
   id: string,
   importer: string | null | undefined,
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
-  depsOptimizer?: DepsOptimizer,
-  ssr?: boolean,
-  externalize?: boolean,
-  allowLinkedExternal: boolean = true,
-): PartialResolvedId | undefined {
-  const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
+): TryNodeResolveCoreResult {
+  const { root, dedupe, preserveSymlinks, packageCache } = options
 
-  ssr ??= false
-
-  // split id by last '>' for nested selected packages, for example:
-  // 'foo > bar > baz' => 'foo > bar' & 'baz'
-  // 'foo'             => ''          & 'foo'
-  const lastArrowIndex = id.lastIndexOf('>')
-  const nestedRoot = id.substring(0, lastArrowIndex).trim()
-  const nestedPath = id.substring(lastArrowIndex + 1).trim()
+  const { nestedRoot, nestedPath } = parseNestedId(id)
 
   const possiblePkgIds: string[] = []
   for (let prevSlashIndex = -1; ; ) {
@@ -722,12 +724,13 @@ export function tryNodeResolve(
           mainPkg.peerDependenciesMeta?.[nestedPath]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`,
+            resultType: 'optional-peer-dep',
+            resolved: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`,
           }
         }
       }
     }
-    return
+    return { resultType: 'fail' }
   }
 
   let resolveId = resolvePackageEntry
@@ -755,8 +758,47 @@ export function tryNodeResolve(
     })
   }
   if (!resolved) {
-    return
+    return { resultType: 'fail' }
   }
+
+  // link id to pkg for browser field mapping check
+  idToPkgMap.set(resolved, pkg)
+
+  return {
+    resultType: 'success',
+    resolved,
+    pkg,
+    pkgId,
+    nearestPkg,
+    isDeepImport,
+  }
+}
+
+export function tryNodeResolve(
+  id: string,
+  importer: string | null | undefined,
+  options: InternalResolveOptionsWithOverrideConditions,
+  targetWeb: boolean,
+  depsOptimizer?: DepsOptimizer,
+  ssr?: boolean,
+  externalize?: boolean,
+  allowLinkedExternal: boolean = true,
+): PartialResolvedId | undefined {
+  const coreResult = tryNodeResolveCore(id, importer, options, targetWeb)
+  if (coreResult.resultType === 'fail') return
+  if (coreResult.resultType === 'optional-peer-dep')
+    return {
+      id: coreResult.resolved,
+    }
+  if (coreResult.resultType !== 'success')
+    throw new Error('assertion error: unexpected coreResult.resultType')
+
+  const { pkg, pkgId, nearestPkg, isDeepImport } = coreResult
+  let { resolved } = coreResult
+  // const {} = pkg
+  const { isBuild } = options
+  ssr ??= false
+  const { nestedPath } = parseNestedId(id)
 
   const processResult = (resolved: PartialResolvedId) => {
     if (!externalize) {
@@ -789,8 +831,6 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  // link id to pkg for browser field mapping check
-  idToPkgMap.set(resolved, pkg)
   if ((isBuild && !depsOptimizer) || externalize) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
@@ -878,6 +918,18 @@ export function tryNodeResolve(
   } else {
     return { id: resolved! }
   }
+}
+
+/**
+ * split id by last '>' for nested selected packages, for example:
+ * 'foo > bar > baz' => 'foo > bar' & 'baz'
+ * 'foo'             => ''          & 'foo'
+ */
+function parseNestedId(id: string) {
+  const lastArrowIndex = id.lastIndexOf('>')
+  const nestedRoot = id.substring(0, lastArrowIndex).trim()
+  const nestedPath = id.substring(lastArrowIndex + 1).trim()
+  return { nestedRoot, nestedPath }
 }
 
 export async function tryOptimizedResolve(
