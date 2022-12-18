@@ -829,6 +829,18 @@ importers:
   playground/resolve-linked:
     specifiers: {}
 
+  playground/resolve-optimized:
+    specifiers:
+      '@vitejs/test-resolve-optimized-package-a': file:./package-a
+      '@vitejs/test-resolve-optimized-package-b': file:./package-b
+      '@vitejs/test-resolve-optimized-package-custom-condition': file:./package-custom-condition
+      '@vitejs/test-resolve-optimized-package-custom-main-field': file:./package-custom-main-field
+    dependencies:
+      '@vitejs/test-resolve-optimized-package-a': file:playground/resolve-optimized/package-a
+      '@vitejs/test-resolve-optimized-package-b': file:playground/resolve-optimized/package-b_j3czbr56p6y2ktoozljpzmhxu4
+      '@vitejs/test-resolve-optimized-package-custom-condition': file:playground/resolve-optimized/package-custom-condition
+      '@vitejs/test-resolve-optimized-package-custom-main-field': file:playground/resolve-optimized/package-custom-main-field
+
   playground/resolve-optimized-dup-deps:
     specifiers:
       '@vitejs/test-resolve-optimized-dup-deps-package-a': file:./package-a
@@ -847,6 +859,18 @@ importers:
     specifiers: {}
 
   playground/resolve-optimized-dup-deps/package-b-v2:
+    specifiers: {}
+
+  playground/resolve-optimized/package-a:
+    specifiers: {}
+
+  playground/resolve-optimized/package-b:
+    specifiers: {}
+
+  playground/resolve-optimized/package-custom-condition:
+    specifiers: {}
+
+  playground/resolve-optimized/package-custom-main-field:
     specifiers: {}
 
   playground/resolve/browser-field:
@@ -8818,6 +8842,39 @@ packages:
     resolution: {directory: playground/resolve-optimized-dup-deps/package-b-v2, type: directory}
     name: '@vitejs/test-resolve-optimized-dup-deps-package-b'
     version: 2.0.0
+    dev: false
+
+  file:playground/resolve-optimized/package-a:
+    resolution: {directory: playground/resolve-optimized/package-a, type: directory}
+    name: '@vitejs/test-resolve-optimized-package-a'
+    version: 1.0.0
+    dev: false
+
+  file:playground/resolve-optimized/package-b_j3czbr56p6y2ktoozljpzmhxu4:
+    resolution: {directory: playground/resolve-optimized/package-b, type: directory}
+    id: file:playground/resolve-optimized/package-b
+    name: '@vitejs/test-resolve-optimized-package-b'
+    version: 1.0.0
+    peerDependencies:
+      '@vitejs/test-resolve-optimized-package-a': '*'
+      '@vitejs/test-resolve-optimized-package-custom-condition': '*'
+      '@vitejs/test-resolve-optimized-package-custom-main-field': '*'
+    dependencies:
+      '@vitejs/test-resolve-optimized-package-a': file:playground/resolve-optimized/package-a
+      '@vitejs/test-resolve-optimized-package-custom-condition': file:playground/resolve-optimized/package-custom-condition
+      '@vitejs/test-resolve-optimized-package-custom-main-field': file:playground/resolve-optimized/package-custom-main-field
+    dev: false
+
+  file:playground/resolve-optimized/package-custom-condition:
+    resolution: {directory: playground/resolve-optimized/package-custom-condition, type: directory}
+    name: '@vitejs/test-resolve-optimized-package-custom-condition'
+    version: 1.0.0
+    dev: false
+
+  file:playground/resolve-optimized/package-custom-main-field:
+    resolution: {directory: playground/resolve-optimized/package-custom-main-field, type: directory}
+    name: '@vitejs/test-resolve-optimized-package-custom-main-field'
+    version: 1.0.0
     dev: false
 
   file:playground/ssr-deps/css-lib:
