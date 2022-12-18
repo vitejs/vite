@@ -6,6 +6,7 @@ import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
+import type { InternalResolveOptions } from './resolve'
 import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -38,10 +39,25 @@ export async function resolvePlugins(
     : { pre: [], post: [] }
   const { modulePreload } = config.build
 
+  const resolveOptions: InternalResolveOptions = {
+    ...config.resolve,
+    root: config.root,
+    isProduction: config.isProduction,
+    isBuild,
+    packageCache: config.packageCache,
+    ssrConfig: config.ssr,
+    asSrc: true,
+    getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
+    shouldExternalize:
+      isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
+        ? (id) => shouldExternalizeForSSR(id, config)
+        : undefined,
+  }
+
   return [
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
-    preAliasPlugin(config),
+    preAliasPlugin(config, resolveOptions),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     modulePreload === true ||
@@ -56,20 +72,7 @@ export async function resolvePlugins(
             : optimizedDepsPlugin(config),
         ]
       : []),
-    resolvePlugin({
-      ...config.resolve,
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      ssrConfig: config.ssr,
-      asSrc: true,
-      getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
-      shouldExternalize:
-        isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
-          ? (id) => shouldExternalizeForSSR(id, config)
-          : undefined,
-    }),
+    resolvePlugin(resolveOptions),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,

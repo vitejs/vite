@@ -16,11 +16,15 @@ import {
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
+import type { InternalResolveOptions } from './resolve'
 
 /**
  * A plugin to avoid an aliased AND optimized dep from being aliased in src
  */
-export function preAliasPlugin(config: ResolvedConfig): Plugin {
+export function preAliasPlugin(
+  config: ResolvedConfig,
+  resolveOptions: InternalResolveOptions,
+): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
   const isBuild = config.command === 'build'
@@ -39,9 +43,11 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
       ) {
         if (findPatterns.find((pattern) => matches(pattern, id))) {
           const optimizedId = await tryOptimizedResolve(
-            depsOptimizer,
             id,
             importer,
+            resolveOptions,
+            depsOptimizer,
+            ssr,
           )
           if (optimizedId) {
             return optimizedId // aliased dep already optimized

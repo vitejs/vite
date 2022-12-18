@@ -35,7 +35,6 @@ import {
   lookupFile,
   nestedResolveFrom,
   normalizePath,
-  resolveFrom,
   slash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
@@ -309,7 +308,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           asSrc &&
           depsOptimizer &&
           !options.scan &&
-          (res = await tryOptimizedResolve(depsOptimizer, id, importer))
+          (res = await tryOptimizedResolve(
+            id,
+            importer,
+            options,
+            depsOptimizer,
+            ssr,
+          ))
         ) {
           return res
         }
@@ -802,7 +807,7 @@ export function tryNodeResolve(
   if (
     !options.ssrOptimizeCheck &&
     (!resolved.includes('node_modules') || // linked
-      !depsOptimizer || // resolving before listening to the server
+      !depsOptimizer || // resolving before listening to the server, or called by tryOptimizedResolve
       options.scan) // initial esbuild scan phase
   ) {
     return { id: resolved }
@@ -876,9 +881,11 @@ export function tryNodeResolve(
 }
 
 export async function tryOptimizedResolve(
-  depsOptimizer: DepsOptimizer,
   id: string,
-  importer?: string,
+  importer: string | null | undefined,
+  resolveOptions: InternalResolveOptions,
+  depsOptimizer: DepsOptimizer,
+  ssr: boolean,
 ): Promise<string | undefined> {
   // TODO: we need to wait until scanning is done here as this function
   // is used in the preAliasPlugin to decide if an aliased dep is optimized,
@@ -913,8 +920,23 @@ export async function tryOptimizedResolve(
     // lazily initialize resolvedSrc
     if (resolvedSrc == null) {
       try {
-        // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+        const { target: ssrTarget } = resolveOptions.ssrConfig ?? {}
+        const targetWeb = !ssr || ssrTarget === 'webworker'
+        const resolved = tryNodeResolve(
+          id,
+          importer,
+          resolveOptions,
+          targetWeb,
+          undefined,
+          ssr,
+          false,
+        )
+        if (resolved?.id) {
+          resolvedSrc = normalizePath(resolved.id)
+        } else {
+          // no resolvedSrc, no need to continue
+          break
+        }
       } catch {
         // this is best-effort only so swallow errors
         break
