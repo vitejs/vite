@@ -829,26 +829,6 @@ importers:
   playground/resolve-linked:
     specifiers: {}
 
-  playground/resolve-optimized-dup-deps:
-    specifiers:
-      '@vitejs/test-resolve-optimized-dup-deps-package-a': file:./package-a
-      '@vitejs/test-resolve-optimized-dup-deps-package-b': file:./package-b-v1
-    dependencies:
-      '@vitejs/test-resolve-optimized-dup-deps-package-a': file:playground/resolve-optimized-dup-deps/package-a
-      '@vitejs/test-resolve-optimized-dup-deps-package-b': file:playground/resolve-optimized-dup-deps/package-b-v1
-
-  playground/resolve-optimized-dup-deps/package-a:
-    specifiers:
-      '@vitejs/test-resolve-optimized-dup-deps-package-b': file:../package-b-v2
-    dependencies:
-      '@vitejs/test-resolve-optimized-dup-deps-package-b': file:playground/resolve-optimized-dup-deps/package-b-v2
-
-  playground/resolve-optimized-dup-deps/package-b-v1:
-    specifiers: {}
-
-  playground/resolve-optimized-dup-deps/package-b-v2:
-    specifiers: {}
-
   playground/resolve/browser-field:
     specifiers: {}
 
@@ -8725,26 +8705,6 @@ packages:
       '@vitejs/test-dep-a': file:playground/preload/dep-a
       dep-a: file:playground/preload/dep-a
     dev: true
-
-  file:playground/resolve-optimized-dup-deps/package-a:
-    resolution: {directory: playground/resolve-optimized-dup-deps/package-a, type: directory}
-    name: '@vitejs/test-resolve-optimized-dup-deps-package-a'
-    version: 1.0.0
-    dependencies:
-      '@vitejs/test-resolve-optimized-dup-deps-package-b': file:playground/resolve-optimized-dup-deps/package-b-v2
-    dev: false
-
-  file:playground/resolve-optimized-dup-deps/package-b-v1:
-    resolution: {directory: playground/resolve-optimized-dup-deps/package-b-v1, type: directory}
-    name: '@vitejs/test-resolve-optimized-dup-deps-package-b'
-    version: 1.0.0
-    dev: false
-
-  file:playground/resolve-optimized-dup-deps/package-b-v2:
-    resolution: {directory: playground/resolve-optimized-dup-deps/package-b-v2, type: directory}
-    name: '@vitejs/test-resolve-optimized-dup-deps-package-b'
-    version: 2.0.0
-    dev: false
 
   file:playground/ssr-deps/css-lib:
     resolution: {directory: playground/ssr-deps/css-lib, type: directory}
