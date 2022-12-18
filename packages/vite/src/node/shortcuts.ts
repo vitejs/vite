@@ -1,7 +1,7 @@
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
 import { openBrowser } from './server/openBrowser'
-import { isDefined } from './utils'
+import { isDefined, isWindows } from './utils'
 
 export type BindShortcutsOptions = {
   /**
@@ -45,6 +45,13 @@ export function bindShortcuts(
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
       process.emit('SIGTERM')
+      return
+    }
+
+    // suspens when we hit ctrl-z on non-windows platforms
+    if (!isWindows && input === '\x1A') {
+      process.kill(process.ppid, 'SIGTSTP')
+      process.kill(process.pid, 'SIGTSTP')
       return
     }
 
