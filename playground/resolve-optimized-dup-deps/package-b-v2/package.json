@@ -1,6 +1,0 @@
-{
-  "name": "@vitejs/test-resolve-optimized-dup-deps-package-b",
-  "private": true,
-  "version": "2.0.0",
-  "main": "index.js"
-}
