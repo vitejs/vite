@@ -169,7 +169,7 @@ importers:
       '@babel/types': ^7.20.5
       '@jridgewell/trace-mapping': ^0.3.17
       '@rollup/plugin-alias': ^4.0.2
-      '@rollup/plugin-commonjs': ^23.0.4
+      '@rollup/plugin-commonjs': ^24.0.0
       '@rollup/plugin-dynamic-import-vars': ^2.0.1
       '@rollup/plugin-json': ^5.0.2
       '@rollup/plugin-node-resolve': 15.0.1
@@ -237,7 +237,7 @@ importers:
       '@babel/types': 7.20.5
       '@jridgewell/trace-mapping': 0.3.17
       '@rollup/plugin-alias': 4.0.2_rollup@3.7.0
-      '@rollup/plugin-commonjs': 23.0.4_rollup@3.7.0
+      '@rollup/plugin-commonjs': 24.0.0_rollup@3.7.0
       '@rollup/plugin-dynamic-import-vars': 2.0.1_rollup@3.7.0
       '@rollup/plugin-json': 5.0.2_rollup@3.7.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.7.0
@@ -1912,8 +1912,8 @@ packages:
       slash: 4.0.0
     dev: true
 
-  /@rollup/plugin-commonjs/23.0.3_rollup@3.7.0:
-    resolution: {integrity: sha512-31HxrT5emGfTyIfAs1lDQHj6EfYxTXcwtX5pIIhq+B/xZBNIqQ179d/CkYxlpYmFCxT78AeU4M8aL8Iv/IBxFA==}
+  /@rollup/plugin-commonjs/23.0.4_rollup@3.7.0:
+    resolution: {integrity: sha512-bOPJeTZg56D2MCm+TT4psP8e8Jmf1Jsi7pFUMl8BN5kOADNzofNHe47+84WVCt7D095xPghC235/YKuNDEhczg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0
@@ -1930,8 +1930,8 @@ packages:
       rollup: 3.7.0
     dev: true
 
-  /@rollup/plugin-commonjs/23.0.4_rollup@3.7.0:
-    resolution: {integrity: sha512-bOPJeTZg56D2MCm+TT4psP8e8Jmf1Jsi7pFUMl8BN5kOADNzofNHe47+84WVCt7D095xPghC235/YKuNDEhczg==}
+  /@rollup/plugin-commonjs/24.0.0_rollup@3.7.0:
+    resolution: {integrity: sha512-0w0wyykzdyRRPHOb0cQt14mIBLujfAv6GgP6g8nvg/iBxEm112t3YPPq+Buqe2+imvElTka+bjNlJ/gB56TD8g==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0
@@ -1944,7 +1944,7 @@ packages:
       estree-walker: 2.0.2
       glob: 8.0.3
       is-reference: 1.2.1
-      magic-string: 0.26.7
+      magic-string: 0.27.0
       rollup: 3.7.0
     dev: true
 
@@ -8077,7 +8077,7 @@ packages:
     hasBin: true
     dependencies:
       '@rollup/plugin-alias': 4.0.2_rollup@3.7.0
-      '@rollup/plugin-commonjs': 23.0.3_rollup@3.7.0
+      '@rollup/plugin-commonjs': 23.0.4_rollup@3.7.0
       '@rollup/plugin-json': 5.0.2_rollup@3.7.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.7.0
       '@rollup/plugin-replace': 5.0.0_rollup@3.7.0
