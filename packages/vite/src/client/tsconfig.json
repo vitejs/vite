@@ -1,8 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../../types"],
+  "include": ["./", "../types"],
   "compilerOptions": {
     "types": [],
+    "target": "ES2019",
     "lib": ["ESNext", "DOM"],
     "declaration": false
   }

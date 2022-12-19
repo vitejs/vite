@@ -1,10 +1,11 @@
+import { expect, test } from 'vitest'
 import {
   browserErrors,
   browserLogs,
   getColor,
   isBuild,
   isServe,
-  page
+  page,
 } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
@@ -37,13 +38,13 @@ test('dynamic default import from webpacked cjs (clipboard)', async () => {
 
 test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
   expect(await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm')).toBe(
-    'ok'
+    'ok',
   )
 })
 
 test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
   expect(await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs')).toBe(
-    'ok'
+    'ok',
   )
 })
 
@@ -55,6 +56,10 @@ test('dedupe', async () => {
 
 test('cjs browser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
+})
+
+test('cjs browser field bare', async () => {
+  expect(await page.textContent('.cjs-browser-field-bare')).toBe('pong')
 })
 
 test('dep from linked dep (lodash-es)', async () => {
@@ -83,8 +88,21 @@ test('Import from dependency which uses relative path which needs to be resolved
 
 test('dep with dynamic import', async () => {
   expect(await page.textContent('.dep-with-dynamic-import')).toMatch(
-    `[success]`
+    `[success]`,
   )
+})
+
+test('dep with optional peer dep', async () => {
+  expect(await page.textContent('.dep-with-optional-peer-dep')).toMatch(
+    `[success]`,
+  )
+  if (isServe) {
+    expect(browserErrors.map((error) => error.message)).toEqual(
+      expect.arrayContaining([
+        'Could not resolve "foobar" imported by "@vitejs/test-dep-with-optional-peer-dep". Is it installed?',
+      ]),
+    )
+  }
 })
 
 test('dep with css import', async () => {
@@ -105,14 +123,11 @@ test('vue + vuex', async () => {
 
 // When we use the Rollup CommonJS plugin instead of esbuild prebundling,
 // the esbuild plugins won't apply to dependencies
-test.skipIf(isBuild && process.env.VITE_TEST_LEGACY_CJS_PLUGIN)(
-  'esbuild-plugin',
-  async () => {
-    expect(await page.textContent('.esbuild-plugin')).toMatch(
-      `Hello from an esbuild plugin`
-    )
-  }
-)
+test('esbuild-plugin', async () => {
+  expect(await page.textContent('.esbuild-plugin')).toMatch(
+    `Hello from an esbuild plugin`,
+  )
+})
 
 test('import from hidden dir', async () => {
   expect(await page.textContent('.hidden-dir')).toBe('hello!')
@@ -135,21 +150,34 @@ test('flatten id should generate correctly', async () => {
   expect(await page.textContent('.clonedeep-dot')).toBe('clonedeep-dot')
 })
 
+test('non optimized module is not duplicated', async () => {
+  expect(
+    await page.textContent('.non-optimized-module-is-not-duplicated'),
+  ).toBe('from-absolute-path, from-relative-path')
+})
+
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([
-      // from dep-with-builtin-module-esm top-level try-catch
+      // from dep-with-builtin-module-esm
+      expect.stringMatching(/dep-with-builtin-module-esm.*is not a function/),
+      // dep-with-builtin-module-esm warnings
       expect.stringContaining(
-        'dep-with-builtin-module-esm Error: Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.'
+        'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.',
       ),
       expect.stringContaining(
-        'dep-with-builtin-module-esm Error: Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.'
+        'Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.',
       ),
-      // from dep-with-builtin-module-cjs top-level try-catch
+      // from dep-with-builtin-module-cjs
+      expect.stringMatching(/dep-with-builtin-module-cjs.*is not a function/),
+      // dep-with-builtin-module-cjs warnings
       expect.stringContaining(
-        'dep-with-builtin-module-cjs Error: Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.'
-      )
-    ])
+        'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.',
+      ),
+      expect.stringContaining(
+        'Module "path" has been externalized for browser compatibility. Cannot access "path.join" in client code.',
+      ),
+    ]),
   )
 
   expect(browserErrors.map((error) => error.message)).toEqual(
@@ -157,10 +185,6 @@ test.runIf(isServe)('error on builtin modules usage', () => {
       // from user source code
       'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
       'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
-      // from dep-with-builtin-module-esm read()
-      'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.',
-      // from dep-with-builtin-module-esm read()
-      'Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFileSync" in client code.'
-    ])
+    ]),
   )
 })

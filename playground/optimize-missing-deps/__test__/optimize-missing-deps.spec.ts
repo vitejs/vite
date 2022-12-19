@@ -1,5 +1,6 @@
 import { platform } from 'node:os'
 import fetch from 'node-fetch'
+import { expect, test } from 'vitest'
 import { port } from './serve'
 import { page, untilUpdated } from '~utils'
 

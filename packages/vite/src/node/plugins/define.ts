@@ -5,7 +5,7 @@ import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
-const nonJsRe = /\.(json)($|\?)/
+const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -20,13 +20,13 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(processEnv, {
       'process.env.': `({}).`,
       'global.process.env.': `({}).`,
-      'globalThis.process.env.': `({}).`
+      'globalThis.process.env.': `({}).`,
     })
     Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv),
     })
   }
 
@@ -43,7 +43,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
-      SSR: !!config.build.ssr
+      SSR: !!config.build.ssr,
     }
     // put import.meta.hot replacement in importMetaKeys to allow
     // users to override with config.define.
@@ -53,12 +53,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(config.env)
+      'import.meta.env': JSON.stringify(config.env),
     })
   }
 
   function generatePattern(
-    ssr: boolean
+    ssr: boolean,
   ): [Record<string, string | undefined>, RegExp | null] {
     const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
@@ -67,7 +67,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...importMetaKeys,
       ...userDefine,
       ...importMetaFallbackKeys,
-      ...(replaceProcessEnv ? processEnv : {})
+      ...(replaceProcessEnv ? processEnv : {}),
     }
 
     if (isBuild && !replaceProcessEnv) {
@@ -87,8 +87,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
               .join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
-            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
-          'gu'
+            ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
+          'gu',
         )
       : null
 
@@ -141,7 +141,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement, { contentOnly: true })
+        s.update(start, end, replacement)
       }
 
       if (!hasReplaced) {
@@ -149,6 +149,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       return transformStableResult(s, id, config)
-    }
+    },
   }
 }

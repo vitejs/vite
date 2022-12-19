@@ -1,5 +1,5 @@
 {
-  "name": "@example/my-lib",
+  "name": "@vitejs/test-my-lib",
   "private": true,
   "version": "0.0.0",
   "scripts": {

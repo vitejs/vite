@@ -12,7 +12,6 @@
     "noUnusedLocals": true,
     "esModuleInterop": true,
     "paths": {
-      "types/*": ["../vite/types/*"],
       "vite": ["../vite/src/node/index.js"]
     }
   }

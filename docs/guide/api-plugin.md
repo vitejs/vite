@@ -11,7 +11,7 @@ Vite strives to offer established patterns out of the box, so before creating a 
 When creating a plugin, you can inline it in your `vite.config.js`. There is no need to create a new package for it. Once you see that a plugin was useful in your projects, consider sharing it to help others [in the ecosystem](https://chat.vitejs.dev).
 
 ::: tip
-When learning, debugging, or authoring plugins we suggest including [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) in your project. It allows you to inspect the intermediate state of Vite plugins. After installing, you can visit `localhost:5173/__inspect/` to inspect the modules and transformation stack of your project. Check out install instructions in the [vite-plugin-inspect docs](https://github.com/antfu/vite-plugin-inspect).
+When learning, debugging, or authoring plugins, we suggest including [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) in your project. It allows you to inspect the intermediate state of Vite plugins. After installing, you can visit `localhost:5173/__inspect/` to inspect the modules and transformation stack of your project. Check out install instructions in the [vite-plugin-inspect docs](https://github.com/antfu/vite-plugin-inspect).
 ![vite-plugin-inspect](/images/vite-plugin-inspect.png)
 :::
 
@@ -48,13 +48,13 @@ import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
 export default defineConfig({
-  plugins: [vitePlugin(), rollupPlugin()]
+  plugins: [vitePlugin(), rollupPlugin()],
 })
 ```
 
 Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
 
-`plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
+`plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
 // framework-plugin
@@ -72,7 +72,7 @@ import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
 export default defineConfig({
-  plugins: [framework()]
+  plugins: [framework()],
 })
 ```
 
@@ -95,10 +95,10 @@ export default function myPlugin() {
       if (fileRegex.test(id)) {
         return {
           code: compileFileToJS(src),
-          map: null // provide source map if available
+          map: null, // provide source map if available
         }
       }
-    }
+    },
   }
 }
 ```
@@ -127,7 +127,7 @@ export default function myPlugin() {
       if (id === resolvedVirtualModuleId) {
         return `export const msg = "from virtual module"`
       }
-    }
+    },
   }
 }
 ```
@@ -188,10 +188,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     config: () => ({
       resolve: {
         alias: {
-          foo: 'bar'
-        }
-      }
-    })
+          foo: 'bar',
+        },
+      },
+    }),
   })
 
   // mutate the config directly (use only when merging doesn't work)
@@ -199,9 +199,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     name: 'mutate-config',
     config(config, { command }) {
       if (command === 'build') {
-        config.root = __dirname
+        config.root = 'foo'
       }
-    }
+    },
   })
   ```
 
@@ -214,7 +214,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(config: ResolvedConfig) => void | Promise<void>`
 - **Kind:** `async`, `parallel`
 
-  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based the command is being run.
+  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based on the command being run.
 
   **Example:**
 
@@ -237,7 +237,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
         } else {
           // build: plugin invoked by Rollup
         }
-      }
+      },
     }
   }
   ```
@@ -259,7 +259,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       server.middlewares.use((req, res, next) => {
         // custom handle request...
       })
-    }
+    },
   })
   ```
 
@@ -278,7 +278,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           // custom handle request...
         })
       }
-    }
+    },
   })
   ```
 
@@ -298,7 +298,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
         if (server) {
           // use server...
         }
-      }
+      },
     }
   }
   ```
@@ -323,13 +323,13 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           // custom handle request...
         })
       }
-    }
+    },
   })
   ```
 
 ### `transformIndexHtml`
 
-- **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post', transform: IndexHtmlTransformHook }`
+- **Type:** `IndexHtmlTransformHook | { order?: 'pre' | 'post', handler: IndexHtmlTransformHook }`
 - **Kind:** `async`, `sequential`
 
   Dedicated hook for transforming HTML entry point files such as `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
@@ -349,9 +349,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       transformIndexHtml(html) {
         return html.replace(
           /<title>(.*?)<\/title>/,
-          `<title>Title replaced!</title>`
+          `<title>Title replaced!</title>`,
         )
-      }
+      },
     }
   }
   ```
@@ -367,7 +367,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       server?: ViteDevServer
       bundle?: import('rollup').OutputBundle
       chunk?: import('rollup').OutputChunk
-    }
+    },
   ) =>
     | IndexHtmlTransformResult
     | void
@@ -459,7 +459,7 @@ By default plugins are invoked for both serve and build. In cases where a plugin
 function myPlugin() {
   return {
     name: 'build-only',
-    apply: 'build' // or 'serve'
+    apply: 'build', // or 'serve'
   }
 }
 ```
@@ -496,9 +496,9 @@ export default defineConfig({
     {
       ...example(),
       enforce: 'post',
-      apply: 'build'
-    }
-  ]
+      apply: 'build',
+    },
+  ],
 })
 ```
 
@@ -537,9 +537,9 @@ export default defineConfig({
       // ...
       configureServer(server) {
         server.ws.send('my:greetings', { msg: 'hello' })
-      }
-    }
-  ]
+      },
+    },
+  ],
 })
 ```
 
@@ -583,9 +583,9 @@ export default defineConfig({
           // reply only to the client (if needed)
           client.send('my:ack', { msg: 'Hi! I got your message!' })
         })
-      }
-    }
-  ]
+      },
+    },
+  ],
 })
 ```
 

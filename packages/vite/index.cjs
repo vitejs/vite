@@ -15,7 +15,8 @@ const asyncFunctions = [
   'resolveConfig',
   'optimizeDeps',
   'formatPostcssSourceMap',
-  'loadConfigFromFile'
+  'loadConfigFromFile',
+  'preprocessCSS',
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
@@ -27,7 +28,7 @@ const unsupportedCJS = ['resolvePackageEntry', 'resolvePackageData']
 unsupportedCJS.forEach((name) => {
   module.exports[name] = () => {
     throw new Error(
-      `"${name}" is not supported in CJS build of Vite 3.\nPlease use ESM or dynamic imports \`const { ${name} } = await import('vite')\`.`
+      `"${name}" is not supported in CJS build of Vite 3.\nPlease use ESM or dynamic imports \`const { ${name} } = await import('vite')\`.`,
     )
   }
 })

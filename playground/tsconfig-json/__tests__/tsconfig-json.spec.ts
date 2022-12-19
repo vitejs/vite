@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { transformWithEsbuild } from 'vite'
+import { describe, expect, test } from 'vitest'
 import { browserLogs } from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {
@@ -27,9 +28,9 @@ describe('transformWithEsbuild', () => {
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: {
         compilerOptions: {
-          useDefineForClassFields: false
-        }
-      }
+          useDefineForClassFields: false,
+        },
+      },
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
     expect(result.code).toContain('import "./not-used-type";')
@@ -43,7 +44,7 @@ describe('transformWithEsbuild', () => {
         "compilerOptions": {
           "useDefineForClassFields": false
         }
-      }`
+      }`,
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should not be read
     // and defaults to "remove"
@@ -57,13 +58,13 @@ describe('transformWithEsbuild', () => {
       tsconfigRaw: {
         compilerOptions: {
           useDefineForClassFields: false,
-          preserveValueImports: true
-        }
-      }
+          preserveValueImports: true,
+        },
+      },
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
     expect(result.code).toContain(
-      'import { MainTypeOnlyClass } from "./not-used-type";'
+      'import { MainTypeOnlyClass } from "./not-used-type";',
     )
   })
 })

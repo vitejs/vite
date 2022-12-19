@@ -9,9 +9,10 @@ permissions:
 
 jobs:
   action:
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/lock-threads@v3
+      - uses: dessant/lock-threads@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           issue-inactive-days: "14"

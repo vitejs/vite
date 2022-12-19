@@ -4,14 +4,15 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [vuePlugin()],
   build: {
+    outDir: 'dist/normal',
     minify: 'terser',
     terserOptions: {
       format: {
-        beautify: true
+        beautify: true,
       },
       compress: {
-        passes: 3
-      }
-    }
-  }
+        passes: 3,
+      },
+    },
+  },
 })

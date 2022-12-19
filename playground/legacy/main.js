@@ -1,5 +1,6 @@
 import './style.css'
-import './vite.svg'
+import viteSvgPath from './vite.svg'
+import MyWorker from './worker?worker'
 
 async function run() {
   const { fn } = await import('./async.js')
@@ -25,7 +26,7 @@ text('#iterators', [...new Set(['hello'])].join(''))
 // structuredClone is supported core.js v3.20.0+
 text(
   '#features-after-corejs-3',
-  JSON.stringify(structuredClone({ foo: 'foo' }))
+  JSON.stringify(structuredClone({ foo: 'foo' })),
 )
 
 // babel-helpers
@@ -33,7 +34,7 @@ text(
 // helpers.
 text(
   '#babel-helpers',
-  String.raw`exposed babel helpers: ${window._templateObject != null}`
+  String.raw`exposed babel helpers: ${window._templateObject != null}`,
 )
 
 // dynamic chunk names
@@ -51,6 +52,14 @@ document
     text('#dynamic-css', 'dynamic import css')
   })
 
+text('#asset-path', viteSvgPath)
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
+
+const worker = new MyWorker()
+worker.postMessage('ping')
+worker.addEventListener('message', (ev) => {
+  text('.worker-message', JSON.stringify(ev.data))
+})

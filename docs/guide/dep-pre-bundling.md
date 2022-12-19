@@ -47,20 +47,20 @@ However, this requires the linked dep to be exported as ESM. If not, you can add
 ```js
 export default defineConfig({
   optimizeDeps: {
-    include: ['linked-dep']
+    include: ['linked-dep'],
   },
   build: {
     commonjsOptions: {
-      include: [/linked-dep/, /node_modules/]
-    }
-  }
+      include: [/linked-dep/, /node_modules/],
+    },
+  },
 })
 ```
 
 When making changes to the linked dep, restart the dev server with the `--force` command line option for the changes to take effect.
 
 ::: warning Deduping
-Due to differences in linked dependency resolution, transitive dependencies can deduplicated incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
+Due to differences in linked dependency resolution, transitive dependencies can deduplicate incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
 :::
 
 ## Customizing the Behavior
@@ -77,9 +77,10 @@ Both `include` and `exclude` can be used to deal with this. If the dependency is
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- The `dependencies` list in your `package.json`.
-- Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lockb`.
+- Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
+- `NODE_ENV` value.
 
 The pre-bundling step will only need to be re-run when one of the above has changed.
 

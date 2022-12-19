@@ -1,11 +1,11 @@
 {
-  "name": "test-fs-serve",
+  "name": "@vitejs/test-fs-serve",
   "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite root",
     "build": "vite build root",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview root"
   }
 }

@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execaCommandSync } from 'execa'
+import { describe, expect, it } from 'vitest'
 import { isBuild, testDir, viteBinPath } from '~utils'
 
 const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
@@ -12,7 +13,7 @@ const build = (configName: string) => {
 const getDistFile = (configName: string, extension: string) => {
   return fs.readFileSync(
     fromTestDir(`${configName}/dist/index.${extension}`),
-    'utf8'
+    'utf8',
   )
 }
 

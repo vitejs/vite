@@ -6,8 +6,8 @@ const timeout = process.env.CI ? 50000 : 30000
 export default defineConfig({
   resolve: {
     alias: {
-      '~utils': resolve(__dirname, './playground/test-utils')
-    }
+      '~utils': resolve(__dirname, './playground/test-utils'),
+    },
   },
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
@@ -15,14 +15,13 @@ export default defineConfig({
     globalSetup: ['./playground/vitestGlobalSetup.ts'],
     testTimeout: timeout,
     hookTimeout: timeout,
-    globals: true,
     reporters: 'dot',
     onConsoleLog(log) {
       if (log.match(/experimental|jit engine|emitted file|tailwind/i))
         return false
-    }
+    },
   },
   esbuild: {
-    target: 'node14'
-  }
+    target: 'node14',
+  },
 })

@@ -16,9 +16,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
        manifest: true,
        rollupOptions: {
          // overwrite default .html entry
-         input: '/path/to/main.js'
-       }
-     }
+         input: '/path/to/main.js',
+       },
+     },
    })
    ```
 
@@ -33,6 +33,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```html
    <!-- if development -->
+   <script type="module" src="http://localhost:5173/@vite/client"></script>
    <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
@@ -82,7 +83,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - The manifest has a `Record<name, chunk>` structure
    - For entry or dynamic entry chunks, the key is the relative src path from project root.
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
-   - Chunks will contain information on its static and dynamic imports (both are keys that maps to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
+   - Chunks will contain information on its static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
 
    You can use this file to render links or preload directives with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
 

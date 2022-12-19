@@ -12,6 +12,8 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.DEV`**: {boolean} whether the app is running in development (always the opposite of `import.meta.env.PROD`)
 
+- **`import.meta.env.SSR`**: {boolean} whether the app is running in the [server](./ssr.md#conditional-logic).
+
 ### Production Replacement
 
 During production, these env variables are **statically replaced**. It is therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
@@ -44,16 +46,32 @@ In addition, environment variables that already exist when Vite is executed have
 
 Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
+To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. for the following env variables:
 
 ```
-DB_PASSWORD=foobar
 VITE_SOME_KEY=123
+DB_PASSWORD=foobar
 ```
 
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
 
-If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
+```js
+console.log(import.meta.env.VITE_SOME_KEY) // 123
+console.log(import.meta.env.DB_PASSWORD) // undefined
+```
+
+Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
+
+Note that if you want to use `$` inside your environment value, you have to escape it with `\`.
+
+```
+KEY=123
+NEW_KEY1=test$foo   # test
+NEW_KEY2=test\$foo  # test$foo
+NEW_KEY3=test$KEY   # test123
+```
+
+If you want to customize the env variables prefix, see the [envPrefix](/config/shared-options.html#envprefix) option.
 
 :::warning SECURITY NOTES
 
@@ -64,9 +82,9 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 
 ### IntelliSense for TypeScript
 
-By default, Vite provides type definition for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables which prefixed with `VITE_`.
+By default, Vite provides type definitions for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables that are prefixed with `VITE_`.
 
-To achieve, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+To achieve this, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
 /// <reference types="vite/client" />
@@ -91,7 +109,7 @@ If your code relies on types from browser environments such as [DOM](https://git
 
 ## Modes
 
-By default, the dev server (`dev` command) runs in `development` mode and the `build` command run in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode and the `build` command runs in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 
@@ -102,20 +120,22 @@ VITE_APP_TITLE=My App
 
 In your app, you can render the title using `import.meta.env.VITE_APP_TITLE`.
 
-However, it is important to understand that **mode** is a wider concept than just development vs. production. A typical example is you may want to have a "staging" mode where it should have production-like behavior, but with slightly different env variables from production.
-
-You can overwrite the default mode used for a command by passing the `--mode` option flag. For example, if you want to build your app for our hypothetical staging mode:
+In some cases, you may want to run `vite build` with a different mode to render a different title. You can overwrite the default mode used for a command by passing the `--mode` option flag. For example, if you want to build your app for a staging mode:
 
 ```bash
 vite build --mode staging
 ```
 
-And to get the behavior we want, we need a `.env.staging` file:
+And create a `.env.staging` file:
 
 ```
 # .env.staging
-NODE_ENV=production
 VITE_APP_TITLE=My App (staging)
 ```
 
-Now your staging app should have production-like behavior, but display a different title from production.
+As `vite build` runs a production build by default, you can also change this and run a development build by using a different mode and `.env` file configuration:
+
+```
+# .env.testing
+NODE_ENV=development
+```

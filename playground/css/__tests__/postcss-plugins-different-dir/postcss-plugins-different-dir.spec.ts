@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { createServer } from 'vite'
+import { expect, test } from 'vitest'
 import { getBgColor, getColor, page, ports } from '~utils'
 
 // Regression test for https://github.com/vitejs/vite/issues/4000
@@ -10,12 +11,12 @@ test('postcss plugins in different dir', async () => {
     logLevel: 'silent',
     server: {
       port,
-      strictPort: true
+      strictPort: true,
     },
     build: {
       // skip transpilation during tests to make it faster
-      target: 'esnext'
-    }
+      target: 'esnext',
+    },
   })
   await server.listen()
   try {

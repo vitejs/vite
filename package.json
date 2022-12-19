@@ -1,8 +1,8 @@
 {
-  "name": "vite-monorepo",
+  "name": "@vitejs/vite-monorepo",
   "private": true,
   "engines": {
-    "node": ">=14.18.0"
+    "node": "^14.18.0 || >=16.0.0"
   },
   "homepage": "https://vitejs.dev/",
   "keywords": [
@@ -16,87 +16,84 @@
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
     "format": "prettier --write --cache .",
-    "lint": "eslint --cache packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**",
-    "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
+    "lint": "eslint --cache .",
+    "typecheck": "tsc -p scripts --noEmit && pnpm -r --parallel run typecheck",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
-    "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
-    "test-build-legacy-cjs": "cross-env VITE_TEST_LEGACY_CJS_PLUGIN=1 pnpm test-build",
+    "test-build": "VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
+    "test-build-without-plugin-commonjs": "VITE_TEST_WITHOUT_PLUGIN_COMMONJS=1 pnpm test-build",
     "test-unit": "vitest run",
     "test-docs": "pnpm run docs-build",
-    "debug-serve": "cross-env VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
-    "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
+    "debug-serve": "VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
+    "debug-build": "VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
     "docs": "vitepress dev docs",
     "docs-build": "vitepress build docs",
     "docs-serve": "vitepress serve docs",
-    "build": "pnpm -r --filter=./packages/* run build",
-    "dev": "pnpm -r --parallel --filter=./packages/* run dev",
+    "build": "pnpm -r --filter='./packages/*' run build",
+    "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
     "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publishCI.ts",
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.18.7",
-    "@microsoft/api-extractor": "^7.28.2",
-    "@rollup/plugin-typescript": "^8.3.3",
-    "@types/babel__core": "^7.1.19",
+    "@babel/types": "^7.20.5",
+    "@microsoft/api-extractor": "^7.33.7",
+    "@rollup/plugin-typescript": "^10.0.1",
+    "@types/babel__core": "^7.1.20",
     "@types/babel__standalone": "^7.1.4",
-    "@types/convert-source-map": "^1.5.2",
+    "@types/convert-source-map": "^2.0.0",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",
-    "@types/estree": "^0.0.52",
+    "@types/estree": "^1.0.0",
     "@types/etag": "^1.8.1",
     "@types/fs-extra": "^9.0.13",
-    "@types/hash-sum": "^1.0.0",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
-    "@types/mime": "^2.0.3",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^17.0.42",
-    "@types/prompts": "^2.4.0",
+    "@types/node": "^18.11.13",
+    "@types/picomatch": "^2.3.0",
+    "@types/prompts": "^2.4.2",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
-    "@types/semver": "^7.3.10",
+    "@types/semver": "^7.3.13",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.30.4",
-    "@typescript-eslint/parser": "^5.30.4",
+    "@typescript-eslint/eslint-plugin": "^5.46.0",
+    "@typescript-eslint/parser": "^5.46.0",
     "conventional-changelog-cli": "^2.2.2",
-    "cross-env": "^7.0.3",
-    "esbuild": "^0.14.47",
-    "eslint": "^8.19.0",
-    "eslint-define-config": "^1.5.1",
+    "esbuild": "^0.16.3",
+    "eslint": "^8.29.0",
+    "eslint-define-config": "^1.12.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-regexp": "^1.11.0",
     "execa": "^6.1.0",
-    "fs-extra": "^10.1.0",
-    "kill-port": "^1.6.1",
-    "lint-staged": "^13.0.3",
-    "minimist": "^1.2.6",
-    "node-fetch": "^3.2.6",
+    "fast-glob": "^3.2.12",
+    "fs-extra": "^11.1.0",
+    "lint-staged": "^13.1.0",
+    "minimist": "^1.2.7",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.23.1",
-    "pnpm": "^7.5.0",
-    "prettier": "2.7.1",
+    "playwright-chromium": "^1.28.1",
+    "pnpm": "^7.18.1",
+    "prettier": "2.8.1",
     "prompts": "^2.4.2",
+    "resolve": "^1.22.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.75.6",
-    "semver": "^7.3.7",
-    "simple-git-hooks": "^2.8.0",
-    "sirv": "^2.0.2",
-    "tslib": "^2.4.0",
-    "tsx": "^3.7.1",
-    "typescript": "^4.6.4",
-    "unbuild": "^0.7.4",
+    "rollup": "^3.7.0",
+    "semver": "^7.3.8",
+    "simple-git-hooks": "^2.8.1",
+    "tslib": "^2.4.1",
+    "tsx": "^3.12.1",
+    "typescript": "^4.9.3",
+    "unbuild": "^0.9.4",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.4",
-    "vitest": "^0.17.0",
-    "vue": "^3.2.37"
+    "vitepress": "^1.0.0-alpha.31",
+    "vitest": "^0.25.7",
+    "vue": "^3.2.45"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec lint-staged --concurrent false",
-    "commit-msg": "pnpm exec tsx scripts/verifyCommit.ts $1"
+    "pre-commit": "pnpm exec lint-staged --concurrent false"
   },
   "lint-staged": {
     "*": [
@@ -112,18 +109,26 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.5.0",
+  "packageManager": "pnpm@7.18.1",
   "pnpm": {
     "overrides": {
-      "vite": "workspace:*",
-      "@vitejs/plugin-vue": "workspace:*"
+      "vite": "workspace:*"
     },
     "packageExtensions": {
       "postcss-load-config": {
         "peerDependencies": {
           "postcss": "*"
         }
+      },
+      "acorn-walk": {
+        "peerDependencies": {
+          "acorn": "*"
+        }
       }
+    },
+    "patchedDependencies": {
+      "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch",
+      "sirv@2.0.2": "patches/sirv@2.0.2.patch"
     }
   }
 }

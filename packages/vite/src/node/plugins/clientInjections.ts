@@ -17,6 +17,14 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:client-inject',
     async transform(code, id, options) {
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
+        const resolvedServerHostname = (
+          await resolveHostname(config.server.host)
+        ).name
+        const resolvedServerPort = config.server.port!
+        const devBase = config.base
+
+        const serverHost = `${resolvedServerHostname}:${resolvedServerPort}${devBase}`
+
         let hmrConfig = config.server.hmr
         hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
         const host = hmrConfig?.host || null
@@ -31,10 +39,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           port ||= 24678
         }
 
-        const devBase = config.base
-        let directTarget =
-          hmrConfig?.host || (await resolveHostname(config.server.host)).name
-        directTarget += `:${hmrConfig?.port || config.server.port!}`
+        let directTarget = hmrConfig?.host || resolvedServerHostname
+        directTarget += `:${hmrConfig?.port || resolvedServerPort}`
         directTarget += devBase
 
         let hmrBase = devBase
@@ -44,8 +50,9 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
-          .replace(`__BASE__`, JSON.stringify(devBase))
+          .replace(/__BASE__/g, JSON.stringify(devBase))
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
+          .replace(`__SERVER_HOST__`, JSON.stringify(serverHost))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
           .replace(`__HMR_PORT__`, JSON.stringify(port))
@@ -60,10 +67,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         return code.replace(
           /\bprocess\.env\.NODE_ENV\b/g,
           config.define?.['process.env.NODE_ENV'] ||
-            JSON.stringify(process.env.NODE_ENV || config.mode)
+            JSON.stringify(process.env.NODE_ENV || config.mode),
         )
       }
-    }
+    },
   }
 }
 

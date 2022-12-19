@@ -1,5 +1,5 @@
 {
-  "name": "resolve-custom-condition",
+  "name": "@vitejs/test-resolve-custom-condition",
   "private": true,
   "version": "1.0.0",
   "main": "index.js",

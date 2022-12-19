@@ -1,12 +1,11 @@
 import { extname } from 'node:path'
-import { parse as parseUrl } from 'node:url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
   normalizePath,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
@@ -62,7 +61,7 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
 export type ResolvedUrl = [
   url: string,
   resolvedId: string,
-  meta: object | null | undefined
+  meta: object | null | undefined,
 ]
 
 export class ModuleGraph {
@@ -75,13 +74,13 @@ export class ModuleGraph {
   constructor(
     private resolveId: (
       url: string,
-      ssr: boolean
-    ) => Promise<PartialResolvedId | null>
+      ssr: boolean,
+    ) => Promise<PartialResolvedId | null>,
   ) {}
 
   async getModuleByUrl(
     rawUrl: string,
-    ssr?: boolean
+    ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     const [url] = await this.resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
@@ -108,7 +107,7 @@ export class ModuleGraph {
   invalidateModule(
     mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
-    timestamp: number = Date.now()
+    timestamp: number = Date.now(),
   ): void {
     // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
     // processing being done for this module
@@ -140,7 +139,7 @@ export class ModuleGraph {
     acceptedModules: Set<string | ModuleNode>,
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
-    ssr?: boolean
+    ssr?: boolean,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
@@ -183,10 +182,10 @@ export class ModuleGraph {
   async ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
-    setIsSelfAccepting = true
+    setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.urlToModuleMap.get(url)
+    let mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -200,6 +199,11 @@ export class ModuleGraph {
         this.fileToModulesMap.set(file, fileMappedModules)
       }
       fileMappedModules.add(mod)
+    }
+    // multiple urls can map to the same module and id, make sure we register
+    // the url to the existing module in that case
+    else if (!this.urlToModuleMap.has(url)) {
+      this.urlToModuleMap.set(url, mod)
     }
     return mod
   }
@@ -237,10 +241,16 @@ export class ModuleGraph {
     url = removeImportQuery(removeTimestampQuery(url))
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
-    const ext = extname(cleanUrl(resolvedId))
-    const { pathname, search, hash } = parseUrl(url)
-    if (ext && !pathname!.endsWith(ext)) {
-      url = pathname + ext + (search || '') + (hash || '')
+    if (
+      url !== resolvedId &&
+      !url.includes('\0') &&
+      !url.startsWith(`virtual:`)
+    ) {
+      const ext = extname(cleanUrl(resolvedId))
+      const { pathname, search, hash } = new URL(url, 'relative://')
+      if (ext && !pathname!.endsWith(ext)) {
+        url = pathname + ext + search + hash
+      }
     }
     return [url, resolvedId, resolved?.meta]
   }

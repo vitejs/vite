@@ -6,6 +6,8 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
   # install playwright binary manually (because pnpm only runs install script once)
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+  # Vitest auto retry on flaky segfault
+  VITEST_SEGFAULT_RETRY: 3
 
 on:
   push:
@@ -17,7 +19,12 @@ on:
       - perf/*
       - v1
       - v2
+      - v2.*
+      - v3.*
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "packages/create-vite/**"
   workflow_dispatch:
 
 concurrency:
@@ -35,9 +42,9 @@ jobs:
         include:
           # Active LTS + other OS
           - os: macos-latest
-            node_version: 16
+            node_version: 18
           - os: windows-latest
-            node_version: 16
+            node_version: 18
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
@@ -46,7 +53,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.2
+        uses: pnpm/action-setup@v2.2.4
 
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v3
@@ -58,23 +65,29 @@ jobs:
         run: pnpm install
 
       # Install playwright's binary under custom directory to cache
-      - name: Set Playwright path (non-windows)
+      - name: (non-windows) Set Playwright path and Get playwright version
         if: runner.os != 'Windows'
-        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
-      - name: Set Playwright path (windows)
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
+          PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
+          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
+      - name: (windows) Set Playwright path and Get playwright version
         if: runner.os == 'Windows'
-        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
+          $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies[\"playwright-chromium\"].version')"
+          echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
-          # Playwright removes unused browsers automatically
-          # So does not need to add playwright version to key
-          key: ${{ runner.os }}-playwright-bin-v1
+          key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-bin-v1-
 
       - name: Install Playwright
-        # does not need to explictly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
+        # does not need to explicitly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
         run: pnpm playwright install chromium
 
       - name: Build
@@ -88,39 +101,3 @@ jobs:
 
       - name: Test build
         run: pnpm run test-build
-
-      - name: Test docs
-        run: pnpm run test-docs
-
-  lint:
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    name: "Lint: node-16, ubuntu-latest"
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.2
-
-      - name: Set node version to 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "pnpm"
-
-      - name: Install deps
-        run: pnpm install
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Check formatting
-        run: pnpm prettier --check .
-
-      - name: Typecheck
-        run: pnpm run typecheck
