@@ -1,5 +1,5 @@
 {
-  "name": "test-ssr-html",
+  "name": "@vitejs/test-ssr-html",
   "private": true,
   "version": "0.0.0",
   "type": "module",

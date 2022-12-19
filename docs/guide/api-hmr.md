@@ -25,18 +25,17 @@ interface ViteHotContext {
   accept(dep: string, cb: (mod: ModuleNamespace | undefined) => void): void
   accept(
     deps: readonly string[],
-    cb: (mods: Array<ModuleNamespace | undefined>) => void
+    cb: (mods: Array<ModuleNamespace | undefined>) => void,
   ): void
 
   dispose(cb: (data: any) => void): void
   prune(cb: (data: any) => void): void
-  decline(): void
   invalidate(message?: string): void
 
   // `InferCustomEventPayload` provides types for built-in Vite events
   on<T extends string>(
     event: T,
-    cb: (payload: InferCustomEventPayload<T>) => void
+    cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }
@@ -95,8 +94,8 @@ if (import.meta.hot) {
     ['./foo.js', './bar.js'],
     ([newFooModule, newBarModule]) => {
       // The callback receives an array where only the updated module is non null
-      // If the update was not succeful (syntax error for ex.), the array is empty
-    }
+      // If the update was not successful (syntax error for ex.), the array is empty
+    },
   )
 }
 ```
@@ -119,9 +118,13 @@ if (import.meta.hot) {
 
 ## `hot.prune(cb)`
 
-Register a callback that will call when the module is no longer imported on the page. This can be used to clean up side effects like style injections. Vite already does this for `.css` imports.
+Register a callback that will call when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
 
 ```js
+function setupOrReuseSideEffect() {}
+
+setupOrReuseSideEffect()
+
 if (import.meta.hot) {
   import.meta.hot.prune((data) => {
     // cleanup side effect
@@ -135,7 +138,7 @@ The `import.meta.hot.data` object is persisted across different instances of the
 
 ## `hot.decline()`
 
-Calling `import.meta.hot.decline()` indicates this module is not hot-updatable, and the browser should perform a full reload if this module is encountered while propagating HMR updates.
+This is currently a noop and is there for backward compatibility. This could change in the future if there is a new usage for it. To indicate that the module is not hot-updatable, use `hot.invalidate()`.
 
 ## `hot.invalidate(message?: string)`
 

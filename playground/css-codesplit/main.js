@@ -9,7 +9,7 @@ import('./inline.css?inline').then((css) => {
 
 import('./mod.module.css').then((css) => {
   document.querySelector('.dynamic-module').textContent = JSON.stringify(
-    css.default
+    css.default,
   )
   document.querySelector('.mod').classList.add(css.default.mod)
 })

@@ -17,39 +17,39 @@ describe.runIf(isBuild)('build', () => {
     const worker = files.find((f) => /^my-worker-\w+\.js$/.test(f))
     const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
-      'utf-8'
+      'utf-8',
     )
     const workerSourcemap = getSourceMapUrl(workerContent)
     const sharedWorker = files.find((f) => /^my-shared-worker-\w+\.js$/.test(f))
     const sharedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, sharedWorker),
-      'utf-8'
+      'utf-8',
     )
     const sharedWorkerSourcemap = getSourceMapUrl(sharedWorkerContent)
     const possibleTsOutputWorker = files.find((f) =>
-      /^possible-ts-output-worker-\w+\.js$/.test(f)
+      /^possible-ts-output-worker-\w+\.js$/.test(f),
     )
     const possibleTsOutputWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, possibleTsOutputWorker),
-      'utf-8'
+      'utf-8',
     )
     const possibleTsOutputWorkerSourcemap = getSourceMapUrl(
-      possibleTsOutputWorkerContent
+      possibleTsOutputWorkerContent,
     )
     const workerNestedWorker = files.find((f) =>
-      /^worker-nested-worker-\w+\.js$/.test(f)
+      /^worker-nested-worker-\w+\.js$/.test(f),
     )
     const workerNestedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, workerNestedWorker),
-      'utf-8'
+      'utf-8',
     )
     const workerNestedWorkerSourcemap = getSourceMapUrl(
-      workerNestedWorkerContent
+      workerNestedWorkerContent,
     )
     const subWorker = files.find((f) => /^sub-worker-\w+\.js$/.test(f))
     const subWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, subWorker),
-      'utf-8'
+      'utf-8',
     )
     const subWorkerSourcemap = getSourceMapUrl(subWorkerContent)
 
@@ -71,17 +71,17 @@ describe.runIf(isBuild)('build', () => {
 
     // chunk
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap-inline/assets/my-worker`
+      `new Worker("/iife-sourcemap-inline/assets/my-worker`,
     )
     expect(content).toMatch(`new Worker("data:application/javascript;base64`)
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap-inline/assets/possible-ts-output-worker`
+      `new Worker("/iife-sourcemap-inline/assets/possible-ts-output-worker`,
     )
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap-inline/assets/worker-nested-worker`
+      `new Worker("/iife-sourcemap-inline/assets/worker-nested-worker`,
     )
     expect(content).toMatch(
-      `new SharedWorker("/iife-sourcemap-inline/assets/my-shared-worker`
+      `new SharedWorker("/iife-sourcemap-inline/assets/my-shared-worker`,
     )
 
     // inlined
@@ -89,7 +89,7 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`window.Blob`)
 
     expect(workerNestedWorkerContent).toMatch(
-      `new Worker("/iife-sourcemap-inline/assets/sub-worker`
+      `new Worker("/iife-sourcemap-inline/assets/sub-worker`,
     )
   })
 })

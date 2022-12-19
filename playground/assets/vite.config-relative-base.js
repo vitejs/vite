@@ -16,11 +16,11 @@ module.exports = {
       output: {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        assetFileNames: 'other-assets/[name]-[hash][extname]'
-      }
-    }
+        assetFileNames: 'other-assets/[name]-[hash][extname]',
+      },
+    },
   },
   testConfig: {
-    baseRoute: '/relative-base/'
-  }
+    baseRoute: '/relative-base/',
+  },
 }

@@ -20,13 +20,13 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(processEnv, {
       'process.env.': `({}).`,
       'global.process.env.': `({}).`,
-      'globalThis.process.env.': `({}).`
+      'globalThis.process.env.': `({}).`,
     })
     Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv),
     })
   }
 
@@ -43,20 +43,21 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
-      SSR: !!config.build.ssr
+      SSR: !!config.build.ssr,
     }
+    // set here to allow override with config.define
+    importMetaKeys['import.meta.hot'] = `false`
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`
     })
   }
 
   function generatePattern(
-    ssr: boolean
+    ssr: boolean,
   ): [Record<string, string | undefined>, RegExp | null] {
     const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
@@ -65,7 +66,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...importMetaKeys,
       ...userDefine,
       ...importMetaFallbackKeys,
-      ...(replaceProcessEnv ? processEnv : {})
+      ...(replaceProcessEnv ? processEnv : {}),
     }
 
     if (isBuild && !replaceProcessEnv) {
@@ -85,8 +86,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
               .join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
-            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
-          'gu'
+            ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
+          'gu',
         )
       : null
 
@@ -147,6 +148,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       return transformStableResult(s, id, config)
-    }
+    },
   }
 }

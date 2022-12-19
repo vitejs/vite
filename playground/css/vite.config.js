@@ -1,28 +1,34 @@
 const path = require('node:path')
 
+// trigger scss bug: https://github.com/sass/dart-sass/issues/710
+// make sure Vite handles safely
+globalThis.window = {}
+globalThis.location = new URL('http://localhost/')
+
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
   build: {
-    cssTarget: 'chrome61'
+    cssTarget: 'chrome61',
   },
   esbuild: {
     logOverride: {
-      'unsupported-css-property': 'silent'
-    }
+      'unsupported-css-property': 'silent',
+    },
   },
   resolve: {
     alias: {
       '=': __dirname,
       spacefolder: __dirname + '/folder with space',
       '#alias': __dirname + '/aliased/foo.css',
-      '#alias-module': __dirname + '/aliased/bar.module.css'
-    }
+      '#alias?inline': __dirname + '/aliased/foo.css?inline',
+      '#alias-module': __dirname + '/aliased/bar.module.css',
+    },
   },
   css: {
     modules: {
-      generateScopedName: '[name]__[local]___[hash:base64:5]'
+      generateScopedName: '[name]__[local]___[hash:base64:5]',
 
       // example of how getJSON can be used to generate
       // typescript typings for css modules class names
@@ -51,16 +57,16 @@ module.exports = {
           },
           function (url) {
             return url.endsWith('.wxss') ? { contents: '' } : null
-          }
-        ]
+          },
+        ],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,
         imports: [
           './options/relative-import.styl',
-          path.join(__dirname, 'options/absolute-import.styl')
-        ]
-      }
-    }
-  }
+          path.join(__dirname, 'options/absolute-import.styl'),
+        ],
+      },
+    },
+  },
 }

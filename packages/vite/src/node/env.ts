@@ -1,18 +1,18 @@
 import fs from 'node:fs'
-import dotenv from 'dotenv'
-import dotenvExpand from 'dotenv-expand'
+import { parse } from 'dotenv'
+import { expand } from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'
 import type { UserConfig } from './config'
 
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string | string[] = 'VITE_'
+  prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
-        `the .local postfix for .env files.`
+        `the .local postfix for .env files.`,
     )
   }
   prefixes = arraify(prefixes)
@@ -21,48 +21,43 @@ export function loadEnv(
     /** default file */ `.env`,
     /** local file */ `.env.local`,
     /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`
+    /** mode local file */ `.env.${mode}.local`,
   ]
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((file) => {
       const path = lookupFile(envDir, [file], {
         pathOnly: true,
-        rootDir: envDir
+        rootDir: envDir,
       })
       if (!path) return []
-      return Object.entries(
-        dotenv.parse(fs.readFileSync(path), {
-          debug: process.env.DEBUG?.includes('vite:dotenv')
-        })
-      )
-    })
+      return Object.entries(parse(fs.readFileSync(path)))
+    }),
   )
 
-  // let environment variables use each other
-  const expandParsed = dotenvExpand({
-    parsed: {
-      ...(process.env as any),
-      ...parsed
-    },
-    // prevent process.env mutation
-    ignoreProcessEnv: true
-  } as any).parsed!
+  // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
+  if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
+    process.env.VITE_USER_NODE_ENV = parsed.NODE_ENV
+  }
 
-  Object.keys(parsed).forEach((key) => {
-    parsed[key] = expandParsed[key]
-  })
+  try {
+    // let environment variables use each other
+    expand({ parsed })
+  } catch (e) {
+    // custom error handling until https://github.com/motdotla/dotenv-expand/issues/65 is fixed upstream
+    // check for message "TypeError: Cannot read properties of undefined (reading 'split')"
+    if (e.message.includes('split')) {
+      throw new Error(
+        'dotenv-expand failed to expand env vars. Maybe you need to escape `$`?',
+      )
+    }
+    throw e
+  }
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = value
-    } else if (
-      key === 'NODE_ENV' &&
-      process.env.VITE_USER_NODE_ENV === undefined
-    ) {
-      // NODE_ENV override in .env file
-      process.env.VITE_USER_NODE_ENV = value
     }
   }
 
@@ -78,12 +73,12 @@ export function loadEnv(
 }
 
 export function resolveEnvPrefix({
-  envPrefix = 'VITE_'
+  envPrefix = 'VITE_',
 }: UserConfig): string[] {
   envPrefix = arraify(envPrefix)
   if (envPrefix.some((prefix) => prefix === '')) {
     throw new Error(
-      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`
+      `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
     )
   }
   return envPrefix
