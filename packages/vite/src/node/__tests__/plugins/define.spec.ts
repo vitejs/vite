@@ -39,4 +39,19 @@ describe('definePlugin', () => {
       'const isSSR = false;',
     )
   })
+
+  test('preserve import.meta.hot with override', async () => {
+    // assert that the default behavior is to replace import.meta.hot with false
+    const transform = await createDefinePluginTransform()
+    expect(await transform('const isHot = import.meta.hot;')).toBe(
+      'const isHot = false;',
+    )
+    // assert that we can specify a user define to preserve import.meta.hot
+    const overrideTransform = await createDefinePluginTransform({
+      'import.meta.hot': 'import.meta.hot',
+    })
+    expect(await overrideTransform('const isHot = import.meta.hot;')).toBe(
+      'const isHot = import.meta.hot;',
+    )
+  })
 })
