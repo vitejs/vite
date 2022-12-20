@@ -55,8 +55,7 @@ export async function initDepsOptimizer(
   server?: ViteDevServer,
 ): Promise<void> {
   // Non Dev SSR Optimizer
-  const ssr = config.command === 'build' && !!config.build.ssr
-  if (!getDepsOptimizer(config, ssr)) {
+  if (!getDepsOptimizer(config)) {
     await createDepsOptimizer(config, server)
   }
 }
