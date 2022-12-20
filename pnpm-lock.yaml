@@ -878,6 +878,7 @@ importers:
       '@vitejs/test-forwarded-export': file:./forwarded-export
       '@vitejs/test-import-builtin-cjs': file:./import-builtin-cjs
       '@vitejs/test-linked-no-external': link:./linked-no-external
+      '@vitejs/test-module-condition': file:./module-condition
       '@vitejs/test-no-external-cjs': file:./no-external-cjs
       '@vitejs/test-no-external-css': file:./no-external-css
       '@vitejs/test-non-optimized-with-nested-external': file:./non-optimized-with-nested-external
@@ -901,6 +902,7 @@ importers:
       '@vitejs/test-forwarded-export': file:playground/ssr-deps/forwarded-export
       '@vitejs/test-import-builtin-cjs': file:playground/ssr-deps/import-builtin-cjs
       '@vitejs/test-linked-no-external': link:linked-no-external
+      '@vitejs/test-module-condition': file:playground/ssr-deps/module-condition
       '@vitejs/test-no-external-cjs': file:playground/ssr-deps/no-external-cjs
       '@vitejs/test-no-external-css': file:playground/ssr-deps/no-external-css
       '@vitejs/test-non-optimized-with-nested-external': file:playground/ssr-deps/non-optimized-with-nested-external
@@ -945,6 +947,9 @@ importers:
     specifiers: {}
 
   playground/ssr-deps/linked-no-external:
+    specifiers: {}
+
+  playground/ssr-deps/module-condition:
     specifiers: {}
 
   playground/ssr-deps/nested-external:
@@ -8749,6 +8754,12 @@ packages:
   file:playground/ssr-deps/import-builtin-cjs:
     resolution: {directory: playground/ssr-deps/import-builtin-cjs, type: directory}
     name: '@vitejs/test-import-builtin'
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/module-condition:
+    resolution: {directory: playground/ssr-deps/module-condition, type: directory}
+    name: '@vitejs/test-module-condition'
     version: 0.0.0
     dev: false
 
