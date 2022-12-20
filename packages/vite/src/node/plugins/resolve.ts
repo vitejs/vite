@@ -26,7 +26,6 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isFileReadable,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
@@ -36,6 +35,7 @@ import {
   lookupFile,
   nestedResolveFrom,
   normalizePath,
+  readMode,
   resolveFrom,
   slash,
 } from '../utils'
@@ -531,8 +531,9 @@ function tryResolveFile(
   tryPrefix?: string,
   skipPackageJson?: boolean,
 ): string | undefined {
-  if (isFileReadable(file)) {
-    if (!fs.statSync(file).isDirectory()) {
+  const stat = fs.statSync(file, { throwIfNoEntry: false })
+  if (stat && (stat.mode & readMode) > 0) {
+    if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
     } else if (tryIndex) {
       if (!skipPackageJson) {
