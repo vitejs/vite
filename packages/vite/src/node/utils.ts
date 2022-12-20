@@ -536,8 +536,12 @@ export function writeFile(
 }
 
 export function isFileReadable(filename: string): boolean {
-  const stat = fs.statSync(filename, { throwIfNoEntry: false })
-  return stat ? (stat.mode & fs.constants.S_IRUSR) > 0 : false
+  try {
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
+  } catch {
+    return false
+  }
 }
 
 const splitFirstDirRE = /(.+?)[\\/](.+)/

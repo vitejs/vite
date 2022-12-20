@@ -531,7 +531,7 @@ function tryResolveFile(
   skipPackageJson?: boolean,
 ): string | undefined {
   const stat = fs.statSync(file, { throwIfNoEntry: false })
-  if (stat && (stat.mode & fs.constants.S_IRUSR) > 0) {
+  if (stat) {
     if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
     } else if (tryIndex) {
