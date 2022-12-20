@@ -85,20 +85,25 @@ export default defineConfig(async ({ command, mode }) => {
 
 ## Hot reload monorepos packages
 
-To have your library packages hot reload in local dev, add an alias to resolve to your package.
+To have your library packages hot reload in local dev
 
-Example:
+1. Ensure your workspace is set in your `apps/main-app/package.json`:
+
 ```js
-{
-  resolve: {
-    alias: [
-      {
-        find: /^@pkg\/(utils|components)$/,
-        replacement: join(__dirname, "packages/$1/src/index.ts")
-      }
-    ]
-  }
+"@package/example": "workspace:packages/example"
 ```
+
+2. Update the exports property in the `packages/example/package.json` of `@package/example`:
+
+```js
+"exports": {
+    ".": {
+        "import": "./src/index.ts"
+    }
+}
+```
+
+Read more about the [exports property](https://nodejs.org/api/packages.html#package-entry-points)
 
 
 ## Environment Variables
