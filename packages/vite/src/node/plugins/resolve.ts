@@ -529,6 +529,7 @@ function tryResolveFile(
   targetWeb: boolean,
   tryPrefix?: string,
   skipPackageJson?: boolean,
+  skipTsExtension?: boolean,
 ): string | undefined {
   const stat = fs.statSync(file, { throwIfNoEntry: false })
   if (stat) {
@@ -553,8 +554,12 @@ function tryResolveFile(
     }
   }
 
-  const tryTsExtension = options.isFromTsImporter && isPossibleTsOutput(file)
-  if (tryTsExtension) {
+  // try resolve .js import to typescript file
+  if (
+    !skipTsExtension &&
+    options.isFromTsImporter &&
+    isPossibleTsOutput(file)
+  ) {
     const tsSrcPaths = getPotentialTsSrcPaths(file)
     for (const srcPath of tsSrcPaths) {
       const res = tryResolveFile(
@@ -565,6 +570,7 @@ function tryResolveFile(
         targetWeb,
         tryPrefix,
         skipPackageJson,
+        true,
       )
       if (res) return res
     }
