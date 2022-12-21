@@ -522,6 +522,7 @@ async function doBuild(
       : libOptions
       ? 'strict'
       : false,
+    cache: config.build.watch ? undefined : false,
     ...options.rollupOptions,
     input,
     plugins,
