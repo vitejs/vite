@@ -38,8 +38,5 @@
     "vuex": "^4.1.0",
     "lodash": "^4.17.21",
     "lodash.clonedeep": "^4.5.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^4.0.0"
   }
 }

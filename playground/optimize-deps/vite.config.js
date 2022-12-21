@@ -1,5 +1,4 @@
 const fs = require('node:fs')
-const vue = require('@vitejs/plugin-vue')
 
 // Overriding the NODE_ENV set by vitest
 process.env.NODE_ENV = ''
@@ -52,7 +51,7 @@ module.exports = {
   },
 
   plugins: [
-    vue(),
+    testVue(),
     notjs(),
     // for axios request test
     {
@@ -93,6 +92,29 @@ module.exports = {
       },
     },
   ],
+}
+
+// Handles Test.vue in dep-linked-include package
+function testVue() {
+  return {
+    name: 'testvue',
+    transform(code, id) {
+      if (id.includes('dep-linked-include/Test.vue')) {
+        return {
+          code: `
+import { defineComponent } from 'vue'
+
+export default defineComponent({
+  name: 'Test',
+  render() {
+    return '[success] rendered from Vue'
+  }
+})
+`.trim(),
+        }
+      }
+    },
+  }
 }
 
 // Handles .notjs file, basically remove wrapping <notjs> and </notjs> tags
