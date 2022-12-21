@@ -755,17 +755,10 @@ importers:
 
   playground/preload:
     specifiers:
-      '@vitejs/plugin-vue': ^4.0.0
       '@vitejs/test-dep-a': file:./dep-a
       '@vitejs/test-dep-including-a': file:./dep-including-a
       terser: ^5.16.1
-      vue: ^3.2.45
-      vue-router: ^4.1.6
-    dependencies:
-      vue: 3.2.45
-      vue-router: 4.1.6_vue@3.2.45
     devDependencies:
-      '@vitejs/plugin-vue': 4.0.0_vue@3.2.45
       '@vitejs/test-dep-a': file:playground/preload/dep-a
       '@vitejs/test-dep-including-a': file:playground/preload/dep-including-a
       terser: 5.16.1
