@@ -609,7 +609,6 @@ importers:
 
   playground/optimize-deps:
     specifiers:
-      '@vitejs/plugin-vue': ^4.0.0
       '@vitejs/test-added-in-entries': file:./added-in-entries
       '@vitejs/test-dep-cjs-browser-field-bare': file:./dep-cjs-browser-field-bare
       '@vitejs/test-dep-cjs-compiled-from-cjs': file:./dep-cjs-compiled-from-cjs
@@ -669,8 +668,6 @@ importers:
       url: 0.11.0
       vue: 3.2.45
       vuex: 4.1.0_vue@3.2.45
-    devDependencies:
-      '@vitejs/plugin-vue': 4.0.0_vue@3.2.45
 
   playground/optimize-deps/added-in-entries:
     specifiers: {}

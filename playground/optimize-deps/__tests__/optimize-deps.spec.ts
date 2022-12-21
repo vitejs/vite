@@ -113,8 +113,10 @@ test('CJS dep with css import', async () => {
   expect(await getColor('.cjs-with-assets')).toBe('blue')
 })
 
-test('dep w/ non-js files handled via plugin', async () => {
-  expect(await page.textContent('.plugin')).toMatch(`[success]`)
+test('externalize known non-js files in optimize included dep', async () => {
+  expect(await page.textContent('.externalize-known-non-js')).toMatch(
+    `[success]`,
+  )
 })
 
 test('vue + vuex', async () => {
