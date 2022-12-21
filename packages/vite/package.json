@@ -52,7 +52,7 @@
     "build-types-roll": "api-extractor run && rimraf temp",
     "build-types-post-patch": "tsx scripts/postPatchTypes.ts",
     "build-types-check": "tsx scripts/checkBuiltTypes.ts && tsc --project tsconfig.check.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "nx exec -- tsc --noEmit",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"

@@ -1,0 +1,86 @@
+{
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nrwl/nx-cloud",
+      "options": {
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "typecheck",
+          "test-unit",
+          "test-build",
+          "test-docs",
+          "docs-build"
+        ],
+        "accessToken": "NjYwZGFlNWYtZGYyNS00MTIzLTkzYTEtYzAxZTZiYzUwYTVifHJlYWQtd3JpdGU="
+      }
+    }
+  },
+  "namedInputs": {
+    "default": [
+      "{workspaceRoot}/packages/**/*",
+      {
+        "runtime": "node -e \"console.log(process.platform)\""
+      }
+    ],
+    "production": [
+      "default",
+      "!{workspaceRoot}/packages/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{workspaceRoot}/vitest.config.e2e.ts",
+      "!{workspaceRoot}/vitest.config.ts",
+      "!{workspaceRoot}/.eslintignore",
+      "!{workspaceRoot}/.eslintrc.cjs",
+      "!{projectRoot}/tsconfig.check.json"
+    ],
+    "playground": [
+      "default",
+      "{workspaceRoot}/playground/**/*",
+      {
+        "env": "VITE_TEST_BUILD"
+      },
+      {
+        "env": "VITE_TEST_WITHOUT_PLUGIN_COMMONJS"
+      }
+    ]
+  },
+  "targetDefaults": {
+    "typecheck": {
+      "dependsOn": [
+        "default",
+        "{projectRoot}/tsconfig.check.json",
+        "{projectRoot}/**/*.[jt]sx?"
+      ]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["production", "!{projectRoot}/LICENSE.md"],
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "test-unit": {
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production", "{workspaceRoot}/vitest.config.ts"]
+    },
+    "test-build": {
+      "dependsOn": ["^build"],
+      "inputs": ["playground", "{workspaceRoot}/vitest.config.e2e.ts"]
+    },
+    "test-serve": {
+      "dependsOn": ["^build"],
+      "inputs": ["playground", "{workspaceRoot}/vitest.config.e2e.ts"]
+    },
+    "docs": {
+      "dependsOn": ["^build"],
+      "inputs": ["{workspaceRoot}/docs/**/*"]
+    },
+    "docs-build": {
+      "dependsOn": ["^build"],
+      "inputs": ["{workspaceRoot}/docs/**/*"],
+      "outputs": ["{workspaceRoot}/docs/.vitepress/dist"]
+    },
+    "docs-serve": {
+      "dependsOn": ["^build"],
+      "inputs": ["{workspaceRoot}/docs/**/*"]
+    }
+  },
+  "defaultBase": "main"
+}
