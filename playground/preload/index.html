@@ -1,10 +1,19 @@
-<div id="app"></div>
+<h1>preload</h1>
+<div id="hello">
+  <button class="load">Load hello</button>
+  <div class="msg"></div>
+</div>
+<div id="about">
+  <button class="load">Load about</button>
+  <div class="msg"></div>
+</div>
+
 <script type="module">
-  import { createApp } from 'vue'
-  import router from './router.js'
-  import App from './src/App.vue'
   import { msgFromA } from '@vitejs/test-dep-a'
   console.log(msgFromA)
 
-  createApp(App).use(router).mount('#app')
+  import './src/main.js'
+  document
+    .querySelector('h1')
+    .insertAdjacentHTML('afterEnd', '<div id="done">ran js</div>')
 </script>

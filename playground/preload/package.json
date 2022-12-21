@@ -16,12 +16,7 @@
     "debug:preload-disabled": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-disabled.ts",
     "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
   },
-  "dependencies": {
-    "vue": "^3.2.45",
-    "vue-router": "^4.1.6"
-  },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.0.0",
     "terser": "^5.16.1",
     "@vitejs/test-dep-a": "file:./dep-a",
     "@vitejs/test-dep-including-a": "file:./dep-including-a"
