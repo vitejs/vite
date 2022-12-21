@@ -8,6 +8,7 @@ import type {
   ModuleFormat,
   OutputOptions,
   Plugin,
+  RollupBuild,
   RollupError,
   RollupOptions,
   RollupOutput,
@@ -519,6 +520,7 @@ export async function build(
     config.logger.error(msg, { error: e })
   }
 
+  let bundle: RollupBuild | undefined
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
@@ -627,11 +629,7 @@ export async function build(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
-    const bundle = await rollup(rollupOptions)
-
-    const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](output)
-    }
+    bundle = await rollup(rollupOptions)
 
     if (options.write) {
       prepareOutDir(outDirs, options.emptyOutDir, config)
@@ -639,13 +637,14 @@ export async function build(
 
     const res = []
     for (const output of normalizedOutputs) {
-      res.push(await generate(output))
+      res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
-    await bundle.close()
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
     throw e
+  } finally {
+    if (bundle) bundle.close()
   }
 }
 
