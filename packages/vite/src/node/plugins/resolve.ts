@@ -471,6 +471,7 @@ function tryFsResolve(
         targetWeb,
         options.tryPrefix,
         options.skipPackageJson,
+        false,
       ))
     ) {
       return res
@@ -485,11 +486,15 @@ function tryFsResolve(
         targetWeb,
         options.tryPrefix,
         options.skipPackageJson,
+        false,
       ))
     ) {
       return res
     }
   }
+
+  // if `tryIndex` false, skip as we've already tested above
+  if (!tryIndex) return
 
   if (
     postfix &&
