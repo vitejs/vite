@@ -9,14 +9,14 @@ import type {
   PluginOption,
   ResolvedConfig,
   UserConfig,
-  ViteDevServer
+  ViteDevServer,
 } from 'vite'
 import {
   build,
   createServer,
   loadConfigFromFile,
   mergeConfig,
-  preview
+  preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
@@ -32,7 +32,7 @@ export const isServe = !isBuild
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
   workspaceRoot,
-  'packages/vite/bin/vite.js'
+  'packages/vite/bin/vite.js',
 )
 
 // #endregion
@@ -151,7 +151,7 @@ beforeAll(async (s) => {
 
       const testCustomServe = [
         resolve(dirname(testPath), 'serve.ts'),
-        resolve(dirname(testPath), 'serve.js')
+        resolve(dirname(testPath), 'serve.js'),
       ].find((i) => fs.existsSync(i))
 
       if (testCustomServe) {
@@ -165,7 +165,6 @@ beforeAll(async (s) => {
         if (serve) {
           server = await serve()
           viteServer = mod.viteServer
-          return
         }
       } else {
         await startDefaultServe()
@@ -196,10 +195,10 @@ function loadConfigFromDir(dir: string) {
   return loadConfigFromFile(
     {
       command: isBuild ? 'build' : 'serve',
-      mode: isBuild ? 'production' : 'development'
+      mode: isBuild ? 'production' : 'development',
     },
     undefined,
-    dir
+    dir,
   )
 }
 
@@ -227,21 +226,21 @@ export async function startDefaultServe(): Promise<void> {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
+        interval: 100,
       },
       host: true,
       fs: {
-        strict: !isBuild
-      }
+        strict: !isBuild,
+      },
     },
     build: {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
       // skip transpilation during tests to make it faster
       target: 'esnext',
       // tests are flaky when `emptyOutDir` is `true`
-      emptyOutDir: false
+      emptyOutDir: false,
     },
-    customLogger: createInMemoryLogger(serverLogs)
+    customLogger: createInMemoryLogger(serverLogs),
   }
 
   setupConsoleWarnCollector(serverLogs)
@@ -264,7 +263,7 @@ export async function startDefaultServe(): Promise<void> {
       name: 'vite-plugin-watcher',
       configResolved(config) {
         resolvedConfig = config
-      }
+      },
     })
     options.plugins = [resolvedPlugin()]
     const testConfig = mergeConfig(options, config || {})
@@ -276,9 +275,7 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    // @ts-ignore
     if (config && config.__test__) {
-      // @ts-ignore
       config.__test__()
     }
     const _nodeEnv = process.env.NODE_ENV
@@ -294,7 +291,7 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher
+  watcher: RollupWatcher,
 ): Promise<RollupWatcher> {
   let resolveFn: undefined | (() => void)
   const callback = (event: RollupWatcherEvent): void => {
@@ -335,7 +332,7 @@ function createInMemoryLogger(logs: string[]): Logger {
       if (opts?.error) {
         loggedErrors.add(opts.error)
       }
-    }
+    },
   }
 
   return logger
@@ -351,4 +348,15 @@ function setupConsoleWarnCollector(logs: string[]) {
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
+}
+
+declare module 'vite' {
+  export interface UserConfig {
+    /**
+     * special test only hook
+     *
+     * runs after build and before preview
+     */
+    __test__?: () => void
+  }
 }

@@ -10,7 +10,7 @@ import {
   injectQuery,
   parseRequest,
   slash,
-  transformStableResult
+  transformStableResult,
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import type { ResolveFn } from '..'
@@ -32,7 +32,7 @@ function err(e: string, pos: number) {
 
 function parseWorkerOptions(
   rawOpts: string,
-  optsStartIndex: number
+  optsStartIndex: number,
 ): WorkerOptions {
   let opts: WorkerOptions = {}
   try {
@@ -41,7 +41,7 @@ function parseWorkerOptions(
     throw err(
       'Vite is unable to parse the worker options as the value is not static.' +
         'To ignore this error, please use /* @vite-ignore */ in the worker options.',
-      optsStartIndex
+      optsStartIndex,
     )
   }
 
@@ -52,7 +52,7 @@ function parseWorkerOptions(
   if (typeof opts !== 'object') {
     throw err(
       `Expected worker options to be an object, got ${typeof opts}`,
-      optsStartIndex
+      optsStartIndex,
     )
   }
 
@@ -129,7 +129,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              urlIndex
+              urlIndex,
             )
           }
 
@@ -137,7 +137,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const workerType = getWorkerType(
             code,
             cleanString,
-            index + allExp.length
+            index + allExp.length,
           )
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
@@ -147,7 +147,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             workerResolver ??= config.createResolver({
               extensions: [],
               tryIndex: false,
-              preferRelative: true
+              preferRelative: true,
             })
             file = await workerResolver(url, id)
             file ??= url.startsWith('/')
@@ -167,7 +167,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             urlIndex,
             urlIndex + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
           )
         }
 
@@ -177,6 +177,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
         return null
       }
-    }
+    },
   }
 }

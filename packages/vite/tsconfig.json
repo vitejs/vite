@@ -1,9 +1,14 @@
 {
   "extends": "./tsconfig.base.json",
+  "include": [
+    "./rollup.config.ts",
+    "scripts",
+    "src/node/__tests__",
+    "src/types/shims.d.ts"
+  ],
   "compilerOptions": {
-    "strict": false,
+    "esModuleInterop": true,
     "declaration": false,
     "resolveJsonModule": true
-  },
-  "include": ["./rollup.config.ts"]
+  }
 }

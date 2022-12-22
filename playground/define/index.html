@@ -35,8 +35,8 @@
   text(
     '.spread-object',
     JSON.stringify({
-      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {})
-    })
+      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {}),
+    }),
   )
   text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
   text('.dollar-identifier', $DOLLAR)
@@ -56,7 +56,11 @@
     document.querySelector(el).textContent = text
   }
 
-  import { defined, importMetaEnvUndefined, processEnvUndefined } from 'dep'
+  import {
+    defined,
+    importMetaEnvUndefined,
+    processEnvUndefined,
+  } from '@vitejs/test-commonjs-dep'
   text('.define-in-dep', JSON.stringify(defined))
   text('.import-meta-env-undefined', importMetaEnvUndefined)
   text('.process-env-undefined', processEnvUndefined)

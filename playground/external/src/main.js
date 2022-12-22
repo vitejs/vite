@@ -1,2 +1,2 @@
-import '@vitejs/dep-that-imports'
-import '@vitejs/dep-that-requires'
+import '@vitejs/test-dep-that-imports'
+import '@vitejs/test-dep-that-requires'
