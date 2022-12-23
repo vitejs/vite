@@ -210,6 +210,10 @@ export function checkPublicFile(
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
+  if (!publicFile.startsWith(publicDir)) {
+    // can happen if URL starts with '../'
+    return
+  }
   if (fs.existsSync(publicFile)) {
     return publicFile
   } else {
