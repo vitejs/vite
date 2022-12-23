@@ -182,7 +182,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       } else {
         return null
       }
-    }
+    },
   }
 }
 
