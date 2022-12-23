@@ -623,7 +623,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     augmentChunkHash(chunk) {
-      if (chunk.viteMetadata.importedCss.size) {
+      if (chunk.viteMetadata?.importedCss.size) {
         let hash = ''
         for (const id of chunk.viteMetadata.importedCss) {
           hash += id
