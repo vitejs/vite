@@ -273,7 +273,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
         }
         if (hasViteIgnore) {
           result.code = result.code.replace(
-            /__vite__ignore__/,
+            /__vite__ignore__/g,
             '/* @vite-ignore */',
           )
         }
