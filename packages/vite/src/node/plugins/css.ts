@@ -622,6 +622,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return null
     },
 
+    augmentChunkHash(chunk) {
+      if (chunk.viteMetadata?.importedCss.size) {
+        let hash = ''
+        for (const id of chunk.viteMetadata.importedCss) {
+          hash += id
+        }
+        return hash
+      }
+    },
+
     async generateBundle(opts, bundle) {
       // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__) {

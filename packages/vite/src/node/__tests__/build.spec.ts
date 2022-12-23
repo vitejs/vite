@@ -3,14 +3,107 @@ import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import type { Logger } from 'vite'
 import { describe, expect, test, vi } from 'vitest'
-import type { OutputOptions } from 'rollup'
+import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { resolveBuildOutputs, resolveLibFilename } from '../build'
+import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
 import { createLogger } from '../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 type FormatsToFileNames = [LibraryFormats, string][]
+
+describe('build', () => {
+  test('file hash should change when css changes for dynamic entries', async () => {
+    const buildProject = async (cssColor: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'subentry.js' ||
+                id === 'foo.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `window.addEventListener('click', () => { import('subentry.js') });`
+              }
+              if (id === '\0subentry.js') {
+                return `import 'foo.css'`
+              }
+              if (id === '\0foo.css') {
+                return `.foo { color: ${cssColor} }`
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+    const result = await Promise.all([
+      buildProject('red'),
+      buildProject('blue'),
+    ])
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when pure css chunk changes', async () => {
+    const buildProject = async (cssColor: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'foo.js' ||
+                id === 'bar.js' ||
+                id === 'baz.js' ||
+                id === 'foo.css' ||
+                id === 'bar.css' ||
+                id === 'baz.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  window.addEventListener('click', () => { import('foo.js') });
+                  window.addEventListener('click', () => { import('bar.js') });`
+              }
+              if (id === '\0foo.js') return `import 'foo.css'; import 'baz.js'`
+              if (id === '\0bar.js') return `import 'bar.css'; import 'baz.js'`
+              if (id === '\0baz.js') return `import 'baz.css'`
+              if (id === '\0foo.css') return `.foo { color: red }`
+              if (id === '\0bar.css') return `.foo { color: green }`
+              if (id === '\0baz.css') return `.foo { color: ${cssColor} }`
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+    const result = await Promise.all([
+      buildProject('yellow'),
+      buildProject('blue'),
+    ])
+    assertOutputHashContentChange(result[0], result[1])
+  })
+})
+
 const baseLibOptions: LibraryOptions = {
   fileName: 'my-lib',
   entry: 'mylib.js',
@@ -439,3 +532,26 @@ describe('resolveBuildOutputs', () => {
     )
   })
 })
+
+/**
+ * for each chunks in output1, if there's a chunk in output2 with the same fileName,
+ * ensure that the chunk code is the same. if not, the chunk hash should have changed.
+ */
+function assertOutputHashContentChange(
+  output1: RollupOutput,
+  output2: RollupOutput,
+) {
+  for (const chunk of output1.output) {
+    if (chunk.type === 'chunk') {
+      const chunk2 = output2.output.find(
+        (c) => c.type === 'chunk' && c.fileName === chunk.fileName,
+      ) as OutputChunk | undefined
+      if (chunk2) {
+        expect(
+          chunk.code,
+          `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
+        ).toEqual(chunk2.code)
+      }
+    }
+  }
+}
