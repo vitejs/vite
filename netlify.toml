@@ -1,6 +1,7 @@
 [build.environment]
   NODE_VERSION = "16"
+  NPM_FLAGS = "--version" # prevent Netlify npm install
 [build]
   publish = "docs/.vitepress/dist"
-  command = "pnpm ci-docs"
+  command = "npx pnpm i --store=node_modules/.pnpm-store --frozen-lockfile && npm run ci-docs"
   ignore = "./scripts/docs-check.sh"
