@@ -461,7 +461,12 @@ function tryFsResolve(
     return res
   }
 
-  for (const ext of options.extensions) {
+  // if fspath from node_modules, should use DEFAULT_EXTENSIONS (#11467).eg
+  const extensions = fsPath.includes('node_modules')
+    ? DEFAULT_EXTENSIONS
+    : options.extensions
+
+  for (const ext of extensions) {
     if (
       postfix &&
       (res = tryResolveFile(
