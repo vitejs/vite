@@ -48,7 +48,7 @@ export function bindShortcuts(
       return
     }
 
-    // suspens when we hit ctrl-z on non-windows platforms
+    // suspend when we hit ctrl-z on non-windows platforms
     if (!isWindows && input === '\x1A') {
       process.kill(process.ppid, 'SIGTSTP')
       process.kill(process.pid, 'SIGTSTP')
