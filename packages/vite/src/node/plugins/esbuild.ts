@@ -254,6 +254,14 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
+        let hasViteIgnore = false
+        if (/\/\* @vite-ignore \*\//.test(code)) {
+          hasViteIgnore = true
+          code = code.replace(
+            /\s*\/\* @vite-ignore \*\/\s*/g,
+            '__vite__ignore__',
+          )
+        }
         const result = await transformWithEsbuild(code, id, transformOptions)
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
@@ -262,6 +270,12 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
         }
         if (options.jsxInject && /\.(?:j|t)sx\b/.test(id)) {
           result.code = options.jsxInject + ';' + result.code
+        }
+        if (hasViteIgnore) {
+          result.code = result.code.replace(
+            /__vite__ignore__/,
+            '/* @vite-ignore */',
+          )
         }
         return {
           code: result.code,
