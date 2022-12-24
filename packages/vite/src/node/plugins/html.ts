@@ -424,8 +424,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     // should not be converted if following attributes are present (#6748)
                     !node.attrs.some(
                       (p) =>
-                        p.prefix === undefined &&
-                        (p.name === 'media' || p.name === 'disabled'),
+                        (p.prefix === undefined &&
+                          (p.name === 'media' || p.name === 'disabled')) ||
+                        (p.name === 'rel' &&
+                          p.value.indexOf('stylesheet') === -1),
                     )
                   ) {
                     // CSS references, convert to import
