@@ -1504,8 +1504,16 @@ function loadPreprocessor(
     return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
+      const preprocessorPackage = {
+        [PreprocessLang.scss]: 'sass',
+        [PreprocessLang.sass]: 'sass',
+        [PreprocessLang.less]: 'less',
+        [PreprocessLang.styl]: 'stylus',
+        [PreprocessLang.stylus]: 'stylus',
+        [PostCssDialectLang.sss]: 'sugarss',
+      }
       throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it?`,
+        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`npm i -D ${preprocessorPackage[lang]}\`.`,
       )
     } else {
       const message = new Error(
