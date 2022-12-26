@@ -8,7 +8,6 @@ import type {
   ModuleFormat,
   OutputOptions,
   Plugin,
-  RollupBuild,
   RollupError,
   RollupOptions,
   RollupOutput,
@@ -422,31 +421,13 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }
 
 /**
- * Track parallel build calls and only stop the esbuild service when all
- * builds are done. (#1098)
- */
-let parallelCallCounts = 0
-// we use a separate counter to track since the call may error before the
-// bundle is even pushed.
-const parallelBuilds: RollupBuild[] = []
-
-/**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  parallelCallCounts++
-  try {
-    return await doBuild(inlineConfig)
-  } finally {
-    parallelCallCounts--
-    if (parallelCallCounts <= 0) {
-      await Promise.all(parallelBuilds.map((bundle) => bundle.close()))
-      parallelBuilds.length = 0
-    }
-  }
+  return await doBuild(inlineConfig)
 }
 
 async function doBuild(
@@ -653,7 +634,6 @@ async function doBuild(
     // write or generate files with rollup
     const { rollup } = await import('rollup')
     const bundle = await rollup(rollupOptions)
-    parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
       return bundle[options.write ? 'write' : 'generate'](output)
