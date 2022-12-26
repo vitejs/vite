@@ -50,6 +50,8 @@ const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
+const modulePreloadLinkRE =
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload).*?\/>/is
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -910,7 +912,7 @@ export function preImportMapHook(
 }
 
 /**
- * Move importmap before the first module script
+ * Move importmap before the first module script and modulepreload link
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
@@ -921,9 +923,20 @@ export function postImportMapHook(): IndexHtmlTransformHook {
       importMap = match
       return ''
     })
-    if (importMap) {
-      html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
-    }
+
+    if (!importMap) return html
+
+    const firstModuleScriptIndex = html.match(moduleScriptRE)?.index
+    const firstModulePreloadIndex = html.match(modulePreloadLinkRE)?.index
+    const ImportMapInsertionIndex = Math.min(
+      firstModuleScriptIndex ?? Infinity,
+      firstModulePreloadIndex ?? Infinity,
+    )
+    if (ImportMapInsertionIndex === Infinity) return html
+
+    html = `${html.slice(0, ImportMapInsertionIndex)}${importMap}\n${html.slice(
+      ImportMapInsertionIndex,
+    )}`
 
     return html
   }
