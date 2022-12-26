@@ -1504,8 +1504,10 @@ function loadPreprocessor(
     return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
+      const packageManager =
+        process.env.npm_config_user_agent?.split(' ')[0].split('/')[0] || 'npm'
       throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`npm i -D ${lang}\`.`,
+        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${packageManager} i -D ${lang}\`.`,
       )
     } else {
       const message = new Error(
