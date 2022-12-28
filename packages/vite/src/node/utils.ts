@@ -867,10 +867,8 @@ export async function resolveServerUrls(
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
-    if (
-      hostnameName === '::1' ||
-      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
-    ) {
+    // ipv6 host
+    if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
     local.push(`${protocol}://${hostnameName}:${port}${base}`)
@@ -886,7 +884,11 @@ export async function resolveServerUrls(
             (typeof detail.family === 'number' && detail.family === 4)),
       )
       .forEach((detail) => {
-        const host = detail.address.replace('127.0.0.1', hostname.name)
+        let host = detail.address.replace('127.0.0.1', hostname.name)
+        // ipv6 host
+        if (host.includes(':')) {
+          host = `[${host}]`
+        }
         const url = `${protocol}://${host}:${port}${base}`
         if (detail.address.includes('127.0.0.1')) {
           local.push(url)
