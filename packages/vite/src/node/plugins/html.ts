@@ -51,7 +51,12 @@ const importMapRE =
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 const modulePreloadLinkRE =
-  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload).*?\/>/is
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+
+const importMapDependenciesRE = new RegExp(
+  [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
+  'i',
+)
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -893,17 +898,17 @@ export function preImportMapHook(
     const importMapIndex = html.match(importMapRE)?.index
     if (importMapIndex === undefined) return
 
-    const moduleScriptIndex = html.match(moduleScriptRE)?.index
-    if (moduleScriptIndex === undefined) return
+    const importMapDepIndex = html.match(importMapDependenciesRE)?.index
+    if (importMapDepIndex === undefined) return
 
-    if (moduleScriptIndex < importMapIndex) {
+    if (importMapDepIndex < importMapIndex) {
       const relativeHtml = normalizePath(
         path.relative(config.root, ctx.filename),
       )
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(
-            `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`,
+            `(!) <script type="importmap"> should come before <script type="module"> and <link rel="modulepreload"> in /${relativeHtml}`,
           ),
         ),
       )
@@ -916,7 +921,7 @@ export function preImportMapHook(
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
-    if (!moduleScriptRE.test(html)) return
+    if (!importMapDependenciesRE.test(html)) return
 
     let importMap: string | undefined
     html = html.replace(importMapRE, (match) => {
@@ -924,19 +929,11 @@ export function postImportMapHook(): IndexHtmlTransformHook {
       return ''
     })
 
-    if (!importMap) return html
-
-    const firstModuleScriptIndex = html.match(moduleScriptRE)?.index
-    const firstModulePreloadIndex = html.match(modulePreloadLinkRE)?.index
-    const ImportMapInsertionIndex = Math.min(
-      firstModuleScriptIndex ?? Infinity,
-      firstModulePreloadIndex ?? Infinity,
-    )
-    if (ImportMapInsertionIndex === Infinity) return html
-
-    html = `${html.slice(0, ImportMapInsertionIndex)}${importMap}\n${html.slice(
-      ImportMapInsertionIndex,
-    )}`
+    if (importMap) {
+      html = html.replace(importMapDependenciesRE, (match) => {
+        return `${importMap}\n${match}`
+      })
+    }
 
     return html
   }
