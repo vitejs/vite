@@ -212,7 +212,7 @@ cli
     `[string] build specified entry for server-side rendering`,
   )
   .option(
-    '--sourcemap [mode]',
+    '--sourcemap [output]',
     `[boolean | "inline" | "hidden"] output source maps for build (default: false)`,
   )
   .option(
