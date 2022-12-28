@@ -886,7 +886,11 @@ export async function resolveServerUrls(
             (typeof detail.family === 'number' && detail.family === 4)),
       )
       .forEach((detail) => {
-        const host = detail.address.replace('127.0.0.1', hostname.name)
+        let host = detail.address.replace('127.0.0.1', hostname.name)
+        // ipv6 host
+        if (host.indexOf(':') > -1) {
+          host = `[${host}]`
+        }
         const url = `${protocol}://${host}:${port}${base}`
         if (detail.address.includes('127.0.0.1')) {
           local.push(url)
