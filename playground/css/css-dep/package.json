@@ -4,5 +4,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "style": "index.css",
-  "sass": "index.scss"
+  "sass": "index.scss",
+  "exports": {
+    ".": {
+      "default": "./index.js"
+    }
+  }
 }

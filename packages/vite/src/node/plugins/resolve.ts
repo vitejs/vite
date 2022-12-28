@@ -91,6 +91,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   tryPrefix?: string
   skipPackageJson?: boolean
   preferRelative?: boolean
+  skipExports?: boolean
   isRequire?: boolean
   // #3040
   // when the importer is a ts module,
@@ -927,7 +928,7 @@ export function resolvePackageEntry(
 
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
-    if (data.exports) {
+    if (data.exports && !options.skipExports) {
       entryPoint = resolveExports(data, '.', options, targetWeb)
     }
 

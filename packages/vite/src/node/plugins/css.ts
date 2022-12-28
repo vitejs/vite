@@ -732,6 +732,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           mainFields: ['style'],
           tryIndex: false,
           preferRelative: true,
+          skipExports: true,
         }))
       )
     },
@@ -745,6 +746,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
+          skipExports: true,
         }))
       )
     },
@@ -757,6 +759,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           mainFields: ['less', 'style'],
           tryIndex: false,
           preferRelative: true,
+          skipExports: true,
         }))
       )
     },
