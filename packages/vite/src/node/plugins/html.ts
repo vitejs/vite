@@ -52,8 +52,7 @@ const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 const modulePreloadLinkRE =
   /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
-
-const importMapDependenciesRE = new RegExp(
+const importMapAppendRE = new RegExp(
   [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
   'i',
 )
@@ -898,10 +897,10 @@ export function preImportMapHook(
     const importMapIndex = html.match(importMapRE)?.index
     if (importMapIndex === undefined) return
 
-    const importMapDepIndex = html.match(importMapDependenciesRE)?.index
-    if (importMapDepIndex === undefined) return
+    const importMapAppendIndex = html.match(importMapAppendRE)?.index
+    if (importMapAppendIndex === undefined) return
 
-    if (importMapDepIndex < importMapIndex) {
+    if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
         path.relative(config.root, ctx.filename),
       )
@@ -921,7 +920,7 @@ export function preImportMapHook(
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
-    if (!importMapDependenciesRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
 
     let importMap: string | undefined
     html = html.replace(importMapRE, (match) => {
@@ -930,9 +929,10 @@ export function postImportMapHook(): IndexHtmlTransformHook {
     })
 
     if (importMap) {
-      html = html.replace(importMapDependenciesRE, (match) => {
-        return `${importMap}\n${match}`
-      })
+      html = html.replace(
+        importMapAppendRE,
+        (match) => `${importMap}\n${match}`,
+      )
     }
 
     return html

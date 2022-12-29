@@ -28,6 +28,7 @@ module.exports = {
         ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
+        importmapOrder: resolve(__dirname, 'importmapOrder.html'),
       },
     },
   },
@@ -168,7 +169,9 @@ ${
     },
     {
       name: 'head-prepend-importmap',
-      transformIndexHtml() {
+      transformIndexHtml(_, ctx) {
+        if (ctx.path.includes('importmapOrder')) return
+
         return [
           {
             tag: 'script',
