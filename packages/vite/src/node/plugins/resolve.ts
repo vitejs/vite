@@ -659,7 +659,9 @@ export function tryNodeResolve(
   // nearest package.json that may have the `exports` field
   let pkg: PackageData | undefined
 
-  let pkgId = possiblePkgIds.find((pkgId) => {
+  const rootPkgId = possiblePkgIds[0]
+
+  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
     nearestPkg = resolvePackageData(
       pkgId,
       basedir,
@@ -669,7 +671,6 @@ export function tryNodeResolve(
     return nearestPkg
   })!
 
-  const rootPkgId = possiblePkgIds[0]
   const rootPkg = resolvePackageData(
     rootPkgId,
     basedir,
