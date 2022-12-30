@@ -65,8 +65,8 @@
 <h2>Import from dependency with optional peer dep</h2>
 <div class="dep-with-optional-peer-dep"></div>
 
-<h2>Dep w/ special file format supported via plugins</h2>
-<div class="plugin"></div>
+<h2>Externalize known non-js files in optimize included dep</h2>
+<div class="externalize-known-non-js"></div>
 
 <h2>Vue & Vuex</h2>
 <div class="vue"></div>
@@ -111,7 +111,7 @@
 
   import { msg, VueSFC } from '@vitejs/test-dep-linked-include'
   text('.force-include', msg)
-  text('.plugin', VueSFC.render())
+  text('.externalize-known-non-js', VueSFC.render())
 
   import * as linked from '@vitejs/test-dep-linked-include'
   const keys = Object.keys(linked)

@@ -17,7 +17,7 @@ import {
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
 
-export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
+export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
 
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap

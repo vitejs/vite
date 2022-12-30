@@ -12,7 +12,6 @@ import {
   posToNumber,
   processSrcSetSync,
   resolveHostname,
-  shouldServe,
 } from '../utils'
 
 describe('injectQuery', () => {
@@ -239,12 +238,6 @@ describe('asyncFlatten', () => {
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])]),
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
-  })
-})
-
-describe('shouldServe', () => {
-  test('returns false for malformed URLs', () => {
-    expect(shouldServe('/%c0%ae%c0%ae/etc/passwd', '/assets/dir')).toBe(false)
   })
 })
 

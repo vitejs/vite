@@ -193,7 +193,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     )
   }
 
-  await traverseHtml(html, htmlPath, (node) => {
+  await traverseHtml(html, filename, (node) => {
     if (!nodeIsElement(node)) {
       return
     }

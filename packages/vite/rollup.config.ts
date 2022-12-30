@@ -8,7 +8,7 @@ import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
-import licensePlugin from '../../scripts/rollupLicensePlugin.mjs'
+import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
@@ -78,7 +78,7 @@ function createNodePlugins(
   isProduction: boolean,
   sourceMap: boolean,
   declarationDir: string | false,
-): Plugin[] {
+): (Plugin | false)[] {
   return [
     nodeResolve({ preferBuiltins: true }),
     typescript({
@@ -284,7 +284,7 @@ const __require = require;
       if (!chunk.fileName.includes('chunks/dep-')) return
 
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
-      const index = match ? match.index + match[0].length : 0
+      const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
       // inject after the last `import`
       s.appendRight(index, cjsPatch)

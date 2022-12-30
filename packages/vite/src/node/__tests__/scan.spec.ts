@@ -15,14 +15,14 @@ describe('optimizer-scan:script-test', () => {
     scriptRE.lastIndex = 0
     const [, tsOpenTag, tsContent] = scriptRE.exec(
       `<script lang="ts">${scriptContent}</script>`,
-    )
+    )!
     expect(tsOpenTag).toEqual('<script lang="ts">')
     expect(tsContent).toEqual(scriptContent)
 
     scriptRE.lastIndex = 0
     const [, openTag, content] = scriptRE.exec(
       `<script>${scriptContent}</script>`,
-    )
+    )!
     expect(openTag).toEqual('<script>')
     expect(content).toEqual(scriptContent)
   })
@@ -58,12 +58,16 @@ describe('optimizer-scan:script-test', () => {
 
   test('ordinary script tag test', () => {
     scriptRE.lastIndex = 0
-    const [, tag, content] = scriptRE.exec(`<script  >var test = null</script>`)
+    const [, tag, content] = scriptRE.exec(
+      `<script  >var test = null</script>`,
+    )!
     expect(tag).toEqual('<script  >')
     expect(content).toEqual('var test = null')
 
     scriptRE.lastIndex = 0
-    const [, tag1, content1] = scriptRE.exec(`<script>var test = null</script>`)
+    const [, tag1, content1] = scriptRE.exec(
+      `<script>var test = null</script>`,
+    )!
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
   })
@@ -90,7 +94,7 @@ describe('optimizer-scan:script-test', () => {
 
     shouldMatchArray.forEach((str) => {
       importsRE.lastIndex = 0
-      expect(importsRE.exec(str)[1]).toEqual("'vue'")
+      expect(importsRE.exec(str)![1]).toEqual("'vue'")
     })
 
     const shouldFailArray = [

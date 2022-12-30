@@ -31,16 +31,15 @@ import {
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
-import {
-  rebindErrorStacktrace,
-  ssrRewriteStacktrace,
-} from '../ssr/ssrStacktrace'
+import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
   getDepsOptimizer,
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
+import { bindShortcuts } from '../shortcuts'
+import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -300,6 +299,13 @@ export interface ViteDevServer {
    * @internal
    */
   _fsDenyGlob: Matcher
+  /**
+   * @internal
+   * Actually BindShortcutsOptions | undefined but api-extractor checks for
+   * export before trimming internal types :(
+   * And I don't want to add complexity to prePatchTypes for that
+   */
+  _shortcutsOptions: any | undefined
 }
 
 export interface ResolvedServerUrls {
@@ -379,10 +385,7 @@ export async function createServer(
       )
     },
     ssrFixStacktrace(e) {
-      if (e.stack) {
-        const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-        rebindErrorStacktrace(e, stacktrace)
-      }
+      ssrFixStacktrace(e, moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
       return ssrRewriteStacktrace(stack, moduleGraph)
@@ -410,7 +413,7 @@ export async function createServer(
           process.stdin.off('end', exitProcess)
         }
       }
-      await Promise.all([
+      await Promise.allSettled([
         watcher.close(),
         ws.close(),
         container.close(),
@@ -452,6 +455,7 @@ export async function createServer(
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
+    _shortcutsOptions: undefined,
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -675,7 +679,7 @@ async function startServer(
     openBrowser(
       path.startsWith('http')
         ? path
-        : `${protocol}://${hostname.name}:${serverPort}${path}`,
+        : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
       true,
       server.config.logger,
     )
@@ -768,9 +772,9 @@ export function resolveServerOptions(
 }
 
 async function restartServer(server: ViteDevServer) {
-  // @ts-ignore
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
+  const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
 
   await server.close()
 
@@ -793,16 +797,10 @@ async function restartServer(server: ViteDevServer) {
     return
   }
 
-  for (const key in newServer) {
-    if (key === '_restartPromise') {
-      // prevent new server `restart` function from calling
-      // @ts-ignore
-      newServer[key] = server[key]
-    } else {
-      // @ts-ignore
-      server[key] = newServer[key]
-    }
-  }
+  // prevent new server `restart` function from calling
+  newServer._restartPromise = server._restartPromise
+
+  Object.assign(server, newServer)
 
   const {
     logger,
@@ -817,6 +815,11 @@ async function restartServer(server: ViteDevServer) {
     }
   } else {
     logger.info('server restarted.', { timestamp: true })
+  }
+
+  if (shortcutsOptions) {
+    shortcutsOptions.print = false
+    bindShortcuts(newServer, shortcutsOptions)
   }
 
   // new server (the current server) can restart now

@@ -8,7 +8,7 @@ import {
   usingDynamicImport,
 } from '../utils'
 import { transformRequest } from '../server/transformRequest'
-import type { InternalResolveOptions } from '../plugins/resolve'
+import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
   ssrDynamicImportKey,
@@ -17,7 +17,7 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './ssrTransform'
-import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
+import { ssrFixStacktrace } from './ssrStacktrace'
 
 interface SSRContext {
   global: typeof globalThis
@@ -112,10 +112,11 @@ async function instantiateModule(
     root,
   } = server.config
 
-  const resolveOptions: InternalResolveOptions = {
+  const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
     mainFields: ['main'],
     browserField: true,
     conditions: [],
+    overrideConditions: ['production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
@@ -203,10 +204,9 @@ async function instantiateModule(
   } catch (e) {
     mod.ssrError = e
     if (e.stack && fixStacktrace) {
-      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-      rebindErrorStacktrace(e, stacktrace)
+      ssrFixStacktrace(e, moduleGraph)
       server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+        `Error when evaluating SSR module ${url}:\n${e.stack}`,
         {
           timestamp: true,
           clear: server.config.clearScreen,
@@ -224,7 +224,7 @@ async function instantiateModule(
 async function nodeImport(
   id: string,
   importer: string,
-  resolveOptions: InternalResolveOptions,
+  resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {
@@ -235,7 +235,7 @@ async function nodeImport(
       importer,
       // Non-external modules can import ESM-only modules, but only outside
       // of test runs, because we use Node `require` in Jest to avoid segfault.
-      // @ts-expect-error
+      // @ts-expect-error jest only exists when running Jest
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,

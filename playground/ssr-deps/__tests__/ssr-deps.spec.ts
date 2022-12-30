@@ -116,3 +116,8 @@ test('import css library', async () => {
   await page.goto(url)
   expect(await getColor('.css-lib')).toBe('blue')
 })
+
+test('import css library', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.module-condition')).toMatch('[success]')
+})
