@@ -1,9 +1,4 @@
 'use strict'
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
-})
-exports.msg = void 0
-var msg =
-  '[success] commonjs .js file within root that has type: module (thanks to a package scope)'
-exports.msg = msg
+// intentionally use the default export here since default import from CJS has different semantics in node
+export default '[success] ES .js file within root that has type: commonjs (thanks to a package scope)'

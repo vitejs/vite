@@ -2,7 +2,7 @@
   "name": "@vitejs/test-resolve-exports-and-nested-scope",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "exports": {
     ".": "./index.js",
     "./nested": "./nested-scope/file.js"
