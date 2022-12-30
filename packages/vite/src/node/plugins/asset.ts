@@ -188,11 +188,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
       if (config.command === 'build' && config.build.ssr) {
-        const assetFiles = Object.keys(bundle).filter(
-          (file) => bundle[file].type === 'asset',
-        )
-        for (const file of assetFiles) {
+        for (const file in bundle) {
           if (
+            bundle[file].type === 'asset' &&
             !file.endsWith('ssr-manifest.json') &&
             !jsSourceMapRE.test(file)
           ) {
