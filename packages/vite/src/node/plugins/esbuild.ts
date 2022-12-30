@@ -255,12 +255,10 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         let hasViteIgnore = false
-        if (/\/\* @vite-ignore \*\//.test(code)) {
+        const ignoreRegExp = /\/\*\s*@vite-ignore\s*\*\/\s*/g
+        if (ignoreRegExp.test(code)) {
           hasViteIgnore = true
-          code = code.replace(
-            /\s*\/\* @vite-ignore \*\/\s*/g,
-            '__vite__ignore__',
-          )
+          code = code.replace(ignoreRegExp, '__vite__ignore__')
         }
         const result = await transformWithEsbuild(code, id, transformOptions)
         if (result.warnings.length) {
