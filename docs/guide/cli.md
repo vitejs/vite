@@ -54,7 +54,7 @@ vite build [root]
 | `--assetsDir <dir>`            | Directory under outDir to place assets in (default: `"assets"`) (`string`)                                          |
 | `--assetsInlineLimit <number>` | Static asset base64 inline threshold in bytes (default: `4096`) (`number`)                                          |
 | `--ssr [entry]`                | Build specified entry for server-side rendering (`string`)                                                          |
-| `--sourcemap`                  | Output source maps for build (default: `false`) (`boolean`)                                                         |
+| `--sourcemap [output]`         | Output source maps for build (default: `false`) (`boolean \| "inline" \| "hidden"`)                                 |
 | `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`) |
 | `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                      |
 | `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                        |
