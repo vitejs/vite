@@ -61,7 +61,7 @@ export async function injectSourcesContent(
 
 export function genSourceMapUrl(map: SourceMap | string | undefined): string {
   if (typeof map !== 'string') {
-    map = JSON.stringify(map)
+    map = map ? JSON.stringify(map) : 'undefined'
   }
   return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
 }
