@@ -21,6 +21,7 @@ on:
       - v2
       - v2.*
       - v3.*
+  pull_request:
   workflow_dispatch:
 
 concurrency:
