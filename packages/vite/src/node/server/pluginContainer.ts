@@ -322,7 +322,7 @@ export async function createPluginContainer(
       // but we can at least update the module info properties we support
       updateModuleInfo(options.id, options)
 
-      await container.load(options.id)
+      await container.load(options.id, { ssr: this.ssr })
       const moduleInfo = this.getModuleInfo(options.id)
       // This shouldn't happen due to calling ensureEntryFromUrl, but 1) our types can't ensure that
       // and 2) moduleGraph may not have been provided (though in the situations where that happens,
