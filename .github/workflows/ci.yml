@@ -29,7 +29,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  diff:
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    name: "Diff files"
+    outputs:
+      runTest: ${{ steps.skip-tests-files.outputs.only_changed != 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # Assume PRs are less than 50 commits
+          fetch-depth: 50
+
+      - name: Get changed files
+        id: skip-tests-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: |
+            docs/**
+            .github/**
+            !.github/workflows/ci.yml
+            packages/create-vite/**
+            !packages/create-vite/__tests__/**
+            **/*.md
+
+  test:
+    needs: diff
+    if: ${{ needs.diff.outputs.runTest }}
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
@@ -98,18 +125,15 @@ jobs:
         run: pnpm playwright install chromium
 
       - name: Build
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run build
 
       - name: Test unit
         run: pnpm run test-unit
 
       - name: Test serve
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-serve
 
       - name: Test build
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-build
 
   lint:
