@@ -42,13 +42,13 @@ export function bindShortcuts(
   let actionRunning = false
 
   const onInput = async (input: string) => {
+    if (actionRunning) return
+
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
-      process.emit('SIGTERM')
-      return
+      actionRunning = true
+      server.close().finally(() => process.exit(1))
     }
-
-    if (actionRunning) return
 
     if (input === 'h') {
       server.config.logger.info(
