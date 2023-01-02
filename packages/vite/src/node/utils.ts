@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
 import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
-import { promises as dns } from 'node:dns'
+import { lookup } from 'node:dns/promises'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import resolve from 'resolve'
@@ -801,8 +801,8 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   string | undefined
 > {
   const [nodeResult, dnsResult] = await Promise.all([
-    dns.lookup('localhost'),
-    dns.lookup('localhost', { verbatim: true }),
+    lookup('localhost'),
+    lookup('localhost', { verbatim: true }),
   ])
   const isSame =
     nodeResult.family === dnsResult.family &&
