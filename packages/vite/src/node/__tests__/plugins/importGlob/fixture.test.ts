@@ -13,9 +13,8 @@ describe('fixture', async () => {
 
   it('transform', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithEsbuild(await readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (
@@ -74,9 +73,8 @@ describe('fixture', async () => {
 
   it('transform with restoreQueryExtension', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithEsbuild(await readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (
