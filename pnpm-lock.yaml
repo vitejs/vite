@@ -458,7 +458,7 @@ importers:
     specifiers:
       '@vitejs/test-dep-that-imports': file:./dep-that-imports
       '@vitejs/test-dep-that-requires': file:./dep-that-requires
-      slash3: npm:slash@^3.0.0
+      slash3: npm:slash@^5.0.0
       slash5: npm:slash@^5.0.0
       vite: workspace:*
       vue: ^3.2.45
@@ -466,28 +466,28 @@ importers:
       '@vitejs/test-dep-that-imports': file:playground/external/dep-that-imports
       '@vitejs/test-dep-that-requires': file:playground/external/dep-that-requires
     devDependencies:
-      slash3: /slash/3.0.0
+      slash3: /slash/5.0.0
       slash5: /slash/5.0.0
       vite: link:../../packages/vite
       vue: 3.2.45
 
   playground/external/dep-that-imports:
     specifiers:
-      slash3: npm:slash@^3.0.0
+      slash3: npm:slash@^5.0.0
       slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
-      slash3: /slash/3.0.0
+      slash3: /slash/5.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
 
   playground/external/dep-that-requires:
     specifiers:
-      slash3: npm:slash@^3.0.0
+      slash3: npm:slash@^5.0.0
       slash5: npm:slash@^5.0.0
       vue: ^3.2.45
     dependencies:
-      slash3: /slash/3.0.0
+      slash3: /slash/5.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
 
@@ -7396,6 +7396,7 @@ packages:
   /slash/3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
+    dev: true
 
   /slash/4.0.0:
     resolution: {integrity: sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==}
@@ -8541,7 +8542,7 @@ packages:
     name: '@vitejs/test-dep-that-imports'
     version: 0.0.0
     dependencies:
-      slash3: /slash/3.0.0
+      slash3: /slash/5.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
@@ -8551,7 +8552,7 @@ packages:
     name: '@vitejs/test-dep-that-requires'
     version: 0.0.0
     dependencies:
-      slash3: /slash/3.0.0
+      slash3: /slash/5.0.0
       slash5: /slash/5.0.0
       vue: 3.2.45
     dev: false
