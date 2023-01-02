@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { realpath, readFile } from 'node:fs/promises'
+import { readFile, realpath } from 'node:fs/promises'
 import type { SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
