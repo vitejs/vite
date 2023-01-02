@@ -251,12 +251,6 @@ describe.runIf(isServe)('invalid', () => {
   })
 })
 
-test('importmap', () => {
-  expect(browserLogs).not.toContain(
-    'An import map is added after module script load was triggered.',
-  )
-})
-
 describe('Valid HTML', () => {
   test('valid HTML is parsed', async () => {
     await page.goto(viteTestUrl + '/valid.html')
@@ -265,5 +259,18 @@ describe('Valid HTML', () => {
     )
 
     expect(await getColor('#duplicated-attrs')).toBe('green')
+  })
+})
+
+describe('importmap', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/importmapOrder.html')
+  })
+
+  // Should put this test at the end to get all browser logs above
+  test('importmap should be prepended', async () => {
+    expect(browserLogs).not.toContain(
+      'An import map is added after module script load was triggered.',
+    )
   })
 })

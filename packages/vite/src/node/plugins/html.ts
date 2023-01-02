@@ -50,6 +50,12 @@ const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
+const modulePreloadLinkRE =
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+const importMapAppendRE = new RegExp(
+  [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
+  'i',
+)
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -891,17 +897,17 @@ export function preImportMapHook(
     const importMapIndex = html.match(importMapRE)?.index
     if (importMapIndex === undefined) return
 
-    const moduleScriptIndex = html.match(moduleScriptRE)?.index
-    if (moduleScriptIndex === undefined) return
+    const importMapAppendIndex = html.match(importMapAppendRE)?.index
+    if (importMapAppendIndex === undefined) return
 
-    if (moduleScriptIndex < importMapIndex) {
+    if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
         path.relative(config.root, ctx.filename),
       )
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(
-            `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`,
+            `(!) <script type="importmap"> should come before <script type="module"> and <link rel="modulepreload"> in /${relativeHtml}`,
           ),
         ),
       )
@@ -910,19 +916,23 @@ export function preImportMapHook(
 }
 
 /**
- * Move importmap before the first module script
+ * Move importmap before the first module script and modulepreload link
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
-    if (!moduleScriptRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
 
     let importMap: string | undefined
     html = html.replace(importMapRE, (match) => {
       importMap = match
       return ''
     })
+
     if (importMap) {
-      html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
+      html = html.replace(
+        importMapAppendRE,
+        (match) => `${importMap}\n${match}`,
+      )
     }
 
     return html
