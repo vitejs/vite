@@ -1,8 +1,8 @@
 // no node: protocol intentionally
 // eslint-disable-next-line import/no-nodejs-modules
-const fs = require('fs')
+const fs = require('node:fs')
 // eslint-disable-next-line import/no-nodejs-modules
-const path = require('path')
+const path = require('node:path')
 
 // NOTE: require destructure would error immediately because of how esbuild
 // compiles it. There's no way around it as it's direct property access, which
