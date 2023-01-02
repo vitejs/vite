@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
@@ -81,7 +81,7 @@ export function transformMiddleware(
                 ensureVolumeInPath(path.resolve(root, url.slice(1))),
               )
           try {
-            const map = await fs.readFile(mapFile, 'utf-8')
+            const map = await readFile(mapFile, 'utf-8')
             return send(req, res, map, 'json', {
               headers: server.config.server.headers,
             })

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
-import fs, { promises as fsp } from 'node:fs'
+import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
@@ -158,9 +159,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         // raw query, read file and return as string
-        return `export default ${JSON.stringify(
-          await fsp.readFile(file, 'utf-8'),
-        )}`
+        return `export default ${JSON.stringify(await readFile(file, 'utf-8'))}`
       }
 
       if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
@@ -216,7 +215,7 @@ export function checkPublicFile(
     // can happen if URL starts with '../'
     return
   }
-  if (fs.existsSync(publicFile)) {
+  if (existsSync(publicFile)) {
     return publicFile
   } else {
     return
@@ -315,7 +314,7 @@ async function fileToBuiltUrl(
   }
 
   const file = cleanUrl(id)
-  const content = await fsp.readFile(file)
+  const content = await readFile(file)
 
   let url: string
   if (

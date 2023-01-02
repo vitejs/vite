@@ -1,5 +1,5 @@
 import { resolve } from 'node:path'
-import { promises as fs } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
@@ -13,9 +13,8 @@ describe('fixture', async () => {
 
   it('transform', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithEsbuild(await readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (
@@ -74,9 +73,8 @@ describe('fixture', async () => {
 
   it('transform with restoreQueryExtension', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithEsbuild(await readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (
