@@ -44,11 +44,9 @@ export function bindShortcuts(
   const onInput = async (input: string) => {
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
-      try {
-        await server.close()
-      } finally {
-        process.exit(1)
-      }
+      process.stdin.setRawMode(false)
+      process.stdin.write(input)
+      return
     }
 
     if (actionRunning) return
