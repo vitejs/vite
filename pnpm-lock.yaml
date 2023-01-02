@@ -171,7 +171,7 @@ importers:
       '@rollup/plugin-alias': ^4.0.2
       '@rollup/plugin-commonjs': ^24.0.0
       '@rollup/plugin-dynamic-import-vars': ^2.0.1
-      '@rollup/plugin-json': ^5.0.2
+      '@rollup/plugin-json': ^6.0.0
       '@rollup/plugin-node-resolve': 15.0.1
       '@rollup/plugin-typescript': ^10.0.1
       '@rollup/pluginutils': ^5.0.2
@@ -239,7 +239,7 @@ importers:
       '@rollup/plugin-alias': 4.0.2_rollup@3.7.0
       '@rollup/plugin-commonjs': 24.0.0_rollup@3.7.0
       '@rollup/plugin-dynamic-import-vars': 2.0.1_rollup@3.7.0
-      '@rollup/plugin-json': 5.0.2_rollup@3.7.0
+      '@rollup/plugin-json': 6.0.0_rollup@3.7.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.7.0
       '@rollup/plugin-typescript': 10.0.1_rollup@3.7.0+tslib@2.4.1
       '@rollup/pluginutils': 5.0.2_rollup@3.7.0
@@ -1961,6 +1961,19 @@ packages:
 
   /@rollup/plugin-json/5.0.2_rollup@3.7.0:
     resolution: {integrity: sha512-D1CoOT2wPvadWLhVcmpkDnesTzjhNIQRWLsc3fA49IFOP2Y84cFOOJ+nKGYedvXHKUsPeq07HR4hXpBBr+CHlA==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      '@rollup/pluginutils': 5.0.2_rollup@3.7.0
+      rollup: 3.7.0
+    dev: true
+
+  /@rollup/plugin-json/6.0.0_rollup@3.7.0:
+    resolution: {integrity: sha512-i/4C5Jrdr1XUarRhVu27EEwjt4GObltD7c+MkCIpO2QIbojw8MUs+CCTqOphQi3Qtg1FLmYt+l+6YeoIf51J7w==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0
