@@ -181,6 +181,17 @@ async function instantiateModule(
     }
   }
 
+  let sourceMapSuffix = ''
+  if (result.map) {
+    const moduleSourceMap = Object.assign({}, result.map, {
+      // offset the first three lines of the module (function declaration and 'use strict')
+      mappings: ';;;' + result.map.mappings,
+    })
+    sourceMapSuffix = `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,${Buffer.from(
+      JSON.stringify(moduleSourceMap),
+    ).toString('base64')}`
+  }
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const AsyncFunction = async function () {}.constructor as typeof Function
@@ -191,7 +202,9 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`,
+      '"use strict";\n' +
+        result.code +
+        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
