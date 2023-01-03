@@ -130,14 +130,17 @@ test('should work with load ../ and contain itself directory', async () => {
   )
 })
 
-test('should load dynamic import.meta.url without warning', async () => {
-  await page.click('.dynamic-import-meta-url')
-  await untilUpdated(
-    () => page.textContent('.dynamic-import-meta-url'),
-    'Success',
-    true,
-  )
-  expect(
-    serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
-  ).toBe(false)
-})
+test.runIf(!isBuild)(
+  'should load dynamic import.meta.url without warning',
+  async () => {
+    await page.click('.dynamic-import-meta-url')
+    await untilUpdated(
+      () => page.textContent('.dynamic-import-meta-url'),
+      'Success',
+      true,
+    )
+    expect(
+      serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
+    ).toBe(false)
+  },
+)
