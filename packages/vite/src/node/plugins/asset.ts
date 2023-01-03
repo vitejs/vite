@@ -23,6 +23,7 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
+const jsSourceMapRE = /\.[cm]?js\.map$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -182,7 +183,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       } else {
         return null
       }
-    },
+    }
   }
 }
 
@@ -196,6 +197,10 @@ export function checkPublicFile(
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
+  if (!publicFile.startsWith(publicDir)) {
+    // can happen if URL starts with '../'
+    return
+  }
   if (fs.existsSync(publicFile)) {
     return publicFile
   } else {
