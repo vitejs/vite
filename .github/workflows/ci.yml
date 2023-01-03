@@ -54,9 +54,8 @@ jobs:
             docs/**
             .github/**
             !.github/workflows/ci.yml
-            packages/create-vite/**
-            !packages/create-vite/__tests__/**
-            **/*.md
+            packages/create-vite/template**
+            **.md
 
   test:
     needs: diff
