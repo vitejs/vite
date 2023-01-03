@@ -588,12 +588,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         } else if (!importer.startsWith(clientDir)) {
           if (!importer.includes('node_modules')) {
-            // check @vite-ignore which suppresses dynamic import warning
-            const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
-              // complete expression inside parens
-              source.slice(dynamicIndex + 1, end),
-            )
-            if (!hasViteIgnore) {
+            const content = source.slice(dynamicIndex + 1, end)
+            const skipDynamicImportWarning =
+              // Workaround https://github.com/evanw/esbuild/issues/2721 for
+              // the React plugin: https://github.com/vitejs/vite-plugin-react/pull/79
+              content === 'import.meta.url' ||
+              /\/\*\s*@vite-ignore\s*\*\//.test(content)
+            if (!skipDynamicImportWarning) {
               this.warn(
                 `\n` +
                   colors.cyan(importerModule.file) +
