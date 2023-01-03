@@ -606,7 +606,12 @@ export function copyDir(srcDir: string, destDir: string): void {
 export const removeDir = isWindows
   ? promisify(gracefulRemoveDir)
   : function removeDirSync(dir: string) {
-      fs.rmSync(dir, { recursive: true, force: true })
+      // when removing `.vite/deps`, if it doesn't exist, nodejs may also remove
+      // other directories within `.vite/`, including `.vite/deps_temp` (bug).
+      // workaround by checking for directory existence before removing for now.
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true })
+      }
     }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
