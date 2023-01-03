@@ -28,6 +28,7 @@ module.exports = {
         ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
+        importmapOrder: resolve(__dirname, 'importmapOrder.html'),
       },
     },
   },
@@ -41,6 +42,10 @@ module.exports = {
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
+
+          const doctypeRE = /<!doctype html>/i
+          if (doctypeRE.test(html)) return
+
           const head = `
   <head lang="en">
     <meta charset="UTF-8">
@@ -164,7 +169,9 @@ ${
     },
     {
       name: 'head-prepend-importmap',
-      transformIndexHtml() {
+      transformIndexHtml(_, ctx) {
+        if (ctx.path.includes('importmapOrder')) return
+
         return [
           {
             tag: 'script',
