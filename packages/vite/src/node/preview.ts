@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
@@ -83,6 +84,14 @@ export async function preview(
     'production',
   )
 
+  const distDir = path.resolve(config.root, config.build.outDir)
+  const isAlreadyBuild = fs.existsSync(distDir)
+  if (!isAlreadyBuild) {
+    throw Error(
+      'The outputDir cannot be found, please try again after building',
+    )
+  }
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
@@ -115,7 +124,6 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
   const assetServer = sirv(distDir, {
     etag: true,
