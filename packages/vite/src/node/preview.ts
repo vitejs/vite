@@ -1,6 +1,9 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import type * as http from 'node:http'
 import sirv from 'sirv'
+import colors from 'picocolors'
+import spawn from 'cross-spawn'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
@@ -83,6 +86,21 @@ export async function preview(
     'production',
   )
 
+  const distDir = path.resolve(config.root, config.build.outDir)
+  const isAlreadyBuild = fs.existsSync(distDir)
+  if (!isAlreadyBuild) {
+    const { status, error } = spawn.sync('npx', ['vite', 'build'])
+    if (status !== 0 || error) {
+      config.logger.info(
+        colors.red(
+          colors.bold(
+            '  > The outputDir cannot be found, the preview server cannot return the corresponding file',
+          ),
+        ),
+      )
+    }
+  }
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
@@ -115,7 +133,6 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
   const assetServer = sirv(distDir, {
     etag: true,
