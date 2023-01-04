@@ -26,7 +26,6 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isFileReadable,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
@@ -472,6 +471,7 @@ function tryFsResolve(
         targetWeb,
         options.tryPrefix,
         options.skipPackageJson,
+        false,
       ))
     ) {
       return res
@@ -486,11 +486,15 @@ function tryFsResolve(
         targetWeb,
         options.tryPrefix,
         options.skipPackageJson,
+        false,
       ))
     ) {
       return res
     }
   }
+
+  // if `tryIndex` false, skip as we've already tested above
+  if (!tryIndex) return
 
   if (
     postfix &&
@@ -530,9 +534,11 @@ function tryResolveFile(
   targetWeb: boolean,
   tryPrefix?: string,
   skipPackageJson?: boolean,
+  skipTsExtension?: boolean,
 ): string | undefined {
-  if (isFileReadable(file)) {
-    if (!fs.statSync(file).isDirectory()) {
+  const stat = fs.statSync(file, { throwIfNoEntry: false })
+  if (stat) {
+    if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
     } else if (tryIndex) {
       if (!skipPackageJson) {
@@ -553,8 +559,12 @@ function tryResolveFile(
     }
   }
 
-  const tryTsExtension = options.isFromTsImporter && isPossibleTsOutput(file)
-  if (tryTsExtension) {
+  // try resolve .js import to typescript file
+  if (
+    !skipTsExtension &&
+    options.isFromTsImporter &&
+    isPossibleTsOutput(file)
+  ) {
     const tsSrcPaths = getPotentialTsSrcPaths(file)
     for (const srcPath of tsSrcPaths) {
       const res = tryResolveFile(
@@ -565,6 +575,7 @@ function tryResolveFile(
         targetWeb,
         tryPrefix,
         skipPackageJson,
+        true,
       )
       if (res) return res
     }
