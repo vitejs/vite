@@ -112,6 +112,10 @@ function createNodePlugins(
           pattern: /require(?=\((configFile|'ts-node')\))/g,
           replacement: `eval('require')`,
         },
+        'json-stable-stringify/index.js': {
+          pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
+          replacement: 'var json = JSON',
+        },
       }),
 
     commonjs({
