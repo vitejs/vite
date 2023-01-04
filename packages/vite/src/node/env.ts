@@ -39,6 +39,13 @@ export function loadEnv(
   if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
     process.env.VITE_USER_NODE_ENV = parsed.NODE_ENV
   }
+  // support BROWSER and BROWSER_ARGS env variables
+  if (parsed.BROWSER && process.env.BROWSER === undefined) {
+    process.env.BROWSER = parsed.BROWSER
+  }
+  if (parsed.BROWSER_ARGS && process.env.BROWSER_ARGS === undefined) {
+    process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
+  }
 
   try {
     // let environment variables use each other

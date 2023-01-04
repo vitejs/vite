@@ -31,7 +31,10 @@ export function openBrowser(
   if (browser.toLowerCase().endsWith('.js')) {
     return executeNodeScript(browser, url, logger)
   } else if (browser.toLowerCase() !== 'none') {
-    return startBrowserProcess(browser, url)
+    const browserArgs = process.env.BROWSER_ARGS
+      ? process.env.BROWSER_ARGS.split(' ')
+      : []
+    return startBrowserProcess(browser, browserArgs, url)
   }
   return false
 }
@@ -67,7 +70,11 @@ const supportedChromiumBrowsers = [
   'Chromium',
 ]
 
-function startBrowserProcess(browser: string | undefined, url: string) {
+function startBrowserProcess(
+  browser: string | undefined,
+  browserArgs: string[],
+  url: string,
+) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
   // a Chromium browser with AppleScript. This lets us reuse an
@@ -115,7 +122,9 @@ function startBrowserProcess(browser: string | undefined, url: string) {
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options: open.Options = browser ? { app: { name: browser } } : {}
+    const options: open.Options = browser
+      ? { app: { name: browser, arguments: browserArgs } }
+      : {}
     open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
     return true
   } catch (err) {
