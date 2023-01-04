@@ -113,6 +113,13 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     },
   },
   {
+    key: 'c',
+    description: 'clear console',
+    action(server) {
+      server.config.logger.clearScreen('error')
+    },
+  },
+  {
     key: 'q',
     description: 'quit',
     async action(server) {
