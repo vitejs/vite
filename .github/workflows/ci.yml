@@ -9,6 +9,10 @@ env:
   # Vitest auto retry on flaky segfault
   VITEST_SEGFAULT_RETRY: 3
 
+# Remove default permissions of GITHUB_TOKEN for security
+# https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions: {}
+
 on:
   push:
     branches:
@@ -22,9 +26,6 @@ on:
       - v2.*
       - v3.*
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "packages/create-vite/**"
   workflow_dispatch:
 
 concurrency:
@@ -32,7 +33,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  diff:
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    name: "Diff files"
+    outputs:
+      runTest: ${{ steps.skip-tests-files.outputs.only_changed != 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # Assume PRs are less than 50 commits
+          fetch-depth: 50
+
+      - name: Get changed files
+        id: skip-tests-files
+        uses: tj-actions/changed-files@1d1287f9fafd92be283f99b781fb5f00f00dd471 # v35.2.1
+        with:
+          files: |
+            docs/**
+            .github/**
+            !.github/workflows/ci.yml
+            packages/create-vite/template**
+            **.md
+
+  test:
+    needs: diff
+    if: ${{ needs.diff.outputs.runTest }}
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
@@ -101,3 +128,43 @@ jobs:
 
       - name: Test build
         run: pnpm run test-build
+
+  lint:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    name: "Lint: node-18, ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2.2.4
+
+      - name: Set node version to 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "pnpm"
+
+      - name: Install deps
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Check formatting
+        run: pnpm prettier --check .
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test docs
+        run: pnpm run test-docs
+
+      # From https://github.com/rhysd/actionlint/blob/main/docs/usage.md#use-actionlint-on-github-actions
+      - name: Check workflow files
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color -shellcheck=""
