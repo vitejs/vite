@@ -573,8 +573,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
             : chunk.name
 
+          const isEntry = chunk.isEntry && isPureCssChunk
           const lang = path.extname(cssAssetName).slice(1)
-          const cssFileName = ensureFileExt(cssAssetName, '.css')
+          const cssFileName = ensureFileExt(
+            isEntry ? chunk.name : cssAssetName,
+            '.css',
+          )
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
@@ -601,7 +605,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             source: chunkCSS,
           })
           const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
-          const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
             .get(config)!
             .set(referenceId, { originalName, isEntry })
