@@ -997,11 +997,6 @@ export async function extractExportsData(
   return exportsData
 }
 
-// https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
-// a list of modules that pretends to be ESM but still uses `require`.
-// this causes esbuild to wrap them as CJS even when its entry appears to be ESM.
-const KNOWN_INTEROP_IDS = new Set(['moment'])
-
 function needsInterop(
   config: ResolvedConfig,
   ssr: boolean,
@@ -1009,10 +1004,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (
-    getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id) ||
-    KNOWN_INTEROP_IDS.has(id)
-  ) {
+  if (getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id)) {
     return true
   }
   const { hasImports, exports } = exportsData
