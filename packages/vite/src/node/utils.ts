@@ -606,7 +606,12 @@ export function copyDir(srcDir: string, destDir: string): void {
 export const removeDir = isWindows
   ? promisify(gracefulRemoveDir)
   : function removeDirSync(dir: string) {
-      fs.rmSync(dir, { recursive: true, force: true })
+      // when removing `.vite/deps`, if it doesn't exist, nodejs may also remove
+      // other directories within `.vite/`, including `.vite/deps_temp` (bug).
+      // workaround by checking for directory existence before removing for now.
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true })
+      }
     }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
@@ -867,10 +872,8 @@ export async function resolveServerUrls(
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
-    if (
-      hostnameName === '::1' ||
-      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
-    ) {
+    // ipv6 host
+    if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
     local.push(`${protocol}://${hostnameName}:${port}${base}`)
@@ -881,14 +884,16 @@ export async function resolveServerUrls(
         (detail) =>
           detail &&
           detail.address &&
-          // Node < v18
           ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
-            // Node >= v18
-            // @ts-expect-error
+            // @ts-expect-error Node 18.0 - 18.3 returns number
             (typeof detail.family === 'number' && detail.family === 4)),
       )
       .forEach((detail) => {
-        const host = detail.address.replace('127.0.0.1', hostname.name)
+        let host = detail.address.replace('127.0.0.1', hostname.name)
+        // ipv6 host
+        if (host.includes(':')) {
+          host = `[${host}]`
+        }
         const url = `${protocol}://${host}:${port}${base}`
         if (detail.address.includes('127.0.0.1')) {
           local.push(url)
@@ -913,7 +918,7 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
-// @ts-expect-error
+// @ts-expect-error jest only exists when running Jest
 export const usingDynamicImport = typeof jest === 'undefined'
 
 /**
@@ -1198,29 +1203,11 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
  * Determine if a file is being requested with the correct case, to ensure
  * consistent behaviour between dev and prod and across operating systems.
  */
-export function shouldServe(url: string, assetsDir: string): boolean {
-  try {
-    // viteTestUrl is set to something like http://localhost:4173/ and then many tests make calls
-    // like `await page.goto(viteTestUrl + '/example')` giving us URLs beginning with a double slash
-    const pathname = decodeURI(
-      new URL(
-        url.startsWith('//') ? url.substring(1) : url,
-        'http://example.com',
-      ).pathname,
-    )
-    const file = path.join(assetsDir, pathname)
-    if (
-      !fs.existsSync(file) ||
-      (isCaseInsensitiveFS && // can skip case check on Linux
-        !fs.statSync(file).isDirectory() &&
-        !hasCorrectCase(file, assetsDir))
-    ) {
-      return false
-    }
-    return true
-  } catch (err) {
-    return false
-  }
+export function shouldServeFile(filePath: string, root: string): boolean {
+  // can skip case check on Linux
+  if (!isCaseInsensitiveFS) return true
+
+  return hasCorrectCase(filePath, root)
 }
 
 /**

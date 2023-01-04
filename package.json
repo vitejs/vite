@@ -17,7 +17,7 @@
     "postinstall": "simple-git-hooks",
     "format": "prettier --write --cache .",
     "lint": "eslint --cache .",
-    "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
+    "typecheck": "tsc -p scripts --noEmit && pnpm -r --parallel run typecheck",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
     "test-build": "VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
@@ -37,11 +37,11 @@
   },
   "devDependencies": {
     "@babel/types": "^7.20.5",
-    "@microsoft/api-extractor": "^7.33.6",
+    "@microsoft/api-extractor": "^7.33.7",
     "@rollup/plugin-typescript": "^10.0.1",
     "@types/babel__core": "^7.1.20",
     "@types/babel__standalone": "^7.1.4",
-    "@types/convert-source-map": "^1.5.2",
+    "@types/convert-source-map": "^2.0.0",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",
     "@types/estree": "^1.0.0",
@@ -50,16 +50,16 @@
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^18.11.10",
+    "@types/node": "^18.11.13",
     "@types/picomatch": "^2.3.0",
-    "@types/prompts": "^2.4.1",
+    "@types/prompts": "^2.4.2",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
     "@types/semver": "^7.3.13",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.45.0",
-    "@typescript-eslint/parser": "^5.45.0",
+    "@typescript-eslint/eslint-plugin": "^5.46.0",
+    "@typescript-eslint/parser": "^5.46.0",
     "conventional-changelog-cli": "^2.2.2",
     "esbuild": "^0.16.3",
     "eslint": "^8.29.0",
@@ -69,19 +69,18 @@
     "eslint-plugin-regexp": "^1.11.0",
     "execa": "^6.1.0",
     "fast-glob": "^3.2.12",
-    "fs-extra": "^10.1.0",
+    "fs-extra": "^11.1.0",
     "lint-staged": "^13.1.0",
     "minimist": "^1.2.7",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.28.1",
     "pnpm": "^7.18.1",
-    "prettier": "2.8.0",
+    "prettier": "2.8.1",
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
     "rimraf": "^3.0.2",
     "rollup": "^3.7.0",
-    "rollup-plugin-license": "^2.9.1",
     "semver": "^7.3.8",
     "simple-git-hooks": "^2.8.1",
     "tslib": "^2.4.1",
@@ -89,13 +88,12 @@
     "typescript": "^4.9.3",
     "unbuild": "^0.9.4",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.29",
-    "vitest": "^0.25.3",
+    "vitepress": "^1.0.0-alpha.31",
+    "vitest": "^0.25.7",
     "vue": "^3.2.45"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec lint-staged --concurrent false",
-    "commit-msg": "pnpm exec tsx scripts/verifyCommit.ts $1"
+    "pre-commit": "pnpm exec lint-staged --concurrent false"
   },
   "lint-staged": {
     "*": [
@@ -129,7 +127,8 @@
       }
     },
     "patchedDependencies": {
-      "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch"
+      "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch",
+      "sirv@2.0.2": "patches/sirv@2.0.2.patch"
     }
   }
 }

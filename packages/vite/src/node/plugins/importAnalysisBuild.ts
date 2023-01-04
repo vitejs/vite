@@ -55,15 +55,14 @@ function toRelativePath(filename: string, importer: string) {
  */
 
 function detectScriptRel() {
-  // @ts-ignore
   const relList = document.createElement('link').relList
-  // @ts-ignore
   return relList && relList.supports && relList.supports('modulepreload')
     ? 'modulepreload'
     : 'preload'
 }
 
 declare const scriptRel: string
+declare const seen: Record<string, boolean>
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
@@ -77,11 +76,9 @@ function preload(
 
   return Promise.all(
     deps.map((dep) => {
-      // @ts-ignore
+      // @ts-expect-error assetsURL is declared before preload.toString()
       dep = assetsURL(dep, importerUrl)
-      // @ts-ignore
       if (dep in seen) return
-      // @ts-ignore
       seen[dep] = true
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
@@ -104,16 +101,13 @@ function preload(
       }
 
       const loadLink = () => {
-        // @ts-ignore
         const link = document.createElement('link')
-        // @ts-ignore
         link.rel = isCss ? 'stylesheet' : scriptRel
         if (!isCss) {
           link.as = 'script'
           link.crossOrigin = ''
         }
         link.href = dep
-        // @ts-ignore
         document.head.appendChild(link)
         return link
       }

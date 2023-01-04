@@ -647,8 +647,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return null
     },
 
+    augmentChunkHash(chunk) {
+      if (chunk.viteMetadata?.importedCss.size) {
+        let hash = ''
+        for (const id of chunk.viteMetadata.importedCss) {
+          hash += id
+        }
+        return hash
+      }
+    },
+
     async generateBundle(opts, bundle) {
-      // @ts-ignore asset emits are skipped in legacy bundle
+      // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__) {
         return
       }
@@ -1172,7 +1182,6 @@ async function resolvePostcssConfig(
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     try {
-      // @ts-ignore
       result = await postcssrc({}, searchPath)
     } catch (e) {
       if (!/No PostCSS Config found/.test(e.message)) {
@@ -1531,6 +1540,9 @@ function loadPreprocessor(
   }
 }
 
+declare const window: unknown | undefined
+declare const location: { href: string } | undefined
+
 // in unix, scss might append `location.href` in environments that shim `location`
 // see https://github.com/sass/dart-sass/issues/710
 function cleanScssBugUrl(url: string) {
@@ -1556,12 +1568,10 @@ function fixScssBugImportValue(
     typeof window !== 'undefined' &&
     typeof location !== 'undefined' &&
     data &&
-    // @ts-expect-error
-    data.file &&
-    // @ts-expect-error
-    data.contents == null
+    'file' in data &&
+    (!('contents' in data) || data.contents == null)
   ) {
-    // @ts-expect-error
+    // @ts-expect-error we need to preserve file property for HMR
     data.contents = fs.readFileSync(data.file, 'utf-8')
   }
   return data

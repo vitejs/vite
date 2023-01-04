@@ -45,13 +45,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...config.env,
       SSR: !!config.build.ssr,
     }
+    // set here to allow override with config.define
+    importMetaKeys['import.meta.hot'] = `false`
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`,
     })
   }
 

@@ -30,7 +30,6 @@ module.exports = {
     },
   },
 
-  // special test only hook
   // for tests, remove `<script type="module">` tags and remove `nomodule`
   // attrs so that we run the legacy bundle instead.
   __test__() {

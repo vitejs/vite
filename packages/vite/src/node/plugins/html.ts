@@ -50,6 +50,12 @@ const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
+const modulePreloadLinkRE =
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+const importMapAppendRE = new RegExp(
+  [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
+  'i',
+)
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -228,21 +234,17 @@ export function overwriteAttrValue(
 /**
  * Format parse5 @type {ParserError} to @type {RollupError}
  */
-function formatParseError(
-  parserError: ParserError,
-  id: string,
-  html: string,
-): RollupError {
-  const formattedError: RollupError = {
+function formatParseError(parserError: ParserError, id: string, html: string) {
+  const formattedError = {
     code: parserError.code,
     message: `parse5 error code ${parserError.code}`,
-  }
-  formattedError.frame = generateCodeFrame(html, parserError.startOffset)
-  formattedError.loc = {
-    file: id,
-    line: parserError.startLine,
-    column: parserError.startCol,
-  }
+    frame: generateCodeFrame(html, parserError.startOffset),
+    loc: {
+      file: id,
+      line: parserError.startLine,
+      column: parserError.startCol,
+    },
+  } satisfies RollupError
   return formattedError
 }
 
@@ -266,15 +268,11 @@ function handleParseError(
       // Allow self closing on non-void elements #10439
       return
   }
-  const parseError = {
-    loc: filePath,
-    frame: '',
-    ...formatParseError(parserError, filePath, html),
-  }
+  const parseError = formatParseError(parserError, filePath, html)
   throw new Error(
-    `Unable to parse HTML; ${parseError.message}\n at ${JSON.stringify(
-      parseError.loc,
-    )}\n${parseError.frame}`,
+    `Unable to parse HTML; ${parseError.message}\n` +
+      ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
+      `${parseError.frame}`,
   )
 }
 
@@ -899,17 +897,17 @@ export function preImportMapHook(
     const importMapIndex = html.match(importMapRE)?.index
     if (importMapIndex === undefined) return
 
-    const moduleScriptIndex = html.match(moduleScriptRE)?.index
-    if (moduleScriptIndex === undefined) return
+    const importMapAppendIndex = html.match(importMapAppendRE)?.index
+    if (importMapAppendIndex === undefined) return
 
-    if (moduleScriptIndex < importMapIndex) {
+    if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
         path.relative(config.root, ctx.filename),
       )
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(
-            `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`,
+            `(!) <script type="importmap"> should come before <script type="module"> and <link rel="modulepreload"> in /${relativeHtml}`,
           ),
         ),
       )
@@ -918,19 +916,23 @@ export function preImportMapHook(
 }
 
 /**
- * Move importmap before the first module script
+ * Move importmap before the first module script and modulepreload link
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
-    if (!moduleScriptRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
 
     let importMap: string | undefined
     html = html.replace(importMapRE, (match) => {
       importMap = match
       return ''
     })
+
     if (importMap) {
-      html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
+      html = html.replace(
+        importMapAppendRE,
+        (match) => `${importMap}\n${match}`,
+      )
     }
 
     return html
