@@ -6,6 +6,9 @@
 <h2>Deep import</h2>
 <p>Should show [2,4]:<span class="pre deep-import">fail</span></p>
 
+<h2>Exports and a nested package scope with a different type</h2>
+<p class="exports-and-nested-scope">fail</p>
+
 <h2>Entry resolving with exports field</h2>
 <p class="exports-entry">fail</p>
 
@@ -23,6 +26,9 @@
 
 <h2>Exports field env priority</h2>
 <p class="exports-env">fail</p>
+
+<h2>Exports field read only from the root package.json</h2>
+<p class="exports-from-root">fail</p>
 
 <h2>Exports with legacy fallback</h2>
 <p class="exports-legacy-fallback">fail</p>
@@ -143,6 +149,9 @@
 
   text('.deep-import', JSON.stringify(slicedToArray(iterable, 2)))
 
+  import exportsAndNestedScopeMsg from '@vitejs/test-resolve-exports-and-nested-scope/nested'
+  text('.exports-and-nested-scope', exportsAndNestedScopeMsg)
+
   // exports field
   import { msg } from '@vitejs/test-resolve-exports-path'
   text('.exports-entry', msg)
@@ -165,6 +174,9 @@
 
   import { msg as exportsEnvMsg } from '@vitejs/test-resolve-exports-env'
   text('.exports-env', exportsEnvMsg)
+
+  import { msg as exportsFromRootMsg } from '@vitejs/test-resolve-exports-from-root/nested'
+  text('.exports-from-root', exportsFromRootMsg)
 
   import { msg as exportsLegacyFallbackMsg } from '@vitejs/test-resolve-exports-legacy-fallback/dir'
   text('.exports-legacy-fallback', exportsLegacyFallbackMsg)

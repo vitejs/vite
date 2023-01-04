@@ -795,7 +795,9 @@ importers:
       '@vitejs/test-resolve-browser-module-field3': link:./browser-module-field3
       '@vitejs/test-resolve-custom-condition': link:./custom-condition
       '@vitejs/test-resolve-custom-main-field': link:./custom-main-field
+      '@vitejs/test-resolve-exports-and-nested-scope': link:./exports-and-nested-scope
       '@vitejs/test-resolve-exports-env': link:./exports-env
+      '@vitejs/test-resolve-exports-from-root': link:./exports-from-root
       '@vitejs/test-resolve-exports-legacy-fallback': link:./exports-legacy-fallback
       '@vitejs/test-resolve-exports-path': link:./exports-path
       '@vitejs/test-resolve-linked': workspace:*
@@ -810,7 +812,9 @@ importers:
       '@vitejs/test-resolve-browser-module-field3': link:browser-module-field3
       '@vitejs/test-resolve-custom-condition': link:custom-condition
       '@vitejs/test-resolve-custom-main-field': link:custom-main-field
+      '@vitejs/test-resolve-exports-and-nested-scope': link:exports-and-nested-scope
       '@vitejs/test-resolve-exports-env': link:exports-env
+      '@vitejs/test-resolve-exports-from-root': link:exports-from-root
       '@vitejs/test-resolve-exports-legacy-fallback': link:exports-legacy-fallback
       '@vitejs/test-resolve-exports-path': link:exports-path
       '@vitejs/test-resolve-linked': link:../resolve-linked
@@ -841,7 +845,19 @@ importers:
   playground/resolve/custom-main-field:
     specifiers: {}
 
+  playground/resolve/exports-and-nested-scope:
+    specifiers: {}
+
+  playground/resolve/exports-and-nested-scope/nested-scope:
+    specifiers: {}
+
   playground/resolve/exports-env:
+    specifiers: {}
+
+  playground/resolve/exports-from-root:
+    specifiers: {}
+
+  playground/resolve/exports-from-root/nested:
     specifiers: {}
 
   playground/resolve/exports-legacy-fallback:

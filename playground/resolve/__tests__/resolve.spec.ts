@@ -9,6 +9,12 @@ test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
 })
 
+test('exports and a nested package scope with a different type', async () => {
+  expect(await page.textContent('.exports-and-nested-scope')).toMatch(
+    '[success]',
+  )
+})
+
 test('entry with exports field', async () => {
   expect(await page.textContent('.exports-entry')).toMatch('[success]')
 })
@@ -34,6 +40,10 @@ test('deep import with exports field + mapped dir', async () => {
   expect(await page.textContent('.exports-deep-mapped-dir')).toMatch(
     '[success]',
   )
+})
+
+test('exports read from the root package.json', async () => {
+  expect(await page.textContent('.exports-from-root')).toMatch('[success]')
 })
 
 // this is how Svelte 3 is packaged

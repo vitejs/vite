@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-resolve-exports-from-root",
+  "private": true,
+  "version": "1.0.0",
+  "exports": {
+    ".": "./index.js",
+    "./nested": "./file.js"
+  }
+}
