@@ -23,7 +23,7 @@ const importMetaUrl = new URL(import.meta.url)
 // use server configuration, then fallback to inference
 const serverHost = __SERVER_HOST__
 const socketProtocol =
-  __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
+  __HMR_PROTOCOL__ || (importMetaUrl.protocol === 'https:' ? 'wss' : 'ws')
 const hmrPort = __HMR_PORT__
 const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
   hmrPort || importMetaUrl.port
