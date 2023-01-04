@@ -28,6 +28,7 @@ importers:
       '@types/estree': ^1.0.0
       '@types/etag': ^1.8.1
       '@types/fs-extra': ^9.0.13
+      '@types/json-stable-stringify': ^1.0.34
       '@types/less': ^3.0.3
       '@types/micromatch': ^4.0.2
       '@types/minimist': ^1.2.2
@@ -84,6 +85,7 @@ importers:
       '@types/estree': 1.0.0
       '@types/etag': 1.8.1
       '@types/fs-extra': 9.0.13
+      '@types/json-stable-stringify': 1.0.34
       '@types/less': 3.0.3
       '@types/micromatch': 4.0.2
       '@types/minimist': 1.2.2
@@ -195,6 +197,7 @@ importers:
       fast-glob: ^3.2.12
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
+      json-stable-stringify: ^1.0.2
       launch-editor-middleware: ^2.6.0
       magic-string: ^0.27.0
       micromatch: ^4.0.5
@@ -261,6 +264,7 @@ importers:
       etag: 1.8.1
       fast-glob: 3.2.12
       http-proxy: 1.18.1_debug@4.3.4
+      json-stable-stringify: 1.0.2
       launch-editor-middleware: 2.6.0
       magic-string: 0.27.0
       micromatch: 4.0.5
@@ -2213,6 +2217,10 @@ packages:
 
   /@types/json-schema/7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
+    dev: true
+
+  /@types/json-stable-stringify/1.0.34:
+    resolution: {integrity: sha512-s2cfwagOQAS8o06TcwKfr9Wx11dNGbH2E9vJz1cqV+a/LOyhWNLUNd6JSRYNzvB4d29UuJX2M0Dj9vE1T8fRXw==}
     dev: true
 
   /@types/json5/0.0.29:
@@ -4722,6 +4730,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5112,7 +5133,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -5492,6 +5513,12 @@ packages:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
     dev: true
 
+  /json-stable-stringify/1.0.2:
+    resolution: {integrity: sha512-eunSSaEnxV12z+Z73y/j5N37/In40GK4GmsSy+tEHJMxknvqnA7/djeYtAgW0GsWHUfg+847WJjKaEylk2y09g==}
+    dependencies:
+      jsonify: 0.0.1
+    dev: true
+
   /json-stringify-safe/5.0.1:
     resolution: {integrity: sha1-Epai1Y/UXxmg9s4B1lcB4sc1tus=}
     dev: true
@@ -5525,6 +5552,10 @@ packages:
       universalify: 2.0.0
     optionalDependencies:
       graceful-fs: 4.2.10
+    dev: true
+
+  /jsonify/0.0.1:
+    resolution: {integrity: sha512-2/Ki0GcmuqSrgFyelQq9M05y7PS0mEwuIzrf3f1fPqkVDVRvZrPZtVSMHxdgo8Aq0sxAOb/cr2aqqA3LeWHVPg==}
     dev: true
 
   /jsonparse/1.3.1:

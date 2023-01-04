@@ -97,6 +97,7 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
     "http-proxy": "^1.18.1",
+    "json-stable-stringify": "^1.0.2",
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.27.0",
     "micromatch": "^4.0.5",
