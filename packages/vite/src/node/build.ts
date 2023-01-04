@@ -498,6 +498,7 @@ export async function build(
       : libOptions
       ? 'strict'
       : false,
+    cache: config.build.watch ? undefined : false,
     ...options.rollupOptions,
     input,
     plugins,
