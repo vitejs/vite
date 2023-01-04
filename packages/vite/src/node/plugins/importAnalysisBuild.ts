@@ -113,7 +113,7 @@ function preload(
       }
 
       if (isCss) {
-        // @ts-ignore
+        // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
         if (__VITE_IS_MODERN__) {
           return new Promise<void>((res, rej) => {
             const link = loadLink()
