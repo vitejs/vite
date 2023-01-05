@@ -56,7 +56,7 @@ importers:
       minimist: ^1.2.7
       npm-run-all: ^4.1.5
       picocolors: ^1.0.0
-      playwright-chromium: ^1.29.1
+      playwright-chromium: ^1.28.1
       pnpm: ^7.22.0
       prettier: 2.8.1
       prompts: ^2.4.2
@@ -113,7 +113,7 @@ importers:
       minimist: 1.2.7
       npm-run-all: 4.1.5
       picocolors: 1.0.0
-      playwright-chromium: 1.29.1
+      playwright-chromium: 1.28.1
       pnpm: 7.22.0
       prettier: 2.8.1
       prompts: 2.4.2
@@ -6600,17 +6600,17 @@ packages:
       pathe: 1.0.0
     dev: true
 
-  /playwright-chromium/1.29.1:
-    resolution: {integrity: sha512-Mdt15dIcYyM3MBBBKYQPBWzqcjrMcJ0n9v567DmHYgJk4XfJlQ2jQVzdQ1OyM1oKaOZ70CuC60f1fZtH8KglMA==}
+  /playwright-chromium/1.28.1:
+    resolution: {integrity: sha512-+JVgyAOaLUVN8ppAATtURmb5hEl6kaJjK5j3qh05viZvgJi9QoWkb5K02iBy99ww3q86vSnPoMmtKa1Bv+P7LQ==}
     engines: {node: '>=14'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      playwright-core: 1.29.1
+      playwright-core: 1.28.1
     dev: true
 
-  /playwright-core/1.29.1:
-    resolution: {integrity: sha512-20Ai3d+lMkWpI9YZYlxk8gxatfgax5STW8GaMozAHwigLiyiKQrdkt7gaoT9UQR8FIVDg6qVXs9IoZUQrDjIIg==}
+  /playwright-core/1.28.1:
+    resolution: {integrity: sha512-3PixLnGPno0E8rSBJjtwqTwJe3Yw72QwBBBxNoukIj3lEeBNXwbNiKrNuB1oyQgTBw5QHUhNO3SteEtHaMK6ag==}
     engines: {node: '>=14'}
     hasBin: true
     dev: true
