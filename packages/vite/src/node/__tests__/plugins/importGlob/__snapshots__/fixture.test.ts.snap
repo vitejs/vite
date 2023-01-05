@@ -24,6 +24,10 @@ export const rawImportModule = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\
 });
 export const excludeSelf = /* #__PURE__ */ Object.assign({\\"./sibling.ts\\": () => import(\\"./sibling.ts\\")
 
+
+
+
+
 });
 export const customQueryString = /* #__PURE__ */ Object.assign({\\"./sibling.ts\\": () => import(\\"./sibling.ts?custom\\")});
 export const customQueryObject = /* #__PURE__ */ Object.assign({\\"./sibling.ts\\": () => import(\\"./sibling.ts?foo=bar&raw=true\\")
@@ -73,6 +77,10 @@ export const rawImportModule = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\
 
 });
 export const excludeSelf = /* #__PURE__ */ Object.assign({\\"./sibling.ts\\": () => import(\\"./sibling.ts\\")
+
+
+
+
 
 });
 export const customQueryString = /* #__PURE__ */ Object.assign({\\"./sibling.ts\\": () => import(\\"./sibling.ts?custom&lang.ts\\")});
