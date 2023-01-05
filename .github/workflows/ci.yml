@@ -48,7 +48,7 @@ jobs:
 
       - name: Get changed files
         id: skip-tests-files
-        uses: tj-actions/changed-files@1d1287f9fafd92be283f99b781fb5f00f00dd471 # v35.2.1
+        uses: tj-actions/changed-files@ea251d4d2f03a9c18841ae1b752f58b82dfb4d5e # v35.3.0
         with:
           files: |
             docs/**
