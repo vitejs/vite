@@ -20,12 +20,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv),
     })
     Object.assign(processEnv, {
       'process.env': `{}`,
       'global.process.env': `{}`,
-      'globalThis.process.env': `{}`
+      'globalThis.process.env': `{}`,
     })
   }
 
@@ -42,14 +42,15 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
-      SSR: !!config.build.ssr
+      SSR: !!config.build.ssr,
     }
+    // set here to allow override with config.define
+    importMetaKeys['import.meta.hot'] = `false`
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`
     })
   }
 
@@ -61,7 +62,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...importMetaKeys,
       ...userDefine,
       ...importMetaFallbackKeys,
-      ...(replaceProcessEnv ? processEnv : {})
+      ...(replaceProcessEnv ? processEnv : {}),
     }
 
     if (isBuild && !replaceProcessEnv) {
@@ -99,7 +100,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       if (!replacements) return
 
       return await replaceDefine(code, id, replacements, config)
-    }
+    },
   }
 }
 
@@ -107,7 +108,7 @@ export async function replaceDefine(
   code: string,
   id: string,
   replacements: Record<string, string>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
 ): Promise<{ code: string; map: string | null }> {
   const result = await transform(code, {
     loader: 'js',
@@ -115,10 +116,10 @@ export async function replaceDefine(
     platform: 'neutral',
     define: replacements,
     sourcefile: id,
-    sourcemap: config.command === 'build' && !!config.build.sourcemap
+    sourcemap: config.command === 'build' && !!config.build.sourcemap,
   })
   return {
     code: result.code,
-    map: result.map || null
+    map: result.map || null,
   }
 }

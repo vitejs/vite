@@ -1,5 +1,5 @@
 {
-  "name": "external-test",
+  "name": "@vitejs/test-external",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/dep-that-imports": "file:./dep-that-imports",
-    "@vitejs/dep-that-requires": "file:./dep-that-requires"
+    "@vitejs/test-dep-that-imports": "file:./dep-that-imports",
+    "@vitejs/test-dep-that-requires": "file:./dep-that-requires"
   },
   "devDependencies": {
     "slash3": "npm:slash@^3.0.0",

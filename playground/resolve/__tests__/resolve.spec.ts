@@ -9,6 +9,12 @@ test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
 })
 
+test('exports and a nested package scope with a different type', async () => {
+  expect(await page.textContent('.exports-and-nested-scope')).toMatch(
+    '[success]',
+  )
+})
+
 test('entry with exports field', async () => {
   expect(await page.textContent('.exports-entry')).toMatch('[success]')
 })
@@ -20,26 +26,30 @@ test('deep import with exports field', async () => {
 test('deep import with query with exports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild ? /base64/ : '/exports-path/deep.json'
+    isBuild ? /base64/ : '/exports-path/deep.json',
   )
 })
 
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
 test('deep import with exports field + mapped dir', async () => {
   expect(await page.textContent('.exports-deep-mapped-dir')).toMatch(
-    '[success]'
+    '[success]',
   )
+})
+
+test('exports read from the root package.json', async () => {
+  expect(await page.textContent('.exports-from-root')).toMatch('[success]')
 })
 
 // this is how Svelte 3 is packaged
 test('deep import with exports and legacy fallback', async () => {
   expect(await page.textContent('.exports-legacy-fallback')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
@@ -49,8 +59,12 @@ test('Respect exports field env key priority', async () => {
 
 test('Respect production/development conditionals', async () => {
   expect(await page.textContent('.exports-env')).toMatch(
-    isBuild ? `browser.prod.mjs` : `browser.mjs`
+    isBuild ? `browser.prod.mjs` : `browser.mjs`,
   )
+})
+
+test('Respect exports to take precedence over mainFields', async () => {
+  expect(await page.textContent('.exports-with-module')).toMatch('[success]')
 })
 
 test('implicit dir/index.js', async () => {
@@ -71,7 +85,7 @@ test('dont add extension to directory name (./dir-with-ext.js/index.js)', async 
 
 test('do not resolve to the `module` field if the importer is a `require` call', async () => {
   expect(await page.textContent('.require-pkg-with-module-field')).toMatch(
-    '[success]'
+    '[success]',
   )
 })
 
@@ -141,6 +155,6 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success]'
+    '[success]',
   )
 })

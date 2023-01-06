@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "3.2.1",
+  "version": "4.0.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "engines": {

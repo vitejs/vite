@@ -37,7 +37,7 @@ test('mode file override', async () => {
 
 test('inline variables', async () => {
   expect(await page.textContent('.inline')).toBe(
-    isBuild ? `inline-build` : `inline-serve`
+    isBuild ? `inline-build` : `inline-serve`,
   )
 })
 
@@ -62,7 +62,7 @@ test('env object', async () => {
     BASE_URL: '/env/',
     MODE: mode,
     DEV: !isBuild,
-    PROD: isBuild
+    PROD: isBuild,
   })
 })
 
@@ -75,7 +75,7 @@ test('env object in template literal expression', async () => {
     BASE_URL: '/env/',
     MODE: mode,
     DEV: !isBuild,
-    PROD: isBuild
+    PROD: isBuild,
   })
 })
 
@@ -87,9 +87,9 @@ if (!isBuild) {
 
 test('ignores import' + '.meta.env in string literals', async () => {
   expect(await page.textContent('.ignores-literal-import-meta-env-dot')).toBe(
-    'import' + '.meta.env.'
+    'import' + '.meta.env.',
   )
   expect(await page.textContent('.ignores-literal-import-meta-env')).toBe(
-    'import' + '.meta.env'
+    'import' + '.meta.env',
   )
 })

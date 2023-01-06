@@ -79,8 +79,8 @@
   text(
     '.spread-object',
     JSON.stringify({
-      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {})
-    })
+      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {}),
+    }),
   )
   text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
   text('.dollar-identifier', $DOLLAR)
@@ -106,34 +106,34 @@
   text('.ignores-string-literals .process-env-dot', 'process.env.')
   text(
     '.ignores-string-literals .global-process-env-dot',
-    'global.process.env.'
+    'global.process.env.',
   )
   text(
     '.ignores-string-literals .globalThis-process-env-dot',
-    'globalThis.process.env.'
+    'globalThis.process.env.',
   )
   text('.ignores-string-literals .process-env-NODE_ENV', 'process.env.NODE_ENV')
   text(
     '.ignores-string-literals .global-process-env-NODE_ENV',
-    'global.process.env.NODE_ENV'
+    'global.process.env.NODE_ENV',
   )
   text(
     '.ignores-string-literals .globalThis-process-env-NODE_ENV',
-    'globalThis.process.env.NODE_ENV'
+    'globalThis.process.env.NODE_ENV',
   )
   text(
     '.ignores-string-literals .__vite_process_env_NODE_ENV',
-    '__vite_process_env_NODE_ENV'
+    '__vite_process_env_NODE_ENV',
   )
   text('.ignores-string-literals .import-meta-hot', 'import.meta.hot')
 
   text(
     '.replaces-constants-in-template-literal-expressions .process-env-dot',
-    `${process.env.SOMEVAR}`
+    `${process.env.SOMEVAR}`,
   )
   text(
     '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV',
-    `${process.env.NODE_ENV}`
+    `${process.env.NODE_ENV}`,
   )
 </script>
 

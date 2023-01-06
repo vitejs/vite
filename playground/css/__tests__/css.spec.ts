@@ -1,17 +1,18 @@
 import { readFileSync } from 'node:fs'
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
+  isServe,
   page,
   removeFile,
   serverLogs,
   untilUpdated,
   viteTestUrl,
-  withRetry
+  withRetry,
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
@@ -42,7 +43,7 @@ test('linked css', async () => {
   await untilUpdated(() => getColor(linked), 'red')
 
   editFile('linked-at-import.css', (code) =>
-    code.replace('color: red', 'color: blue')
+    code.replace('color: red', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
 })
@@ -58,7 +59,7 @@ test('css import from js', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 
   editFile('imported-at-import.css', (code) =>
-    code.replace('color: purple', 'color: blue')
+    code.replace('color: purple', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
 })
@@ -89,25 +90,25 @@ test('sass', async () => {
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
   expect(await getColor(atImportAlias)).toBe('olive')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png'
+    isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`
+    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
 
   editFile('sass.scss', (code) =>
-    code.replace('color: $injectedColor', 'color: red')
+    code.replace('color: $injectedColor', 'color: red'),
   )
   await untilUpdated(() => getColor(imported), 'red')
 
   editFile('nested/_index.scss', (code) =>
-    code.replace('color: olive', 'color: blue')
+    code.replace('color: olive', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
 
   editFile('nested/_partial.scss', (code) =>
-    code.replace('color: orchid', 'color: green')
+    code.replace('color: orchid', 'color: green'),
   )
   await untilUpdated(() => getColor(partialImport), 'green')
 })
@@ -123,17 +124,17 @@ test('less', async () => {
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png'
+    isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`
+    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`,
   )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
   await untilUpdated(() => getColor(imported), 'red')
 
   editFile('nested/nested.less', (code) =>
-    code.replace('color: darkslateblue', 'color: blue')
+    code.replace('color: darkslateblue', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
 })
@@ -151,18 +152,18 @@ test('stylus', async () => {
   expect(await getColor(relativeImport)).toBe('darkslateblue')
   expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
   expect(await getBg(relativeImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png'
+    isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
 
   editFile('stylus.styl', (code) =>
-    code.replace('$color ?= blue', '$color ?= red')
+    code.replace('$color ?= blue', '$color ?= red'),
   )
   await untilUpdated(() => getColor(imported), 'red')
 
   editFile('nested/nested.styl', (code) =>
-    code.replace('color: darkslateblue', 'color: blue')
+    code.replace('color: darkslateblue', 'color: blue'),
   )
   await untilUpdated(() => getColor(relativeImport), 'blue')
 })
@@ -174,11 +175,11 @@ test('css modules', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.mod-module__apply-color___[\w-]{5}/
+    /.mod-module__apply-color___[\w-]{5}/,
   )
 
   editFile('mod.module.css', (code) =>
-    code.replace('color: turquoise', 'color: red')
+    code.replace('color: turquoise', 'color: red'),
   )
   await untilUpdated(() => getColor(imported), 'red')
 })
@@ -190,11 +191,11 @@ test('css modules composes/from path resolving', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/
+    /.composed-module__apply-color___[\w-]{5}/,
   )
 
   expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-css___[\w-]{5}/
+    /.composes-path-resolving-module__path-resolving-css___[\w-]{5}/,
   )
 
   // @todo HMR is not working on this situation.
@@ -211,11 +212,11 @@ test('sass modules composes/from path resolving', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/
+    /.composed-module__apply-color___[\w-]{5}/,
   )
 
   expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-sass___[\w-]{5}/
+    /.composes-path-resolving-module__path-resolving-sass___[\w-]{5}/,
   )
 
   // @todo HMR is not working on this situation.
@@ -232,11 +233,11 @@ test('less modules composes/from path resolving', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/
+    /.composed-module__apply-color___[\w-]{5}/,
   )
 
   expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-less___[\w-]{5}/
+    /.composes-path-resolving-module__path-resolving-less___[\w-]{5}/,
   )
 
   // @todo HMR is not working on this situation.
@@ -250,11 +251,11 @@ test('css modules w/ sass', async () => {
   const imported = await page.$('.modules-sass')
   expect(await getColor(imported)).toBe('orangered')
   expect(await imported.getAttribute('class')).toMatch(
-    /.mod-module__apply-color___[\w-]{5}/
+    /.mod-module__apply-color___[\w-]{5}/,
   )
 
   editFile('mod.module.scss', (code) =>
-    code.replace('color: orangered', 'color: blue')
+    code.replace('color: orangered', 'color: blue'),
   )
   await untilUpdated(() => getColor(imported), 'blue')
 })
@@ -284,10 +285,6 @@ test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
 })
 
-test('@import dependency w/ stylus entry', async () => {
-  expect(await getColor('.css-dep-stylus')).toBe('red')
-})
-
 test('@import dependency w/out package scss', async () => {
   expect(await getColor('.sass-dep')).toBe('lavender')
 })
@@ -314,7 +311,7 @@ test('treeshaken async chunk', async () => {
     expect(
       await page.evaluate(() => {
         return document.querySelector('.async-treeshaken')
-      })
+      }),
     ).toBeNull()
     // assert that the css is not present anywhere
     expect(findAssetFile(/\.css$/)).not.toMatch('plum')
@@ -326,7 +323,7 @@ test('treeshaken async chunk', async () => {
     // should be present in dev
     const el = await page.$('.async-treeshaken')
     editFile('async-treeshaken.css', (code) =>
-      code.replace('color: plum', 'color: blue')
+      code.replace('color: plum', 'color: blue'),
     )
     await untilUpdated(() => getColor(el), 'blue')
   }
@@ -343,19 +340,19 @@ test('PostCSS dir-dependency', async () => {
 
   if (!isBuild) {
     editFile('glob-dep/foo.css', (code) =>
-      code.replace('color: grey', 'color: blue')
+      code.replace('color: grey', 'color: blue'),
     )
     await untilUpdated(() => getColor(el1), 'blue')
     expect(await getColor(el2)).toBe('grey')
 
     editFile('glob-dep/bar.css', (code) =>
-      code.replace('color: grey', 'color: red')
+      code.replace('color: grey', 'color: red'),
     )
     await untilUpdated(() => getColor(el2), 'red')
     expect(await getColor(el1)).toBe('blue')
 
     editFile('glob-dep/nested (dir)/baz.css', (code) =>
-      code.replace('color: grey', 'color: green')
+      code.replace('color: grey', 'color: green'),
     )
     await untilUpdated(() => getColor(el3), 'green')
     expect(await getColor(el1)).toBe('blue')
@@ -379,8 +376,9 @@ test('URL separation', async () => {
     .fill('')
     .flatMap((_, i) =>
       [',', ' ,', ', ', ' , '].map(
-        (sep) => `background-image:${new Array(i + 1).fill(baseUrl).join(sep)};`
-      )
+        (sep) =>
+          `background-image:${new Array(i + 1).fill(baseUrl).join(sep)};`,
+      ),
     )
 
   // Insert the base case
@@ -391,7 +389,7 @@ test('URL separation', async () => {
     if (i > 0) editFile('imported.css', (code) => code.replace(cases[i - 1], c))
 
     expect(await getBg(urlSeparated)).toMatch(
-      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/
+      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/,
     )
   }
 })
@@ -427,7 +425,7 @@ test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
-    readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
+    readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
 })
 
@@ -440,7 +438,7 @@ test("relative path rewritten in Less's data-uri", async () => {
   // relative path passed to Less's data-uri is rewritten to absolute,
   // the Less inlines it
   expect(await getBg('.form-box-data-uri')).toMatch(
-    /^url\("data:image\/svg\+xml,%3Csvg/
+    /^url\("data:image\/svg\+xml,%3Csvg/,
   )
 })
 
@@ -450,8 +448,25 @@ test('PostCSS source.input.from includes query', async () => {
   expect(code).toContain(
     isBuild
       ? '/postcss-source-input.css?used&query=foo'
-      : '/postcss-source-input.css?query=foo'
+      : '/postcss-source-input.css?query=foo',
   )
+})
+
+describe.runIf(isServe)('deprecate default/named imports from CSS', () => {
+  test('css file', () => {
+    const actual = serverLogs.some((log) =>
+      /Use the \?inline query instead.+imported\.css/.test(log),
+    )
+    expect(actual).toBe(true)
+  })
+
+  test('js file ending with .css.js', async () => {
+    const message = await page.textContent('.jsfile-css-js')
+    expect(message).toMatch('from jsfile.css.js')
+    serverLogs.forEach((log) => {
+      expect(log).not.toMatch(/Use the \?inline query instead.+jsfile\.css/)
+    })
+  })
 })
 
 test('aliased css has content', async () => {
@@ -478,14 +493,14 @@ test('sugarss', async () => {
   expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png'
+    isBuild ? /base64/ : '/nested/icon.png',
   )
 
   editFile('sugarss.sss', (code) => code.replace('color: blue', 'color: coral'))
   await untilUpdated(() => getColor(imported), 'coral')
 
   editFile('nested/nested.sss', (code) =>
-    code.replace('color: darkslateblue', 'color: blue')
+    code.replace('color: darkslateblue', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
 })

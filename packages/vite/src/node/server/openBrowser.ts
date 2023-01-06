@@ -23,7 +23,7 @@ import { VITE_PACKAGE_DIR } from '../constants'
 export function openBrowser(
   url: string,
   opt: string | true,
-  logger: Logger
+  logger: Logger,
 ): boolean {
   // The browser executable to open.
   // See https://github.com/sindresorhus/open#app for documentation.
@@ -31,7 +31,10 @@ export function openBrowser(
   if (browser.toLowerCase().endsWith('.js')) {
     return executeNodeScript(browser, url, logger)
   } else if (browser.toLowerCase() !== 'none') {
-    return startBrowserProcess(browser, url)
+    const browserArgs = process.env.BROWSER_ARGS
+      ? process.env.BROWSER_ARGS.split(' ')
+      : []
+    return startBrowserProcess(browser, browserArgs, url)
   }
   return false
 }
@@ -39,17 +42,17 @@ export function openBrowser(
 function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   const extraArgs = process.argv.slice(2)
   const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
-    stdio: 'inherit'
+    stdio: 'inherit',
   })
   child.on('close', (code) => {
     if (code !== 0) {
       logger.error(
         colors.red(
           `\nThe script specified as BROWSER environment variable failed.\n\n${colors.cyan(
-            scriptPath
-          )} exited with code ${code}.`
+            scriptPath,
+          )} exited with code ${code}.`,
         ),
-        { error: null }
+        { error: null },
       )
     }
   })
@@ -64,10 +67,14 @@ const supportedChromiumBrowsers = [
   'Microsoft Edge',
   'Brave Browser',
   'Vivaldi',
-  'Chromium'
+  'Chromium',
 ]
 
-function startBrowserProcess(browser: string | undefined, url: string) {
+function startBrowserProcess(
+  browser: string | undefined,
+  browserArgs: string[],
+  url: string,
+) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
   // a Chromium browser with AppleScript. This lets us reuse an
@@ -86,17 +93,19 @@ function startBrowserProcess(browser: string | undefined, url: string) {
         preferredOSXBrowser && ps.includes(preferredOSXBrowser)
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
-      // Try our best to reuse existing tab with AppleScript
-      execSync(
-        `osascript openChrome.applescript "${encodeURI(
-          url
-        )}" "${openedBrowser}"`,
-        {
-          cwd: join(VITE_PACKAGE_DIR, 'bin'),
-          stdio: 'ignore'
-        }
-      )
-      return true
+      if (openedBrowser) {
+        // Try our best to reuse existing tab with AppleScript
+        execSync(
+          `osascript openChrome.applescript "${encodeURI(
+            url,
+          )}" "${openedBrowser}"`,
+          {
+            cwd: join(VITE_PACKAGE_DIR, 'bin'),
+            stdio: 'ignore',
+          },
+        )
+        return true
+      }
     } catch (err) {
       // Ignore errors
     }
@@ -113,7 +122,9 @@ function startBrowserProcess(browser: string | undefined, url: string) {
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options: open.Options = browser ? { app: { name: browser } } : {}
+    const options: open.Options = browser
+      ? { app: { name: browser, arguments: browserArgs } }
+      : {}
     open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
     return true
   } catch (err) {

@@ -35,7 +35,7 @@ export const isJSONRequest = (request: string): boolean =>
 
 export function jsonPlugin(
   options: JsonOptions = {},
-  isBuild: boolean
+  isBuild: boolean,
 ): Plugin {
   return {
     name: 'vite:json',
@@ -53,9 +53,9 @@ export function jsonPlugin(
               // during build, parse then double-stringify to remove all
               // unnecessary whitespaces to reduce bundle size.
               code: `export default JSON.parse(${JSON.stringify(
-                JSON.stringify(JSON.parse(json))
+                JSON.stringify(JSON.parse(json)),
               )})`,
-              map: { mappings: '' }
+              map: { mappings: '' },
             }
           } else {
             return `export default JSON.parse(${JSON.stringify(json)})`
@@ -66,9 +66,9 @@ export function jsonPlugin(
         return {
           code: dataToEsm(parsed, {
             preferConst: true,
-            namedExports: options.namedExports
+            namedExports: options.namedExports,
           }),
-          map: { mappings: '' }
+          map: { mappings: '' },
         }
       } catch (e) {
         const errorMessageList = /\d+/.exec(e.message)
@@ -78,6 +78,6 @@ export function jsonPlugin(
           : `.`
         this.error(`Failed to parse JSON file` + msg, e.idx)
       }
-    }
+    },
   }
 }

@@ -3,6 +3,6 @@
  */
 module.exports = {
   build: {
-    sourcemap: true
-  }
+    sourcemap: true,
+  },
 }

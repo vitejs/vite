@@ -1,5 +1,5 @@
 {
-  "name": "test-import-assertion",
+  "name": "@vitejs/test-import-assertion",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/import-assertion-dep": "file:./import-assertion-dep"
+    "@vitejs/test-import-assertion-dep": "file:./import-assertion-dep"
   }
 }

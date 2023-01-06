@@ -51,7 +51,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
-          .replace(`__BASE__`, JSON.stringify(devBase))
+          .replace(/__BASE__/g, JSON.stringify(devBase))
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__SERVER_HOST__`, JSON.stringify(serverHost))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
@@ -72,10 +72,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           code,
           id,
           { 'process.env.NODE_ENV': nodeEnv },
-          config
+          config,
         )
       }
-    }
+    },
   }
 }
 

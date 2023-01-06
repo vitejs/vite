@@ -6,7 +6,7 @@ import {
   listAssets,
   page,
   readManifest,
-  untilUpdated
+  untilUpdated,
 } from '~utils'
 
 test('should load the worker', async () => {
@@ -21,7 +21,7 @@ test('import.meta.env.LEGACY', async () => {
   await untilUpdated(
     () => page.textContent('#env'),
     isBuild ? 'true' : 'false',
-    true
+    true,
   )
 })
 
@@ -34,7 +34,7 @@ test('wraps with iife', async () => {
   await untilUpdated(
     () => page.textContent('#babel-helpers'),
     'exposed babel helpers: false',
-    true
+    true,
   )
 })
 
@@ -49,7 +49,7 @@ test('generates assets', async () => {
           'chunk-async-legacy: 404',
           'immutable-chunk: 200',
           'immutable-chunk-legacy: 200',
-          'polyfills-legacy: 404'
+          'polyfills-legacy: 404',
         ].join('\n')
       : [
           'index: 404',
@@ -58,9 +58,9 @@ test('generates assets', async () => {
           'chunk-async-legacy: 404',
           'immutable-chunk: 404',
           'immutable-chunk-legacy: 404',
-          'polyfills-legacy: 404'
+          'polyfills-legacy: 404',
         ].join('\n'),
-    true
+    true,
   )
 })
 
@@ -76,7 +76,7 @@ test('should load dynamic import with css', async () => {
 
 test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg'
+    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg',
   )
 })
 
@@ -86,12 +86,12 @@ describe.runIf(isBuild)('build', () => {
     // legacy polyfill
     expect(manifest['../../vite/legacy-polyfills-legacy']).toBeDefined()
     expect(manifest['../../vite/legacy-polyfills-legacy'].src).toBe(
-      '../../vite/legacy-polyfills-legacy'
+      '../../vite/legacy-polyfills-legacy',
     )
     // modern polyfill
     expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
     expect(manifest['../../vite/legacy-polyfills'].src).toBe(
-      '../../vite/legacy-polyfills'
+      '../../vite/legacy-polyfills',
     )
   })
 

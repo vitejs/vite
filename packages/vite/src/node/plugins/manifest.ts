@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type { OutputAsset, OutputChunk } from 'rollup'
+import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
@@ -35,7 +36,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function getChunkName(chunk: OutputChunk) {
         if (chunk.facadeModuleId) {
           let name = normalizePath(
-            path.relative(config.root, chunk.facadeModuleId)
+            path.relative(config.root, chunk.facadeModuleId),
           )
           if (format === 'system' && !chunk.name.includes('-legacy')) {
             const ext = path.extname(name)
@@ -64,7 +65,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
-          file: chunk.fileName
+          file: chunk.fileName,
         }
 
         if (chunk.facadeModuleId) {
@@ -104,11 +105,11 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function createAsset(
         asset: OutputAsset,
         src: string,
-        isEntry?: boolean
+        isEntry?: boolean,
       ): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: asset.fileName,
-          src
+          src,
         }
         if (isEntry) manifestChunk.isEntry = true
         return manifestChunk
@@ -158,9 +159,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
               ? config.build.manifest
               : 'manifest.json',
           type: 'asset',
-          source: JSON.stringify(manifest, null, 2)
+          source: jsonStableStringify(manifest, { space: 2 }),
         })
       }
-    }
+    },
   }
 }

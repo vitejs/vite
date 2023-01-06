@@ -33,8 +33,8 @@ module.exports = {
         a22: resolve(__dirname, 'entrypoints/a22.js'),
         a23: resolve(__dirname, 'entrypoints/a23.js'),
         a24: resolve(__dirname, 'entrypoints/a24.js'),
-        index: resolve(__dirname, './index.html')
-      }
-    }
-  }
+        index: resolve(__dirname, './index.html'),
+      },
+    },
+  },
 }

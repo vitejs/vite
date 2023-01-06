@@ -3,17 +3,110 @@ import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import type { Logger } from 'vite'
 import { describe, expect, test, vi } from 'vitest'
-import type { OutputOptions } from 'rollup'
+import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { resolveBuildOutputs, resolveLibFilename } from '../build'
+import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
 import { createLogger } from '../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 type FormatsToFileNames = [LibraryFormats, string][]
+
+describe('build', () => {
+  test('file hash should change when css changes for dynamic entries', async () => {
+    const buildProject = async (cssColor: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'subentry.js' ||
+                id === 'foo.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `window.addEventListener('click', () => { import('subentry.js') });`
+              }
+              if (id === '\0subentry.js') {
+                return `import 'foo.css'`
+              }
+              if (id === '\0foo.css') {
+                return `.foo { color: ${cssColor} }`
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+    const result = await Promise.all([
+      buildProject('red'),
+      buildProject('blue'),
+    ])
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when pure css chunk changes', async () => {
+    const buildProject = async (cssColor: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'foo.js' ||
+                id === 'bar.js' ||
+                id === 'baz.js' ||
+                id === 'foo.css' ||
+                id === 'bar.css' ||
+                id === 'baz.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  window.addEventListener('click', () => { import('foo.js') });
+                  window.addEventListener('click', () => { import('bar.js') });`
+              }
+              if (id === '\0foo.js') return `import 'foo.css'; import 'baz.js'`
+              if (id === '\0bar.js') return `import 'bar.css'; import 'baz.js'`
+              if (id === '\0baz.js') return `import 'baz.css'`
+              if (id === '\0foo.css') return `.foo { color: red }`
+              if (id === '\0bar.css') return `.foo { color: green }`
+              if (id === '\0baz.css') return `.foo { color: ${cssColor} }`
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+    const result = await Promise.all([
+      buildProject('yellow'),
+      buildProject('blue'),
+    ])
+    assertOutputHashContentChange(result[0], result[1])
+  })
+})
+
 const baseLibOptions: LibraryOptions = {
   fileName: 'my-lib',
-  entry: 'mylib.js'
+  entry: 'mylib.js',
 }
 
 describe('resolveBuildOutputs', () => {
@@ -25,8 +118,8 @@ describe('resolveBuildOutputs', () => {
 
     expect(resolvedOutputs).toEqual([
       {
-        format: 'es'
-      }
+        format: 'es',
+      },
     ])
   })
 
@@ -37,11 +130,11 @@ describe('resolveBuildOutputs', () => {
 
     expect(resolvedOutputs).toEqual([
       {
-        format: 'es'
+        format: 'es',
       },
       {
-        format: 'umd'
-      }
+        format: 'umd',
+      },
     ])
   })
 
@@ -58,14 +151,14 @@ describe('resolveBuildOutputs', () => {
     const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     const libOptions: LibraryOptions = {
       ...baseLibOptions,
-      formats: ['iife']
+      formats: ['iife'],
     }
     const outputs: OutputOptions[] = [{ format: 'es' }]
 
     resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(loggerSpy).toHaveBeenCalledWith(
-      expect.stringContaining('"build.lib.formats" will be ignored because')
+      expect.stringContaining('"build.lib.formats" will be ignored because'),
     )
   })
 
@@ -73,7 +166,7 @@ describe('resolveBuildOutputs', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = {
       ...baseLibOptions,
-      formats: ['iife']
+      formats: ['iife'],
     }
     const resolveBuild = () => resolveBuildOutputs(void 0, libOptions, logger)
 
@@ -95,7 +188,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/
+      /Entries in "build\.rollupOptions\.output" must specify "name"/,
     )
   })
 
@@ -106,7 +199,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/
+      /Entries in "build\.rollupOptions\.output" must specify "name"/,
     )
   })
 })
@@ -116,11 +209,11 @@ describe('resolveLibFilename', () => {
     const filename = resolveLibFilename(
       {
         fileName: (format) => `custom-filename-function.${format}.js`,
-        entry: 'mylib.js'
+        entry: 'mylib.js',
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name')
+      resolve(__dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename-function.es.js')
@@ -130,11 +223,11 @@ describe('resolveLibFilename', () => {
     const filename = resolveLibFilename(
       {
         fileName: 'custom-filename',
-        entry: 'mylib.js'
+        entry: 'mylib.js',
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name')
+      resolve(__dirname, 'packages/name'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -143,11 +236,11 @@ describe('resolveLibFilename', () => {
   test('package name as filename', () => {
     const filename = resolveLibFilename(
       {
-        entry: 'mylib.js'
+        entry: 'mylib.js',
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/name')
+      resolve(__dirname, 'packages/name'),
     )
 
     expect(filename).toBe('mylib.mjs')
@@ -157,11 +250,11 @@ describe('resolveLibFilename', () => {
     const filename = resolveLibFilename(
       {
         fileName: 'custom-filename',
-        entry: 'mylib.js'
+        entry: 'mylib.js',
       },
       'es',
       'myLib',
-      resolve(__dirname, 'packages/noname')
+      resolve(__dirname, 'packages/noname'),
     )
 
     expect(filename).toBe('custom-filename.mjs')
@@ -171,11 +264,11 @@ describe('resolveLibFilename', () => {
     expect(() => {
       resolveLibFilename(
         {
-          entry: 'mylib.js'
+          entry: 'mylib.js',
         },
         'es',
         'myLib',
-        resolve(__dirname, 'packages/noname')
+        resolve(__dirname, 'packages/noname'),
       )
     }).toThrow()
   })
@@ -185,7 +278,7 @@ describe('resolveLibFilename', () => {
       ['es', 'my-lib.mjs'],
       ['umd', 'my-lib.umd.js'],
       ['cjs', 'my-lib.js'],
-      ['iife', 'my-lib.iife.js']
+      ['iife', 'my-lib.iife.js'],
     ]
 
     for (const [format, expectedFilename] of formatsToFilenames) {
@@ -193,7 +286,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/noname')
+        resolve(__dirname, 'packages/noname'),
       )
 
       expect(filename).toBe(expectedFilename)
@@ -205,7 +298,7 @@ describe('resolveLibFilename', () => {
       ['es', 'my-lib.js'],
       ['umd', 'my-lib.umd.cjs'],
       ['cjs', 'my-lib.cjs'],
-      ['iife', 'my-lib.iife.js']
+      ['iife', 'my-lib.iife.js'],
     ]
 
     for (const [format, expectedFilename] of formatsToFilenames) {
@@ -213,7 +306,7 @@ describe('resolveLibFilename', () => {
         baseLibOptions,
         format,
         'myLib',
-        resolve(__dirname, 'packages/module')
+        resolve(__dirname, 'packages/module'),
       )
 
       expect(expectedFilename).toBe(filename)
@@ -224,8 +317,8 @@ describe('resolveLibFilename', () => {
     const libOptions: LibraryOptions = {
       entry: {
         entryA: 'entryA.js',
-        entryB: 'entryB.js'
-      }
+        entryB: 'entryB.js',
+      },
     }
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
@@ -233,8 +326,8 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name')
-      )
+        resolve(__dirname, 'packages/name'),
+      ),
     )
 
     expect(fileName1).toBe('entryA.mjs')
@@ -245,10 +338,10 @@ describe('resolveLibFilename', () => {
     const libOptions: LibraryOptions = {
       entry: {
         entryA: 'entryA.js',
-        entryB: 'entryB.js'
+        entryB: 'entryB.js',
       },
       fileName: (format, entryAlias) =>
-        `custom-filename-function.${entryAlias}.${format}.js`
+        `custom-filename-function.${entryAlias}.${format}.js`,
     }
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
@@ -256,8 +349,8 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name')
-      )
+        resolve(__dirname, 'packages/name'),
+      ),
     )
 
     expect(fileName1).toBe('custom-filename-function.entryA.es.js')
@@ -268,9 +361,9 @@ describe('resolveLibFilename', () => {
     const libOptions: LibraryOptions = {
       entry: {
         entryA: 'entryA.js',
-        entryB: 'entryB.js'
+        entryB: 'entryB.js',
       },
-      fileName: 'custom-filename'
+      fileName: 'custom-filename',
     }
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
@@ -278,8 +371,8 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name')
-      )
+        resolve(__dirname, 'packages/name'),
+      ),
     )
 
     expect(fileName1).toBe('custom-filename.mjs')
@@ -288,7 +381,7 @@ describe('resolveLibFilename', () => {
 
   test('multiple entries as array', () => {
     const libOptions: LibraryOptions = {
-      entry: ['entryA.js', 'entryB.js']
+      entry: ['entryA.js', 'entryB.js'],
     }
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
@@ -296,8 +389,8 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name')
-      )
+        resolve(__dirname, 'packages/name'),
+      ),
     )
 
     expect(fileName1).toBe('entryA.mjs')
@@ -308,7 +401,7 @@ describe('resolveLibFilename', () => {
     const libOptions: LibraryOptions = {
       entry: ['entryA.js', 'entryB.js'],
       fileName: (format, entryAlias) =>
-        `custom-filename-function.${entryAlias}.${format}.js`
+        `custom-filename-function.${entryAlias}.${format}.js`,
     }
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
@@ -316,8 +409,8 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name')
-      )
+        resolve(__dirname, 'packages/name'),
+      ),
     )
 
     expect(fileName1).toBe('custom-filename-function.entryA.es.js')
@@ -327,7 +420,7 @@ describe('resolveLibFilename', () => {
   test('multiple entries as array: custom filename string', () => {
     const libOptions: LibraryOptions = {
       entry: ['entryA.js', 'entryB.js'],
-      fileName: 'custom-filename'
+      fileName: 'custom-filename',
     }
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
@@ -335,8 +428,8 @@ describe('resolveLibFilename', () => {
         libOptions,
         'es',
         entryAlias,
-        resolve(__dirname, 'packages/name')
-      )
+        resolve(__dirname, 'packages/name'),
+      ),
     )
 
     expect(fileName1).toBe('custom-filename.mjs')
@@ -348,41 +441,41 @@ describe('resolveBuildOutputs', () => {
   test('default format: one entry', () => {
     const libOptions: LibraryOptions = {
       entry: 'entryA.js',
-      name: 'entryA'
+      name: 'entryA',
     }
 
     expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
       { format: 'es' },
-      { format: 'umd' }
+      { format: 'umd' },
     ])
     expect(
-      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger)
+      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
     ).toEqual([
       { format: 'es', name: 'A' },
-      { format: 'umd', name: 'A' }
+      { format: 'umd', name: 'A' },
     ])
     expect(
-      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger)
+      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
     ).toEqual([{ name: 'A' }])
   })
 
   test('default format: multiple entries', () => {
     const libOptions: LibraryOptions = {
-      entry: ['entryA.js', 'entryB.js']
+      entry: ['entryA.js', 'entryB.js'],
     }
 
     expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
       { format: 'es' },
-      { format: 'cjs' }
+      { format: 'cjs' },
     ])
     expect(
-      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger)
+      resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
     ).toEqual([
       { format: 'es', name: 'A' },
-      { format: 'cjs', name: 'A' }
+      { format: 'cjs', name: 'A' },
     ])
     expect(
-      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger)
+      resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
     ).toEqual([{ name: 'A' }])
   })
 
@@ -393,12 +486,12 @@ describe('resolveBuildOutputs', () => {
           undefined,
           {
             entry: ['entryA.js', 'entryB.js'],
-            formats: [format as LibraryFormats]
+            formats: [format as LibraryFormats],
           },
-          {} as Logger
-        )
+          {} as Logger,
+        ),
       ).toThrow(
-        `Multiple entry points are not supported when output formats include "umd" or "iife".`
+        `Multiple entry points are not supported when output formats include "umd" or "iife".`,
       )
     })
   })
@@ -410,33 +503,55 @@ describe('resolveBuildOutputs', () => {
           undefined,
           {
             entry: 'entryA.js',
-            formats: [format as LibraryFormats]
+            formats: [format as LibraryFormats],
           },
-          {} as Logger
-        )
+          {} as Logger,
+        ),
       ).toThrow(
-        `Option "build.lib.name" is required when output formats include "umd" or "iife".`
+        `Option "build.lib.name" is required when output formats include "umd" or "iife".`,
       )
     })
   })
 
   test('array outputs: should ignore build.lib.formats', () => {
-    // @ts-expect-error mock Logger
-    const log = { warn: vi.fn() } as Logger
+    const log = { warn: vi.fn() } as unknown as Logger
     expect(
       resolveBuildOutputs(
         [{ name: 'A' }],
         {
           entry: 'entryA.js',
-          formats: ['es']
+          formats: ['es'],
         },
-        log
-      )
+        log,
+      ),
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
-        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`
-      )
+        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
+      ),
     )
   })
 })
+
+/**
+ * for each chunks in output1, if there's a chunk in output2 with the same fileName,
+ * ensure that the chunk code is the same. if not, the chunk hash should have changed.
+ */
+function assertOutputHashContentChange(
+  output1: RollupOutput,
+  output2: RollupOutput,
+) {
+  for (const chunk of output1.output) {
+    if (chunk.type === 'chunk') {
+      const chunk2 = output2.output.find(
+        (c) => c.type === 'chunk' && c.fileName === chunk.fileName,
+      ) as OutputChunk | undefined
+      if (chunk2) {
+        expect(
+          chunk.code,
+          `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
+        ).toEqual(chunk2.code)
+      }
+    }
+  }
+}

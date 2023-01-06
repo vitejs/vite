@@ -61,15 +61,17 @@ A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-ba
 
 - **Type:** `boolean | string`
 
-Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
+Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). You can also set `process.env.BROWSER_ARGS` to pass additional arguments (e.g. `--incognito`).
+
+`BROWSER` and `BROWSER_ARGS` are also special environment variables you can set in the `.env` file to configure it. See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
 
 **Example:**
 
 ```js
 export default defineConfig({
   server: {
-    open: '/docs/index.html'
-  }
+    open: '/docs/index.html',
+  },
 })
 ```
 
@@ -97,13 +99,13 @@ export default defineConfig({
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // with RegEx: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/fallback/, '')
+        rewrite: (path) => path.replace(/^\/fallback/, ''),
       },
       // Using the proxy instance
       '/api': {
@@ -111,15 +113,15 @@ export default defineConfig({
         changeOrigin: true,
         configure: (proxy, options) => {
           // proxy will be an instance of 'http-proxy'
-        }
+        },
       },
       // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
       '/socket.io': {
         target: 'ws://localhost:5174',
-        ws: true
-      }
-    }
-  }
+        ws: true,
+      },
+    },
+  },
 })
 ```
 
@@ -177,14 +179,14 @@ The Vite server watcher skips `.git/` and `node_modules/` directories by default
 export default defineConfig({
   server: {
     watch: {
-      ignored: ['!**/node_modules/your-package-name/**']
-    }
+      ignored: ['!**/node_modules/your-package-name/**'],
+    },
   },
   // The watched package must be excluded from optimization,
   // so that it can appear in the dependency graph and trigger hot reload.
   optimizeDeps: {
-    exclude: ['your-package-name']
-  }
+    exclude: ['your-package-name'],
+  },
 })
 ```
 
@@ -222,7 +224,7 @@ async function createServer() {
   // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom' // don't include Vite's default HTML handling middlewares
+    appType: 'custom', // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -271,9 +273,9 @@ export default defineConfig({
   server: {
     fs: {
       // Allow serving files from one level up to the project root
-      allow: ['..']
-    }
-  }
+      allow: ['..'],
+    },
+  },
 })
 ```
 
@@ -289,10 +291,10 @@ export default defineConfig({
         // search up for workspace root
         searchForWorkspaceRoot(process.cwd()),
         // your custom rules
-        '/path/to/custom/allow'
-      ]
-    }
-  }
+        '/path/to/custom/allow',
+      ],
+    },
+  },
 })
 ```
 
@@ -312,7 +314,7 @@ Defines the origin of the generated asset URLs during development.
 ```js
 export default defineConfig({
   server: {
-    origin: 'http://127.0.0.1:8080'
-  }
+    origin: 'http://127.0.0.1:8080',
+  },
 })
 ```

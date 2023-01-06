@@ -1,10 +1,10 @@
 {
-  "name": "@vitejs/require-external-cjs",
+  "name": "@vitejs/test-require-external-cjs",
   "type": "commonjs",
   "private": true,
   "version": "0.0.0",
   "main": "main.js",
   "dependencies": {
-    "@vitejs/external-cjs": "file:../external-cjs"
+    "@vitejs/test-external-cjs": "file:../external-cjs"
   }
 }
