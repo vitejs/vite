@@ -26,7 +26,6 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isFileReadable,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
@@ -472,6 +471,7 @@ function tryFsResolve(
         targetWeb,
         options.tryPrefix,
         options.skipPackageJson,
+        false,
       ))
     ) {
       return res
@@ -486,11 +486,15 @@ function tryFsResolve(
         targetWeb,
         options.tryPrefix,
         options.skipPackageJson,
+        false,
       ))
     ) {
       return res
     }
   }
+
+  // if `tryIndex` false, skip as we've already tested above
+  if (!tryIndex) return
 
   if (
     postfix &&
@@ -530,9 +534,11 @@ function tryResolveFile(
   targetWeb: boolean,
   tryPrefix?: string,
   skipPackageJson?: boolean,
+  skipTsExtension?: boolean,
 ): string | undefined {
-  if (isFileReadable(file)) {
-    if (!fs.statSync(file).isDirectory()) {
+  const stat = fs.statSync(file, { throwIfNoEntry: false })
+  if (stat) {
+    if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
     } else if (tryIndex) {
       if (!skipPackageJson) {
@@ -553,8 +559,12 @@ function tryResolveFile(
     }
   }
 
-  const tryTsExtension = options.isFromTsImporter && isPossibleTsOutput(file)
-  if (tryTsExtension) {
+  // try resolve .js import to typescript file
+  if (
+    !skipTsExtension &&
+    options.isFromTsImporter &&
+    isPossibleTsOutput(file)
+  ) {
     const tsSrcPaths = getPotentialTsSrcPaths(file)
     for (const srcPath of tsSrcPaths) {
       const res = tryResolveFile(
@@ -565,6 +575,7 @@ function tryResolveFile(
         targetWeb,
         tryPrefix,
         skipPackageJson,
+        true,
       )
       if (res) return res
     }
@@ -654,12 +665,21 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
+  let pkg: PackageData | undefined
+  let pkgId: string | undefined
   // nearest package.json
   let nearestPkg: PackageData | undefined
-  // nearest package.json that may have the `exports` field
-  let pkg: PackageData | undefined
 
-  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
+  const rootPkgId = possiblePkgIds[0]
+
+  const rootPkg = resolvePackageData(
+    rootPkgId,
+    basedir,
+    preserveSymlinks,
+    packageCache,
+  )!
+
+  const nearestPkgId = [...possiblePkgIds].reverse().find((pkgId) => {
     nearestPkg = resolvePackageData(
       pkgId,
       basedir,
@@ -669,17 +689,11 @@ export function tryNodeResolve(
     return nearestPkg
   })!
 
-  const rootPkgId = possiblePkgIds[0]
-  const rootPkg = resolvePackageData(
-    rootPkgId,
-    basedir,
-    preserveSymlinks,
-    packageCache,
-  )!
   if (rootPkg?.data?.exports) {
-    pkg = rootPkg
     pkgId = rootPkgId
+    pkg = rootPkg
   } else {
+    pkgId = nearestPkgId
     pkg = nearestPkg
   }
 
@@ -931,6 +945,8 @@ export function resolvePackageEntry(
       entryPoint = resolveExports(data, '.', options, targetWeb)
     }
 
+    const resolvedFromExports = !!entryPoint
+
     // if exports resolved to .mjs, still resolve other fields.
     // This is because .mjs files can technically import .cjs files which would
     // make them invalid for pure ESM environments - so if other module/browser
@@ -980,7 +996,9 @@ export function resolvePackageEntry(
       }
     }
 
-    if (!entryPoint || entryPoint.endsWith('.mjs')) {
+    // fallback to mainFields if still not resolved
+    // TODO: review if `.mjs` check is still needed
+    if (!resolvedFromExports && (!entryPoint || entryPoint.endsWith('.mjs'))) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {
