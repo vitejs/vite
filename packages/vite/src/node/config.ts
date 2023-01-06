@@ -831,10 +831,14 @@ export function resolveBaseUrl(
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
-    base = new URL(base, 'http://vitejs.dev').pathname
-    // ensure leading slash
-    if (!base.startsWith('/')) {
-      base = '/' + base
+    try {
+      base = new URL(base, 'http://vitejs.dev').pathname
+      // ensure leading slash
+      if (!base.startsWith('/')) {
+        base = '/' + base
+      }
+    } catch {
+      // ignored invalid url and handle it as an external URL
     }
   }
 
