@@ -1,3 +1,3 @@
 module.exports = {
-  defined: __STRINGIFIED_OBJ__
+  defined: __STRINGIFIED_OBJ__,
 }

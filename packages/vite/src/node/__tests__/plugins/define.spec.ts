@@ -22,7 +22,7 @@ describe('definePlugin', () => {
       __APP_VERSION__: JSON.stringify('1.0'),
     })
     expect(await transform('const version = __APP_VERSION__ ;')).toBe(
-      'const version = "1.0" ;',
+      'const version = "1.0";\n',
     )
     expect(await transform('const version = __APP_VERSION__;')).toBe(
       'const version = "1.0";\n',

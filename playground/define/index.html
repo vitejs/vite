@@ -100,7 +100,7 @@
     document.querySelector(el).textContent = text
   }
 
-  import { defined } from 'dep'
+  import { defined } from '@vitejs/test-commonjs-dep'
   text('.define-in-dep', JSON.stringify(defined))
 
   text('.ignores-string-literals .process-env-dot', 'process.env.')

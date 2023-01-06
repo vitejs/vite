@@ -38,7 +38,7 @@
   text('.custom', import.meta.env.VITE_CUSTOM_ENV_VARIABLE)
   text(
     '.custom-template-literal-exp',
-    `${import.meta.env.VITE_CUSTOM_ENV_VARIABLE}`
+    `${import.meta.env.VITE_CUSTOM_ENV_VARIABLE}`,
   )
   text('.custom-prefix', import.meta.env.CUSTOM_PREFIX_ENV_VARIABLE)
   text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
@@ -48,7 +48,7 @@
   text('.env-object', JSON.stringify(import.meta.env, null, 2))
   text(
     '.env-object-in-template-literal-exp',
-    `${JSON.stringify(import.meta.env, null, 2)}`
+    `${JSON.stringify(import.meta.env, null, 2)}`,
   )
   text('.ignores-literal-import-meta-env-dot', 'import' + '.meta.env.')
   text('.ignores-literal-import-meta-env', 'import' + '.meta.env')
