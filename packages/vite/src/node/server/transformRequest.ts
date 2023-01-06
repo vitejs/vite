@@ -227,8 +227,12 @@ async function loadAndTransform(
         `going through the plugin transforms, and therefore should not be ` +
         `imported from source code. It can only be referenced via HTML tags.`
       : `Does the file exist?`
+    const modulePath = server.moduleGraph.idToModuleMap
+      .get(id)
+      ?.importers.values()
+      .next().value.file
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id}). ${msg}`,
+      `Failed to load url ${url} (resolved id: ${id}) in ${modulePath} ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
