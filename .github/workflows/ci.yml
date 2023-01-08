@@ -58,12 +58,11 @@ jobs:
 
   test:
     needs: diff
-    if: needs.diff.outputs.runTest != 'false'
+    if: needs.diff.outputs.runTest == 'true'
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # Should be in sync with test-skip & GH required jobs
         os: [ubuntu-latest]
         node_version: [14, 16, 18]
         include:
@@ -177,7 +176,9 @@ jobs:
     name: "Required job"
     steps:
       - run: |
-          if [[ "${{ needs.test.result }}" == "true" && "${{ needs.lint.result }}" == "true" ]]; then
+          echo "Lint result: ${{ needs.lint.result }}"
+          echo "Test result: ${{ needs.test.result }}"
+          if [[ "${{ needs.lint.result }}" == "success" && ("${{ needs.text.result }}" == "success" || "${{ needs.text.result }}" == "skipped") ]]; then
             exit 0
           else
             exit 1
