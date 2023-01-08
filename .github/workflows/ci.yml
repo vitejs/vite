@@ -188,10 +188,10 @@ jobs:
           echo "Diff result: ${{ needs.diff.result }}"
           echo "Lint result: ${{ needs.lint.result }}"
           echo "Test result: ${{ needs.test.result }}"
-          $diff_success = ${{ needs.diff.result == 'success' }}
-          $lint_success = ${{ needs.lint.result == 'success' }}
-          $test_success = ${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
-          if [[ !$diff_success || !$lint_success || !$test_success ]]; then
+          diff_success=${{ needs.diff.result == 'success' }}
+          lint_success=${{ needs.lint.result == 'success' }}
+          test_success=${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
+          if [[ $diff_success == false || $lint_success == false || $test_success == false ]]; then
             echo "Some jobs failed"
             exit 1
           fi
