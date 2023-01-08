@@ -58,7 +58,7 @@ jobs:
 
   test:
     needs: diff
-    if: needs.diff.outputs.runTest
+    if: needs.diff.outputs.runTest != 'false'
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
