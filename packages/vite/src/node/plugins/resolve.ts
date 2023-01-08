@@ -312,8 +312,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             id,
             importer,
             options,
+            targetWeb,
             depsOptimizer,
-            ssr,
           ))
         ) {
           return res
@@ -608,7 +608,6 @@ export type TryNodeResolveCoreResult =
   | {
       resultType: 'success'
       resolved: string
-      // nestedPath: string
       pkg: PackageData
       pkgId: string
       nearestPkg: PackageData
@@ -795,7 +794,6 @@ export function tryNodeResolve(
 
   const { pkg, pkgId, nearestPkg, isDeepImport } = coreResult
   let { resolved } = coreResult
-  // const {} = pkg
   const { isBuild } = options
   ssr ??= false
   const { nestedPath } = parseNestedId(id)
@@ -847,7 +845,7 @@ export function tryNodeResolve(
   if (
     !options.ssrOptimizeCheck &&
     (!resolved.includes('node_modules') || // linked
-      !depsOptimizer || // resolving before listening to the server, or called by tryOptimizedResolve
+      !depsOptimizer || // resolving before listening to the server
       options.scan) // initial esbuild scan phase
   ) {
     return { id: resolved }
@@ -936,8 +934,8 @@ export async function tryOptimizedResolve(
   id: string,
   importer: string | null | undefined,
   resolveOptions: InternalResolveOptions,
+  targetWeb: boolean,
   depsOptimizer: DepsOptimizer,
-  ssr: boolean,
 ): Promise<string | undefined> {
   // TODO: we need to wait until scanning is done here as this function
   // is used in the preAliasPlugin to decide if an aliased dep is optimized,
@@ -972,22 +970,17 @@ export async function tryOptimizedResolve(
     // lazily initialize resolvedSrc
     if (resolvedSrc == null) {
       try {
-        const { target: ssrTarget } = resolveOptions.ssrConfig ?? {}
-        const targetWeb = !ssr || ssrTarget === 'webworker'
-        const resolved = tryNodeResolve(
+        const resolveResult = tryNodeResolveCore(
           id,
           importer,
           resolveOptions,
           targetWeb,
-          undefined,
-          ssr,
-          false,
         )
-        if (resolved?.id) {
-          resolvedSrc = normalizePath(resolved.id)
-        } else {
+        if (resolveResult.resultType !== 'success') {
           // no resolvedSrc, no need to continue
           break
+        } else {
+          resolvedSrc = normalizePath(resolveResult.resolved)
         }
       } catch {
         // this is best-effort only so swallow errors

@@ -28,6 +28,9 @@ export function preAliasPlugin(
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
   const isBuild = config.command === 'build'
+  const { ssrConfig } = resolveOptions
+  const { target: ssrTarget } = ssrConfig ?? {}
+
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
@@ -42,12 +45,13 @@ export function preAliasPlugin(
         id !== '@vite/env'
       ) {
         if (findPatterns.find((pattern) => matches(pattern, id))) {
+          const targetWeb = !ssr || ssrTarget === 'webworker'
           const optimizedId = await tryOptimizedResolve(
             id,
             importer,
             resolveOptions,
+            targetWeb,
             depsOptimizer,
-            ssr,
           )
           if (optimizedId) {
             return optimizedId // aliased dep already optimized
