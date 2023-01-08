@@ -16,6 +16,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
+  assertUnreachable,
   bareImportRE,
   cleanUrl,
   createDebugger,
@@ -613,7 +614,7 @@ export type TryNodeResolveCoreResult =
       nearestPkg: PackageData
       isDeepImport: boolean
     }
-  | { resultType: 'optional-peer-dep'; resolved: string }
+  | { resultType: 'fail-as-optional-peer-dep'; resolved: string }
   | { resultType: 'fail' }
 
 export function tryNodeResolveCore(
@@ -723,7 +724,7 @@ export function tryNodeResolveCore(
           mainPkg.peerDependenciesMeta?.[nestedPath]?.optional
         ) {
           return {
-            resultType: 'optional-peer-dep',
+            resultType: 'fail-as-optional-peer-dep',
             resolved: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`,
           }
         }
@@ -785,12 +786,13 @@ export function tryNodeResolve(
 ): PartialResolvedId | undefined {
   const coreResult = tryNodeResolveCore(id, importer, options, targetWeb)
   if (coreResult.resultType === 'fail') return
-  if (coreResult.resultType === 'optional-peer-dep')
+  if (coreResult.resultType === 'fail-as-optional-peer-dep')
     return {
       id: coreResult.resolved,
     }
-  if (coreResult.resultType !== 'success')
-    throw new Error('assertion error: unexpected coreResult.resultType')
+  if (coreResult.resultType !== 'success') {
+    return assertUnreachable(coreResult)
+  }
 
   const { pkg, pkgId, nearestPkg, isDeepImport } = coreResult
   let { resolved } = coreResult

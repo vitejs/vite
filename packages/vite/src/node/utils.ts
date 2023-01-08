@@ -1263,3 +1263,11 @@ export function evalValue<T = any>(rawValue: string): T {
   `)
   return fn()
 }
+
+/**
+ * let typescript do exhaustive check to ensure we have handled all cases
+ * https://stackoverflow.com/a/39419171
+ */
+export function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here")
+}
