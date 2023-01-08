@@ -76,7 +76,7 @@ jobs:
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
-      - name: Checkout ${{ needs.diff.outputs.runTest }}
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Install pnpm
@@ -129,25 +129,6 @@ jobs:
       - name: Test build
         run: pnpm run test-build
 
-  test-skip:
-    needs: diff
-    if: needs.diff.outputs.runTest == 'false'
-    timeout-minutes: 1
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node_version: [14, 16, 18]
-        include:
-          # Active LTS + other OS
-          - os: macos-latest
-            node_version: 18
-          - os: windows-latest
-            node_version: 18
-    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
-    steps:
-      - run: echo "No test required"
-
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -187,3 +168,17 @@ jobs:
         run: |
           bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
           ./actionlint -color -shellcheck=""
+
+  required:
+    needs: [test, lint]
+    if: always()
+    timeout-minutes: 1
+    runs-on: ubuntu-latest
+    name: "Required job"
+    steps:
+      - run: |
+          if [[ "${{ needs.test.result }}" == "true" && "${{ needs.lint.result }}" == "true" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
