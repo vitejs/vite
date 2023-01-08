@@ -168,18 +168,30 @@ jobs:
           bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
           ./actionlint -color -shellcheck=""
 
+  # At the time of writing GH only support job level require checks using labels.
+  # Which means to that all the name of the test matrix should be marked as required.
+  # And that skipping the matrix gives pending required jobs because the skip happen before the labels are evaluated
+  # A first solution is to create dummy jobs that runs with an opposite conditions like what the documentation suggest
+  # when skipping with path filtering: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  # But this requires to sync the two matrix and the list of required jobs in settings
+  # This step emulate a "workflow successful" output and simplify the GH requirement
+  # Note: we need to check that the diff job is successful to be sure test is not skipped because previous job failed
+  # For the same reason we need always() condition because a skipped job passes the requirement check
   required:
-    needs: [test, lint]
+    needs: [diff, test, lint]
     if: always()
     timeout-minutes: 1
     runs-on: ubuntu-latest
     name: "Required job"
     steps:
       - run: |
+          echo "Diff result: ${{ needs.diff.result }}"
           echo "Lint result: ${{ needs.lint.result }}"
           echo "Test result: ${{ needs.test.result }}"
-          if [[ "${{ needs.lint.result }}" == "success" && ("${{ needs.text.result }}" == "success" || "${{ needs.text.result }}" == "skipped") ]]; then
-            exit 0
-          else
+          $diff_success = ${{ needs.diff.result == 'success' }}
+          $lint_success = ${{ needs.lint.result == 'success' }}
+          $test_success = ${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
+          if [[ !$diff_success || !$lint_success || !$test_success ]]; then
+            echo "Some jobs failed"
             exit 1
           fi
