@@ -790,9 +790,7 @@ export function tryNodeResolve(
     return {
       id: coreResult.resolved,
     }
-  if (coreResult.resultType !== 'success') {
-    return assertUnreachable(coreResult)
-  }
+  if (coreResult.resultType !== 'success') return assertUnreachable(coreResult)
 
   const { pkg, pkgId, nearestPkg, isDeepImport } = coreResult
   let { resolved } = coreResult

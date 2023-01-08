@@ -28,8 +28,7 @@ export function preAliasPlugin(
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
   const isBuild = config.command === 'build'
-  const { ssrConfig } = resolveOptions
-  const { target: ssrTarget } = ssrConfig ?? {}
+  const ssrTarget = resolveOptions.ssrConfig?.target
 
   return {
     name: 'vite:pre-alias',
