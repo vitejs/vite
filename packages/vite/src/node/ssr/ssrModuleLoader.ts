@@ -2,6 +2,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ViteDevServer } from '../server'
 import {
+  assertUnreachable,
   dynamicImport,
   isBuiltin,
   unwrapId,
@@ -9,7 +10,7 @@ import {
 } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
-import { tryNodeResolve } from '../plugins/resolve'
+import { tryNodeResolveCore } from '../plugins/resolve'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -230,7 +231,7 @@ async function nodeImport(
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    const resolved = tryNodeResolve(
+    const resolveResult = tryNodeResolveCore(
       id,
       importer,
       // Non-external modules can import ESM-only modules, but only outside
@@ -241,14 +242,19 @@ async function nodeImport(
         : resolveOptions,
       false,
     )
-    if (!resolved) {
+    if (
+      resolveResult.resultType === 'success' ||
+      resolveResult.resultType === 'fail-as-optional-peer-dep'
+    ) {
+      url = resolveResult.resolved
+    } else {
+      if (resolveResult.resultType !== 'fail') assertUnreachable(resolveResult)
       const err: any = new Error(
         `Cannot find module '${id}' imported from '${importer}'`,
       )
       err.code = 'ERR_MODULE_NOT_FOUND'
       throw err
     }
-    url = resolved.id
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }

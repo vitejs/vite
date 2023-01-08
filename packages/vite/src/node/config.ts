@@ -53,7 +53,7 @@ import type {
   InternalResolveOptionsWithOverrideConditions,
   ResolveOptions,
 } from './plugins/resolve'
-import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
+import { resolvePlugin, tryNodeResolveCore } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
@@ -997,12 +997,18 @@ async function bundleConfigFile(
               }
 
               const isIdESM = isESM || kind === 'dynamic-import'
-              let idFsPath = tryNodeResolve(
+              let idFsPath: undefined | string
+              const resolveResult = tryNodeResolveCore(
                 id,
                 importer,
                 { ...options, isRequire: !isIdESM },
                 false,
-              )?.id
+              )
+              if (
+                resolveResult.resultType === 'success' ||
+                resolveResult.resultType === 'fail-as-optional-peer-dep'
+              )
+                idFsPath = resolveResult.resolved
               if (idFsPath && isIdESM) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
