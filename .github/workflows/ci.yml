@@ -53,13 +53,12 @@ jobs:
           files: |
             docs/**
             .github/**
-            !.github/workflows/ci.yml
             packages/create-vite/template**
             **.md
 
   test:
     needs: diff
-    if: ${{ needs.diff.outputs.runTest }}
+    if: needs.diff.outputs.runTest
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
