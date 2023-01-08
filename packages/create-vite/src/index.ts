@@ -336,6 +336,9 @@ async function init() {
       })
 
     const [command, ...args] = fullCustomCommand.split(' ')
+    if (targetDir.includes(' ')) {
+      args.splice(2, args.length - 2, targetDir)
+    }
     const { status } = spawn.sync(command, args, {
       stdio: 'inherit',
     })
