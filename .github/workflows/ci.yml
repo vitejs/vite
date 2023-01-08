@@ -75,7 +75,7 @@ jobs:
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
-      - name: Checkout
+      - name: Checkout ${{ needs.diff.outputs.runTest }}
         uses: actions/checkout@v3
 
       - name: Install pnpm
