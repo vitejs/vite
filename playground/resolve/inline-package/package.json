@@ -1,5 +1,5 @@
 {
-  "name": "inline-package",
+  "name": "@vitejs/test-inline-package",
   "private": true,
   "version": "0.0.0",
   "sideEffects": false,

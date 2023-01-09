@@ -8,21 +8,21 @@ module.exports = {
   esbuild: {
     supported: {
       // Force esbuild inject helpers to test regex
-      'object-rest-spread': false
-    }
+      'object-rest-spread': false,
+    },
   },
   build: {
     rollupOptions: {
       output: {
-        banner: `/*!\nMayLib\n*/`
-      }
+        banner: `/*!\nMayLib\n*/`,
+      },
     },
     lib: {
       entry: path.resolve(__dirname, 'src/main.js'),
       name: 'MyLib',
       formats: ['es', 'umd', 'iife'],
-      fileName: 'my-lib-custom-filename'
-    }
+      fileName: 'my-lib-custom-filename',
+    },
   },
   plugins: [
     {
@@ -33,10 +33,10 @@ module.exports = {
           fileName: 'index.html',
           source: fs.readFileSync(
             path.resolve(__dirname, 'index.dist.html'),
-            'utf-8'
-          )
+            'utf-8',
+          ),
         })
-      }
-    }
-  ]
+      },
+    },
+  ],
 }

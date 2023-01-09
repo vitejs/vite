@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type {
   Server as HttpServer,
-  OutgoingHttpHeaders as HttpServerHeaders
+  OutgoingHttpHeaders as HttpServerHeaders,
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'dep-types/connect'
@@ -93,7 +93,7 @@ export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 export async function resolveHttpServer(
   { proxy }: CommonServerOptions,
   app: Connect.Server,
-  httpsOptions?: HttpsServerOptions
+  httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
   if (!httpsOptions) {
     const { createServer } = await import('node:http')
@@ -112,16 +112,16 @@ export async function resolveHttpServer(
         // errors on large numbers of requests
         maxSessionMemory: 1000,
         ...httpsOptions,
-        allowHTTP1: true
+        allowHTTP1: true,
       },
       // @ts-expect-error TODO: is this correct?
-      app
+      app,
     ) as unknown as HttpServer
   }
 }
 
 export async function resolveHttpsConfig(
-  https: boolean | HttpsServerOptions | undefined
+  https: boolean | HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
@@ -132,7 +132,7 @@ export async function resolveHttpsConfig(
     ca: readFileIfExists(ca),
     cert: readFileIfExists(cert),
     key: readFileIfExists(key),
-    pfx: readFileIfExists(pfx)
+    pfx: readFileIfExists(pfx),
   })
   return httpsOption
 }
@@ -155,7 +155,7 @@ export async function httpServerStart(
     strictPort: boolean | undefined
     host: string | undefined
     logger: Logger
-  }
+  },
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
 
@@ -186,7 +186,7 @@ export async function httpServerStart(
 
 export function setClientErrorHandler(
   server: HttpServer,
-  logger: Logger
+  logger: Logger,
 ): void {
   server.on('clientError', (err, socket) => {
     let msg = '400 Bad Request'
@@ -195,8 +195,8 @@ export function setClientErrorHandler(
       logger.warn(
         colors.yellow(
           'Server responded with status code 431. ' +
-            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.'
-        )
+            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+        ),
       )
     }
     if ((err as any).code === 'ECONNRESET' || !socket.writable) {

@@ -10,12 +10,12 @@ import {
   httpServerStart,
   resolveHttpServer,
   resolveHttpsConfig,
-  setClientErrorHandler
+  setClientErrorHandler,
 } from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls, shouldServe } from './utils'
+import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
@@ -26,7 +26,7 @@ export interface ResolvedPreviewOptions extends PreviewOptions {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
-  server: ResolvedServerOptions
+  server: ResolvedServerOptions,
 ): ResolvedPreviewOptions {
   // The preview server inherits every CommonServerOption from the `server` config
   // except for the port to enable having both the dev and preview servers running
@@ -39,7 +39,7 @@ export function resolvePreviewOptions(
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
     cors: preview?.cors ?? server.cors,
-    headers: preview?.headers ?? server.headers
+    headers: preview?.headers ?? server.headers,
   }
 }
 
@@ -67,22 +67,27 @@ export type PreviewServerHook = (
   server: {
     middlewares: Connect.Server
     httpServer: http.Server
-  }
+  },
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
  */
 export async function preview(
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
 ): Promise<PreviewServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+  const config = await resolveConfig(
+    inlineConfig,
+    'serve',
+    'production',
+    'production',
+  )
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https)
+    await resolveHttpsConfig(config.preview?.https),
   )
   setClientErrorHandler(httpServer, config.logger)
 
@@ -122,14 +127,12 @@ export async function preview(
           res.setHeader(name, headers[name]!)
         }
       }
-    }
+    },
+    shouldServe(filePath) {
+      return shouldServeFile(filePath, distDir)
+    },
   })
-  app.use(previewBase, async (req, res, next) => {
-    if (shouldServe(req.url!, distDir)) {
-      return assetServer(req, res, next)
-    }
-    next()
-  })
+  app.use(previewBase, assetServer)
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
@@ -144,13 +147,13 @@ export async function preview(
     port,
     strictPort: options.strictPort,
     host: hostname.host,
-    logger
+    logger,
   })
 
   const resolvedUrls = await resolveServerUrls(
     httpServer,
     config.preview,
-    config
+    config,
   )
 
   if (options.open) {
@@ -158,9 +161,9 @@ export async function preview(
     openBrowser(
       path.startsWith('http')
         ? path
-        : `${protocol}://${hostname.name}:${serverPort}${path}`,
+        : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
       true,
-      logger
+      logger,
     )
   }
 
@@ -170,6 +173,6 @@ export async function preview(
     resolvedUrls,
     printUrls() {
       printServerUrls(resolvedUrls, options.host, logger.info)
-    }
+    },
   }
 }

@@ -14,7 +14,7 @@ import {
   isObject,
   prettifyUrl,
   removeTimestampQuery,
-  timeFrom
+  timeFrom,
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
@@ -45,7 +45,7 @@ export interface TransformOptions {
 export function transformRequest(
   url: string,
   server: ViteDevServer,
-  options: TransformOptions = {}
+  options: TransformOptions = {},
 ): Promise<TransformResult | null> {
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
@@ -107,7 +107,7 @@ export function transformRequest(
   server._pendingRequests.set(cacheKey, {
     request,
     timestamp,
-    abort: clearCache
+    abort: clearCache,
   })
   request.then(clearCache, clearCache)
 
@@ -118,7 +118,7 @@ async function doTransform(
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
-  timestamp: number
+  timestamp: number,
 ) {
   url = removeTimestampQuery(url)
 
@@ -158,7 +158,7 @@ async function loadAndTransform(
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
-  timestamp: number
+  timestamp: number,
 ) {
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
@@ -198,13 +198,16 @@ async function loadAndTransform(
       try {
         map = (
           convertSourceMap.fromSource(code) ||
-          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+          (await convertSourceMap.fromMapFileSource(
+            code,
+            createConvertSourceMapReadMap(file),
+          ))
         )?.toObject()
 
         code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
         logger.warn(`Failed to load source map for ${url}.`, {
-          timestamp: true
+          timestamp: true,
         })
       }
     }
@@ -225,7 +228,7 @@ async function loadAndTransform(
         `imported from source code. It can only be referenced via HTML tags.`
       : `Does the file exist?`
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id}). ${msg}`
+      `Failed to load url ${url} (resolved id: ${id}). ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
@@ -238,7 +241,7 @@ async function loadAndTransform(
   const transformStart = isDebug ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
-    ssr
+    ssr,
   })
   const originalCode = code
   if (
@@ -248,7 +251,7 @@ async function loadAndTransform(
     // no transform applied, keep code as-is
     isDebug &&
       debugTransform(
-        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
+        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
@@ -268,7 +271,7 @@ async function loadAndTransform(
     : ({
         code,
         map,
-        etag: getEtag(code, { weak: true })
+        etag: getEtag(code, { weak: true }),
       } as TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
@@ -279,4 +282,13 @@ async function loadAndTransform(
   }
 
   return result
+}
+
+function createConvertSourceMapReadMap(originalFileName: string) {
+  return (filename: string) => {
+    return fs.readFile(
+      path.resolve(path.dirname(originalFileName), filename),
+      'utf-8',
+    )
+  }
 }

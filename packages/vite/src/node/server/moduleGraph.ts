@@ -5,7 +5,7 @@ import {
   cleanUrl,
   normalizePath,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
@@ -48,20 +48,10 @@ export class ModuleNode {
   }
 }
 
-function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
-  if (seen.has(mod)) {
-    return
-  }
-  seen.add(mod)
-  mod.ssrModule = null
-  mod.ssrError = null
-  mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
-}
-
 export type ResolvedUrl = [
   url: string,
   resolvedId: string,
-  meta: object | null | undefined
+  meta: object | null | undefined,
 ]
 
 export class ModuleGraph {
@@ -74,13 +64,13 @@ export class ModuleGraph {
   constructor(
     private resolveId: (
       url: string,
-      ssr: boolean
-    ) => Promise<PartialResolvedId | null>
+      ssr: boolean,
+    ) => Promise<PartialResolvedId | null>,
   ) {}
 
   async getModuleByUrl(
     rawUrl: string,
-    ssr?: boolean
+    ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     const [url] = await this.resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
@@ -107,16 +97,31 @@ export class ModuleGraph {
   invalidateModule(
     mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
-    timestamp: number = Date.now()
+    timestamp: number = Date.now(),
+    isHmr: boolean = false,
   ): void {
-    // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
-    // processing being done for this module
-    mod.lastInvalidationTimestamp = timestamp
+    if (seen.has(mod)) {
+      return
+    }
+    seen.add(mod)
+    if (isHmr) {
+      mod.lastHMRTimestamp = timestamp
+    } else {
+      // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
+      // processing being done for this module
+      mod.lastInvalidationTimestamp = timestamp
+    }
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
     mod.ssrTransformResult = null
-    invalidateSSRModule(mod, seen)
+    mod.ssrModule = null
+    mod.ssrError = null
+    mod.importers.forEach((importer) => {
+      if (!importer.acceptedHmrDeps.has(mod)) {
+        this.invalidateModule(importer, seen, timestamp, isHmr)
+      }
+    })
   }
 
   invalidateAll(): void {
@@ -139,7 +144,7 @@ export class ModuleGraph {
     acceptedModules: Set<string | ModuleNode>,
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
-    ssr?: boolean
+    ssr?: boolean,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
@@ -182,7 +187,7 @@ export class ModuleGraph {
   async ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
-    setIsSelfAccepting = true
+    setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.idToModuleMap.get(resolvedId)

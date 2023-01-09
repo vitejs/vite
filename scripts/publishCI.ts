@@ -4,7 +4,7 @@ import {
   getActiveVersion,
   getPackageInfo,
   publishPackage,
-  step
+  step,
 } from './releaseUtils'
 
 async function main() {
@@ -25,7 +25,7 @@ async function main() {
   const { currentVersion, pkgDir } = getPackageInfo(pkgName)
   if (currentVersion !== version)
     throw new Error(
-      `Package version from tag "${version}" mismatches with current version "${currentVersion}"`
+      `Package version from tag "${version}" mismatches with current version "${currentVersion}"`,
     )
 
   const activeVersion = await getActiveVersion(pkgName)
