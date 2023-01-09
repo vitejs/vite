@@ -704,26 +704,6 @@ function splitSrcSet(srcs: string) {
   return parts
 }
 
-function escapeToLinuxLikePath(path: string) {
-  if (/^[A-Z]:/.test(path)) {
-    return path.replace(/^([A-Z]):\//, '/windows/$1/')
-  }
-  if (/^\/[^/]/.test(path)) {
-    return `/linux${path}`
-  }
-  return path
-}
-
-function unescapeToLinuxLikePath(path: string) {
-  if (path.startsWith('/linux/')) {
-    return path.slice('/linux'.length)
-  }
-  if (path.startsWith('/windows/')) {
-    return path.replace(/^\/windows\/([A-Z])\//, '$1:/')
-  }
-  return path
-}
-
 // based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
 const nullSourceMap: RawSourceMap = {
   names: [],
@@ -731,6 +711,9 @@ const nullSourceMap: RawSourceMap = {
   mappings: '',
   version: 3,
 }
+
+const filePathRegex =
+  /^(?<windowsPath>\/windows\/[A-Z]\/)(?<windowsRemainingPath>.*)|(?<linuxPath>\/linux\/)(?<linuxRemainingPath>.*)|(?<otherPath>.*)/
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
@@ -748,15 +731,37 @@ export function combineSourcemaps(
   // also avoid mutation here to prevent breaking plugin's using cache to generate sourcemaps like vue (see #7442)
   sourcemapList = sourcemapList.map((sourcemap) => {
     const newSourcemaps = { ...sourcemap }
-    newSourcemaps.sources = sourcemap.sources.map((source) =>
-      source ? escapeToLinuxLikePath(source) : null,
-    )
+    newSourcemaps.sources = sourcemap.sources.map((source) => {
+      if (!source) return source
+      const match = source.match(filePathRegex)
+      if (!match || !match.groups) return source
+      if (match.groups.windowsPath) {
+        return match.groups.windowsPath + match.groups.windowsRemainingPath
+      } else if (match.groups.linuxPath) {
+        return match.groups.linuxPath + match.groups.linuxRemainingPath
+      } else {
+        return match.groups.otherPath
+      }
+    })
     if (sourcemap.sourceRoot) {
-      newSourcemaps.sourceRoot = escapeToLinuxLikePath(sourcemap.sourceRoot)
+      const match = sourcemap.sourceRoot.match(filePathRegex)
+      if (!match || !match.groups) return newSourcemaps
+      if (match.groups.windowsPath) {
+        newSourcemaps.sourceRoot =
+          match.groups.windowsPath + match.groups.windowsRemainingPath
+      } else if (match.groups.linuxPath) {
+        newSourcemaps.sourceRoot =
+          match.groups.linuxPath + match.groups.linuxRemainingPath
+      } else {
+        newSourcemaps.sourceRoot = match.groups.otherPath
+      }
     }
     return newSourcemaps
   })
-  const escapedFilename = escapeToLinuxLikePath(filename)
+  // Re-write the const above considering match and match.groups can be null
+  const filenameMatch = filename.match(filePathRegex)!
+  const escapedFilename =
+    filenameMatch.groups!.linuxPath + filenameMatch.groups!.linuxRemainingPath
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -783,9 +788,18 @@ export function combineSourcemaps(
   }
 
   // unescape the previous hack
-  map.sources = map.sources.map((source) =>
-    source ? unescapeToLinuxLikePath(source) : source,
-  )
+  map.sources = map.sources.map((source) => {
+    if (!source) return null
+    const match = source.match(filePathRegex)
+    if (!match || !match.groups) return source
+    if (match.groups.windowsPath) {
+      return match.groups.windowsPath + match.groups.windowsRemainingPath
+    } else if (match.groups.linuxPath) {
+      return match.groups.linuxPath + match.groups.linuxRemainingPath
+    } else {
+      return match.groups.otherPath
+    }
+  })
   map.file = filename
 
   return map as RawSourceMap
