@@ -113,6 +113,14 @@ export const core = [
     title: 'Frontend Developer',
     desc: 'Passionate by tooling around TypeScript and React.',
     links: [{ icon: 'github', link: 'https://github.com/ArnaudBarre' }],
+    sponsor: 'https://github.com/sponsors/ArnaudBarre',
+  },
+  {
+    avatar: 'https://github.com/dominikg.png',
+    name: 'Dominik G.',
+    title: 'Resident CI Expert',
+    desc: 'Team Member of Vite and Svelte',
+    links: [{ icon: 'github', link: 'https://github.com/dominikg' }],
   },
 ]
 

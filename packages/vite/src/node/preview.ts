@@ -161,7 +161,7 @@ export async function preview(
     openBrowser(
       path.startsWith('http')
         ? path
-        : `${protocol}://${hostname.name}:${serverPort}${path}`,
+        : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
       true,
       logger,
     )

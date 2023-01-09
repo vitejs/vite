@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
-import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
+import fs from 'fs-extra'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = join(__dirname, '..')
@@ -19,21 +19,22 @@ const run = (
 // Helper to create a non-empty directory
 const createNonEmptyDir = () => {
   // Create the temporary directory
-  mkdirpSync(genPath)
+  fs.mkdirpSync(genPath)
 
   // Create a package.json file
   const pkgJson = join(genPath, 'package.json')
-  writeFileSync(pkgJson, '{ "foo": "bar" }')
+  fs.writeFileSync(pkgJson, '{ "foo": "bar" }')
 }
 
 // Vue 3 starter template
-const templateFiles = readdirSync(join(CLI_PATH, 'template-vue'))
+const templateFiles = fs
+  .readdirSync(join(CLI_PATH, 'template-vue'))
   // _gitignore is renamed to .gitignore
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
-beforeAll(() => remove(genPath))
-afterEach(() => remove(genPath))
+beforeAll(() => fs.remove(genPath))
+afterEach(() => fs.remove(genPath))
 
 test('prompts for the project name if none supplied', () => {
   const { stdout } = run([])
@@ -41,7 +42,7 @@ test('prompts for the project name if none supplied', () => {
 })
 
 test('prompts for the framework if none supplied when target dir is current directory', () => {
-  mkdirpSync(genPath)
+  fs.mkdirpSync(genPath)
   const { stdout } = run(['.'], { cwd: genPath })
   expect(stdout).toContain('Select a framework:')
 })
@@ -79,7 +80,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
   const { stdout } = run([projectName, '--template', 'vue'], {
     cwd: __dirname,
   })
-  const generatedFiles = readdirSync(genPath).sort()
+  const generatedFiles = fs.readdirSync(genPath).sort()
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
@@ -90,7 +91,7 @@ test('works with the -t alias', () => {
   const { stdout } = run([projectName, '-t', 'vue'], {
     cwd: __dirname,
   })
-  const generatedFiles = readdirSync(genPath).sort()
+  const generatedFiles = fs.readdirSync(genPath).sort()
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
