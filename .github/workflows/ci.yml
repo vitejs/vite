@@ -53,6 +53,7 @@ jobs:
           files: |
             docs/**
             .github/**
+            !.github/workflows/ci.yml
             packages/create-vite/template**
             **.md
 
