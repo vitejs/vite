@@ -6,6 +6,12 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "frontend",
+    "vite",
+    "vite-plugin",
+    "@vitejs/plugin-legacy"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
