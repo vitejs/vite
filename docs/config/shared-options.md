@@ -171,7 +171,7 @@ In future, `resolve.mainFields`'s default value will be `['browser', 'module', '
 ## resolve.extensions
 
 - **Type:** `string[]`
-- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
 List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
