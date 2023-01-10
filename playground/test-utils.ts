@@ -30,7 +30,6 @@ export const ports = {
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
-  'custom-server-single-port': 8744,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,

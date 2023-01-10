@@ -421,12 +421,6 @@ importers:
   playground/css/postcss-caching/green-app:
     specifiers: {}
 
-  playground/custom-server-single-port:
-    specifiers:
-      express: ^4.18.2
-    devDependencies:
-      express: 4.18.2
-
   playground/data-uri:
     specifiers: {}
 
