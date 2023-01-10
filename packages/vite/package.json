@@ -8,6 +8,14 @@
   "bin": {
     "vite": "bin/vite.js"
   },
+  "keywords": [
+    "frontend",
+    "framework",
+    "hmr",
+    "dev-server",
+    "build-tool",
+    "vite"
+  ],
   "main": "./dist/node/index.js",
   "module": "./dist/node/index.js",
   "types": "./dist/node/index.d.ts",
