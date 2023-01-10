@@ -51,6 +51,15 @@ export interface PreviewServer {
    */
   config: ResolvedConfig
   /**
+   * A connect app instance.
+   * - Can be used to attach custom middlewares to the preview server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
+   * https://github.com/senchalabs/connect#use-middleware
+   */
+  middlewares: Connect.Server
+  /**
    * native Node http server instance
    */
   httpServer: http.Server
@@ -66,10 +75,7 @@ export interface PreviewServer {
 
 export type PreviewServerHook = (
   this: void,
-  server: {
-    middlewares: Connect.Server
-    httpServer: http.Server
-  },
+  server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
@@ -100,7 +106,15 @@ export async function preview(
     )
   }
 
+  const options = config.preview
+  const logger = config.logger
+
   const app = connect() as Connect.Server
+
+  const hostname = await resolveHostname(options.host)
+  const port = options.port ?? DEFAULT_PREVIEW_PORT
+  const protocol = options.https ? 'https' : 'http'
+
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
@@ -108,10 +122,33 @@ export async function preview(
   )
   setClientErrorHandler(httpServer, config.logger)
 
+  const serverPort = await httpServerStart(httpServer, {
+    port,
+    strictPort: options.strictPort,
+    host: hostname.host,
+    logger,
+  })
+
+  const resolvedUrls = await resolveServerUrls(
+    httpServer,
+    config.preview,
+    config,
+  )
+
+  const server: PreviewServer = {
+    config,
+    middlewares: app,
+    httpServer,
+    resolvedUrls,
+    printUrls() {
+      printServerUrls(resolvedUrls, options.host, logger.info)
+    },
+  }
+
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook({ middlewares: app, httpServer }))
+    postHooks.push(await hook(server))
   }
 
   // cors
@@ -153,24 +190,6 @@ export async function preview(
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
-  const options = config.preview
-  const hostname = await resolveHostname(options.host)
-  const port = options.port ?? DEFAULT_PREVIEW_PORT
-  const protocol = options.https ? 'https' : 'http'
-  const logger = config.logger
-
-  const serverPort = await httpServerStart(httpServer, {
-    port,
-    strictPort: options.strictPort,
-    host: hostname.host,
-    logger,
-  })
-
-  const resolvedUrls = await resolveServerUrls(
-    httpServer,
-    config.preview,
-    config,
-  )
 
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : previewBase
@@ -183,12 +202,5 @@ export async function preview(
     )
   }
 
-  return {
-    config,
-    httpServer,
-    resolvedUrls,
-    printUrls() {
-      printServerUrls(resolvedUrls, options.host, logger.info)
-    },
-  }
+  return server
 }
