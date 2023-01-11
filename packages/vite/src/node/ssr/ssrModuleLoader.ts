@@ -188,9 +188,7 @@ async function instantiateModule(
       mappings: ';;;' + result.map.mappings,
     })
     // The ${'//'} is to avoid being replaced by node/server/transformRequest
-    sourceMapSuffix = `\n${'//'}# sourceMappingURL=data:application/json;charset=utf-8;base64,${Buffer.from(
-      JSON.stringify(moduleSourceMap),
-    ).toString('base64')}`
+    sourceMapSuffix = `\n${'//'}# sourceMappingURL=${genSourceMapUrl(moduleSourceMap)}`
   }
 
   try {
