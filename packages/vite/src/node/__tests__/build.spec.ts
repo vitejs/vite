@@ -1,11 +1,11 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
-import type { Logger } from 'vite'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
+import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
