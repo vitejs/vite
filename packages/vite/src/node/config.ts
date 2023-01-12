@@ -940,6 +940,12 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
+  if (!process.env.NODE_ENV) {
+    throw new Error(
+      'process.env.NODE_ENV must be set before loading config file',
+    )
+  }
+  const envCondition = process.env.NODE_ENV
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
@@ -950,6 +956,7 @@ async function bundleConfigFile(
     write: false,
     target: ['node14.18', 'node16'],
     platform: 'node',
+    conditions: [envCondition],
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
     mainFields: ['main'],
@@ -973,7 +980,7 @@ async function bundleConfigFile(
             mainFields: [],
             browserField: false,
             conditions: [],
-            overrideConditions: ['node'],
+            overrideConditions: ['node', envCondition],
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
             preserveSymlinks: false,
