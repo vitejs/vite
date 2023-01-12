@@ -198,7 +198,8 @@ async function instantiateModule(
       // offset the first three lines of the module (function declaration and 'use strict')
       mappings: ';'.repeat(fnDeclarationLineCount + 1) + result.map.mappings,
     })
-    sourceMapSuffix = `\n//# sourceMappingURL=${genSourceMapUrl(moduleSourceMap)}`
+    sourceMapSuffix =
+      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
   }
 
   try {
