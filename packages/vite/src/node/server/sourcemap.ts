@@ -59,7 +59,7 @@ export async function injectSourcesContent(
   }
 }
 
-export function genSourceMapUrl(map: SourceMap | string | undefined): string {
+export function genSourceMapUrl(map: SourceMap | string): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -69,16 +69,16 @@ export function genSourceMapUrl(map: SourceMap | string | undefined): string {
 export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
-  map: SourceMap | null,
+  map: SourceMap,
 ): string {
   if (isDebug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }
 
   if (type === 'js') {
-    code += `\n//# sourceMappingURL=${genSourceMapUrl(map ?? undefined)}`
+    code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
   } else if (type === 'css') {
-    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map ?? undefined)} */`
+    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map)} */`
   }
 
   return code
