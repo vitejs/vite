@@ -225,15 +225,13 @@ async function createDepsOptimizer(
               }
             }
 
-            if (!isBuild) {
-              const knownDeps = prepareKnownDeps()
+            const knownDeps = prepareKnownDeps()
 
-              // For dev, we run the scanner and the first optimization
-              // run on the background, but we wait until crawling has ended
-              // to decide if we send this result to the browser or we need to
-              // do another optimize step
-              postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-            }
+            // For dev, we run the scanner and the first optimization
+            // run on the background, but we wait until crawling has ended
+            // to decide if we send this result to the browser or we need to
+            // do another optimize step
+            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
           } catch (e) {
             logger.error(e.message)
           } finally {
