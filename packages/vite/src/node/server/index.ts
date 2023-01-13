@@ -776,8 +776,6 @@ async function restartServer(server: ViteDevServer) {
   const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
 
-  await server.close()
-
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
@@ -790,7 +788,8 @@ async function restartServer(server: ViteDevServer) {
   let newServer = null
   try {
     newServer = await createServer(inlineConfig)
-  } catch (err: any) {
+    await server.close()
+  } catch (err) {
     server.config.logger.error(err.message, {
       timestamp: true,
     })
