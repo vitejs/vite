@@ -60,10 +60,10 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@ea251d4d2f03a9c18841ae1b752f58b82dfb4d5e # v35.3.0
         with:
-          # !.github/workflows/ci.yml
           files: |
             docs/**
             .github/**
+            !.github/workflows/ci.yml
             packages/create-vite/template**
             **.md
 
