@@ -19,7 +19,7 @@ importers:
     specifiers:
       '@babel/types': ^7.20.7
       '@microsoft/api-extractor': ^7.33.7
-      '@rollup/plugin-typescript': ^10.0.1
+      '@rollup/plugin-typescript': ^11.0.0
       '@types/babel__core': ^7.1.20
       '@types/babel__standalone': ^7.1.4
       '@types/convert-source-map': ^2.0.0
@@ -76,7 +76,7 @@ importers:
     devDependencies:
       '@babel/types': 7.20.7
       '@microsoft/api-extractor': 7.33.7
-      '@rollup/plugin-typescript': 10.0.1_w32d2yt4tg6e3zn5worlea7ffu
+      '@rollup/plugin-typescript': 11.0.0_w32d2yt4tg6e3zn5worlea7ffu
       '@types/babel__core': 7.1.20
       '@types/babel__standalone': 7.1.4
       '@types/convert-source-map': 2.0.0
@@ -175,7 +175,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': ^2.0.2
       '@rollup/plugin-json': ^6.0.0
       '@rollup/plugin-node-resolve': 15.0.1
-      '@rollup/plugin-typescript': ^10.0.1
+      '@rollup/plugin-typescript': ^11.0.0
       '@rollup/pluginutils': ^5.0.2
       acorn: ^8.8.1
       acorn-walk: ^8.2.0
@@ -244,7 +244,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': 2.0.2_rollup@3.7.0
       '@rollup/plugin-json': 6.0.0_rollup@3.7.0
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.7.0
-      '@rollup/plugin-typescript': 10.0.1_rollup@3.7.0+tslib@2.4.1
+      '@rollup/plugin-typescript': 11.0.0_rollup@3.7.0+tslib@2.4.1
       '@rollup/pluginutils': 5.0.2_rollup@3.7.0
       acorn: 8.8.1
       acorn-walk: 8.2.0_acorn@8.8.1
@@ -2043,8 +2043,8 @@ packages:
       rollup: 3.7.0
     dev: true
 
-  /@rollup/plugin-typescript/10.0.1_rollup@3.7.0+tslib@2.4.1:
-    resolution: {integrity: sha512-wBykxRLlX7EzL8BmUqMqk5zpx2onnmRMSw/l9M1sVfkJvdwfxogZQVNUM9gVMJbjRLDR5H6U0OMOrlDGmIV45A==}
+  /@rollup/plugin-typescript/11.0.0_rollup@3.7.0+tslib@2.4.1:
+    resolution: {integrity: sha512-goPyCWBiimk1iJgSTgsehFD5OOFHiAknrRJjqFCudcW8JtWiBlK284Xnn4flqMqg6YAjVG/EE+3aVzrL5qNSzQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.14.0||^3.0.0
@@ -2062,8 +2062,8 @@ packages:
       tslib: 2.4.1
     dev: true
 
-  /@rollup/plugin-typescript/10.0.1_w32d2yt4tg6e3zn5worlea7ffu:
-    resolution: {integrity: sha512-wBykxRLlX7EzL8BmUqMqk5zpx2onnmRMSw/l9M1sVfkJvdwfxogZQVNUM9gVMJbjRLDR5H6U0OMOrlDGmIV45A==}
+  /@rollup/plugin-typescript/11.0.0_w32d2yt4tg6e3zn5worlea7ffu:
+    resolution: {integrity: sha512-goPyCWBiimk1iJgSTgsehFD5OOFHiAknrRJjqFCudcW8JtWiBlK284Xnn4flqMqg6YAjVG/EE+3aVzrL5qNSzQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.14.0||^3.0.0

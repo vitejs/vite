@@ -38,7 +38,7 @@
   "devDependencies": {
     "@babel/types": "^7.20.7",
     "@microsoft/api-extractor": "^7.33.7",
-    "@rollup/plugin-typescript": "^10.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
     "@types/babel__core": "^7.1.20",
     "@types/babel__standalone": "^7.1.4",
     "@types/convert-source-map": "^2.0.0",
