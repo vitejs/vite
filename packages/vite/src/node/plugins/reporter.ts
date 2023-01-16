@@ -14,7 +14,7 @@ const groups = [
 ]
 type LogEntry = {
   name: string
-  group: typeof groups[number]['name']
+  group: (typeof groups)[number]['name']
   size: number
   compressedSize: number | null
   mapSize: number | null
