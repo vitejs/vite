@@ -83,6 +83,9 @@ test('sass', async () => {
   const atImport = await page.$('.sass-at-import')
   const atImportAlias = await page.$('.sass-at-import-alias')
   const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
+  const depUrlStartsWithVariable = await page.$(
+    '.sass-dep-url-starts-with-variable',
+  )
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
@@ -94,6 +97,9 @@ test('sass', async () => {
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
     isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+  expect(await getBg(depUrlStartsWithVariable)).toMatch(
+    isBuild ? /ok-dep-\w+\.png/ : `${viteTestUrl}/css-dep/ok-dep.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
 
@@ -118,6 +124,9 @@ test('less', async () => {
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
   const urlStartsWithVariable = await page.$('.less-url-starts-with-variable')
+  const depUrlStartsWithVariable = await page.$(
+    '.less-dep-url-starts-with-variable',
+  )
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
@@ -128,6 +137,9 @@ test('less', async () => {
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
     isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+  expect(await getBg(depUrlStartsWithVariable)).toMatch(
+    isBuild ? /ok-dep-\w+\.png/ : `${viteTestUrl}/css-dep/ok-dep.png`,
   )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))

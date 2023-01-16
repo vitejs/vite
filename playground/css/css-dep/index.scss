@@ -1,3 +1,9 @@
 .css-dep-sass {
   color: orange;
 }
+
+$var-dep: './ok-dep.png';
+.sass-dep-url-starts-with-variable {
+  background-image: url($var-dep);
+  background-position: center;
+}
