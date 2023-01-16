@@ -67,7 +67,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.16.14",
-    "postcss": "^8.4.20",
+    "postcss": "^8.4.21",
     "resolve": "^1.22.1",
     "rollup": "^3.7.0"
   },
@@ -108,7 +108,7 @@
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.27.0",
     "micromatch": "^4.0.5",
-    "mlly": "^1.0.0",
+    "mlly": "^1.1.0",
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
@@ -119,7 +119,7 @@
     "postcss-import": "^15.1.0",
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^6.0.0",
-    "resolve.exports": "^1.1.0",
+    "resolve.exports": "^1.1.1",
     "rollup-plugin-license": "^3.0.1",
     "sirv": "^2.0.2",
     "source-map-js": "^1.0.2",
@@ -130,7 +130,7 @@
     "tslib": "^2.4.1",
     "types": "link:./types",
     "ufo": "^1.0.1",
-    "ws": "^8.11.0"
+    "ws": "^8.12.0"
   },
   "peerDependencies": {
     "@types/node": ">= 14",
