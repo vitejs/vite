@@ -33,7 +33,7 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ## define
 
-- **Type:** `Record<string, string>`
+- **Type:** `Record<string, any>`
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
