@@ -118,7 +118,7 @@ export type {
   KnownAsTypeMap,
 } from 'types/importGlob'
 export type { ChunkMetadata } from 'types/metadata'
-
+export type { RollupWatcher, RollupWatcherEvent, RollupOutput } from 'rollup'
 // dep types
 export type {
   AliasOptions,
