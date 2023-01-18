@@ -266,13 +266,14 @@ async function loadAndTransform(
     }
   }
 
-  const result = ssr
-    ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
-    : ({
-        code,
-        map,
-        etag: getEtag(code, { weak: true }),
-      } as TransformResult)
+  const result =
+    ssr && !server.config.experimental.skipSsrTransform
+      ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
+      : ({
+          code,
+          map,
+          etag: getEtag(code, { weak: true }),
+        } as TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
