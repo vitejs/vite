@@ -219,7 +219,7 @@ export interface UserConfig {
   legacy?: LegacyOptions
   /**
    * Log level.
-   * @default: 'info'
+   * @default 'info'
    */
   logLevel?: LogLevel
   /**
@@ -227,7 +227,7 @@ export interface UserConfig {
    */
   customLogger?: Logger
   /**
-   * @default: true
+   * @default true
    */
   clearScreen?: boolean
   /**
