@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
-import { resolve as _resolveExports } from 'resolve.exports'
+import { exports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
@@ -937,7 +937,7 @@ export function resolvePackageEntry(
     return cached
   }
   try {
-    let entryPoint: string | undefined | void
+    let entryPoint: string | undefined
 
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
@@ -1099,11 +1099,13 @@ function resolveExports(
     conditions.push(...options.conditions)
   }
 
-  return _resolveExports(pkg, key, {
+  const result = exports(pkg, key, {
     browser: targetWeb && !conditions.includes('node'),
     require: options.isRequire && !conditions.includes('import'),
     conditions,
   })
+
+  return result ? result[0] : undefined
 }
 
 function resolveDeepImport(
