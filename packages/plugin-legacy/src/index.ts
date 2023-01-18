@@ -797,10 +797,10 @@ function wrapIIFEBabelPlugin(): BabelPlugin {
 }
 
 export const cspHashes = [
-  createHash('sha256').update(safari10NoModuleFix).digest('base64'),
-  createHash('sha256').update(systemJSInlineCode).digest('base64'),
-  createHash('sha256').update(detectModernBrowserCode).digest('base64'),
-  createHash('sha256').update(dynamicFallbackInlineCode).digest('base64'),
-]
+  safari10NoModuleFix,
+  systemJSInlineCode,
+  detectModernBrowserCode,
+  dynamicFallbackInlineCode,
+].map((i) => createHash('sha256').update(i).digest('base64'))
 
 export default viteLegacyPlugin
