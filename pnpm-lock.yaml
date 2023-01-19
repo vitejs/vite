@@ -57,7 +57,6 @@ importers:
       npm-run-all: ^4.1.5
       picocolors: ^1.0.0
       playwright-chromium: ^1.29.2
-      pnpm: ^7.25.0
       prettier: 2.8.3
       prompts: ^2.4.2
       resolve: ^1.22.1
@@ -114,7 +113,6 @@ importers:
       npm-run-all: 4.1.5
       picocolors: 1.0.0
       playwright-chromium: 1.29.2
-      pnpm: 7.25.0
       prettier: 2.8.3
       prompts: 2.4.2
       resolve: 1.22.1
@@ -6706,12 +6704,6 @@ packages:
   /playwright-core/1.29.2:
     resolution: {integrity: sha512-94QXm4PMgFoHAhlCuoWyaBYKb92yOcGVHdQLoxQ7Wjlc7Flg4aC/jbFW7xMR52OfXMVkWicue4WXE7QEegbIRA==}
     engines: {node: '>=14'}
-    hasBin: true
-    dev: true
-
-  /pnpm/7.25.0:
-    resolution: {integrity: sha512-FGFQUON8kJ6ma39elJ8lyD8wPIfgp3opGJD9sX0TgIJk4zSr556qCgC8AN+3BFHe4yuRkEauf4JVLW2RKyyEcA==}
-    engines: {node: '>=14.6'}
     hasBin: true
     dev: true
 
