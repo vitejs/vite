@@ -485,6 +485,8 @@ async function loadTsconfigJsonForFile(
 }
 
 function reloadOnTsconfigChange(changedFile: string) {
+  // server could be closed externally after a file change is detected
+  if (!server) return
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
   if (
