@@ -75,6 +75,7 @@ export interface BuildOptions {
    *
    * For custom targets, see https://esbuild.github.io/api/#target and
    * https://esbuild.github.io/content-types/#javascript for more details.
+   * @default 'modules'
    */
   target?: 'modules' | TransformOptions['target'] | false
   /**
@@ -122,6 +123,7 @@ export interface BuildOptions {
    * a niche browser that comes with most modern JavaScript features
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
+   * @default target
    */
   cssTarget?: TransformOptions['target'] | false
   /**
@@ -196,21 +198,25 @@ export interface BuildOptions {
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
    * configurations that are suitable for distributing libraries.
+   * @default false
    */
   lib?: LibraryOptions | false
   /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
    * `rollupOptions.input`.
+   * @default false
    */
   ssr?: boolean | string
   /**
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
+   * @default false
    */
   ssrManifest?: boolean | string
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
+   * @default true
    */
   reportCompressedSize?: boolean
   /**
@@ -221,6 +227,7 @@ export interface BuildOptions {
   /**
    * Rollup watch options
    * https://rollupjs.org/guide/en/#watchoptions
+   * @default null
    */
   watch?: WatcherOptions | null
 }
