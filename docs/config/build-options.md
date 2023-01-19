@@ -3,7 +3,7 @@
 ## build.target
 
 - **Type:** `string | string[]`
-- **Default:** `'modules'`
+- **Default:** `['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14']`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
 Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta) support.
