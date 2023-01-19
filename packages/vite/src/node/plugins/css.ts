@@ -19,10 +19,8 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { TransformOptions } from 'esbuild'
-import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import lightningcss from 'lightningcss'
+import { transform } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -66,7 +64,6 @@ import {
   publicFileToBuiltUrl,
   renderAssetUrlInJS,
 } from './asset'
-import type { ESBuildOptions } from './esbuild'
 
 // const debug = createDebugger('vite:css')
 
@@ -439,7 +436,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           let content = css
           if (config.build.minify) {
-            content = await minifyCSS(content, config)
+            content = await minifyCSS(content)
           }
           code = `export default ${JSON.stringify(content)}`
         }
@@ -1122,7 +1119,7 @@ async function finalizeCss(
     css = await hoistAtRules(css)
   }
   if (minify && config.build.minify) {
-    css = await minifyCSS(css, config)
+    css = await minifyCSS(css)
   }
   return css
 }
@@ -1345,9 +1342,10 @@ async function doImportCSSReplace(
   return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
-async function minifyCSS(css: string, config: ResolvedConfig) {
+async function minifyCSS(css: string) {
   try {
-    const { code, warnings } = lightningcss.transform({
+    const { code, warnings } = transform({
+      // TODO user-passed options
       filename: 'style.css',
       code: Buffer.from(css),
       minify: true,
@@ -1359,40 +1357,15 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
       //   colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       // )
     }
-    return code
+    return code.toString('utf8')
   } catch (e) {
     if (e.errors) {
-      e.message = '[esbuild css minify] ' + e.message
-      const msgs = await formatMessages(e.errors, { kind: 'error' })
-      e.frame = '\n' + msgs.join('\n')
-      e.loc = e.errors[0].location
+      // e.message = '[esbuild css minify] ' + e.message
+      // const msgs = await formatMessages(e.errors, { kind: 'error' })
+      // e.frame = '\n' + msgs.join('\n')
+      // e.loc = e.errors[0].location
     }
     throw e
-  }
-}
-
-function resolveEsbuildMinifyOptions(
-  options: ESBuildOptions,
-): TransformOptions {
-  const base: TransformOptions = {
-    logLevel: options.logLevel,
-    logLimit: options.logLimit,
-    logOverride: options.logOverride,
-  }
-
-  if (
-    options.minifyIdentifiers != null ||
-    options.minifySyntax != null ||
-    options.minifyWhitespace != null
-  ) {
-    return {
-      ...base,
-      minifyIdentifiers: options.minifyIdentifiers ?? true,
-      minifySyntax: options.minifySyntax ?? true,
-      minifyWhitespace: options.minifyWhitespace ?? true,
-    }
-  } else {
-    return { ...base, minify: true }
   }
 }
 
