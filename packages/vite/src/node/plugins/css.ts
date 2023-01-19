@@ -22,6 +22,7 @@ import type { Alias } from 'dep-types/alias'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
+import lightningcss from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -1346,16 +1347,17 @@ async function doImportCSSReplace(
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
   try {
-    const { code, warnings } = await transform(css, {
-      loader: 'css',
-      target: config.build.cssTarget || undefined,
-      ...resolveEsbuildMinifyOptions(config.esbuild || {}),
+    const { code, warnings } = lightningcss.transform({
+      filename: 'style.css',
+      code: Buffer.from(css),
+      minify: true,
     })
     if (warnings.length) {
-      const msgs = await formatMessages(warnings, { kind: 'warning' })
-      config.logger.warn(
-        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
-      )
+      // TODO format messages
+      // const msgs = await formatMessages(warnings, { kind: 'warning' })
+      // config.logger.warn(
+      //   colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
+      // )
     }
     return code
   } catch (e) {
