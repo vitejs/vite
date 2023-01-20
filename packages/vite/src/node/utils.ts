@@ -918,8 +918,7 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore jest only exists when running Jest
+// @ts-expect-error jest only exists when running Jest
 export const usingDynamicImport = typeof jest === 'undefined'
 
 /**
