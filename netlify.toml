@@ -1,7 +1,6 @@
 [build.environment]
   NODE_VERSION = "16"
   PNPM_VERSION = "7.25.0"
-  PNPM_FLAGS = "--frozen-lockfile"
   # don't need playwright for docs build
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
 [build]
