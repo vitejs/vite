@@ -70,7 +70,7 @@ importers:
       typescript: ^4.9.3
       unbuild: ^0.9.4
       vite: workspace:*
-      vitepress: ^1.0.0-alpha.38
+      vitepress: ^1.0.0-alpha.39
       vitest: ^0.27.1
       vue: ^3.2.45
     devDependencies:
@@ -127,7 +127,7 @@ importers:
       typescript: 4.9.3
       unbuild: 0.9.4
       vite: link:packages/vite
-      vitepress: 1.0.0-alpha.38
+      vitepress: 1.0.0-alpha.39
       vitest: 0.27.1
       vue: 3.2.45
 
@@ -1134,6 +1134,9 @@ packages:
     peerDependencies:
       '@algolia/client-search': '>= 4.9.1 < 6'
       algoliasearch: '>= 4.9.1 < 6'
+    peerDependenciesMeta:
+      '@algolia/client-search':
+        optional: true
     dependencies:
       '@algolia/autocomplete-shared': 1.7.2
       algoliasearch: 4.13.1
@@ -8374,8 +8377,8 @@ packages:
       - supports-color
     dev: true
 
-  /vitepress/1.0.0-alpha.38:
-    resolution: {integrity: sha512-p3Kb2KM2dw6gnnnKFeBH01seqXWB6fY6uE+RY9sH8dBY7asP4OulB7cmhnVDVTX94gaPnKFbVsbc3KPe3l2Slw==}
+  /vitepress/1.0.0-alpha.39:
+    resolution: {integrity: sha512-aB/wO0fLMFoDlV7LLbKjIvPJRcwQIzloSRF/l/99UQRdMhL8Oja4NRomOdxDfnAde9bsuEjAC8JW5iXg3C2n0w==}
     hasBin: true
     dependencies:
       '@docsearch/css': 3.3.1
