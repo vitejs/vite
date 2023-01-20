@@ -318,7 +318,6 @@ async function init() {
 
   if (customCommand) {
     const fullCustomCommand = customCommand
-      .replace('TARGET_DIR', targetDir)
       .replace(/^npm create/, `${pkgManager} create`)
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
@@ -336,10 +335,9 @@ async function init() {
       })
 
     const [command, ...args] = fullCustomCommand.split(' ')
-    if (targetDir.includes(' ')) {
-      args.splice(2, args.length - 2, targetDir)
-    }
-    const { status } = spawn.sync(command, args, {
+    // we replace TARGET_DIR here because targetDir may include a space
+    const replacedArgs = args.map((arg) => arg.replace('TARGET_DIR', targetDir))
+    const { status } = spawn.sync(command, replacedArgs, {
       stdio: 'inherit',
     })
     process.exit(status ?? 0)
