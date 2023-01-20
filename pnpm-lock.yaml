@@ -1051,10 +1051,10 @@ importers:
   playground/ssr-resolve:
     specifiers:
       '@vitejs/test-entries': file:./entries
-      '@vitejs/test-pkg-exports': file:./pkg-exports
+      '@vitejs/test-resolve-pkg-exports': file:./pkg-exports
     dependencies:
       '@vitejs/test-entries': file:playground/ssr-resolve/entries
-      '@vitejs/test-pkg-exports': file:playground/ssr-resolve/pkg-exports
+      '@vitejs/test-resolve-pkg-exports': file:playground/ssr-resolve/pkg-exports
 
   playground/ssr-resolve/entries:
     specifiers: {}
@@ -7239,7 +7239,7 @@ packages:
     dev: true
 
   /require-directory/2.1.1:
-    resolution: {integrity: sha1-jGStX9MNqxyXbiNE/+f3kqam30I=}
+    resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
     dev: true
 
@@ -9070,7 +9070,7 @@ packages:
 
   file:playground/ssr-resolve/pkg-exports:
     resolution: {directory: playground/ssr-resolve/pkg-exports, type: directory}
-    name: '@vitejs/test-pkg-exports'
+    name: '@vitejs/test-resolve-pkg-exports'
     version: 0.0.0
     dev: false
 
