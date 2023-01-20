@@ -70,7 +70,7 @@ importers:
       typescript: ^4.9.3
       unbuild: ^0.9.4
       vite: workspace:*
-      vitepress: ^1.0.0-alpha.39
+      vitepress: ^1.0.0-alpha.40
       vitest: ^0.27.1
       vue: ^3.2.45
     devDependencies:
@@ -127,7 +127,7 @@ importers:
       typescript: 4.9.3
       unbuild: 0.9.4
       vite: link:packages/vite
-      vitepress: 1.0.0-alpha.39
+      vitepress: 1.0.0-alpha.40
       vitest: 0.27.1
       vue: 3.2.45
 
@@ -8377,8 +8377,8 @@ packages:
       - supports-color
     dev: true
 
-  /vitepress/1.0.0-alpha.39:
-    resolution: {integrity: sha512-aB/wO0fLMFoDlV7LLbKjIvPJRcwQIzloSRF/l/99UQRdMhL8Oja4NRomOdxDfnAde9bsuEjAC8JW5iXg3C2n0w==}
+  /vitepress/1.0.0-alpha.40:
+    resolution: {integrity: sha512-axhLI/wq/V9RjzFQZ00Ur0WhvoZXG7E1H88NxnglZm6wU/FAePP4bGaWPzU2WZwy3Nzpb9cbf1oXC+1DNgv9cQ==}
     hasBin: true
     dependencies:
       '@docsearch/css': 3.3.1
