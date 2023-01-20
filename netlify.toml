@@ -6,5 +6,5 @@
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
 [build]
   publish = "docs/.vitepress/dist"
-  command = "ls node_modules && ls node_modules/@types && pnpm ci-docs"
+  command = "pnpm ci-docs"
   ignore = "./scripts/docs-check.sh"
