@@ -195,7 +195,8 @@ async function instantiateModule(
   let sourceMapSuffix = ''
   if (result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
-      // offset the first three lines of the module (function declaration)
+      // currently we need to offset the line
+      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
       mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
     })
     sourceMapSuffix =
