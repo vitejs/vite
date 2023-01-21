@@ -195,8 +195,8 @@ async function instantiateModule(
   let sourceMapSuffix = ''
   if (result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
-      // offset the first three lines of the module (function declaration and 'use strict')
-      mappings: ';'.repeat(fnDeclarationLineCount + 1) + result.map.mappings,
+      // offset the first three lines of the module (function declaration)
+      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
     })
     sourceMapSuffix =
       '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
@@ -210,7 +210,7 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";\n' +
+      '"use strict";' +
         result.code +
         `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
     )
