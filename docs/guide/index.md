@@ -68,7 +68,7 @@ You can also directly specify the project name and the template you want to use 
 npm create vite@latest my-vue-app --template vue
 
 # npm 7+, extra double-dash is needed:
-npm create vite@latest my-vue-app -- --template vue
+npm create vite@latest -- my-vue-app --template vue
 
 # yarn
 yarn create vite my-vue-app --template vue
