@@ -25,7 +25,7 @@ try {
   // this should not be called
   // when running on Node.js "^16.17.0 || >=18.6.0" and sourcemap is enabled
   // because the stacktrace is already rewritten
-  if (isSourceMapEnabled) {
+  if (!isSourceMapEnabled) {
     vite.ssrFixStacktrace(e)
   }
   console.log(e)
