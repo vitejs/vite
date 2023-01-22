@@ -10,7 +10,7 @@ const version = (() => {
   const m = process.version.match(/^v(\d+)\.(\d+)\.\d+$/)
   if (!m) throw new Error(`Failed to parse version: ${process.version}`)
 
-  return { major: m[1], minor: m[2] }
+  return { major: +m[1], minor: +m[2] }
 })()
 
 // https://github.com/nodejs/node/pull/43428
