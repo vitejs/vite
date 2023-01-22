@@ -22,9 +22,12 @@ const mod = await vite.ssrLoadModule('/src/error.js')
 try {
   mod.error()
 } catch (e) {
-  // this is not required
+  // this should not be called
   // when running on Node.js "^16.17.0 || >=18.6.0" and sourcemap is enabled
-  vite.ssrFixStacktrace(e)
+  // because the stacktrace is already rewritten
+  if (isSourceMapEnabled) {
+    vite.ssrFixStacktrace(e)
+  }
   console.log(e)
 }
 
