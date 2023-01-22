@@ -377,9 +377,14 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
+  const cdProjectName = path.relative(cwd, root)
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
-    console.log(`  cd ${path.relative(cwd, root)}`)
+    console.log(
+      `  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`,
+    )
   }
   switch (pkgManager) {
     case 'yarn':
