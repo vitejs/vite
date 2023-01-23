@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@babel/runtime": "^7.20.7",
+    "@babel/runtime": "^7.20.13",
     "es5-ext": "0.10.62",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
