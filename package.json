@@ -46,7 +46,7 @@
     "@types/debug": "^4.1.7",
     "@types/estree": "^1.0.0",
     "@types/etag": "^1.8.1",
-    "@types/fs-extra": "^9.0.13",
+    "@types/fs-extra": "^11.0.1",
     "@types/json-stable-stringify": "^1.0.34",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
