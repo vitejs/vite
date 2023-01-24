@@ -315,3 +315,29 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
+
+## Edgio (formerly Layer0)
+
+You can deploy your Vite app as a Static Site on [Edgio](https://app.layer0.co)
+
+1. Create an [Edgio account](https://app.layer0.co)
+
+2. Install [Edgio CLI](https://docs.edg.io/guides/develop/cli)
+
+3. Authenticate Edgio CLI with your account using `edgio login`
+
+4. Initialize Edgio to your project using `edgio init`
+
+6. Modify the created file: `routes.*s` to the following:
+
+```js filename='routes.*s'
+import { Router } from '@edgio/core/router'
+
+export default new Router().static('dist')
+```
+
+7. Deploy using `edgio deploy`
+
+   Your app should be deployed at `https://<PROJECTNAME>.layer0-limelight.link`.
+
+You can also add a [custom domain](https://docs.edg.io/guides/basics/domains) to your project.
