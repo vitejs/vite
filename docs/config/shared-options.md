@@ -45,7 +45,6 @@ Define global constant replacements. Entries will be defined as globals during d
 
 ::: warning
 Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
-
 For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 :::
 
@@ -235,7 +234,7 @@ export default defineConfig({
       scss: {
         additionalData: `$injectedColor: orange;`,
       },
-      styl: {
+      style: {
         additionalData: `$injectedColor ?= orange`,
       },
     },
