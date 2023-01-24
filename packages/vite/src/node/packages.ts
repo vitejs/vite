@@ -100,7 +100,20 @@ export function loadPackageData(
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {
-    hasSideEffects = createFilter(sideEffects, null, { resolve: pkgDir })
+    const finalPackageSideEffects = sideEffects.map((sideEffect) => {
+      /*
+       * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
+       * https://webpack.js.org/guides/tree-shaking/
+       */
+      if (sideEffect.includes('/')) {
+        return sideEffect
+      }
+      return `**/${sideEffect}`
+    })
+
+    hasSideEffects = createFilter(finalPackageSideEffects, null, {
+      resolve: pkgDir,
+    })
   } else {
     hasSideEffects = () => true
   }
