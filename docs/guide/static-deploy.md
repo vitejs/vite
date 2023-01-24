@@ -328,7 +328,15 @@ You can deploy your Vite app as a Static Site on [Edgio](https://app.layer0.co)
 
 4. Initialize Edgio to your project using `edgio init`
 
-6. Modify the created file: `routes.*s` to the following:
+```bash
+# Install Edgio CLI
+npm install -g @edgio/cli
+
+# Login to Edgio account from CLI
+edgio login
+```
+
+5. Modify the created file: `routes.*s` to the following:
 
 ```js filename='routes.*s'
 import { Router } from '@edgio/core/router'
@@ -336,7 +344,7 @@ import { Router } from '@edgio/core/router'
 export default new Router().static('dist')
 ```
 
-7. Deploy using `edgio deploy`
+6. Deploy using `edgio deploy`
 
    Your app should be deployed at `https://<PROJECTNAME>.layer0-limelight.link`.
 
