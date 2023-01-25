@@ -194,6 +194,7 @@ importers:
       etag: ^1.8.1
       fast-glob: ^3.2.12
       fsevents: ~2.3.2
+      http-compression: ^1.0.2
       http-proxy: ^1.18.1
       json-stable-stringify: ^1.0.2
       launch-editor-middleware: ^2.6.0
@@ -261,6 +262,7 @@ importers:
       estree-walker: 3.0.3
       etag: 1.8.1
       fast-glob: 3.2.12
+      http-compression: 1.0.2
       http-proxy: 1.18.1_debug@4.3.4
       json-stable-stringify: 1.0.2
       launch-editor-middleware: 2.6.0
@@ -5246,6 +5248,11 @@ packages:
 
   /http-cache-semantics/4.1.0:
     resolution: {integrity: sha512-carPklcUh7ROWRK7Cv27RPtdhYhUsela/ue5/jKzjegVvXDqM2ILE9Q2BGn9JZJh1g87cp56su/FgQSzcWS8cQ==}
+    dev: true
+
+  /http-compression/1.0.2:
+    resolution: {integrity: sha512-AMuTGeK9IoW3WLeNlNk5amX6/w0sSjyE4rP3vxP3H2USApPW5a0fpYKAWrTg0E8drqPHiFGk5URN5Y7QhO/9QQ==}
+    engines: {node: '>= 18'}
     dev: true
 
   /http-errors/2.0.0:

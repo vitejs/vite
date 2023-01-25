@@ -103,6 +103,7 @@
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
+    "http-compression": "^1.0.2",
     "http-proxy": "^1.18.1",
     "json-stable-stringify": "^1.0.2",
     "launch-editor-middleware": "^2.6.0",

@@ -4,6 +4,7 @@ import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import compression from 'http-compression'
 import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
 import type { CommonServerOptions } from './http'
 import {
@@ -13,7 +14,6 @@ import {
   setClientErrorHandler,
 } from './http'
 import { openBrowser } from './server/openBrowser'
-import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
