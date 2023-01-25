@@ -31,14 +31,14 @@ For advanced base path control, check out [Advanced Base Options](#advanced-base
 
 ## Customizing the Build
 
-The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
+The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/configuration-options/) via `build.rollupOptions`:
 
 ```js
 // vite.config.js
 export default defineConfig({
   build: {
     rollupOptions: {
-      // https://rollupjs.org/guide/en/#big-list-of-options
+      // https://rollupjs.org/configuration-options/
     },
   },
 })
@@ -48,7 +48,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/guide/en/#outputmanualchunks)). Until Vite 2.8, the default chunking strategy divided the chunks into `index` and `vendor`. It is a good strategy for some SPAs, but it is hard to provide a general solution for every Vite target use case. From Vite 2.9, `manualChunks` is no longer modified by default. You can continue to use the Split Vendor Chunk strategy by adding the `splitVendorChunkPlugin` in your config file:
+You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). Until Vite 2.8, the default chunking strategy divided the chunks into `index` and `vendor`. It is a good strategy for some SPAs, but it is hard to provide a general solution for every Vite target use case. From Vite 2.9, `manualChunks` is no longer modified by default. You can continue to use the Split Vendor Chunk strategy by adding the `splitVendorChunkPlugin` in your config file:
 
 ```js
 // vite.config.js
@@ -62,14 +62,14 @@ This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkC
 
 ## Rebuild on files changes
 
-You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options) via `build.watch`:
+You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch) via `build.watch`:
 
 ```js
 // vite.config.js
 export default defineConfig({
   build: {
     watch: {
-      // https://rollupjs.org/guide/en/#watch-options
+      // https://rollupjs.org/configuration-options/#watch
     },
   },
 })
