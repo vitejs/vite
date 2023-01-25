@@ -448,6 +448,8 @@ function walk(
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
+      } else if (node.type === 'CatchClause' && node.param) {
+        handlePattern(node.param, node)
       }
     },
 
@@ -550,14 +552,14 @@ function isFunction(node: _Node): node is FunctionNode {
   return functionNodeTypeRE.test(node.type)
 }
 
-const scopeNodeTypeRE =
-  /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
 function findParentScope(
   parentStack: _Node[],
   isVar = false,
 ): _Node | undefined {
-  const regex = isVar ? functionNodeTypeRE : scopeNodeTypeRE
-  return parentStack.find((i) => regex.test(i.type))
+  const predicate = isVar
+    ? isFunction
+    : (node: _Node) => node.type === 'BlockStatement'
+  return parentStack.find(predicate)
 }
 
 function isInDestructuringAssignment(
