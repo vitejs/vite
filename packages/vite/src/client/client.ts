@@ -347,6 +347,9 @@ const sheetsMap = new Map<
   string,
   HTMLStyleElement | CSSStyleSheet | undefined
 >()
+// all css imports should be inserted at the same position
+// because after build it will be a single css file
+let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
@@ -374,7 +377,19 @@ export function updateStyle(id: string, content: string): void {
       style.setAttribute('type', 'text/css')
       style.setAttribute('data-vite-dev-id', id)
       style.textContent = content
-      document.head.appendChild(style)
+
+      if (!lastInsertedStyle) {
+        document.head.appendChild(style)
+
+        // reset lastInsertedStyle after async
+        // because dynamically imported css will be splitted into a different file
+        setTimeout(() => {
+          lastInsertedStyle = undefined
+        }, 0)
+      } else {
+        lastInsertedStyle.insertAdjacentElement('afterend', style)
+      }
+      lastInsertedStyle = style
     } else {
       style.textContent = content
     }

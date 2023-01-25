@@ -1,5 +1,6 @@
 import './style.css'
 import './main.css'
+import './order'
 
 import('./async.css')
 
