@@ -2,7 +2,7 @@
 
 Vite plugins extends Rollup's well-designed plugin interface with a few extra Vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
 
-**It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
+**It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/plugin-development/) first before reading the sections below.**
 
 ## Authoring a Plugin
 
@@ -17,7 +17,7 @@ When learning, debugging, or authoring plugins, we suggest including [vite-plugi
 
 ## Conventions
 
-If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/guide/en/#conventions).
+If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/plugin-development/#conventions).
 
 - Rollup Plugins should have a clear name with `rollup-plugin-` prefix.
 - Include `rollup-plugin` and `vite-plugin` keywords in package.json.
@@ -146,27 +146,27 @@ Note that modules directly derived from a real file, as in the case of a script 
 
 ## Universal Hooks
 
-During dev, the Vite dev server creates a plugin container that invokes [Rollup Build Hooks](https://rollupjs.org/guide/en/#build-hooks) the same way Rollup does it.
+During dev, the Vite dev server creates a plugin container that invokes [Rollup Build Hooks](https://rollupjs.org/plugin-development/#build-hooks) the same way Rollup does it.
 
 The following hooks are called once on server start:
 
-- [`options`](https://rollupjs.org/guide/en/#options)
-- [`buildStart`](https://rollupjs.org/guide/en/#buildstart)
+- [`options`](https://rollupjs.org/plugin-development/#options)
+- [`buildStart`](https://rollupjs.org/plugin-development/#buildstart)
 
 The following hooks are called on each incoming module request:
 
-- [`resolveId`](https://rollupjs.org/guide/en/#resolveid)
-- [`load`](https://rollupjs.org/guide/en/#load)
-- [`transform`](https://rollupjs.org/guide/en/#transform)
+- [`resolveId`](https://rollupjs.org/plugin-development/#resolveid)
+- [`load`](https://rollupjs.org/plugin-development/#load)
+- [`transform`](https://rollupjs.org/plugin-development/#transform)
 
 The following hooks are called when the server is closed:
 
-- [`buildEnd`](https://rollupjs.org/guide/en/#buildend)
-- [`closeBundle`](https://rollupjs.org/guide/en/#closebundle)
+- [`buildEnd`](https://rollupjs.org/plugin-development/#buildend)
+- [`closeBundle`](https://rollupjs.org/plugin-development/#closebundle)
 
-Note that the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook is **not** called during dev, because Vite avoids full AST parses for better performance.
+Note that the [`moduleParsed`](https://rollupjs.org/plugin-development/#moduleparsed) hook is **not** called during dev, because Vite avoids full AST parses for better performance.
 
-[Output Generation Hooks](https://rollupjs.org/guide/en/#output-generation-hooks) (except `closeBundle`) are **not** called during dev. You can think of Vite's dev server as only calling `rollup.rollup()` without calling `bundle.generate()`.
+[Output Generation Hooks](https://rollupjs.org/plugin-development/#output-generation-hooks) (except `closeBundle`) are **not** called during dev. You can think of Vite's dev server as only calling `rollup.rollup()` without calling `bundle.generate()`.
 
 ## Vite Specific Hooks
 

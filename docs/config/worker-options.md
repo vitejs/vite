@@ -17,6 +17,6 @@ Vite plugins that apply to worker bundle. Note that [config.plugins](./shared-op
 
 ## worker.rollupOptions
 
-- **Type:** [`RollupOptions`](https://rollupjs.org/guide/en/#big-list-of-options)
+- **Type:** [`RollupOptions`](https://rollupjs.org/configuration-options/)
 
 Rollup options to build worker bundle.

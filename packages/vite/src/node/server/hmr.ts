@@ -128,7 +128,7 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, ws }: ViteDevServer,
+  { config, ws, moduleGraph }: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
   const updates: Update[] = []
@@ -136,7 +136,7 @@ export function updateModules(
   let needFullReload = false
 
   for (const mod of modules) {
-    invalidate(mod, timestamp, invalidatedModules)
+    moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
     if (needFullReload) {
       continue
     }
@@ -315,23 +315,6 @@ function propagateUpdate(
     }
   }
   return false
-}
-
-function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
-  if (seen.has(mod)) {
-    return
-  }
-  seen.add(mod)
-  mod.lastHMRTimestamp = timestamp
-  mod.transformResult = null
-  mod.ssrModule = null
-  mod.ssrError = null
-  mod.ssrTransformResult = null
-  mod.importers.forEach((importer) => {
-    if (!importer.acceptedHmrDeps.has(mod)) {
-      invalidate(importer, timestamp, seen)
-    }
-  })
 }
 
 export function handlePrunedModules(
