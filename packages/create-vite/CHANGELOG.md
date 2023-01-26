@@ -1,3 +1,19 @@
+## 4.1.0-beta.0 (2023-01-26)
+
+* chore: typecheck create-vite (#11295) ([af86e5b](https://github.com/vitejs/vite/commit/af86e5b)), closes [#11295](https://github.com/vitejs/vite/issues/11295)
+* chore: update create-vite templates for beta testing ([7dbb24f](https://github.com/vitejs/vite/commit/7dbb24f))
+* chore: update plugin-react to 3.1.0-beta.0 (#11820) ([f0480a5](https://github.com/vitejs/vite/commit/f0480a5)), closes [#11820](https://github.com/vitejs/vite/issues/11820)
+* chore(create-vite): added transition to grow back drop in (#11392) ([d0757e2](https://github.com/vitejs/vite/commit/d0757e2)), closes [#11392](https://github.com/vitejs/vite/issues/11392)
+* chore(deps): update all non-major dependencies (#11321) ([dcc0004](https://github.com/vitejs/vite/commit/dcc0004)), closes [#11321](https://github.com/vitejs/vite/issues/11321)
+* chore(deps): update all non-major dependencies (#11419) ([896475d](https://github.com/vitejs/vite/commit/896475d)), closes [#11419](https://github.com/vitejs/vite/issues/11419)
+* chore(deps): update all non-major dependencies (#11701) ([1d2ee63](https://github.com/vitejs/vite/commit/1d2ee63)), closes [#11701](https://github.com/vitejs/vite/issues/11701)
+* chore(deps): update all non-major dependencies (#11787) ([271394f](https://github.com/vitejs/vite/commit/271394f)), closes [#11787](https://github.com/vitejs/vite/issues/11787)
+* fix(create-vite): update templates to use better font (#11665) ([a65d31b](https://github.com/vitejs/vite/commit/a65d31b)), closes [#11665](https://github.com/vitejs/vite/issues/11665)
+* feat(create-vite): add preprocess to sveltejs template (#11600) ([529b0a6](https://github.com/vitejs/vite/commit/529b0a6)), closes [#11600](https://github.com/vitejs/vite/issues/11600)
+* test: use default import for fs-extra (#11543) ([d3bed53](https://github.com/vitejs/vite/commit/d3bed53)), closes [#11543](https://github.com/vitejs/vite/issues/11543)
+
+
+
 ## 4.0.0 (2022-12-09)
 
 * fix(create-vite): update react-swc template name (#11281) ([b3b9ac5](https://github.com/vitejs/vite/commit/b3b9ac5)), closes [#11281](https://github.com/vitejs/vite/issues/11281)
