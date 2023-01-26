@@ -86,7 +86,7 @@
     "tslib": "^2.4.1",
     "tsx": "^3.12.2",
     "typescript": "^4.9.3",
-    "unbuild": "^0.9.4",
+    "unbuild": "^1.1.1",
     "vite": "workspace:*",
     "vitepress": "^1.0.0-alpha.40",
     "vitest": "^0.28.1",
