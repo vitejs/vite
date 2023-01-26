@@ -209,6 +209,12 @@ export interface BuildOptions {
    */
   ssrManifest?: boolean | string
   /**
+   * Emit assets during SSR.
+   * @experimental
+   * @default false
+   */
+  ssrEmitAssets?: boolean
+  /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
    */
@@ -324,6 +330,7 @@ export function resolveBuildOptions(
     lib: false,
     ssr: false,
     ssrManifest: false,
+    ssrEmitAssets: false,
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,

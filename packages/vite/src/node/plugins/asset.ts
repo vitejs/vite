@@ -187,7 +187,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
-      if (config.command === 'build' && config.build.ssr) {
+      if (
+        config.command === 'build' &&
+        config.build.ssr &&
+        !config.build.ssrEmitAssets
+      ) {
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&
