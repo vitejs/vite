@@ -60,7 +60,7 @@ importers:
       prettier: 2.8.3
       prompts: ^2.4.2
       resolve: ^1.22.1
-      rimraf: ^3.0.2
+      rimraf: ^4.1.2
       rollup: ^3.10.0
       semver: ^7.3.8
       simple-git-hooks: ^2.8.1
@@ -116,7 +116,7 @@ importers:
       prettier: 2.8.3
       prompts: 2.4.2
       resolve: 1.22.1
-      rimraf: 3.0.2
+      rimraf: 4.1.2
       rollup: 3.10.0
       semver: 7.3.8
       simple-git-hooks: 2.8.1
@@ -7384,6 +7384,12 @@ packages:
     hasBin: true
     dependencies:
       glob: 7.2.0
+
+  /rimraf/4.1.2:
+    resolution: {integrity: sha512-BlIbgFryTbw3Dz6hyoWFhKk+unCcHMSkZGrTFVAx2WmttdBSonsdtRlwiuTbDqTKr+UlXIUqJVS4QT5tUzGENQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dev: true
 
   /rollup-plugin-dts/5.0.0_c2b5pnnboavo6ciqowacof4cka:
     resolution: {integrity: sha512-OO8ayCvuJCKaQSShyVTARxGurVVk4ulzbuvz+0zFd1f93vlnWFU5pBMT7HFeS6uj7MvvZLx4kUAarGATSU1+Ng==}
