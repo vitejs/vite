@@ -165,6 +165,10 @@ export function createIsConfiguredAsSsrExternal(
       ) {
         return true
       }
+      // Allow individual package entries to be specified in noExternal
+      if (noExternalFilter && !noExternalFilter(id)) {
+        return false
+      }
       const pkgName = getNpmPackageName(id)
       if (!pkgName) {
         return isExternalizable(id)
