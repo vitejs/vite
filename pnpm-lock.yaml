@@ -6,12 +6,12 @@ overrides:
 packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
 patchedDependencies:
-  sirv@2.0.2:
-    hash: w6q35pvk7bmykgqf2hieut43iq
-    path: patches/sirv@2.0.2.patch
   dotenv-expand@9.0.0:
     hash: 6vdpvodnfhahap67xag6diqqtu
     path: patches/dotenv-expand@9.0.0.patch
+  sirv@2.0.2:
+    hash: w6q35pvk7bmykgqf2hieut43iq
+    path: patches/sirv@2.0.2.patch
 
 importers:
 
