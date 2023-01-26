@@ -145,7 +145,7 @@ export interface BuildOptions {
   terserOptions?: Terser.MinifyOptions
   /**
    * Will be merged with internal rollup options.
-   * https://rollupjs.org/guide/en/#big-list-of-options
+   * https://rollupjs.org/configuration-options/
    */
   rollupOptions?: RollupOptions
   /**
@@ -220,7 +220,7 @@ export interface BuildOptions {
   chunkSizeWarningLimit?: number
   /**
    * Rollup watch options
-   * https://rollupjs.org/guide/en/#watchoptions
+   * https://rollupjs.org/configuration-options/#watch
    */
   watch?: WatcherOptions | null
 }
