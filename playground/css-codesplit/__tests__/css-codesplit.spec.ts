@@ -21,6 +21,12 @@ test('should load dynamic import with module', async () => {
   expect(await getColor('.mod')).toBe('yellow')
 })
 
+test('style order should be consistent when style tag is inserted by JS', async () => {
+  expect(await getColor('.order-bulk')).toBe('orange')
+  await page.click('.order-bulk-update')
+  expect(await getColor('.order-bulk')).toBe('green')
+})
+
 describe.runIf(isBuild)('build', () => {
   test('should remove empty chunk', async () => {
     expect(findAssetFile(/style.*\.js$/)).toBe('')

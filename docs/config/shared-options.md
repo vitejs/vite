@@ -33,7 +33,7 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ## define
 
-- **Type:** `Record<string, string>`
+- **Type:** `Record<string, any>`
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
@@ -171,7 +171,7 @@ In future, `resolve.mainFields`'s default value will be `['browser', 'module', '
 ## resolve.extensions
 
 - **Type:** `string[]`
-- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
 List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
