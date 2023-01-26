@@ -46,7 +46,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       SSR: !!config.build.ssr,
     }
     // set here to allow override with config.define
-    importMetaKeys['import.meta.hot'] = `false`
+    importMetaKeys['import.meta.hot'] = `undefined`
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
