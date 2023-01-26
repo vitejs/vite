@@ -1,3 +1,14 @@
+## <small>3.0.2 (2023-01-26)</small>
+
+* chore: enable `@typescript-eslint/ban-ts-comment` (#11326) ([e58a4f0](https://github.com/vitejs/vite/commit/e58a4f0)), closes [#11326](https://github.com/vitejs/vite/issues/11326)
+* chore: update packages' (vite, vite-legacy) keywords (#11402) ([a56bc34](https://github.com/vitejs/vite/commit/a56bc34)), closes [#11402](https://github.com/vitejs/vite/issues/11402)
+* chore(deps): update all non-major dependencies (#11419) ([896475d](https://github.com/vitejs/vite/commit/896475d)), closes [#11419](https://github.com/vitejs/vite/issues/11419)
+* chore(deps): update all non-major dependencies (#11787) ([271394f](https://github.com/vitejs/vite/commit/271394f)), closes [#11787](https://github.com/vitejs/vite/issues/11787)
+* refactor(plugin-legacy): optimize cspHashes array (#11734) ([b1a8e58](https://github.com/vitejs/vite/commit/b1a8e58)), closes [#11734](https://github.com/vitejs/vite/issues/11734)
+* fix: typo (#11283) ([bf234a6](https://github.com/vitejs/vite/commit/bf234a6)), closes [#11283](https://github.com/vitejs/vite/issues/11283)
+
+
+
 ## <small>3.0.1 (2022-12-09)</small>
 
 * chore: update vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)
