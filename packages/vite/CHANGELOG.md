@@ -1,3 +1,32 @@
+## 4.1.0-beta.1 (2023-01-26)
+
+* fix: deep resolve side effects when glob does not contain / (#11807) ([f3a0c3b](https://github.com/vitejs/vite/commit/f3a0c3b)), closes [#11807](https://github.com/vitejs/vite/issues/11807)
+* fix: duplicated sourceMappingURL for worker bundles (fix #11601) (#11602) ([5444781](https://github.com/vitejs/vite/commit/5444781)), closes [#11601](https://github.com/vitejs/vite/issues/11601) [#11602](https://github.com/vitejs/vite/issues/11602)
+* fix: emit assets from SSR build (#11430) ([ffbdcdb](https://github.com/vitejs/vite/commit/ffbdcdb)), closes [#11430](https://github.com/vitejs/vite/issues/11430)
+* fix: revert "load sourcemaps alongside modules (#11576)" (#11775) ([697dd00](https://github.com/vitejs/vite/commit/697dd00)), closes [#11576](https://github.com/vitejs/vite/issues/11576) [#11775](https://github.com/vitejs/vite/issues/11775)
+* fix: scope tracking for shadowing variables in blocks (#11806) (#11811) ([568bdab](https://github.com/vitejs/vite/commit/568bdab)), closes [#11806](https://github.com/vitejs/vite/issues/11806) [#11811](https://github.com/vitejs/vite/issues/11811)
+* fix(cli): exit 1 on ctrl+c (#11563) ([fb77411](https://github.com/vitejs/vite/commit/fb77411)), closes [#11563](https://github.com/vitejs/vite/issues/11563)
+* fix(css): insert styles in the same position (#11763) ([d2f1381](https://github.com/vitejs/vite/commit/d2f1381)), closes [#11763](https://github.com/vitejs/vite/issues/11763)
+* fix(esbuild): check server before reload tsconfig (#11747) ([c56b954](https://github.com/vitejs/vite/commit/c56b954)), closes [#11747](https://github.com/vitejs/vite/issues/11747)
+* fix(hmr): hmr websocket failure for custom middleware mode with server.hmr.server (#11487) ([00919bb](https://github.com/vitejs/vite/commit/00919bb)), closes [#11487](https://github.com/vitejs/vite/issues/11487)
+* fix(ssr): load sourcemaps alongside modules (fix: #3288) (#11576) ([dc05e97](https://github.com/vitejs/vite/commit/dc05e97)), closes [#3288](https://github.com/vitejs/vite/issues/3288) [#11576](https://github.com/vitejs/vite/issues/11576)
+* docs: update rollup docs links (#11809) ([4bbebf3](https://github.com/vitejs/vite/commit/4bbebf3)), closes [#11809](https://github.com/vitejs/vite/issues/11809)
+* chore: extract DEFAULT_DEV_PORT and DEFAULT_PREVIEW_PORT (#11669) ([c9f009d](https://github.com/vitejs/vite/commit/c9f009d)), closes [#11669](https://github.com/vitejs/vite/issues/11669)
+* chore: fix type warning during building vite (#11673) ([305b76e](https://github.com/vitejs/vite/commit/305b76e)), closes [#11673](https://github.com/vitejs/vite/issues/11673)
+* chore: remove unused `module` field in `package.json` (#11698) ([595b55f](https://github.com/vitejs/vite/commit/595b55f)), closes [#11698](https://github.com/vitejs/vite/issues/11698)
+* chore: shrink genSourceMapUrl type (#11667) ([9fb406b](https://github.com/vitejs/vite/commit/9fb406b)), closes [#11667](https://github.com/vitejs/vite/issues/11667)
+* chore: update packages' (vite, vite-legacy) keywords (#11402) ([a56bc34](https://github.com/vitejs/vite/commit/a56bc34)), closes [#11402](https://github.com/vitejs/vite/issues/11402)
+* chore: update rollup (#11710) ([193d55c](https://github.com/vitejs/vite/commit/193d55c)), closes [#11710](https://github.com/vitejs/vite/issues/11710)
+* chore: use jsdoc's default tag (#11725) ([a6df6b4](https://github.com/vitejs/vite/commit/a6df6b4)), closes [#11725](https://github.com/vitejs/vite/issues/11725)
+* chore(deps): update all non-major dependencies (#11701) ([1d2ee63](https://github.com/vitejs/vite/commit/1d2ee63)), closes [#11701](https://github.com/vitejs/vite/issues/11701)
+* chore(deps): update all non-major dependencies (#11787) ([271394f](https://github.com/vitejs/vite/commit/271394f)), closes [#11787](https://github.com/vitejs/vite/issues/11787)
+* chore(deps): update dependency @rollup/plugin-typescript to v11 (#11702) ([f40d511](https://github.com/vitejs/vite/commit/f40d511)), closes [#11702](https://github.com/vitejs/vite/issues/11702)
+* feat: add experimental option to skip SSR transform (#11411) ([e781ef3](https://github.com/vitejs/vite/commit/e781ef3)), closes [#11411](https://github.com/vitejs/vite/issues/11411)
+* refactor: remove unnecessary if conditions (#11668) ([9c114c5](https://github.com/vitejs/vite/commit/9c114c5)), closes [#11668](https://github.com/vitejs/vite/issues/11668)
+* refactor: upgrade resolve.exports (#11712) ([00a79ec](https://github.com/vitejs/vite/commit/00a79ec)), closes [#11712](https://github.com/vitejs/vite/issues/11712)
+
+
+
 ## 4.1.0-beta.0 (2023-01-09)
 
 * chore(deps): update all non-major dependencies (#11419) ([896475d](https://github.com/vitejs/vite/commit/896475d)), closes [#11419](https://github.com/vitejs/vite/issues/11419)
