@@ -5,6 +5,6 @@ export interface ChunkMetadata {
 
 declare module 'rollup' {
   export interface RenderedChunk {
-    viteMetadata: ChunkMetadata
+    viteMetadata?: ChunkMetadata
   }
 }

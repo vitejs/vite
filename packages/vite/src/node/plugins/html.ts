@@ -658,7 +658,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           })
         }
 
-        chunk.viteMetadata.importedCss.forEach((file) => {
+        chunk.viteMetadata!.importedCss.forEach((file) => {
           if (!seen.has(file)) {
             seen.add(file)
             tags.push({
