@@ -23,6 +23,7 @@ import type {
   types as BabelTypes,
 } from '@babel/core'
 import colors from 'picocolors'
+import browserslist from 'browserslist'
 import type { Options } from './types'
 
 // lazy load babel since it's not used during dev
@@ -122,7 +123,10 @@ const _require = createRequire(import.meta.url)
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
-  const targets = options.targets
+  const targets =
+    browserslist() ||
+    options.targets ||
+    'last 2 versions and not dead, > 0.3%, Firefox ESR'
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 

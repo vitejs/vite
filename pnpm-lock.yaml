@@ -144,8 +144,9 @@ importers:
   packages/plugin-legacy:
     specifiers:
       '@babel/core': ^7.20.12
-      '@babel/standalone': ^7.20.13
       core-js: ^3.27.2
+      '@babel/preset-env': ^7.20.2
+      browserslist: ^4.21.4
       magic-string: ^0.27.0
       picocolors: ^1.0.0
       regenerator-runtime: ^0.13.11
@@ -154,6 +155,7 @@ importers:
     dependencies:
       '@babel/core': 7.20.5
       '@babel/preset-env': 7.20.2_@babel+core@7.20.5
+      browserslist: 4.21.4
       core-js: 3.26.1
       magic-string: 0.27.0
       regenerator-runtime: 0.13.11
