@@ -589,10 +589,26 @@ export async function toAbsoluteGlob(
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
-  if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
-  if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
-  if (glob.startsWith('../')) return pre + posix.join(dir, glob)
-  if (glob.startsWith('**')) return pre + glob
+
+  function getSafeGlob(glob: string) {
+    return glob
+      .split('/')
+      .map(
+        // escape characters in glob
+        (p) =>
+          !p || fg.isDynamicPattern(p) || /\$\{[^/]+\}/.test(p)
+            ? p
+            : globSafePath(p),
+      )
+      .join('/')
+  }
+
+  if (glob.startsWith('/'))
+    return pre + posix.join(root, getSafeGlob(glob.slice(1)))
+  if (glob.startsWith('./'))
+    return pre + posix.join(dir, getSafeGlob(glob.slice(2)))
+  if (glob.startsWith('../')) return pre + posix.join(dir, getSafeGlob(glob))
+  if (glob.startsWith('**')) return pre + getSafeGlob(glob)
 
   const resolved = normalizePath((await resolveId(glob, importer)) || glob)
   if (isAbsolute(resolved)) {

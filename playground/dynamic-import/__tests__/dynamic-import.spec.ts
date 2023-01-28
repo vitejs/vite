@@ -129,3 +129,11 @@ test('should work with load ../ and contain itself directory', async () => {
     true,
   )
 })
+
+test('should load dynamic import with escape characters', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-escape'),
+    'dynamic-import-escape: () [] {}',
+    true,
+  )
+})

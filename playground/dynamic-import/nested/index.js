@@ -126,4 +126,17 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   text('.dynamic-import-nested-self', mod.self)
 })
 
+// escape characters
+const modName = 'mod'
+Promise.all([
+  import(`../escape/(parenthesis)/${modName}.js`),
+  import(`../escape/[brackets]/${modName}.js`),
+  import(`../escape/{curlies}/${modName}.js`),
+]).then((mods) => {
+  text(
+    '.dynamic-import-escape',
+    mods.reduce((msg, mod) => `${msg} ${mod.msg}`, 'dynamic-import-escape:'),
+  )
+})
+
 console.log('index.js')
