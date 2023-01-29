@@ -127,6 +127,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     options.targets ||
     browserslist() ||
     'last 2 versions and not dead, > 0.3%, Firefox ESR'
+
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
