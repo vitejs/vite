@@ -111,7 +111,9 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should emit css file', async () => {
-    expect(listAssets().some((filename) => filename.endsWith('.css')))
+    expect(
+      listAssets().some((filename) => filename.endsWith('.css')),
+    ).toBeTruthy()
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
