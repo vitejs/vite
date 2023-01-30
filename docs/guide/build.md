@@ -11,7 +11,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 - Safari >=14
 - Edge >=88
 
-You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
+You can specify custom targets via the [`build.target` config option](/docs/config/build-options.md#buildtarget), where the lowest target is `es2015`.
 
 Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
