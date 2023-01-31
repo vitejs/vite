@@ -18,6 +18,7 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
+  isUrl,
   normalizePath,
   processSrcSet,
 } from '../utils'
@@ -811,11 +812,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
-          return normalizePath(
-            toOutputPublicAssetFilePath(
-              getPublicAssetFilename(fileHash, config)!,
-            ),
+          const publicAssetPath = toOutputPublicAssetFilePath(
+            getPublicAssetFilename(fileHash, config)!,
           )
+
+          return isUrl(publicAssetPath)
+            ? publicAssetPath
+            : normalizePath(publicAssetPath)
         })
 
         if (chunk && canInlineEntry) {
