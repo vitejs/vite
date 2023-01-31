@@ -14,6 +14,7 @@ module.exports = {
   build: {
     cssCodeSplit: false,
     manifest: true,
+    sourcemap: true,
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'index.html'),
