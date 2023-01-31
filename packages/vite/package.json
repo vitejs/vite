@@ -113,7 +113,7 @@
     "okie": "^1.0.1",
     "open": "^8.4.0",
     "parse5": "^7.1.2",
-    "periscopic": "^3.0.4",
+    "periscopic": "^3.1.0",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
     "postcss-import": "^15.1.0",
@@ -127,7 +127,7 @@
     "strip-ansi": "^7.0.1",
     "strip-literal": "^0.4.2",
     "tsconfck": "^2.0.2",
-    "tslib": "^2.4.1",
+    "tslib": "^2.5.0",
     "types": "link:./types",
     "ufo": "^1.0.1",
     "ws": "^8.12.0"
