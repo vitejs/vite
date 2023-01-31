@@ -578,7 +578,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (isLegacyBundle(bundle, opts)) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
-          if (bundle[name].type === 'asset') {
+          if (bundle[name].type === 'asset' && !/.+\.map$/.test(name)) {
             delete bundle[name]
           }
         }

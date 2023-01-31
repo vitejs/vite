@@ -120,4 +120,15 @@ describe.runIf(isBuild)('build', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
     expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
   })
+
+  test('should generate legacy sourcemap file', async () => {
+    expect(
+      listAssets().some((filename) => /index-legacy.+\.map$/.test(filename)),
+    ).toBeTruthy()
+    expect(
+      listAssets().some((filename) =>
+        /polyfills-legacy.+\.map$/.test(filename),
+      ),
+    ).toBeFalsy()
+  })
 })
