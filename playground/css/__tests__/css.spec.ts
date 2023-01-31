@@ -508,3 +508,8 @@ test('async css order with css modules', async () => {
 test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
+
+test.runIf(isServe)('style csp nonce', async () => {
+  const cspNonce = await page.getAttribute('style', 'nonce')
+  expect(cspNonce).toBe('random')
+})

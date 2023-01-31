@@ -404,6 +404,13 @@ export function updateStyle(id: string, content: string): void {
     style.setAttribute('data-vite-dev-id', id)
     style.textContent = content
 
+    const cspNonce = document.querySelector<HTMLMetaElement>(
+      'meta[property=csp-nonce]',
+    )?.content
+    if (cspNonce) {
+      style.setAttribute('nonce', cspNonce)
+    }
+
     if (!lastInsertedStyle) {
       document.head.appendChild(style)
 
