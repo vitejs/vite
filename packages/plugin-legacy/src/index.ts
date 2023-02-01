@@ -600,7 +600,7 @@ export async function detectPolyfills(
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
-  const result = babel?.transform(code, {
+  const result = babel.transform(code, {
     ast: true,
     babelrc: false,
     configFile: false,
