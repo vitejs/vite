@@ -1,3 +1,16 @@
+## 4.1.0-beta.2 (2023-02-01)
+
+* fix: await bundle closing (#11873) ([1e6768d](https://github.com/vitejs/vite/commit/1e6768d)), closes [#11873](https://github.com/vitejs/vite/issues/11873)
+* fix: make viteMetadata property of RenderedChunk optional (#11768) ([128f09e](https://github.com/vitejs/vite/commit/128f09e)), closes [#11768](https://github.com/vitejs/vite/issues/11768)
+* fix: replace import.meta.hot with undefined in the production (#11317) ([73afe6d](https://github.com/vitejs/vite/commit/73afe6d)), closes [#11317](https://github.com/vitejs/vite/issues/11317)
+* fix: update CJS interop error message (#11842) ([356ddfe](https://github.com/vitejs/vite/commit/356ddfe)), closes [#11842](https://github.com/vitejs/vite/issues/11842)
+* fix(client): serve client sources next to deployed scripts (#11865) ([63bd261](https://github.com/vitejs/vite/commit/63bd261)), closes [#11865](https://github.com/vitejs/vite/issues/11865)
+* fix(deps): update all non-major dependencies (#11846) ([5d55083](https://github.com/vitejs/vite/commit/5d55083)), closes [#11846](https://github.com/vitejs/vite/issues/11846)
+* fix(esbuild): avoid polluting global namespace while minify is false (#11882) ([c895379](https://github.com/vitejs/vite/commit/c895379)), closes [#11882](https://github.com/vitejs/vite/issues/11882)
+* docs: add troubleshooting for browser compat (#11877) ([cc00b52](https://github.com/vitejs/vite/commit/cc00b52)), closes [#11877](https://github.com/vitejs/vite/issues/11877)
+
+
+
 ## 4.1.0-beta.1 (2023-01-26)
 
 * fix: deep resolve side effects when glob does not contain / (#11807) ([f3a0c3b](https://github.com/vitejs/vite/commit/f3a0c3b)), closes [#11807](https://github.com/vitejs/vite/issues/11807)
