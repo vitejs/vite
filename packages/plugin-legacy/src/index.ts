@@ -23,7 +23,7 @@ import type {
   types as BabelTypes,
 } from '@babel/core'
 import colors from 'picocolors'
-import browserslist from 'browserslist'
+import { loadConfig as browserslistLoadConfig } from 'browserslist'
 import type { Options } from './types'
 
 // lazy load babel since it's not used during dev
