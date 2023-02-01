@@ -111,11 +111,24 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should emit css file', async () => {
-    expect(listAssets().some((filename) => filename.endsWith('.css')))
+    expect(
+      listAssets().some((filename) => filename.endsWith('.css')),
+    ).toBeTruthy()
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
     expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
+  })
+
+  test('should generate legacy sourcemap file', async () => {
+    expect(
+      listAssets().some((filename) => /index-legacy.+\.map$/.test(filename)),
+    ).toBeTruthy()
+    expect(
+      listAssets().some((filename) =>
+        /polyfills-legacy.+\.map$/.test(filename),
+      ),
+    ).toBeFalsy()
   })
 })

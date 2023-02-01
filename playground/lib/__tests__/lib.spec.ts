@@ -16,15 +16,23 @@ describe.runIf(isBuild)('build', () => {
   test('umd', async () => {
     expect(await page.textContent('.umd')).toBe('It works')
     const code = readFile('dist/my-lib-custom-filename.umd.js')
+    const noMinifyCode = readFile('dist/nominify/my-lib-custom-filename.umd.js')
     // esbuild helpers are injected inside of the UMD wrapper
     expect(code).toMatch(/^\(function\(/)
+    expect(noMinifyCode).toMatch(/^\(function\(global/)
   })
 
   test('iife', async () => {
     expect(await page.textContent('.iife')).toBe('It works')
     const code = readFile('dist/my-lib-custom-filename.iife.js')
+    const noMinifyCode = readFile(
+      'dist/nominify/my-lib-custom-filename.iife.js',
+    )
     // esbuild helpers are injected inside of the IIFE wrapper
     expect(code).toMatch(/^var MyLib=function\(\)\{"use strict";/)
+    expect(noMinifyCode).toMatch(
+      /^var MyLib\s*=\s*function\(\)\s*\{.*?"use strict";/s,
+    )
   })
 
   test('Library mode does not include `preload`', async () => {

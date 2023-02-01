@@ -4,7 +4,7 @@
 
 ### `vite`
 
-Start Vite dev server in the current directory. Will enter the watch mode in development environment and run mode in CI automatically.
+Start Vite dev server in the current directory.
 
 #### Usage
 
