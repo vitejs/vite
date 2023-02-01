@@ -13,7 +13,7 @@ Output format for worker bundle.
 
 - **Type:** [`(Plugin | Plugin[])[]`](./shared-options#plugins)
 
-Vite plugins that apply to worker bundle. Note that [config.plugins](./shared-options#plugins) only applies to workers in serve, it should be configured here instead for build.
+Vite plugins that apply to worker bundle. Note that [config.plugins](./shared-options#plugins) only applies to workers in dev, it should be configured here instead for build.
 
 ## worker.rollupOptions
 
