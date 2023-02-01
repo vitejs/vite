@@ -123,10 +123,7 @@ const _require = createRequire(import.meta.url)
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
-  const targets =
-    options.targets ||
-    browserslistLoadConfig({ path: config.root }) || // we need to run this after the ResolvedConfig hook
-    'last 2 versions and not dead, > 0.3%, Firefox ESR'
+  let targets: Options['targets']
 
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
@@ -300,6 +297,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (!genLegacy || config.build.ssr) {
         return
       }
+
+      targets =
+        options.targets ||
+        browserslistLoadConfig({ path: config.root }) ||
+        'last 2 versions and not dead, > 0.3%, Firefox ESR'
 
       const getLegacyOutputFileName = (
         fileNames:
