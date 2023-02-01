@@ -239,6 +239,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
         if (workerType === 'classic') {
           injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+
+          // on classic, bundle classic workers by default
+          if (!isBuild) {
+            const result = await bundleWorkerEntry(config, id, {})
+
+            // prepend /@vite/env into worker
+            result.code = injectEnv + result.code
+
+            return result
+          }
         } else if (workerType === 'module') {
           injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
         } else if (workerType === 'ignore') {
