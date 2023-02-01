@@ -417,7 +417,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
       const babel = await loadBabel()
-      const result = babel?.transform(raw, {
+      const result = babel.transform(raw, {
         babelrc: false,
         configFile: false,
         compact: !!config.build.minify,
