@@ -125,7 +125,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   const targets =
     options.targets ||
-    browserslist() ||
+    browserslistLoadConfig({ path: config.root }) || // we need to run this after the ResolvedConfig hook
     'last 2 versions and not dead, > 0.3%, Firefox ESR'
 
   const genLegacy = options.renderLegacyChunks !== false
