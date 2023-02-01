@@ -1,5 +1,4 @@
-let base = `/${self.location.pathname.split('/')[1]}`
-if (base === `/worker-entries`) base = '' // relative base
+let base = ''
 
 importScripts(`${base}/classic.js`)
 
