@@ -38,7 +38,7 @@ npm add -D terser
 ### `targets`
 
 - **Type:** `string | string[] | { [key: string]: string }`
-- **Default:** `'last 2 versions and not dead, > 0.3%, Firefox ESR'`
+- **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
   If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets).
 
