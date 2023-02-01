@@ -652,7 +652,7 @@ export async function build(
     outputBuildError(e)
     throw e
   } finally {
-    if (bundle) bundle.close()
+    if (bundle) await bundle.close()
   }
 }
 
