@@ -37,7 +37,7 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
-- Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
+- String values will be used as raw expressions, so if defining a string constant, **it needs to be explicitly quoted** (e.g. with `JSON.stringify`).
 
 - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
