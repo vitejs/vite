@@ -13,6 +13,7 @@ const getConfig = (base: string): InlineConfig => ({
   root: rootDir,
   logLevel: 'silent',
   server: { port: ports['css/dynamic-import'] },
+  preview: { port: ports['css/dynamic-import'] },
   build: { assetsInlineLimit: 0 },
 })
 
