@@ -1,3 +1,18 @@
+## 4.0.0 (2023-02-02)
+
+* feat(legacy)!: bump modern target to support async generator (#11896) ([55b9711](https://github.com/vitejs/vite/commit/55b9711)), closes [#11896](https://github.com/vitejs/vite/issues/11896)
+* fix(plugin-legacy)!: support browserslist and update default target (#11318) ([d5b8f86](https://github.com/vitejs/vite/commit/d5b8f86)), closes [#11318](https://github.com/vitejs/vite/issues/11318)
+* fix: typo (#11283) ([bf234a6](https://github.com/vitejs/vite/commit/bf234a6)), closes [#11283](https://github.com/vitejs/vite/issues/11283)
+* fix(deps): update all non-major dependencies (#11846) ([5d55083](https://github.com/vitejs/vite/commit/5d55083)), closes [#11846](https://github.com/vitejs/vite/issues/11846)
+* fix(plugin-legacy): legacy sourcemap not generate (fix #11693) (#11841) ([2ff5930](https://github.com/vitejs/vite/commit/2ff5930)), closes [#11693](https://github.com/vitejs/vite/issues/11693) [#11841](https://github.com/vitejs/vite/issues/11841)
+* chore: enable `@typescript-eslint/ban-ts-comment` (#11326) ([e58a4f0](https://github.com/vitejs/vite/commit/e58a4f0)), closes [#11326](https://github.com/vitejs/vite/issues/11326)
+* chore: update packages' (vite, vite-legacy) keywords (#11402) ([a56bc34](https://github.com/vitejs/vite/commit/a56bc34)), closes [#11402](https://github.com/vitejs/vite/issues/11402)
+* chore(deps): update all non-major dependencies (#11419) ([896475d](https://github.com/vitejs/vite/commit/896475d)), closes [#11419](https://github.com/vitejs/vite/issues/11419)
+* chore(deps): update all non-major dependencies (#11787) ([271394f](https://github.com/vitejs/vite/commit/271394f)), closes [#11787](https://github.com/vitejs/vite/issues/11787)
+* refactor(plugin-legacy): optimize cspHashes array (#11734) ([b1a8e58](https://github.com/vitejs/vite/commit/b1a8e58)), closes [#11734](https://github.com/vitejs/vite/issues/11734)
+
+
+
 ## <small>3.0.1 (2022-12-09)</small>
 
 * chore: update vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)
