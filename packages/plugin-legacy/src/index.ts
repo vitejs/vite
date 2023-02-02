@@ -121,7 +121,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let targets: Options['targets']
 
   const genLegacy = options.renderLegacyChunks !== false
-  const genDynamicFallback = genLegacy
 
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
@@ -247,7 +246,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // legacy bundle
-      if (legacyPolyfills.size || genDynamicFallback) {
+      if (legacyPolyfills.size) {
         // check if the target needs Promise polyfill because SystemJS relies on it
         // https://github.com/systemjs/systemjs#ie11-support
         await detectPolyfills(
@@ -362,7 +361,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         const ms = new MagicString(raw)
 
-        if (genDynamicFallback && chunk.isEntry) {
+        if (genLegacy && chunk.isEntry) {
           ms.prepend(forceDynamicImportUsage)
         }
 
@@ -552,7 +551,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 5. inject dynamic import fallback entry
-      if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename) {
+      if (genLegacy && legacyPolyfillFilename && legacyEntryFilename) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
