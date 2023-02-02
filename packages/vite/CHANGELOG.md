@@ -1,3 +1,8 @@
+## 4.1.0 (2023-02-02)
+
+
+
+
 ## 4.1.0-beta.2 (2023-02-01)
 
 * fix: await bundle closing (#11873) ([1e6768d](https://github.com/vitejs/vite/commit/1e6768d)), closes [#11873](https://github.com/vitejs/vite/issues/11873)
