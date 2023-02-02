@@ -1,9 +1,26 @@
 ## 4.1.0 (2023-02-02)
 
+Vite 4.1 updates to the latest versions of Rollup and esbuild. Check out the new [Rollup docs](https://rollupjs.org/), that are now powered by VitePress making the navigation between Vite and Rollup docs easier for users.
+
+[Vite docs](https://vitejs.dev) got a theme update migrating to the latest version of VitePress.
+
+As part of [Vite 4](https://vitejs.dev/blog/announcing-vite4.html), the Vue and React plugins have been extracted out of the monorepo. Although their release cycle will no longer follow Vite releases moving forward, Vite 4.1 is released in parallel with new versions of [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/releases/tag/plugin-react%403.1.0) and [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc/releases/tag/v3.1.0). @vitejs/plugin-react 3.1.0 reworks the way HMR is handled fixing many edge cases and @vitejs/plugin-react-swc 3.1.0 adds support for SWC plugins.
+
+There is also a new major for [@vitejs/plugin-legacy](https://github.com/vitejs/vite/blob/main/packages/plugin-legacy), see [changelog for v4.0.0](https://github.com/vitejs/vite/blob/main/packages/plugin-legacy/CHANGELOG.md#400-2023-02-02). This version contains breaking changes:
+- Support browserslist and update default target ([#11318](https://github.com/vitejs/vite/pull/11318)). See [updated `targets` default](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#targets).
+- Bump modern target to support async generator ([#11896](https://github.com/vitejs/vite/pull/11896)). Learn more at [the browsers support docs](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#browsers-that-supports-esm-but-does-not-support-widely-available-features).
+
+### Features
+
+* feat: add experimental option to skip SSR transform (#11411) ([e781ef3](https://github.com/vitejs/vite/commit/e781ef3)), closes [#11411](https://github.com/vitejs/vite/issues/11411)
+* feat: reproducible manifest (#11542) ([efc8979](https://github.com/vitejs/vite/commit/efc8979)), closes [#11542](https://github.com/vitejs/vite/issues/11542)
+* feat: support BROWSER and BROWSER_ARGS in env file (#11513) ([8972868](https://github.com/vitejs/vite/commit/8972868)), closes [#11513](https://github.com/vitejs/vite/issues/11513)
+* feat(cli): clear console by pressing c (#11493) (#11494) ([1ae018f](https://github.com/vitejs/vite/commit/1ae018f)), closes [#11493](https://github.com/vitejs/vite/issues/11493) [#11494](https://github.com/vitejs/vite/issues/11494)
+* perf(build): disable rollup cache for builds (#11454) ([580ba7a](https://github.com/vitejs/vite/commit/580ba7a)), closes [#11454](https://github.com/vitejs/vite/issues/11454)
+* perf(resolve): improve file existence check (#11436) ([4a12b89](https://github.com/vitejs/vite/commit/4a12b89)), closes [#11436](https://github.com/vitejs/vite/issues/11436)
 
 
-
-## 4.1.0-beta.2 (2023-02-01)
+### Bug Fixes
 
 * fix: await bundle closing (#11873) ([1e6768d](https://github.com/vitejs/vite/commit/1e6768d)), closes [#11873](https://github.com/vitejs/vite/issues/11873)
 * fix: make viteMetadata property of RenderedChunk optional (#11768) ([128f09e](https://github.com/vitejs/vite/commit/128f09e)), closes [#11768](https://github.com/vitejs/vite/issues/11768)
@@ -12,12 +29,6 @@
 * fix(client): serve client sources next to deployed scripts (#11865) ([63bd261](https://github.com/vitejs/vite/commit/63bd261)), closes [#11865](https://github.com/vitejs/vite/issues/11865)
 * fix(deps): update all non-major dependencies (#11846) ([5d55083](https://github.com/vitejs/vite/commit/5d55083)), closes [#11846](https://github.com/vitejs/vite/issues/11846)
 * fix(esbuild): avoid polluting global namespace while minify is false (#11882) ([c895379](https://github.com/vitejs/vite/commit/c895379)), closes [#11882](https://github.com/vitejs/vite/issues/11882)
-* docs: add troubleshooting for browser compat (#11877) ([cc00b52](https://github.com/vitejs/vite/commit/cc00b52)), closes [#11877](https://github.com/vitejs/vite/issues/11877)
-
-
-
-## 4.1.0-beta.1 (2023-01-26)
-
 * fix: deep resolve side effects when glob does not contain / (#11807) ([f3a0c3b](https://github.com/vitejs/vite/commit/f3a0c3b)), closes [#11807](https://github.com/vitejs/vite/issues/11807)
 * fix: duplicated sourceMappingURL for worker bundles (fix #11601) (#11602) ([5444781](https://github.com/vitejs/vite/commit/5444781)), closes [#11601](https://github.com/vitejs/vite/issues/11601) [#11602](https://github.com/vitejs/vite/issues/11602)
 * fix: emit assets from SSR build (#11430) ([ffbdcdb](https://github.com/vitejs/vite/commit/ffbdcdb)), closes [#11430](https://github.com/vitejs/vite/issues/11430)
@@ -28,38 +39,32 @@
 * fix(esbuild): check server before reload tsconfig (#11747) ([c56b954](https://github.com/vitejs/vite/commit/c56b954)), closes [#11747](https://github.com/vitejs/vite/issues/11747)
 * fix(hmr): hmr websocket failure for custom middleware mode with server.hmr.server (#11487) ([00919bb](https://github.com/vitejs/vite/commit/00919bb)), closes [#11487](https://github.com/vitejs/vite/issues/11487)
 * fix(ssr): load sourcemaps alongside modules (fix: #3288) (#11576) ([dc05e97](https://github.com/vitejs/vite/commit/dc05e97)), closes [#3288](https://github.com/vitejs/vite/issues/3288) [#11576](https://github.com/vitejs/vite/issues/11576)
-* docs: update rollup docs links (#11809) ([4bbebf3](https://github.com/vitejs/vite/commit/4bbebf3)), closes [#11809](https://github.com/vitejs/vite/issues/11809)
-* chore: extract DEFAULT_DEV_PORT and DEFAULT_PREVIEW_PORT (#11669) ([c9f009d](https://github.com/vitejs/vite/commit/c9f009d)), closes [#11669](https://github.com/vitejs/vite/issues/11669)
-* chore: fix type warning during building vite (#11673) ([305b76e](https://github.com/vitejs/vite/commit/305b76e)), closes [#11673](https://github.com/vitejs/vite/issues/11673)
-* chore: remove unused `module` field in `package.json` (#11698) ([595b55f](https://github.com/vitejs/vite/commit/595b55f)), closes [#11698](https://github.com/vitejs/vite/issues/11698)
-* chore: shrink genSourceMapUrl type (#11667) ([9fb406b](https://github.com/vitejs/vite/commit/9fb406b)), closes [#11667](https://github.com/vitejs/vite/issues/11667)
-* chore: update packages' (vite, vite-legacy) keywords (#11402) ([a56bc34](https://github.com/vitejs/vite/commit/a56bc34)), closes [#11402](https://github.com/vitejs/vite/issues/11402)
-* chore: update rollup (#11710) ([193d55c](https://github.com/vitejs/vite/commit/193d55c)), closes [#11710](https://github.com/vitejs/vite/issues/11710)
-* chore: use jsdoc's default tag (#11725) ([a6df6b4](https://github.com/vitejs/vite/commit/a6df6b4)), closes [#11725](https://github.com/vitejs/vite/issues/11725)
-* chore(deps): update all non-major dependencies (#11701) ([1d2ee63](https://github.com/vitejs/vite/commit/1d2ee63)), closes [#11701](https://github.com/vitejs/vite/issues/11701)
-* chore(deps): update all non-major dependencies (#11787) ([271394f](https://github.com/vitejs/vite/commit/271394f)), closes [#11787](https://github.com/vitejs/vite/issues/11787)
-* chore(deps): update dependency @rollup/plugin-typescript to v11 (#11702) ([f40d511](https://github.com/vitejs/vite/commit/f40d511)), closes [#11702](https://github.com/vitejs/vite/issues/11702)
-* feat: add experimental option to skip SSR transform (#11411) ([e781ef3](https://github.com/vitejs/vite/commit/e781ef3)), closes [#11411](https://github.com/vitejs/vite/issues/11411)
-* refactor: remove unnecessary if conditions (#11668) ([9c114c5](https://github.com/vitejs/vite/commit/9c114c5)), closes [#11668](https://github.com/vitejs/vite/issues/11668)
 * refactor: upgrade resolve.exports (#11712) ([00a79ec](https://github.com/vitejs/vite/commit/00a79ec)), closes [#11712](https://github.com/vitejs/vite/issues/11712)
-
-
-
-## 4.1.0-beta.0 (2023-01-09)
-
-* chore(deps): update all non-major dependencies (#11419) ([896475d](https://github.com/vitejs/vite/commit/896475d)), closes [#11419](https://github.com/vitejs/vite/issues/11419)
 * fix: remove moment from force interop packages (#11502) ([b89ddd6](https://github.com/vitejs/vite/commit/b89ddd6)), closes [#11502](https://github.com/vitejs/vite/issues/11502)
 * fix(css): fix stale css when reloading with hmr disabled (#10270) (#11506) ([e5807c4](https://github.com/vitejs/vite/commit/e5807c4)), closes [#10270](https://github.com/vitejs/vite/issues/10270) [#11506](https://github.com/vitejs/vite/issues/11506)
 * fix(hmr): base default protocol on client source location (#11497) ([167753d](https://github.com/vitejs/vite/commit/167753d)), closes [#11497](https://github.com/vitejs/vite/issues/11497)
 * fix(metadata): expose viteMetadata type (#11511) ([32dee3c](https://github.com/vitejs/vite/commit/32dee3c)), closes [#11511](https://github.com/vitejs/vite/issues/11511)
 * fix(resolve): ensure exports has precedence over mainFields (cherry pick #11234) (#11595) ([691e432](https://github.com/vitejs/vite/commit/691e432)), closes [#11234](https://github.com/vitejs/vite/issues/11234) [#11595](https://github.com/vitejs/vite/issues/11595)
 * fix(resolve): use only root package.json as exports source (#11259) ([b9afa6e](https://github.com/vitejs/vite/commit/b9afa6e)), closes [#11259](https://github.com/vitejs/vite/issues/11259)
-* feat: reproducible manifest (#11542) ([efc8979](https://github.com/vitejs/vite/commit/efc8979)), closes [#11542](https://github.com/vitejs/vite/issues/11542)
-* feat: support BROWSER and BROWSER_ARGS in env file (#11513) ([8972868](https://github.com/vitejs/vite/commit/8972868)), closes [#11513](https://github.com/vitejs/vite/issues/11513)
-* feat(cli): clear console by pressing c (#11493) (#11494) ([1ae018f](https://github.com/vitejs/vite/commit/1ae018f)), closes [#11493](https://github.com/vitejs/vite/issues/11493) [#11494](https://github.com/vitejs/vite/issues/11494)
-* perf(build): disable rollup cache for builds (#11454) ([580ba7a](https://github.com/vitejs/vite/commit/580ba7a)), closes [#11454](https://github.com/vitejs/vite/issues/11454)
-* perf(resolve): improve file existence check (#11436) ([4a12b89](https://github.com/vitejs/vite/commit/4a12b89)), closes [#11436](https://github.com/vitejs/vite/issues/11436)
 * refactor(build): close rollup bundle directly (#11460) ([a802828](https://github.com/vitejs/vite/commit/a802828)), closes [#11460](https://github.com/vitejs/vite/issues/11460)
+
+
+### Previous Changelogs
+
+
+#### [4.1.0-beta.2](https://github.com/vitejs/vite/compare/v4.1.0-beta.1....v4.1.0-beta.2) (2023-02-01)
+
+See [4.1.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v4.1.0-beta.2/packages/vite/CHANGELOG.md)
+
+
+#### [4.1.0-beta.1](https://github.com/vitejs/vite/compare/v4.1.0-beta.0....v4.1.0-beta.1) (2023-01-26)
+
+See [4.1.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v4.1.0-beta.1/packages/vite/CHANGELOG.md)
+
+
+#### [4.1.0-beta.0](https://github.com/vitejs/vite/compare/v4.0.3....v4.1.0-beta.0) (2023-01-09)
+
+See [4.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v4.1.0-beta.0/packages/vite/CHANGELOG.md)
 
 
 
