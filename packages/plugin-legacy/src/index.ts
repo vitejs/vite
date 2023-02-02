@@ -23,7 +23,7 @@ import type {
   types as BabelTypes,
 } from '@babel/core'
 import colors from 'picocolors'
-import { loadConfig as browserslistLoadConfig } from 'browserslist'
+import browserslist from 'browserslist'
 import type { Options } from './types'
 import {
   detectModernBrowserCode,
@@ -44,6 +44,10 @@ async function loadBabel() {
   }
   return babel
 }
+
+// The requested module 'browserslist' is a CommonJS module
+// which may not support all module.exports as named exports
+const { loadConfig: browserslistLoadConfig } = browserslist
 
 // Duplicated from build.ts in Vite Core, at least while the feature is experimental
 // We should later expose this helper for other plugins to use
