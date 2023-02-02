@@ -536,7 +536,13 @@ function tryResolveFile(
   skipPackageJson?: boolean,
   skipTsExtension?: boolean,
 ): string | undefined {
-  const stat = fs.statSync(file, { throwIfNoEntry: false })
+  let stat: fs.Stats | undefined
+  try {
+    stat = fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    return
+  }
+
   if (stat) {
     if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
