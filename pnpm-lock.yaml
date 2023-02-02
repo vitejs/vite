@@ -145,6 +145,7 @@ importers:
     specifiers:
       '@babel/core': ^7.20.12
       '@babel/preset-env': ^7.20.2
+      acorn: ^8.8.2
       browserslist: ^4.21.4
       core-js: ^3.27.2
       magic-string: ^0.27.0
@@ -161,6 +162,7 @@ importers:
       regenerator-runtime: 0.13.11
       systemjs: 6.13.0
     devDependencies:
+      acorn: 8.8.2
       picocolors: 1.0.0
       vite: link:../vite
 
