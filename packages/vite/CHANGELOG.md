@@ -1,3 +1,10 @@
+## <small>4.1.1 (2023-02-02)</small>
+
+* chore: 4.1.0 changelog cleanup (#11900) ([7747d32](https://github.com/vitejs/vite/commit/7747d32)), closes [#11900](https://github.com/vitejs/vite/issues/11900)
+* fix: catch statSync error (#11907) ([f80b9a2](https://github.com/vitejs/vite/commit/f80b9a2)), closes [#11907](https://github.com/vitejs/vite/issues/11907)
+
+
+
 ## 4.1.0 (2023-02-02)
 
 Vite 4.1 updates to the latest versions of Rollup and esbuild. Check out the new [Rollup docs](https://rollupjs.org/), that are now powered by VitePress making the navigation between Vite and Rollup docs easier for users.
