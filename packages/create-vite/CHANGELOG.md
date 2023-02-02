@@ -1,3 +1,11 @@
+## 4.1.0 (2023-02-02)
+
+* chore(create-vite): update plugin-react to 3.1.0 ([8895629](https://github.com/vitejs/vite/commit/8895629))
+* fix: two folders are created when the project name contains spaces (#11630) ([758fc6c](https://github.com/vitejs/vite/commit/758fc6c)), closes [#11630](https://github.com/vitejs/vite/issues/11630)
+* fix(deps): update all non-major dependencies (#11846) ([5d55083](https://github.com/vitejs/vite/commit/5d55083)), closes [#11846](https://github.com/vitejs/vite/issues/11846)
+
+
+
 ## 4.1.0-beta.0 (2023-01-26)
 
 * chore: typecheck create-vite (#11295) ([af86e5b](https://github.com/vitejs/vite/commit/af86e5b)), closes [#11295](https://github.com/vitejs/vite/issues/11295)
