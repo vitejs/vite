@@ -1,6 +1,6 @@
 ## 4.1.0 (2023-02-02)
 
-Vite 4.1 updates to the latests version of Rollup and esbuild. Check out the new [Rollup docs](https://rollupjs.org/), that are now powered by VitePress making the navigation between Vite and Rollup docs easier for users.
+Vite 4.1 updates to the latest versions of Rollup and esbuild. Check out the new [Rollup docs](https://rollupjs.org/), that are now powered by VitePress making the navigation between Vite and Rollup docs easier for users.
 
 [Vite docs](https://vitejs.dev) got a theme update migrating to the latest version of VitePress.
 
