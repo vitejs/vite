@@ -30,6 +30,14 @@ test('transpiles down iterators correctly', async () => {
   await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
 })
 
+test('async generator', async () => {
+  await untilUpdated(
+    () => page.textContent('#async-generator'),
+    '[0,1,2]',
+    true,
+  )
+})
+
 test('wraps with iife', async () => {
   await untilUpdated(
     () => page.textContent('#babel-helpers'),

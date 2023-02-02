@@ -179,13 +179,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
-          // browsers supporting ESM + dynamic import + import.meta
+          // browsers supporting ESM + dynamic import + import.meta + async generator
           config.build.target = [
             'es2020',
             'edge79',
             'firefox67',
             'chrome64',
-            'safari11.1',
+            'safari12',
           ]
         }
       }
