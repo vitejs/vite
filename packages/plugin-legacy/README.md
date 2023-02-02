@@ -8,7 +8,7 @@ By default, this plugin will:
 
 - Generate a polyfill chunk including SystemJS runtime, and any necessary polyfills determined by specified browser targets and **actual usage** in the bundle.
 
-- Inject `<script nomodule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without native ESM support.
+- Inject `<script nomodule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without widely-available features support.
 
 - Inject the `import.meta.env.LEGACY` env variable, which will only be `true` in the legacy production build, and `false` in all other cases.
 
@@ -117,12 +117,18 @@ npm add -D terser
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
 
-## Dynamic Import
+## Browsers that supports ESM but does not support widely-available features
 
-The legacy plugin offers a way to use native `import()` in the modern build while falling back to the legacy build in browsers with native ESM but without dynamic import support (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
+The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
 
 - Modern bundle is downloaded in all ESM browsers
-- Modern bundle throws `SyntaxError` in browsers without dynamic import
+- Modern bundle throws `SyntaxError` in browsers without those features support
+
+The following syntax are considered as widely-available:
+
+- dynamic import
+- `import.meta`
+- async generator
 
 ## Polyfill Specifiers
 
