@@ -1,3 +1,9 @@
+## <small>4.0.1 (2023-02-02)</small>
+
+* fix(legacy): fix browserslist import, close https://github.com/vitejs/vite/issues/11898 (#11899) ([9241d08](https://github.com/vitejs/vite/commit/9241d08)), closes [#11899](https://github.com/vitejs/vite/issues/11899)
+
+
+
 ## 4.0.0 (2023-02-02)
 
 * feat(legacy)!: bump modern target to support async generator (#11896) ([55b9711](https://github.com/vitejs/vite/commit/55b9711)), closes [#11896](https://github.com/vitejs/vite/issues/11896)
