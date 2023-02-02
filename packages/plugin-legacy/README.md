@@ -38,11 +38,11 @@ npm add -D terser
 ### `targets`
 
 - **Type:** `string | string[] | { [key: string]: string }`
-- **Default:** `'defaults'`
+- **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
   If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets).
 
-  The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). The default value, `'defaults'`, is what is recommended by Browserslist. See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
+  The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
 ### `polyfills`
 
