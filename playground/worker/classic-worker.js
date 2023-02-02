@@ -1,4 +1,4 @@
-let base = ''
+const base = ''
 
 importScripts(`${base}/classic.js`)
 
