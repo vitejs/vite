@@ -10,6 +10,6 @@
   },
   "devDependencies": {
     "typescript": "^4.9.3",
-    "vite": "^4.1.0-beta.1"
+    "vite": "^4.1.0"
   }
 }
