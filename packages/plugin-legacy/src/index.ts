@@ -28,9 +28,9 @@ import type { Options } from './types'
 import {
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
-  forceDynamicImportUsage,
   legacyEntryId,
   legacyPolyfillId,
+  modernChunkLegacyGuard,
   safari10NoModuleFix,
   systemJSInlineCode,
 } from './snippets'
@@ -362,7 +362,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         const ms = new MagicString(raw)
 
         if (genLegacy && chunk.isEntry) {
-          ms.prepend(forceDynamicImportUsage)
+          // append this code to avoid modern chunks running on legacy targeted browsers
+          ms.prepend(modernChunkLegacyGuard)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
