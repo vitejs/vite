@@ -11,6 +11,7 @@ import {
   fsPathFromUrl,
   isFileReadable,
   isImportRequest,
+  isIndexHtmlRequest,
   isInternalRequest,
   isParentDirectory,
   isWindows,
@@ -63,7 +64,11 @@ export function servePublicMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
     // skip import request and internal requests `/@fs/ /@vite-client` etc...
-    if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
+    if (
+      isImportRequest(req.url!) ||
+      isInternalRequest(req.url!) ||
+      isIndexHtmlRequest(req.url!)
+    ) {
       return next()
     }
     serve(req, res, next)

@@ -315,6 +315,8 @@ const trailingSeparatorRE = /[?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
+export const isIndexHtmlRequest = (url: string): boolean =>
+  url.includes('index.html')
 
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
