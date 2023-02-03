@@ -198,6 +198,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   const isWorker = config.isWorker
 
+  const isWorkerQueryId = (id: string) => {
+    const parsedQuery = parseRequest(id)
+    if (
+      parsedQuery &&
+      (parsedQuery.worker ?? parsedQuery.sharedworker) != null
+    ) {
+      return true
+    }
+
+    return false
+  }
+
   return {
     name: 'vite:worker',
 
@@ -217,15 +229,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      if (isBuild) {
-        const parsedQuery = parseRequest(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
-          return ''
-        }
+      if (isBuild && isWorkerQueryId(id)) {
+        return ''
       }
+    },
+
+    shouldTransformCachedModule({ id }) {
+      if (isBuild && isWorkerQueryId(id) && config.build.watch) {
+        return true
+      }
+      return false
     },
 
     async transform(raw, id, options) {
