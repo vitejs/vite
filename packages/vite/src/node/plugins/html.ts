@@ -625,6 +625,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return chunks
       }
 
+      const hasNonce = config.build.noncePlaceholder?.length > 0
+      const nonce = config.build.noncePlaceholder
+
       const toScriptTag = (
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
@@ -636,6 +639,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           type: 'module',
           crossorigin: true,
           src: toOutputPath(chunk.fileName),
+          ...(hasNonce ? { nonce } : {}),
         },
       })
 
@@ -648,6 +652,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           rel: 'modulepreload',
           crossorigin: true,
           href: toOutputPath(filename),
+          ...(hasNonce ? { nonce } : {}),
         },
       })
 
@@ -675,6 +680,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               attrs: {
                 rel: 'stylesheet',
                 href: toOutputPath(file),
+                ...(hasNonce ? { nonce } : {}),
               },
             })
           }
@@ -782,6 +788,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 attrs: {
                   rel: 'stylesheet',
                   href: toOutputAssetFilePath(cssChunk.fileName),
+                  ...(hasNonce ? { nonce } : {}),
                 },
               },
             ])

@@ -244,6 +244,11 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
+
+  /**
+   * If specified, adds a `nonce` attribute to HTML script and link tags with the placeholder value.
+   */
+  noncePlaceholder?: string
 }
 
 export interface LibraryOptions {

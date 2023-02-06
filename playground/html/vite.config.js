@@ -30,8 +30,10 @@ export default defineConfig({
         env: resolve(__dirname, 'env.html'),
         sideEffects: resolve(__dirname, 'side-effects/index.html'),
         'a á': resolve(__dirname, 'a á.html'),
+        nonce: resolve(__dirname, 'nonce.html'),
       },
     },
+    noncePlaceholder: 'TEST_NONCE',
   },
 
   define: {
@@ -175,7 +177,9 @@ ${
     {
       name: 'head-prepend-importmap',
       transformIndexHtml(_, ctx) {
-        if (ctx.path.includes('importmapOrder')) return
+        if (ctx.path.includes('importmapOrder') || ctx.path.includes('nonce')) {
+          return
+        }
 
         return [
           {

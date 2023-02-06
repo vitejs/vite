@@ -179,6 +179,28 @@ describe.runIf(isBuild)('build', () => {
       )
     })
   })
+
+  describe('nonce', () => {
+    beforeAll(async () => {
+      await page.goto(viteTestUrl + '/nonce.html')
+    })
+
+    test('nonce should be included in html tags', async () => {
+      const scripts = await page.locator('script').all()
+      const links = await page.locator('link[rel=stylesheet]').all()
+
+      await Promise.all(
+        scripts.map(async (script) =>
+          expect(await script.getAttribute('nonce')).toBe('TEST_NONCE'),
+        ),
+      )
+      await Promise.all(
+        links.map(async (link) =>
+          expect(await link.getAttribute('nonce')).toBe('TEST_NONCE'),
+        ),
+      )
+    })
+  })
 })
 
 describe('noHead', () => {

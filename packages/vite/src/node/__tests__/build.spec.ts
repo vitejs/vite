@@ -2,7 +2,12 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import { describe, expect, test, vi } from 'vitest'
-import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
+import type {
+  OutputAsset,
+  OutputChunk,
+  OutputOptions,
+  RollupOutput,
+} from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
 import type { Logger } from '../logger'
@@ -101,6 +106,54 @@ describe('build', () => {
       buildProject('blue'),
     ])
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  describe('nonce placeholder', () => {
+    const buildProject = async (noncePlaceholder?: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+          noncePlaceholder,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (id === 'entry.js') {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `console.log('hello world')`
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+
+    test('nonce placeholder should be added to html script tag', async () => {
+      const result = await buildProject('TEST_NONCE')
+
+      expect(result.output).toHaveLength(2)
+
+      const htmlAsset = result.output[1] as OutputAsset
+
+      expect(htmlAsset.source).toMatch(`nonce=\"TEST_NONCE\"`)
+    })
+
+    test('nonce placeholder should not be added to html script tag', async () => {
+      const result = await buildProject()
+
+      expect(result.output).toHaveLength(2)
+
+      const htmlAsset = result.output[1] as OutputAsset
+
+      expect(htmlAsset.source).not.toMatch(`nonce`)
+    })
   })
 })
 
