@@ -608,6 +608,7 @@ export async function build(
 
     // watch file changes with rollup
     if (config.build.watch) {
+      const chokidarMod = import('chokidar')
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
@@ -639,6 +640,29 @@ export async function build(
         }
       })
 
+      // watch config related files in another chokidar instance to
+      // re-run the build function to start a new rollup watcher
+      const chokidar = await chokidarMod
+      const configFileChokidar = chokidar.watch(
+        (
+          [
+            config.configFile,
+            ...config.configFileDependencies,
+            '.env',
+            '.env.*',
+          ].filter(Boolean) as string[]
+        ).map(resolve),
+        {
+          ignoreInitial: true,
+        },
+      )
+
+      configFileChokidar.on('all', async () => {
+        await Promise.all([watcher.close(), configFileChokidar.close()])
+        build()
+      })
+
+      // TODO: the returned watcher will be closed once config file changed
       return watcher
     }
 
