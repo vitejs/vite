@@ -60,6 +60,8 @@ export function logError(server: ViteDevServer, err: RollupError): void {
 export function errorMiddleware(
   server: ViteDevServer,
   allowNext = false,
+  title = 'Error',
+  headTags = [] as string[],
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -75,7 +77,8 @@ export function errorMiddleware(
         <html lang="en">
           <head>
             <meta charset="UTF-8" />
-            <title>Error</title>
+            <title>${title}</title>
+            ${headTags.join('\n')}
             <script type="module">
               import { ErrorOverlay } from '/@vite/client'
               document.body.appendChild(new ErrorOverlay(${JSON.stringify(
