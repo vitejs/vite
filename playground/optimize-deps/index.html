@@ -83,6 +83,9 @@
 <h2>Alias with colon</h2>
 <div>URL: <span class="url"></span></div>
 
+<h2>Alias using absolute path</h2>
+<div class="alias-using-absolute-path"></div>
+
 <h2>Reused variable names</h2>
 <div>This should show reused: <span class="reused-variable-names"></span></div>
 
@@ -152,6 +155,10 @@
 
   import { parse } from 'node:url'
   text('.url', parse('https://vitejs.dev').hostname)
+
+  import('./dynamic-use-dep-alias-using-absolute-path.js').then((mod) =>
+    text('.alias-using-absolute-path', mod.default),
+  )
 
   import './index.astro'
 

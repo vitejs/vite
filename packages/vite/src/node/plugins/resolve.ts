@@ -173,6 +173,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const ensureVersionQuery = (resolved: string): string => {
         if (
           !options.isBuild &&
+          !options.scan &&
           depsOptimizer &&
           !(
             resolved === normalizedClientEntry ||
