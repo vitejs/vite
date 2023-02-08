@@ -109,7 +109,11 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
         return
       }
 
-      openBrowser(url, true, server.config.logger)
+      const path =
+        typeof server.config.server.open === 'string'
+          ? new URL(server.config.server.open, url).href
+          : ''
+      openBrowser(path ? path : url, true, server.config.logger)
     },
   },
   {
