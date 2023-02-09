@@ -159,7 +159,7 @@ export function createWebSocketServer(
     }
     socket.on('error', (e) => {
       config.logger.info(`WebSocket error:\n${e.stack || e.message}`)
-    });
+    })
   })
 
   wss.on('error', (e: Error & { code: string }) => {
