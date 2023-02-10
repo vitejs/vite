@@ -75,6 +75,9 @@ describe.runIf(isBuild)('build', () => {
     // inlined
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(
+      /try\{return e\?new Worker\(.+\):new Worker\("data:application\/javascript;base64,"\+/,
+    )
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {

@@ -21,6 +21,9 @@
     "dev:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js dev",
     "build:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js build",
     "preview:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js preview",
+    "dev:inline-url": "vite --config ./vite.config-inline-url.js dev",
+    "build:inline-url": "vite --config ./vite.config-inline-url.js build",
+    "preview:inline-url": "vite --config ./vite.config-inline-url.js preview",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "dependencies": {

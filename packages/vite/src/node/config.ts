@@ -251,6 +251,11 @@ export interface UserConfig {
      */
     format?: 'es' | 'iife'
     /**
+     * URL type for inline worker
+     * @default 'blob'
+     */
+    inlineUrl?: 'blob' | 'data'
+    /**
      * Vite plugins that apply to worker bundle
      */
     plugins?: PluginOption[]
@@ -315,6 +320,7 @@ export interface LegacyOptions {
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
+  inlineUrl: 'blob' | 'data'
   plugins: Plugin[]
   rollupOptions: RollupOptions
 }
@@ -633,6 +639,7 @@ export async function resolveConfig(
   workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
+    inlineUrl: workerConfig.worker?.inlineUrl || 'blob',
     plugins: [],
     rollupOptions: workerConfig.worker?.rollupOptions || {},
     getSortedPlugins: undefined!,

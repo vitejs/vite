@@ -278,7 +278,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       // stringified url or `new URL(...)`
       let url: string
-      const { format } = config.worker
+      const { format, inlineUrl } = config.worker
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerType = isBuild
@@ -300,7 +300,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+                return objURL && ${
+                  inlineUrl === 'blob'
+                } ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
