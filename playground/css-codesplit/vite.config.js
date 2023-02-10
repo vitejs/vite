@@ -1,6 +1,8 @@
-const { resolve } = require('node:path')
+// @ts-check
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-module.exports = {
+export default defineConfig({
   build: {
     manifest: true,
     rollupOptions: {
@@ -18,4 +20,4 @@ module.exports = {
       },
     },
   },
-}
+})

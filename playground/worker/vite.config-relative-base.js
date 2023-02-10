@@ -1,8 +1,8 @@
-const path = require('node:path')
-const vite = require('vite')
-const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
+// @ts-check
+import vite from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig({
+export default vite.defineConfig({
   base: './',
   resolve: {
     alias: {
@@ -30,6 +30,7 @@ module.exports = vite.defineConfig({
       },
     },
   },
+  // @ts-expect-error refer to playground/vitestSetup.ts
   testConfig: {
     baseRoute: '/relative-base/',
   },

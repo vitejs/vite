@@ -1,3 +1,4 @@
+// @ts-check
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -13,6 +14,7 @@ export default defineConfig({
   },
   plugins: [
     {
+      name: '@vitejs/test-ssr-webworker/no-external',
       config() {
         return {
           ssr: {
@@ -22,6 +24,7 @@ export default defineConfig({
       },
     },
     {
+      name: '@vitejs/test-ssr-webworker/no-external-array',
       config() {
         return {
           ssr: {

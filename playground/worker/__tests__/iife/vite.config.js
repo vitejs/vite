@@ -1,1 +1,2 @@
-module.exports = require('../../vite.config-iife')
+// @ts-check
+export { default } from '../../vite.config-iife'

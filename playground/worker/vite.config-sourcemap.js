@@ -1,12 +1,13 @@
-const vite = require('vite')
-const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
+// @ts-check
+import vite from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig((sourcemap) => {
-  sourcemap = process.env.WORKER_MODE || sourcemap
-  if (sourcemap === 'sourcemap') {
-    sourcemap = true
-  }
-  return {
+/** @param {boolean | 'inline' | 'hidden'} sourcemap */
+export default (sourcemap) => {
+  sourcemap =
+    /** @type {'inline' | 'hidden'} */ (process.env.WORKER_MODE) || sourcemap
+
+  return vite.defineConfig({
     base: `/iife-${
       typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
     }/`,
@@ -40,5 +41,5 @@ module.exports = vite.defineConfig((sourcemap) => {
       },
     },
     plugins: [workerPluginTestPlugin()],
-  }
-})
+  })
+}

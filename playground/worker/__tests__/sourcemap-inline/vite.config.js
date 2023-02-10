@@ -1,1 +1,3 @@
-module.exports = require('../../vite.config-sourcemap')('inline')
+// @ts-check
+import sourcemap from '../../vite.config-sourcemap'
+export default sourcemap('inline')

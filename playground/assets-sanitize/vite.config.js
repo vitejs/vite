@@ -1,6 +1,7 @@
-const { defineConfig } = require('vite')
+// @ts-check
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     //speed up build
     minify: false,

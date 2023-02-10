@@ -1,3 +1,4 @@
+// @ts-check
 /* eslint-disable import/no-nodejs-modules */
 import assert from 'assert'
 import { defineConfig } from 'vite'

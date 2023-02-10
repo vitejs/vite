@@ -1,7 +1,8 @@
-const { resolve } = require('node:path')
-const fs = require('node:fs')
+// @ts-check
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-module.exports = {
+export default defineConfig({
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -37,4 +38,4 @@ module.exports = {
       },
     },
   },
-}
+})

@@ -1,1 +1,2 @@
-module.exports = require('../../vite.config-preload-disabled')
+// @ts-check
+export { default } from '../../vite.config-preload-disabled'

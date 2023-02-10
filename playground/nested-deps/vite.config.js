@@ -1,7 +1,7 @@
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+// @ts-check
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   optimizeDeps: {
     include: [
       '@vitejs/test-package-a',
@@ -13,4 +13,4 @@ module.exports = {
     ],
     exclude: ['@vitejs/test-package-d', '@vitejs/test-package-e-excluded'],
   },
-}
+})

@@ -1,8 +1,8 @@
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+// @ts-check
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   build: {
     sourcemap: true,
   },
-}
+})

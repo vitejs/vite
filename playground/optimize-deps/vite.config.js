@@ -1,12 +1,11 @@
-const fs = require('node:fs')
+// @ts-check
+import fs from 'node:fs'
+import { defineConfig } from 'vite'
 
 // Overriding the NODE_ENV set by vitest
 process.env.NODE_ENV = ''
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   resolve: {
     dedupe: ['react'],
     alias: {
@@ -95,7 +94,7 @@ module.exports = {
       },
     },
   ],
-}
+})
 
 // Handles Test.vue in dep-linked-include package
 function testVue() {

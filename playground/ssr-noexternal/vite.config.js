@@ -1,4 +1,4 @@
-import module from 'node:module'
+// @ts-check
 import { defineConfig } from 'vite'
 
 export default defineConfig({

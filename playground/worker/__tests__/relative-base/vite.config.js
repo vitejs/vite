@@ -1,1 +1,2 @@
-module.exports = require('../../vite.config-relative-base')
+// @ts-check
+export { default } from '../../vite.config-relative-base'

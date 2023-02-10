@@ -1,9 +1,8 @@
-const { resolve } = require('node:path')
+// @ts-check
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
@@ -189,4 +188,4 @@ ${
       },
     },
   ],
-}
+})
