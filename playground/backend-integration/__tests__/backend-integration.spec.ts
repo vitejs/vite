@@ -36,6 +36,7 @@ describe.runIf(isBuild)('build', () => {
     const htmlEntry = manifest['index.html']
     const cssAssetEntry = manifest['global.css']
     const scssAssetEntry = manifest['nested/blue.scss']
+    const pcssAssetEntry = manifest['nested/red.pcss']
     const imgAssetEntry = manifest['../images/logo.png']
     const dirFooAssetEntry = manifest['../../dir/foo.css'] // '\\' should not be used even on windows
     expect(htmlEntry.css.length).toEqual(1)
@@ -45,6 +46,10 @@ describe.runIf(isBuild)('build', () => {
     expect(scssAssetEntry?.file).not.toBeUndefined()
     expect(scssAssetEntry?.src).toEqual('nested/blue.scss')
     expect(scssAssetEntry?.isEntry).toEqual(true)
+    expect(pcssAssetEntry?.file).not.toBeUndefined()
+    expect(pcssAssetEntry?.src).toEqual('nested/red.pcss')
+    expect(pcssAssetEntry?.isEntry).toEqual(true)
+    expect(pcssAssetEntry?.file).not.toBeUndefined()
     expect(imgAssetEntry?.file).not.toBeUndefined()
     expect(imgAssetEntry?.isEntry).toBeUndefined()
     expect(dirFooAssetEntry).not.toBeUndefined()
