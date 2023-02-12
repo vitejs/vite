@@ -165,7 +165,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       // The importerUrl is passed as third parameter to __vitePreload in this case
       `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
     : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appendended inside __vitePreload too.
+      // is appended inside __vitePreload too.
       `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 

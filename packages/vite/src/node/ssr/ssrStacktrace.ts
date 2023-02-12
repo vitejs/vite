@@ -42,12 +42,12 @@ export function ssrRewriteStacktrace(
             return input
           }
 
-          const trimedVarName = varName.trim()
+          const trimmedVarName = varName.trim()
           const source = `${pos.source}:${pos.line}:${pos.column}`
-          if (!trimedVarName || trimedVarName === 'eval') {
+          if (!trimmedVarName || trimmedVarName === 'eval') {
             return `    at ${source}`
           } else {
-            return `    at ${trimedVarName} (${source})`
+            return `    at ${trimmedVarName} (${source})`
           }
         },
       )
