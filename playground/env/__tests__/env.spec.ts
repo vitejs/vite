@@ -46,15 +46,25 @@ test('NODE_ENV', async () => {
 })
 
 test('expand', async () => {
-  expect(await page.textContent('.expand')).toBe('expand')
+  expect(await page.textContent('.expand-a')).toBe('expand')
+  expect(await page.textContent('.expand-b')).toBe('depend')
 })
 
 test('env object', async () => {
-  const envText = await page.textContent('.env-object')
-  expect(JSON.parse(envText)).toMatchObject({
+  const env = JSON.parse(await page.textContent('.env-object'))
+  expect(env).not.toHaveProperty([
+    'DEPEND_ENV',
+    'IRRELEVANT_ENV',
+    'IRRELEVANT_ESCAPE_ENV',
+  ])
+  expect(env).toMatchObject({
     VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
     CUSTOM_PREFIX_ENV_VARIABLE: '1',
     VITE_CUSTOM_ENV_VARIABLE: '1',
+    VITE_EXPAND_A: 'expand',
+    VITE_EXPAND_B: 'depend',
+    VITE_ESCAPE_A: 'escape$',
+    VITE_ESCAPE_B: 'escape$',
     BASE_URL: '/env/',
     MODE: mode,
     DEV: !isBuild,
