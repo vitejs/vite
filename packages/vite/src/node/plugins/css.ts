@@ -565,7 +565,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS,
           })
-          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
+          const originalName =
+            isPreProcessor(lang) || lang === 'pcss' ? cssAssetName : cssFileName
           const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
             .get(config)!
