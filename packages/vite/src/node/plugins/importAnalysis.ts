@@ -204,7 +204,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           ? `Install @vitejs/plugin-vue to handle .vue files.`
           : maybeJSX
           ? isJsx
-            ? `If you use tsconfig.json, make sure don't set jsx to preserve.`
+            ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
             : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
           : `You may need to install appropriate plugins to handle the ${path.extname(
               importer,
