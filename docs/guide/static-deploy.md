@@ -71,7 +71,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
    on:
      # Runs on pushes targeting the default branch
      push:
-       branches: ["master"]
+       branches: ['master']
 
      # Allows you to run this workflow manually from the Actions tab
      workflow_dispatch:
@@ -84,7 +84,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
    # Allow one concurrent deployment
    concurrency:
-     group: "pages"
+     group: 'pages'
      cancel-in-progress: true
 
    jobs:
