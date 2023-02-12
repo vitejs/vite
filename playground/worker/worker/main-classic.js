@@ -8,7 +8,7 @@ let classicWorker = new Worker(
   // test comment
 )
 
-// just test for case: ') ... ,' mean no worker options parmas
+// just test for case: ') ... ,' mean no worker options params
 classicWorker = new Worker(new URL('../classic-worker.js', import.meta.url))
 
 classicWorker.addEventListener('message', ({ data }) => {

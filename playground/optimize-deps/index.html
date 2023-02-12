@@ -103,8 +103,8 @@
   // test dep detection in globbed files
   const globbed = import.meta.glob('./glob/*.js', { eager: true })
 
-  import cjsBrowerFieldBare from '@vitejs/test-dep-cjs-browser-field-bare'
-  text('.cjs-browser-field-bare', cjsBrowerFieldBare)
+  import cjsBrowserFieldBare from '@vitejs/test-dep-cjs-browser-field-bare'
+  text('.cjs-browser-field-bare', cjsBrowserFieldBare)
 
   import { camelCase } from '@vitejs/test-dep-linked'
   text('.deps-linked', camelCase('foo-bar-baz'))
