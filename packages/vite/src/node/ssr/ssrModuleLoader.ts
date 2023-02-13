@@ -243,7 +243,7 @@ async function nodeImport(
     )
     if (!resolved) {
       const err: any = new Error(
-        `Cannot find module '${id}' imported from '${importer}'`,
+        `Cannot find module ${id} imported from ${importer}`,
       )
       err.code = 'ERR_MODULE_NOT_FOUND'
       throw err
