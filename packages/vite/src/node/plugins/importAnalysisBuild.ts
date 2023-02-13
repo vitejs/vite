@@ -488,13 +488,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             chunk.imports.forEach(addDeps)
             // Ensure that the css imported by current chunk is loaded after the dependencies.
             // So the style of current chunk won't be overwritten unexpectedly.
-            chunk.viteMetadata.importedCss.forEach((file) => {
+            chunk.viteMetadata!.importedCss.forEach((file) => {
               deps.add(file)
             })
           } else {
             const chunk = removedPureCssFiles.get(filename)
             if (chunk) {
-              chunk.viteMetadata.importedCss.forEach((file) => {
+              chunk.viteMetadata!.importedCss.forEach((file) => {
                 deps.add(file)
               })
 
@@ -586,7 +586,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               let selfIsPureCssChunk = false
 
               createAddDepsFunc(deps, chunk.fileName, (chunk) => {
-                if (chunk.viteMetadata.importedCss.size) {
+                if (chunk.viteMetadata!.importedCss.size) {
                   hasRemovedPureCssChunk = true
                 }
                 selfIsPureCssChunk = true
@@ -693,7 +693,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   )
 
                   createAddDepsFunc(deps, chunk.fileName, (chunk) => {
-                    if (chunk.viteMetadata.importedCss.size) {
+                    if (chunk.viteMetadata!.importedCss.size) {
                       hasRemovedPureCssChunk = true
                     }
                     s.update(expStart, expEnd, 'Promise.resolve({})')
