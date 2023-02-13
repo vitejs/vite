@@ -26,6 +26,9 @@ const envConfig = defineConfig({
   output: {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
     sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
   },
 })
 
@@ -40,6 +43,9 @@ const clientConfig = defineConfig({
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
     sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
   },
 })
 
@@ -111,6 +117,10 @@ function createNodePlugins(
         'postcss-load-config/src/index.js': {
           pattern: /require(?=\((configFile|'ts-node')\))/g,
           replacement: `eval('require')`,
+        },
+        'json-stable-stringify/index.js': {
+          pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
+          replacement: 'var json = JSON',
         },
       }),
 

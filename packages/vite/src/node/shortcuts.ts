@@ -44,7 +44,7 @@ export function bindShortcuts(
   const onInput = async (input: string) => {
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
-      process.emit('SIGTERM')
+      await server.close().finally(() => process.exit(1))
       return
     }
 
@@ -110,6 +110,13 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
       }
 
       openBrowser(url, true, server.config.logger)
+    },
+  },
+  {
+    key: 'c',
+    description: 'clear console',
+    action(server) {
+      server.config.logger.clearScreen('error')
     },
   },
   {

@@ -145,7 +145,7 @@ export interface BuildOptions {
   terserOptions?: Terser.MinifyOptions
   /**
    * Will be merged with internal rollup options.
-   * https://rollupjs.org/guide/en/#big-list-of-options
+   * https://rollupjs.org/configuration-options/
    */
   rollupOptions?: RollupOptions
   /**
@@ -209,6 +209,12 @@ export interface BuildOptions {
    */
   ssrManifest?: boolean | string
   /**
+   * Emit assets during SSR.
+   * @experimental
+   * @default false
+   */
+  ssrEmitAssets?: boolean
+  /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
    */
@@ -220,7 +226,7 @@ export interface BuildOptions {
   chunkSizeWarningLimit?: number
   /**
    * Rollup watch options
-   * https://rollupjs.org/guide/en/#watchoptions
+   * https://rollupjs.org/configuration-options/#watch
    */
   watch?: WatcherOptions | null
 }
@@ -324,6 +330,7 @@ export function resolveBuildOptions(
     lib: false,
     ssr: false,
     ssrManifest: false,
+    ssrEmitAssets: false,
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
@@ -422,34 +429,10 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }
 
 /**
- * Track parallel build calls and only stop the esbuild service when all
- * builds are done. (#1098)
- */
-let parallelCallCounts = 0
-// we use a separate counter to track since the call may error before the
-// bundle is even pushed.
-const parallelBuilds: RollupBuild[] = []
-
-/**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
-  inlineConfig: InlineConfig = {},
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  parallelCallCounts++
-  try {
-    return await doBuild(inlineConfig)
-  } finally {
-    parallelCallCounts--
-    if (parallelCallCounts <= 0) {
-      await Promise.all(parallelBuilds.map((bundle) => bundle.close()))
-      parallelBuilds.length = 0
-    }
-  }
-}
-
-async function doBuild(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(
@@ -522,6 +505,7 @@ async function doBuild(
       : libOptions
       ? 'strict'
       : false,
+    cache: config.build.watch ? undefined : false,
     ...options.rollupOptions,
     input,
     plugins,
@@ -544,6 +528,7 @@ async function doBuild(
     config.logger.error(msg, { error: e })
   }
 
+  let bundle: RollupBuild | undefined
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
@@ -652,12 +637,7 @@ async function doBuild(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
-    const bundle = await rollup(rollupOptions)
-    parallelBuilds.push(bundle)
-
-    const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](output)
-    }
+    bundle = await rollup(rollupOptions)
 
     if (options.write) {
       prepareOutDir(outDirs, options.emptyOutDir, config)
@@ -665,12 +645,14 @@ async function doBuild(
 
     const res = []
     for (const output of normalizedOutputs) {
-      res.push(await generate(output))
+      res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
     throw e
+  } finally {
+    if (bundle) await bundle.close()
   }
 }
 

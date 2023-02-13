@@ -142,13 +142,7 @@ function emitSourcemapForWorkerEntry(
   const { map: sourcemap } = chunk
 
   if (sourcemap) {
-    if (config.build.sourcemap === 'inline') {
-      // Manually add the sourcemap to the code if configured for inline sourcemaps.
-      // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
-      // Currently seems that it won't be resolved until Rollup 3
-      const dataUrl = sourcemap.toUrl()
-      chunk.code += `//# sourceMappingURL=${dataUrl}`
-    } else if (
+    if (
       config.build.sourcemap === 'hidden' ||
       config.build.sourcemap === true
     ) {
@@ -159,20 +153,6 @@ function emitSourcemapForWorkerEntry(
         type: 'asset',
         source: data,
       })
-
-      // Emit the comment that tells the JS debugger where it can find the
-      // sourcemap file.
-      // 'hidden' causes the sourcemap file to be created but
-      // the comment in the file to be omitted.
-      if (config.build.sourcemap === true) {
-        // inline web workers need to use the full sourcemap path
-        // non-inline web workers can use a relative path
-        const sourceMapUrl =
-          query?.inline != null
-            ? mapFileName
-            : path.relative(config.build.assetsDir, mapFileName)
-        chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
-      }
     }
   }
 

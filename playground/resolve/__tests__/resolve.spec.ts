@@ -9,6 +9,12 @@ test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
 })
 
+test('exports and a nested package scope with a different type', async () => {
+  expect(await page.textContent('.exports-and-nested-scope')).toMatch(
+    '[success]',
+  )
+})
+
 test('entry with exports field', async () => {
   expect(await page.textContent('.exports-entry')).toMatch('[success]')
 })
@@ -36,6 +42,10 @@ test('deep import with exports field + mapped dir', async () => {
   )
 })
 
+test('exports read from the root package.json', async () => {
+  expect(await page.textContent('.exports-from-root')).toMatch('[success]')
+})
+
 // this is how Svelte 3 is packaged
 test('deep import with exports and legacy fallback', async () => {
   expect(await page.textContent('.exports-legacy-fallback')).toMatch(
@@ -51,6 +61,10 @@ test('Respect production/development conditionals', async () => {
   expect(await page.textContent('.exports-env')).toMatch(
     isBuild ? `browser.prod.mjs` : `browser.mjs`,
   )
+})
+
+test('Respect exports to take precedence over mainFields', async () => {
+  expect(await page.textContent('.exports-with-module')).toMatch('[success]')
 })
 
 test('implicit dir/index.js', async () => {

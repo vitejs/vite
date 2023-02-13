@@ -531,7 +531,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
-          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
+          chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
             'asset',
@@ -599,7 +599,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           generatedAssets
             .get(config)!
             .set(referenceId, { originalName, isEntry })
-          chunk.viteMetadata.importedCss.add(this.getFileName(referenceId))
+          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // inline css only in library mode
           if (!config.build.lib) {
@@ -696,11 +696,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const {
-                  viteMetadata: { importedCss },
-                } = bundle[file] as OutputChunk
+                const { importedCss } = (bundle[file] as OutputChunk)
+                  .viteMetadata!
                 importedCss.forEach((file) =>
-                  chunk.viteMetadata.importedCss.add(file),
+                  chunk.viteMetadata!.importedCss.add(file),
                 )
                 return false
               }
