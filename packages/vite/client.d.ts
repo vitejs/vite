@@ -97,6 +97,19 @@ declare module '*.sss' {
 // Built-in asset types
 // see `src/node/constants.ts`
 
+interface ViteClientAssetTypeOverride {}
+type ViteClientAssetTypeOverrideExtractType<Ext extends string> = {
+  [K in keyof ViteClientAssetTypeOverride]: K extends Ext
+    ? ViteClientAssetTypeOverride[K]
+    : never
+}[keyof ViteClientAssetTypeOverride]
+type ViteClientAssetGetType<
+  Ext extends string,
+  DefaultType,
+> = ViteClientAssetTypeOverrideExtractType<Ext> extends never
+  ? DefaultType
+  : ViteClientAssetTypeOverrideExtractType<Ext>
+
 // images
 declare module '*.png' {
   const src: string
@@ -127,7 +140,7 @@ declare module '*.gif' {
   export default src
 }
 declare module '*.svg' {
-  const src: string
+  const src: ViteClientAssetGetType<'svg', string>
   export default src
 }
 declare module '*.ico' {
