@@ -72,8 +72,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
       logLevel: 'silent',
       configFile: path.resolve(
         __dirname,
-        '../vite.emitAssetsWithModule.config.js'
-      )
+        '../vite.emitAssetsWithModule.config.js',
+      ),
     })
 
     // start static file server

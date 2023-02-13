@@ -12,8 +12,8 @@ module.exports = {
       formats: ['es'],
       name: 'emitAssetsWithModule',
       fileName: () => `emit-assets-with-module.js`,
-      emitAssetsWithModule: true
+      emitAssetsWithModule: true,
     },
-    outDir: 'dist/lib2'
-  }
+    outDir: 'dist/lib2',
+  },
 }

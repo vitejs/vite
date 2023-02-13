@@ -1063,7 +1063,10 @@ export function toOutputFilePathInJS(
   ) => string | { runtime: string },
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
-  const base = config.build.lib && config.build.lib.emitAssetsWithModule ? './' : config.base
+  const base =
+    config.build.lib && config.build.lib.emitAssetsWithModule
+      ? './'
+      : config.base
   let relative = base === '' || base === './'
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
@@ -1109,7 +1112,10 @@ export function toOutputFilePathWithoutRuntime(
   toRelative: (filename: string, hostId: string) => string,
 ): string {
   const { renderBuiltUrl } = config.experimental
-  const base = config.build.lib && config.build.lib.emitAssetsWithModule ? './' : config.base
+  const base =
+    config.build.lib && config.build.lib.emitAssetsWithModule
+      ? './'
+      : config.base
   let relative = base === '' || base === './'
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {

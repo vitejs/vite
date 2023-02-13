@@ -8,9 +8,9 @@ export default function myLib(sel) {
   console.log(process.env.NODE_ENV)
 
   document.querySelector(
-    '.emitAssetsWithModule-default'
+    '.emitAssetsWithModule-default',
   ).style.backgroundImage = `url(${new URL(
     `../../assets/nested/asset.png`,
-    import.meta.url
+    import.meta.url,
   )})`
 }
