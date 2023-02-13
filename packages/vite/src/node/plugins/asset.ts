@@ -92,7 +92,7 @@ export function renderAssetUrlInJS(
       config,
       isEmitAssetsWithModule
         ? (filename: string, hostType: string) =>
-            path.posix.relative(path.dirname(hostType), filename)
+            `./${path.posix.relative(path.dirname(hostType), filename)}`
         : toRelativeRuntime,
     )
     const replacementString =
@@ -118,7 +118,7 @@ export function renderAssetUrlInJS(
       config,
       isEmitAssetsWithModule
         ? (filename: string, hostType: string) =>
-            path.posix.relative(path.dirname(hostType), filename)
+            `./${path.posix.relative(path.dirname(hostType), filename)}`
         : toRelativeRuntime,
     )
     const replacementString =

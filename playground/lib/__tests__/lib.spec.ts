@@ -43,9 +43,9 @@ describe.runIf(isBuild)('build', () => {
 
   test('lib: emitAssetsWithModule:true = is emitted', async () => {
     const code = readFile('dist/lib2/emit-assets-with-module.js')
-    expect(code).toMatch(/^import img from "\.\/assets\/asset\..*\.png";/)
+    expect(code).toMatch(/^import asset from "\.\/asset\.png";/)
     const cssCode = readFile('dist/lib2/style.css')
-    expect(cssCode).toMatch(/url\('\.\/assets\/asset\..*\.png'\)/)
+    expect(cssCode).toMatch(/url\('\.\/asset\.png'\)/)
   })
 
   test('Library mode does not include `preload`', async () => {
