@@ -20,7 +20,7 @@ import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
-const assetUrlRENoGFlag = /__VITE_ASSET__[a-z\d]+__?:\$_.*?__å?/
+const assetUrlRENoGFlag = /__VITE_ASSET__[a-z\d]+__(?:\$_.*?__)?/
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
