@@ -223,7 +223,7 @@ importers:
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^7.0.1
-      strip-literal: ^0.4.2
+      strip-literal: ^1.0.1
       tsconfck: ^2.0.2
       tslib: ^2.5.0
       types: link:./types
@@ -287,7 +287,7 @@ importers:
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 7.0.1
-      strip-literal: 0.4.2
+      strip-literal: 1.0.1
       tsconfck: 2.0.2
       tslib: 2.5.0
       types: link:types
@@ -8885,14 +8885,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /strip-literal/0.4.2:
-    resolution: {integrity: sha512-pv48ybn4iE1O9RLgCAN0iU4Xv7RlBTiit6DKmMiErbs9x1wH6vXBs45tWc0H5wUIF6TLTrKweqkmYF/iraQKNw==}
-    dependencies:
-      acorn: 8.8.2
-    dev: true
-
-  /strip-literal/1.0.0:
-    resolution: {integrity: sha512-5o4LsH1lzBzO9UFH63AJ2ad2/S2AVx6NtjOcaz+VTT2h1RiRvbipW72z8M/lxEhcPHDBQwpDrnTF7sXy/7OwCQ==}
+  /strip-literal/1.0.1:
+    resolution: {integrity: sha512-QZTsipNpa2Ppr6v1AmJHESqJ3Uz247MUS0OjrnnZjFAvEoWqxuyFuXn2xLgMtRnijJShAa1HL0gtJyUs7u7n3Q==}
     dependencies:
       acorn: 8.8.2
     dev: true
@@ -9544,7 +9538,7 @@ packages:
       picocolors: 1.0.0
       source-map: 0.6.1
       std-env: 3.3.1
-      strip-literal: 1.0.0
+      strip-literal: 1.0.1
       tinybench: 2.3.1
       tinypool: 0.3.1
       tinyspy: 1.0.2
