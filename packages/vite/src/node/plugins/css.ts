@@ -553,7 +553,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
             : chunk.name
 
-          const lang = path.extname(cssAssetName).slice(1)
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
@@ -565,12 +564,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS,
           })
-          const originalName =
-            isPreProcessor(lang) || lang === 'pcss' ? cssAssetName : cssFileName
           const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
             .get(config)!
-            .set(referenceId, { originalName, isEntry })
+            .set(referenceId, { originalName: cssAssetName, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // legacy build and inline css
