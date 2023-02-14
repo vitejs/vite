@@ -12,7 +12,7 @@ body:
       label: Documentation is
       options:
         - label: Missing
-        - label: Needed
+        - label: Outdated
         - label: Confusing
         - label: Not sure?
   - type: textarea
