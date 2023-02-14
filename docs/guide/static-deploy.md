@@ -113,10 +113,6 @@ jobs:
         uses: actions/deploy-pages@v1
 ```
 
-::: tip
-You may have to modify the the "path" in the artifact step or the command in the build step to make sure it works with your setup.
-:::
-
 ## GitLab Pages and GitLab CI
 
 1. Set the correct `base` in `vite.config.js`.
