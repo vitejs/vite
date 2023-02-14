@@ -5,7 +5,7 @@ import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
+import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   cleanUrl,
@@ -227,12 +227,15 @@ async function loadAndTransform(
         `going through the plugin transforms, and therefore should not be ` +
         `imported from source code. It can only be referenced via HTML tags.`
       : `Does the file exist?`
-    const modulePath = server.moduleGraph.idToModuleMap
+    const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
       .get(id)
       ?.importers.values()
-      .next().value.file
+      .next().value
+    const importer = importerMod?.file || importerMod?.url
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id}) in ${modulePath} ${msg}`,
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
