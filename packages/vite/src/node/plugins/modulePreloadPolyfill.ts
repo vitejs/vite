@@ -81,7 +81,7 @@ function polyfill() {
   function getFetchOpts(link: any) {
     const fetchOpts = {} as any
     if (link.integrity) fetchOpts.integrity = link.integrity
-    if (link.referrerpolicy) fetchOpts.referrerPolicy = link.referrerpolicy
+    if (link.referrerPolicy) fetchOpts.referrerPolicy = link.referrerPolicy
     if (link.crossOrigin === 'use-credentials')
       fetchOpts.credentials = 'include'
     else if (link.crossOrigin === 'anonymous') fetchOpts.credentials = 'omit'
