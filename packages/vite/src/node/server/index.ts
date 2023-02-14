@@ -40,7 +40,7 @@ import {
 } from '../optimizer'
 import { bindShortcuts } from '../shortcuts'
 import type { BindShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR } from '../constants'
+import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
@@ -92,6 +92,7 @@ export interface ServerOptions extends CommonServerOptions {
   watch?: WatchOptions
   /**
    * Create Vite dev server to be used as a middleware in an existing server
+   * @default false
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**
@@ -661,7 +662,7 @@ async function startServer(
   }
 
   const options = server.config.server
-  const port = inlinePort ?? options.port ?? 5173
+  const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
@@ -809,7 +810,10 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
-    if ((port ?? 5173) !== (prevPort ?? 5173) || host !== prevHost) {
+    if (
+      (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
+      host !== prevHost
+    ) {
       logger.info('')
       server.printUrls()
     }

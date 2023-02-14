@@ -385,13 +385,8 @@ export async function createPluginContainer(
     if (ctx._activeCode) {
       err.pluginCode = ctx._activeCode
 
-      const pos =
-        position != null
-          ? position
-          : err.pos != null
-          ? err.pos
-          : // some rollup plugins, e.g. json, sets position instead of pos
-            (err as any).position
+      // some rollup plugins, e.g. json, sets err.position instead of err.pos
+      const pos = position ?? err.pos ?? (err as any).position
 
       if (pos != null) {
         let errLocation

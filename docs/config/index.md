@@ -82,7 +82,7 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
-## Environment Variables
+## Using Environment Variables in Config
 
 Environmental Variables can be obtained from `process.env` as usual.
 

@@ -185,8 +185,12 @@ test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserErrors.map((error) => error.message)).toEqual(
     expect.arrayContaining([
       // from user source code
-      'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
-      'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
+      expect.stringContaining(
+        'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
+      ),
+      expect.stringContaining(
+        'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
+      ),
     ]),
   )
 })

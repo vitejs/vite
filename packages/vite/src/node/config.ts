@@ -104,6 +104,9 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
+export function defineConfig(config: UserConfig): UserConfig
+export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
+export function defineConfig(config: UserConfigFn): UserConfigFn
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
@@ -219,7 +222,7 @@ export interface UserConfig {
   legacy?: LegacyOptions
   /**
    * Log level.
-   * Default: 'info'
+   * @default 'info'
    */
   logLevel?: LogLevel
   /**
@@ -227,7 +230,7 @@ export interface UserConfig {
    */
   customLogger?: Logger
   /**
-   * Default: true
+   * @default true
    */
   clearScreen?: boolean
   /**
@@ -292,6 +295,14 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
+  /**
+   * Skips SSR transform to make it easier to use Vite with Node ESM loaders.
+   * @warning Enabling this will break normal operation of Vite's SSR in development mode.
+   *
+   * @experimental
+   * @default false
+   */
+  skipSsrTransform?: boolean
 }
 
 export interface LegacyOptions {

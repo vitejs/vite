@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "4.0.4",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -8,8 +8,15 @@
   "bin": {
     "vite": "bin/vite.js"
   },
+  "keywords": [
+    "frontend",
+    "framework",
+    "hmr",
+    "dev-server",
+    "build-tool",
+    "vite"
+  ],
   "main": "./dist/node/index.js",
-  "module": "./dist/node/index.js",
   "types": "./dist/node/index.d.ts",
   "exports": {
     ".": {
@@ -60,26 +67,26 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.16.14",
-    "postcss": "^8.4.20",
+    "postcss": "^8.4.21",
     "resolve": "^1.22.1",
-    "rollup": "^3.7.0"
+    "rollup": "^3.10.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.20.7",
+    "@babel/parser": "^7.20.13",
     "@babel/types": "^7.20.7",
     "@jridgewell/trace-mapping": "^0.3.17",
-    "@rollup/plugin-alias": "^4.0.2",
-    "@rollup/plugin-commonjs": "^24.0.0",
-    "@rollup/plugin-dynamic-import-vars": "^2.0.2",
+    "@rollup/plugin-alias": "^4.0.3",
+    "@rollup/plugin-commonjs": "^24.0.1",
+    "@rollup/plugin-dynamic-import-vars": "^2.0.3",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "15.0.1",
-    "@rollup/plugin-typescript": "^10.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "acorn": "^8.8.1",
+    "acorn": "^8.8.2",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
@@ -93,7 +100,7 @@
     "dotenv": "^16.0.3",
     "dotenv-expand": "^9.0.0",
     "es-module-lexer": "^1.1.0",
-    "estree-walker": "^3.0.2",
+    "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
     "http-proxy": "^1.18.1",
@@ -101,29 +108,29 @@
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.27.0",
     "micromatch": "^4.0.5",
-    "mlly": "^1.0.0",
+    "mlly": "^1.1.0",
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
     "parse5": "^7.1.2",
-    "periscopic": "^3.0.4",
+    "periscopic": "^3.1.0",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
     "postcss-import": "^15.1.0",
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^6.0.0",
-    "resolve.exports": "^1.1.0",
+    "resolve.exports": "^2.0.0",
     "rollup-plugin-license": "^3.0.1",
     "sirv": "^2.0.2",
     "source-map-js": "^1.0.2",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.0.1",
-    "strip-literal": "^0.4.2",
+    "strip-literal": "^1.0.1",
     "tsconfck": "^2.0.2",
-    "tslib": "^2.4.1",
+    "tslib": "^2.5.0",
     "types": "link:./types",
     "ufo": "^1.0.1",
-    "ws": "^8.11.0"
+    "ws": "^8.12.0"
   },
   "peerDependencies": {
     "@types/node": ">= 14",

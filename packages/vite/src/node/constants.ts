@@ -145,3 +145,7 @@ export const wildcardHosts = new Set([
   '::',
   '0000:0000:0000:0000:0000:0000:0000:0000',
 ])
+
+export const DEFAULT_DEV_PORT = 5173
+
+export const DEFAULT_PREVIEW_PORT = 4173
