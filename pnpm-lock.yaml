@@ -49,7 +49,7 @@ importers:
       eslint-plugin-import: ^2.27.5
       eslint-plugin-node: ^11.1.0
       eslint-plugin-regexp: ^1.12.0
-      execa: ^6.1.0
+      execa: ^7.0.0
       fast-glob: ^3.2.12
       fs-extra: ^11.1.0
       lint-staged: ^13.1.0
@@ -105,7 +105,7 @@ importers:
       eslint-plugin-import: 2.27.5_kf2q37rsxgsj6p2nz45hjttose
       eslint-plugin-node: 11.1.0_eslint@8.33.0
       eslint-plugin-regexp: 1.12.0_eslint@8.33.0
-      execa: 6.1.0
+      execa: 7.0.0
       fast-glob: 3.2.12
       fs-extra: 11.1.0
       lint-staged: 13.1.0
@@ -5668,6 +5668,21 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
+  /execa/7.0.0:
+    resolution: {integrity: sha512-tQbH0pH/8LHTnwTrsKWideqi6rFB/QNUawEwrn+WHyz7PX1Tuz2u7wfTvbaNBdP5JD5LVWxNo8/A8CHNZ3bV6g==}
+    engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
+    dependencies:
+      cross-spawn: 7.0.3
+      get-stream: 6.0.1
+      human-signals: 4.3.0
+      is-stream: 3.0.0
+      merge-stream: 2.0.0
+      npm-run-path: 5.1.0
+      onetime: 6.0.0
+      signal-exit: 3.0.7
+      strip-final-newline: 3.0.0
+    dev: true
+
   /express/4.18.2:
     resolution: {integrity: sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==}
     engines: {node: '>= 0.10.0'}
@@ -6253,6 +6268,11 @@ packages:
   /human-signals/3.0.1:
     resolution: {integrity: sha512-rQLskxnM/5OCldHo+wNXbpVgDn5A17CUoKX+7Sokwaknlq7CdSnphy0W39GU8dw59XiCXmFXDg4fRuckQRKewQ==}
     engines: {node: '>=12.20.0'}
+    dev: true
+
+  /human-signals/4.3.0:
+    resolution: {integrity: sha512-zyzVyMjpGBX2+6cDVZeFPCdtOtdsxOeseRhB9tkQ6xXmGUNrcnBzdEKPy3VPNYz+4gy1oukVOXcrJCunSyc6QQ==}
+    engines: {node: '>=14.18.0'}
     dev: true
 
   /iconv-lite/0.4.24:
