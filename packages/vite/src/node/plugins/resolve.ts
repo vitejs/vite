@@ -397,7 +397,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return `\
 export default new Proxy({}, {
   get(_, key) {
-    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.\`)
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
   }
 })`
         }
@@ -545,7 +545,13 @@ function tryResolveFile(
   skipPackageJson?: boolean,
   skipTsExtension?: boolean,
 ): string | undefined {
-  const stat = fs.statSync(file, { throwIfNoEntry: false })
+  let stat: fs.Stats | undefined
+  try {
+    stat = fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    return
+  }
+
   if (stat) {
     if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix

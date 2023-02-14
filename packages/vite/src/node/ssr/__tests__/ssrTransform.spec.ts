@@ -812,3 +812,33 @@ function test() {
     }"
   `)
 })
+
+// #11806
+test('track scope by blocks', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { foo, bar, baz } from 'foobar'
+function test() {
+  [foo];
+  {
+    let foo = 10;
+    let bar = 10;
+  }
+  try {} catch (baz){ baz };
+  return bar;
+}`),
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
+    function test() {
+      [__vite_ssr_import_0__.foo];
+      {
+        let foo = 10;
+        let bar = 10;
+      }
+      try {} catch (baz){ baz };
+      return __vite_ssr_import_0__.bar;
+    }"
+  `)
+})
