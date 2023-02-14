@@ -20,7 +20,7 @@ test('ssrLoad', async () => {
     await server.ssrLoadModule(moduleRelativePath)
   } catch (e) {
     expect(e.message).toBe(
-      `Failed to load url ./non-existent.js (resolved id: ./non-existent.js) in ${moduleAbsolutePath} Does the file exist?`,
+      `Failed to load url ./non-existent.js (resolved id: ./non-existent.js) in ${moduleAbsolutePath}. Does the file exist?`,
     )
   }
 })
