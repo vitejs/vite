@@ -49,7 +49,7 @@ If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as 
 - /etc/systemd/system.conf
 - /etc/systemd/user.conf
 
-For Ubuntu Linux the working solution is to add the line `* - nofile 65536` to the file `/etc/security/limits.conf` instead of updating systemd config files.
+For Ubuntu Linux, you may need to add the line `* - nofile 65536` to the file `/etc/security/limits.conf` instead of updating systemd config files.
 
 Note that these settings persist but a **restart is required**.
 
