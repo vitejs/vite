@@ -211,12 +211,12 @@ On a high-level, the steps you'll need to follow in order to deploy a project fo
 
 ### Create a Project with Configuration via the Dashboard
 
-1. Create a Flightcontrol project from our Dashboard. Select a repository for the source.
+1. Create a Flightcontrol project from the Dashboard. Select a repository for the source.
 2. Select the `GUI` Config Type.
 3. Add a static site service by clicking the `Add a Static Site`.
 4. Add a build command, `yarn build` and select `Single Page App` option.
 5. Add any environment variables your project might need.
-6. Create your project.
+6. Submit the new project form.
 
 ### Create a Project with Configuration via "flightcontrol.json"
 
@@ -252,7 +252,7 @@ On a high-level, the steps you'll need to follow in order to deploy a project fo
 }
 ```
 
-4. Create your project.
+4. Submit the new project form.
 
 Learn more about Flightcontrol's [configuration](https://flightcontrol.dev/docs?ref=vite).
 
