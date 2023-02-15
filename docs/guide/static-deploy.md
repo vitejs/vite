@@ -62,43 +62,61 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
    If you are deploying to `https://<USERNAME>.github.io/<REPO>/`, for example your repository is at `https://github.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
 
-2. Inside your project, create `deploy.sh` with the following content (with highlighted lines uncommented appropriately), and run it to deploy:
+2. Go to your GitHub Pages configuration in the repository settings page and choose the source of deployment as "GitHub Actions", this will lead you to create a workflow that builds and deploys your project, a sample workflow that installs dependencies and builds using npm is provided:
 
-   ```bash{16,24,27}
-   #!/usr/bin/env sh
+   ```yml
+   # Simple workflow for deploying static content to GitHub Pages
+   name: Deploy static content to Pages
 
-   # abort on errors
-   set -e
+   on:
+     # Runs on pushes targeting the default branch
+     push:
+       branches: ['main']
 
-   # build
-   npm run build
+     # Allows you to run this workflow manually from the Actions tab
+     workflow_dispatch:
 
-   # navigate into the build output directory
-   cd dist
+   # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+   permissions:
+     contents: read
+     pages: write
+     id-token: write
 
-   # place .nojekyll to bypass Jekyll processing
-   echo > .nojekyll
+   # Allow one concurrent deployment
+   concurrency:
+     group: 'pages'
+     cancel-in-progress: true
 
-   # if you are deploying to a custom domain
-   # echo 'www.example.com' > CNAME
-
-   git init
-   git checkout -B main
-   git add -A
-   git commit -m 'deploy'
-
-   # if you are deploying to https://<USERNAME>.github.io
-   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
-
-   # if you are deploying to https://<USERNAME>.github.io/<REPO>
-   # git push -f git@github.com:<USERNAME>/<REPO>.git main:gh-pages
-
-   cd -
+   jobs:
+     # Single deploy job since we're just deploying
+     deploy:
+       environment:
+         name: github-pages
+         url: ${{ steps.deployment.outputs.page_url }}
+       runs-on: ubuntu-latest
+       steps:
+         - name: Checkout
+           uses: actions/checkout@v3
+         - name: Set up Node
+           uses: actions/setup-node@v3
+           with:
+             node-version: 18
+             cache: 'npm'
+         - name: Install dependencies
+           run: npm install
+         - name: Build
+           run: npm run build
+         - name: Setup Pages
+           uses: actions/configure-pages@v3
+         - name: Upload artifact
+           uses: actions/upload-pages-artifact@v1
+           with:
+             # Upload dist repository
+             path: './dist'
+         - name: Deploy to GitHub Pages
+           id: deployment
+           uses: actions/deploy-pages@v1
    ```
-
-::: tip
-You can also run the above script in your CI setup to enable automatic deployment on each push.
-:::
 
 ## GitLab Pages and GitLab CI
 
