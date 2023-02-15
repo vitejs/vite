@@ -195,6 +195,67 @@ After your project has been imported and deployed, all subsequent pushes to bran
 
 Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
+## AWS via Flightcontrol
+
+Your can deploy your Vite app as a static site to AWS via [Flightcontrol](https://flightcontrol.dev?ref=vite).
+
+### Set Up your Flightcontrol account
+
+On a high-level, the steps you'll need to follow in order to deploy a project for the first time are:
+
+1. Create an account at [Flightcontrol](https://app.flightcontrol.dev/signup?ref=vite)
+2. Create an account at [AWS](https://portal.aws.amazon.com/billing/signup) (if you don't already have one)
+3. Link your AWS account to Flightcontrol
+4. Authorize the Flightcontrol Github App to access your chosen repositories, public or private.
+5. Create a Flightcontrol project with configuration via the Dashboard or with configuration via `flightcontrol.json`.
+
+### Create a Project with Configuration via the Dashboard
+
+1. Create a Flightcontrol project from our Dashboard. Select a repository for the source.
+2. Select the `GUI` Config Type.
+3. Add a static site service by clicking the `Add a Static Site`.
+4. Add a build command, `yarn build` and select `Single Page App` option.
+5. Add any environment variables your project might need.
+6. Create your project.
+
+### Create a Project with Configuration via "flightcontrol.json"
+
+1. Create a Flightcontrol project from your dashboard. Select a repository for the source.
+2. Select the `flightcontrol.json` Config Type.
+3. Add a new file at the root of your repository called `flightcontrol.json`. Here's an example configuration that creates a static site service for your vite app:
+
+```json
+{
+  "$schema": "https://app.flightcontrol.dev/schema.json",
+  "environments": [
+    {
+      "id": "production",
+      "name": "Production",
+      "region": "us-west-2",
+      "source": {
+        "branch": "main"
+      },
+      "services": [
+        {
+          "id": "my-static-vite",
+          "buildType": "nixpacks",
+          "name": "My static vite site",
+          "type": "static",
+          "domain": "www.yourdomain.com",
+          "buildCommand": "yarn build",
+          "outputDirectory": "public",
+          "singlePageApp": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+4. Create your project.
+
+Learn more about Flightcontrol's [configuration](https://flightcontrol.dev/docs?ref=vite).
+
 ## Cloudflare Pages
 
 ### Cloudflare Pages via Wrangler
@@ -315,60 +376,3 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
-
-## AWS via Flightcontrol
-
-### Set Up your Flightcontrol account
-
-On a high-level, the steps you'll need to follow in order to deploy a project for the first time are:
-
-1. Create an account at [Flightcontrol](https://app.flightcontrol.dev/signup)
-2. Create an account at [AWS](https://portal.aws.amazon.com/billing/signup) (if you don't already have one)
-3. Link your AWS account to Flightcontrol
-4. Authorize the Flightcontrol Github App to access your chosen repositories, public or private.
-5. Create a Flightcontrol project with configuration via the Dashboard or with configuration via `flightcontrol.json`.
-
-### Create a Project with Configuration via the Dashboard
-
-1. Create a Flightcontrol project from our Dashboard. Select a repository for the source.
-2. Select the `GUI` Config Type.
-3. Add a static site service by clicking the `Add a Static Site`.
-4. Add a build command, `yarn build` and select `Single Page App` option.
-5. Add any environment variables your project might need.
-6. Create your project.
-
-### Create a Project with Configuration via "flightcontrol.json"
-
-1. Create a Flightcontrol project from your dashboard. Select a repository for the source.
-2. Select the `flightcontrol.json` Config Type.
-3. Add a new file at the root of your repository called `flightcontrol.json`. Here's an example configuration that creates a static site service for your vite app:
-
-```json
-{
-  "$schema": "https://app.flightcontrol.dev/schema.json",
-  "environments": [
-    {
-      "id": "production",
-      "name": "Production",
-      "region": "us-west-2",
-      "source": {
-        "branch": "main"
-      },
-      "services": [
-        {
-          "id": "my-static-vite",
-          "buildType": "nixpacks",
-          "name": "My static vite site",
-          "type": "static",
-          "domain": "www.yourdomain.com",
-          "buildCommand": "yarn build",
-          "outputDirectory": "public",
-          "singlePageApp": true
-        }
-      ]
-    }
-  ]
-}
-```
-
-4. Create your project.
