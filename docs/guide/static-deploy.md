@@ -315,3 +315,62 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
+
+## Flightcontrol
+
+### Setup your Flightcontrol account
+
+On a high-level, the steps you'll need to follow in order to deploy a project for the first time are:
+
+1. Create an account at [Flightcontrol](https://app.flightcontrol.dev/signup)
+2. Create an account at [AWS](https://portal.aws.amazon.com/billing/signup) (if you don't already have one)
+3. Link your AWS account to Flightcontrol
+4. Optional: Authorize the Flightcontrol Github App to access your chosen repositories, public or private. This is needed if you want to deploy your own code from your Github repository.
+5. Create a Flightcontrol project from our Dashboard
+
+### Flightcontrol Dashboard
+
+1. Create a Flightcontrol project from our Dashboard. Select a repository for the source.
+2. Select the `GUI` Config Type.
+3. Add a static site service by clicking the `Add a Static Site`.
+4. Add a build command, `yarn build` and select `Single Page App` option.
+5. Add any environment variables your project might need.
+6. Create your project.
+
+### Flightcontrol `flightcontrol.json` file
+
+1. Create a Flightcontrol project from your dashboard. Select a repository for the source.
+2. Select the `flightcontrol.json` Config Type.
+3. Add a new file at the root of your repository called `flightcontrol.json`. Here's an example configuration that creates a static site service for your vite app:
+
+```json
+{
+  "$schema": "https://app.flightcontrol.dev/schema.json",
+  "environments": [
+    {
+      "id": "production",
+      "name": "Production",
+      "region": "us-west-2",
+      "source": {
+        "branch": "main"
+      },
+      "services": [
+        {
+          "id": "my-static-vite",
+          "name": "My static vite site",
+          "type": "static",
+          "domain": "www.example-vite.com",
+          "buildCommand": "yarn build",
+          "outputDirectory": "public",
+          "singlePageApp": true
+        }
+      ],
+      "envVariables": {
+        "VITE_APP_API_URL": "https://example-api.com"
+      }
+    }
+  ]
+}
+```
+
+4. Create your project.
