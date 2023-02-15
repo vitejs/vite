@@ -10,7 +10,7 @@ patchedDependencies:
     hash: 6vdpvodnfhahap67xag6diqqtu
     path: patches/dotenv-expand@9.0.0.patch
   sirv@2.0.2:
-    hash: w6q35pvk7bmykgqf2hieut43iq
+    hash: hmoqtj4vy3i7wnpchga2a2mu3y
     path: patches/sirv@2.0.2.patch
 
 importers:
@@ -283,7 +283,7 @@ importers:
       postcss-modules: 6.0.0_postcss@8.4.21
       resolve.exports: 2.0.0
       rollup-plugin-license: 3.0.1_rollup@3.10.0
-      sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
+      sirv: 2.0.2_hmoqtj4vy3i7wnpchga2a2mu3y
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 7.0.1
@@ -306,7 +306,7 @@ importers:
       css-color-names: 1.0.1
       kill-port: 1.6.1
       node-fetch: 3.3.0
-      sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
+      sirv: 2.0.2_hmoqtj4vy3i7wnpchga2a2mu3y
 
   playground/alias:
     specifiers:
@@ -8637,7 +8637,7 @@ packages:
     requiresBuild: true
     dev: true
 
-  /sirv/2.0.2_w6q35pvk7bmykgqf2hieut43iq:
+  /sirv/2.0.2_hmoqtj4vy3i7wnpchga2a2mu3y:
     resolution: {integrity: sha512-4Qog6aE29nIjAOKe/wowFTxOdmbEZKb+3tsLljaBRzJwtqto0BChD2zzH0LhgCSXiI+V7X+Y45v14wBZQ1TK3w==}
     engines: {node: '>= 10'}
     dependencies:
