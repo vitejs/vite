@@ -101,6 +101,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
            uses: actions/setup-node@v3
            with:
              node-version: 18
+             cache: 'npm'
          - name: Install dependencies
            run: npm install
          - name: Build
