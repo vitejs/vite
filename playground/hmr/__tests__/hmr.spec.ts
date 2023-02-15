@@ -774,4 +774,16 @@ if (import.meta.hot) {
       'parent:child',
     )
   })
+
+  test('import.meta.hot?.accept', async () => {
+    const el = await page.$('.optional-chaining')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('optional-chaining/child.js', (code) =>
+          code.replace('const foo = 1', 'const foo = 2'),
+        ),
+      '(optional-chaining) child update',
+    )
+    await untilUpdated(() => el.textContent(), '2')
+  })
 }

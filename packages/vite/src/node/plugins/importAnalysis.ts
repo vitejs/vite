@@ -406,19 +406,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const prop = source.slice(end, end + 4)
           if (prop === '.hot') {
             hasHMR = true
-            if (source.slice(end + 4, end + 11) === '.accept') {
+            const endHot = end + 4 + (source[end + 4] === '?' ? 1 : 0)
+            if (source.slice(endHot, endHot + 7) === '.accept') {
               // further analyze accepted modules
-              if (source.slice(end + 4, end + 18) === '.acceptExports') {
+              if (source.slice(endHot, endHot + 14) === '.acceptExports') {
                 lexAcceptedHmrExports(
                   source,
-                  source.indexOf('(', end + 18) + 1,
+                  source.indexOf('(', endHot + 14) + 1,
                   acceptedExports,
                 )
                 isPartiallySelfAccepting = true
               } else if (
                 lexAcceptedHmrDeps(
                   source,
-                  source.indexOf('(', end + 11) + 1,
+                  source.indexOf('(', endHot + 7) + 1,
                   acceptedUrls,
                 )
               ) {
