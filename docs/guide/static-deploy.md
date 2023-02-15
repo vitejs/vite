@@ -316,19 +316,19 @@ By default, any new commit pushed to the specified branch will automatically tri
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
 
-## Flightcontrol
+## AWS via Flightcontrol
 
-### Setup your Flightcontrol account
+### Set Up your Flightcontrol account
 
 On a high-level, the steps you'll need to follow in order to deploy a project for the first time are:
 
 1. Create an account at [Flightcontrol](https://app.flightcontrol.dev/signup)
 2. Create an account at [AWS](https://portal.aws.amazon.com/billing/signup) (if you don't already have one)
 3. Link your AWS account to Flightcontrol
-4. Optional: Authorize the Flightcontrol Github App to access your chosen repositories, public or private. This is needed if you want to deploy your own code from your Github repository.
-5. Create a Flightcontrol project from our Dashboard
+4. Authorize the Flightcontrol Github App to access your chosen repositories, public or private.
+5. Create a Flightcontrol project with configuration via the Dashboard or with configuration via `flightcontrol.json`.
 
-### Flightcontrol Dashboard
+### Create a Project with Configuration via the Dashboard
 
 1. Create a Flightcontrol project from our Dashboard. Select a repository for the source.
 2. Select the `GUI` Config Type.
@@ -337,7 +337,7 @@ On a high-level, the steps you'll need to follow in order to deploy a project fo
 5. Add any environment variables your project might need.
 6. Create your project.
 
-### Flightcontrol `flightcontrol.json` file
+### Create a Project with Configuration via "flightcontrol.json"
 
 1. Create a Flightcontrol project from your dashboard. Select a repository for the source.
 2. Select the `flightcontrol.json` Config Type.
@@ -357,17 +357,15 @@ On a high-level, the steps you'll need to follow in order to deploy a project fo
       "services": [
         {
           "id": "my-static-vite",
+          "buildType": "nixpacks",
           "name": "My static vite site",
           "type": "static",
-          "domain": "www.example-vite.com",
+          "domain": "www.yourdomain.com",
           "buildCommand": "yarn build",
           "outputDirectory": "public",
           "singlePageApp": true
         }
-      ],
-      "envVariables": {
-        "VITE_APP_API_URL": "https://example-api.com"
-      }
+      ]
     }
   ]
 }
