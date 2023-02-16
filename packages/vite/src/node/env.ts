@@ -47,19 +47,9 @@ export function loadEnv(
     process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
   }
 
-  try {
-    // let environment variables use each other
-    expand({ parsed })
-  } catch (e) {
-    // custom error handling until https://github.com/motdotla/dotenv-expand/issues/65 is fixed upstream
-    // check for message "TypeError: Cannot read properties of undefined (reading 'split')"
-    if (e.message.includes('split')) {
-      throw new Error(
-        'dotenv-expand failed to expand env vars. Maybe you need to escape `$`?',
-      )
-    }
-    throw e
-  }
+  // let environment variables use each other
+  // `expand` patched in patches/dotenv-expand@9.0.0.patch
+  expand({ parsed })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
