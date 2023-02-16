@@ -129,6 +129,7 @@ For example, to make the default import of `*.svg` a React component:
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
   ```
+
 :::
 
 ## Vue
