@@ -15,6 +15,7 @@
 <p>typeof import.meta.env.VITE_BOOL: <code class="bool"></code></p>
 <p>process.env.NODE_ENV: <code class="node-env"></code></p>
 <p>import.meta.env.VITE_EXPAND: <code class="expand"></code></p>
+<p>import.meta.env.SSR: <code class="ssr"></code></p>
 <p>import.meta.env: <span class="pre env-object"></span></p>
 <p>import.meta.url: <span class="pre url"></span></p>
 
@@ -28,6 +29,7 @@
   text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
   text('.inline', import.meta.env.VITE_INLINE)
   text('.bool', typeof import.meta.env.VITE_BOOL)
+  text('.ssr', import.meta.env.SSR)
   text('.node-env', process.env.NODE_ENV)
   text('.env-object', JSON.stringify(import.meta.env, null, 2))
   text('.expand', import.meta.env.VITE_EXPAND)
