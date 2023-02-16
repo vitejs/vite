@@ -62,10 +62,6 @@ function polyfill() {
     return
   }
 
-  for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
-    processPreload(link)
-  }
-
   new MutationObserver((mutations: any) => {
     for (const mutation of mutations) {
       if (mutation.type !== 'childList') {
@@ -78,6 +74,10 @@ function polyfill() {
     }
   }).observe(document, { childList: true, subtree: true })
 
+  for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
+    processPreload(link)
+  }
+
   function getFetchOpts(link: any) {
     const fetchOpts = {} as any
     if (link.integrity) fetchOpts.integrity = link.integrity
@@ -89,12 +89,12 @@ function polyfill() {
     return fetchOpts
   }
 
+  const fetchCache = {} as any
   function processPreload(link: any) {
-    if (link.ep)
-      // ep marker = processed
-      return
+    if (link.ep) return
     link.ep = true
-    // prepopulate the load record
+    if (fetchCache[link.href]) return
+    fetchCache[link.href] = true
     const fetchOpts = getFetchOpts(link)
     fetch(link.href, fetchOpts)
   }
