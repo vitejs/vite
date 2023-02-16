@@ -66,7 +66,6 @@ import {
   renderAssetUrlInJS,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
-
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
@@ -819,8 +818,10 @@ async function compileCSS(
     configToAtImportResolvers.set(config, atImportResolvers)
   }
 
-  // 2. pre-processors: sass etc.
-  if (isPreProcessor(lang)) {
+  const applyPreprocessor = async (
+    code: string,
+    lang: PreprocessLang,
+  ): Promise<string> => {
     const preProcessor = preProcessors[lang]
     let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
     // support @import from node dependencies by default
@@ -857,7 +858,6 @@ async function compileCSS(
       throw preprocessResult.error
     }
 
-    code = preprocessResult.code
     preprocessorMap = combineSourcemapsIfExists(
       opts.filename,
       preprocessResult.map,
@@ -872,6 +872,13 @@ async function compileCSS(
         }
       })
     }
+
+    return preprocessResult.code
+  }
+
+  // 2. pre-processors: sass etc.
+  if (isPreProcessor(lang)) {
+    code = await applyPreprocessor(code, lang)
   }
 
   // 3. postcss
@@ -924,9 +931,49 @@ async function compileCSS(
   }
 
   if (isModule) {
+    const FileSystemLoader = // @ts-expect-error TODO: needs types
+      (await import('postcss-modules/build/FileSystemLoader')).default
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        Loader: class extends FileSystemLoader {
+          async fetch(
+            _newPath: string,
+            relativeTo: string,
+            _trace: string,
+          ): Promise<any> {
+            const newPath = _newPath.replace(/^["']|["']$/g, '')
+            const lang = newPath.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
+            if (isPreProcessor(lang)) {
+              const fileResolvedPath = await this.fileResolve(
+                newPath,
+                relativeTo,
+              )
+              const code = (
+                await fs.promises.readFile(fileResolvedPath, {
+                  encoding: 'utf-8',
+                })
+              ).toString()
+              const processedCode = await applyPreprocessor(code, lang)
+
+              const trace = _trace || String.fromCharCode(this.importNr++)
+              const { injectableSource, exportTokens } = await this.core.load(
+                processedCode,
+                fileResolvedPath,
+                trace,
+                this.fetch.bind(this),
+              )
+              this.sources[fileResolvedPath] = injectableSource
+              this.traces[trace] = fileResolvedPath
+              this.tokensByFile[fileResolvedPath] = exportTokens
+
+              return exportTokens
+            } else {
+              // Use the default loader because there is no need to apply a preprocessor.
+              return super.fetch(_newPath, relativeTo, _trace)
+            }
+          }
+        },
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
