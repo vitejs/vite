@@ -7,7 +7,7 @@ packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
 patchedDependencies:
   dotenv-expand@9.0.0:
-    hash: 6vdpvodnfhahap67xag6diqqtu
+    hash: dccccn23nvejzy75sgiosdt2au
     path: patches/dotenv-expand@9.0.0.patch
   sirv@2.0.2:
     hash: hmoqtj4vy3i7wnpchga2a2mu3y
@@ -260,7 +260,7 @@ importers:
       debug: 4.3.4
       dep-types: link:src/types
       dotenv: 16.0.3
-      dotenv-expand: 9.0.0_6vdpvodnfhahap67xag6diqqtu
+      dotenv-expand: 9.0.0_dccccn23nvejzy75sgiosdt2au
       es-module-lexer: 1.1.0
       estree-walker: 3.0.3
       etag: 1.8.1
@@ -4939,7 +4939,7 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand/9.0.0_6vdpvodnfhahap67xag6diqqtu:
+  /dotenv-expand/9.0.0_dccccn23nvejzy75sgiosdt2au:
     resolution: {integrity: sha512-uW8Hrhp5ammm9x7kBLR6jDfujgaDarNA02tprvZdyrJ7MpdzD1KyrIHG4l+YoC2fJ2UcdFdNWNWIjt+sexBHJw==}
     engines: {node: '>=12'}
     dev: true
