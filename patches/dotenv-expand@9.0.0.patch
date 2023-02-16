@@ -1,12 +1,12 @@
 diff --git a/lib/main.js b/lib/main.js
-index c873cc77229d4cd0cf9de98ae0970b25d89f312f..7681ae0f2d843f0b9466f0f84799af56cd178500 100644
+index c873cc77229d4cd0cf9de98ae0970b25d89f312f..901758c6b665d2935501404fc09c6abd94b7eb1e 100644
 --- a/lib/main.js
 +++ b/lib/main.js
 @@ -17,6 +17,10 @@ function _interpolate (envValue, environment, config) {
        replacePart = parts[0]
        value = replacePart.replace('\\$', '$')
      } else {
-+      // compatible with env variables ended with unescaped $
++      // PATCH: compatible with env variables ended with unescaped $
 +      if(!parts[2]) {
 +        return newEnv
 +      }
