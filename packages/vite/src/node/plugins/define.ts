@@ -6,6 +6,7 @@ import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
+const metaEnvRe = /import\.meta\.env\.(.+)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -30,10 +31,17 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
+  const env = { ...config.env }
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
     userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
+
+    // make sure `import.meta.env` object has user define properties
+    const match = key.match(metaEnvRe)
+    if (match) {
+      env[match[1]] = val
+    }
   }
 
   // during dev, import.meta properties are handled by importAnalysis plugin.
@@ -41,10 +49,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const importMetaKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
-    const env: Record<string, any> = {
-      ...config.env,
-      SSR: !!config.build.ssr,
-    }
+    env.SSR = !!config.build.ssr
+
     // set here to allow override with config.define
     importMetaKeys['import.meta.hot'] = `undefined`
     for (const key in env) {
@@ -52,7 +58,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(config.env),
+      'import.meta.env': JSON.stringify(env),
     })
   }
 

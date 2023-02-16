@@ -50,6 +50,10 @@ test('expand', async () => {
   expect(await page.textContent('.expand-b')).toBe('depend')
 })
 
+test('ssr', async () => {
+  expect(await page.textContent('.ssr')).toBe('false')
+})
+
 test('env object', async () => {
   const env = JSON.parse(await page.textContent('.env-object'))
   expect(env).not.toHaveProperty([
@@ -66,6 +70,8 @@ test('env object', async () => {
     VITE_ESCAPE_A: 'escape$',
     VITE_ESCAPE_B: 'escape$',
     BASE_URL: '/env/',
+    VITE_BOOL: true,
+    SSR: false,
     MODE: mode,
     DEV: !isBuild,
     PROD: isBuild,
