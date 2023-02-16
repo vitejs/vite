@@ -35,7 +35,7 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
 The following polyfill function is meant to run in the browser and adapted from
 https://github.com/guybedford/es-module-shims
 MIT License
-Copyright (C) 2018-2021 Guy Bedford
+Copyright (C) 2018-2023 Guy Bedford
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
