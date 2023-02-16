@@ -49,6 +49,10 @@ test('expand', async () => {
   expect(await page.textContent('.expand')).toBe('expand')
 })
 
+test('ssr', async () => {
+  expect(await page.textContent('.ssr')).toBe('false')
+})
+
 test('env object', async () => {
   const envText = await page.textContent('.env-object')
   expect(JSON.parse(envText)).toMatchObject({
@@ -56,6 +60,8 @@ test('env object', async () => {
     CUSTOM_PREFIX_ENV_VARIABLE: '1',
     VITE_CUSTOM_ENV_VARIABLE: '1',
     BASE_URL: '/env/',
+    VITE_BOOL: true,
+    SSR: false,
     MODE: mode,
     DEV: !isBuild,
     PROD: isBuild,
