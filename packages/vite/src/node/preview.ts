@@ -88,7 +88,12 @@ export async function preview(
   const distDir = path.resolve(config.root, config.build.outDir)
   if (
     !fs.existsSync(distDir) &&
-    config.plugins.every((plugin) => !plugin.configurePreviewServer)
+    // error if no plugins implement `configurePreviewServer`
+    config.plugins.every((plugin) => !plugin.configurePreviewServer) &&
+    // error if called in CLI only. programmatic usage could access `httpServer`
+    // and affect file serving
+    process.argv[1]?.endsWith(path.normalize('bin/vite.js')) &&
+    process.argv[2] === 'preview'
   ) {
     throw new Error(
       `The directory "${config.build.outDir}" does not exist. Did you build your project?`,
