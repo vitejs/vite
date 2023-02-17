@@ -464,15 +464,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (
-          !isCSSRequest(id) ||
-          cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
-        ) {
+        if (cssModuleRE.test(id)) {
           isPureCssChunk = false
         }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
+        } else {
+          isPureCssChunk = false
         }
       }
 
