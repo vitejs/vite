@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { expect, test } from 'vitest'
 import { createServer } from '../../server'
+import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
 
@@ -15,7 +16,7 @@ test('ssrLoad', async () => {
   expect.assertions(1)
   const server = await createDevServer()
   const moduleRelativePath = '/fixtures/modules/has-invalid-import.js'
-  const moduleAbsolutePath = path.join(root, moduleRelativePath)
+  const moduleAbsolutePath = normalizePath(path.join(root, moduleRelativePath))
   try {
     await server.ssrLoadModule(moduleRelativePath)
   } catch (e) {
