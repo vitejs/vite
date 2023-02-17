@@ -497,6 +497,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const toRelative = (filename: string, importer: string) => {
           // relative base + extracted CSS
+          if (!config.build.cssCodeSplit) {
+            return filename.startsWith('.') ? filename : './' + filename
+          }
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
           return relativePath.startsWith('.')
             ? relativePath
