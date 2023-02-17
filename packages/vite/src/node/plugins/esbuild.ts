@@ -29,7 +29,7 @@ const debug = createDebugger('vite:esbuild')
 const INJECT_HELPERS_IIFE_RE =
   /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{.*?"use strict";)/s
 const INJECT_HELPERS_UMD_RE =
-  /^(.*?)(\(function\([^)]*\)\s*\{.+amd.+function\([^)]*\)\s*\{.*?"use strict";)/s
+  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{.*?"use strict";)/s
 
 let server: ViteDevServer
 

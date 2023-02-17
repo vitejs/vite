@@ -6,4 +6,7 @@ export default function myLib(sel) {
 
   // Env vars should not be replaced
   console.log(process.env.NODE_ENV)
+
+  // make sure umd helper has been moved to the right position
+  console.log(`amd function(){ "use strict"; }`)
 }
