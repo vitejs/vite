@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import type * as http from 'node:http'
 import sirv from 'sirv'
@@ -84,6 +85,16 @@ export async function preview(
     'production',
   )
 
+  const distDir = path.resolve(config.root, config.build.outDir)
+  if (
+    !fs.existsSync(distDir) &&
+    config.plugins.every((plugin) => !plugin.configurePreviewServer)
+  ) {
+    throw new Error(
+      `The directory "${config.build.outDir}" does not exist. Did you build your project?`,
+    )
+  }
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
@@ -116,7 +127,6 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
   const assetServer = sirv(distDir, {
     etag: true,
