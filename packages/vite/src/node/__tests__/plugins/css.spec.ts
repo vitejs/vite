@@ -110,49 +110,6 @@ position: fixed;
     expect(result1.code).toBe(result2.code)
     resetMock()
   })
-
-  // following tests requires `sass` as devDependencies.But when we add sass to devDependencies,types is conflicts between @types/sass and sass itself types.
-  /*
-  test('Can compose files that needs to apply preprocessor', async () => {
-    const barScssFilePath = path.join(process.cwd(), 'bar.scss')
-    const bazScssFilePath = path.join(process.cwd(), 'baz.scss')
-    const { transform, resetMock } = await createCssPluginTransform({
-      [barScssFilePath]: `\
-.bar {
-// comment
-display: block;
-composes: baz from '${bazScssFilePath}';
-}`,
-      [bazScssFilePath]: `\
-.baz {
-// comment
-color: red;
-}`,
-    })
-
-    const result = await transform(
-      `\
-.foo {
-position: fixed;
-composes: bar from '${barScssFilePath}';
-}`,
-      '/foo.module.scss',
-    )
-
-    expect(result.code).toBe(
-      `\
-._baz_14enc_1 {
-  color: red;
-}._bar_1vym1_1 {
-  display: block;
-}._foo_1m9mb_1 {
-  position: fixed;
-}`,
-    )
-
-    resetMock()
-  })
-*/
 })
 
 describe('hoist @ rules', () => {
@@ -261,11 +218,6 @@ async function createCssPluginTransform(
     .mockImplementationOnce((p, encoding, callback) => {
       callback(null, Buffer.from(files?.[p] ?? ''))
     })
-  const mockFsPromises = vi
-    .spyOn(fs.promises, 'readFile')
-    .mockImplementation((p) =>
-      Promise.resolve(Buffer.from(files?.[p as string] ?? '')),
-    )
 
   return {
     async transform(code: string, id: string) {
@@ -282,7 +234,6 @@ async function createCssPluginTransform(
     },
     resetMock() {
       mockFs.mockReset()
-      mockFsPromises.mockReset()
     },
   }
 }
