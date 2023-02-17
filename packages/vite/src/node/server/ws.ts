@@ -152,14 +152,17 @@ export function createWebSocketServer(
       const client = getSocketClient(socket)
       listeners.forEach((listener) => listener(parsed.data, client))
     })
+    socket.on('error', (err) => {
+      config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
+        timestamp: true,
+        error: err,
+      })
+    })
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
       bufferedError = null
     }
-    socket.on('error', (e) => {
-      config.logger.info(`WebSocket error:\n${e.stack || e.message}`)
-    })
   })
 
   wss.on('error', (e: Error & { code: string }) => {
