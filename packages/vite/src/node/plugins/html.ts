@@ -169,6 +169,7 @@ export async function traverseHtml(
   // lazy load compiler
   const { parse } = await import('parse5')
   const ast = parse(html, {
+    scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
       handleParseError(e, html, filePath)
