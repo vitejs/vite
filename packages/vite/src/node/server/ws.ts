@@ -153,7 +153,7 @@ export function createWebSocketServer(
       listeners.forEach((listener) => listener(parsed.data, client))
     })
     socket.on('error', (err) => {
-      config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
+      config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err,
       })
