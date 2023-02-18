@@ -464,15 +464,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (
-          !isCSSRequest(id) ||
-          cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
-        ) {
-          isPureCssChunk = false
-        }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
+          // a css module contains JS, so it makes this not a pure css chunk
+          if (cssModuleRE.test(id)) {
+            isPureCssChunk = false
+          }
+        } else {
+          // if the module does not have a style, then it's not a pure css chunk.
+          // this is true because in the `transform` hook above, only modules
+          // that are css gets added to the `styles` map.
+          isPureCssChunk = false
         }
       }
 
