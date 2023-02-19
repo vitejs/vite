@@ -267,6 +267,11 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
+
+  /**
+   * Open browser
+   */
+  openDevBrowser(): void
   /**
    * @internal
    */
@@ -396,7 +401,7 @@ export async function createServer(
       }
     },
     async listen(port?: number, isRestart?: boolean) {
-      await startServer(server, port, isRestart)
+      await startServer(server, port)
       if (httpServer) {
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
@@ -404,7 +409,23 @@ export async function createServer(
           config,
         )
       }
+
+      if (!isRestart && config.server.open) server.openDevBrowser()
       return server
+    },
+    openDevBrowser() {
+      const options = server.config.server
+      const url = server.resolvedUrls?.local[0]
+      if (url) {
+        const path =
+          typeof options.open === 'string'
+            ? new URL(options.open, url).href
+            : url
+
+        openBrowser(path, true, server.config.logger)
+      } else {
+        server.config.logger.warn('No URL available to open in browser')
+      }
     },
     async close() {
       if (!middlewareMode) {
@@ -653,7 +674,6 @@ export async function createServer(
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
-  isRestart: boolean = false,
 ): Promise<void> {
   const httpServer = server.httpServer
   if (!httpServer) {
@@ -664,26 +684,12 @@ async function startServer(
   const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
 
-  const protocol = options.https ? 'https' : 'http'
-
-  const serverPort = await httpServerStart(httpServer, {
+  await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger: server.config.logger,
   })
-
-  if (options.open && !isRestart) {
-    const path =
-      typeof options.open === 'string' ? options.open : server.config.base
-    openBrowser(
-      path.startsWith('http')
-        ? path
-        : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
-      true,
-      server.config.logger,
-    )
-  }
 }
 
 function createServerCloseFn(server: http.Server | null) {

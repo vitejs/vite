@@ -1,6 +1,5 @@
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
-import { openBrowser } from './server/openBrowser'
 import { isDefined } from './utils'
 
 export type BindShortcutsOptions = {
@@ -102,18 +101,7 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     key: 'o',
     description: 'open in browser',
     action(server) {
-      const url = server.resolvedUrls?.local[0]
-
-      if (!url) {
-        server.config.logger.warn('No URL available to open in browser')
-        return
-      }
-
-      const path =
-        typeof server.config.server.open === 'string'
-          ? new URL(server.config.server.open, url).href
-          : ''
-      openBrowser(path ? path : url, true, server.config.logger)
+      server.openDevBrowser()
     },
   },
   {
