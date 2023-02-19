@@ -1,3 +1,7 @@
+import chunkMsg from './chunk'
+
+document.querySelector('.chunk').textContent = chunkMsg
+
 const ids = {
   hello: async () => {
     await import(/* a comment */ './hello.js')
