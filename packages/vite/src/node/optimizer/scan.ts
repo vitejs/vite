@@ -121,17 +121,19 @@ export async function scanImports(config: ResolvedConfig): Promise<{
       ...esbuildOptions,
     })
   } catch (e) {
-    const err = new Error('Failed to scan dependencies from entries')
-    err.stack = e.stack + '\n' + err.stack
+    e.message = '[Failed to scan dependencies from entries]' + e.message
+    e.stack = new Error().stack + '\n' + e.stack
     const esbuildMsg = e.errors
       ? await formatMessages(e.errors, { kind: 'error' })
       : ''
 
     config.logger.error(
       colors.red(
-        `${err.message}:\n${entries.join('\n')}\n\n${esbuildMsg}${err.stack}`,
+        `${e.message}:\n${entries.join('\n')}\n\n${esbuildMsg}${e.stack}`,
       ),
     )
+
+    throw e
   }
 
   debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
