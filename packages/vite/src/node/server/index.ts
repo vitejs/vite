@@ -92,6 +92,7 @@ export interface ServerOptions extends CommonServerOptions {
   watch?: WatchOptions
   /**
    * Create Vite dev server to be used as a middleware in an existing server
+   * @default false
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**

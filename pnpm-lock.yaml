@@ -7,10 +7,10 @@ packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
 patchedDependencies:
   dotenv-expand@9.0.0:
-    hash: 6vdpvodnfhahap67xag6diqqtu
+    hash: dccccn23nvejzy75sgiosdt2au
     path: patches/dotenv-expand@9.0.0.patch
   sirv@2.0.2:
-    hash: w6q35pvk7bmykgqf2hieut43iq
+    hash: hmoqtj4vy3i7wnpchga2a2mu3y
     path: patches/sirv@2.0.2.patch
 
 importers:
@@ -49,7 +49,7 @@ importers:
       eslint-plugin-import: ^2.27.5
       eslint-plugin-node: ^11.1.0
       eslint-plugin-regexp: ^1.12.0
-      execa: ^6.1.0
+      execa: ^7.0.0
       fast-glob: ^3.2.12
       fs-extra: ^11.1.0
       lint-staged: ^13.1.0
@@ -105,7 +105,7 @@ importers:
       eslint-plugin-import: 2.27.5_kf2q37rsxgsj6p2nz45hjttose
       eslint-plugin-node: 11.1.0_eslint@8.33.0
       eslint-plugin-regexp: 1.12.0_eslint@8.33.0
-      execa: 6.1.0
+      execa: 7.0.0
       fast-glob: 3.2.12
       fs-extra: 11.1.0
       lint-staged: 13.1.0
@@ -223,7 +223,7 @@ importers:
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^7.0.1
-      strip-literal: ^0.4.2
+      strip-literal: ^1.0.1
       tsconfck: ^2.0.2
       tslib: ^2.5.0
       types: link:./types
@@ -260,7 +260,7 @@ importers:
       debug: 4.3.4
       dep-types: link:src/types
       dotenv: 16.0.3
-      dotenv-expand: 9.0.0_6vdpvodnfhahap67xag6diqqtu
+      dotenv-expand: 9.0.0_dccccn23nvejzy75sgiosdt2au
       es-module-lexer: 1.1.0
       estree-walker: 3.0.3
       etag: 1.8.1
@@ -283,11 +283,11 @@ importers:
       postcss-modules: 6.0.0_postcss@8.4.21
       resolve.exports: 2.0.0
       rollup-plugin-license: 3.0.1_rollup@3.10.0
-      sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
+      sirv: 2.0.2_hmoqtj4vy3i7wnpchga2a2mu3y
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 7.0.1
-      strip-literal: 0.4.2
+      strip-literal: 1.0.1
       tsconfck: 2.0.2
       tslib: 2.5.0
       types: link:types
@@ -306,7 +306,7 @@ importers:
       css-color-names: 1.0.1
       kill-port: 1.6.1
       node-fetch: 3.3.0
-      sirv: 2.0.2_w6q35pvk7bmykgqf2hieut43iq
+      sirv: 2.0.2_hmoqtj4vy3i7wnpchga2a2mu3y
 
   playground/alias:
     specifiers:
@@ -4939,7 +4939,7 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand/9.0.0_6vdpvodnfhahap67xag6diqqtu:
+  /dotenv-expand/9.0.0_dccccn23nvejzy75sgiosdt2au:
     resolution: {integrity: sha512-uW8Hrhp5ammm9x7kBLR6jDfujgaDarNA02tprvZdyrJ7MpdzD1KyrIHG4l+YoC2fJ2UcdFdNWNWIjt+sexBHJw==}
     engines: {node: '>=12'}
     dev: true
@@ -5668,6 +5668,21 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
+  /execa/7.0.0:
+    resolution: {integrity: sha512-tQbH0pH/8LHTnwTrsKWideqi6rFB/QNUawEwrn+WHyz7PX1Tuz2u7wfTvbaNBdP5JD5LVWxNo8/A8CHNZ3bV6g==}
+    engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
+    dependencies:
+      cross-spawn: 7.0.3
+      get-stream: 6.0.1
+      human-signals: 4.3.0
+      is-stream: 3.0.0
+      merge-stream: 2.0.0
+      npm-run-path: 5.1.0
+      onetime: 6.0.0
+      signal-exit: 3.0.7
+      strip-final-newline: 3.0.0
+    dev: true
+
   /express/4.18.2:
     resolution: {integrity: sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==}
     engines: {node: '>= 0.10.0'}
@@ -6253,6 +6268,11 @@ packages:
   /human-signals/3.0.1:
     resolution: {integrity: sha512-rQLskxnM/5OCldHo+wNXbpVgDn5A17CUoKX+7Sokwaknlq7CdSnphy0W39GU8dw59XiCXmFXDg4fRuckQRKewQ==}
     engines: {node: '>=12.20.0'}
+    dev: true
+
+  /human-signals/4.3.0:
+    resolution: {integrity: sha512-zyzVyMjpGBX2+6cDVZeFPCdtOtdsxOeseRhB9tkQ6xXmGUNrcnBzdEKPy3VPNYz+4gy1oukVOXcrJCunSyc6QQ==}
+    engines: {node: '>=14.18.0'}
     dev: true
 
   /iconv-lite/0.4.24:
@@ -8617,7 +8637,7 @@ packages:
     requiresBuild: true
     dev: true
 
-  /sirv/2.0.2_w6q35pvk7bmykgqf2hieut43iq:
+  /sirv/2.0.2_hmoqtj4vy3i7wnpchga2a2mu3y:
     resolution: {integrity: sha512-4Qog6aE29nIjAOKe/wowFTxOdmbEZKb+3tsLljaBRzJwtqto0BChD2zzH0LhgCSXiI+V7X+Y45v14wBZQ1TK3w==}
     engines: {node: '>= 10'}
     dependencies:
@@ -8885,14 +8905,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /strip-literal/0.4.2:
-    resolution: {integrity: sha512-pv48ybn4iE1O9RLgCAN0iU4Xv7RlBTiit6DKmMiErbs9x1wH6vXBs45tWc0H5wUIF6TLTrKweqkmYF/iraQKNw==}
-    dependencies:
-      acorn: 8.8.2
-    dev: true
-
-  /strip-literal/1.0.0:
-    resolution: {integrity: sha512-5o4LsH1lzBzO9UFH63AJ2ad2/S2AVx6NtjOcaz+VTT2h1RiRvbipW72z8M/lxEhcPHDBQwpDrnTF7sXy/7OwCQ==}
+  /strip-literal/1.0.1:
+    resolution: {integrity: sha512-QZTsipNpa2Ppr6v1AmJHESqJ3Uz247MUS0OjrnnZjFAvEoWqxuyFuXn2xLgMtRnijJShAa1HL0gtJyUs7u7n3Q==}
     dependencies:
       acorn: 8.8.2
     dev: true
@@ -9544,7 +9558,7 @@ packages:
       picocolors: 1.0.0
       source-map: 0.6.1
       std-env: 3.3.1
-      strip-literal: 1.0.0
+      strip-literal: 1.0.1
       tinybench: 2.3.1
       tinypool: 0.3.1
       tinyspy: 1.0.2

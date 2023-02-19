@@ -5,6 +5,7 @@ test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
   expect(await getColor('.dynamic')).toBe('green')
+  expect(await getColor('.chunk')).toBe('magenta')
 })
 
 test('should load dynamic import with inline', async () => {
@@ -39,5 +40,9 @@ describe.runIf(isBuild)('build', () => {
     const manifest = readManifest()
     expect(manifest['index.html'].css.length).toBe(2)
     expect(manifest['other.js'].css.length).toBe(1)
+  })
+
+  test('should not mark a css chunk with ?url and normal import as pure css chunk', () => {
+    expect(findAssetFile(/chunk-.*\.js$/)).toBeTruthy()
   })
 })
