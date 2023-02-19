@@ -616,6 +616,7 @@ importers:
   playground/optimize-deps:
     specifiers:
       '@vitejs/test-added-in-entries': file:./added-in-entries
+      '@vitejs/test-dep-alias-using-absolute-path': file:./dep-alias-using-absolute-path
       '@vitejs/test-dep-cjs-browser-field-bare': file:./dep-cjs-browser-field-bare
       '@vitejs/test-dep-cjs-compiled-from-cjs': file:./dep-cjs-compiled-from-cjs
       '@vitejs/test-dep-cjs-compiled-from-esm': file:./dep-cjs-compiled-from-esm
@@ -646,6 +647,7 @@ importers:
       vuex: ^4.1.0
     dependencies:
       '@vitejs/test-added-in-entries': file:playground/optimize-deps/added-in-entries
+      '@vitejs/test-dep-alias-using-absolute-path': file:playground/optimize-deps/dep-alias-using-absolute-path
       '@vitejs/test-dep-cjs-browser-field-bare': file:playground/optimize-deps/dep-cjs-browser-field-bare
       '@vitejs/test-dep-cjs-compiled-from-cjs': file:playground/optimize-deps/dep-cjs-compiled-from-cjs
       '@vitejs/test-dep-cjs-compiled-from-esm': file:playground/optimize-deps/dep-cjs-compiled-from-esm
@@ -677,6 +679,12 @@ importers:
 
   playground/optimize-deps/added-in-entries:
     specifiers: {}
+
+  playground/optimize-deps/dep-alias-using-absolute-path:
+    specifiers:
+      lodash: ^4.17.21
+    dependencies:
+      lodash: 4.17.21
 
   playground/optimize-deps/dep-cjs-browser-field-bare:
     specifiers: {}
@@ -9924,6 +9932,14 @@ packages:
     resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
     name: '@vitejs/test-added-in-entries'
     version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-alias-using-absolute-path:
+    resolution: {directory: playground/optimize-deps/dep-alias-using-absolute-path, type: directory}
+    name: '@vitejs/test-dep-alias-using-absolute-path'
+    version: 1.0.0
+    dependencies:
+      lodash: 4.17.21
     dev: false
 
   file:playground/optimize-deps/dep-cjs-browser-field-bare:
