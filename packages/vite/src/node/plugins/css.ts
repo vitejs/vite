@@ -558,6 +558,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
+          const originalName = isCSSRequest(cssAssetName)
+            ? cssAssetName
+            : cssFileName
           // emit corresponding css file
           const referenceId = this.emitFile({
             name: path.basename(cssFileName),
@@ -567,7 +570,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
             .get(config)!
-            .set(referenceId, { originalName: cssAssetName, isEntry })
+            .set(referenceId, { originalName, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // legacy build and inline css
