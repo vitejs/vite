@@ -737,23 +737,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               toScriptTag(chunk, toOutputAssetFilePath, isAsync),
             )
           } else {
+            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
             const { modulePreload } = config.build
-            const resolveDependencies =
-              typeof modulePreload === 'object' &&
-              modulePreload.resolveDependencies
-            const importsFileNames = imports.map((chunk) => chunk.fileName)
-            const resolvedDeps = resolveDependencies
-              ? resolveDependencies(chunk.fileName, importsFileNames, {
-                  hostId: relativeUrlPath,
-                  hostType: 'html',
-                })
-              : importsFileNames
-            assetTags = [
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
-              ...resolvedDeps.map((i) =>
-                toPreloadTag(i, toOutputAssetFilePath),
-              ),
-            ]
+            if (modulePreload !== false) {
+              const resolveDependencies =
+                typeof modulePreload === 'object' &&
+                modulePreload.resolveDependencies
+              const importsFileNames = imports.map((chunk) => chunk.fileName)
+              const resolvedDeps = resolveDependencies
+                ? resolveDependencies(chunk.fileName, importsFileNames, {
+                    hostId: relativeUrlPath,
+                    hostType: 'html',
+                  })
+                : importsFileNames
+              assetTags.push(
+                ...resolvedDeps.map((i) =>
+                  toPreloadTag(i, toOutputAssetFilePath),
+                ),
+              )
+            }
           }
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
