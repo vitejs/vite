@@ -159,8 +159,8 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-BoFUHKsYhJ9tbsHugtNQCmnkBbZ11pcW6kZguu+T+EU=`
-- `sha256-A18HC3jLpyEc9B8oyxq/NBFCyFBJFSsRLt0gmT9kft8=`
+- `sha256-p7PoC97FO+Lu90RNjGWxhbm13yALSR4xzV8vaDhaQBo=`
+- `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--
 Run `node --input-type=module -e "import {cspHashes} from '@vitejs/plugin-legacy'; console.log(cspHashes.map(h => 'sha256-'+h))"` to retrieve the value.
