@@ -6,6 +6,9 @@ export class HashSet<Value> {
     getHash,
     initialValues,
   }: {
+    /**
+     * The hash function used for value retrieval in the `add`, `get`, `has`, and `delete` methods.
+     */
     getHash: (value: Value) => string
     initialValues?: Value[]
   }) {
