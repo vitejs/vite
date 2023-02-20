@@ -191,7 +191,18 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`,
+      `"use strict";\n${result.code}\n//# ${
+        result.map && result.map.mappings
+          ? `sourceMappingURL=data:application/json;charset=utf-8;base64,${Buffer.from(
+              JSON.stringify({
+                ...result.map,
+                mappings: `;;;${result.map.mappings}`,
+              }),
+            ).toString(
+              'base64',
+            )}\n//# sourceURL=vite-internal:///./${mod.url.replace(/^\/+/, '')}`
+          : `sourceURL=${mod.url}`
+      }`,
     )
     await initModule(
       context.global,
