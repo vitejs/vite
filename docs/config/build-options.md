@@ -78,7 +78,7 @@ Specify the output directory (relative to [project root](/guide/#index-html-and-
 - **Type:** `string`
 - **Default:** `assets`
 
-Specify the directory to nest generated assets under (relative to `build.outDir`).
+Specify the directory to nest generated assets under (relative to `build.outDir`, only used in non-[Library Mode](/guide/build#library-mode)).
 
 ## build.assetsInlineLimit
 
