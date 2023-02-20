@@ -8,6 +8,7 @@ import { isHTMLRequest } from './html'
 const nonJsRe = /\.json(?:$|\?)/
 const metaEnvRe = /import\.meta\.env\.(.+)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
+const internalEnvs = ['__VITE_IS_LEGACY__']
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -56,9 +57,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
+
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(env),
+      // make sure vite internal env won't be stringify
+      'import.meta.env': JSON.stringify(env).replace(
+        new RegExp(`"(${internalEnvs.join('|')})"`, 'g'),
+        '$1',
+      ),
     })
   }
 
