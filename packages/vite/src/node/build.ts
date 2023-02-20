@@ -236,6 +236,13 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
+  /**
+   * Watch config files and restart the server when they changed.
+   * When enabled, the build function will return `() => RollupWatcher`
+   * This will be set to true by default and be removed in Vite 5.
+   * @default false
+   */
+  watchConfig?: boolean
 }
 
 export interface LibraryOptions {
@@ -341,6 +348,7 @@ export function resolveBuildOptions(
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
+    watchConfig: false,
   }
 
   const userBuildOptions = raw
@@ -435,13 +443,17 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   }
 }
 
+let rollupWatcher: RollupWatcher
+
 /**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
   inlineConfig: InlineConfig = {},
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+): Promise<
+  RollupOutput | RollupOutput[] | RollupWatcher | (() => RollupWatcher)
+> {
   const config = await resolveConfig(
     inlineConfig,
     'build',
@@ -608,7 +620,6 @@ export async function build(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      const chokidarMod = import('chokidar')
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
@@ -625,6 +636,7 @@ export async function build(
           chokidar: resolvedChokidarOptions,
         },
       })
+      rollupWatcher = watcher
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
@@ -642,27 +654,32 @@ export async function build(
 
       // watch config related files in another chokidar instance to
       // re-run the build function to start a new rollup watcher
-      const chokidar = await chokidarMod
-      const configFileChokidar = chokidar.watch(
-        (
-          [
-            config.configFile,
-            ...config.configFileDependencies,
-            '.env',
-            '.env.*',
-          ].filter(Boolean) as string[]
-        ).map(resolve),
-        {
-          ignoreInitial: true,
-        },
-      )
+      if (config.build.watchConfig) {
+        const chokidar = await import('chokidar')
+        const configFileChokidar = chokidar.watch(
+          (
+            [
+              config.configFile,
+              ...config.configFileDependencies,
+              '.env',
+              '.env.*',
+            ].filter(Boolean) as string[]
+          ).map(resolve),
+          {
+            ignoreInitial: true,
+          },
+        )
 
-      configFileChokidar.on('all', async () => {
-        await Promise.all([watcher.close(), configFileChokidar.close()])
-        build()
-      })
+        configFileChokidar.on('all', async () => {
+          await Promise.all([watcher.close(), configFileChokidar.close()])
+          build(inlineConfig)
+        })
 
-      // TODO: the returned watcher will be closed once config file changed
+        return () => {
+          return rollupWatcher
+        }
+      }
+
       return watcher
     }
 

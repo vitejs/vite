@@ -235,6 +235,8 @@ cli
     filterDuplicateOptions(options)
     const { build } = await import('./build')
     const buildOptions: BuildOptions = cleanOptions(options)
+    // TODO: make this default by true in Vite 5
+    buildOptions.watchConfig = true
 
     try {
       await build({
