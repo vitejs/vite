@@ -283,7 +283,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             code: `const encodedJs = "${Buffer.from(chunk.code).toString(
               'base64',
             )}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+            const base64decode = (ascii) => new TextDecoder().decode(Uint8Array.from(atob(ascii), c => c.charCodeAt(0)));
+            const blob = typeof window !== "undefined" && window.Blob && new Blob([base64decode(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
