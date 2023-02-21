@@ -479,7 +479,7 @@ A fair number of Rollup plugins will work directly as a Vite plugin (e.g. `@roll
 
 In general, as long as a Rollup plugin fits the following criteria then it should just work as a Vite plugin:
 
-- It doesn't use the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook.
+- It doesn't use the [`moduleParsed`](https://rollupjs.org/plugin-development/#moduleparsed) hook.
 - It doesn't have strong coupling between bundle-phase hooks and output-phase hooks.
 
 If a Rollup plugin only makes sense for the build phase, then it can be specified under `build.rollupOptions.plugins` instead. It will work the same as a Vite plugin with `enforce: 'post'` and `apply: 'build'`.
