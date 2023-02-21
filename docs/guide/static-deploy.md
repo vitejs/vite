@@ -76,7 +76,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
      # Allows you to run this workflow manually from the Actions tab
      workflow_dispatch:
 
-   # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+   # Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
    permissions:
      contents: read
      pages: write
