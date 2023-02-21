@@ -406,7 +406,7 @@ When combined with `eager` it's even possible to have tree-shaking enabled for t
 ```ts
 const modules = import.meta.glob('./dir/*.js', {
   import: 'setup',
-  eager: true
+  eager: true,
 })
 ```
 
