@@ -20,6 +20,9 @@ if (import.meta.env.LEGACY) {
 
 text('#env', `is legacy: ${isLegacy}`)
 
+const metaEnvObj = import.meta.env
+text('#env-equal', import.meta.env.LEGACY === metaEnvObj.LEGACY)
+
 // Iterators
 text('#iterators', [...new Set(['hello'])].join(''))
 
