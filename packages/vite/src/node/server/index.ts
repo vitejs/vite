@@ -484,16 +484,10 @@ export async function createServer(
     return setPackageData(id, pkg)
   }
 
-  watcher.on('change', async (file) => {
-    file = normalizePath(file)
-    if (file.endsWith('/package.json')) {
-      return invalidatePackageData(packageCache, file)
-    }
-    // invalidate module graph cache on file change
-    moduleGraph.onFileChange(file)
+  const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(file, server)
+        await handleHMRUpdate(file, server, configOnly)
       } catch (err) {
         ws.send({
           type: 'error',
@@ -501,14 +495,27 @@ export async function createServer(
         })
       }
     }
+  }
+
+  const onFileAddUnlink = async (file: string) => {
+    file = normalizePath(file)
+    await handleFileAddUnlink(file, server)
+    await onHMRUpdate(file, true)
+  }
+
+  watcher.on('change', async (file) => {
+    file = normalizePath(file)
+    if (file.endsWith('/package.json')) {
+      return invalidatePackageData(packageCache, file)
+    }
+    // invalidate module graph cache on file change
+    moduleGraph.onFileChange(file)
+
+    await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', (file) => {
-    handleFileAddUnlink(normalizePath(file), server)
-  })
-  watcher.on('unlink', (file) => {
-    handleFileAddUnlink(normalizePath(file), server)
-  })
+  watcher.on('add', onFileAddUnlink)
+  watcher.on('unlink', onFileAddUnlink)
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
