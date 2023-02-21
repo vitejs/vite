@@ -31,16 +31,24 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const env = { ...config.env }
   const userDefine: Record<string, string> = {}
+  const userDefineEnv: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
     userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
 
     // make sure `import.meta.env` object has user define properties
-    const match = key.match(metaEnvRe)
-    if (match) {
-      env[match[1]] = val
+    if (isBuild) {
+      const match = key.match(metaEnvRe)
+      if (match) {
+        userDefineEnv[match[1]] =
+          // test if value is raw identifier to wrap with __vite__ so when
+          // stringified for `import.meta.env`, we can remove the quotes and
+          // retain being an identifier
+          typeof val === 'string' && /^[\p{L}_$]/u.test(val.trim())
+            ? `__vite__${val}__vite__`
+            : val
+      }
     }
   }
 
@@ -49,8 +57,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const importMetaKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
-    env.SSR = !!config.build.ssr
-
+    const env: Record<string, any> = {
+      ...config.env,
+      SSR: !!config.build.ssr,
+    }
     // set here to allow override with config.define
     importMetaKeys['import.meta.hot'] = `undefined`
     for (const key in env) {
@@ -58,7 +68,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(env),
+      'import.meta.env': JSON.stringify({ ...env, ...userDefineEnv }).replace(
+        /"__vite__(.+?)__vite__"/g,
+        (_, val) => val,
+      ),
     })
   }
 
