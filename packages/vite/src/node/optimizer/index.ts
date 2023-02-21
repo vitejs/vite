@@ -722,7 +722,7 @@ export async function addManuallyIncludedOptimizeDeps(
               deps[normalizedId] = entry
             }
           } else {
-            unableToOptimize(entry, 'Cannot optimize dependency')
+            unableToOptimize(id, 'Cannot optimize dependency')
           }
         } else {
           unableToOptimize(id, 'Failed to resolve dependency')
