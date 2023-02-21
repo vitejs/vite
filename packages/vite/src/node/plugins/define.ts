@@ -69,8 +69,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify({ ...env, ...userDefineEnv })
-        .replace('"__vite__', '')
-        .replace('__vite__"', ''),
+        .replace(/"__vite__/g, '')
+        .replace(/__vite__"/g, ''),
     })
   }
 
