@@ -93,8 +93,9 @@ if (import.meta.hot) {
   import.meta.hot.accept(
     ['./foo.js', './bar.js'],
     ([newFooModule, newBarModule]) => {
-      // The callback receives an array where only the updated module is non null
-      // If the update was not successful (syntax error for ex.), the array is empty
+      // The callback receives an array where only the updated module is
+      // non null. If the update was not successful (syntax error for ex.),
+      // the array is empty
     },
   )
 }
