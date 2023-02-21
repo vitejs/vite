@@ -249,7 +249,7 @@ The automatic injection of CSS contents can be turned off via the `?inline` quer
 
 ```js
 import styles from './foo.css' // will be injected into the page
-import otherStyles from './bar.css?inline' // will not be injected into the page
+import otherStyles from './bar.css?inline' // will not be injected
 ```
 
 ## Static Assets
@@ -404,7 +404,10 @@ const modules = {
 When combined with `eager` it's even possible to have tree-shaking enabled for those modules.
 
 ```ts
-const modules = import.meta.glob('./dir/*.js', { import: 'setup', eager: true })
+const modules = import.meta.glob('./dir/*.js', {
+  import: 'setup',
+  eager: true,
+})
 ```
 
 ```ts
