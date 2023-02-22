@@ -212,8 +212,8 @@ cli
     `[string] build specified entry for server-side rendering`,
   )
   .option(
-    '--sourcemap',
-    `[boolean] output source maps for build (default: false)`,
+    '--sourcemap [output]',
+    `[boolean | "inline" | "hidden"] output source maps for build (default: false)`,
   )
   .option(
     '--minify [minifier]',
