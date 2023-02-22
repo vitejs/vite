@@ -62,6 +62,9 @@ const debug = createDebugger('vite:resolve-details', {
 })
 
 export interface ResolveOptions {
+  /**
+   * @default ['module', 'jsnext:main', 'jsnext']
+   */
   mainFields?: string[]
   /**
    * @deprecated In future, `mainFields` should be used instead.
@@ -69,8 +72,14 @@ export interface ResolveOptions {
    */
   browserField?: boolean
   conditions?: string[]
+  /**
+   * @default ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
+   */
   extensions?: string[]
   dedupe?: string[]
+  /**
+   * @default false
+   */
   preserveSymlinks?: boolean
 }
 
@@ -173,6 +182,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const ensureVersionQuery = (resolved: string): string => {
         if (
           !options.isBuild &&
+          !options.scan &&
           depsOptimizer &&
           !(
             resolved === normalizedClientEntry ||

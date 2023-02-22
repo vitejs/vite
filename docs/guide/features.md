@@ -113,16 +113,22 @@ This will provide the following type shims:
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
-To override the default typing, declare it before the triple-slash reference. For example, to make the default import of `*.svg` a React component:
+To override the default typing, add a type definition file that contains your typings. Then, add the type reference before `vite/client`.
 
-```ts
-declare module '*.svg' {
-  const content: React.FC<React.SVGProps<SVGElement>>
-  export default content
-}
+For example, to make the default import of `*.svg` a React component:
 
-/// <reference types="vite/client" />
-```
+- `vite-env-override.d.ts` (the file that contains your typings):
+  ```ts
+  declare module '*.svg' {
+    const content: React.FC<React.SVGProps<SVGElement>>
+    export default content
+  }
+  ```
+- The file containing the reference to `vite/client`:
+  ```ts
+  /// <reference types="./vite-env-override.d.ts" />
+  /// <reference types="vite/client" />
+  ```
 
 :::
 
@@ -243,7 +249,7 @@ The automatic injection of CSS contents can be turned off via the `?inline` quer
 
 ```js
 import styles from './foo.css' // will be injected into the page
-import otherStyles from './bar.css?inline' // will not be injected into the page
+import otherStyles from './bar.css?inline' // will not be injected
 ```
 
 ## Static Assets
@@ -398,7 +404,10 @@ const modules = {
 When combined with `eager` it's even possible to have tree-shaking enabled for those modules.
 
 ```ts
-const modules = import.meta.glob('./dir/*.js', { import: 'setup', eager: true })
+const modules = import.meta.glob('./dir/*.js', {
+  import: 'setup',
+  eager: true,
+})
 ```
 
 ```ts

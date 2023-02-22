@@ -371,7 +371,7 @@ async function init() {
 
   pkg.name = packageName || getProjectName()
 
-  write('package.json', JSON.stringify(pkg, null, 2))
+  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
   if (isReactSwc) {
     setupReactSwc(root, template.endsWith('-ts'))

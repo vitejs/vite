@@ -11,6 +11,9 @@ module.exports = {
     dedupe: ['react'],
     alias: {
       'node:url': 'url',
+      '@vitejs/test-dep-alias-using-absolute-path': require.resolve(
+        '@vitejs/test-dep-alias-using-absolute-path',
+      ),
     },
   },
   optimizeDeps: {
@@ -38,7 +41,7 @@ module.exports = {
         },
       ],
     },
-    entries: ['entry.js'],
+    entries: ['index.html', 'unused-split-entry.js'],
   },
 
   build: {
