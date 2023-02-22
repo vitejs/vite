@@ -27,10 +27,8 @@ const count = ref(0)
   </p>
   <p>
     Install
-    <a
-      href="https://marketplace.visualstudio.com/items?itemName=Vue.volar"
-      target="_blank"
-      >Volar</a
+    <a href="https://github.com/vuejs/language-tools" target="_blank"
+      >Vue Language Tools</a
     >
     in your IDE for a better DX
   </p>
