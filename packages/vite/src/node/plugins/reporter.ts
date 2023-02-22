@@ -32,6 +32,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   let transformedCount = 0
   let chunkCount = 0
   let compressedCount = 0
+  let startTime = Date.now()
 
   async function getCompressedSize(
     code: string | Uint8Array,
@@ -82,6 +83,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         hasTransformed = true
       }
       return null
+    },
+
+    options() {
+      startTime = Date.now()
     },
 
     buildEnd() {
@@ -242,6 +247,16 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         )
       }
     },
+
+    closeBundle() {
+      if (shouldLogInfo && !config.build.watch) {
+        config.logger.info(
+          `${colors.green(`✓`)} built in ${displayTime(
+            Date.now() - startTime,
+          )}`,
+        )
+      }
+    },
   }
 }
 
@@ -275,4 +290,24 @@ function displaySize(bytes: number) {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
   })} kB`
+}
+
+function displayTime(time: number) {
+  // display: {X}ms
+  if (time < 1000) {
+    return `${time}ms`
+  }
+
+  time = time / 1000
+
+  // display: {X}s
+  if (time < 60) {
+    return `${time.toFixed(2)}s`
+  }
+
+  const mins = parseInt((time / 60).toString())
+  const seconds = time % 60
+
+  // display: {X}m {Y}s
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
 }
