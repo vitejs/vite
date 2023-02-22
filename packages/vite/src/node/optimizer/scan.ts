@@ -3,7 +3,7 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
 import type { Loader, OnLoadResult, Plugin } from 'esbuild'
-import { build, transform } from 'esbuild'
+import { build, formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import {
@@ -106,19 +106,37 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await build({
-    absWorkingDir: process.cwd(),
-    write: false,
-    stdin: {
-      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
-      loader: 'js',
-    },
-    bundle: true,
-    format: 'esm',
-    logLevel: 'error',
-    plugins: [...plugins, plugin],
-    ...esbuildOptions,
-  })
+  try {
+    await build({
+      absWorkingDir: process.cwd(),
+      write: false,
+      stdin: {
+        contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
+        loader: 'js',
+      },
+      bundle: true,
+      format: 'esm',
+      logLevel: 'silent',
+      plugins: [...plugins, plugin],
+      ...esbuildOptions,
+    })
+  } catch (e) {
+    const prependMessage = colors.red(`\
+Failed to scan for dependencies from entries:
+${entries.join('\n')}
+
+`)
+    if (e.errors) {
+      const msgs = await formatMessages(e.errors, {
+        kind: 'error',
+        color: true,
+      })
+      e.message = prependMessage + msgs.join('\n')
+    } else {
+      e.message = prependMessage + e.message
+    }
+    throw e
+  }
 
   debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
 
