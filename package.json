@@ -62,7 +62,6 @@
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
     "conventional-changelog-cli": "^2.2.2",
-    "esbuild": "^0.16.14",
     "eslint": "^8.33.0",
     "eslint-define-config": "^1.14.0",
     "eslint-plugin-import": "^2.27.5",
