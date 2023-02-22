@@ -143,6 +143,12 @@ test('import aliased package with colon', async () => {
   expect(await page.textContent('.url')).toBe('vitejs.dev')
 })
 
+test('import aliased package using absolute path', async () => {
+  expect(await page.textContent('.alias-using-absolute-path')).toBe(
+    'From dep-alias-using-absolute-path',
+  )
+})
+
 test('variable names are reused in different scripts', async () => {
   expect(await page.textContent('.reused-variable-names')).toBe('reused')
 })

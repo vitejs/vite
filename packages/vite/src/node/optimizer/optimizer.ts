@@ -233,7 +233,7 @@ async function createDepsOptimizer(
             // do another optimize step
             postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
           } catch (e) {
-            logger.error(e.message)
+            logger.error(e.stack || e.message)
           } finally {
             resolve()
             depsOptimizer.scanProcessing = undefined

@@ -45,7 +45,7 @@
     "@babel/preset-env": "^7.20.2",
     "browserslist": "^4.21.4",
     "core-js": "^3.27.2",
-    "magic-string": "^0.27.0",
+    "magic-string": "^0.29.0",
     "regenerator-runtime": "^0.13.11",
     "systemjs": "^6.13.0"
   },

@@ -19,7 +19,9 @@ describe.runIf(isBuild)('build', () => {
     const noMinifyCode = readFile('dist/nominify/my-lib-custom-filename.umd.js')
     // esbuild helpers are injected inside of the UMD wrapper
     expect(code).toMatch(/^\(function\(/)
-    expect(noMinifyCode).toMatch(/^\(function\(global/)
+    expect(noMinifyCode).toMatch(
+      /^\(function\(global.+?"use strict";var.+?function\smyLib\(/s,
+    )
   })
 
   test('iife', async () => {
