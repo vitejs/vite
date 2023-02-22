@@ -332,67 +332,33 @@ async function waitForSuccessfulPing(
   }
 }
 
-// https://wicg.github.io/construct-stylesheets
-const supportsConstructedSheet = (() => {
-  // TODO: re-enable this try block once Chrome fixes the performance of
-  // rule insertion in really big stylesheets
-  // try {
-  //   new CSSStyleSheet()
-  //   return true
-  // } catch (e) {}
-  return false
-})()
-
-const sheetsMap = new Map<
-  string,
-  HTMLStyleElement | CSSStyleSheet | undefined
->()
+const sheetsMap = new Map<string, HTMLStyleElement>()
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
-  if (supportsConstructedSheet && !content.includes('@import')) {
-    if (style && !(style instanceof CSSStyleSheet)) {
-      removeStyle(id)
-      style = undefined
-    }
+  if (!style) {
+    style = document.createElement('style')
+    style.setAttribute('type', 'text/css')
+    style.setAttribute('data-vite-dev-id', id)
+    style.textContent = content
 
-    if (!style) {
-      style = new CSSStyleSheet()
-      style.replaceSync(content)
-      document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
+    if (!lastInsertedStyle) {
+      document.head.appendChild(style)
+
+      // reset lastInsertedStyle after async
+      // because dynamically imported css will be splitted into a different file
+      setTimeout(() => {
+        lastInsertedStyle = undefined
+      }, 0)
     } else {
-      style.replaceSync(content)
+      lastInsertedStyle.insertAdjacentElement('afterend', style)
     }
+    lastInsertedStyle = style
   } else {
-    if (style && !(style instanceof HTMLStyleElement)) {
-      removeStyle(id)
-      style = undefined
-    }
-
-    if (!style) {
-      style = document.createElement('style')
-      style.setAttribute('type', 'text/css')
-      style.setAttribute('data-vite-dev-id', id)
-      style.textContent = content
-
-      if (!lastInsertedStyle) {
-        document.head.appendChild(style)
-
-        // reset lastInsertedStyle after async
-        // because dynamically imported css will be splitted into a different file
-        setTimeout(() => {
-          lastInsertedStyle = undefined
-        }, 0)
-      } else {
-        lastInsertedStyle.insertAdjacentElement('afterend', style)
-      }
-      lastInsertedStyle = style
-    } else {
-      style.textContent = content
-    }
+    style.textContent = content
   }
   sheetsMap.set(id, style)
 }
@@ -400,13 +366,7 @@ export function updateStyle(id: string, content: string): void {
 export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
-    if (style instanceof CSSStyleSheet) {
-      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
-        (s: CSSStyleSheet) => s !== style,
-      )
-    } else {
-      document.head.removeChild(style)
-    }
+    document.head.removeChild(style)
     sheetsMap.delete(id)
   }
 }
