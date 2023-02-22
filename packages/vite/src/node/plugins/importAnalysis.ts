@@ -197,12 +197,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         ;[imports, exports] = parseImports(source)
       } catch (e: any) {
         const isVue = importer.endsWith('.vue')
+        const isJsx = importer.endsWith('.jsx') || importer.endsWith('.tsx')
         const maybeJSX = !isVue && isJSRequest(importer)
 
         const msg = isVue
           ? `Install @vitejs/plugin-vue to handle .vue files.`
           : maybeJSX
-          ? `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
+          ? isJsx
+            ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
+            : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
           : `You may need to install appropriate plugins to handle the ${path.extname(
               importer,
             )} file format, or if it's an asset, add "**/*${path.extname(
