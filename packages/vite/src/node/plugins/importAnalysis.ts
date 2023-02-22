@@ -165,6 +165,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
+  let env = `import.meta.env = ${JSON.stringify({
+    ...config.env,
+    SSR: '__vite__ssr__vite__',
+  })};`
+  // account for user env defines
+  for (const key in config.define) {
+    if (key.startsWith(`import.meta.env.`)) {
+      const val = config.define[key]
+      env += `${key} = ${typeof val === 'string' ? val : JSON.stringify(val)};`
+    }
+  }
 
   return {
     name: 'vite:import-analysis',
@@ -635,20 +646,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (hasEnv) {
         // inject import.meta.env
-        let env = `import.meta.env = ${JSON.stringify({
-          ...config.env,
-          SSR: !!ssr,
-        })};`
-        // account for user env defines
-        for (const key in config.define) {
-          if (key.startsWith(`import.meta.env.`)) {
-            const val = config.define[key]
-            env += `${key} = ${
-              typeof val === 'string' ? val : JSON.stringify(val)
-            };`
-          }
-        }
-        str().prepend(env)
+        str().prepend(env.replace(`"__vite__ssr__vite__"`, `${!!ssr}`))
       }
 
       if (hasHMR && !ssr) {
