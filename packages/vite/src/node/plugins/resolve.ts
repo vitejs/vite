@@ -156,13 +156,14 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const resolveSubpathImports = (id: string, importer?: string) => {
         if (!importer || !id.startsWith(subpathImportsPrefix)) return
         const basedir = path.dirname(importer)
-        const importerPkgJson = lookupFile(basedir, ['package.json'], {
-          predicate: (content) => !!JSON.parse(content).name,
+        const pkgJsonPath = lookupFile(basedir, ['package.json'], {
+          pathOnly: true,
         })
-        if (!importerPkgJson) return
+        if (!pkgJsonPath) return
 
+        const pkgData = loadPackageData(pkgJsonPath, options.preserveSymlinks)
         return resolveExportsOrImports(
-          JSON.parse(importerPkgJson),
+          pkgData.data,
           id,
           options,
           targetWeb,
