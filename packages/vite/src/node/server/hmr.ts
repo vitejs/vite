@@ -121,7 +121,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  updateModules(shortFile, hmrContext.modules, timestamp, server)
+  updateModules(file, hmrContext.modules, timestamp, server)
 }
 
 export function updateModules(
@@ -131,6 +131,7 @@ export function updateModules(
   { config, ws, moduleGraph }: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
+  const shortName = getShortName(file, config.root)
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false
@@ -145,7 +146,10 @@ export function updateModules(
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    const hasDeadEnd = propagateUpdate(mod, boundaries)
+    const hasDeadEnd = propagateUpdate(mod, boundaries, [
+      ...(moduleGraph.getModulesByFile(file) || []),
+      mod,
+    ])
     if (hasDeadEnd) {
       needFullReload = true
       continue
@@ -166,7 +170,7 @@ export function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
+    config.logger.info(colors.green(`page reload `) + colors.dim(shortName), {
       clear: !afterInvalidation,
       timestamp: true,
     })
@@ -177,7 +181,7 @@ export function updateModules(
   }
 
   if (updates.length === 0) {
-    debugHmr(colors.yellow(`no update happened `) + colors.dim(file))
+    debugHmr(colors.yellow(`no update happened `) + colors.dim(shortName))
     return
   }
 
@@ -201,12 +205,7 @@ export async function handleFileAddUnlink(
   modules.push(...getAffectedGlobModules(file, server))
 
   if (modules.length > 0) {
-    updateModules(
-      getShortName(file, server.config.root),
-      unique(modules),
-      Date.now(),
-      server,
-    )
+    updateModules(file, unique(modules), Date.now(), server)
   }
 }
 
