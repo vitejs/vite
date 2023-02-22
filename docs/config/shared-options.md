@@ -39,8 +39,6 @@ Define global constant replacements. Entries will be defined as globals during d
 
 - String values will be used as raw expressions, so if defining a string constant, **it needs to be explicitly quoted** (e.g. with `JSON.stringify`).
 
-- To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
-
 - Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
 
 ::: warning
