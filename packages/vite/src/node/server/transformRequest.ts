@@ -268,6 +268,26 @@ async function loadAndTransform(
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
+    for (
+      let sourcesIndex = 0;
+      sourcesIndex < map.sources.length;
+      ++sourcesIndex
+    ) {
+      const sourcePath = map.sources[sourcesIndex]
+
+      const ignoreList = config.server.sourcemapIgnoreList(sourcePath)
+      if (typeof ignoreList !== 'boolean') {
+        logger.warn('sourcemapIgnoreList function must return a boolean.')
+      }
+      if (ignoreList) {
+        if (map.x_google_ignoreList === undefined) {
+          map.x_google_ignoreList = []
+        }
+        if (!map.x_google_ignoreList.includes(sourcesIndex)) {
+          map.x_google_ignoreList.push(sourcesIndex)
+        }
+      }
+    }
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }

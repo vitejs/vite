@@ -116,6 +116,12 @@ export interface ServerOptions extends CommonServerOptions {
    */
   preTransformRequests?: boolean
   /**
+   * Whether or not to ignore-list source files in the dev server sourcemap, used to populate
+   * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+   * By default, it excludes all paths containing `/node_modules/`.
+   */
+  sourcemapIgnoreList?: (sourcePath: string) => boolean
+  /**
    * Force dep pre-optimization regardless of whether deps have changed.
    *
    * @deprecated Use optimizeDeps.force instead, this option may be removed
@@ -127,6 +133,7 @@ export interface ServerOptions extends CommonServerOptions {
 export interface ResolvedServerOptions extends ServerOptions {
   fs: Required<FileSystemServeOptions>
   middlewareMode: boolean
+  sourcemapIgnoreList: NonNullable<ServerOptions['sourcemapIgnoreList']>
 }
 
 export interface FileSystemServeOptions {
@@ -746,7 +753,8 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    ...(raw as ResolvedServerOptions),
+    sourcemapIgnoreList: (sourcePath) => sourcePath.includes('/node_modules/'),
+    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow

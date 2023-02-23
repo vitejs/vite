@@ -318,3 +318,19 @@ export default defineConfig({
   },
 })
 ```
+
+## server.sourcemapIgnoreList
+
+- **Type:** `Function`
+
+Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+
+```js
+export default defineConfig({
+  server: {
+    // This is the default value, and will add all files with node_modules in their paths
+    // to the ignore list.
+    sourcemapIgnoreList: sourcePath => sourcePath.includes('/node_modules/')
+  }
+};
+```
