@@ -190,7 +190,7 @@ importers:
       dep-types: link:./src/types
       dotenv: ^16.0.3
       dotenv-expand: ^9.0.0
-      es-module-lexer: ^1.1.1
+      es-module-lexer: 1.1.0
       esbuild: ^0.17.5
       estree-walker: ^3.0.3
       etag: ^1.8.1
@@ -259,7 +259,7 @@ importers:
       dep-types: link:src/types
       dotenv: 16.0.3
       dotenv-expand: 9.0.0_dccccn23nvejzy75sgiosdt2au
-      es-module-lexer: 1.1.1
+      es-module-lexer: 1.1.0
       estree-walker: 3.0.3
       etag: 1.8.1
       fast-glob: 3.2.12
@@ -5077,8 +5077,8 @@ packages:
       which-typed-array: 1.1.9
     dev: true
 
-  /es-module-lexer/1.1.1:
-    resolution: {integrity: sha512-n3ruqU8Te7I5prBd6d0darM8ajFuVNhLWvgo04hN7goWSaSrxe7ENOZitac7akN0A2o+8fMomBDsNPvW/eE3CQ==}
+  /es-module-lexer/1.1.0:
+    resolution: {integrity: sha512-fJg+1tiyEeS8figV+fPcPpm8WqJEflG3yPU0NOm5xMvrNkuiy7HzX/Ljng4Y0hAoiw4/3hQTCFYw+ub8+a2pRA==}
     dev: true
 
   /es-set-tostringtag/2.0.1:
