@@ -147,6 +147,44 @@ describe('plugin container', () => {
       expect.assertions(2)
     })
   })
+
+  describe('load', () => {
+    beforeEach(() => {
+      moduleGraph = new ModuleGraph((id) => resolveId(id))
+    })
+
+    it('can resolve a secondary module', async () => {
+      const entryUrl = '/x.js'
+
+      const plugin: Plugin = {
+        name: 'p1',
+        resolveId(id) {
+          return id
+        },
+        load(id) {
+          if (id === entryUrl) return { code: '1', meta: { x: 1 } }
+          else return { code: '2', meta: { x: 2 } }
+        },
+        async transform(code, id) {
+          if (id === entryUrl)
+            return {
+              code: `${
+                (await this.load({ id: '/secondary.js' })).meta.x || undefined
+              }`,
+            }
+          return { code }
+        },
+      }
+
+      const container = await getPluginContainer({
+        plugins: [plugin],
+      })
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await container.load(entryUrl)
+      const result: any = await container.transform(loadResult.code, entryUrl)
+      expect(result.code).equals('2')
+    })
+  })
 })
 
 async function getPluginContainer(
