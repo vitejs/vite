@@ -29,6 +29,9 @@ const envConfig = defineConfig({
     sourcemapPathTransform(relativeSourcePath) {
       return path.basename(relativeSourcePath)
     },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 
@@ -45,6 +48,9 @@ const clientConfig = defineConfig({
     sourcemap: true,
     sourcemapPathTransform(relativeSourcePath) {
       return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
     },
   },
 })
