@@ -73,7 +73,7 @@ import {
   handleHMRUpdate,
   updateModules,
 } from './hmr'
-import { openBrowser } from './openBrowser'
+import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
@@ -271,7 +271,7 @@ export interface ViteDevServer {
   /**
    * Open browser
    */
-  openDevBrowser(): void
+  openBrowser(): void
   /**
    * @internal
    */
@@ -408,12 +408,11 @@ export async function createServer(
           config.server,
           config,
         )
+        if (!isRestart && config.server.open) server.openBrowser()
       }
-
-      if (!isRestart && config.server.open) server.openDevBrowser()
       return server
     },
-    openDevBrowser() {
+    openBrowser() {
       const options = server.config.server
       const url = server.resolvedUrls?.local[0]
       if (url) {
@@ -422,7 +421,7 @@ export async function createServer(
             ? new URL(options.open, url).href
             : url
 
-        openBrowser(path, true, server.config.logger)
+        _openBrowser(path, true, server.config.logger)
       } else {
         server.config.logger.warn('No URL available to open in browser')
       }

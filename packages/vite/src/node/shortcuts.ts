@@ -101,7 +101,7 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     key: 'o',
     description: 'open in browser',
     action(server) {
-      server.openDevBrowser()
+      server.openBrowser()
     },
   },
   {
