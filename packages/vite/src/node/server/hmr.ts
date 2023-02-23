@@ -42,6 +42,7 @@ export function getShortName(file: string, root: string): string {
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
+  configOnly: boolean,
 ): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
@@ -68,6 +69,10 @@ export async function handleHMRUpdate(
     } catch (e) {
       config.logger.error(colors.red(e))
     }
+    return
+  }
+
+  if (configOnly) {
     return
   }
 
