@@ -82,25 +82,6 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
-## Custom Logger
-
-Vite provides a `createLogger` function which you can filter out warnings or provide a custom message for your errors.
-
-```js
-import { createLogger, defineConfig } from 'vite'
-
-const logger = createLogger()
-const originalWarning = logger.warn
-logger.warn = (msg, options) => {
-  if (msg.includes('vite:css') && msg.includes(' is empty')) return
-  originalWarning(msg, options)
-}
-
-export default defineConfig({
-  customLogger: logger
-})
-```
-
 ## Environment Variables
 
 Environmental Variables can be obtained from `process.env` as usual.
