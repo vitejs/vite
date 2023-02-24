@@ -229,7 +229,7 @@ function areAllImportsAccepted(
   return true
 }
 
-function propagateUpdate(
+export function propagateUpdate(
   node: ModuleNode,
   boundaries: HashSet<{
     boundary: ModuleNode
