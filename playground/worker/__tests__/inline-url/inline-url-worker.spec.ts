@@ -13,7 +13,7 @@ describe.runIf(isBuild)('build', () => {
 
     // inlined
     expect(content).toMatch(
-      `;try{return new Worker("data:application/javascript;base64,"+`,
+      `return new Worker("data:application/javascript;base64,"+`,
     )
   })
 })

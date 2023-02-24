@@ -291,23 +291,29 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
+          const encodedJs = `const encodedJs = "${Buffer.from(
+            chunk.code,
+          ).toString('base64')}";`
+          const blobCode = `${encodedJs}
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper() {
+            const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+            try {
+              return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+            } finally {
+              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }
+          }`
+
+          const base64Code = `${encodedJs}
+          export default function WorkerWrapper() {
+            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          }
+          `
+
           // inline as blob data url
           return {
-            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
-              'base64',
-            )}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL && ${
-                  inlineUrl === 'blob'
-                } ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`,
-
+            code: inlineUrl === 'blob' ? blobCode : base64Code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }
