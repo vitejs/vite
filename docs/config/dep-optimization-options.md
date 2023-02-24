@@ -54,6 +54,7 @@ Set to `true` to force dependency pre-bundling, ignoring previously cached optim
 
 ## optimizeDeps.disabled
 
+- **Experimental**
 - **Type:** `boolean | 'build' | 'dev'`
 - **Default:** `'build'`
 
