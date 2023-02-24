@@ -1,0 +1,6 @@
+{
+  "name": "@vite/test-config-entry",
+  "dependencies": {
+    "@vite/test-config-plugin-module-condition": "link:../plugin-module-condition"
+  }
+}

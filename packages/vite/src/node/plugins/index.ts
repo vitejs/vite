@@ -18,8 +18,8 @@ import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
-import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
@@ -29,13 +29,14 @@ export async function resolvePlugins(
   config: ResolvedConfig,
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
-  postPlugins: Plugin[]
+  postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
   const isWatch = isBuild && !!config.build.watch
   const buildPlugins = isBuild
-    ? (await import('../build')).resolveBuildPlugins(config)
+    ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
+  const { modulePreload } = config.build
 
   return [
     isWatch ? ensureWatchPlugin() : null,
@@ -43,7 +44,8 @@ export async function resolvePlugins(
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
-    config.build.polyfillModulePreload
+    modulePreload === true ||
+    (typeof modulePreload === 'object' && modulePreload.polyfill)
       ? modulePreloadPolyfillPlugin(config)
       : null,
     ...(isDepsOptimizerEnabled(config, false) ||
@@ -51,7 +53,7 @@ export async function resolvePlugins(
       ? [
           isBuild
             ? optimizedDepsBuildPlugin(config)
-            : optimizedDepsPlugin(config)
+            : optimizedDepsPlugin(config),
         ]
       : []),
     resolvePlugin({
@@ -66,7 +68,7 @@ export async function resolvePlugins(
       shouldExternalize:
         isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
           ? (id) => shouldExternalizeForSSR(id, config)
-          : undefined
+          : undefined,
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
@@ -74,9 +76,9 @@ export async function resolvePlugins(
     jsonPlugin(
       {
         namedExports: true,
-        ...config.json
+        ...config.json,
       },
-      isBuild
+      isBuild,
     ),
     wasmHelperPlugin(config),
     webWorkerPlugin(config),
@@ -85,9 +87,9 @@ export async function resolvePlugins(
     wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBuild && config.build.ssr ? ssrRequireHookPlugin(config) : null,
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
+    assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     dynamicImportVarsPlugin(config),
     importGlobPlugin(config),
@@ -96,12 +98,12 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
   ].filter(Boolean) as Plugin[]
 }
 
 export function createPluginHookUtils(
-  plugins: readonly Plugin[]
+  plugins: readonly Plugin[],
 ): PluginHookUtils {
   // sort plugins per hook
   const sortedPluginsCache = new Map<keyof Plugin, Plugin[]>()
@@ -113,27 +115,28 @@ export function createPluginHookUtils(
     return sorted
   }
   function getSortedPluginHooks<K extends keyof Plugin>(
-    hookName: K
+    hookName: K,
   ): NonNullable<HookHandler<Plugin[K]>>[] {
     const plugins = getSortedPlugins(hookName)
     return plugins
       .map((p) => {
         const hook = p[hookName]!
-        // @ts-expect-error cast
-        return 'handler' in hook ? hook.handler : hook
+        return typeof hook === 'object' && 'handler' in hook
+          ? hook.handler
+          : hook
       })
       .filter(Boolean)
   }
 
   return {
     getSortedPlugins,
-    getSortedPluginHooks
+    getSortedPluginHooks,
   }
 }
 
 export function getSortedPluginsByHook(
   hookName: keyof Plugin,
-  plugins: readonly Plugin[]
+  plugins: readonly Plugin[],
 ): Plugin[] {
   const pre: Plugin[] = []
   const normal: Plugin[] = []

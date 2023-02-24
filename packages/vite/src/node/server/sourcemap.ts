@@ -6,13 +6,13 @@ import { createDebugger } from '../utils'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
-  onlyWhenFocused: true
+  onlyWhenFocused: true,
 })
 
 // Virtual modules should be prefixed with a null byte to avoid a
 // false positive "missing source" warning. We also check for certain
 // prefixes used for special handling in esbuildDepPlugin.
-const virtualSourceRE = /^(\0|dep:|browser-external:)/
+const virtualSourceRE = /^(?:\0|dep:|browser-external:)/
 
 interface SourceMapLike {
   sources: string[]
@@ -23,13 +23,13 @@ interface SourceMapLike {
 export async function injectSourcesContent(
   map: SourceMapLike,
   file: string,
-  logger: Logger
+  logger: Logger,
 ): Promise<void> {
   let sourceRoot: string | undefined
   try {
     // The source root is undefined for virtual modules and permission errors.
     sourceRoot = await fs.realpath(
-      path.resolve(path.dirname(file), map.sourceRoot || '')
+      path.resolve(path.dirname(file), map.sourceRoot || ''),
     )
   } catch {}
 
@@ -47,7 +47,7 @@ export async function injectSourcesContent(
         })
       }
       return null
-    })
+    }),
   )
 
   // Use this command…
@@ -59,7 +59,7 @@ export async function injectSourcesContent(
   }
 }
 
-export function genSourceMapUrl(map: SourceMap | string | undefined): string {
+export function genSourceMapUrl(map: SourceMap | string): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -69,16 +69,16 @@ export function genSourceMapUrl(map: SourceMap | string | undefined): string {
 export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
-  map: SourceMap | null
+  map: SourceMap,
 ): string {
   if (isDebug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }
 
   if (type === 'js') {
-    code += `\n//# sourceMappingURL=${genSourceMapUrl(map ?? undefined)}`
+    code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
   } else if (type === 'css') {
-    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map ?? undefined)} */`
+    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map)} */`
   }
 
   return code

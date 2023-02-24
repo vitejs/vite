@@ -2,8 +2,7 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'types/connect'
-import micromatch from 'micromatch'
+import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -15,12 +14,17 @@ import {
   isInternalRequest,
   isParentDirectory,
   isWindows,
-  slash
+  shouldServeFile,
+  slash,
 } from '../../utils'
 
-const { isMatch } = micromatch
-
-const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
+const sirvOptions = ({
+  headers,
+  shouldServe,
+}: {
+  headers?: OutgoingHttpHeaders
+  shouldServe?: (p: string) => void
+}): Options => {
   return {
     dev: true,
     etag: true,
@@ -39,15 +43,22 @@ const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
           res.setHeader(name, headers[name]!)
         }
       }
-    }
+    },
+    shouldServe,
   }
 }
 
 export function servePublicMiddleware(
   dir: string,
-  headers?: OutgoingHttpHeaders
+  headers?: OutgoingHttpHeaders,
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions(headers))
+  const serve = sirv(
+    dir,
+    sirvOptions({
+      headers,
+      shouldServe: (filePath) => shouldServeFile(filePath, dir),
+    }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
@@ -61,9 +72,14 @@ export function servePublicMiddleware(
 
 export function serveStaticMiddleware(
   dir: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions(server.config.server.headers))
+  const serve = sirv(
+    dir,
+    sirvOptions({
+      headers: server.config.server.headers,
+    }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
@@ -121,9 +137,12 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serveFromRoot = sirv('/', sirvOptions(server.config.server.headers))
+  const serveFromRoot = sirv(
+    '/',
+    sirvOptions({ headers: server.config.server.headers }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
@@ -140,7 +159,7 @@ export function serveRawFsMiddleware(
           slash(path.resolve(fsPathFromId(pathname))),
           server,
           res,
-          next
+          next,
         )
       ) {
         return
@@ -158,18 +177,15 @@ export function serveRawFsMiddleware(
   }
 }
 
-const _matchOptions = { matchBase: true }
-
 export function isFileServingAllowed(
   url: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
   const file = fsPathFromUrl(url)
 
-  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
-    return false
+  if (server._fsDenyGlob(file)) return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
@@ -183,7 +199,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction
+  next: Connect.NextFunction,
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true

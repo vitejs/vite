@@ -1,0 +1,13 @@
+{
+  "name": "@vitejs/test-ssr-resolve",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite build"
+  },
+  "dependencies": {
+    "@vitejs/test-entries": "file:./entries",
+    "@vitejs/test-resolve-pkg-exports": "file:./pkg-exports"
+  }
+}

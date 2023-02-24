@@ -26,17 +26,17 @@ function BackendIntegrationExample() {
           manifest: true,
           outDir,
           rollupOptions: {
-            input: Object.fromEntries(entrypoints)
-          }
+            input: Object.fromEntries(entrypoints),
+          },
         },
         root,
         resolve: {
           alias: {
-            '~': sourceCodeDir
-          }
-        }
+            '~': sourceCodeDir,
+          },
+        },
       }
-    }
+    },
   }
 }
 
@@ -45,5 +45,5 @@ function BackendIntegrationExample() {
  */
 module.exports = {
   base: '/dev/',
-  plugins: [BackendIntegrationExample()]
+  plugins: [BackendIntegrationExample()],
 }

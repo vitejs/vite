@@ -2,36 +2,34 @@ import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  getAttrKey,
   getScriptInfo,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
   resolveHtmlTransforms,
-  traverseHtml
+  traverseHtml,
 } from '../../plugins/html'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
-import {
-  CLIENT_PUBLIC_PATH,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
-} from '../../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
+  joinUrlSegments,
   normalizePath,
-  processSrcSetSync
+  processSrcSetSync,
+  wrapId,
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -42,9 +40,11 @@ interface AssetNode {
 }
 
 export function createDevHtmlTransformFn(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
-  const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
+  const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
+    server.config.plugins,
+  )
   return (url: string, html: string, originalUrl: string): Promise<string> => {
     return applyHtmlTransforms(
       html,
@@ -52,15 +52,16 @@ export function createDevHtmlTransformFn(
         preImportMapHook(server.config),
         ...preHooks,
         devHtmlHook,
+        ...normalHooks,
         ...postHooks,
-        postImportMapHook()
+        postImportMapHook(),
       ],
       {
         path: url,
         filename: getHtmlFilename(url, server),
         server,
-        originalUrl
-      }
+        originalUrl,
+      },
     )
   }
 }
@@ -70,7 +71,7 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
     return decodeURIComponent(
-      normalizePath(path.join(server.config.root, url.slice(1)))
+      normalizePath(path.join(server.config.root, url.slice(1))),
     )
   }
 }
@@ -83,7 +84,7 @@ const processNodeUrl = (
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
-  moduleGraph?: ModuleGraph
+  moduleGraph?: ModuleGraph,
 ) => {
   let url = attr.value || ''
 
@@ -96,19 +97,16 @@ const processNodeUrl = (
   const devBase = config.base
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base (dev only, base is never relative)
-    overwriteAttrValue(s, sourceCodeLocation, devBase + url.slice(1))
+    const fullUrl = path.posix.join(devBase, url)
+    overwriteAttrValue(s, sourceCodeLocation, fullUrl)
   } else if (
     url.startsWith('.') &&
     originalUrl &&
     originalUrl !== '/' &&
     htmlPath === '/index.html'
   ) {
-    const replacer = (url: string) =>
-      path.posix.join(
-        devBase,
-        path.posix.relative(originalUrl, devBase),
-        url.slice(1)
-      )
+    // prefix with base (dev only, base is never relative)
+    const replacer = (url: string) => path.posix.join(devBase, url)
 
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
@@ -116,7 +114,7 @@ const processNodeUrl = (
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
     const processedUrl =
-      attr.name === 'srcset'
+      attr.name === 'srcset' && attr.prefix === undefined
         ? processSrcSetSync(url, ({ url }) => replacer(url))
         : replacer(url)
     overwriteAttrValue(s, sourceCodeLocation, processedUrl)
@@ -124,7 +122,7 @@ const processNodeUrl = (
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: htmlPath, filename, server, originalUrl }
+  { path: htmlPath, filename, server, originalUrl },
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
@@ -135,7 +133,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
-    proxyModuleUrl = base + htmlPath.slice(1)
+    proxyModuleUrl = joinUrlSegments(base, htmlPath)
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -144,20 +142,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // and ids are properly handled
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
-    proxyModuleUrl = `${VALID_ID_PREFIX}${NULL_BYTE_PLACEHOLDER}${validPath}`
+    proxyModuleUrl = wrapId(proxyModulePath)
   }
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
   const proxyCacheUrl = cleanUrl(proxyModulePath).replace(
     normalizePath(config.root),
-    ''
+    '',
   )
   const styleUrl: AssetNode[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
-    ext: 'js'
+    ext: 'js',
   ) => {
     inlineModuleIndex++
 
@@ -170,7 +168,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       map = new MagicString(html)
         .snip(
           contentNode.sourceCodeLocation!.startOffset,
-          contentNode.sourceCodeLocation!.endOffset
+          contentNode.sourceCodeLocation!.endOffset,
         )
         .generateMap({ hires: true })
       map.sources = [filename]
@@ -188,15 +186,14 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    s.overwrite(
+    s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${modulePath}"></script>`,
-      { contentOnly: true }
     )
   }
 
-  await traverseHtml(html, htmlPath, (node) => {
+  await traverseHtml(html, filename, (node) => {
     if (!nodeIsElement(node)) {
       return
     }
@@ -213,7 +210,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
-          moduleGraph
+          moduleGraph,
         )
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
@@ -225,7 +222,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       styleUrl.push({
         start: children.sourceCodeLocation!.startOffset,
         end: children.sourceCodeLocation!.endOffset,
-        code: children.value
+        code: children.value,
       })
     }
 
@@ -233,14 +230,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
       for (const p of node.attrs) {
-        if (p.value && assetAttrs.includes(p.name)) {
+        const attrKey = getAttrKey(p)
+        if (p.value && assetAttrs.includes(attrKey)) {
           processNodeUrl(
             p,
-            node.sourceCodeLocation!.attrs![p.name],
+            node.sourceCodeLocation!.attrs![attrKey],
             s,
             config,
             htmlPath,
-            originalUrl
+            originalUrl,
           )
         }
       }
@@ -257,7 +255,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
       s.overwrite(start, end, result?.code || '')
-    })
+    }),
   )
 
   html = s.toString()
@@ -269,16 +267,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         tag: 'script',
         attrs: {
           type: 'module',
-          src: path.posix.join(base, CLIENT_PUBLIC_PATH)
+          src: path.posix.join(base, CLIENT_PUBLIC_PATH),
         },
-        injectTo: 'head-prepend'
-      }
-    ]
+        injectTo: 'head-prepend',
+      },
+    ],
   }
 }
 
 export function indexHtmlMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -287,7 +285,7 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // spa-fallback always redirects to /index.html
+    // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {
@@ -295,7 +293,7 @@ export function indexHtmlMiddleware(
           let html = fs.readFileSync(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
           return send(req, res, html, 'html', {
-            headers: server.config.server.headers
+            headers: server.config.server.headers,
           })
         } catch (e) {
           return next(e)

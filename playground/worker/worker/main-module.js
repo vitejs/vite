@@ -1,5 +1,5 @@
-import myWorker from '../my-worker?worker'
-import InlineWorker from '../my-worker?worker&inline'
+import myWorker from '../my-worker.ts?worker'
+import InlineWorker from '../my-worker.ts?worker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
@@ -59,10 +59,19 @@ const workerOptions = { type: 'module' }
 // url import worker
 const w = new Worker(
   new URL('../url-worker.js', import.meta.url),
-  /* @vite-ignore */ workerOptions
+  /* @vite-ignore */ workerOptions,
 )
 w.addEventListener('message', (ev) =>
-  text('.worker-import-meta-url', JSON.stringify(ev.data))
+  text('.worker-import-meta-url', JSON.stringify(ev.data)),
+)
+
+// url import worker with alias path
+const wResolve = new Worker(
+  new URL('@/url-worker.js', import.meta.url),
+  /* @vite-ignore */ workerOptions,
+)
+wResolve.addEventListener('message', (ev) =>
+  text('.worker-import-meta-url-resolve', JSON.stringify(ev.data)),
 )
 
 const genWorkerName = () => 'module'
@@ -71,10 +80,22 @@ const w2 = new SharedWorker(
   {
     /* @vite-ignore */
     name: genWorkerName(),
-    type: 'module'
-  }
+    type: 'module',
+  },
 )
 w2.port.addEventListener('message', (ev) => {
   text('.shared-worker-import-meta-url', JSON.stringify(ev.data))
 })
 w2.port.start()
+
+const workers = import.meta.glob('../importMetaGlobEager.*.js', {
+  as: 'worker',
+  eager: true,
+})
+const importMetaGlobEagerWorker = new workers[
+  '../importMetaGlobEager.worker.js'
+].default()
+importMetaGlobEagerWorker.postMessage('1')
+importMetaGlobEagerWorker.addEventListener('message', (e) => {
+  text('.importMetaGlobEager-worker', JSON.stringify(e.data))
+})

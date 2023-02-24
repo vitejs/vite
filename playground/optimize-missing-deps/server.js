@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const express = require('express')
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITEST
 
 async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
@@ -19,10 +19,10 @@ async function createServer(root = process.cwd(), hmrPort) {
     server: {
       middlewareMode: true,
       hmr: {
-        port: hmrPort
-      }
+        port: hmrPort,
+      },
     },
-    appType: 'custom'
+    appType: 'custom',
   })
   app.use(vite.middlewares)
 
@@ -59,7 +59,7 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }
 

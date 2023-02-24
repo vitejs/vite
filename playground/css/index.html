@@ -32,6 +32,7 @@
     contains alias
   </p>
   <p class="sass-partial">@import from SASS _partial: This should be orchid</p>
+  <p class="sass-url-starts-with-variable">url starts with variable</p>
   <p>Imported SASS string:</p>
   <pre class="imported-sass"></pre>
   <p class="sass-dep">
@@ -46,6 +47,7 @@
     @import from Less: This should be darkslateblue and have bg image which url
     contains alias
   </p>
+  <p class="less-url-starts-with-variable">url starts with variable</p>
   <p>Imported Less string:</p>
   <pre class="imported-less"></pre>
 
@@ -72,6 +74,17 @@
   </p>
   <p>Imported Stylus string:</p>
   <pre class="imported-stylus"></pre>
+
+  <p class="sugarss">SugarSS: This should be blue</p>
+  <p class="sugarss-at-import">
+    @import from SugarSS: This should be darkslateblue and have bg image
+  </p>
+  <p class="sugarss-at-import-alias">
+    @import from SugarSS: This should be darkslateblue and have bg image which
+    url contains alias
+  </p>
+  <p>Imported SugarSS string:</p>
+  <pre class="imported-sugarss"></pre>
 
   <p class="modules">CSS modules: this should be turquoise</p>
   <p>Imported CSS module:</p>
@@ -110,9 +123,6 @@
   </p>
   <p class="css-dep-sass">
     @import dependency w/ sass entrypoints: this should be orange
-  </p>
-  <p class="css-dep-stylus">
-    @import dependency w/ styl entrypoints: this should be red
   </p>
 
   <p class="dir-dep">PostCSS dir-dependency: this should be grey</p>
@@ -154,6 +164,9 @@
 
   <p>PostCSS source.input.from. Should include query</p>
   <pre class="postcss-source-input"></pre>
+
+  <p>Import from jsfile.css.js without the extension</p>
+  <pre class="jsfile-css-js"></pre>
 
   <p>Aliased</p>
   <p class="aliased">import '#alias': this should be blue</p>

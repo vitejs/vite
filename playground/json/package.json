@@ -1,5 +1,5 @@
 {
-  "name": "test-json",
+  "name": "@vitejs/test-json",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -12,8 +12,8 @@
     "debug:ssr": "node --inspect-brk server"
   },
   "devDependencies": {
-    "express": "^4.18.1",
-    "json-module": "file:./json-module",
-    "vue": "^3.2.39"
+    "express": "^4.18.2",
+    "@vitejs/test-json-module": "file:./json-module",
+    "vue": "^3.2.47"
   }
 }

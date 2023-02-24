@@ -1,21 +1,24 @@
 {
-  "name": "test-preload",
+  "name": "@vitejs/test-preload",
   "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "vue": "^3.2.39",
-    "vue-router": "^4.1.5"
+    "preview": "vite preview",
+    "dev:resolve-deps": "vite --config vite.config-resolve-deps.ts",
+    "build:resolve-deps": "vite build --config vite.config-resolve-deps.ts",
+    "debug:resolve-deps": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-resolve-deps.ts",
+    "preview:resolve-deps": "vite preview --config vite.config-resolve-deps.ts",
+    "dev:preload-disabled": "vite --config vite.config-preload-disabled.ts",
+    "build:preload-disabled": "vite build --config vite.config-preload-disabled.ts",
+    "debug:preload-disabled": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-disabled.ts",
+    "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
-    "terser": "^5.15.0",
-    "dep-a": "file:./dep-a",
-    "dep-including-a": "file:./dep-including-a"
+    "terser": "^5.16.4",
+    "@vitejs/test-dep-a": "file:./dep-a",
+    "@vitejs/test-dep-including-a": "file:./dep-including-a"
   }
 }

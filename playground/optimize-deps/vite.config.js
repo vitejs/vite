@@ -1,5 +1,4 @@
 const fs = require('node:fs')
-const vue = require('@vitejs/plugin-vue')
 
 // Overriding the NODE_ENV set by vitest
 process.env.NODE_ENV = ''
@@ -11,18 +10,21 @@ module.exports = {
   resolve: {
     dedupe: ['react'],
     alias: {
-      'node:url': 'url'
-    }
+      'node:url': 'url',
+      '@vitejs/test-dep-alias-using-absolute-path': require.resolve(
+        '@vitejs/test-dep-alias-using-absolute-path',
+      ),
+    },
   },
   optimizeDeps: {
     disabled: false,
     include: [
-      'dep-linked-include',
-      'nested-exclude > nested-include',
+      '@vitejs/test-dep-linked-include',
+      '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
       // will throw if optimized (should log warning instead)
-      'non-optimizable-include'
+      '@vitejs/test-non-optimizable-include',
     ],
-    exclude: ['nested-exclude', 'dep-non-optimized'],
+    exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],
     esbuildOptions: {
       plugins: [
         {
@@ -32,14 +34,14 @@ module.exports = {
               { filter: /dep-esbuild-plugin-transform(\\|\/)index\.js$/ },
               () => ({
                 contents: `export const hello = () => 'Hello from an esbuild plugin'`,
-                loader: 'js'
-              })
+                loader: 'js',
+              }),
             )
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
-    entries: ['entry.js']
+    entries: ['index.html', 'unused-split-entry.js'],
   },
 
   build: {
@@ -47,12 +49,12 @@ module.exports = {
     minify: false,
     // Avoid @rollup/plugin-commonjs
     commonjsOptions: {
-      include: []
-    }
+      include: [],
+    },
   },
 
   plugins: [
-    vue(),
+    testVue(),
     notjs(),
     // for axios request test
     {
@@ -62,7 +64,13 @@ module.exports = {
           res.statusCode = 200
           res.end('pong')
         })
-      }
+      },
+      configurePreviewServer({ middlewares }) {
+        middlewares.use('/ping', (_, res) => {
+          res.statusCode = 200
+          res.end('pong')
+        })
+      },
     },
     {
       name: 'test-astro',
@@ -71,7 +79,7 @@ module.exports = {
           code = `export default {}`
           return { code }
         }
-      }
+      },
     },
     // TODO: Remove this one support for prebundling in build lands.
     // It is expected that named importing in build doesn't work
@@ -84,9 +92,32 @@ module.exports = {
         if (id === '__vite-browser-external') {
           return `export default {}; export function readFileSync() {}`
         }
+      },
+    },
+  ],
+}
+
+// Handles Test.vue in dep-linked-include package
+function testVue() {
+  return {
+    name: 'testvue',
+    transform(code, id) {
+      if (id.includes('dep-linked-include/Test.vue')) {
+        return {
+          code: `
+import { defineComponent } from 'vue'
+
+export default defineComponent({
+  name: 'Test',
+  render() {
+    return '[success] rendered from Vue'
+  }
+})
+`.trim(),
+        }
       }
-    }
-  ]
+    },
+  }
 }
 
 // Handles .notjs file, basically remove wrapping <notjs> and </notjs> tags
@@ -109,11 +140,11 @@ function notjs() {
                       .replace('</notjs>', '')
                     return { contents, loader: 'js' }
                   })
-                }
-              }
-            ]
-          }
-        }
+                },
+              },
+            ],
+          },
+        },
       }
     },
     transform(code, id) {
@@ -121,6 +152,6 @@ function notjs() {
         code = code.replace('<notjs>', '').replace('</notjs>', '')
         return { code }
       }
-    }
+    },
   }
 }

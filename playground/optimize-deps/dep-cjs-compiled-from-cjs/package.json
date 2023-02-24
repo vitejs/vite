@@ -1,5 +1,5 @@
 {
-  "name": "dep-cjs-compiled-from-cjs",
+  "name": "@vitejs/test-dep-cjs-compiled-from-cjs",
   "private": true,
   "version": "0.0.0",
   "main": "index.js"

@@ -62,40 +62,61 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
    If you are deploying to `https://<USERNAME>.github.io/<REPO>/`, for example your repository is at `https://github.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
 
-2. Inside your project, create `deploy.sh` with the following content (with highlighted lines uncommented appropriately), and run it to deploy:
+2. Go to your GitHub Pages configuration in the repository settings page and choose the source of deployment as "GitHub Actions", this will lead you to create a workflow that builds and deploys your project, a sample workflow that installs dependencies and builds using npm is provided:
 
-   ```bash{13,21,24}
-   #!/usr/bin/env sh
+   ```yml
+   # Simple workflow for deploying static content to GitHub Pages
+   name: Deploy static content to Pages
 
-   # abort on errors
-   set -e
+   on:
+     # Runs on pushes targeting the default branch
+     push:
+       branches: ['main']
 
-   # build
-   npm run build
+     # Allows you to run this workflow manually from the Actions tab
+     workflow_dispatch:
 
-   # navigate into the build output directory
-   cd dist
+   # Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
+   permissions:
+     contents: read
+     pages: write
+     id-token: write
 
-   # if you are deploying to a custom domain
-   # echo 'www.example.com' > CNAME
+   # Allow one concurrent deployment
+   concurrency:
+     group: 'pages'
+     cancel-in-progress: true
 
-   git init
-   git checkout -b main
-   git add -A
-   git commit -m 'deploy'
-
-   # if you are deploying to https://<USERNAME>.github.io
-   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
-
-   # if you are deploying to https://<USERNAME>.github.io/<REPO>
-   # git push -f git@github.com:<USERNAME>/<REPO>.git main:gh-pages
-
-   cd -
+   jobs:
+     # Single deploy job since we're just deploying
+     deploy:
+       environment:
+         name: github-pages
+         url: ${{ steps.deployment.outputs.page_url }}
+       runs-on: ubuntu-latest
+       steps:
+         - name: Checkout
+           uses: actions/checkout@v3
+         - name: Set up Node
+           uses: actions/setup-node@v3
+           with:
+             node-version: 18
+             cache: 'npm'
+         - name: Install dependencies
+           run: npm install
+         - name: Build
+           run: npm run build
+         - name: Setup Pages
+           uses: actions/configure-pages@v3
+         - name: Upload artifact
+           uses: actions/upload-pages-artifact@v1
+           with:
+             # Upload dist repository
+             path: './dist'
+         - name: Deploy to GitHub Pages
+           id: deployment
+           uses: actions/deploy-pages@v1
    ```
-
-::: tip
-You can also run the above script in your CI setup to enable automatic deployment on each push.
-:::
 
 ## GitLab Pages and GitLab CI
 
@@ -275,60 +296,6 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 3. Deploy to surge by typing `surge dist`.
 
 You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
-
-## Heroku
-
-1. Install [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
-
-2. Create a Heroku account by [signing up](https://signup.heroku.com).
-
-3. Run `heroku login` and fill in your Heroku credentials:
-
-   ```bash
-   $ heroku login
-   ```
-
-4. Create a file called `static.json` in the root of your project with the below content:
-
-   `static.json`:
-
-   ```json
-   {
-     "root": "./dist"
-   }
-   ```
-
-   This is the configuration of your site; read more at [heroku-buildpack-static](https://github.com/heroku/heroku-buildpack-static).
-
-5. Set up your Heroku git remote:
-
-   ```bash
-   # version change
-   $ git init
-   $ git add .
-   $ git commit -m "My site ready for deployment."
-
-   # creates a new app with a specified name
-   $ heroku apps:create example
-   ```
-
-6. Set buildpacks. We use `heroku/nodejs` to build the project and `heroku-buildpack-static` to serve it.
-
-   ```bash
-   # set buildpacks
-   $ heroku buildpacks:set heroku/nodejs
-   $ heroku buildpacks:add https://github.com/heroku/heroku-buildpack-static.git
-   ```
-
-7. Deploy your site:
-
-   ```bash
-   # publish site
-   $ git push heroku main
-
-   # opens a browser to view the Dashboard version of Heroku CI
-   $ heroku open
-   ```
 
 ## Azure Static Web Apps
 

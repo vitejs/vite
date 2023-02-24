@@ -45,6 +45,12 @@
 <code class="worker-import-meta-url"></code>
 
 <p>
+  new Worker(new URL('@/url-worker', import.meta.url), { type: 'module' })
+  <span class="classname">.worker-import-meta-url-resolve</span>
+</p>
+<code class="worker-import-meta-url-resolve"></code>
+
+<p>
   new SharedWorker(new URL('./url-shared-worker.js', import.meta.url), { type:
   'module' })
   <span class="classname">.shared-worker-import-meta-url</span>
