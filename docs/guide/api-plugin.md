@@ -536,7 +536,10 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.ws.send('my:greetings', { msg: 'hello' })
+        // Example: wait for a client to connect before sending a message
+        server.ws.on('connection', () => {
+          server.ws.send('my:greetings', { msg: 'hello' })
+        })
       },
     },
   ],
