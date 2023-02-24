@@ -355,7 +355,7 @@ logger.warn = (msg, options) => {
 }
 
 export default defineConfig({
-  customLogger: logger
+  customLogger: logger,
 })
 ```
 
