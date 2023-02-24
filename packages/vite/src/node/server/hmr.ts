@@ -10,6 +10,7 @@ import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
+import { getModuleNodeHash, isModuleNodeEqual } from './moduleGraph'
 import type { ModuleNode } from './moduleGraph'
 import { HashSet } from './hashset'
 
@@ -133,7 +134,9 @@ export function updateModules(
   afterInvalidation?: boolean,
 ): void {
   const updates: Update[] = []
-  const invalidatedModules = new Set<ModuleNode>()
+  const invalidatedModules = new HashSet<ModuleNode>({
+    getHash: getModuleNodeHash,
+  })
   let needFullReload = false
 
   for (const mod of modules) {
@@ -147,7 +150,7 @@ export function updateModules(
       acceptedVia: ModuleNode
     }>({
       getHash: ({ boundary, acceptedVia }) =>
-        `${boundary.id}:${acceptedVia.id}`,
+        `${getModuleNodeHash(boundary)}:${getModuleNodeHash(acceptedVia)}`,
     })
     const hasDeadEnd = propagateUpdate(mod, boundaries)
     if (hasDeadEnd) {
@@ -255,7 +258,10 @@ function propagateUpdate(
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
-      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
+      if (
+        isCSSRequest(importer.url) &&
+        !currentChain.some(isModuleNodeEqual(importer))
+      ) {
         propagateUpdate(importer, boundaries, currentChain.concat(importer))
       }
     }
@@ -309,7 +315,7 @@ function propagateUpdate(
       }
     }
 
-    if (currentChain.includes(importer)) {
+    if (currentChain.some(isModuleNodeEqual(importer))) {
       // circular deps is considered dead end
       return true
     }

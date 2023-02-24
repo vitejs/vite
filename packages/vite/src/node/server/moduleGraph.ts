@@ -9,6 +9,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
+import { HashSet } from './hashset'
 
 export class ModuleNode {
   /**
@@ -47,6 +48,14 @@ export class ModuleNode {
     }
   }
 }
+
+export const getModuleNodeHash = (moduleNode: ModuleNode): string =>
+  moduleNode.id ?? moduleNode.url
+
+export const isModuleNodeEqual =
+  (a: ModuleNode) =>
+  (b: ModuleNode): boolean =>
+    getModuleNodeHash(a) === getModuleNodeHash(b)
 
 export type ResolvedUrl = [
   url: string,
@@ -87,7 +96,9 @@ export class ModuleGraph {
   onFileChange(file: string): void {
     const mods = this.getModulesByFile(file)
     if (mods) {
-      const seen = new Set<ModuleNode>()
+      const seen = new HashSet<ModuleNode>({
+        getHash: getModuleNodeHash,
+      })
       mods.forEach((mod) => {
         this.invalidateModule(mod, seen)
       })
@@ -96,7 +107,9 @@ export class ModuleGraph {
 
   invalidateModule(
     mod: ModuleNode,
-    seen: Set<ModuleNode> = new Set(),
+    seen: HashSet<ModuleNode> = new HashSet({
+      getHash: getModuleNodeHash,
+    }),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
   ): void {
@@ -126,7 +139,9 @@ export class ModuleGraph {
 
   invalidateAll(): void {
     const timestamp = Date.now()
-    const seen = new Set<ModuleNode>()
+    const seen = new HashSet<ModuleNode>({
+      getHash: getModuleNodeHash,
+    })
     this.idToModuleMap.forEach((mod) => {
       this.invalidateModule(mod, seen, timestamp)
     })

@@ -94,6 +94,7 @@ export type {
   TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+export type { HashSet } from './server/hashset'
 
 export type {
   HMRPayload,
