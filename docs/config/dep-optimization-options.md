@@ -57,11 +57,10 @@ Set to `true` to force dependency pre-bundling, ignoring previously cached optim
 - **Type:** `boolean | 'build' | 'dev'`
 - **Default:** `'build'`
 
-Disables dependencies optimizations, `true` disables the optimizer during build and dev. Pass `'build'` or `'dev'` to only disable the optimizer in one of the modes. Deps optimization is enabled by default in dev only.
+Disables dependencies optimizations, `true` disables the optimizer during build and dev. Pass `'build'` or `'dev'` to only disable the optimizer in one of the modes. Dependency optimization is enabled by default in dev only.
 
-::: tip Note
-Vite allows the use of esbuild to optimize dependencies during build time. If enabled, it removes one of the most significant differences between dev and prod. [`@rollup/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer needed in this case since esbuild converts CJS-only dependencies to ESM.
+::: warning
+Optimizing dependencies in build mode is **experimental**. If enabled, it removes one of the most significant differences between dev and prod. [`@rollup/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer needed in this case since esbuild converts CJS-only dependencies to ESM.
 
-If you want to try this build strategy, you can use `optimizeDeps.disabled: false` (the default is `disabled: 'build'`). `@rollup/plugin-commonjs`
-can be removed by passing `build.commonjsOptions: { include: [] }`
+If you want to try this build strategy, you can use `optimizeDeps.disabled: false`. `@rollup/plugin-commonjs` can be removed by passing `build.commonjsOptions: { include: [] }`.
 :::
