@@ -172,6 +172,8 @@ Note that the [`moduleParsed`](https://rollupjs.org/plugin-development/#modulepa
 
 Vite plugins can also provide hooks that serve Vite-specific purposes. These hooks are ignored by Rollup.
 
+Some Rollup hooks have the `options` parameter that are also extended with additional properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
+
 ### `config`
 
 - **Type:** `(config: UserConfig, env: { mode: string, command: string }) => UserConfig | null | void`
