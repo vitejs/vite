@@ -254,7 +254,7 @@ export interface UserConfig {
      * URL type for inline worker
      * @default 'blob'
      */
-    inlineUrl?: 'blob' | 'data'
+    inlineUrl?: 'blob' | 'base64'
     /**
      * Vite plugins that apply to worker bundle
      */
@@ -320,7 +320,7 @@ export interface LegacyOptions {
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
-  inlineUrl: 'blob' | 'data'
+  inlineUrl: 'blob' | 'base64'
   plugins: Plugin[]
   rollupOptions: RollupOptions
 }
