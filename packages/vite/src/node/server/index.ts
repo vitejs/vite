@@ -120,7 +120,7 @@ export interface ServerOptions extends CommonServerOptions {
    * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
    * By default, it excludes all paths containing `/node_modules/`.
    */
-  sourcemapIgnoreList?: (sourcePath: string) => boolean
+  sourcemapIgnoreList?: (sourcePath: string, sourcemapPath: string) => boolean
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    *

@@ -275,7 +275,11 @@ async function loadAndTransform(
     ) {
       const sourcePath = map.sources[sourcesIndex]
 
-      const ignoreList = config.server.sourcemapIgnoreList(sourcePath)
+      const sourcemapPath = `${mod.file}.map`
+      const ignoreList = config.server.sourcemapIgnoreList(
+        sourcePath,
+        sourcemapPath,
+      )
       if (typeof ignoreList !== 'boolean') {
         logger.warn('sourcemapIgnoreList function must return a boolean.')
       }
