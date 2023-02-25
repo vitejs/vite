@@ -406,30 +406,43 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // check import.meta usage
         if (rawUrl === 'import.meta') {
-          const prop = source.slice(end, end + 4)
-          if (prop === '.hot') {
+          const hotSuffix = '.hot'
+          const envSuffix = '.env'
+          const acceptSuffix = '.accept'
+          const exportsSuffix = '.acceptExports'
+          const prop = source.slice(end, end + hotSuffix.length)
+          if (prop === hotSuffix) {
             hasHMR = true
-            const endHot = end + 4 + (source[end + 4] === '?' ? 1 : 0)
-            if (source.slice(endHot, endHot + 7) === '.accept') {
+            const endHot =
+              end +
+              hotSuffix.length +
+              (source[end + hotSuffix.length] === '?' ? 1 : 0)
+            if (
+              source.slice(endHot, endHot + acceptSuffix.length) ===
+              acceptSuffix
+            ) {
               // further analyze accepted modules
-              if (source.slice(endHot, endHot + 14) === '.acceptExports') {
+              if (
+                source.slice(endHot, endHot + exportsSuffix.length) ===
+                exportsSuffix
+              ) {
                 lexAcceptedHmrExports(
                   source,
-                  source.indexOf('(', endHot + 14) + 1,
+                  source.indexOf('(', endHot + exportsSuffix.length) + 1,
                   acceptedExports,
                 )
                 isPartiallySelfAccepting = true
               } else if (
                 lexAcceptedHmrDeps(
                   source,
-                  source.indexOf('(', endHot + 7) + 1,
+                  source.indexOf('(', endHot + acceptSuffix.length) + 1,
                   acceptedUrls,
                 )
               ) {
                 isSelfAccepting = true
               }
             }
-          } else if (prop === '.env') {
+          } else if (prop === envSuffix) {
             hasEnv = true
           }
           continue
