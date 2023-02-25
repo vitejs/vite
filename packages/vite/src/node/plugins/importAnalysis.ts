@@ -165,16 +165,25 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
-  let env = `import.meta.env = ${JSON.stringify({
-    ...config.env,
-    SSR: '__vite__ssr__vite__',
-  })};`
-  // account for user env defines
-  for (const key in config.define) {
-    if (key.startsWith(`import.meta.env.`)) {
-      const val = config.define[key]
-      env += `${key} = ${typeof val === 'string' ? val : JSON.stringify(val)};`
+
+  let _env: string | undefined
+  function getEnv(ssr: boolean) {
+    if (!_env) {
+      _env = `import.meta.env = ${JSON.stringify({
+        ...config.env,
+        SSR: '__vite__ssr__vite__',
+      })};`
+      // account for user env defines
+      for (const key in config.define) {
+        if (key.startsWith(`import.meta.env.`)) {
+          const val = config.define[key]
+          _env += `${key} = ${
+            typeof val === 'string' ? val : JSON.stringify(val)
+          };`
+        }
+      }
     }
+    return _env.replace('"__vite__ssr__vite__"', ssr + '')
   }
 
   return {
@@ -646,7 +655,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (hasEnv) {
         // inject import.meta.env
-        str().prepend(env.replace(`"__vite__ssr__vite__"`, `${!!ssr}`))
+        str().prepend(getEnv(ssr))
       }
 
       if (hasHMR && !ssr) {
