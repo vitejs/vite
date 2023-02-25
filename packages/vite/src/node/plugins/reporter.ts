@@ -7,14 +7,20 @@ import type { ResolvedConfig } from '../config'
 import { isDefined, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
+enum ChunkGroup {
+  ASSETS = 'Assets',
+  CSS = 'CSS',
+  JS = 'JS',
+}
+
 const groups = [
-  { name: 'Assets', color: colors.green },
-  { name: 'CSS', color: colors.magenta },
-  { name: 'JS', color: colors.cyan },
+  { name: ChunkGroup.ASSETS, color: colors.green },
+  { name: ChunkGroup.CSS, color: colors.magenta },
+  { name: ChunkGroup.JS, color: colors.cyan },
 ]
 type LogEntry = {
   name: string
-  group: (typeof groups)[number]['name']
+  group: ChunkGroup
   size: number
   compressedSize: number | null
   mapSize: number | null
@@ -136,7 +142,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                 if (chunk.type === 'chunk') {
                   return {
                     name: chunk.fileName,
-                    group: 'JS',
+                    group: ChunkGroup.JS,
                     size: chunk.code.length,
                     compressedSize: await getCompressedSize(chunk.code),
                     mapSize: chunk.map ? chunk.map.toString().length : null,
@@ -146,7 +152,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                   const isCSS = chunk.fileName.endsWith('.css')
                   return {
                     name: chunk.fileName,
-                    group: isCSS ? 'CSS' : 'Assets',
+                    group: isCSS ? ChunkGroup.CSS : ChunkGroup.ASSETS,
                     size: chunk.source.length,
                     mapSize: null, // Rollup doesn't support CSS maps?
                     compressedSize: isCSS
@@ -195,7 +201,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           if (!filtered.length) continue
           for (const entry of filtered.sort((a, z) => a.size - z.size)) {
             const isLarge =
-              group.name === 'JS' && entry.size / 1000 > chunkLimit
+              group.name === ChunkGroup.JS && entry.size / 1000 > chunkLimit
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
             let log = colors.dim(relativeOutDir + '/')
