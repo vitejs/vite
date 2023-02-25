@@ -4,10 +4,9 @@
   "version": "1.0.0",
   "exports": {
     ".": {
-      "import": "./index.js",
       "sass": "./style.scss",
-      "style": "./style.css"
-    },
-    "./package.json": "./package.json"
+      "style": "./style.css",
+      "import": "./index.js"
+    }
   }
 }

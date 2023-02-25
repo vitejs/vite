@@ -734,7 +734,6 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           conditions: ['style'],
           tryIndex: false,
           preferRelative: true,
-          isUnsafeExport: true,
         }))
       )
     },
@@ -749,7 +748,6 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
-          isUnsafeExport: true,
         }))
       )
     },
@@ -763,7 +761,6 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           conditions: ['less', 'style'],
           tryIndex: false,
           preferRelative: true,
-          isUnsafeExport: true,
         }))
       )
     },
