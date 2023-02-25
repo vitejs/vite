@@ -25,9 +25,7 @@ const count = ref(0)
   </p>
   <p>
     Install
-    <a href="https://github.com/vuejs/language-tools" target="_blank"
-      >Vue Language Tools</a
-    >
+    <a href="https://github.com/vuejs/language-tools" target="_blank">Volar</a>
     in your IDE for a better DX
   </p>
   <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
