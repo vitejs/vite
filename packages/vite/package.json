@@ -138,7 +138,7 @@
     "sass": "*",
     "stylus": "*",
     "sugarss": "*",
-    "terser": "^5.4.0"
+    "terser": "^5.16.1"
   },
   "peerDependenciesMeta": {
     "@types/node": {
