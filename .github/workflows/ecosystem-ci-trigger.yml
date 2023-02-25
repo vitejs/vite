@@ -80,7 +80,7 @@ jobs:
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
 
-            const suite = comment.replace(/^\/ecosystem-ci run/, '').trim()
+            const suite = comment.split('\n')[0].replace(/^\/ecosystem-ci run/, '').trim()
 
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
