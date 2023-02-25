@@ -26,6 +26,8 @@ type LogEntry = {
   mapSize: number | null
 }
 
+const kBUnit = 1000
+
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
@@ -201,7 +203,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           if (!filtered.length) continue
           for (const entry of filtered.sort((a, z) => a.size - z.size)) {
             const isLarge =
-              group.name === ChunkGroup.JS && entry.size / 1000 > chunkLimit
+              group.name === ChunkGroup.JS && entry.size / kBUnit > chunkLimit
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
             let log = colors.dim(relativeOutDir + '/')
@@ -233,7 +235,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         hasLargeChunks = Object.values(output).some((chunk) => {
-          return chunk.type === 'chunk' && chunk.code.length / 1000 > chunkLimit
+          return (
+            chunk.type === 'chunk' && chunk.code.length / kBUnit > chunkLimit
+          )
         })
       }
 
@@ -292,7 +296,7 @@ function throttle(fn: Function) {
 }
 
 function displaySize(bytes: number) {
-  return `${(bytes / 1000).toLocaleString('en', {
+  return `${(bytes / kBUnit).toLocaleString('en', {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
   })} kB`
