@@ -31,11 +31,12 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const protocol = hmrConfig?.protocol || null
         const timeout = hmrConfig?.timeout || 30000
         const overlay = hmrConfig?.overlay !== false
+        const isHmrServerSpecified = !!hmrConfig?.server
 
         // hmr.clientPort -> hmr.port
-        // -> (24678 if middleware mode) -> new URL(import.meta.url).port
+        // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
         let port = hmrConfig?.clientPort || hmrConfig?.port || null
-        if (config.server.middlewareMode) {
+        if (config.server.middlewareMode && !isHmrServerSpecified) {
           port ||= 24678
         }
 
@@ -65,7 +66,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
         return code.replace(
-          /\bprocess\.env\.NODE_ENV\b/g,
+          /(\bglobal(This)?\.)?\bprocess\.env\.NODE_ENV\b/g,
           config.define?.['process.env.NODE_ENV'] ||
             JSON.stringify(process.env.NODE_ENV || config.mode),
         )

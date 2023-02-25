@@ -197,12 +197,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         ;[imports, exports] = parseImports(source)
       } catch (e: any) {
         const isVue = importer.endsWith('.vue')
+        const isJsx = importer.endsWith('.jsx') || importer.endsWith('.tsx')
         const maybeJSX = !isVue && isJSRequest(importer)
 
         const msg = isVue
           ? `Install @vitejs/plugin-vue to handle .vue files.`
           : maybeJSX
-          ? `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
+          ? isJsx
+            ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
+            : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
           : `You may need to install appropriate plugins to handle the ${path.extname(
               importer,
             )} file format, or if it's an asset, add "**/*${path.extname(
@@ -406,19 +409,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const prop = source.slice(end, end + 4)
           if (prop === '.hot') {
             hasHMR = true
-            if (source.slice(end + 4, end + 11) === '.accept') {
+            const endHot = end + 4 + (source[end + 4] === '?' ? 1 : 0)
+            if (source.slice(endHot, endHot + 7) === '.accept') {
               // further analyze accepted modules
-              if (source.slice(end + 4, end + 18) === '.acceptExports') {
+              if (source.slice(endHot, endHot + 14) === '.acceptExports') {
                 lexAcceptedHmrExports(
                   source,
-                  source.indexOf('(', end + 18) + 1,
+                  source.indexOf('(', endHot + 14) + 1,
                   acceptedExports,
                 )
                 isPartiallySelfAccepting = true
               } else if (
                 lexAcceptedHmrDeps(
                   source,
-                  source.indexOf('(', end + 11) + 1,
+                  source.indexOf('(', endHot + 7) + 1,
                   acceptedUrls,
                 )
               ) {

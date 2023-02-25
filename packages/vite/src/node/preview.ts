@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import type * as http from 'node:http'
 import sirv from 'sirv'
@@ -17,6 +18,7 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
+import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
 
@@ -83,6 +85,21 @@ export async function preview(
     'production',
   )
 
+  const distDir = path.resolve(config.root, config.build.outDir)
+  if (
+    !fs.existsSync(distDir) &&
+    // error if no plugins implement `configurePreviewServer`
+    config.plugins.every((plugin) => !plugin.configurePreviewServer) &&
+    // error if called in CLI only. programmatic usage could access `httpServer`
+    // and affect file serving
+    process.argv[1]?.endsWith(path.normalize('bin/vite.js')) &&
+    process.argv[2] === 'preview'
+  ) {
+    throw new Error(
+      `The directory "${config.build.outDir}" does not exist. Did you build your project?`,
+    )
+  }
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
@@ -115,7 +132,6 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
   const assetServer = sirv(distDir, {
     etag: true,
@@ -139,7 +155,7 @@ export async function preview(
 
   const options = config.preview
   const hostname = await resolveHostname(options.host)
-  const port = options.port ?? 4173
+  const port = options.port ?? DEFAULT_PREVIEW_PORT
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
 

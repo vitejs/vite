@@ -119,14 +119,14 @@ code {
 </style>
 <div class="backdrop" part="backdrop">
   <div class="window" part="window">
-    <pre class="message" part="message"><span class="plugin"></span><span class="message-body"></span></pre>
+    <pre class="message" part="message"><span class="plugin" part="plugin"></span><span class="message-body" part="message-body"></span></pre>
     <pre class="file" part="file"></pre>
     <pre class="frame" part="frame"></pre>
     <pre class="stack" part="stack"></pre>
     <div class="tip" part="tip">
       Click outside or fix the code to dismiss.<br>
       You can also disable this overlay by setting
-      <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.js.</code>
     </div>
   </div>
 </div>

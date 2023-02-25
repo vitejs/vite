@@ -78,7 +78,7 @@ export function renderAssetUrlInJS(
     s ||= new MagicString(code)
     const [full, referenceId, postfix = ''] = match
     const file = ctx.getFileName(referenceId)
-    chunk.viteMetadata.importedAssets.add(cleanUrl(file))
+    chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
       filename,
@@ -187,7 +187,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
-      if (config.command === 'build' && config.build.ssr) {
+      if (
+        config.command === 'build' &&
+        config.build.ssr &&
+        !config.build.ssrEmitAssets
+      ) {
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&

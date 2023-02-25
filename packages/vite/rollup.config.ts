@@ -26,6 +26,12 @@ const envConfig = defineConfig({
   output: {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
     sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 
@@ -40,6 +46,12 @@ const clientConfig = defineConfig({
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
     sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 

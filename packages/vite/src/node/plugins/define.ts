@@ -6,6 +6,7 @@ import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
+const metaEnvRe = /import\.meta\.env\.(.+)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -31,13 +32,27 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const userDefine: Record<string, string> = {}
+  const userDefineEnv: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
     userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
+
+    // make sure `import.meta.env` object has user define properties
+    if (isBuild) {
+      const match = key.match(metaEnvRe)
+      if (match) {
+        userDefineEnv[match[1]] =
+          // test if value is raw identifier to wrap with __vite__ so when
+          // stringified for `import.meta.env`, we can remove the quotes and
+          // retain being an identifier
+          typeof val === 'string' && /^[\p{L}_$]/u.test(val.trim())
+            ? `__vite__${val}__vite__`
+            : val
+      }
+    }
   }
 
   // during dev, import.meta properties are handled by importAnalysis plugin.
-  // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
@@ -46,13 +61,16 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       SSR: !!config.build.ssr,
     }
     // set here to allow override with config.define
-    importMetaKeys['import.meta.hot'] = `false`
+    importMetaKeys['import.meta.hot'] = `undefined`
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(config.env),
+      'import.meta.env': JSON.stringify({ ...env, ...userDefineEnv }).replace(
+        /"__vite__(.+?)__vite__"/g,
+        (_, val) => val,
+      ),
     })
   }
 

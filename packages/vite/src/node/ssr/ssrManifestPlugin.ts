@@ -27,11 +27,11 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
               mappedChunks.push(joinUrlSegments(base, chunk.fileName))
               // <link> tags for entry chunks are already generated in static HTML,
               // so we only need to record info for non-entry chunks.
-              chunk.viteMetadata.importedCss.forEach((file) => {
+              chunk.viteMetadata!.importedCss.forEach((file) => {
                 mappedChunks.push(joinUrlSegments(base, file))
               })
             }
-            chunk.viteMetadata.importedAssets.forEach((file) => {
+            chunk.viteMetadata!.importedAssets.forEach((file) => {
               mappedChunks.push(joinUrlSegments(base, file))
             })
           }
@@ -59,7 +59,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    chunk.viteMetadata.importedCss.forEach((file) => {
+                    chunk.viteMetadata!.importedCss.forEach((file) => {
                       deps.push(joinUrlSegments(base, file)) // TODO:base
                     })
                     chunk.imports.forEach(addDeps)

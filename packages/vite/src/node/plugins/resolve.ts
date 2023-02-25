@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
-import { resolve as _resolveExports } from 'resolve.exports'
+import { exports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
@@ -62,6 +62,9 @@ const debug = createDebugger('vite:resolve-details', {
 })
 
 export interface ResolveOptions {
+  /**
+   * @default ['module', 'jsnext:main', 'jsnext']
+   */
   mainFields?: string[]
   /**
    * @deprecated In future, `mainFields` should be used instead.
@@ -69,8 +72,14 @@ export interface ResolveOptions {
    */
   browserField?: boolean
   conditions?: string[]
+  /**
+   * @default ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
+   */
   extensions?: string[]
   dedupe?: string[]
+  /**
+   * @default false
+   */
   preserveSymlinks?: boolean
 }
 
@@ -176,6 +185,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const ensureVersionQuery = (resolved: string): string => {
         if (
           !options.isBuild &&
+          !options.scan &&
           depsOptimizer &&
           !(
             resolved === normalizedClientEntry ||
@@ -391,7 +401,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return `\
 export default new Proxy({}, {
   get(_, key) {
-    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.\`)
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
   }
 })`
         }
@@ -539,7 +549,13 @@ function tryResolveFile(
   skipPackageJson?: boolean,
   skipTsExtension?: boolean,
 ): string | undefined {
-  const stat = fs.statSync(file, { throwIfNoEntry: false })
+  let stat: fs.Stats | undefined
+  try {
+    stat = fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    return
+  }
+
   if (stat) {
     if (!stat.isDirectory()) {
       return getRealPath(file, options.preserveSymlinks) + postfix
@@ -940,7 +956,7 @@ export function resolvePackageEntry(
     return cached
   }
   try {
-    let entryPoint: string | undefined | void
+    let entryPoint: string | undefined
 
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
@@ -1103,12 +1119,14 @@ function resolveExports(
     conditions.push(...options.conditions)
   }
 
-  return _resolveExports(pkg, key, {
+  const result = exports(pkg, key, {
     browser: targetWeb && !conditions.includes('node'),
     require: options.isRequire && !conditions.includes('import'),
     unsafe: options.isUnsafeExport,
     conditions,
   })
+
+  return result ? result[0] : undefined
 }
 
 function resolveDeepImport(
