@@ -44,6 +44,9 @@ test('bool', async () => {
 test('NODE_ENV', async () => {
   expect(await page.textContent('.node-env')).toBe(process.env.NODE_ENV)
   expect(await page.textContent('.global-node-env')).toBe(process.env.NODE_ENV)
+  expect(await page.textContent('.global-this-node-env')).toBe(
+    process.env.NODE_ENV,
+  )
 })
 
 test('expand', async () => {
