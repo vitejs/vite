@@ -123,6 +123,7 @@ const inlineRE = /(?:\?|&)inline\b/
 const inlineCSSRE = /(?:\?|&)inline-css\b/
 const usedRE = /(?:\?|&)used\b/
 const varRE = /^var\(/i
+const urlRE = /^(?:https?:)?\/\//i
 
 const cssBundleName = 'style.css'
 
@@ -1796,8 +1797,8 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      override supports() {
-        return true
+      override supports(filename: string) {
+        return !urlRE.test(filename)
       }
       override supportsSync() {
         return false
