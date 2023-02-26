@@ -29,6 +29,7 @@ module.exports = {
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
+        env: resolve(__dirname, 'env.html'),
       },
     },
   },
