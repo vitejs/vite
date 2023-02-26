@@ -5,6 +5,7 @@ import type {
   OutgoingHttpHeaders as HttpServerHeaders,
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
+import net from 'node:net'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import { isObject } from './utils'
@@ -157,30 +158,18 @@ export async function httpServerStart(
     logger: Logger
   },
 ): Promise<number> {
-  let { port, strictPort, host, logger } = serverOptions
+  const { port, strictPort, host, logger } = serverOptions
 
   return new Promise((resolve, reject) => {
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
-        } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
-        }
-      } else {
-        httpServer.removeListener('error', onError)
-        reject(e)
-      }
-    }
-
-    httpServer.on('error', onError)
-
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
-    })
+    findAvailablePort(port, logger, host, strictPort)
+      .then((_port) => {
+        httpServer.listen(_port, host, () => {
+          resolve(_port)
+        })
+      })
+      .catch((err) => {
+        reject(err)
+      })
   })
 }
 
@@ -203,5 +192,36 @@ export function setClientErrorHandler(
       return
     }
     socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
+  })
+}
+
+async function findAvailablePort(
+  port: number,
+  logger: Logger,
+  host = '0.0.0.0',
+  strictPort?: boolean,
+): Promise<number> {
+  return new Promise((resolve, reject) => {
+    if (port > 65535) {
+      reject(new Error('Port not found'))
+    }
+    const server = net.connect(port, host)
+    server.on('connect', async () => {
+      if (strictPort) {
+        reject(new Error(`Port ${port} is already in use`))
+      } else {
+        logger.info(`Port ${port} is in use, trying another one...`)
+        const _port = await findAvailablePort(++port, logger, host, strictPort)
+        resolve(_port)
+      }
+    })
+    server.on('error', async (err: NodeJS.ErrnoException) => {
+      resolve(port)
+      // if (err.code === 'ECONNREFUSED') {
+      //   resolve(port)
+      // } else {
+      //   resolve(port)
+      // }
+    })
   })
 }
