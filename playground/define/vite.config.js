@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig } from 'vite'
 
 export default /** @type {import('vite').UserConfig} */ (

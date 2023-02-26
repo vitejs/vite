@@ -1,4 +1,3 @@
-// @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
 import legacy from '@vitejs/plugin-legacy'

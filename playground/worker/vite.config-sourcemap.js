@@ -1,11 +1,16 @@
-// @ts-check
 import vite from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-/** @param {boolean | 'inline' | 'hidden'} sourcemap */
+/** @param {boolean | 'inline' | 'hidden' | 'sourcemap'} sourcemap */
 export default (sourcemap) => {
   sourcemap =
-    /** @type {'inline' | 'hidden'} */ (process.env.WORKER_MODE) || sourcemap
+    /** @type {'inline' | 'hidden' | 'sourcemap'} */ (
+      process.env.WORKER_MODE
+    ) || sourcemap
+
+  if (sourcemap === 'sourcemap') {
+    sourcemap = true
+  }
 
   return vite.defineConfig({
     base: `/iife-${

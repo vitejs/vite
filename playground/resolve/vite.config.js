@@ -1,4 +1,3 @@
-// @ts-check
 import path from 'node:path'
 import { defineConfig, normalizePath } from 'vite'
 import { a } from './config-dep'

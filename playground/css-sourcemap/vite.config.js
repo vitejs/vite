@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig } from 'vite'
 import MagicString from 'magic-string'
 

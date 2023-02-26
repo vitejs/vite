@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig } from 'vite'
 
 process.env.EXPAND = 'expand'

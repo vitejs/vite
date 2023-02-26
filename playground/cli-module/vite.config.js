@@ -1,4 +1,3 @@
-// @ts-check
 // eslint-disable-next-line import/no-nodejs-modules
 import { URL } from 'url'
 import { defineConfig } from 'vite'

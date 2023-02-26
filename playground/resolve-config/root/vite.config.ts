@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig } from 'vite'
 
 const __CONFIG_LOADED__: boolean = true

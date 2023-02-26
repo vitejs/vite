@@ -1,4 +1,3 @@
-// @ts-check
 import path from 'node:path'
 import glob from 'fast-glob'
 import { defineConfig, normalizePath } from 'vite'

@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 

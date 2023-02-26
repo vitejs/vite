@@ -1,4 +1,3 @@
-// @ts-check
 import fs from 'node:fs'
 import { defineConfig } from 'vite'
 

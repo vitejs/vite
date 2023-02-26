@@ -1,4 +1,3 @@
-// @ts-check
 import vite from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
