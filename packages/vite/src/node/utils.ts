@@ -839,11 +839,13 @@ export async function resolveHostname(
   // Set host name to localhost when possible
   let name = host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
-  if (host === 'localhost') {
+  if (host === 'localhost' || host === undefined) {
     // See #8647 for more details.
     const localhostAddr = await getLocalhostAddressIfDiffersFromDNS()
     if (localhostAddr) {
-      name = localhostAddr
+      name = host ? localhostAddr : name
+    } else {
+      name = host ? name : '127.0.0.1'
     }
   }
 
