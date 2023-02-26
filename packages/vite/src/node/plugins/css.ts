@@ -1875,10 +1875,10 @@ const styl: StylusStylePreprocessor = async (source, root, options) => {
     path.resolve(dep),
   )
   try {
-    let ref = nodeStylus(content, options)
+    const ref = nodeStylus(content, options)
     if (options.define) {
       for (const key in options.define) {
-        ref = ref.define(key, options.define[key])
+        ref.define(key, options.define[key])
       }
     }
     if (options.enableSourcemap) {
