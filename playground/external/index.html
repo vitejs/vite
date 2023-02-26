@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js",
+          "slash5": "https://unpkg.com/slash@5.0.0/index.js",
+          "slash3": "https://esm.sh/slash@3.0.0"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <p>Imported Vue version: <span id="imported-vue-version"></span></p>
+    <p>Required Vue version: <span id="required-vue-version"></span></p>
+    <p>Imported slash5 exists: <span id="imported-slash5-exists"></span></p>
+    <p>Imported slash3 exists: <span id="imported-slash3-exists"></span></p>
+    <p>Required slash3 exists: <span id="required-slash3-exists"></span></p>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

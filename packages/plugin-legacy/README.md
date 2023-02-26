@@ -1,8 +1,6 @@
 # @vitejs/plugin-legacy [![npm](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg)](https://npmjs.com/package/@vitejs/plugin-legacy)
 
-**Note: this plugin requires `vite@^2.0.0`**.
-
-Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM.
+Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta). This plugin provides support for legacy browsers that do not support those features when building for production.
 
 By default, this plugin will:
 
@@ -10,7 +8,7 @@ By default, this plugin will:
 
 - Generate a polyfill chunk including SystemJS runtime, and any necessary polyfills determined by specified browser targets and **actual usage** in the bundle.
 
-- Inject `<script nomodule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without native ESM support.
+- Inject `<script nomodule>` tags into generated HTML to conditionally load the polyfills and legacy bundle only in browsers without widely-available features support.
 
 - Inject the `import.meta.env.LEGACY` env variable, which will only be `true` in the legacy production build, and `false` in all other cases.
 
@@ -23,26 +21,16 @@ import legacy from '@vitejs/plugin-legacy'
 export default {
   plugins: [
     legacy({
-      targets: ['defaults', 'not IE 11']
-    })
-  ]
+      targets: ['defaults', 'not IE 11'],
+    }),
+  ],
 }
 ```
 
-When targeting IE11, you also need `regenerator-runtime`:
+Terser must be installed because plugin-legacy uses Terser for minification.
 
-```js
-// vite.config.js
-import legacy from '@vitejs/plugin-legacy'
-
-export default {
-  plugins: [
-    legacy({
-      targets: ['ie >= 11'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime']
-    })
-  ]
-}
+```sh
+npm add -D terser
 ```
 
 ## Options
@@ -50,11 +38,11 @@ export default {
 ### `targets`
 
 - **Type:** `string | string[] | { [key: string]: string }`
-- **Default:** `'defaults'`
+- **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
   If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets).
 
-  The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). The default value, `'defaults'`, is what is recommended by Browserslist. See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
+  The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
 ### `polyfills`
 
@@ -116,9 +104,9 @@ export default {
         modernPolyfills: [
           /* ... */
         ],
-        renderLegacyChunks: false
-      })
-    ]
+        renderLegacyChunks: false,
+      }),
+    ],
   }
   ```
 
@@ -129,20 +117,26 @@ export default {
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
 
-## Dynamic Import
+## Browsers that supports ESM but does not support widely-available features
 
-The legacy plugin offers a way to use native `import()` in the modern build while falling back to the legacy build in browsers with native ESM but without dynamic import support (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
+The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
 
 - Modern bundle is downloaded in all ESM browsers
-- Modern bundle throws `SyntaxError` in browsers without dynamic import
+- Modern bundle throws `SyntaxError` in browsers without those features support
+
+The following syntax are considered as widely-available:
+
+- dynamic import
+- `import.meta`
+- async generator
 
 ## Polyfill Specifiers
 
 Polyfill specifier strings for `polyfills` and `modernPolyfills` can be either of the following:
 
-- Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@3.8.2/) - e.g. `es/map` will import `core-js/es/map`
+- Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@latest/) - e.g. `es/map` will import `core-js/es/map`
 
-- Any [individual `core-js` 3 modules](https://unpkg.com/browse/core-js@3.8.2/modules/) - e.g. `es.array.iterator` will import `core-js/modules/es.array.iterator.js`
+- Any [individual `core-js` 3 modules](https://unpkg.com/browse/core-js@latest/modules/) - e.g. `es.array.iterator` will import `core-js/modules/es.array.iterator.js`
 
 **Example**
 
@@ -153,9 +147,9 @@ export default {
   plugins: [
     legacy({
       polyfills: ['es.promise.finally', 'es/map', 'es/set'],
-      modernPolyfills: ['es.promise.finally']
-    })
-  ]
+      modernPolyfills: ['es.promise.finally'],
+    }),
+  ],
 }
 ```
 
@@ -165,13 +159,20 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-T9h4ixy0FtNsCwAyTfBtIY6uV5ZhMeNQIlL42GAKEME=`
+- `sha256-p7PoC97FO+Lu90RNjGWxhbm13yALSR4xzV8vaDhaQBo=`
+- `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
+
+<!--
+Run `node --input-type=module -e "import {cspHashes} from '@vitejs/plugin-legacy'; console.log(cspHashes.map(h => 'sha256-'+h))"` to retrieve the value.
+-->
 
 These values (without the `sha256-` prefix) can also be retrieved via
 
 ```js
-const { cspHashes } = require('@vitejs/plugin-legacy')
+import { cspHashes } from '@vitejs/plugin-legacy'
 ```
+
+When using the `regenerator-runtime` polyfill, it will attempt to use the `globalThis` object to register itself. If `globalThis` is not available (it is [fairly new](https://caniuse.com/?search=globalThis) and not widely supported, including IE 11), it attempts to perform dynamic `Function(...)` call which violates the CSP. To avoid dynamic `eval` in the absence of `globalThis` consider adding `core-js/proposals/global-this` to `additionalLegacyPolyfills` to define it.
 
 ## References
 

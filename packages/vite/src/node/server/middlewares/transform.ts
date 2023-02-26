@@ -1,10 +1,13 @@
-import { promises as fs } from 'fs'
-import path from 'path'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import type { Connect } from 'dep-types/connect'
+import colors from 'picocolors'
 import type { ViteDevServer } from '..'
-import type { Connect } from 'types/connect'
 import {
   cleanUrl,
   createDebugger,
+  ensureVolumeInPath,
+  fsPathFromId,
   injectQuery,
   isImportRequest,
   isJSRequest,
@@ -13,28 +16,25 @@ import {
   removeImportQuery,
   removeTimestampQuery,
   unwrapId,
-  fsPathFromId,
-  ensureVolumeInPath
 } from '../../utils'
 import { send } from '../send'
-import { transformRequest } from '../transformRequest'
+import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
-import colors from 'picocolors'
 import {
   DEP_VERSION_RE,
+  FS_PREFIX,
   NULL_BYTE_PLACEHOLDER,
-  FS_PREFIX
 } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
-  isDirectRequest
+  isDirectRequest,
 } from '../../plugins/css'
 import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP
+  ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
-import { createIsOptimizedDepUrl } from '../../optimizer'
+import { getDepsOptimizer } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -42,14 +42,12 @@ const isDebug = !!process.env.DEBUG
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
 export function transformMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   const {
     config: { root, logger },
-    moduleGraph
+    moduleGraph,
   } = server
-
-  const isOptimizedDepUrl = createIsOptimizedDepUrl(server.config)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteTransformMiddleware(req, res, next) {
@@ -61,7 +59,7 @@ export function transformMiddleware(
     try {
       url = decodeURI(removeTimestampQuery(req.url!)).replace(
         NULL_BYTE_PLACEHOLDER,
-        '\0'
+        '\0',
       )
     } catch (e) {
       return next(e)
@@ -73,18 +71,19 @@ export function transformMiddleware(
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        if (isOptimizedDepUrl(url)) {
+        const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
+        if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
           const mapFile = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(
-                ensureVolumeInPath(path.resolve(root, url.slice(1)))
+                ensureVolumeInPath(path.resolve(root, url.slice(1))),
               )
           try {
             const map = await fs.readFile(mapFile, 'utf-8')
             return send(req, res, map, 'json', {
-              headers: server.config.server.headers
+              headers: server.config.server.headers,
             })
           } catch (e) {
             // Outdated source map request for optimized deps, this isn't an error
@@ -96,11 +95,11 @@ export function transformMiddleware(
               sources: [],
               sourcesContent: [],
               names: [],
-              mappings: ';;;;;;;;;'
+              mappings: ';;;;;;;;;',
             }
             return send(req, res, JSON.stringify(dummySourceMap), 'json', {
               cacheControl: 'no-cache',
-              headers: server.config.server.headers
+              headers: server.config.server.headers,
             })
           }
         } else {
@@ -109,7 +108,7 @@ export function transformMiddleware(
             ?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
-              headers: server.config.server.headers
+              headers: server.config.server.headers,
             })
           } else {
             return next()
@@ -124,14 +123,27 @@ export function transformMiddleware(
         const publicPath = `${publicDir.slice(rootDir.length)}/`
         // warn explicit public paths
         if (url.startsWith(publicPath)) {
-          logger.warn(
-            colors.yellow(
+          let warning: string
+
+          if (isImportRequest(url)) {
+            const rawUrl = removeImportQuery(url)
+
+            warning =
+              'Assets in public cannot be imported from JavaScript.\n' +
+              `Instead of ${colors.cyan(
+                rawUrl,
+              )}, put the file in the src directory, and use ${colors.cyan(
+                rawUrl.replace(publicPath, '/src/'),
+              )} instead.`
+          } else {
+            warning =
               `files in the public directory are served at the root path.\n` +
-                `Instead of ${colors.cyan(url)}, use ${colors.cyan(
-                  url.replace(publicPath, '/')
-                )}.`
-            )
-          )
+              `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+                url.replace(publicPath, '/'),
+              )}.`
+          }
+
+          logger.warn(colors.yellow(warning))
         }
       }
 
@@ -171,24 +183,26 @@ export function transformMiddleware(
 
         // resolve, load and transform using the plugin container
         const result = await transformRequest(url, server, {
-          html: req.headers.accept?.includes('text/html')
+          html: req.headers.accept?.includes('text/html'),
         })
         if (result) {
+          const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
-          const isDep = DEP_VERSION_RE.test(url) || isOptimizedDepUrl(url)
+          const isDep =
+            DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
-            map: result.map
+            map: result.map,
           })
         }
       }
     } catch (e) {
       if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
+        // Skip if response has already been sent
         if (!res.writableEnded) {
-          // Don't do anything if response has already been sent
           res.statusCode = 504 // status code request timeout
           res.end()
         }
@@ -197,18 +211,22 @@ export function transformMiddleware(
         return
       }
       if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+        // Skip if response has already been sent
         if (!res.writableEnded) {
-          // Don't do anything if response has already been sent
           res.statusCode = 504 // status code request timeout
           res.end()
         }
         // We don't need to log an error in this case, the request
         // is outdated because new dependencies were discovered and
-        // the new pre-bundle dependendencies have changed.
+        // the new pre-bundle dependencies have changed.
         // A full-page reload has been issued, and these old requests
-        // can't be properly fullfilled. This isn't an unexpected
+        // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
         return
+      }
+      if (e?.code === ERR_LOAD_URL) {
+        // Let other middleware handle if we can't load the url via transformRequest
+        return next()
       }
       return next(e)
     }

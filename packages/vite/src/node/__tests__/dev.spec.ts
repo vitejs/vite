@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '..'
 
 describe('resolveBuildOptions in dev', () => {
@@ -6,11 +7,11 @@ describe('resolveBuildOptions in dev', () => {
       {
         build: {
           lib: {
-            entry: './index.js'
-          }
-        }
+            entry: './index.js',
+          },
+        },
       },
-      'serve'
+      'serve',
     )
 
     expect(config.build.rollupOptions).not.toHaveProperty('input')

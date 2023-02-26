@@ -1,0 +1,18 @@
+{
+  "name": "@vitejs/test-nested-deps",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-package-a": "link:./test-package-a",
+    "@vitejs/test-package-b": "link:./test-package-b",
+    "@vitejs/test-package-c": "link:./test-package-c",
+    "@vitejs/test-package-d": "link:./test-package-d",
+    "@vitejs/test-package-e": "link:./test-package-e"
+  }
+}

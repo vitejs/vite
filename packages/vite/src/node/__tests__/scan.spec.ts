@@ -1,4 +1,5 @@
-import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+import { describe, expect, test } from 'vitest'
+import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
@@ -13,15 +14,15 @@ describe('optimizer-scan:script-test', () => {
   test('component return value test', () => {
     scriptRE.lastIndex = 0
     const [, tsOpenTag, tsContent] = scriptRE.exec(
-      `<script lang="ts">${scriptContent}</script>`
-    )
+      `<script lang="ts">${scriptContent}</script>`,
+    )!
     expect(tsOpenTag).toEqual('<script lang="ts">')
     expect(tsContent).toEqual(scriptContent)
 
     scriptRE.lastIndex = 0
     const [, openTag, content] = scriptRE.exec(
-      `<script>${scriptContent}</script>`
-    )
+      `<script>${scriptContent}</script>`,
+    )!
     expect(openTag).toEqual('<script>')
     expect(content).toEqual(scriptContent)
   })
@@ -32,7 +33,7 @@ describe('optimizer-scan:script-test', () => {
       `<template>
         <!--  <script >var test1 = null</script> -->
         <!--  <script >var test2 = null</script> -->
-      </template>`.replace(commentRE, '')
+      </template>`.replace(commentRE, ''),
     )
     expect(ret).toEqual(null)
   })
@@ -44,25 +45,29 @@ describe('optimizer-scan:script-test', () => {
 
     scriptRE.lastIndex = 0
     ret = scriptRE.exec(
-      `<template><script-develop-pane></script-develop-pane></template>`
+      `<template><script-develop-pane></script-develop-pane></template>`,
     )
     expect(ret).toBe(null)
 
     scriptRE.lastIndex = 0
     ret = scriptRE.exec(
-      `<template><script-develop-pane  > content </script-develop-pane></template>`
+      `<template><script-develop-pane  > content </script-develop-pane></template>`,
     )
     expect(ret).toBe(null)
   })
 
   test('ordinary script tag test', () => {
     scriptRE.lastIndex = 0
-    const [, tag, content] = scriptRE.exec(`<script  >var test = null</script>`)
+    const [, tag, content] = scriptRE.exec(
+      `<script  >var test = null</script>`,
+    )!
     expect(tag).toEqual('<script  >')
     expect(content).toEqual('var test = null')
 
     scriptRE.lastIndex = 0
-    const [, tag1, content1] = scriptRE.exec(`<script>var test = null</script>`)
+    const [, tag1, content1] = scriptRE.exec(
+      `<script>var test = null</script>`,
+    )!
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
   })
@@ -81,7 +86,7 @@ describe('optimizer-scan:script-test', () => {
       `*/ import foo from 'vue';`,
       `import foo from 'vue';//comment`,
       `import foo from 'vue';/*comment
-      */`
+      */`,
       // Skipped, false negatives with current regex
       // `import typescript from 'typescript'`,
       // import type, {foo} from 'vue'
@@ -89,7 +94,7 @@ describe('optimizer-scan:script-test', () => {
 
     shouldMatchArray.forEach((str) => {
       importsRE.lastIndex = 0
-      expect(importsRE.exec(str)[1]).toEqual("'vue'")
+      expect(importsRE.exec(str)![1]).toEqual("'vue'")
     })
 
     const shouldFailArray = [
@@ -98,7 +103,7 @@ describe('optimizer-scan:script-test', () => {
       `//;import foo from 'vue'`,
       `import type { Bar } from 'foo'`,
       `import type{ Bar } from 'foo'`,
-      `import type Bar from 'foo'`
+      `import type Bar from 'foo'`,
     ]
     shouldFailArray.forEach((str) => {
       expect(importsRE.test(str)).toBe(false)

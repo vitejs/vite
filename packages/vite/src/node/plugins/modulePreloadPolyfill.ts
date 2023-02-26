@@ -3,30 +3,31 @@ import type { Plugin } from '../plugin'
 import { isModernFlag } from './importAnalysisBuild'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
+const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
-  const skip = config.build.ssr
+  // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
+  const skip = config.command !== 'build' || config.build.ssr
   let polyfillString: string | undefined
 
   return {
     name: 'vite:modulepreload-polyfill',
     resolveId(id) {
       if (id === modulePreloadPolyfillId) {
-        return id
+        return resolvedModulePreloadPolyfillId
       }
     },
     load(id) {
-      if (id === modulePreloadPolyfillId) {
+      if (id === resolvedModulePreloadPolyfillId) {
         if (skip) {
           return ''
         }
         if (!polyfillString) {
-          polyfillString =
-            `const p = ${polyfill.toString()};` + `${isModernFlag}&&p();`
+          polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
         }
         return polyfillString
       }
-    }
+    },
   }
 }
 
@@ -77,13 +78,13 @@ function polyfill() {
     }
   }).observe(document, { childList: true, subtree: true })
 
-  function getFetchOpts(script: any) {
+  function getFetchOpts(link: any) {
     const fetchOpts = {} as any
-    if (script.integrity) fetchOpts.integrity = script.integrity
-    if (script.referrerpolicy) fetchOpts.referrerPolicy = script.referrerpolicy
-    if (script.crossorigin === 'use-credentials')
+    if (link.integrity) fetchOpts.integrity = link.integrity
+    if (link.referrerPolicy) fetchOpts.referrerPolicy = link.referrerPolicy
+    if (link.crossOrigin === 'use-credentials')
       fetchOpts.credentials = 'include'
-    else if (script.crossorigin === 'anonymous') fetchOpts.credentials = 'omit'
+    else if (link.crossOrigin === 'anonymous') fetchOpts.credentials = 'omit'
     else fetchOpts.credentials = 'same-origin'
     return fetchOpts
   }

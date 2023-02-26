@@ -1,0 +1,15 @@
+{
+  "name": "@vitejs/vite-playground",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "convert-source-map": "^2.0.0",
+    "css-color-names": "^1.0.1",
+    "kill-port": "^1.6.1",
+    "node-fetch": "^3.3.0",
+    "sirv": "^2.0.2"
+  }
+}
