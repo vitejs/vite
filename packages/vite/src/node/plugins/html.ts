@@ -285,6 +285,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
   )
   preHooks.unshift(preImportMapHook(config))
+  normalHooks.unshift(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
@@ -939,6 +940,26 @@ export function postImportMapHook(): IndexHtmlTransformHook {
     }
 
     return html
+  }
+}
+
+/**
+ * Support `%ENV_NAME%` syntax in html files
+ */
+export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
+  const pattern = /%(\S+?)%/g
+  const env: Record<string, any> = { ...config.env }
+  // account for user env defines
+  for (const key in config.define) {
+    if (key.startsWith(`import.meta.env.`)) {
+      const val = config.define[key]
+      env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
+    }
+  }
+  return (html) => {
+    return html.replace(pattern, (text, key) => {
+      return key in env ? env[key] : text
+    })
   }
 }
 

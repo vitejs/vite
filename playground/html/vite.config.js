@@ -33,6 +33,10 @@ module.exports = {
     },
   },
 
+  define: {
+    'import.meta.env.VITE_NUMBER': 5173,
+  },
+
   plugins: [
     {
       name: 'pre-transform',
