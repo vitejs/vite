@@ -1,0 +1,37 @@
+<script></script>
+<link rel="stylesheet" href="./linked.css" />
+
+<div class="wrapper">
+  <h1>CSS Inject</h1>
+
+  <p class="linked outside">&lt;linked&gt;</p>
+
+  <p class="imported outside">&lt;imported&gt;</p>
+
+  <custom-element></custom-element>
+</div>
+
+<script type="module">
+  customElements.define(
+    'custom-element',
+    class CustomElement extends HTMLElement {
+      constructor() {
+        super()
+        console.log('ctor')
+        this.attachShadow({ mode: 'open' })
+      }
+
+      connectedCallback() {
+        console.log('connected')
+
+        this.shadowRoot.innerHTML = `
+<p class="linked inside">&lt;linked&gt;</p>
+
+<p class="imported inside">&lt;imported&gt;</p>
+`
+
+        import('./imported.css')
+      }
+    },
+  )
+</script>

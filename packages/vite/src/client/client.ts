@@ -337,7 +337,12 @@ const sheetsMap = new Map<string, HTMLStyleElement>()
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
 
-export function updateStyle(id: string, content: string): void {
+export function updateStyle(
+  id: string,
+  content: string,
+  inject?: (style: HTMLStyleElement) => void,
+): void {
+  console.log('updateStyle', id, content)
   let style = sheetsMap.get(id)
   if (!style) {
     style = document.createElement('style')
@@ -346,7 +351,11 @@ export function updateStyle(id: string, content: string): void {
     style.textContent = content
 
     if (!lastInsertedStyle) {
-      document.head.appendChild(style)
+      if (inject) {
+        inject(style)
+      } else {
+        document.head.appendChild(style)
+      }
 
       // reset lastInsertedStyle after async
       // because dynamically imported css will be splitted into a different file
@@ -366,7 +375,7 @@ export function updateStyle(id: string, content: string): void {
 export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
-    document.head.removeChild(style)
+    style.remove()
     sheetsMap.delete(id)
   }
 }

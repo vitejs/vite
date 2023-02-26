@@ -243,6 +243,26 @@ export default defineConfig({
 })
 ```
 
+## css.inject
+
+- **Type:** `string | ((node: Element) => void)`
+
+A (stringified) function with the signature `(node: Element) => void` that is used to inject CSS style tags when importing CSS in JS.
+
+If passed a function it will be stringified and can therefore not rely on any variables on the outer scopes.
+
+Note this does not affect `<link >` tags added to `index.html`.
+
+```js
+export default defineConfig({
+  css: {
+    inject: (node) => {
+      document.body.querySelector('custom-element').shadowRoot.appendChild(node)
+    },
+  },
+})
+```
+
 ## css.devSourcemap
 
 - **Experimental**

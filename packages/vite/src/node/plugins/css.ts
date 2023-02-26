@@ -86,6 +86,13 @@ export interface CSSOptions {
    * @experimental
    */
   devSourcemap?: boolean
+  /**
+   * Stringified function with the signature `(node: Element) => void`
+   * that is used to inject stylesheets.
+   *
+   * By default styles are appended to the document.head.
+   */
+  inject?: string | ((node: Element) => void)
 }
 
 export interface CSSModulesOptions {
@@ -401,7 +408,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
-          `__vite__updateStyle(__vite__id, __vite__css)`,
+          `const __vite__inject_css = ${config.css?.inject}`,
+          `__vite__updateStyle(__vite__id, __vite__css, __vite__inject_css)`,
           // css modules exports change on edit so it can't self accept
           `${
             modulesCode ||
