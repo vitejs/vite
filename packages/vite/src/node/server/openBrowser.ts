@@ -8,16 +8,13 @@
  *
  */
 
-import { join } from 'path'
-import { execSync } from 'child_process'
+import { join } from 'node:path'
+import { execSync } from 'node:child_process'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
-
-// https://github.com/sindresorhus/open#app
-const OSX_CHROME = 'google chrome'
 
 /**
  * Reads the BROWSER environment variable and decides what to do with it.
@@ -26,7 +23,7 @@ const OSX_CHROME = 'google chrome'
 export function openBrowser(
   url: string,
   opt: string | true,
-  logger: Logger
+  logger: Logger,
 ): boolean {
   // The browser executable to open.
   // See https://github.com/sindresorhus/open#app for documentation.
@@ -34,7 +31,10 @@ export function openBrowser(
   if (browser.toLowerCase().endsWith('.js')) {
     return executeNodeScript(browser, url, logger)
   } else if (browser.toLowerCase() !== 'none') {
-    return startBrowserProcess(browser, url)
+    const browserArgs = process.env.BROWSER_ARGS
+      ? process.env.BROWSER_ARGS.split(' ')
+      : []
+    return startBrowserProcess(browser, browserArgs, url)
   }
   return false
 }
@@ -42,41 +42,70 @@ export function openBrowser(
 function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   const extraArgs = process.argv.slice(2)
   const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
-    stdio: 'inherit'
+    stdio: 'inherit',
   })
   child.on('close', (code) => {
     if (code !== 0) {
       logger.error(
         colors.red(
           `\nThe script specified as BROWSER environment variable failed.\n\n${colors.cyan(
-            scriptPath
-          )} exited with code ${code}.`
+            scriptPath,
+          )} exited with code ${code}.`,
         ),
-        { error: null }
+        { error: null },
       )
     }
   })
   return true
 }
 
-function startBrowserProcess(browser: string | undefined, url: string) {
+const supportedChromiumBrowsers = [
+  'Google Chrome Canary',
+  'Google Chrome Dev',
+  'Google Chrome Beta',
+  'Google Chrome',
+  'Microsoft Edge',
+  'Brave Browser',
+  'Vivaldi',
+  'Chromium',
+]
+
+function startBrowserProcess(
+  browser: string | undefined,
+  browserArgs: string[],
+  url: string,
+) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
-  // Chrome with AppleScript. This lets us reuse an
+  // a Chromium browser with AppleScript. This lets us reuse an
   // existing tab when possible instead of creating a new one.
+  const preferredOSXBrowser =
+    browser === 'google chrome' ? 'Google Chrome' : browser
   const shouldTryOpenChromeWithAppleScript =
-    process.platform === 'darwin' && (browser === '' || browser === OSX_CHROME)
+    process.platform === 'darwin' &&
+    (!preferredOSXBrowser ||
+      supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
   if (shouldTryOpenChromeWithAppleScript) {
     try {
-      // Try our best to reuse existing tab
-      // on OS X Google Chrome with AppleScript
-      execSync('ps cax | grep "Google Chrome"')
-      execSync('osascript openChrome.applescript "' + encodeURI(url) + '"', {
-        cwd: join(VITE_PACKAGE_DIR, 'bin'),
-        stdio: 'ignore'
-      })
-      return true
+      const ps = execSync('ps cax').toString()
+      const openedBrowser =
+        preferredOSXBrowser && ps.includes(preferredOSXBrowser)
+          ? preferredOSXBrowser
+          : supportedChromiumBrowsers.find((b) => ps.includes(b))
+      if (openedBrowser) {
+        // Try our best to reuse existing tab with AppleScript
+        execSync(
+          `osascript openChrome.applescript "${encodeURI(
+            url,
+          )}" "${openedBrowser}"`,
+          {
+            cwd: join(VITE_PACKAGE_DIR, 'bin'),
+            stdio: 'ignore',
+          },
+        )
+        return true
+      }
     } catch (err) {
       // Ignore errors
     }
@@ -93,7 +122,9 @@ function startBrowserProcess(browser: string | undefined, url: string) {
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options: open.Options = browser ? { app: { name: browser } } : {}
+    const options: open.Options = browser
+      ? { app: { name: browser, arguments: browserArgs } }
+      : {}
     open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
     return true
   } catch (err) {

@@ -1,4 +1,4 @@
-const { resolve } = require('path')
+const { resolve } = require('node:path')
 
 module.exports = {
   build: {
@@ -7,14 +7,14 @@ module.exports = {
     rollupOptions: {
       input: {
         main: resolve(__dirname, './index.html'),
-        other: resolve(__dirname, './other.js')
+        other: resolve(__dirname, './other.js'),
       },
       treeshake: false,
       output: {
         format: 'cjs',
         freeze: false,
-        externalLiveBindings: false
-      }
-    }
-  }
+        externalLiveBindings: false,
+      },
+    },
+  },
 }

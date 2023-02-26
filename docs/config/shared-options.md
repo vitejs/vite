@@ -5,7 +5,7 @@
 - **Type:** `string`
 - **Default:** `process.cwd()`
 
-Project root directory (where `index.html` is located). Can be an absolute path, or a path relative to the location of the config file itself.
+Project root directory (where `index.html` is located). Can be an absolute path, or a path relative to the current working directory.
 
 See [Project Root](/guide/#index-html-and-project-root) for more details.
 
@@ -33,11 +33,11 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ## define
 
-- **Type:** `Record<string, string>`
+- **Type:** `Record<string, any>`
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
-- Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
+- String values will be used as raw expressions, so if defining a string constant, **it needs to be explicitly quoted** (e.g. with `JSON.stringify`).
 
 - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
@@ -69,7 +69,7 @@ Example:
 ```js
 const obj = {
   __NAME__, // Don't define object shorthand property names
-  __KEY__: value // Don't define object key
+  __KEY__: value, // Don't define object key
 }
 ```
 
@@ -77,9 +77,9 @@ const obj = {
 
 ## plugins
 
-- **Type:** `(Plugin | Plugin[])[]`
+- **Type:** `(Plugin | Plugin[] | Promise<Plugin | Plugin[]>)[]`
 
-Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. If a promise is returned, it would be resolved before running. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
 ## publicDir
 
@@ -109,6 +109,10 @@ Will be passed to `@rollup/plugin-alias` as its [entries option](https://github.
 When aliasing to file system paths, always use absolute paths. Relative alias values will be used as-is and will not be resolved into file system paths.
 
 More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
+
+::: warning Using with SSR
+If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+:::
 
 ## resolve.dedupe
 
@@ -154,10 +158,20 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
+## resolve.browserField
+
+- **Type:** `boolean`
+- **Default:** `true`
+- **Deprecated**
+
+Whether to enable resolving to `browser` field.
+
+In future, `resolve.mainFields`'s default value will be `['browser', 'module', 'jsnext:main', 'jsnext']` and this option will be removed.
+
 ## resolve.extensions
 
 - **Type:** `string[]`
-- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
 List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
@@ -198,7 +212,7 @@ Configure CSS modules behavior. The options are passed on to [postcss-modules](h
 
 ## css.postcss
 
-- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
+- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.AcceptedPlugin[] })`
 
 Inline PostCSS config or a custom directory to search PostCSS config from (default is project root).
 
@@ -219,13 +233,13 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `$injectedColor: orange;`
+        additionalData: `$injectedColor: orange;`,
       },
       styl: {
-        additionalData: `$injectedColor ?= orange`
-      }
-    }
-  }
+        additionalData: `$injectedColor ?= orange`,
+      },
+    },
+  },
 })
 ```
 
@@ -263,8 +277,8 @@ Enabling this disables named imports.
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
-    jsxFragment: 'Fragment'
-  }
+    jsxFragment: 'Fragment',
+  },
 })
 ```
 
@@ -275,10 +289,12 @@ In addition, you can also use `esbuild.jsxInject` to automatically inject JSX he
 ```js
 export default defineConfig({
   esbuild: {
-    jsxInject: `import React from 'react'`
-  }
+    jsxInject: `import React from 'react'`,
+  },
 })
 ```
+
+When [`build.minify`](./build-options.md#build-minify) is `true`, all minify optimizations are applied by default. To disable [certain aspects](https://esbuild.github.io/api/#minify) of it, set any of `esbuild.minifyIdentifiers`, `esbuild.minifySyntax`, or `esbuild.minifyWhitespace` options to `false`. Note the `esbuild.minify` option can't be used to override `build.minify`.
 
 Set to `false` to disable esbuild transforms.
 
@@ -299,7 +315,7 @@ The built-in asset type list can be found [here](https://github.com/vitejs/vite/
 
 ```js
 export default defineConfig({
-  assetsInclude: ['**/*.gltf']
+  assetsInclude: ['**/*.gltf'],
 })
 ```
 
@@ -308,6 +324,40 @@ export default defineConfig({
 - **Type:** `'info' | 'warn' | 'error' | 'silent'`
 
 Adjust console output verbosity. Default is `'info'`.
+
+## customLogger
+
+- **Type:**
+  ```ts
+  interface Logger {
+    info(msg: string, options?: LogOptions): void
+    warn(msg: string, options?: LogOptions): void
+    warnOnce(msg: string, options?: LogOptions): void
+    error(msg: string, options?: LogErrorOptions): void
+    clearScreen(type: LogType): void
+    hasErrorLogged(error: Error | RollupError): boolean
+    hasWarned: boolean
+  }
+  ```
+
+Use a custom logger to log messages. You can use Vite's `createLogger` API to get the default logger and customize it to, for example, change the message or filter out certain warnings.
+
+```js
+import { createLogger, defineConfig } from 'vite'
+
+const logger = createLogger()
+const loggerWarn = logger.warn
+
+logger.warn = (msg, options) => {
+  // Ignore empty CSS files warning
+  if (msg.includes('vite:css') && msg.includes(' is empty')) return
+  loggerWarn(msg, options)
+}
+
+export default defineConfig({
+  customLogger: logger,
+})
+```
 
 ## clearScreen
 
@@ -330,15 +380,21 @@ See [here](/guide/env-and-mode#env-files) for more about environment files.
 - **Type:** `string | string[]`
 - **Default:** `VITE_`
 
-Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+Env variables starting with `envPrefix` will be exposed to your client source code via import.meta.env.
 
 :::warning SECURITY NOTES
-`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
 :::
 
-## spa
+## appType
 
-- **Type:** `boolean`
-- **Default:** `true`
+- **Type:** `'spa' | 'mpa' | 'custom'`
+- **Default:** `'spa'`
 
-Whether your application is a Single Page Application (SPA). Set to `false` for other kinds of apps like MPAs. Learn more in Vite's [SSR guide](/guide/ssr#vite-cli).
+Whether your application is a Single Page Application (SPA), a [Multi Page Application (MPA)](../guide/build#multi-page-app), or Custom Application (SSR and frameworks with custom HTML handling):
+
+- `'spa'`: include HTML middlewares and use SPA fallback. Configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
+- `'mpa'`: include HTML middlewares
+- `'custom'`: don't include HTML middlewares
+
+Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).

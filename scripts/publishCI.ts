@@ -1,4 +1,11 @@
-import { args, getPackageInfo, publishPackage, step } from './releaseUtils'
+import semver from 'semver'
+import {
+  args,
+  getActiveVersion,
+  getPackageInfo,
+  publishPackage,
+  step,
+} from './releaseUtils'
 
 async function main() {
   const tag = args._[0]
@@ -18,14 +25,18 @@ async function main() {
   const { currentVersion, pkgDir } = getPackageInfo(pkgName)
   if (currentVersion !== version)
     throw new Error(
-      `Package version from tag "${version}" mismatches with current version "${currentVersion}"`
+      `Package version from tag "${version}" mismatches with current version "${currentVersion}"`,
     )
+
+  const activeVersion = await getActiveVersion(pkgName)
 
   step('Publishing package...')
   const releaseTag = version.includes('beta')
     ? 'beta'
     : version.includes('alpha')
     ? 'alpha'
+    : semver.lt(currentVersion, activeVersion)
+    ? 'previous'
     : undefined
   await publishPackage(pkgDir, releaseTag)
 }

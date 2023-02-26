@@ -1,6 +1,6 @@
-import fs, { promises as fsp } from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -9,7 +9,7 @@ import type {
   OutputChunk,
   RenderedChunk,
   RollupError,
-  SourceMapInput
+  SourceMapInput,
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
@@ -18,16 +18,23 @@ import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
-import type { Alias } from 'types/alias'
+import type { Alias } from 'dep-types/alias'
+import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
-import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
+import { toOutputFilePathInCss } from '../build'
+import {
+  CLIENT_PUBLIC_PATH,
+  CSS_LANGS_RE,
+  SPECIAL_QUERY_RE,
+} from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
+  arrayEqual,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -37,11 +44,14 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
-  isRelativeBase,
+  joinUrlSegments,
   normalizePath,
   parseRequest,
   processSrcSet,
-  requireResolveFromRootWithFallback
+  removeDirectQuery,
+  requireResolveFromRootWithFallback,
+  stripBase,
+  stripBomTag,
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -49,11 +59,13 @@ import {
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename,
+  generatedAssets,
   publicAssetUrlCache,
   publicAssetUrlRE,
-  publicFileToBuiltUrl
+  publicFileToBuiltUrl,
+  renderAssetUrlInJS,
 } from './asset'
+import type { ESBuildOptions } from './esbuild'
 
 // const debug = createDebugger('vite:css')
 
@@ -66,7 +78,7 @@ export interface CSSOptions {
   postcss?:
     | string
     | (PostCSS.ProcessOptions & {
-        plugins?: PostCSS.Plugin[]
+        plugins?: PostCSS.AcceptedPlugin[]
       })
   /**
    * Enables css sourcemaps during dev
@@ -80,7 +92,7 @@ export interface CSSModulesOptions {
   getJSON?: (
     cssFileName: string,
     json: Record<string, string>,
-    outputFileName: string
+    outputFileName: string,
   ) => void
   scopeBehaviour?: 'global' | 'local'
   globalModulePaths?: RegExp[]
@@ -89,24 +101,27 @@ export interface CSSModulesOptions {
     | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
-   * default: null
+   * default: undefined
    */
   localsConvention?:
     | 'camelCase'
     | 'camelCaseOnly'
     | 'dashes'
     | 'dashesOnly'
-    | null
+    | ((
+        originalClassName: string,
+        generatedClassName: string,
+        inputFile: string,
+      ) => string)
 }
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
-const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
-const directRequestRE = /(\?|&)direct\b/
-const htmlProxyRE = /(\?|&)html-proxy\b/
+const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
+const directRequestRE = /(?:\?|&)direct\b/
+const htmlProxyRE = /(?:\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
-const inlineRE = /(\?|&)inline\b/
-const inlineCSSRE = /(\?|&)inline-css\b/
+const inlineRE = /(?:\?|&)inline\b/
+const inlineCSSRE = /(?:\?|&)inline-css\b/
+const usedRE = /(?:\?|&)used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -116,18 +131,27 @@ const enum PreprocessLang {
   sass = 'sass',
   scss = 'scss',
   styl = 'styl',
-  stylus = 'stylus'
+  stylus = 'stylus',
 }
 const enum PureCssLang {
-  css = 'css'
+  css = 'css',
 }
-type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
+const enum PostCssDialectLang {
+  sss = 'sugarss',
+}
+type CssLang =
+  | keyof typeof PureCssLang
+  | keyof typeof PreprocessLang
+  | keyof typeof PostCssDialectLang
 
 export const isCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request)
+  CSS_LANGS_RE.test(request)
+
+export const isModuleCSSRequest = (request: string): boolean =>
+  cssModuleRE.test(request)
 
 export const isDirectCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request) && directRequestRE.test(request)
+  CSS_LANGS_RE.test(request) && directRequestRE.test(request)
 
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
@@ -142,10 +166,14 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
-const postcssConfigCache = new WeakMap<
-  ResolvedConfig,
-  PostCSSConfigResult | null
->()
+const postcssConfigCache: Record<
+  string,
+  WeakMap<ResolvedConfig, PostCSSConfigResult | null>
+> = {}
+
+function encodePublicUrlsInCSS(config: ResolvedConfig) {
+  return config.command === 'build'
+}
 
 /**
  * Plugin applied before user plugins
@@ -157,9 +185,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   const resolveUrl = config.createResolver({
     preferRelative: true,
     tryIndex: false,
-    extensions: []
+    extensions: [],
   })
-  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -188,15 +215,21 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
-          if (isRelativeBase(config.base)) {
+          if (encodePublicUrlsInCSS(config)) {
             return publicFileToBuiltUrl(url, config)
           } else {
-            return config.base + url.slice(1)
+            return joinUrlSegments(config.base, url)
           }
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
           return fileToUrl(resolved, config, this)
+        }
+        if (config.command === 'build') {
+          // #9800 If we cannot resolve the css url, leave a warning.
+          config.logger.warnOnce(
+            `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
+          )
         }
         return url
       }
@@ -205,8 +238,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         code: css,
         modules,
         deps,
-        map
-      } = await compileCSS(id, raw, config, urlReplacer, atImportResolvers)
+        map,
+      } = await compileCSS(id, raw, config, urlReplacer)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -231,29 +264,30 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
             const depModules = new Set<string | ModuleNode>()
+            const devBase = config.base
             for (const file of deps) {
               depModules.add(
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                      (
-                        await fileToUrl(file, config, this)
-                      ).replace(
-                        (config.server?.origin ?? '') + config.base,
-                        '/'
+                      stripBase(
+                        await fileToUrl(file, config, this),
+                        (config.server?.origin ?? '') + devBase,
                       ),
-                      ssr
-                    )
+                      ssr,
+                    ),
               )
             }
             moduleGraph.updateModuleInfo(
               thisModule,
               depModules,
+              null,
               // The root CSS proxy module is self-accepting and should not
               // have an explicit accept list
               new Set(),
+              null,
               isSelfAccepting,
-              ssr
+              ssr,
             )
             for (const file of deps) {
               this.addWatchFile(file)
@@ -266,9 +300,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: css,
-        map
+        map,
       }
-    }
+    },
   }
 }
 
@@ -278,14 +312,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
-  let pureCssChunks: Set<string>
+  let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
   let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
-
-  const relativeBase = isRelativeBase(config.base)
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -303,8 +335,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         assetFileNames({
           name: cssAssetName,
           type: 'asset',
-          source: '/* vite internal call, ignore */'
-        })
+          source: '/* vite internal call, ignore */',
+        }),
       )
     }
   }
@@ -314,7 +346,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
-      pureCssChunks = new Set<string>()
+      pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
     },
@@ -327,6 +359,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      css = stripBomTag(css)
 
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
@@ -361,9 +395,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const cssContent = await getContentWithSourcemap(css)
-        return [
+        const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH),
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
@@ -373,8 +407,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             modulesCode ||
             `import.meta.hot.accept()\nexport default __vite__css`
           }`,
-          `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
+          `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`,
         ].join('\n')
+        return { code, map: { mappings: '' } }
       }
 
       // build CSS handling ----------------------------------------------------
@@ -388,7 +423,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
-          css
+          css,
         )
         return `export default ''`
       }
@@ -397,19 +432,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (modulesCode) {
-        code = modulesCode
-      } else {
-        let content = css
-        if (config.build.minify) {
-          content = await minifyCSS(content, config)
+      if (usedRE.test(id)) {
+        if (modulesCode) {
+          code = modulesCode
+        } else {
+          let content = css
+          if (config.build.minify) {
+            content = await minifyCSS(content, config)
+          }
+          code = `export default ${JSON.stringify(content)}`
         }
-        // marking as pure to make it tree-shakable by minifier
-        // but the module itself is still treated as a non tree-shakable module
-        // because moduleSideEffects is 'no-treeshake'
-        code = `export default /* #__PURE__ */ (() => ${JSON.stringify(
-          content
-        )})()`
+      } else {
+        // if moduleCode exists return it **even if** it does not have `?used`
+        // this will disable tree-shake to work with `import './foo.module.css'` but this usually does not happen
+        // this is a limitation of the current approach by `?used` to make tree-shake work
+        // See #8936 for more details
+        code = modulesCode || `export default ''`
       }
 
       return {
@@ -417,7 +455,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
-        moduleSideEffects: inlined ? false : 'no-treeshake'
+        moduleSideEffects: inlined ? false : 'no-treeshake',
       }
     },
 
@@ -426,15 +464,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (
-          !isCSSRequest(id) ||
-          cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
-        ) {
-          isPureCssChunk = false
-        }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
+          // a css module contains JS, so it makes this not a pure css chunk
+          if (cssModuleRE.test(id)) {
+            isPureCssChunk = false
+          }
+        } else {
+          // if the module does not have a style, then it's not a pure css chunk.
+          // this is true because in the `transform` hook above, only modules
+          // that are css gets added to the `styles` map.
+          isPureCssChunk = false
         }
       }
 
@@ -445,85 +485,131 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
-        const cssAssetDirname = relativeBase
-          ? getCssAssetDirname(cssAssetName)
-          : undefined
+      const resolveAssetUrlsInCss = (
+        chunkCSS: string,
+        cssAssetName: string,
+      ) => {
+        const encodedPublicUrls = encodePublicUrlsInCSS(config)
+
+        const relative = config.base === './' || config.base === ''
+        const cssAssetDirname =
+          encodedPublicUrls || relative
+            ? getCssAssetDirname(cssAssetName)
+            : undefined
+
+        const toRelative = (filename: string, importer: string) => {
+          // relative base + extracted CSS
+          const relativePath = path.posix.relative(cssAssetDirname!, filename)
+          return relativePath.startsWith('.')
+            ? relativePath
+            : './' + relativePath
+        }
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          const filename = getAssetFilename(fileHash, config) + postfix
-          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (relativeBase) {
-            // relative base + extracted CSS
-            const relativePath = path.posix.relative(cssAssetDirname!, filename)
-            return relativePath.startsWith('.')
-              ? relativePath
-              : './' + relativePath
-          } else {
-            // absolute base
-            return config.base + filename
-          }
+          const filename = this.getFileName(fileHash) + postfix
+          chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
+          return toOutputFilePathInCss(
+            filename,
+            'asset',
+            cssAssetName,
+            'css',
+            config,
+            toRelative,
+          )
         })
         // resolve public URL from CSS paths
-        if (relativeBase) {
+        if (encodedPublicUrls) {
           const relativePathToPublicFromCSS = path.posix.relative(
             cssAssetDirname!,
-            ''
+            '',
           )
-          chunkCSS = chunkCSS.replace(
-            publicAssetUrlRE,
-            (_, hash) =>
-              relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
-          )
+          chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
+            const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+            return toOutputFilePathInCss(
+              publicUrl,
+              'public',
+              cssAssetName,
+              'css',
+              config,
+              () => `${relativePathToPublicFromCSS}/${publicUrl}`,
+            )
+          })
         }
         return chunkCSS
+      }
+
+      function ensureFileExt(name: string, ext: string) {
+        return normalizePath(
+          path.format({ ...path.parse(name), base: undefined, ext }),
+        )
       }
 
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
-          pureCssChunks.add(chunk.fileName)
+          pureCssChunks.add(chunk)
         }
-        if (
-          opts.format === 'es' ||
-          opts.format === 'cjs' ||
-          opts.format === 'system'
-        ) {
-          const cssAssetName = chunk.name + '.css'
+        if (opts.format === 'es' || opts.format === 'cjs') {
+          const cssAssetName = chunk.facadeModuleId
+            ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
+            : chunk.name
+
+          const lang = path.extname(cssAssetName).slice(1)
+          const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
-          const fileHandle = this.emitFile({
-            name: cssAssetName,
+          const referenceId = this.emitFile({
+            name: path.basename(cssFileName),
             type: 'asset',
-            source: chunkCSS
+            source: chunkCSS,
           })
-          chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
+          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
+          const isEntry = chunk.isEntry && isPureCssChunk
+          generatedAssets
+            .get(config)!
+            .set(referenceId, { originalName, isEntry })
+          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
-          // the vite:asset plugin, don't call resolveAssetUrlsInCss here
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
+          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+          // and injected later by the `'vite:build-html'` plugin into the `index.html`
+          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+          // But because entry chunk can be imported by dynamic import,
+          // we shouldn't remove the inlined CSS. (#10285)
 
+          chunkCSS = await finalizeCss(chunkCSS, true, config)
+          let cssString = JSON.stringify(chunkCSS)
+          cssString =
+            renderAssetUrlInJS(
+              this,
+              config,
+              chunk,
+              opts,
+              cssString,
+            )?.toString() || cssString
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
+          const wrapIdx = code.indexOf('System.register')
+          const insertMark = "'use strict';"
+          const insertIdx = code.indexOf(insertMark, wrapIdx)
+          const s = new MagicString(code)
+          s.appendLeft(insertIdx + insertMark.length, injectCode)
           if (config.build.sourcemap) {
-            const s = new MagicString(code)
-            s.prepend(injectCode)
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
-              map: s.generateMap({ hires: true })
+              map: s.generateMap({ hires: true }),
             }
           } else {
-            return { code: injectCode + code }
+            return { code: s.toString() }
           }
         }
       } else {
@@ -532,29 +618,56 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         outputToExtractedCSSMap.set(
           opts,
-          (outputToExtractedCSSMap.get(opts) || '') + chunkCSS
+          (outputToExtractedCSSMap.get(opts) || '') + chunkCSS,
         )
       }
       return null
     },
 
+    augmentChunkHash(chunk) {
+      if (chunk.viteMetadata?.importedCss.size) {
+        let hash = ''
+        for (const id of chunk.viteMetadata.importedCss) {
+          hash += id
+        }
+        return hash
+      }
+    },
+
     async generateBundle(opts, bundle) {
-      // @ts-ignore asset emits are skipped in legacy bundle
+      // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__) {
         return
       }
 
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
-        const emptyChunkFiles = [...pureCssChunks]
+        // map each pure css chunk (rendered chunk) to it's corresponding bundle
+        // chunk. we check that by comparing the `moduleIds` as they have different
+        // filenames (rendered chunk has the !~{XXX}~ placeholder)
+        const pureCssChunkNames: string[] = []
+        for (const pureCssChunk of pureCssChunks) {
+          for (const key in bundle) {
+            const bundleChunk = bundle[key]
+            if (
+              bundleChunk.type === 'chunk' &&
+              arrayEqual(bundleChunk.moduleIds, pureCssChunk.moduleIds)
+            ) {
+              pureCssChunkNames.push(key)
+              break
+            }
+          }
+        }
+
+        const emptyChunkFiles = pureCssChunkNames
           .map((file) => path.basename(file))
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          opts.format === 'es' || opts.format === 'system'
+          opts.format === 'es'
             ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
             : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
-          'g'
+          'g',
         )
         for (const file in bundle) {
           const chunk = bundle[file]
@@ -563,12 +676,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // and also register the emitted CSS files under the importer
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunks.has(file)) {
-                const {
-                  viteMetadata: { importedCss }
-                } = bundle[file] as OutputChunk
+              if (pureCssChunkNames.includes(file)) {
+                const { importedCss } = (bundle[file] as OutputChunk)
+                  .viteMetadata!
                 importedCss.forEach((file) =>
-                  chunk.viteMetadata.importedCss.add(file)
+                  chunk.viteMetadata!.importedCss.add(file),
                 )
                 return false
               }
@@ -577,12 +689,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             chunk.code = chunk.code.replace(
               emptyChunkRE,
               // remove css import while preserving source map location
-              (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`
+              (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`,
             )
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
-        pureCssChunks.forEach((fileName) => {
+        pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
         })
@@ -595,10 +707,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         this.emitFile({
           name: cssBundleName,
           type: 'asset',
-          source: extractedCss
+          source: extractedCss,
         })
       }
-    }
+    },
   }
 }
 
@@ -620,7 +732,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           extensions: ['.css'],
           mainFields: ['style'],
           tryIndex: false,
-          preferRelative: true
+          preferRelative: true,
         }))
       )
     },
@@ -633,7 +745,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           mainFields: ['sass', 'style'],
           tryIndex: true,
           tryPrefix: '_',
-          preferRelative: true
+          preferRelative: true,
         }))
       )
     },
@@ -645,95 +757,29 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           extensions: ['.less', '.css'],
           mainFields: ['less', 'style'],
           tryIndex: false,
-          preferRelative: true
+          preferRelative: true,
         }))
       )
-    }
+    },
   }
 }
 
 function getCssResolversKeys(
-  resolvers: CSSAtImportResolvers
+  resolvers: CSSAtImportResolvers,
 ): Array<keyof CSSAtImportResolvers> {
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
-async function preProcessCSS(
-  config: ResolvedConfig,
-  id: string,
-  code: string,
-  atImportResolvers: CSSAtImportResolvers,
-  deps: Set<string>,
-  sourcemap: boolean = true // if use in postcss can disable sourcemap
-): Promise<null | { code: string; map?: ExistingRawSourceMap }> {
-  const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
-  if (!isPreProcessor(lang)) {
-    return null
-  }
-  const { preprocessorOptions, devSourcemap } = config.css || {}
-  const preProcessor = preProcessors[lang]
-  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
-  // support @import from node dependencies by default
-  switch (lang) {
-    case PreprocessLang.scss:
-    case PreprocessLang.sass:
-      opts = {
-        includePaths: ['node_modules'],
-        alias: config.resolve.alias,
-        ...opts
-      }
-      break
-    case PreprocessLang.less:
-    case PreprocessLang.styl:
-    case PreprocessLang.stylus:
-      opts = {
-        paths: ['node_modules'],
-        alias: config.resolve.alias,
-        ...opts
-      }
-  }
-  // important: set this for relative import resolving
-  opts.filename = cleanUrl(id)
-  opts.enableSourcemap = sourcemap && (devSourcemap ?? false)
-
-  const preprocessResult = await preProcessor(
-    code,
-    config.root,
-    opts,
-    atImportResolvers
-  )
-
-  if (preprocessResult.errors.length) {
-    throw preprocessResult.errors[0]
-  }
-
-  code = preprocessResult.code
-  const preprocessorMap = combineSourcemapsIfExists(
-    opts.filename,
-    preprocessResult.map,
-    preprocessResult.additionalMap
-  )
-
-  if (preprocessResult.deps) {
-    preprocessResult.deps.forEach((dep) => {
-      // sometimes sass registers the file itself as a dep
-      if (normalizePath(dep) !== normalizePath(opts.filename)) {
-        deps.add(dep)
-      }
-    })
-  }
-  return {
-    code,
-    map: preprocessorMap
-  }
-}
+const configToAtImportResolvers = new WeakMap<
+  ResolvedConfig,
+  CSSAtImportResolvers
+>()
 
 async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers
+  urlReplacer?: CssUrlReplacer,
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -741,14 +787,18 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const { modules: modulesOptions, devSourcemap } = config.css || {}
+  const {
+    modules: modulesOptions,
+    preprocessorOptions,
+    devSourcemap,
+  } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const postcssConfig = await resolvePostcssConfig(config)
-  const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
+  const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
+  const postcssConfig = await resolvePostcssConfig(config, getCssDialect(lang))
 
   // 1. plain css that needs no processing
   if (
@@ -765,21 +815,78 @@ async function compileCSS(
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
+  let atImportResolvers = configToAtImportResolvers.get(config)!
+  if (!atImportResolvers) {
+    atImportResolvers = createCSSResolvers(config)
+    configToAtImportResolvers.set(config, atImportResolvers)
+  }
+
   // 2. pre-processors: sass etc.
-  const preProcessResult = await preProcessCSS(
-    config,
-    id,
-    code,
-    atImportResolvers,
-    deps
-  )
-  if (preProcessResult) {
-    code = preProcessResult.code
-    preprocessorMap = preProcessResult.map
+  if (isPreProcessor(lang)) {
+    const preProcessor = preProcessors[lang]
+    let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
+    // support @import from node dependencies by default
+    switch (lang) {
+      case PreprocessLang.scss:
+      case PreprocessLang.sass:
+        opts = {
+          includePaths: ['node_modules'],
+          alias: config.resolve.alias,
+          ...opts,
+        }
+        break
+      case PreprocessLang.less:
+      case PreprocessLang.styl:
+      case PreprocessLang.stylus:
+        opts = {
+          paths: ['node_modules'],
+          alias: config.resolve.alias,
+          ...opts,
+        }
+    }
+    // important: set this for relative import resolving
+    opts.filename = cleanUrl(id)
+    opts.enableSourcemap = devSourcemap ?? false
+
+    const preprocessResult = await preProcessor(
+      code,
+      config.root,
+      opts,
+      atImportResolvers,
+    )
+
+    if (preprocessResult.error) {
+      throw preprocessResult.error
+    }
+
+    code = preprocessResult.code
+    preprocessorMap = combineSourcemapsIfExists(
+      opts.filename,
+      preprocessResult.map,
+      preprocessResult.additionalMap,
+    )
+
+    if (preprocessResult.deps) {
+      preprocessResult.deps.forEach((dep) => {
+        // sometimes sass registers the file itself as a dep
+        if (normalizePath(dep) !== normalizePath(opts.filename)) {
+          deps.add(dep)
+        }
+      })
+    }
   }
 
   // 3. postcss
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
+
+  // for sugarss change parser
+  if (lang === 'sss') {
+    postcssOptions.parser = loadPreprocessor(
+      PostCssDialectLang.sss,
+      config.root,
+    )
+  }
+
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
@@ -791,123 +898,135 @@ async function compileCSS(
           if (publicFile) {
             return publicFile
           }
-          for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](
-              id,
-              path.join(basedir, '*')
-            )
 
-            if (resolved) {
-              return path.resolve(resolved)
-            }
+          const resolved = await atImportResolvers.css(
+            id,
+            path.join(basedir, '*'),
+          )
+
+          if (resolved) {
+            return path.resolve(resolved)
           }
-
           return id
         },
         async load(id) {
-          const code = await fsp.readFile(id, 'utf-8')
-          const preProcessResult = await preProcessCSS(
-            config,
-            id,
-            code,
-            atImportResolvers,
-            deps,
-            false
-          )
-          return preProcessResult ? preProcessResult.code : code
-        }
-      })
+          const code = fs.readFileSync(id, 'utf-8')
+          const result = await compileCSS(id, code, config)
+          return result.code
+        },
+        nameLayer(index) {
+          return `vite--anon-layer-${getHash(id)}-${index}`
+        },
+      }),
     )
   }
-  postcssPlugins.push(
-    UrlRewritePostcssPlugin({
-      replacer: urlReplacer,
-      logger: config.logger
-    }) as PostCSS.Plugin
-  )
+
+  if (urlReplacer) {
+    postcssPlugins.push(
+      UrlRewritePostcssPlugin({
+        replacer: urlReplacer,
+        logger: config.logger,
+      }),
+    )
+  }
 
   if (isModule) {
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
         ...modulesOptions,
+        localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
-          outputFileName: string
+          outputFileName: string,
         ) {
           modules = _modules
           if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
         },
-        async resolve(id: string) {
+        async resolve(id: string, importer: string) {
           for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id)
+            const resolved = await atImportResolvers[key](id, importer)
             if (resolved) {
               return path.resolve(resolved)
             }
           }
 
           return id
-        }
-      })
+        },
+      }),
     )
   }
 
   if (!postcssPlugins.length) {
     return {
       code,
-      map: preprocessorMap
+      map: preprocessorMap,
     }
   }
 
-  // postcss is an unbundled dep and should be lazy imported
-  const postcssResult = await (await import('postcss'))
-    .default(postcssPlugins)
-    .process(code, {
-      ...postcssOptions,
-      to: id,
-      from: id,
-      ...(devSourcemap
-        ? {
-            map: {
-              inline: false,
-              annotation: false,
-              // postcss may return virtual files
-              // we cannot obtain content of them, so this needs to be enabled
-              sourcesContent: true
-              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-              // prev: preprocessorMap,
+  let postcssResult: PostCSS.Result
+  try {
+    const source = removeDirectQuery(id)
+    // postcss is an unbundled dep and should be lazy imported
+    postcssResult = await (await import('postcss'))
+      .default(postcssPlugins)
+      .process(code, {
+        ...postcssOptions,
+        to: source,
+        from: source,
+        ...(devSourcemap
+          ? {
+              map: {
+                inline: false,
+                annotation: false,
+                // postcss may return virtual files
+                // we cannot obtain content of them, so this needs to be enabled
+                sourcesContent: true,
+                // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+                // prev: preprocessorMap,
+              },
             }
-          }
-        : {})
-    })
-
-  // record CSS dependencies from @imports
-  for (const message of postcssResult.messages) {
-    if (message.type === 'dependency') {
-      deps.add(normalizePath(message.file as string))
-    } else if (message.type === 'dir-dependency') {
-      // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
-      const { dir, glob: globPattern = '**' } = message
-      const pattern =
-        normalizePath(path.resolve(path.dirname(id), dir)) + `/` + globPattern
-      const files = glob.sync(pattern, {
-        ignore: ['**/node_modules/**']
+          : {}),
       })
-      for (let i = 0; i < files.length; i++) {
-        deps.add(files[i])
+
+    // record CSS dependencies from @imports
+    for (const message of postcssResult.messages) {
+      if (message.type === 'dependency') {
+        deps.add(normalizePath(message.file as string))
+      } else if (message.type === 'dir-dependency') {
+        // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
+        const { dir, glob: globPattern = '**' } = message
+        const pattern =
+          glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
+          `/` +
+          globPattern
+        const files = glob.sync(pattern, {
+          ignore: ['**/node_modules/**'],
+        })
+        for (let i = 0; i < files.length; i++) {
+          deps.add(files[i])
+        }
+      } else if (message.type === 'warning') {
+        let msg = `[vite:css] ${message.text}`
+        if (message.line && message.column) {
+          msg += `\n${generateCodeFrame(code, {
+            line: message.line,
+            column: message.column,
+          })}`
+        }
+        config.logger.warn(colors.yellow(msg))
       }
-    } else if (message.type === 'warning') {
-      let msg = `[vite:css] ${message.text}`
-      if (message.line && message.column) {
-        msg += `\n${generateCodeFrame(code, {
-          line: message.line,
-          column: message.column
-        })}`
-      }
-      config.logger.warn(colors.yellow(msg))
     }
+  } catch (e) {
+    e.message = `[postcss] ${e.message}`
+    e.code = code
+    e.loc = {
+      column: e.column,
+      line: e.line,
+    }
+    throw e
   }
 
   if (!devSourcemap) {
@@ -916,7 +1035,7 @@ async function compileCSS(
       code: postcssResult.css,
       map: { mappings: '' },
       modules,
-      deps
+      deps,
     }
   }
 
@@ -926,7 +1045,7 @@ async function compileCSS(
     // version property of rawPostcssMap is declared as string
     // but actually it is a number
     rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
-    cleanUrl(id)
+    cleanUrl(id),
   )
 
   return {
@@ -934,13 +1053,31 @@ async function compileCSS(
     code: postcssResult.css,
     map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
     modules,
-    deps
+    deps,
   }
+}
+
+export interface PreprocessCSSResult {
+  code: string
+  map?: SourceMapInput
+  modules?: Record<string, string>
+  deps?: Set<string>
+}
+
+/**
+ * @experimental
+ */
+export async function preprocessCSS(
+  code: string,
+  filename: string,
+  config: ResolvedConfig,
+): Promise<PreprocessCSSResult> {
+  return await compileCSS(filename, code, config)
 }
 
 export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
-  file: string
+  file: string,
 ): Promise<ExistingRawSourceMap> {
   const inputFileDir = path.dirname(file)
 
@@ -961,21 +1098,21 @@ export async function formatPostcssSourceMap(
     names: rawMap.names,
     sources,
     sourcesContent: rawMap.sourcesContent,
-    version: rawMap.version
+    version: rawMap.version,
   }
 }
 
 function combineSourcemapsIfExists(
   filename: string,
   map1: ExistingRawSourceMap | undefined,
-  map2: ExistingRawSourceMap | undefined
+  map2: ExistingRawSourceMap | undefined,
 ): ExistingRawSourceMap | undefined {
   return map1 && map2
     ? (combineSourcemaps(filename, [
         // type of version property of ExistingRawSourceMap is number
         // but it is always 3
         map1 as RawSourceMap,
-        map2 as RawSourceMap
+        map2 as RawSourceMap,
       ]) as ExistingRawSourceMap)
     : map1
 }
@@ -983,7 +1120,7 @@ function combineSourcemapsIfExists(
 async function finalizeCss(
   css: string,
   minify: boolean,
-  config: ResolvedConfig
+  config: ResolvedConfig,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
@@ -997,13 +1134,19 @@ async function finalizeCss(
 
 interface PostCSSConfigResult {
   options: PostCSS.ProcessOptions
-  plugins: PostCSS.Plugin[]
+  plugins: PostCSS.AcceptedPlugin[]
 }
 
 async function resolvePostcssConfig(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  dialect = 'css',
 ): Promise<PostCSSConfigResult | null> {
-  let result = postcssConfigCache.get(config)
+  postcssConfigCache[dialect] ??= new WeakMap<
+    ResolvedConfig,
+    PostCSSConfigResult | null
+  >()
+
+  let result = postcssConfigCache[dialect].get(config)
   if (result !== undefined) {
     return result
   }
@@ -1016,13 +1159,12 @@ async function resolvePostcssConfig(
     delete options.plugins
     result = {
       options,
-      plugins: inlineOptions.plugins || []
+      plugins: inlineOptions.plugins || [],
     }
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     try {
-      // @ts-ignore
       result = await postcssrc({}, searchPath)
     } catch (e) {
       if (!/No PostCSS Config found/.test(e.message)) {
@@ -1040,21 +1182,23 @@ async function resolvePostcssConfig(
     }
   }
 
-  postcssConfigCache.set(config, result)
+  postcssConfigCache[dialect].set(config, result)
   return result
 }
 
 type CssUrlReplacer = (
   url: string,
-  importer?: string
+  importer?: string,
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const cssDataUriRE =
-  /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+  /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
+// Assuming a function name won't be longer than 256 chars
+// eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
+const cssImageSetRE = /(?<=image-set\()((?:[\w\-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
@@ -1075,7 +1219,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
             '\nA PostCSS plugin did not pass the `from` option to `postcss.parse`. ' +
               'This may cause imported assets to be incorrectly transformed. ' +
               "If you've recently added a PostCSS plugin that raised this warning, " +
-              'please contact the package author to fix the issue.'
+              'please contact the package author to fix the issue.',
           )
         }
         const isCssUrl = cssUrlRE.test(declaration.value)
@@ -1091,42 +1235,42 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
             rewriterToUse(declaration.value, replacerForDeclaration).then(
               (url) => {
                 declaration.value = url
-              }
-            )
+              },
+            ),
           )
         }
       })
       if (promises.length) {
         return Promise.all(promises) as any
       }
-    }
+    },
   }
 }
 UrlRewritePostcssPlugin.postcss = true
 
 function rewriteCssUrls(
   css: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
     const [matched, rawUrl] = match
-    return await doUrlReplace(rawUrl, matched, replacer)
+    return await doUrlReplace(rawUrl.trim(), matched, replacer)
   })
 }
 
 function rewriteCssDataUris(
   css: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
 ): Promise<string> {
   return asyncReplace(css, cssDataUriRE, async (match) => {
     const [matched, rawUrl] = match
-    return await doUrlReplace(rawUrl, matched, replacer, 'data-uri')
+    return await doUrlReplace(rawUrl.trim(), matched, replacer, 'data-uri')
   })
 }
 
 function rewriteImportCss(
   css: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
 ): Promise<string> {
   return asyncReplace(css, importCssRE, async (match) => {
     const [matched, rawUrl] = match
@@ -1137,11 +1281,11 @@ function rewriteImportCss(
 // TODO: image and cross-fade could contain a "url" that needs to be processed
 // https://drafts.csswg.org/css-images-4/#image-notation
 // https://drafts.csswg.org/css-images-4/#cross-fade-function
-const cssNotProcessedRE = /(gradient|element|cross-fade|image)\(/
+const cssNotProcessedRE = /(?:gradient|element|cross-fade|image)\(/
 
 async function rewriteCssImageSet(
   css: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
 ): Promise<string> {
   return await asyncReplace(css, cssImageSetRE, async (match) => {
     const [, rawUrl] = match
@@ -1162,7 +1306,7 @@ async function doUrlReplace(
   rawUrl: string,
   matched: string,
   replacer: CssUrlReplacer,
-  funcName: string = 'url'
+  funcName: string = 'url',
 ) {
   let wrap = ''
   const first = rawUrl[0]
@@ -1191,7 +1335,7 @@ async function doUrlReplace(
 async function doImportCSSReplace(
   rawUrl: string,
   matched: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
 ) {
   let wrap = ''
   const first = rawUrl[0]
@@ -1210,23 +1354,49 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   try {
     const { code, warnings } = await transform(css, {
       loader: 'css',
-      minify: true,
-      target: config.build.cssTarget || undefined
+      target: config.build.cssTarget || undefined,
+      ...resolveEsbuildMinifyOptions(config.esbuild || {}),
     })
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
       config.logger.warn(
-        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
+        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
     }
     return code
   } catch (e) {
     if (e.errors) {
+      e.message = '[esbuild css minify] ' + e.message
       const msgs = await formatMessages(e.errors, { kind: 'error' })
       e.frame = '\n' + msgs.join('\n')
       e.loc = e.errors[0].location
     }
     throw e
+  }
+}
+
+function resolveEsbuildMinifyOptions(
+  options: ESBuildOptions,
+): TransformOptions {
+  const base: TransformOptions = {
+    logLevel: options.logLevel,
+    logLimit: options.logLimit,
+    logOverride: options.logOverride,
+  }
+
+  if (
+    options.minifyIdentifiers != null ||
+    options.minifySyntax != null ||
+    options.minifyWhitespace != null
+  ) {
+    return {
+      ...base,
+      minifyIdentifiers: options.minifyIdentifiers ?? true,
+      minifySyntax: options.minifySyntax ?? true,
+      minifyWhitespace: options.minifyWhitespace ?? true,
+    }
+  } else {
+    return { ...base, minify: true }
   }
 }
 
@@ -1240,7 +1410,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
   const atImportRE =
-    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+    /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
   while ((match = atImportRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
     // Use `appendLeft` instead of `prepend` to preserve original @import order
@@ -1250,7 +1420,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
   const atCharsetRE =
-    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+    /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
   let foundCharset = false
   while ((match = atCharsetRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
@@ -1273,7 +1443,7 @@ type PreprocessorAdditionalData =
   | string
   | ((
       source: string,
-      filename: string
+      filename: string,
     ) =>
       | PreprocessorAdditionalDataResult
       | Promise<PreprocessorAdditionalDataResult>)
@@ -1292,25 +1462,27 @@ type StylePreprocessor = (
   source: string,
   root: string,
   options: StylePreprocessorOptions,
-  resolvers: CSSAtImportResolvers
+  resolvers: CSSAtImportResolvers,
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
 type SassStylePreprocessor = (
   source: string,
   root: string,
   options: SassStylePreprocessorOptions,
-  resolvers: CSSAtImportResolvers
+  resolvers: CSSAtImportResolvers,
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
 export interface StylePreprocessorResults {
   code: string
   map?: ExistingRawSourceMap | undefined
   additionalMap?: ExistingRawSourceMap | undefined
-  errors: RollupError[]
+  error?: RollupError
   deps: string[]
 }
 
-const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
+const loadedPreprocessors: Partial<
+  Record<PreprocessLang | PostCssDialectLang, any>
+> = {}
 
 // TODO: use dynamic import
 const _require = createRequire(import.meta.url)
@@ -1320,9 +1492,16 @@ function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
 function loadPreprocessor(
   lang: PreprocessLang.stylus,
-  root: string
+  root: string,
 ): typeof Stylus
-function loadPreprocessor(lang: PreprocessLang, root: string): any {
+function loadPreprocessor(
+  lang: PostCssDialectLang.sss,
+  root: string,
+): PostCSS.Parser
+function loadPreprocessor(
+  lang: PreprocessLang | PostCssDialectLang,
+  root: string,
+): any {
   if (lang in loadedPreprocessors) {
     return loadedPreprocessors[lang]
   }
@@ -1332,11 +1511,11 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it?`
+        `Preprocessor dependency "${lang}" not found. Did you install it?`,
       )
     } else {
       const message = new Error(
-        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`
+        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`,
       )
       message.stack = e.stack + '\n' + message.stack
       throw message
@@ -1344,19 +1523,59 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
   }
 }
 
+declare const window: unknown | undefined
+declare const location: { href: string } | undefined
+
+// in unix, scss might append `location.href` in environments that shim `location`
+// see https://github.com/sass/dart-sass/issues/710
+function cleanScssBugUrl(url: string) {
+  if (
+    // check bug via `window` and `location` global
+    typeof window !== 'undefined' &&
+    typeof location !== 'undefined'
+  ) {
+    const prefix = location.href.replace(/\/$/, '')
+    return url.replace(prefix, '')
+  } else {
+    return url
+  }
+}
+
+function fixScssBugImportValue(
+  data: Sass.ImporterReturnType,
+): Sass.ImporterReturnType {
+  // the scss bug doesn't load files properly so we have to load it ourselves
+  // to prevent internal error when it loads itself
+  if (
+    // check bug via `window` and `location` global
+    typeof window !== 'undefined' &&
+    typeof location !== 'undefined' &&
+    data &&
+    'file' in data &&
+    (!('contents' in data) || data.contents == null)
+  ) {
+    // @ts-expect-error we need to preserve file property for HMR
+    data.contents = fs.readFileSync(data.file, 'utf-8')
+  }
+  return data
+}
+
 // .scss/.sass processor
 const scss: SassStylePreprocessor = async (
   source,
   root,
   options,
-  resolvers
+  resolvers,
 ) => {
   const render = loadPreprocessor(PreprocessLang.sass, root).render
+  // NOTE: `sass` always runs it's own importer first, and only falls back to
+  // the `importer` option when it can't resolve a path
   const internalImporter: Sass.Importer = (url, importer, done) => {
+    importer = cleanScssBugUrl(importer)
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias)
-          .then((data) => done?.(data))
+        rebaseUrls(resolved, options.filename, options.alias, '$')
+          .then((data) => done?.(fixScssBugImportValue(data)))
           .catch((data) => done?.(data))
       } else {
         done?.(null)
@@ -1366,15 +1585,15 @@ const scss: SassStylePreprocessor = async (
   const importer = [internalImporter]
   if (options.importer) {
     Array.isArray(options.importer)
-      ? importer.push(...options.importer)
-      : importer.push(options.importer)
+      ? importer.unshift(...options.importer)
+      : importer.unshift(options.importer)
   }
 
   const { content: data, map: additionalMap } = await getSource(
     source,
     options.filename,
     options.additionalData,
-    options.enableSourcemap
+    options.enableSourcemap,
   )
   const finalOptions: Sass.Options = {
     ...options,
@@ -1386,9 +1605,9 @@ const scss: SassStylePreprocessor = async (
       ? {
           sourceMap: true,
           omitSourceMapUrl: true,
-          sourceMapRoot: path.dirname(options.filename)
+          sourceMapRoot: path.dirname(options.filename),
         }
-      : {})
+      : {}),
   }
 
   try {
@@ -1401,7 +1620,7 @@ const scss: SassStylePreprocessor = async (
         }
       })
     })
-    const deps = result.stats.includedFiles
+    const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
     const map: ExistingRawSourceMap | undefined = result.map
       ? JSON.parse(result.map.toString())
       : undefined
@@ -1410,14 +1629,14 @@ const scss: SassStylePreprocessor = async (
       code: result.css.toString(),
       map,
       additionalMap,
-      errors: [],
-      deps
+      deps,
     }
   } catch (e) {
     // normalize SASS error
+    e.message = `[sass] ${e.message}`
     e.id = e.file
     e.frame = e.formatted
-    return { code: '', errors: [e], deps: [] }
+    return { code: '', error: e, deps: [] }
   }
 }
 
@@ -1427,9 +1646,9 @@ const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
     root,
     {
       ...options,
-      indentedSyntax: true
+      indentedSyntax: true,
     },
-    aliasResolver
+    aliasResolver,
   )
 
 /**
@@ -1439,7 +1658,8 @@ const sass: SassStylePreprocessor = (source, root, options, aliasResolver) =>
 async function rebaseUrls(
   file: string,
   rootFile: string,
-  alias: Alias[]
+  alias: Alias[],
+  variablePrefix: string,
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1464,6 +1684,8 @@ async function rebaseUrls(
   let rebased
   const rebaseFn = (url: string) => {
     if (url.startsWith('/')) return url
+    // ignore url's starting with variable
+    if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
       const matches =
@@ -1492,7 +1714,7 @@ async function rebaseUrls(
 
   return {
     file,
-    contents: rebased
+    contents: rebased,
   }
 }
 
@@ -1503,13 +1725,13 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     nodeLess,
     options.filename,
     options.alias,
-    resolvers
+    resolvers,
   )
   const { content, map: additionalMap } = await getSource(
     source,
     options.filename,
     options.additionalData,
-    options.enableSourcemap
+    options.enableSourcemap,
   )
 
   let result: Less.RenderOutput | undefined
@@ -1521,21 +1743,23 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
         ? {
             sourceMap: {
               outputSourceFiles: true,
-              sourceMapFileInline: false
-            }
+              sourceMapFileInline: false,
+            },
           }
-        : {})
+        : {}),
     })
   } catch (e) {
     const error = e as Less.RenderError
     // normalize error info
-    const normalizedError: RollupError = new Error(error.message || error.type)
+    const normalizedError: RollupError = new Error(
+      `[less] ${error.message || error.type}`,
+    ) as RollupError
     normalizedError.loc = {
       file: error.filename || options.filename,
       line: error.line,
-      column: error.column
+      column: error.column,
     }
-    return { code: '', errors: [normalizedError], deps: [] }
+    return { code: '', error: normalizedError, deps: [] }
   }
 
   const map: ExistingRawSourceMap = result.map && JSON.parse(result.map)
@@ -1548,7 +1772,6 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     map,
     additionalMap,
     deps: result.imports,
-    errors: []
   }
 }
 
@@ -1561,7 +1784,7 @@ function createViteLessPlugin(
   less: typeof Less,
   rootFile: string,
   alias: Alias[],
-  resolvers: CSSAtImportResolvers
+  resolvers: CSSAtImportResolvers,
 ): Less.Plugin {
   if (!ViteLessManager) {
     ViteLessManager = class ViteManager extends less.FileManager {
@@ -1571,15 +1794,15 @@ function createViteLessPlugin(
       constructor(
         rootFile: string,
         resolvers: CSSAtImportResolvers,
-        alias: Alias[]
+        alias: Alias[],
       ) {
         super()
         this.rootFile = rootFile
         this.resolvers = resolvers
         this.alias = alias
       }
-      override supports() {
-        return true
+      override supports(filename: string) {
+        return !isExternalUrl(filename)
       }
       override supportsSync() {
         return false
@@ -1588,14 +1811,19 @@ function createViteLessPlugin(
         filename: string,
         dir: string,
         opts: any,
-        env: any
+        env: any,
       ): Promise<Less.FileLoadResult> {
         const resolved = await this.resolvers.less(
           filename,
-          path.join(dir, '*')
+          path.join(dir, '*'),
         )
         if (resolved) {
-          const result = await rebaseUrls(resolved, this.rootFile, this.alias)
+          const result = await rebaseUrls(
+            resolved,
+            this.rootFile,
+            this.alias,
+            '@',
+          )
           let contents: string
           if (result && 'contents' in result) {
             contents = result.contents
@@ -1604,7 +1832,7 @@ function createViteLessPlugin(
           }
           return {
             filename: path.resolve(resolved),
-            contents
+            contents,
           }
         } else {
           return super.loadFile(filename, dir, opts, env)
@@ -1616,10 +1844,10 @@ function createViteLessPlugin(
   return {
     install(_, pluginManager) {
       pluginManager.addFileManager(
-        new ViteLessManager(rootFile, resolvers, alias)
+        new ViteLessManager(rootFile, resolvers, alias),
       )
     },
-    minVersion: [3, 0, 0]
+    minVersion: [3, 0, 0],
   }
 }
 
@@ -1633,12 +1861,12 @@ const styl: StylePreprocessor = async (source, root, options) => {
     options.filename,
     options.additionalData,
     options.enableSourcemap,
-    '\n'
+    '\n',
   )
   // Get preprocessor options.imports dependencies as stylus
   // does not return them with its builtin `.deps()` method
   const importsDeps = (options.imports ?? []).map((dep: string) =>
-    path.resolve(dep)
+    path.resolve(dep),
   )
   try {
     const ref = nodeStylus(content, options)
@@ -1646,7 +1874,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
       ref.set('sourcemap', {
         comment: false,
         inline: false,
-        basePath: root
+        basePath: root,
       })
     }
 
@@ -1662,17 +1890,17 @@ const styl: StylePreprocessor = async (source, root, options) => {
       code: result,
       map: formatStylusSourceMap(map, root),
       additionalMap,
-      errors: [],
-      deps
+      deps,
     }
   } catch (e) {
-    return { code: '', errors: [e], deps: [] }
+    e.message = `[stylus] ${e.message}`
+    return { code: '', error: e, deps: [] }
   }
 }
 
 function formatStylusSourceMap(
   mapBefore: ExistingRawSourceMap | undefined,
-  root: string
+  root: string,
 ): ExistingRawSourceMap | undefined {
   if (!mapBefore) return undefined
   const map = { ...mapBefore }
@@ -1692,7 +1920,7 @@ async function getSource(
   filename: string,
   additionalData: PreprocessorAdditionalData | undefined,
   enableSourcemap: boolean,
-  sep: string = ''
+  sep: string = '',
 ): Promise<{ content: string; map?: ExistingRawSourceMap }> {
   if (!additionalData) return { content: source }
 
@@ -1718,7 +1946,7 @@ async function getSource(
 
   return {
     content: ms.toString(),
-    map
+    map,
   }
 }
 
@@ -1727,9 +1955,13 @@ const preProcessors = Object.freeze({
   [PreprocessLang.sass]: sass,
   [PreprocessLang.scss]: scss,
   [PreprocessLang.styl]: styl,
-  [PreprocessLang.stylus]: styl
+  [PreprocessLang.stylus]: styl,
 })
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
+}
+
+function getCssDialect(lang: CssLang | undefined): string {
+  return lang === 'sss' ? 'sss' : 'css'
 }

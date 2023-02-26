@@ -4,9 +4,12 @@
  * Please control the side-effects by checking the ./dist/node-cjs/publicUtils.cjs bundle
  */
 export { VERSION as version } from './constants'
+export { version as esbuildVersion } from 'esbuild'
+export { VERSION as rollupVersion } from 'rollup'
 export {
   splitVendorChunkPlugin,
-  splitVendorChunk
+  splitVendorChunk,
+  isCSSRequest,
 } from './plugins/splitVendorChunk'
 export { normalizePath, mergeConfig, mergeAlias, createFilter } from './utils'
 export { send } from './server/send'

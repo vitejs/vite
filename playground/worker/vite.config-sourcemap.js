@@ -1,5 +1,5 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
+const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
 
 module.exports = vite.defineConfig((sourcemap) => {
   sourcemap = process.env.WORKER_MODE || sourcemap
@@ -10,20 +10,22 @@ module.exports = vite.defineConfig((sourcemap) => {
     base: `/iife-${
       typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
     }/`,
+    resolve: {
+      alias: {
+        '@': __dirname,
+      },
+    },
     worker: {
       format: 'iife',
-      plugins: [vueJsx()],
+      plugins: [workerPluginTestPlugin()],
       rollupOptions: {
         output: {
-          assetFileNames: 'assets/[name].worker_asset[hash].[ext]',
-          chunkFileNames: 'assets/[name].worker_chunk[hash].js',
-          entryFileNames: 'assets/[name].worker_entry[hash].js'
-        }
-      }
+          assetFileNames: 'assets/[name]-worker_asset[hash].[ext]',
+          chunkFileNames: 'assets/[name]-worker_chunk[hash].js',
+          entryFileNames: 'assets/[name]-worker_entry[hash].js',
+        },
+      },
     },
-    cacheDir: `node_modules/.vite/iife-${
-      typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-    }`,
     build: {
       outDir: `dist/iife-${
         typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
@@ -31,11 +33,12 @@ module.exports = vite.defineConfig((sourcemap) => {
       sourcemap: sourcemap,
       rollupOptions: {
         output: {
-          assetFileNames: 'assets/[name].[hash].[ext]',
-          chunkFileNames: 'assets/[name].[hash].js',
-          entryFileNames: 'assets/[name].[hash].js'
-        }
-      }
-    }
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+        },
+      },
+    },
+    plugins: [workerPluginTestPlugin()],
   }
 })

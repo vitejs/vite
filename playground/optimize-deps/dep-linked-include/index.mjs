@@ -1,5 +1,8 @@
 export { msg } from './foo.js'
 
+// test importing node built-ins
+import fs from 'node:fs'
+
 import { useState } from 'react'
 
 export function useCount() {
@@ -8,9 +11,6 @@ export function useCount() {
 
 // test dep with css/asset imports
 import './test.css'
-
-// test importing node built-ins
-import fs from 'fs'
 
 if (false) {
   fs.readFileSync()

@@ -4,26 +4,26 @@ const subWorker = new SubWorker()
 subWorker.onmessage = (event) => {
   self.postMessage({
     type: 'emit-chunk-sub-worker',
-    data: event.data
+    data: event.data,
   })
 }
 
 const moduleWorker = new Worker(
   new URL('./module-and-worker.js', import.meta.url),
-  { type: 'module' }
+  { type: 'module' },
 )
 
 moduleWorker.onmessage = (event) => {
   self.postMessage({
     type: 'module-and-worker:worker',
-    data: event.data
+    data: event.data,
   })
 }
 
 import('./module-and-worker').then((res) => {
   self.postMessage({
     type: 'module-and-worker:module',
-    data: res.module
+    data: res.module,
   })
 })
 

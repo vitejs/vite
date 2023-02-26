@@ -1,6 +1,6 @@
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import strip from 'strip-ansi'
 import type { ErrorPayload } from 'types/hmrPayload'
 import { pad } from '../../utils'
@@ -16,17 +16,18 @@ export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
     frame: strip((err as RollupError).frame || ''),
     plugin: (err as RollupError).plugin,
     pluginCode: (err as RollupError).pluginCode,
-    loc: (err as RollupError).loc
+    loc: (err as RollupError).loc,
   }
 }
 
 export function buildErrorMessage(
   err: RollupError,
   args: string[] = [],
-  includeStack = true
+  includeStack = true,
 ): string {
   if (err.plugin) args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
-  if (err.id) args.push(`  File: ${colors.cyan(err.id)}`)
+  const loc = err.loc ? `:${err.loc.line}:${err.loc.column}` : ''
+  if (err.id) args.push(`  File: ${colors.cyan(err.id)}${loc}`)
   if (err.frame) args.push(colors.yellow(pad(err.frame)))
   if (includeStack && err.stack) args.push(pad(cleanStack(err.stack)))
   return args.join('\n')
@@ -41,24 +42,24 @@ function cleanStack(stack: string) {
 
 export function logError(server: ViteDevServer, err: RollupError): void {
   const msg = buildErrorMessage(err, [
-    colors.red(`Internal server error: ${err.message}`)
+    colors.red(`Internal server error: ${err.message}`),
   ])
 
   server.config.logger.error(msg, {
     clear: true,
     timestamp: true,
-    error: err
+    error: err,
   })
 
   server.ws.send({
     type: 'error',
-    err: prepareError(err)
+    err: prepareError(err),
   })
 }
 
 export function errorMiddleware(
   server: ViteDevServer,
-  allowNext = false
+  allowNext = false,
 ): Connect.ErrorHandleFunction {
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -78,7 +79,7 @@ export function errorMiddleware(
             <script type="module">
               import { ErrorOverlay } from '/@vite/client'
               document.body.appendChild(new ErrorOverlay(${JSON.stringify(
-                prepareError(err)
+                prepareError(err),
               ).replace(/</g, '\\u003c')}))
             </script>
           </head>

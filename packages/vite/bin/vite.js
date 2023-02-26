@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { performance } from 'perf_hooks'
+import { performance } from 'node:perf_hooks'
 
 if (!import.meta.url.includes('node_modules')) {
   try {
@@ -13,7 +13,7 @@ global.__vite_start_time = performance.now()
 // check debug mode first before requiring the CLI.
 const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))
 const filterIndex = process.argv.findIndex((arg) =>
-  /^(?:-f|--filter)$/.test(arg)
+  /^(?:-f|--filter)$/.test(arg),
 )
 const profileIndex = process.argv.indexOf('--profile')
 
@@ -50,7 +50,7 @@ if (profileIndex > 0) {
   if (next && !next.startsWith('-')) {
     process.argv.splice(profileIndex, 1)
   }
-  const inspector = await import('inspector').then((r) => r.default)
+  const inspector = await import('node:inspector').then((r) => r.default)
   const session = (global.__vite_profile_session = new inspector.Session())
   session.connect()
   session.post('Profiler.enable', () => {

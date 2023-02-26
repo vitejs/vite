@@ -1,0 +1,43 @@
+name: "\U0001F4DA Documentation"
+description: Suggest a change or new page to be added to vitejs.dev
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this issue!
+  - type: checkboxes
+    id: documentation_is
+    attributes:
+      label: Documentation is
+      options:
+        - label: Missing
+        - label: Outdated
+        - label: Confusing
+        - label: Not sure?
+  - type: textarea
+    id: description
+    attributes:
+      label: Explain in Detail
+      description: A clear and concise description of your suggestion. If you intend to submit a PR for this issue, tell us in the description. Thanks!
+      placeholder: The description of ... page is not clear. I thought it meant ... but it wasn't.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Your Suggestion for Changes
+    validations:
+      required: true
+  - type: input
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: If you have a reproduction, please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template.
+      placeholder: Reproduction URL
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to reproduce
+      description: Please provide any reproduction steps that may need to be described. E.g. if it happens only when running the dev or build script make sure it's clear which one to use.
+      placeholder: Run `npm install` followed by `npm run dev`

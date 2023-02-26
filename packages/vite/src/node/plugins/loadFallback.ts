@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs'
+import { promises as fs } from 'node:fs'
 import type { Plugin } from '..'
 import { cleanUrl } from '../utils'
 
@@ -15,6 +15,6 @@ export function loadFallbackPlugin(): Plugin {
       } catch (e) {
         return fs.readFile(id, 'utf-8')
       }
-    }
+    },
   }
 }

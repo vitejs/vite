@@ -1,13 +1,13 @@
 // @ts-check
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const express = require('express')
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITEST
 
 async function createServer(
   root = process.cwd(),
-  isProd = process.env.NODE_ENV === 'production'
+  isProd = process.env.NODE_ENV === 'production',
 ) {
   const resolve = (p) => path.resolve(__dirname, p)
   const app = express()
@@ -15,22 +15,22 @@ async function createServer(
   /**
    * @type {import('vite').ViteDevServer}
    */
-  let vite
-  vite = await require('vite').createServer({
+  const vite = await require('vite').createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
-      }
+        interval: 100,
+      },
     },
+    appType: 'custom',
     json: {
-      stringify: true
-    }
+      stringify: true,
+    },
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -54,7 +54,7 @@ async function createServer(
         const json = await vite.ssrTransform(
           `export default ${source}`,
           null,
-          './output.json'
+          './output.json',
         )
         console.timeEnd('transform module')
         res.status(200).end(String(json.code.length))
@@ -80,7 +80,7 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }
 

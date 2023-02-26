@@ -1,3 +1,4 @@
+import { afterAll } from 'vitest'
 import { startDefaultServe } from '~utils'
 
 export let serveError: Error | undefined

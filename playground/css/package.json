@@ -1,19 +1,24 @@
 {
-  "name": "test-css",
+  "name": "@vitejs/test-css",
   "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:relative-base": "vite --config ./vite.config-relative-base.js dev",
+    "build:relative-base": "vite --config ./vite.config-relative-base.js build",
+    "preview:relative-base": "vite --config ./vite.config-relative-base.js preview"
   },
   "devDependencies": {
-    "css-dep": "link:./css-dep",
-    "fast-glob": "^3.2.11",
+    "@vitejs/test-css-dep": "link:./css-dep",
+    "@vitejs/test-css-js-dep": "file:./css-js-dep",
+    "fast-glob": "^3.2.12",
     "less": "^4.1.3",
-    "postcss-nested": "^5.0.6",
-    "sass": "^1.52.3",
-    "stylus": "^0.58.1"
+    "postcss-nested": "^6.0.1",
+    "sass": "^1.58.3",
+    "stylus": "^0.59.0",
+    "sugarss": "^4.0.1"
   }
 }

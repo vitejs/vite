@@ -1,24 +1,28 @@
-import { promises as fs } from 'fs'
-import path from 'path'
-import { performance } from 'perf_hooks'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
-import * as convertSourceMap from 'convert-source-map'
+import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
+import type { ModuleNode, ViteDevServer } from '..'
 import {
+  blankReplacer,
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
   isObject,
   prettifyUrl,
   removeTimestampQuery,
-  timeFrom
+  timeFrom,
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
-import { ssrTransform } from '../ssr/ssrTransform'
+import { getDepsOptimizer } from '../optimizer'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+
+export const ERR_LOAD_URL = 'ERR_LOAD_URL'
+export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -41,7 +45,7 @@ export interface TransformOptions {
 export function transformRequest(
   url: string,
   server: ViteDevServer,
-  options: TransformOptions = {}
+  options: TransformOptions = {},
 ): Promise<TransformResult | null> {
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
@@ -103,7 +107,7 @@ export function transformRequest(
   server._pendingRequests.set(cacheKey, {
     request,
     timestamp,
-    abort: clearCache
+    abort: clearCache,
   })
   request.then(clearCache, clearCache)
 
@@ -114,13 +118,12 @@ async function doTransform(
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
-  timestamp: number
+  timestamp: number,
 ) {
   url = removeTimestampQuery(url)
 
-  const { config, pluginContainer, moduleGraph, watcher } = server
-  const { root, logger } = config
-  const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
+  const { config, pluginContainer } = server
+  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
@@ -142,6 +145,26 @@ async function doTransform(
   // resolve
   const id =
     (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
+
+  const result = loadAndTransform(id, url, server, options, timestamp)
+
+  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
+
+  return result
+}
+
+async function loadAndTransform(
+  id: string,
+  url: string,
+  server: ViteDevServer,
+  options: TransformOptions,
+  timestamp: number,
+) {
+  const { config, pluginContainer, moduleGraph, watcher } = server
+  const { root, logger } = config
+  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
+  const ssr = !!options.ssr
+
   const file = cleanUrl(id)
 
   let code: string | null = null
@@ -175,11 +198,16 @@ async function doTransform(
       try {
         map = (
           convertSourceMap.fromSource(code) ||
-          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+          (await convertSourceMap.fromMapFileSource(
+            code,
+            createConvertSourceMapReadMap(file),
+          ))
         )?.toObject()
+
+        code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
         logger.warn(`Failed to load source map for ${url}.`, {
-          timestamp: true
+          timestamp: true,
         })
       }
     }
@@ -193,18 +221,25 @@ async function doTransform(
     }
   }
   if (code == null) {
-    if (checkPublicFile(url, config)) {
-      throw new Error(
-        `Failed to load url ${url} (resolved id: ${id}). ` +
-          `This file is in /public and will be copied as-is during build without ` +
-          `going through the plugin transforms, and therefore should not be ` +
-          `imported from source code. It can only be referenced via HTML tags.`
-      )
-    } else {
-      return null
-    }
+    const isPublicFile = checkPublicFile(url, config)
+    const msg = isPublicFile
+      ? `This file is in /public and will be copied as-is during build without ` +
+        `going through the plugin transforms, and therefore should not be ` +
+        `imported from source code. It can only be referenced via HTML tags.`
+      : `Does the file exist?`
+    const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
+      .get(id)
+      ?.importers.values()
+      .next().value
+    const importer = importerMod?.file || importerMod?.url
+    const err: any = new Error(
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
+    )
+    err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
+    throw err
   }
-
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
@@ -213,8 +248,9 @@ async function doTransform(
   const transformStart = isDebug ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
-    ssr
+    ssr,
   })
+  const originalCode = code
   if (
     transformResult == null ||
     (isObject(transformResult) && transformResult.code == null)
@@ -222,7 +258,7 @@ async function doTransform(
     // no transform applied, keep code as-is
     isDebug &&
       debugTransform(
-        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
+        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
@@ -237,15 +273,14 @@ async function doTransform(
     }
   }
 
-  const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url, {
-        json: { stringify: !!server.config.json?.stringify }
-      })
-    : ({
-        code,
-        map,
-        etag: getEtag(code, { weak: true })
-      } as TransformResult)
+  const result =
+    ssr && !server.config.experimental.skipSsrTransform
+      ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
+      : ({
+          code,
+          map,
+          etag: getEtag(code, { weak: true }),
+        } as TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
@@ -255,4 +290,13 @@ async function doTransform(
   }
 
   return result
+}
+
+function createConvertSourceMapReadMap(originalFileName: string) {
+  return (filename: string) => {
+    return fs.readFile(
+      path.resolve(path.dirname(originalFileName), filename),
+      'utf-8',
+    )
+  }
 }

@@ -1,0 +1,17 @@
+{
+  "name": "@vitejs/test-ssr-noexternal",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "build": "vite build --ssr src/entry-server.js",
+    "serve": "NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "dependencies": {
+    "@vitejs/test-external-cjs": "file:./external-cjs",
+    "@vitejs/test-require-external-cjs": "file:./require-external-cjs",
+    "express": "^4.18.2"
+  }
+}
