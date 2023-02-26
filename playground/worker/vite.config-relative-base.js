@@ -29,7 +29,6 @@ export default vite.defineConfig({
       },
     },
   },
-  // @ts-expect-error refer to playground/vitestSetup.ts
   testConfig: {
     baseRoute: '/relative-base/',
   },
