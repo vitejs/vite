@@ -84,7 +84,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return {
       ...importMetaFallbackKeys,
       'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
-        '"__vite__ssr"',
+        '"__vite__ssr__"',
         ssr + '',
       ),
     }
