@@ -173,11 +173,8 @@
   <pre class="aliased-content"></pre>
   <p class="aliased-module">import '#alias-module': this should be blue</p>
 </div>
-<!-- <link rel="stylesheet" href="./scss/_app.scss" /> -->
 <style>
-  @import url(./scss/app.scss);
+  @import url(./imported.scss);
 </style>
-<div class="scss-index-html">
-  (index.html inline css) scss pre-processor test (tobe red)
-</div>
+<div class="at-import-scss">@import scss: this should be red</div>
 <script type="module" src="./main.js"></script>

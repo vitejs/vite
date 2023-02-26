@@ -519,6 +519,6 @@ test('async css order with css modules', async () => {
   }, true)
 })
 
-test('css preprocessor in index.html', async () => {
-  expect(await getColor('.scss-index-html')).toBe('red')
+test('@import scss', async () => {
+  expect(await getColor('.at-import-scss')).toBe('red')
 })
