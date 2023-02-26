@@ -71,6 +71,25 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
+  function getImportMetaKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaKeys,
+      'import.meta.env.SSR': ssr + '',
+    }
+  }
+
+  function getImportMetaFallbackKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaFallbackKeys,
+      'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
+        '"__vite__ssr"',
+        ssr + '',
+      ),
+    }
+  }
+
   function generatePattern(
     ssr: boolean,
   ): [Record<string, string | undefined>, RegExp | null] {
@@ -78,14 +97,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...importMetaKeys,
-      'import.meta.env.SSR': ssr + '',
+      ...getImportMetaKeys(ssr),
       ...userDefine,
-      ...importMetaFallbackKeys,
-      'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
-        '"__vite__ssr"',
-        ssr + '',
-      ),
+      ...getImportMetaFallbackKeys(ssr),
       ...(replaceProcessEnv ? processEnv : {}),
     }
 
