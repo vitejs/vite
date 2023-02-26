@@ -912,6 +912,7 @@ async function compileCSS(
         async load(id) {
           const code = fs.readFileSync(id, 'utf-8')
           const result = await compileCSS(id, code, config)
+          result.deps?.forEach((dep) => deps.add(dep))
           return result.code
         },
         nameLayer(index) {
