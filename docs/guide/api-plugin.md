@@ -159,6 +159,8 @@ The following hooks are called on each incoming module request:
 - [`load`](https://rollupjs.org/plugin-development/#load)
 - [`transform`](https://rollupjs.org/plugin-development/#transform)
 
+They also have an extended `options` parameter with additional Vite-specific properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
+
 The following hooks are called when the server is closed:
 
 - [`buildEnd`](https://rollupjs.org/plugin-development/#buildend)
@@ -171,8 +173,6 @@ Note that the [`moduleParsed`](https://rollupjs.org/plugin-development/#modulepa
 ## Vite Specific Hooks
 
 Vite plugins can also provide hooks that serve Vite-specific purposes. These hooks are ignored by Rollup.
-
-Some Rollup hooks have the `options` parameter that are also extended with additional properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
 
 ### `config`
 
