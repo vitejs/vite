@@ -338,7 +338,7 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = await resolveConfig(inlineConfig, 'serve', 'dev')
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig

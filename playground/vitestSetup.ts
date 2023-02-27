@@ -201,6 +201,7 @@ function loadConfigFromDir(dir: string) {
   return loadConfigFromFile(
     {
       command: isBuild ? 'build' : 'serve',
+      operation: isBuild ? 'build' : 'dev',
       mode: isBuild ? 'production' : 'development',
     },
     undefined,

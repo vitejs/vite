@@ -223,7 +223,7 @@ describe('preview config', () => {
     const config: InlineConfig = {
       server: serverConfig(),
     }
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, 'serve', 'preview')).toMatchObject({
       preview: {
         ...serverConfig(),
         port: undefined,
@@ -238,7 +238,7 @@ describe('preview config', () => {
         port: 3006,
       },
     }
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, 'serve', 'preview')).toMatchObject({
       preview: {
         ...serverConfig(),
         port: 3006,
@@ -261,7 +261,7 @@ describe('preview config', () => {
       server: serverConfig(),
       preview: previewConfig(),
     }
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, 'serve', 'preview')).toMatchObject({
       preview: previewConfig(),
     })
   })
@@ -293,8 +293,8 @@ describe('resolveConfig', () => {
       clearScreen: true,
     }
 
-    const results1 = await resolveConfig(config1, 'build')
-    const results2 = await resolveConfig(config2, 'build')
+    const results1 = await resolveConfig(config1, 'build', 'build')
+    const results2 = await resolveConfig(config2, 'build', 'build')
 
     expect(results1.clearScreen).toBe(false)
     expect(results2.clearScreen).toBe(false)
@@ -307,8 +307,8 @@ describe('resolveConfig', () => {
       clearScreen: true,
     }
 
-    const results1 = await resolveConfig(config1, 'build')
-    const results2 = await resolveConfig(config2, 'build')
+    const results1 = await resolveConfig(config1, 'build', 'build')
+    const results2 = await resolveConfig(config2, 'build', 'build')
 
     expect(results1.clearScreen).toBe(false)
     expect(results2.clearScreen).toBe(false)

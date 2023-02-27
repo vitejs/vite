@@ -12,6 +12,7 @@ describe('resolveBuildOptions in dev', () => {
         },
       },
       'serve',
+      'dev',
     )
 
     expect(config.build.rollupOptions).not.toHaveProperty('input')

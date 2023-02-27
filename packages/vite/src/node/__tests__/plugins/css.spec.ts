@@ -206,7 +206,7 @@ async function createCssPluginTransform(
   files?: Record<string, string>,
   inlineConfig: InlineConfig = {},
 ) {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = await resolveConfig(inlineConfig, 'serve', 'dev')
   const { transform, buildStart } = cssPlugin(config)
 
   // @ts-expect-error buildStart is function

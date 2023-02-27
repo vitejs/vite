@@ -193,6 +193,7 @@ async function getPluginContainer(
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
     'serve',
+    'dev',
   )
 
   // @ts-expect-error This plugin requires a ViteDevServer instance.

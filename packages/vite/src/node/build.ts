@@ -459,6 +459,7 @@ export async function build(
   const config = await resolveConfig(
     inlineConfig,
     'build',
+    'build',
     'production',
     'production',
   )

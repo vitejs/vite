@@ -81,6 +81,7 @@ export async function preview(
   const config = await resolveConfig(
     inlineConfig,
     'serve',
+    'preview',
     'production',
     'production',
   )

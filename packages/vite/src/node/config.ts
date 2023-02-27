@@ -80,6 +80,7 @@ export type {
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
+  operation: 'build' | 'dev' | 'preview' | 'optimize'
   /**
    * @experimental
    */
@@ -336,6 +337,7 @@ export type ResolvedConfig = Readonly<
     publicDir: string
     cacheDir: string
     command: 'build' | 'serve'
+    operation: 'build' | 'dev' | 'preview' | 'optimize'
     mode: string
     isWorker: boolean
     // in nested worker bundle to find the main config
@@ -380,6 +382,7 @@ export type ResolveFn = (
 export async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
+  operation: 'build' | 'dev' | 'preview' | 'optimize',
   defaultMode = 'development',
   defaultNodeEnv = 'development',
 ): Promise<ResolvedConfig> {
@@ -397,6 +400,7 @@ export async function resolveConfig(
   const configEnv = {
     mode,
     command,
+    operation,
     ssrBuild: !!config.build?.ssr,
   }
 
@@ -649,6 +653,7 @@ export async function resolveConfig(
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
+    operation,
     command,
     mode,
     ssr,

@@ -278,6 +278,7 @@ cli
             logLevel: options.logLevel,
           },
           'serve',
+          'optimize',
         )
         await optimizeDeps(config, options.force, true)
       } catch (e) {
