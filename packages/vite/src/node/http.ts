@@ -198,7 +198,7 @@ export function setClientErrorHandler(
 async function findAvailablePort(
   port: number,
   logger: Logger,
-  host = '0.0.0.0',
+  host?: string,
   strictPort?: boolean,
 ): Promise<number> {
   return new Promise((resolve, reject) => {
