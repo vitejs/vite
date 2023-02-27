@@ -14,6 +14,10 @@
 <p>import.meta.env.VITE_INLINE: <code class="inline"></code></p>
 <p>typeof import.meta.env.VITE_BOOL: <code class="bool"></code></p>
 <p>process.env.NODE_ENV: <code class="node-env"></code></p>
+<p>global.process.env.NODE_ENV: <code class="global-node-env"></code></p>
+<p>
+  globalThis.process.env.NODE_ENV: <code class="global-this-node-env"></code>
+</p>
 <p>import.meta.env.VITE_EXPAND_A: <code class="expand-a"></code></p>
 <p>import.meta.env.VITE_EXPAND_B: <code class="expand-b"></code></p>
 <p>import.meta.env.SSR: <code class="ssr"></code></p>
@@ -32,6 +36,8 @@
   text('.bool', typeof import.meta.env.VITE_BOOL)
   text('.ssr', import.meta.env.SSR)
   text('.node-env', process.env.NODE_ENV)
+  text('.global-node-env', global.process.env.NODE_ENV)
+  text('.global-this-node-env', globalThis.process.env.NODE_ENV)
   text('.env-object', JSON.stringify(import.meta.env, null, 2))
   text('.expand-a', import.meta.env.VITE_EXPAND_A)
   text('.expand-b', import.meta.env.VITE_EXPAND_B)

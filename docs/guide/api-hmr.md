@@ -51,6 +51,14 @@ if (import.meta.hot) {
 }
 ```
 
+## IntelliSense for TypeScript
+
+Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can create an `env.d.ts` in the `src` directory so TypeScript picks up the type definitions:
+
+```ts
+/// <reference types="vite/client" />
+```
+
 ## `hot.accept(cb)`
 
 For a module to self-accept, use `import.meta.hot.accept` with a callback which receives the updated module:

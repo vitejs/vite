@@ -159,6 +159,8 @@ The following hooks are called on each incoming module request:
 - [`load`](https://rollupjs.org/plugin-development/#load)
 - [`transform`](https://rollupjs.org/plugin-development/#transform)
 
+They also have an extended `options` parameter with additional Vite-specific properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
+
 The following hooks are called when the server is closed:
 
 - [`buildEnd`](https://rollupjs.org/plugin-development/#buildend)
@@ -536,7 +538,10 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.ws.send('my:greetings', { msg: 'hello' })
+        // Example: wait for a client to connect before sending a message
+        server.ws.on('connection', () => {
+          server.ws.send('my:greetings', { msg: 'hello' })
+        })
       },
     },
   ],

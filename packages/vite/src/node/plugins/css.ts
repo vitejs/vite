@@ -1796,8 +1796,8 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      override supports() {
-        return true
+      override supports(filename: string) {
+        return !isExternalUrl(filename)
       }
       override supportsSync() {
         return false
