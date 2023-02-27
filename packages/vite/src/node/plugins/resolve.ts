@@ -256,13 +256,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (
           targetWeb &&
           options.browserField &&
-          (res = tryResolveBrowserMapping(
-            fsPath,
-            importer,
-            options,
-            targetWeb,
-            true,
-          ))
+          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
         }
@@ -338,7 +332,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             importer,
             options,
             false,
-            targetWeb,
             external,
           ))
         ) {
@@ -1206,7 +1199,6 @@ function tryResolveBrowserMapping(
   importer: string | undefined,
   options: InternalResolveOptions,
   isFilePath: boolean,
-  targetWeb: boolean,
   externalize?: boolean,
 ) {
   let res: string | undefined
@@ -1216,12 +1208,10 @@ function tryResolveBrowserMapping(
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
     if (browserMappedPath) {
-      const fsPath = path.join(pkg.dir, browserMappedPath)
-
       if (
         (res = bareImportRE.test(browserMappedPath)
-          ? tryNodeResolve(browserMappedPath, importer, options, targetWeb)?.id
-          : tryFsResolve(fsPath, options))
+          ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
+          : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         isDebug &&
           debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
