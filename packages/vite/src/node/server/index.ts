@@ -753,7 +753,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    sourcemapIgnoreList: (sourcePath) => sourcePath.includes('/node_modules/'),
+    sourcemapIgnoreList: (sourcePath) => sourcePath.includes('node_modules'),
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     middlewareMode: !!raw?.middlewareMode,
   }
