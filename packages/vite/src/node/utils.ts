@@ -909,10 +909,6 @@ export function arraify<T>(target: T | T[]): T[] {
   return Array.isArray(target) ? target : [target]
 }
 
-export function toUpperCaseDriveLetter(pathName: string): string {
-  return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
-}
-
 // Taken from https://stackoverflow.com/a/36328890
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g

@@ -70,8 +70,8 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
         "sources": [
-          "/root/be-imported.css",
-          "/root/linked-with-import.css",
+          "be-imported.css",
+          "linked-with-import.css",
         ],
         "sourcesContent": [
           ".be-imported {
