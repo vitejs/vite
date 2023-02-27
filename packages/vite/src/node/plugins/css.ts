@@ -464,15 +464,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (
-          !isCSSRequest(id) ||
-          cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
-        ) {
-          isPureCssChunk = false
-        }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
+          // a css module contains JS, so it makes this not a pure css chunk
+          if (cssModuleRE.test(id)) {
+            isPureCssChunk = false
+          }
+        } else {
+          // if the module does not have a style, then it's not a pure css chunk.
+          // this is true because in the `transform` hook above, only modules
+          // that are css gets added to the `styles` map.
+          isPureCssChunk = false
         }
       }
 
@@ -506,7 +508,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
-          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
+          chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
             'asset',
@@ -570,7 +572,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           generatedAssets
             .get(config)!
             .set(referenceId, { originalName, isEntry })
-          chunk.viteMetadata.importedCss.add(this.getFileName(referenceId))
+          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
@@ -622,6 +624,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return null
     },
 
+    augmentChunkHash(chunk) {
+      if (chunk.viteMetadata?.importedCss.size) {
+        let hash = ''
+        for (const id of chunk.viteMetadata.importedCss) {
+          hash += id
+        }
+        return hash
+      }
+    },
+
     async generateBundle(opts, bundle) {
       // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__) {
@@ -665,11 +677,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const {
-                  viteMetadata: { importedCss },
-                } = bundle[file] as OutputChunk
+                const { importedCss } = (bundle[file] as OutputChunk)
+                  .viteMetadata!
                 importedCss.forEach((file) =>
-                  chunk.viteMetadata.importedCss.add(file),
+                  chunk.viteMetadata!.importedCss.add(file),
                 )
                 return false
               }
@@ -1785,8 +1796,8 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      override supports() {
-        return true
+      override supports(filename: string) {
+        return !isExternalUrl(filename)
       }
       override supportsSync() {
         return false

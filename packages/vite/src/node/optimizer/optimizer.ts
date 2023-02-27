@@ -225,17 +225,15 @@ async function createDepsOptimizer(
               }
             }
 
-            if (!isBuild) {
-              const knownDeps = prepareKnownDeps()
+            const knownDeps = prepareKnownDeps()
 
-              // For dev, we run the scanner and the first optimization
-              // run on the background, but we wait until crawling has ended
-              // to decide if we send this result to the browser or we need to
-              // do another optimize step
-              postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-            }
+            // For dev, we run the scanner and the first optimization
+            // run on the background, but we wait until crawling has ended
+            // to decide if we send this result to the browser or we need to
+            // do another optimize step
+            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
           } catch (e) {
-            logger.error(e.message)
+            logger.error(e.stack || e.message)
           } finally {
             resolve()
             depsOptimizer.scanProcessing = undefined
@@ -548,7 +546,7 @@ async function createDepsOptimizer(
       id,
       file: getOptimizedDepPath(id, config, ssr),
       src: resolved,
-      // Assing a browserHash to this missing dependency that is unique to
+      // Adding a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
       // doesn't alter the bundled files of previous known dependencies,
       // we don't need a full reload and this browserHash will be kept

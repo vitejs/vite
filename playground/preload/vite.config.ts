@@ -1,8 +1,6 @@
-import vuePlugin from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [vuePlugin()],
   build: {
     outDir: 'dist/normal',
     minify: 'terser',
@@ -12,6 +10,15 @@ export default defineConfig({
       },
       compress: {
         passes: 3,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('chunk.js')) {
+            return 'chunk'
+          }
+        },
       },
     },
   },

@@ -8,7 +8,7 @@ import {
   usingDynamicImport,
 } from '../utils'
 import { transformRequest } from '../server/transformRequest'
-import type { InternalResolveOptions } from '../plugins/resolve'
+import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
   ssrDynamicImportKey,
@@ -112,10 +112,11 @@ async function instantiateModule(
     root,
   } = server.config
 
-  const resolveOptions: InternalResolveOptions = {
+  const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
     mainFields: ['main'],
     browserField: true,
     conditions: [],
+    overrideConditions: ['production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
@@ -223,7 +224,7 @@ async function instantiateModule(
 async function nodeImport(
   id: string,
   importer: string,
-  resolveOptions: InternalResolveOptions,
+  resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
   if (id.startsWith('node:') || isBuiltin(id)) {

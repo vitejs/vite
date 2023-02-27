@@ -23,17 +23,31 @@ import type {
   types as BabelTypes,
 } from '@babel/core'
 import colors from 'picocolors'
+import browserslist from 'browserslist'
 import type { Options } from './types'
+import {
+  detectModernBrowserCode,
+  dynamicFallbackInlineCode,
+  legacyEntryId,
+  legacyPolyfillId,
+  modernChunkLegacyGuard,
+  safari10NoModuleFix,
+  systemJSInlineCode,
+} from './snippets'
 
 // lazy load babel since it's not used during dev
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-let babel: typeof import('@babel/standalone') | undefined
+let babel: typeof import('@babel/core') | undefined
 async function loadBabel() {
   if (!babel) {
-    babel = await import('@babel/standalone')
+    babel = await import('@babel/core')
   }
   return babel
 }
+
+// The requested module 'browserslist' is a CommonJS module
+// which may not support all module.exports as named exports
+const { loadConfig: browserslistLoadConfig } = browserslist
 
 // Duplicated from build.ts in Vite Core, at least while the feature is experimental
 // We should later expose this helper for other plugins to use
@@ -102,29 +116,15 @@ function toAssetPathFromHtml(
   )
 }
 
-// https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
-// DO NOT ALTER THIS CONTENT
-const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();`
-
-const legacyPolyfillId = 'vite-legacy-polyfill'
-const legacyEntryId = 'vite-legacy-entry'
-const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
-
-const detectModernBrowserVarName = '__vite_is_modern_browser'
-const detectModernBrowserCode = `try{import.meta.url;import("_").catch(()=>1);}catch(e){}window.${detectModernBrowserVarName}=true;`
-const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy build because dynamic import or import.meta.url is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
-
-const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
-
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
-  const targets = options.targets || 'defaults'
+  let targets: Options['targets']
+
   const genLegacy = options.renderLegacyChunks !== false
-  const genDynamicFallback = genLegacy
 
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
@@ -183,13 +183,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
-          // browsers supporting ESM + dynamic import + import.meta
+          // browsers supporting ESM + dynamic import + import.meta + async generator
           config.build.target = [
             'es2020',
             'edge79',
             'firefox67',
             'chrome64',
-            'safari11.1',
+            'safari12',
           ]
         }
       }
@@ -250,7 +250,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // legacy bundle
-      if (legacyPolyfills.size || genDynamicFallback) {
+      if (legacyPolyfills.size) {
         // check if the target needs Promise polyfill because SystemJS relies on it
         // https://github.com/systemjs/systemjs#ie11-support
         await detectPolyfills(
@@ -295,6 +295,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (!genLegacy || config.build.ssr) {
         return
       }
+
+      targets =
+        options.targets ||
+        browserslistLoadConfig({ path: config.root }) ||
+        'last 2 versions and not dead, > 0.3%, Firefox ESR'
+      isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
 
       const getLegacyOutputFileName = (
         fileNames:
@@ -359,8 +365,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         const ms = new MagicString(raw)
 
-        if (genDynamicFallback && chunk.isEntry) {
-          ms.prepend(forceDynamicImportUsage)
+        if (genLegacy && chunk.isEntry) {
+          // append this code to avoid modern chunks running on legacy targeted browsers
+          ms.prepend(modernChunkLegacyGuard)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -412,7 +419,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
       const babel = await loadBabel()
-      const { code, map } = babel.transform(raw, {
+      const result = babel.transform(raw, {
         babelrc: false,
         configFile: false,
         compact: !!config.build.minify,
@@ -431,7 +438,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             }),
           ],
           [
-            'env',
+            '@babel/preset-env',
             createBabelPresetEnvOptions(targets, {
               needPolyfills,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig,
@@ -440,7 +447,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         ],
       })
 
-      if (code) return { code, map }
+      if (result) return { code: result.code!, map: result.map }
       return null
     },
 
@@ -549,7 +556,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 5. inject dynamic import fallback entry
-      if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename) {
+      if (genLegacy && legacyPolyfillFilename && legacyEntryFilename) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
@@ -578,7 +585,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (isLegacyBundle(bundle, opts)) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
-          if (bundle[name].type === 'asset') {
+          if (bundle[name].type === 'asset' && !/.+\.map$/.test(name)) {
             delete bundle[name]
           }
         }
@@ -595,20 +602,20 @@ export async function detectPolyfills(
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
-  const { ast } = babel.transform(code, {
+  const result = babel.transform(code, {
     ast: true,
     babelrc: false,
     configFile: false,
     presets: [
       [
-        'env',
+        '@babel/preset-env',
         createBabelPresetEnvOptions(targets, {
           ignoreBrowserslistConfig: true,
         }),
       ],
     ],
   })
-  for (const node of ast!.program.body) {
+  for (const node of result!.ast!.program.body) {
     if (node.type === 'ImportDeclaration') {
       const source = node.source.value
       if (
@@ -797,10 +804,10 @@ function wrapIIFEBabelPlugin(): BabelPlugin {
 }
 
 export const cspHashes = [
-  createHash('sha256').update(safari10NoModuleFix).digest('base64'),
-  createHash('sha256').update(systemJSInlineCode).digest('base64'),
-  createHash('sha256').update(detectModernBrowserCode).digest('base64'),
-  createHash('sha256').update(dynamicFallbackInlineCode).digest('base64'),
-]
+  safari10NoModuleFix,
+  systemJSInlineCode,
+  detectModernBrowserCode,
+  dynamicFallbackInlineCode,
+].map((i) => createHash('sha256').update(i).digest('base64'))
 
 export default viteLegacyPlugin

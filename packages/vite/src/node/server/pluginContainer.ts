@@ -42,9 +42,11 @@ import type {
   LoadResult,
   MinimalPluginContext,
   ModuleInfo,
+  ModuleOptions,
   NormalizedInputOptions,
   OutputOptions,
   ParallelPluginHooks,
+  PartialNull,
   PartialResolvedId,
   ResolvedId,
   RollupError,
@@ -126,8 +128,6 @@ export interface PluginContainer {
 
 type PluginContext = Omit<
   RollupPluginContext,
-  // not supported
-  | 'load'
   // not documented
   | 'cache'
   // deprecated
@@ -221,6 +221,10 @@ export async function createPluginContainer(
       if (key in info) {
         return info[key]
       }
+      // Don't throw an error when returning from an async function
+      if (key === 'then') {
+        return undefined
+      }
       throw Error(
         `[vite] The "${key}" property of ModuleInfo is not supported.`,
       )
@@ -306,6 +310,28 @@ export async function createPluginContainer(
       return out as ResolvedId | null
     }
 
+    async load(
+      options: {
+        id: string
+        resolveDependencies?: boolean
+      } & Partial<PartialNull<ModuleOptions>>,
+    ): Promise<ModuleInfo> {
+      // We may not have added this to our module graph yet, so ensure it exists
+      await moduleGraph?.ensureEntryFromUrl(options.id)
+      // Not all options passed to this function make sense in the context of loading individual files,
+      // but we can at least update the module info properties we support
+      updateModuleInfo(options.id, options)
+
+      await container.load(options.id, { ssr: this.ssr })
+      const moduleInfo = this.getModuleInfo(options.id)
+      // This shouldn't happen due to calling ensureEntryFromUrl, but 1) our types can't ensure that
+      // and 2) moduleGraph may not have been provided (though in the situations where that happens,
+      // we should never have plugins calling this.load)
+      if (!moduleInfo)
+        throw Error(`Failed to load module with id ${options.id}`)
+      return moduleInfo
+    }
+
     getModuleInfo(id: string) {
       return getModuleInfo(id)
     }
@@ -385,13 +411,8 @@ export async function createPluginContainer(
     if (ctx._activeCode) {
       err.pluginCode = ctx._activeCode
 
-      const pos =
-        position != null
-          ? position
-          : err.pos != null
-          ? err.pos
-          : // some rollup plugins, e.g. json, sets position instead of pos
-            (err as any).position
+      // some rollup plugins, e.g. json, sets err.position instead of err.pos
+      const pos = position ?? err.pos ?? (err as any).position
 
       if (pos != null) {
         let errLocation

@@ -40,7 +40,7 @@ import {
 } from '../optimizer'
 import { bindShortcuts } from '../shortcuts'
 import type { BindShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR } from '../constants'
+import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
@@ -73,7 +73,7 @@ import {
   handleHMRUpdate,
   updateModules,
 } from './hmr'
-import { openBrowser } from './openBrowser'
+import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
@@ -92,6 +92,7 @@ export interface ServerOptions extends CommonServerOptions {
   watch?: WatchOptions
   /**
    * Create Vite dev server to be used as a middleware in an existing server
+   * @default false
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**
@@ -267,6 +268,11 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
+
+  /**
+   * Open browser
+   */
+  openBrowser(): void
   /**
    * @internal
    */
@@ -396,15 +402,30 @@ export async function createServer(
       }
     },
     async listen(port?: number, isRestart?: boolean) {
-      await startServer(server, port, isRestart)
+      await startServer(server, port)
       if (httpServer) {
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
           config,
         )
+        if (!isRestart && config.server.open) server.openBrowser()
       }
       return server
+    },
+    openBrowser() {
+      const options = server.config.server
+      const url = server.resolvedUrls?.local[0]
+      if (url) {
+        const path =
+          typeof options.open === 'string'
+            ? new URL(options.open, url).href
+            : url
+
+        _openBrowser(path, true, server.config.logger)
+      } else {
+        server.config.logger.warn('No URL available to open in browser')
+      }
     },
     async close() {
       if (!middlewareMode) {
@@ -483,16 +504,10 @@ export async function createServer(
     return setPackageData(id, pkg)
   }
 
-  watcher.on('change', async (file) => {
-    file = normalizePath(file)
-    if (file.endsWith('/package.json')) {
-      return invalidatePackageData(packageCache, file)
-    }
-    // invalidate module graph cache on file change
-    moduleGraph.onFileChange(file)
+  const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(file, server)
+        await handleHMRUpdate(file, server, configOnly)
       } catch (err) {
         ws.send({
           type: 'error',
@@ -500,14 +515,27 @@ export async function createServer(
         })
       }
     }
+  }
+
+  const onFileAddUnlink = async (file: string) => {
+    file = normalizePath(file)
+    await handleFileAddUnlink(file, server)
+    await onHMRUpdate(file, true)
+  }
+
+  watcher.on('change', async (file) => {
+    file = normalizePath(file)
+    if (file.endsWith('/package.json')) {
+      return invalidatePackageData(packageCache, file)
+    }
+    // invalidate module graph cache on file change
+    moduleGraph.onFileChange(file)
+
+    await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', (file) => {
-    handleFileAddUnlink(normalizePath(file), server)
-  })
-  watcher.on('unlink', (file) => {
-    handleFileAddUnlink(normalizePath(file), server)
-  })
+  watcher.on('add', onFileAddUnlink)
+  watcher.on('unlink', onFileAddUnlink)
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
@@ -653,7 +681,6 @@ export async function createServer(
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
-  isRestart: boolean = false,
 ): Promise<void> {
   const httpServer = server.httpServer
   if (!httpServer) {
@@ -661,29 +688,15 @@ async function startServer(
   }
 
   const options = server.config.server
-  const port = inlinePort ?? options.port ?? 5173
+  const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
 
-  const protocol = options.https ? 'https' : 'http'
-
-  const serverPort = await httpServerStart(httpServer, {
+  await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger: server.config.logger,
   })
-
-  if (options.open && !isRestart) {
-    const path =
-      typeof options.open === 'string' ? options.open : server.config.base
-    openBrowser(
-      path.startsWith('http')
-        ? path
-        : `${protocol}://${hostname.name}:${serverPort}${path}`,
-      true,
-      server.config.logger,
-    )
-  }
 }
 
 function createServerCloseFn(server: http.Server | null) {
@@ -809,7 +822,10 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
-    if ((port ?? 5173) !== (prevPort ?? 5173) || host !== prevHost) {
+    if (
+      (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
+      host !== prevHost
+    ) {
       logger.info('')
       server.printUrls()
     }

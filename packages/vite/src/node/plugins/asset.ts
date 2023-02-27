@@ -23,6 +23,7 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
+const jsSourceMapRE = /\.[cm]?js\.map$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -77,7 +78,7 @@ export function renderAssetUrlInJS(
     s ||= new MagicString(code)
     const [full, referenceId, postfix = ''] = match
     const file = ctx.getFileName(referenceId)
-    chunk.viteMetadata.importedAssets.add(cleanUrl(file))
+    chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
       filename,
@@ -186,11 +187,16 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
-      if (config.command === 'build' && config.build.ssr) {
+      if (
+        config.command === 'build' &&
+        config.build.ssr &&
+        !config.build.ssrEmitAssets
+      ) {
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&
-            !file.includes('ssr-manifest.json')
+            !file.endsWith('ssr-manifest.json') &&
+            !jsSourceMapRE.test(file)
           ) {
             delete bundle[file]
           }
@@ -210,6 +216,10 @@ export function checkPublicFile(
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
+  if (!publicFile.startsWith(publicDir)) {
+    // can happen if URL starts with '../'
+    return
+  }
   if (fs.existsSync(publicFile)) {
     return publicFile
   } else {

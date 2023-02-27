@@ -73,14 +73,12 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
 } from './plugins/css'
-export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
-import type { ChunkMetadata } from './plugins/metadata'
 
 export type {
   WebSocketServer,
@@ -119,6 +117,7 @@ export type {
   GeneralImportGlobOptions,
   KnownAsTypeMap,
 } from 'types/importGlob'
+export type { ChunkMetadata } from 'types/metadata'
 
 // dep types
 export type {
@@ -140,9 +139,3 @@ export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-
-declare module 'rollup' {
-  export interface RenderedChunk {
-    viteMetadata: ChunkMetadata
-  }
-}

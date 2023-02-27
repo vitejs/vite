@@ -1,8 +1,6 @@
-import vuePlugin from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [vuePlugin()],
   build: {
     outDir: 'dist/resolve-deps',
     minify: 'terser',
@@ -14,9 +12,18 @@ export default defineConfig({
         passes: 3,
       },
     },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('chunk.js')) {
+            return 'chunk'
+          }
+        },
+      },
+    },
     modulePreload: {
       resolveDependencies(filename, deps, { hostId, hostType }) {
-        if (filename.includes('Hello')) {
+        if (filename.includes('hello')) {
           return [...deps, 'preloaded.js']
         }
         return deps
