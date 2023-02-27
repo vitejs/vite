@@ -268,6 +268,9 @@ async function loadAndTransform(
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
+    if (map.mappings && !map.sourcesContent) {
+      await injectSourcesContent(map, mod.file, logger)
+    }
     for (
       let sourcesIndex = 0;
       sourcesIndex < map.sources.length;
@@ -291,16 +294,6 @@ async function loadAndTransform(
           map.x_google_ignoreList.push(sourcesIndex)
         }
       }
-    }
-    if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
-    }
-    for (
-      let sourcesIndex = 0;
-      sourcesIndex < map.sources.length;
-      ++sourcesIndex
-    ) {
-      const sourcePath = map.sources[sourcesIndex]
 
       // Rewrite sources to relative paths to give debuggers the chance
       // to resolve and display them in a meaningful way (rather than
