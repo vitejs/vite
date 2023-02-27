@@ -136,8 +136,9 @@
     .sort()
     .join('\n')
   const alias = Object.entries(globs)
-    .filter(([_, mod]) => Object.keys(mod?.alias ?? {}).length === 1)
+    .filter(([_, mod]) => Object.keys(mod?.alias ?? {}).length === 2)
     .map(([glob]) => glob)
+
   document.querySelector('.escape-alias').textContent = alias.sort().join('\n')
 </script>
 

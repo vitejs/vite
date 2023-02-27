@@ -38,6 +38,9 @@ const globWithAlias = {
   '/dir/alias.js': {
     default: 'hi',
   },
+  '@dir/alias.js': {
+    default: 'hi',
+  },
 }
 
 const allResult = {
