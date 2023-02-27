@@ -3,7 +3,7 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
 import type { Loader, OnLoadResult, Plugin } from 'esbuild'
-import { build, formatMessages, transform } from 'esbuild'
+import esbuild, { formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import {
@@ -48,8 +48,11 @@ export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export async function scanImports(config: ResolvedConfig): Promise<{
-  deps: Record<string, string>
-  missing: Record<string, string>
+  cancel: () => Promise<void>
+  result: Promise<{
+    deps: Record<string, string>
+    missing: Record<string, string>
+  }>
 }> {
   // Only used to scan non-ssr code
 
@@ -93,7 +96,10 @@ export async function scanImports(config: ResolvedConfig): Promise<{
         ),
       )
     }
-    return { deps: {}, missing: {} }
+    return {
+      cancel: () => Promise.resolve(),
+      result: Promise.resolve({ deps: {}, missing: {} }),
+    }
   } else {
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
@@ -106,44 +112,57 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  try {
-    await build({
-      absWorkingDir: process.cwd(),
-      write: false,
-      stdin: {
-        contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
-        loader: 'js',
-      },
-      bundle: true,
-      format: 'esm',
-      logLevel: 'silent',
-      plugins: [...plugins, plugin],
-      ...esbuildOptions,
+  const esbuildContext = await esbuild.context({
+    absWorkingDir: process.cwd(),
+    write: false,
+    stdin: {
+      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
+      loader: 'js',
+    },
+    bundle: true,
+    format: 'esm',
+    logLevel: 'silent',
+    plugins: [...plugins, plugin],
+    ...esbuildOptions,
+  })
+
+  const result = esbuildContext
+    .rebuild()
+    .then(() => {
+      return {
+        // Ensure a fixed order so hashes are stable and improve logs
+        deps: orderedDependencies(deps),
+        missing,
+      }
     })
-  } catch (e) {
-    const prependMessage = colors.red(`\
+    .catch(async (e) => {
+      const prependMessage = colors.red(`\
 Failed to scan for dependencies from entries:
 ${entries.join('\n')}
 
 `)
-    if (e.errors) {
-      const msgs = await formatMessages(e.errors, {
-        kind: 'error',
-        color: true,
-      })
-      e.message = prependMessage + msgs.join('\n')
-    } else {
-      e.message = prependMessage + e.message
-    }
-    throw e
-  }
-
-  debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
+      if (e.errors) {
+        const msgs = await formatMessages(e.errors, {
+          kind: 'error',
+          color: true,
+        })
+        e.message = prependMessage + msgs.join('\n')
+      } else {
+        e.message = prependMessage + e.message
+      }
+      throw e
+    })
+    .finally(() => {
+      esbuildContext.dispose()
+      debug(
+        `Scan completed in ${(performance.now() - start).toFixed(2)}ms:`,
+        deps,
+      )
+    })
 
   return {
-    // Ensure a fixed order so hashes are stable and improve logs
-    deps: orderedDependencies(deps),
-    missing,
+    cancel: () => esbuildContext.cancel(),
+    result,
   }
 }
 

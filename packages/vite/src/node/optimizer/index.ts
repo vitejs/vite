@@ -239,7 +239,7 @@ export async function optimizeDeps(
     return cachedMetadata
   }
 
-  const deps = await discoverProjectDependencies(config)
+  const deps = await (await discoverProjectDependencies(config)).result
 
   const depsString = depsLogString(Object.keys(deps))
   log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
@@ -382,24 +382,32 @@ export function loadCachedDepOptimizationMetadata(
  */
 export async function discoverProjectDependencies(
   config: ResolvedConfig,
-): Promise<Record<string, string>> {
-  const { deps, missing } = await scanImports(config)
+): Promise<{
+  cancel: () => Promise<void>
+  result: Promise<Record<string, string>>
+}> {
+  const { cancel, result } = await scanImports(config)
 
-  const missingIds = Object.keys(missing)
-  if (missingIds.length) {
-    throw new Error(
-      `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
-        .map(
-          (id) =>
-            `${colors.cyan(id)} ${colors.white(
-              colors.dim(`(imported by ${missing[id]})`),
-            )}`,
+  return {
+    cancel,
+    result: result.then(({ deps, missing }) => {
+      const missingIds = Object.keys(missing)
+      if (missingIds.length) {
+        throw new Error(
+          `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
+            .map(
+              (id) =>
+                `${colors.cyan(id)} ${colors.white(
+                  colors.dim(`(imported by ${missing[id]})`),
+                )}`,
+            )
+            .join(`\n  `)}\n\nAre they installed?`,
         )
-        .join(`\n  `)}\n\nAre they installed?`,
-    )
-  }
+      }
 
-  return deps
+      return deps
+    }),
+  }
 }
 
 export function toDiscoveredDependencies(
@@ -679,7 +687,7 @@ export async function findKnownImports(
   config: ResolvedConfig,
   ssr: boolean,
 ): Promise<string[]> {
-  const deps = (await scanImports(config)).deps
+  const deps = (await (await scanImports(config)).result).deps
   await addManuallyIncludedOptimizeDeps(deps, config, ssr)
   return Object.keys(deps)
 }
