@@ -455,11 +455,15 @@ export async function transformGlobImport(
           files.forEach((file, i) => {
             const paths = resolvePaths(file)
             const filePath = paths.filePath
+            const safeFile = globSafePath(file)
             const aliasPath =
               aliasPattern &&
               typeof aliasPattern.find === 'string' &&
-              file.replace(aliasPattern.replacement, aliasPattern.find)
-            const aliasMatched = aliasPath && aliasPath !== file
+              safeFile.replace(
+                globSafePath(aliasPattern.replacement),
+                aliasPattern.find,
+              )
+            const aliasMatched = aliasPath && aliasPath !== safeFile
             let importPath = paths.importPath
             let importQuery = query
 
