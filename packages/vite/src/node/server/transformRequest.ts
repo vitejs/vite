@@ -271,6 +271,27 @@ async function loadAndTransform(
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }
+    for (
+      let sourcesIndex = 0;
+      sourcesIndex < map.sources.length;
+      ++sourcesIndex
+    ) {
+      const sourcePath = map.sources[sourcesIndex]
+
+      // Rewrite sources to relative paths to give debuggers the chance
+      // to resolve and display them in a meaningful way (rather than
+      // with absolute paths).
+      if (
+        sourcePath &&
+        path.isAbsolute(sourcePath) &&
+        path.isAbsolute(mod.file)
+      ) {
+        map.sources[sourcesIndex] = path.relative(
+          path.dirname(mod.file),
+          sourcePath,
+        )
+      }
+    }
   }
 
   const result =
