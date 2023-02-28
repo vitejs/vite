@@ -161,13 +161,24 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   let optimizationResult:
-    | { cancel: () => Promise<void>; result: Promise<DepOptimizationResult> }
+    | {
+        cancel: () => Promise<void>
+        result: Promise<DepOptimizationResult>
+      }
+    | undefined
+
+  let discover:
+    | {
+        cancel: () => Promise<void>
+        result: Promise<Record<string, string>>
+      }
     | undefined
 
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
     await Promise.allSettled([
+      discover?.cancel(),
       depsOptimizer.scanProcessing,
       optimizationResult?.cancel(),
       optimizingNewDeps,
@@ -206,7 +217,9 @@ async function createDepsOptimizer(
           try {
             debug(colors.green(`scanning for dependencies...`))
 
-            const deps = await discoverProjectDependencies(config)
+            discover = discoverProjectDependencies(config)
+            const deps = await discover.result
+            discover = undefined
 
             debug(
               colors.green(
