@@ -214,6 +214,9 @@ async function findAvailablePort(
         const _port = await findAvailablePort(++port, logger, host, strictPort)
         resolve(_port)
       }
+      if (!server.closed) {
+        server.end()
+      }
     })
     server.on('error', async (err: NodeJS.ErrnoException) => {
       resolve(port)
