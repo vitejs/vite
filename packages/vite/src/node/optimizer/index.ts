@@ -239,7 +239,7 @@ export async function optimizeDeps(
     return cachedMetadata
   }
 
-  const deps = await (await discoverProjectDependencies(config)).result
+  const deps = await discoverProjectDependencies(config).result
 
   const depsString = depsLogString(Object.keys(deps))
   log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
@@ -380,13 +380,11 @@ export function loadCachedDepOptimizationMetadata(
  * Initial optimizeDeps at server start. Perform a fast scan using esbuild to
  * find deps to pre-bundle and include user hard-coded dependencies
  */
-export async function discoverProjectDependencies(
-  config: ResolvedConfig,
-): Promise<{
+export function discoverProjectDependencies(config: ResolvedConfig): {
   cancel: () => Promise<void>
   result: Promise<Record<string, string>>
-}> {
-  const { cancel, result } = await scanImports(config)
+} {
+  const { cancel, result } = scanImports(config)
 
   return {
     cancel,
@@ -687,7 +685,7 @@ export async function findKnownImports(
   config: ResolvedConfig,
   ssr: boolean,
 ): Promise<string[]> {
-  const deps = (await (await scanImports(config)).result).deps
+  const { deps } = await scanImports(config).result
   await addManuallyIncludedOptimizeDeps(deps, config, ssr)
   return Object.keys(deps)
 }

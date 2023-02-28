@@ -211,7 +211,7 @@ async function createDepsOptimizer(
           try {
             debug(colors.green(`scanning for dependencies...`))
 
-            discover = await discoverProjectDependencies(config)
+            discover = discoverProjectDependencies(config)
             const deps = await discover.result
             discover = undefined
 
