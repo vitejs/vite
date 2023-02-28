@@ -361,7 +361,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           // because there is no way to check whether the default export is used
           (source.slice(expStart, start).includes('from') || isDynamicImport) &&
           // already has ?used query (by import.meta.glob)
-          !specifier.match(/\?used(&|$)/) &&
+          !specifier.match(/\?(used|raw|url)(&|$)/) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
