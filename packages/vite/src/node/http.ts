@@ -217,11 +217,6 @@ async function findAvailablePort(
     })
     server.on('error', async (err: NodeJS.ErrnoException) => {
       resolve(port)
-      // if (err.code === 'ECONNREFUSED') {
-      //   resolve(port)
-      // } else {
-      //   resolve(port)
-      // }
     })
   })
 }
