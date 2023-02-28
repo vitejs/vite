@@ -114,3 +114,16 @@
 .dark .vp-doc .custom-block a {
   transition: color 0.25s;
 }
+
+/* Avoid <code> being split by <wbr> */
+.vp-doc code:has(+ wbr + code) {
+  padding-right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.vp-doc code + wbr + code {
+  padding-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
