@@ -190,7 +190,7 @@ importers:
       dep-types: link:./src/types
       dotenv: ^16.0.3
       dotenv-expand: ^9.0.0
-      es-module-lexer: 1.1.0
+      es-module-lexer: ^1.2.0
       esbuild: ^0.17.5
       estree-walker: ^3.0.3
       etag: ^1.8.1
@@ -259,7 +259,7 @@ importers:
       dep-types: link:src/types
       dotenv: 16.0.3
       dotenv-expand: 9.0.0_dccccn23nvejzy75sgiosdt2au
-      es-module-lexer: 1.1.0
+      es-module-lexer: 1.2.0
       estree-walker: 3.0.3
       etag: 1.8.1
       fast-glob: 3.2.12
@@ -5077,8 +5077,8 @@ packages:
       which-typed-array: 1.1.9
     dev: true
 
-  /es-module-lexer/1.1.0:
-    resolution: {integrity: sha512-fJg+1tiyEeS8figV+fPcPpm8WqJEflG3yPU0NOm5xMvrNkuiy7HzX/Ljng4Y0hAoiw4/3hQTCFYw+ub8+a2pRA==}
+  /es-module-lexer/1.2.0:
+    resolution: {integrity: sha512-2BMfqBDeVCcOlLaL1ZAfp+D868SczNpKArrTM3dhpd7dK/OVlogzY15qpUngt+LMTq5UC/csb9vVQAgupucSbA==}
     dev: true
 
   /es-set-tostringtag/2.0.1:
@@ -5885,6 +5885,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -6287,7 +6300,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
