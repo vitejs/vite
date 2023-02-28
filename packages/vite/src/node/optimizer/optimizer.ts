@@ -160,14 +160,16 @@ async function createDepsOptimizer(
   // If there wasn't a cache or it is outdated, we need to prepare a first run
   let firstRunCalled = !!cachedMetadata
 
-  let postScanOptimizationResult: Promise<DepOptimizationResult> | undefined
+  let optimizationResult:
+    | { cancel: () => Promise<void>; result: Promise<DepOptimizationResult> }
+    | undefined
 
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
     await Promise.allSettled([
       depsOptimizer.scanProcessing,
-      postScanOptimizationResult,
+      optimizationResult?.cancel(),
       optimizingNewDeps,
     ])
   }
@@ -231,7 +233,7 @@ async function createDepsOptimizer(
             // run on the background, but we wait until crawling has ended
             // to decide if we send this result to the browser or we need to
             // do another optimize step
-            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+            optimizationResult = runOptimizeDeps(config, knownDeps)
           } catch (e) {
             logger.error(e.stack || e.message)
           } finally {
@@ -272,7 +274,8 @@ async function createDepsOptimizer(
 
     startNextDiscoveredBatch()
 
-    return await runOptimizeDeps(config, knownDeps)
+    optimizationResult = runOptimizeDeps(config, knownDeps)
+    return await optimizationResult.result
   }
 
   function prepareKnownDeps() {
@@ -595,9 +598,9 @@ async function createDepsOptimizer(
     // It normally should be over by the time crawling of user code ended
     await depsOptimizer.scanProcessing
 
-    if (!isBuild && postScanOptimizationResult) {
-      const result = await postScanOptimizationResult
-      postScanOptimizationResult = undefined
+    if (!isBuild && optimizationResult) {
+      const result = await optimizationResult.result
+      optimizationResult = undefined
 
       const scanDeps = Object.keys(result.metadata.optimized)
 
