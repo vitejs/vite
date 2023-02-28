@@ -2,8 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
-import type { Loader, OnLoadResult, Plugin } from 'esbuild'
-import { build, formatMessages, transform } from 'esbuild'
+import type { BuildContext, Loader, OnLoadResult, Plugin } from 'esbuild'
+import esbuild, { formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import {
@@ -47,14 +47,91 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
-export async function scanImports(config: ResolvedConfig): Promise<{
-  deps: Record<string, string>
-  missing: Record<string, string>
-}> {
+export function scanImports(config: ResolvedConfig): {
+  cancel: () => Promise<void>
+  result: Promise<{
+    deps: Record<string, string>
+    missing: Record<string, string>
+  }>
+} {
   // Only used to scan non-ssr code
 
   const start = performance.now()
+  const deps: Record<string, string> = {}
+  const missing: Record<string, string> = {}
+  let entries: string[]
 
+  const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
+    config,
+  ).then((computedEntries) => {
+    entries = computedEntries
+
+    if (!entries.length) {
+      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
+        config.logger.warn(
+          colors.yellow(
+            '(!) Could not auto-determine entry point from rollupOptions or html files ' +
+              'and there are no explicit optimizeDeps.include patterns. ' +
+              'Skipping dependency pre-bundling.',
+          ),
+        )
+      }
+      return
+    }
+
+    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
+    return prepareEsbuildScanner(config, entries, deps, missing)
+  })
+
+  const result = esbuildContext
+    .then((context) => {
+      if (!context) {
+        return { deps: {}, missing: {} }
+      }
+      return context
+        .rebuild()
+        .then(() => {
+          return {
+            // Ensure a fixed order so hashes are stable and improve logs
+            deps: orderedDependencies(deps),
+            missing,
+          }
+        })
+        .finally(() => {
+          context.dispose()
+        })
+    })
+    .catch(async (e) => {
+      const prependMessage = colors.red(`\
+  Failed to scan for dependencies from entries:
+  ${entries.join('\n')}
+
+  `)
+      if (e.errors) {
+        const msgs = await formatMessages(e.errors, {
+          kind: 'error',
+          color: true,
+        })
+        e.message = prependMessage + msgs.join('\n')
+      } else {
+        e.message = prependMessage + e.message
+      }
+      throw e
+    })
+    .finally(() => {
+      debug(
+        `Scan completed in ${(performance.now() - start).toFixed(2)}ms:`,
+        deps,
+      )
+    })
+
+  return {
+    cancel: () => esbuildContext.then((context) => context?.cancel()),
+    result,
+  }
+}
+
+async function computeEntries(config: ResolvedConfig) {
   let entries: string[] = []
 
   const explicitEntryPatterns = config.optimizeDeps.entries
@@ -83,68 +160,34 @@ export async function scanImports(config: ResolvedConfig): Promise<{
     (entry) => isScannable(entry) && fs.existsSync(entry),
   )
 
-  if (!entries.length) {
-    if (!explicitEntryPatterns && !config.optimizeDeps.include) {
-      config.logger.warn(
-        colors.yellow(
-          '(!) Could not auto-determine entry point from rollupOptions or html files ' +
-            'and there are no explicit optimizeDeps.include patterns. ' +
-            'Skipping dependency pre-bundling.',
-        ),
-      )
-    }
-    return { deps: {}, missing: {} }
-  } else {
-    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
-  }
+  return entries
+}
 
-  const deps: Record<string, string> = {}
-  const missing: Record<string, string> = {}
+async function prepareEsbuildScanner(
+  config: ResolvedConfig,
+  entries: string[],
+  deps: Record<string, string>,
+  missing: Record<string, string>,
+) {
   const container = await createPluginContainer(config)
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  try {
-    await build({
-      absWorkingDir: process.cwd(),
-      write: false,
-      stdin: {
-        contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
-        loader: 'js',
-      },
-      bundle: true,
-      format: 'esm',
-      logLevel: 'silent',
-      plugins: [...plugins, plugin],
-      ...esbuildOptions,
-    })
-  } catch (e) {
-    const prependMessage = colors.red(`\
-Failed to scan for dependencies from entries:
-${entries.join('\n')}
-
-`)
-    if (e.errors) {
-      const msgs = await formatMessages(e.errors, {
-        kind: 'error',
-        color: true,
-      })
-      e.message = prependMessage + msgs.join('\n')
-    } else {
-      e.message = prependMessage + e.message
-    }
-    throw e
-  }
-
-  debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
-
-  return {
-    // Ensure a fixed order so hashes are stable and improve logs
-    deps: orderedDependencies(deps),
-    missing,
-  }
+  return await esbuild.context({
+    absWorkingDir: process.cwd(),
+    write: false,
+    stdin: {
+      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
+      loader: 'js',
+    },
+    bundle: true,
+    format: 'esm',
+    logLevel: 'silent',
+    plugins: [...plugins, plugin],
+    ...esbuildOptions,
+  })
 }
 
 function orderedDependencies(deps: Record<string, string>) {
