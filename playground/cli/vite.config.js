@@ -1,6 +1,6 @@
-const { defineConfig } = require('vite')
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   server: {
     host: 'localhost',
     headers: {

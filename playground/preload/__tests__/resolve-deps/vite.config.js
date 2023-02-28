@@ -1,1 +1,1 @@
-module.exports = require('../../vite.config-resolve-deps')
+export { default } from '../../vite.config-resolve-deps'

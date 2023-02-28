@@ -1,7 +1,8 @@
 {
-  "include": ["."],
+  "include": ["**/vite*config*", "**/*.ts"],
   "exclude": ["**/dist/**"],
   "compilerOptions": {
+    "checkJs": true,
     "target": "ES2020",
     "module": "ESNext",
     "outDir": "dist",

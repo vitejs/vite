@@ -1,8 +1,9 @@
-const fs = require('node:fs')
-const path = require('node:path')
-const legacy = require('@vitejs/plugin-legacy').default
+import fs from 'node:fs'
+import path from 'node:path'
+import legacy from '@vitejs/plugin-legacy'
+import { defineConfig } from 'vite'
 
-module.exports = {
+export default defineConfig({
   base: './',
   plugins: [
     legacy({
@@ -41,4 +42,4 @@ module.exports = {
       .replace(/<script nomodule/g, '<script')
     fs.writeFileSync(indexPath, index)
   },
-}
+})

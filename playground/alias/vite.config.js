@@ -1,9 +1,7 @@
-const path = require('node:path')
+import path from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   resolve: {
     alias: [
       { find: 'fs', replacement: path.resolve(__dirname, 'test.js') },
@@ -39,4 +37,4 @@ module.exports = {
     __VUE_OPTIONS_API__: true,
     __VUE_PROD_DEVTOOLS__: true,
   },
-}
+})

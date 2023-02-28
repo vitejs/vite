@@ -86,6 +86,12 @@ declare module 'vite' {
       baseRoute: string
     }
   }
+
+  interface UserConfig {
+    testConfig?: {
+      baseRoute: string
+    }
+  }
 }
 
 export function setViteUrl(url: string): void {

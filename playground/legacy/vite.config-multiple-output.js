@@ -1,5 +1,5 @@
-import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
+import legacy from '@vitejs/plugin-legacy'
 
 export default defineConfig({
   plugins: [legacy({ modernPolyfills: true })],

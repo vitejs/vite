@@ -1,8 +1,8 @@
-const { defineConfig } = require('vite')
+import { defineConfig } from 'vite'
 
 process.env.EXPAND = 'expand'
 
-module.exports = defineConfig({
+export default defineConfig({
   base: '/env/',
   envPrefix: ['VITE_', 'CUSTOM_PREFIX_'],
   build: {

@@ -1,14 +1,16 @@
-const path = require('node:path')
+import path from 'node:path'
+import { defineConfig } from 'vite'
 
 // trigger scss bug: https://github.com/sass/dart-sass/issues/710
 // make sure Vite handles safely
+// @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.window = {}
+// @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.location = new URL('http://localhost/')
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+/** @type {import('vite').UserConfig} */
+// @ts-expect-error typecast
+export default defineConfig({
   build: {
     cssTarget: 'chrome61',
   },
@@ -69,4 +71,4 @@ module.exports = {
       },
     },
   },
-}
+})

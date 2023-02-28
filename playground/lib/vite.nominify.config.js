@@ -1,6 +1,7 @@
-const baseConfig = require('./vite.config')
+import { defineConfig } from 'vite'
+import baseConfig from './vite.config'
 
-module.exports = {
+export default defineConfig({
   ...baseConfig,
   build: {
     ...baseConfig.build,
@@ -8,4 +9,4 @@ module.exports = {
     outDir: 'dist/nominify',
   },
   plugins: [],
-}
+})

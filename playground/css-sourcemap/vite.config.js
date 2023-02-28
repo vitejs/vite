@@ -1,9 +1,7 @@
-const MagicString = require('magic-string')
+import { defineConfig } from 'vite'
+import MagicString from 'magic-string'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   resolve: {
     alias: {
       '@': __dirname,
@@ -58,4 +56,4 @@ module.exports = {
       },
     },
   ],
-}
+})
