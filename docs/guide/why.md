@@ -51,7 +51,9 @@ Ensuring optimal output and behavioral consistency between the dev server and th
 
 ## Why Not Bundle with esbuild?
 
-While `esbuild` is extremely fast and is already a very capable bundler for libraries, some of the important features needed for bundling _applications_ are still work in progress - in particular code-splitting and CSS handling. For the time being, Rollup is more mature and flexible in these regards. That said, we won't rule out the possibility of using `esbuild` for production builds when it stabilizes these features in the future.
+When Vite was first created, `esbuild` was not used for builds as features like code-splitting and CSS handling were still a work in progress, so Rollup was used instead as it is more mature and flexible in these regards.
+
+Today, `esbuild` is capable of handling these features, but Vite's adoption of Rollup's plugin API and architecture makes it hard to take advantage of `esbuild`'s performance, and even often incompatible. That said, we won't rule out the possibility of using `esbuild` for production builds if there are interests from the community.
 
 ## How is Vite Different from X?
 
