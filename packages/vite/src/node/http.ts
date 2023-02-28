@@ -195,6 +195,9 @@ export function setClientErrorHandler(
   })
 }
 
+/**
+ * Try to establish a tcp connection to find an available port
+ */
 async function findAvailablePort(
   port: number,
   logger: Logger,
@@ -204,6 +207,7 @@ async function findAvailablePort(
   return new Promise((resolve, reject) => {
     if (port > 65535) {
       reject(new Error('Port not found'))
+      return
     }
     const server = net.connect(port, host)
     server.on('connect', async () => {
