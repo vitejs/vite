@@ -1,7 +1,8 @@
 {
   "pnpm": {
     "overrides": {
-      "vite": "./packages/vite"
+      "vite": "./packages/vite",
+      "@vitejs/plugin-legacy": "./packages/plugin-legacy"
     }
   }
 }
