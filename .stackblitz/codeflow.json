@@ -1,0 +1,7 @@
+{
+  "pnpm": {
+    "overrides": {
+      "vite": "./packages/vite"
+    }
+  }
+}
