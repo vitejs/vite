@@ -22,6 +22,7 @@
     "@vitejs/test-dep-node-env": "file:./dep-node-env",
     "@vitejs/test-dep-not-js": "file:./dep-not-js",
     "@vitejs/test-dep-relative-to-main": "file:./dep-relative-to-main",
+    "@vitejs/test-dep-using-import-meta-url": "file:./dep-using-import-meta-url",
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "@vitejs/test-dep-with-dynamic-import": "file:./dep-with-dynamic-import",

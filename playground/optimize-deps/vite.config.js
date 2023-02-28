@@ -20,6 +20,7 @@ module.exports = {
     disabled: false,
     include: [
       '@vitejs/test-dep-linked-include',
+      '@vitejs/test-dep-using-import-meta-url',
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
       // will throw if optimized (should log warning instead)
       '@vitejs/test-non-optimizable-include',

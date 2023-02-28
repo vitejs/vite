@@ -626,6 +626,7 @@ importers:
       '@vitejs/test-dep-non-optimized': file:./dep-non-optimized
       '@vitejs/test-dep-not-js': file:./dep-not-js
       '@vitejs/test-dep-relative-to-main': file:./dep-relative-to-main
+      '@vitejs/test-dep-using-import-meta-url': file:./dep-using-import-meta-url
       '@vitejs/test-dep-with-builtin-module-cjs': file:./dep-with-builtin-module-cjs
       '@vitejs/test-dep-with-builtin-module-esm': file:./dep-with-builtin-module-esm
       '@vitejs/test-dep-with-dynamic-import': file:./dep-with-dynamic-import
@@ -657,6 +658,7 @@ importers:
       '@vitejs/test-dep-non-optimized': file:playground/optimize-deps/dep-non-optimized
       '@vitejs/test-dep-not-js': file:playground/optimize-deps/dep-not-js
       '@vitejs/test-dep-relative-to-main': file:playground/optimize-deps/dep-relative-to-main
+      '@vitejs/test-dep-using-import-meta-url': file:playground/optimize-deps/dep-using-import-meta-url
       '@vitejs/test-dep-with-builtin-module-cjs': file:playground/optimize-deps/dep-with-builtin-module-cjs
       '@vitejs/test-dep-with-builtin-module-esm': file:playground/optimize-deps/dep-with-builtin-module-esm
       '@vitejs/test-dep-with-dynamic-import': file:playground/optimize-deps/dep-with-dynamic-import
@@ -721,6 +723,9 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-relative-to-main:
+    specifiers: {}
+
+  playground/optimize-deps/dep-using-import-meta-url:
     specifiers: {}
 
   playground/optimize-deps/dep-with-builtin-module-cjs:
@@ -10047,6 +10052,12 @@ packages:
     resolution: {directory: playground/optimize-deps/dep-relative-to-main, type: directory}
     name: '@vitejs/test-dep-relative-to-main'
     version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-using-import-meta-url:
+    resolution: {directory: playground/optimize-deps/dep-using-import-meta-url, type: directory}
+    name: '@vitejs/test-dep-using-import-meta-url'
+    version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-with-builtin-module-cjs:

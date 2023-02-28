@@ -27,6 +27,7 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
+import { fixImportMetaUrl } from './fixImportMetaUrl'
 export {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -669,6 +670,8 @@ export async function runOptimizeDeps(
 
   const dataPath = path.join(processingCacheDir, '_metadata.json')
   writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
+
+  await fixImportMetaUrl(meta.outputs, process.cwd())
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 

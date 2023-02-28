@@ -96,6 +96,10 @@
 <h2>Non Optimized Module isn't duplicated</h2>
 <div class="non-optimized-module-is-not-duplicated"></div>
 
+<h2>Support import.meta.url</h2>
+<div class="support-import-meta-url"></div>
+<img class="support-import-meta-url-image" />
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -173,6 +177,10 @@
     '.non-optimized-module-is-not-duplicated',
     getFromBareImport().join(', '),
   )
+
+  import { url, imageUrl } from '@vitejs/test-dep-using-import-meta-url'
+  text('.support-import-meta-url', url)
+  document.querySelector('.support-import-meta-url-image').src = imageUrl
 </script>
 
 <script type="module">
