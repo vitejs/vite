@@ -99,7 +99,7 @@
     "dep-types": "link:./src/types",
     "dotenv": "^16.0.3",
     "dotenv-expand": "^9.0.0",
-    "es-module-lexer": "1.1.0",
+    "es-module-lexer": "^1.2.0",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.12",
