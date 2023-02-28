@@ -77,10 +77,9 @@ export function scanImports(config: ResolvedConfig): {
         )
       }
       return
-    } else {
-      debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
     }
 
+    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
     return prepareEsbuildScanner(config, entries, deps, missing)
   })
 
