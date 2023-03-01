@@ -17,6 +17,7 @@ import type {
   OutputOptions,
   PreRenderedChunk,
   RenderedChunk,
+  Plugin as RollupPlugin,
 } from 'rollup'
 import type {
   PluginItem as BabelPlugin,
@@ -120,7 +121,10 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
-function viteLegacyPlugin(options: Options = {}): Plugin[] {
+function viteLegacyPluginActual(options: Options = {}): {
+  plugins: Plugin[]
+  workerPlugins?: RollupPlugin[]
+} {
   let config: ResolvedConfig
   let targets: Options['targets']
 
@@ -593,7 +597,74 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     },
   }
 
-  return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
+  const legacyWorkerPlugin: RollupPlugin = {
+    name: 'vite:legacy-post-process',
+
+    async generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
+      for (const filename in bundle) {
+        const chunk = bundle[filename]
+        if (chunk.type !== 'chunk' || !chunk.isEntry) continue
+
+        // transform the legacy chunk with @babel/preset-env
+        const sourceMaps = !!config.build.sourcemap
+        const babel = await loadBabel()
+        const result = babel.transform(chunk.code, {
+          babelrc: false,
+          configFile: false,
+          compact: !!config.build.minify,
+          sourceMaps,
+          inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
+          presets: [
+            // forcing our plugin to run before preset-env by wrapping it in a
+            // preset so we can catch the injected import statements...
+            [
+              () => ({
+                plugins: [
+                  //recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                  replaceLegacyEnvBabelPlugin(),
+                  wrapIIFEBabelPlugin(),
+                ],
+              }),
+            ],
+            [
+              '@babel/preset-env',
+              createBabelPresetEnvOptions(targets, {
+                needPolyfills: false,
+                ignoreBrowserslistConfig: false,
+              }),
+            ],
+          ],
+        })
+
+        chunk.code = result!.code as string
+        chunk.map = result!.map as any
+      }
+    },
+  }
+
+  return {
+    plugins: [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin],
+    workerPlugins: [legacyWorkerPlugin],
+  }
+}
+
+const viteLegacyPlugin: {
+  (options?: Options):
+    | Plugin[]
+    | { plugins: Plugin[]; workerPlugins?: RollupPlugin[] }
+  (options: Options & { worker: true }): {
+    plugins: Plugin[]
+    workerPlugins?: RollupPlugin[]
+  }
+  (options: Options & { worker?: false }): Plugin[]
+} = (options = {}) => {
+  const result = viteLegacyPluginActual(options)
+
+  return (options.worker ? result : result.plugins) as any
 }
 
 export async function detectPolyfills(

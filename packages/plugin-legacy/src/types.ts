@@ -24,4 +24,8 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
+  /**
+   * default: false
+   */
+  worker?: boolean
 }
