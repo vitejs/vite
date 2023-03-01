@@ -193,17 +193,57 @@ const renameFiles: Record<string, string | undefined> = {
 }
 
 const defaultTargetDir = 'vite-project'
+const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
+
+function outputTip(root: string, autoInstall: boolean) {
+  const cdProjectName = path.relative(cwd, root)
+  console.log(`\nDone. Now run:\n`)
+  if (root !== cwd) {
+    console.log(
+      `  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`,
+    )
+  }
+  switch (pkgManager) {
+    case 'yarn':
+      autoInstall || console.log('  yarn')
+      console.log('  yarn dev')
+      break
+    default:
+      autoInstall || console.log(`  ${pkgManager} install`)
+      console.log(`  ${pkgManager} run dev`)
+      break
+  }
+}
+
+function install(root: string) {
+  const cdProjectName = path.relative(cwd, root)
+  process.chdir(cdProjectName)
+  console.log(`\nInstalling dependencies via ${pkgManager}...`)
+  spawn.sync(pkgManager, pkgManager === 'yarn' ? [] : ['install'], {
+    stdio: 'inherit',
+  })
+}
 
 async function init() {
   const argTargetDir = formatTargetDir(argv._[0])
   const argTemplate = argv.template || argv.t
+  const argAutoInstall = argv.install || argv.i
 
   let targetDir = argTargetDir || defaultTargetDir
   const getProjectName = () =>
     targetDir === '.' ? path.basename(path.resolve()) : targetDir
 
   let result: prompts.Answers<
-    'projectName' | 'overwrite' | 'packageName' | 'framework' | 'variant'
+    | 'projectName'
+    | 'overwrite'
+    | 'packageName'
+    | 'framework'
+    | 'variant'
+    | 'autoInstall'
   >
 
   try {
@@ -278,6 +318,11 @@ async function init() {
               }
             }),
         },
+        {
+          type: argAutoInstall ? null : 'confirm',
+          name: 'autoInstall',
+          message: reset('Install dependencies?'),
+        },
       ],
       {
         onCancel: () => {
@@ -291,7 +336,13 @@ async function init() {
   }
 
   // user choice associated with prompts
-  const { framework, overwrite, packageName, variant } = result
+  const {
+    framework,
+    overwrite,
+    packageName,
+    variant,
+    autoInstall = argAutoInstall === true,
+  } = result
 
   const root = path.join(cwd, targetDir)
 
@@ -308,10 +359,6 @@ async function init() {
     isReactSwc = true
     template = template.replace('-swc', '')
   }
-
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
@@ -377,25 +424,9 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
-  const cdProjectName = path.relative(cwd, root)
-  console.log(`\nDone. Now run:\n`)
-  if (root !== cwd) {
-    console.log(
-      `  cd ${
-        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
-      }`,
-    )
-  }
-  switch (pkgManager) {
-    case 'yarn':
-      console.log('  yarn')
-      console.log('  yarn dev')
-      break
-    default:
-      console.log(`  ${pkgManager} install`)
-      console.log(`  ${pkgManager} run dev`)
-      break
-  }
+  autoInstall && install(root)
+  outputTip(root, autoInstall)
+
   console.log()
 }
 
