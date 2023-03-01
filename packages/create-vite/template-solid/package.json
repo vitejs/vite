@@ -1,14 +1,13 @@
 {
-  "name": "vite-template-solid",
+  "name": "vite-solid-starter",
+  "private": true,
   "version": "0.0.0",
-  "description": "",
+  "type": "module",
   "scripts": {
-    "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
-  "license": "MIT",
   "devDependencies": {
     "vite": "^4.1.1",
     "vite-plugin-solid": "^2.5.0"

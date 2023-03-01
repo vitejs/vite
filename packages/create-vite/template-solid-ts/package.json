@@ -1,14 +1,13 @@
 {
-  "name": "vite-template-solid",
+  "name": "vite-solid-typescript-starter",
+  "private": true,
   "version": "0.0.0",
-  "description": "",
+  "type": "module",
   "scripts": {
-    "start": "vite",
     "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
-  "license": "MIT",
   "devDependencies": {
     "typescript": "^4.9.5",
     "vite": "^4.1.1",
