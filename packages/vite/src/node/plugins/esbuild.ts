@@ -18,7 +18,6 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
-  toUpperCaseDriveLetter,
 } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
@@ -191,9 +190,6 @@ export async function transformWithEsbuild(
         resolvedOptions.sourcemap && resolvedOptions.sourcemap !== 'inline'
           ? JSON.parse(result.map)
           : { mappings: '' }
-    }
-    if (Array.isArray(map.sources)) {
-      map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
     }
     return {
       ...result,
