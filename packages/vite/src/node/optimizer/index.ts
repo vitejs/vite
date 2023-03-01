@@ -617,9 +617,8 @@ export function runOptimizeDeps(
       })
   })
 
-  result.catch((error) => {
+  result.catch(() => {
     cleanUp()
-    throw error
   })
 
   return {
