@@ -33,7 +33,6 @@ if (debugIndex > 0) {
     }${value}`
   }
 
-
   if (filterIndex > 0) {
     const filter = process.argv[filterIndex + 1]
     if (filter && !filter.startsWith('-')) {
