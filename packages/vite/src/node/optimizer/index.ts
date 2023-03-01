@@ -613,7 +613,7 @@ export function runOptimizeDeps(
         return createProcessingResult()
       })
       .finally(() => {
-        context.dispose()
+        return context.dispose()
       })
   })
 
