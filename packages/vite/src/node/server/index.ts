@@ -121,7 +121,7 @@ export interface ServerOptions extends CommonServerOptions {
    *
    * By default, it excludes all paths containing `node_modules`. You can pass `false` to
    * disable this behavior, or, for full control, a function that takes the source path and
-   * sourcemap path.
+   * sourcemap path and returns whether to ignore the source path.
    */
   sourcemapIgnoreList?:
     | false
