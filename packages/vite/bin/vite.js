@@ -21,16 +21,18 @@ if (debugIndex > 0) {
   let value = process.argv[debugIndex + 1]
   if (!value || value.startsWith('-')) {
     value = 'vite:*'
+    process.env.DEBUG = process.env.DEBUG || value
   } else {
     // support debugging multiple flags with comma-separated list
     value = value
       .split(',')
       .map((v) => `vite:${v}`)
       .join(',')
+    process.env.DEBUG = `${
+      process.env.DEBUG ? process.env.DEBUG + ',' : ''
+    }${value}`
   }
-  process.env.DEBUG = `${
-    process.env.DEBUG ? process.env.DEBUG + ',' : ''
-  }${value}`
+
 
   if (filterIndex > 0) {
     const filter = process.argv[filterIndex + 1]
