@@ -165,7 +165,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     name: 'vite:legacy-config',
 
     config(config, env) {
-      if (env.command === 'build') {
+      if (env.command === 'build' && !config.build?.ssr) {
         if (!config.build) {
           config.build = {}
         }
