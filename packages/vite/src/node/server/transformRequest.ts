@@ -277,6 +277,7 @@ async function loadAndTransform(
       ++sourcesIndex
     ) {
       const sourcePath = map.sources[sourcesIndex]
+      if (!sourcePath) continue
 
       const sourcemapPath = `${mod.file}.map`
       const ignoreList = config.server.sourcemapIgnoreList(
@@ -298,11 +299,7 @@ async function loadAndTransform(
       // Rewrite sources to relative paths to give debuggers the chance
       // to resolve and display them in a meaningful way (rather than
       // with absolute paths).
-      if (
-        sourcePath &&
-        path.isAbsolute(sourcePath) &&
-        path.isAbsolute(mod.file)
-      ) {
+      if (path.isAbsolute(sourcePath) && path.isAbsolute(mod.file)) {
         map.sources[sourcesIndex] = path.relative(
           path.dirname(mod.file),
           sourcePath,
