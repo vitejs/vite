@@ -37,13 +37,14 @@ interface Pkg {
   version: string
   private?: boolean
 }
-export function getPackageInfo(pkgName: string): {
+interface PkgInfo {
   pkg: Pkg
   pkgName: string
   pkgDir: string
   pkgPath: string
   currentVersion: string
-} {
+}
+export function getPackageInfo(pkgName: string): PkgInfo {
   const pkgDir = path.resolve(__dirname, '../packages/' + pkgName)
 
   if (!existsSync(pkgDir)) {
@@ -52,7 +53,6 @@ export function getPackageInfo(pkgName: string): {
 
   const pkgPath = path.resolve(pkgDir, 'package.json')
   const pkg: Pkg = require(pkgPath)
-  const currentVersion = pkg.version
 
   if (pkg.private) {
     throw new Error(`Package ${pkgName} is private`)
@@ -63,7 +63,7 @@ export function getPackageInfo(pkgName: string): {
     pkgName,
     pkgDir,
     pkgPath,
-    currentVersion,
+    currentVersion: pkg.version,
   }
 }
 
