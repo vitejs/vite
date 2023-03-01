@@ -23,6 +23,7 @@ import {
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
+import { resolveEnvPrefix } from '../env'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -948,6 +949,7 @@ export function postImportMapHook(): IndexHtmlTransformHook {
  */
 export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   const pattern = /%(\S+?)%/g
+  const envPrefix = resolveEnvPrefix({ envPrefix: config.envPrefix })
   const env: Record<string, any> = { ...config.env }
   // account for user env defines
   for (const key in config.define) {
@@ -956,9 +958,27 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
     }
   }
-  return (html) => {
+  return (html, ctx) => {
     return html.replace(pattern, (text, key) => {
-      return key in env ? env[key] : text
+      if (key in env) {
+        return env[key]
+      } else {
+        if (envPrefix.some((prefix) => key.startsWith(prefix))) {
+          const relativeHtml = normalizePath(
+            path.relative(config.root, ctx.filename),
+          )
+          config.logger.warn(
+            colors.yellow(
+              colors.bold(
+                `(!) ${text} is not defined in env variables found in /${relativeHtml}. ` +
+                  `Is the variable mistyped?`,
+              ),
+            ),
+          )
+        }
+
+        return text
+      }
     })
   }
 }
