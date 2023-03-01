@@ -34,6 +34,7 @@ import {
   joinUrlSegments,
   lookupFile,
   normalizePath,
+  requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
@@ -298,6 +299,7 @@ export interface ResolvedBuildOptions
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   logger: Logger,
+  root: string,
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   if (raw) {
@@ -378,8 +380,20 @@ export function resolveBuildOptions(
   if (resolved.target === 'modules') {
     resolved.target = ESBUILD_MODULES_TARGET
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    // esnext + terser: limit to es2021 so it can be minified by terser
-    resolved.target = 'es2021'
+    try {
+      const terserPackageJsonPath = requireResolveFromRootWithFallback(
+        root,
+        'terser/package.json',
+      )
+      const terserPackageJson = JSON.parse(
+        fs.readFileSync(terserPackageJsonPath, 'utf-8'),
+      )
+      const v = terserPackageJson.version.split('.')
+      if (v[0] === '5' && v[1] < 16) {
+        // esnext + terser 5.16<: limit to es2021 so it can be minified by terser
+        resolved.target = 'es2021'
+      }
+    } catch {}
   }
 
   if (!resolved.cssTarget) {
