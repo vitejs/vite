@@ -625,7 +625,7 @@ export function runOptimizeDeps(
   return {
     async cancel() {
       const { context } = await preparedRun
-      context.cancel()
+      await context.cancel()
       cleanUp()
     },
     result,
