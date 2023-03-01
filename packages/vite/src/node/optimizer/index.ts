@@ -3,8 +3,8 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
-import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import { build } from 'esbuild'
+import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import { createFilter } from '@rollup/pluginutils'
 import { getDepOptimizationConfig } from '../config'
@@ -248,7 +248,7 @@ export async function optimizeDeps(
 
   const depsInfo = toDiscoveredDependencies(config, deps, ssr)
 
-  const result = await runOptimizeDeps(config, depsInfo)
+  const result = await runOptimizeDeps(config, depsInfo).result
 
   await result.commit()
 
@@ -299,7 +299,7 @@ export async function optimizeServerSsrDeps(
 
   const depsInfo = toDiscoveredDependencies(config, deps, true)
 
-  const result = await runOptimizeDeps(config, depsInfo, true)
+  const result = await runOptimizeDeps(config, depsInfo, true).result
 
   await result.commit()
 
@@ -452,13 +452,15 @@ export function depsLogString(qualifiedIds: string[]): string {
  * Internally, Vite uses this function to prepare a optimizeDeps run. When Vite starts, we can get
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed
  */
-export async function runOptimizeDeps(
+export function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
   ssr: boolean = resolvedConfig.command === 'build' &&
     !!resolvedConfig.build.ssr,
-): Promise<DepOptimizationResult> {
-  const isBuild = resolvedConfig.command === 'build'
+): {
+  cancel: () => Promise<void>
+  result: Promise<DepOptimizationResult>
+} {
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build',
@@ -496,22 +498,154 @@ export async function runOptimizeDeps(
 
   const qualifiedIds = Object.keys(depsInfo)
 
-  const processingResult: DepOptimizationResult = {
+  let cleaned = false
+  const cleanUp = () => {
+    if (!cleaned) {
+      cleaned = true
+      fs.rmSync(processingCacheDir, { recursive: true, force: true })
+    }
+  }
+  const createProcessingResult = () => ({
     metadata,
     async commit() {
+      if (cleaned) {
+        throw new Error(
+          `Vite Internal Error: Can't commit optimizeDeps processing result, it has already been cancelled.`,
+        )
+      }
       // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
       // Processing is done, we can now replace the depsCacheDir with processingCacheDir
       // Rewire the file paths from the temporal processing dir to the final deps cache dir
       await removeDir(depsCacheDir)
       await renameDir(processingCacheDir, depsCacheDir)
     },
-    cancel() {
-      fs.rmSync(processingCacheDir, { recursive: true, force: true })
-    },
-  }
+    cancel: cleanUp,
+  })
 
   if (!qualifiedIds.length) {
-    return processingResult
+    return {
+      cancel: async () => cleanUp(),
+      result: Promise.resolve(createProcessingResult()),
+    }
+  }
+
+  const start = performance.now()
+
+  const preparedRun = prepareEsbuildOptimizerRun(
+    resolvedConfig,
+    depsInfo,
+    ssr,
+    processingCacheDir,
+  )
+
+  const result = preparedRun.then(({ context, idToExports }) => {
+    return context
+      .rebuild()
+      .then((result) => {
+        const meta = result.metafile!
+
+        // the paths in `meta.outputs` are relative to `process.cwd()`
+        const processingCacheDirOutputPath = path.relative(
+          process.cwd(),
+          processingCacheDir,
+        )
+
+        for (const id in depsInfo) {
+          const output = esbuildOutputFromId(
+            meta.outputs,
+            id,
+            processingCacheDir,
+          )
+
+          const { exportsData, ...info } = depsInfo[id]
+          addOptimizedDepInfo(metadata, 'optimized', {
+            ...info,
+            // We only need to hash the output.imports in to check for stability, but adding the hash
+            // and file path gives us a unique hash that may be useful for other things in the future
+            fileHash: getHash(
+              metadata.hash +
+                depsInfo[id].file +
+                JSON.stringify(output.imports),
+            ),
+            browserHash: metadata.browserHash,
+            // After bundling we have more information and can warn the user about legacy packages
+            // that require manual configuration
+            needsInterop: needsInterop(
+              config,
+              ssr,
+              id,
+              idToExports[id],
+              output,
+            ),
+          })
+        }
+
+        for (const o of Object.keys(meta.outputs)) {
+          if (!o.match(jsMapExtensionRE)) {
+            const id = path
+              .relative(processingCacheDirOutputPath, o)
+              .replace(jsExtensionRE, '')
+            const file = getOptimizedDepPath(id, resolvedConfig, ssr)
+            if (
+              !findOptimizedDepInfoInRecord(
+                metadata.optimized,
+                (depInfo) => depInfo.file === file,
+              )
+            ) {
+              addOptimizedDepInfo(metadata, 'chunks', {
+                id,
+                file,
+                needsInterop: false,
+                browserHash: metadata.browserHash,
+              })
+            }
+          }
+        }
+
+        const dataPath = path.join(processingCacheDir, '_metadata.json')
+        writeFile(
+          dataPath,
+          stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+        )
+
+        debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
+
+        return createProcessingResult()
+      })
+      .finally(() => {
+        return context.dispose().catch((e) => {
+          config.logger.error('error happed during context.dispose', e)
+        })
+      })
+  })
+
+  result.catch(() => {
+    cleanUp()
+  })
+
+  return {
+    async cancel() {
+      const { context } = await preparedRun
+      await context.cancel()
+      cleanUp()
+    },
+    result,
+  }
+}
+
+async function prepareEsbuildOptimizerRun(
+  resolvedConfig: ResolvedConfig,
+  depsInfo: Record<string, OptimizedDepInfo>,
+  ssr: boolean,
+  processingCacheDir: string,
+): Promise<{
+  context: BuildContext
+  idToExports: Record<string, ExportsData>
+}> {
+  const isBuild = resolvedConfig.command === 'build'
+  const config: ResolvedConfig = {
+    ...resolvedConfig,
+    command: 'build',
   }
 
   // esbuild generates nested directory output with lowest common ancestor base
@@ -588,9 +722,7 @@ export async function runOptimizeDeps(
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
-  const start = performance.now()
-
-  const result = await build({
+  const context = await esbuild.context({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
@@ -624,61 +756,7 @@ export async function runOptimizeDeps(
       ...esbuildOptions.supported,
     },
   })
-
-  const meta = result.metafile!
-
-  // the paths in `meta.outputs` are relative to `process.cwd()`
-  const processingCacheDirOutputPath = path.relative(
-    process.cwd(),
-    processingCacheDir,
-  )
-
-  for (const id in depsInfo) {
-    const output = esbuildOutputFromId(meta.outputs, id, processingCacheDir)
-
-    const { exportsData, ...info } = depsInfo[id]
-    addOptimizedDepInfo(metadata, 'optimized', {
-      ...info,
-      // We only need to hash the output.imports in to check for stability, but adding the hash
-      // and file path gives us a unique hash that may be useful for other things in the future
-      fileHash: getHash(
-        metadata.hash + depsInfo[id].file + JSON.stringify(output.imports),
-      ),
-      browserHash: metadata.browserHash,
-      // After bundling we have more information and can warn the user about legacy packages
-      // that require manual configuration
-      needsInterop: needsInterop(config, ssr, id, idToExports[id], output),
-    })
-  }
-
-  for (const o of Object.keys(meta.outputs)) {
-    if (!o.match(jsMapExtensionRE)) {
-      const id = path
-        .relative(processingCacheDirOutputPath, o)
-        .replace(jsExtensionRE, '')
-      const file = getOptimizedDepPath(id, resolvedConfig, ssr)
-      if (
-        !findOptimizedDepInfoInRecord(
-          metadata.optimized,
-          (depInfo) => depInfo.file === file,
-        )
-      ) {
-        addOptimizedDepInfo(metadata, 'chunks', {
-          id,
-          file,
-          needsInterop: false,
-          browserHash: metadata.browserHash,
-        })
-      }
-    }
-  }
-
-  const dataPath = path.join(processingCacheDir, '_metadata.json')
-  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
-
-  debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
-
-  return processingResult
+  return { context, idToExports }
 }
 
 export async function findKnownImports(
