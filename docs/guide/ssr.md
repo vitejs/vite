@@ -169,7 +169,7 @@ Our scripts in `package.json` will look like this:
 
 Note the `--ssr` flag which indicates this is an SSR build. It should also specify the SSR entry.
 
-Then, in `server.js` we need to add some production specific logic by checking `process.env.`<wbr>`NODE_ENV`:
+Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
 
 - Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
 
