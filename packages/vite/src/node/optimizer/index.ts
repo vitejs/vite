@@ -613,7 +613,9 @@ export function runOptimizeDeps(
         return createProcessingResult()
       })
       .finally(() => {
-        return context.dispose()
+        return context.dispose().catch((e) => {
+          config.logger.error('error happed during context.dispose', e)
+        })
       })
   })
 

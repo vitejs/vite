@@ -98,7 +98,9 @@ export function scanImports(config: ResolvedConfig): {
           }
         })
         .finally(() => {
-          context.dispose()
+          return context.dispose().catch((e) => {
+            config.logger.error('error happed during context.dispose', e)
+          })
         })
     })
     .catch(async (e) => {
