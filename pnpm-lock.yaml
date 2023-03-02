@@ -838,6 +838,17 @@ importers:
     specifiers: {}
 
   playground/resolve/browser-field:
+    specifiers:
+      '@vitejs/test-resolve-browser-field-bare-import-fail': link:../browser-field-bare-import-fail
+      '@vitejs/test-resolve-browser-field-bare-import-success': link:../browser-field-bare-import-success
+    dependencies:
+      '@vitejs/test-resolve-browser-field-bare-import-fail': link:../browser-field-bare-import-fail
+      '@vitejs/test-resolve-browser-field-bare-import-success': link:../browser-field-bare-import-success
+
+  playground/resolve/browser-field-bare-import-fail:
+    specifiers: {}
+
+  playground/resolve/browser-field-bare-import-success:
     specifiers: {}
 
   playground/resolve/browser-module-field1:

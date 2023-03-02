@@ -1208,8 +1208,11 @@ function tryResolveBrowserMapping(
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
     if (browserMappedPath) {
-      const fsPath = path.join(pkg.dir, browserMappedPath)
-      if ((res = tryFsResolve(fsPath, options))) {
+      if (
+        (res = bareImportRE.test(browserMappedPath)
+          ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
+          : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
+      ) {
         isDebug &&
           debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         idToPkgMap.set(res, pkg)
