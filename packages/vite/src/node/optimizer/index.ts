@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import _debug from 'debug'
@@ -879,7 +880,10 @@ export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
 
 function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
   return (
-    getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr) + '_temp'
+    getDepsCacheDirPrefix(config) +
+    getDepsCacheSuffix(config, ssr) +
+    '_temp_' +
+    getHash(Date.now().toString())
   )
 }
 
@@ -1246,4 +1250,27 @@ export async function optimizedDepNeedsInterop(
     )
   }
   return depInfo?.needsInterop
+}
+
+const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
+export async function cleanupDepsCacheStaleDirs(
+  config: ResolvedConfig,
+): Promise<void> {
+  try {
+    const cacheDir = path.resolve(config.cacheDir)
+    if (fs.existsSync(cacheDir)) {
+      const dirents = await fsp.readdir(cacheDir, { withFileTypes: true })
+      for (const dirent of dirents) {
+        if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
+          const tempDirPath = path.resolve(config.cacheDir, dirent.name)
+          const { mtime } = await fsp.stat(tempDirPath)
+          if (Date.now() - mtime.getTime() > MAX_TEMP_DIR_AGE_MS) {
+            await removeDir(tempDirPath)
+          }
+        }
+      }
+    }
+  } catch (err) {
+    config.logger.error(err)
+  }
 }
