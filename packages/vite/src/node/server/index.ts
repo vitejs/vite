@@ -822,12 +822,11 @@ async function restartServer(server: ViteDevServer) {
   } = server.config
   if (!middlewareMode) {
     await server.listen(port, true)
-    const dnsOrderChange = diffDnsOrderChange(oldUrls, newServer.resolvedUrls)
     logger.info('server restarted.', { timestamp: true })
     if (
       (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
       host !== prevHost ||
-      dnsOrderChange
+      diffDnsOrderChange(oldUrls, newServer.resolvedUrls)
     ) {
       logger.info('')
       server.printUrls()
