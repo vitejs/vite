@@ -90,7 +90,7 @@ export function scanImports(config: ResolvedConfig): {
     .then((context) => {
       function disposeContext() {
         return context?.dispose().catch((e) => {
-          config.logger.error('error happed during context.dispose', e)
+          config.logger.error('Failed to dispose esbuild context', { error: e })
         })
       }
       if (!context || scanContext?.cancelled) {
