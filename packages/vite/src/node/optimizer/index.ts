@@ -461,6 +461,8 @@ export function runOptimizeDeps(
   cancel: () => Promise<void>
   result: Promise<DepOptimizationResult>
 } {
+  const optimizerContext = { cancelled: false }
+
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build',
@@ -536,9 +538,20 @@ export function runOptimizeDeps(
     depsInfo,
     ssr,
     processingCacheDir,
+    optimizerContext,
   )
 
   const result = preparedRun.then(({ context, idToExports }) => {
+    function disposeContext() {
+      return context?.dispose().catch((e) => {
+        config.logger.error('Failed to dispose esbuild context', { error: e })
+      })
+    }
+    if (!context || optimizerContext.cancelled) {
+      disposeContext()
+      return createProcessingResult()
+    }
+
     return context
       .rebuild()
       .then((result) => {
@@ -613,9 +626,7 @@ export function runOptimizeDeps(
         return createProcessingResult()
       })
       .finally(() => {
-        return context.dispose().catch((e) => {
-          config.logger.error('error happed during context.dispose', e)
-        })
+        return disposeContext()
       })
   })
 
@@ -625,8 +636,9 @@ export function runOptimizeDeps(
 
   return {
     async cancel() {
+      optimizerContext.cancelled = true
       const { context } = await preparedRun
-      await context.cancel()
+      await context?.cancel()
       cleanUp()
     },
     result,
@@ -638,8 +650,9 @@ async function prepareEsbuildOptimizerRun(
   depsInfo: Record<string, OptimizedDepInfo>,
   ssr: boolean,
   processingCacheDir: string,
+  optimizerContext: { cancelled: boolean },
 ): Promise<{
-  context: BuildContext
+  context?: BuildContext
   idToExports: Record<string, ExportsData>
 }> {
   const isBuild = resolvedConfig.command === 'build'
@@ -680,6 +693,8 @@ async function prepareEsbuildOptimizerRun(
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData
   }
+
+  if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   // esbuild automatically replaces process.env.NODE_ENV for platform 'browser'
   // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
