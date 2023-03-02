@@ -544,7 +544,7 @@ export function runOptimizeDeps(
   const result = preparedRun.then(({ context, idToExports }) => {
     function disposeContext() {
       return context?.dispose().catch((e) => {
-        config.logger.error('error happed during context.dispose', e)
+        config.logger.error('Failed to dispose esbuild context', { error: e })
       })
     }
     if (!context || optimizerContext.cancelled) {
