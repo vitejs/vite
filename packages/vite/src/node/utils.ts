@@ -821,8 +821,10 @@ export function diffDnsOrderChange(
 ): boolean {
   return !(
     oldUrls === newUrls ||
-    (arrayEqual(oldUrls?.local || [], newUrls?.local || []) &&
-      arrayEqual(oldUrls?.network || [], newUrls?.network || []))
+    (oldUrls &&
+      newUrls &&
+      arrayEqual(oldUrls.local, newUrls.local) &&
+      arrayEqual(oldUrls.network, newUrls.network))
   )
 }
 
