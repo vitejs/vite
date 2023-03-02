@@ -33,7 +33,7 @@ import {
 } from './constants'
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls } from './server'
+import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -813,6 +813,43 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
     nodeResult.family === dnsResult.family &&
     nodeResult.address === dnsResult.address
   return isSame ? undefined : nodeResult.address
+}
+
+export function diffDnsOrderChange(
+  oldUrls: ViteDevServer['resolvedUrls'],
+  newUrls: ViteDevServer['resolvedUrls'],
+): boolean {
+  if (oldUrls && newUrls) {
+    const { local: oldLocal, network: oldNetwork } = oldUrls
+    const { local: newLocal, network: newNetwork } = newUrls
+    const localChange = oldLocal.length !== newLocal.length
+    const networkChange = oldNetwork.length !== newNetwork.length
+    if (!localChange) {
+      for (let i = 0; i < oldLocal.length; i++) {
+        if (oldLocal[i] !== newLocal[i]) {
+          return true
+        }
+      }
+    }
+    if (!networkChange) {
+      for (let i = 0; i < oldNetwork.length; i++) {
+        if (oldNetwork[i] !== newNetwork[i]) {
+          return true
+        }
+      }
+    }
+    return localChange || networkChange
+  }
+  if (!oldUrls && !newUrls) {
+    return false
+  }
+  if (oldUrls && !newUrls) {
+    return true
+  }
+  if (!oldUrls && newUrls) {
+    return true
+  }
+  return false
 }
 
 export interface Hostname {

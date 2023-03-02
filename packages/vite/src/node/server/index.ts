@@ -23,6 +23,7 @@ import {
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
+  diffDnsOrderChange,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -788,7 +789,7 @@ async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
-
+  const oldUrls = server.resolvedUrls
   await server.close()
 
   let inlineConfig = server.config.inlineConfig
@@ -821,10 +822,12 @@ async function restartServer(server: ViteDevServer) {
   } = server.config
   if (!middlewareMode) {
     await server.listen(port, true)
+    const dnsOrderChange = diffDnsOrderChange(oldUrls, newServer.resolvedUrls)
     logger.info('server restarted.', { timestamp: true })
     if (
       (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
-      host !== prevHost
+      host !== prevHost ||
+      dnsOrderChange
     ) {
       logger.info('')
       server.printUrls()
