@@ -47,6 +47,10 @@ export function proxyMiddleware(
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
+    if (opts.configure) {
+      opts.configure(proxy, opts)
+    }
+
     proxy.on('error', (err, req, originalRes) => {
       // When it is ws proxy, res is net.Socket
       const res = originalRes as http.ServerResponse | net.Socket
@@ -75,10 +79,6 @@ export function proxyMiddleware(
         res.end()
       }
     })
-
-    if (opts.configure) {
-      opts.configure(proxy, opts)
-    }
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
   })
