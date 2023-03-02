@@ -233,6 +233,7 @@
   import f from '@vitejs/test-resolve-browser-field/ext-index'
   import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
   import h from '@vitejs/test-resolve-browser-field/no-ext?query'
+  import i from '@vitejs/test-resolve-browser-field/bare-import'
 
   import {
     ra,
@@ -244,7 +245,7 @@
     rg,
   } from '@vitejs/test-resolve-browser-field/relative'
 
-  const success = [main, a, c, d, e, f, h, ra, rc, rd, re, rf]
+  const success = [main, a, c, d, e, f, h, i, ra, rc, rd, re, rf]
   const noSuccess = [b, g, rb, rg]
 
   if (
