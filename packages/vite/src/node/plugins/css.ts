@@ -1656,6 +1656,11 @@ async function rebaseUrls(
   alias: Alias[],
   variablePrefix: string,
 ): Promise<Sass.ImporterReturnType> {
+  // http url
+  if (isExternalUrl(file)) {
+    return { file }
+  }
+
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
   const fileDir = path.dirname(file)
