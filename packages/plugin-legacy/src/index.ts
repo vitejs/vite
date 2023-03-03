@@ -17,7 +17,6 @@ import type {
   OutputOptions,
   PreRenderedChunk,
   RenderedChunk,
-  Plugin as RollupPlugin,
 } from 'rollup'
 import type {
   PluginItem as BabelPlugin,
@@ -121,10 +120,16 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
-function viteLegacyPluginActual(options: Options = {}): {
-  plugins: Plugin[]
-  workerPlugins?: RollupPlugin[]
-} {
+type RollupPlugin = Plugin // TODO: If you import the real Rollup Plugin, there is some error in the build process somehow
+type FullPluginsResult = { plugins: Plugin[]; workerPlugins: RollupPlugin[] }
+
+function viteLegacyPlugin<T extends Options>(
+  options: T = {} as T,
+): T['worker'] extends true
+  ? FullPluginsResult
+  : T['worker'] extends false | undefined
+  ? Plugin[]
+  : Plugin[] | FullPluginsResult {
   let config: ResolvedConfig
   let targets: Options['targets']
 
@@ -214,6 +219,16 @@ function viteLegacyPluginActual(options: Options = {}): {
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
           ),
         )
+      }
+
+      if (options.worker && !config.build?.ssr) {
+        const format = config.worker?.format ?? 'iife'
+        if (format !== 'iife') {
+          throw new Error(
+            `plugin-legacy cannot emit legacy workers chunk when 'config.worker.format' is different than 'iife'!` +
+              ` (currently it equals to '${format}')`,
+          )
+        }
       }
     },
   }
@@ -597,17 +612,19 @@ function viteLegacyPluginActual(options: Options = {}): {
     },
   }
 
-  const legacyWorkerPlugin: RollupPlugin = {
-    name: 'vite:legacy-post-process',
+  const legacyWorkerRollupPlugin: RollupPlugin = {
+    name: 'vite:legacy-worker-rollup',
 
-    async generateBundle(opts, bundle) {
-      if (config.build.ssr) {
-        return
-      }
+    async generateBundle(_opts, bundle) {
+      // TODO: Try to make it work to be in `renderChunk` instead of the final build, since it may undo minification!
+
+      if (config.build.ssr || !genLegacy) return
 
       for (const filename in bundle) {
         const chunk = bundle[filename]
         if (chunk.type !== 'chunk' || !chunk.isEntry) continue
+
+        // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
 
         // transform the legacy chunk with @babel/preset-env
         const sourceMaps = !!config.build.sourcemap
@@ -622,6 +639,7 @@ function viteLegacyPluginActual(options: Options = {}): {
             // forcing our plugin to run before preset-env by wrapping it in a
             // preset so we can catch the injected import statements...
             [
+              // TODO: Can we omit all these plugins?
               () => ({
                 plugins: [
                   //recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
@@ -646,25 +664,17 @@ function viteLegacyPluginActual(options: Options = {}): {
     },
   }
 
-  return {
-    plugins: [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin],
-    workerPlugins: [legacyWorkerPlugin],
-  }
-}
+  const plugins = [
+    legacyConfigPlugin,
+    legacyGenerateBundlePlugin,
+    legacyPostPlugin,
+  ]
 
-const viteLegacyPlugin: {
-  (options?: Options):
-    | Plugin[]
-    | { plugins: Plugin[]; workerPlugins?: RollupPlugin[] }
-  (options: Options & { worker: true }): {
-    plugins: Plugin[]
-    workerPlugins?: RollupPlugin[]
-  }
-  (options: Options & { worker?: false }): Plugin[]
-} = (options = {}) => {
-  const result = viteLegacyPluginActual(options)
-
-  return (options.worker ? result : result.plugins) as any
+  return (
+    options.worker
+      ? { plugins, workerPlugins: [legacyWorkerRollupPlugin] }
+      : plugins
+  ) as any
 }
 
 export async function detectPolyfills(
