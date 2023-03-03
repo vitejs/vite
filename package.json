@@ -79,7 +79,7 @@
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
     "rimraf": "^4.1.2",
-    "rollup": "^3.17.2",
+    "rollup": "^3.18.0",
     "semver": "^7.3.8",
     "simple-git-hooks": "^2.8.1",
     "tslib": "^2.5.0",
