@@ -126,7 +126,7 @@ export interface ServerOptions extends CommonServerOptions {
    */
   sourcemapIgnoreList?:
     | false
-    | ((sourcePath: string, sourcemapPath: string) => boolean)
+    | ((relativeSourcePath: string, sourcemapPath: string) => boolean)
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    *
@@ -771,7 +771,7 @@ export function resolveServerOptions(
       raw?.sourcemapIgnoreList === false
         ? () => false
         : raw?.sourcemapIgnoreList ||
-          ((sourcePath) => sourcePath.includes('node_modules')),
+          ((relativeSourcePath) => relativeSourcePath.includes('node_modules')),
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow
