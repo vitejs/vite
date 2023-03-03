@@ -197,7 +197,21 @@ const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
 const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
-function outputTip(root: string, autoInstall: boolean) {
+function run(...params: Parameters<typeof spawn.sync>) {
+  const { status, error } = spawn.sync(...params)
+
+  if (status !== null && status > 0) {
+    process.exit(status)
+  }
+
+  if (error) {
+    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
+    console.error(error)
+    process.exit(1)
+  }
+}
+
+function nextAction(root: string) {
   const cdProjectName = path.relative(cwd, root)
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
@@ -209,29 +223,37 @@ function outputTip(root: string, autoInstall: boolean) {
   }
   switch (pkgManager) {
     case 'yarn':
-      autoInstall || console.log('  yarn')
+      console.log('  yarn')
       console.log('  yarn dev')
       break
     default:
-      autoInstall || console.log(`  ${pkgManager} install`)
+      console.log(`  ${pkgManager} install`)
       console.log(`  ${pkgManager} run dev`)
       break
   }
 }
 
-function install(root: string) {
-  const cdProjectName = path.relative(cwd, root)
-  process.chdir(cdProjectName)
-  console.log(`\nInstalling dependencies via ${pkgManager}...`)
-  spawn.sync(pkgManager, pkgManager === 'yarn' ? [] : ['install'], {
+function install(root: string, agent: string) {
+  console.log(`\nInstalling dependencies via ${agent}...`)
+  run(agent, agent === 'yarn' ? [] : ['install'], {
     stdio: 'inherit',
+    cwd: root,
+  })
+}
+
+function start(root: string, agent: string) {
+  console.log('\nStart dev server...')
+  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+    stdio: 'inherit',
+    cwd: root,
   })
 }
 
 async function init() {
   const argTargetDir = formatTargetDir(argv._[0])
   const argTemplate = argv.template || argv.t
-  const argAutoInstall = argv.install || argv.i
+  const argImmediate = argv.immediate || argv.i
+  const argAgent = argv.agent || argv.a
 
   let targetDir = argTargetDir || defaultTargetDir
   const getProjectName = () =>
@@ -243,7 +265,8 @@ async function init() {
     | 'packageName'
     | 'framework'
     | 'variant'
-    | 'autoInstall'
+    | 'immediate'
+    | 'agent'
   >
 
   try {
@@ -319,9 +342,19 @@ async function init() {
             }),
         },
         {
-          type: argAutoInstall ? null : 'confirm',
-          name: 'autoInstall',
-          message: reset('Install dependencies?'),
+          type: argImmediate ? null : 'confirm',
+          name: 'immediate',
+          message: reset('Install and start now?'),
+        },
+        {
+          type: (immediate: boolean) =>
+            !immediate || argAgent ? null : 'select',
+          name: 'agent',
+          message: reset('Select a agent:'),
+          choices: ['npm', 'yarn', 'pnpm'].map((agent) => ({
+            value: agent,
+            title: agent,
+          })),
         },
       ],
       {
@@ -341,7 +374,8 @@ async function init() {
     overwrite,
     packageName,
     variant,
-    autoInstall = argAutoInstall === true,
+    immediate = argImmediate === true,
+    agent = argAgent,
   } = result
 
   const root = path.join(cwd, targetDir)
@@ -424,8 +458,10 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
-  autoInstall && install(root)
-  outputTip(root, autoInstall)
+  if (immediate && agent) {
+    install(root, agent)
+    start(root, agent)
+  } else nextAction(root)
 
   console.log()
 }
