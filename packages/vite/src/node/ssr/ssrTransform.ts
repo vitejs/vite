@@ -97,8 +97,8 @@ async function ssrTransformScript(
   function defineImport(node: Node, source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
-    s.appendRight(
-      node.start,
+    s.appendLeft(
+      0,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`,
     )
     return importId
@@ -118,7 +118,6 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
-      s.remove(node.start, node.end)
       const importId = defineImport(node, node.source.value as string)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
@@ -133,6 +132,7 @@ async function ssrTransformScript(
           idToImportMap.set(spec.local.name, importId)
         }
       }
+      s.remove(node.start, node.end)
     }
   }
 
