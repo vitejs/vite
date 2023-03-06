@@ -24,7 +24,7 @@ if (!isBuild) {
       {
         "mappings": "AAAO,aAAM,MAAM;",
         "sources": [
-          "/root/bar.ts",
+          "bar.ts",
         ],
         "sourcesContent": [
           "export const bar = 'bar'

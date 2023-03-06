@@ -1,6 +1,7 @@
-const { resolve } = require('node:path')
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-module.exports = {
+export default defineConfig({
   build: {
     manifest: true,
     rollupOptions: {
@@ -18,4 +19,4 @@ module.exports = {
       },
     },
   },
-}
+})

@@ -34,7 +34,7 @@ import stuff from './global.css?inline'
 
 `vite build` will now always build for production regardless of the `--mode` passed. Previously, changing `mode` to other than `production` would result in a development build. If you wish to still build for development, you can set `NODE_ENV=development` in the `.env.{mode}` file.
 
-In part of this change, `vite dev` and `vite build` will not override `process.env.`<wbr>`NODE_ENV` anymore if it is already defined. So if you've set `process.env.`<wbr>`NODE_ENV = 'development'` before building, it will also build for development. This gives more control when running multiple builds or dev servers in parallel.
+In part of this change, `vite dev` and `vite build` will not override `process.env.NODE_ENV` anymore if it is already defined. So if you've set `process.env.NODE_ENV = 'development'` before building, it will also build for development. This gives more control when running multiple builds or dev servers in parallel.
 
 See the updated [`mode` documentation](https://vitejs.dev/guide/env-and-mode.html#modes) for more details.
 

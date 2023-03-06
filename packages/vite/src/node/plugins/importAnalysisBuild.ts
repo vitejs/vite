@@ -19,6 +19,7 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { SPECIAL_QUERY_RE } from '../constants'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
@@ -362,6 +363,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           (source.slice(expStart, start).includes('from') || isDynamicImport) &&
           // already has ?used query (by import.meta.glob)
           !specifier.match(/\?used(&|$)/) &&
+          // don't append ?used when SPECIAL_QUERY_RE exists
+          !specifier.match(SPECIAL_QUERY_RE) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {

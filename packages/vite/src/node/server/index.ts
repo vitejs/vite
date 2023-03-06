@@ -34,6 +34,7 @@ import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
+  cleanupDepsCacheStaleDirs,
   getDepsOptimizer,
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -116,6 +117,17 @@ export interface ServerOptions extends CommonServerOptions {
    */
   preTransformRequests?: boolean
   /**
+   * Whether or not to ignore-list source files in the dev server sourcemap, used to populate
+   * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+   *
+   * By default, it excludes all paths containing `node_modules`. You can pass `false` to
+   * disable this behavior, or, for full control, a function that takes the source path and
+   * sourcemap path and returns whether to ignore the source path.
+   */
+  sourcemapIgnoreList?:
+    | false
+    | ((sourcePath: string, sourcemapPath: string) => boolean)
+  /**
    * Force dep pre-optimization regardless of whether deps have changed.
    *
    * @deprecated Use optimizeDeps.force instead, this option may be removed
@@ -127,6 +139,10 @@ export interface ServerOptions extends CommonServerOptions {
 export interface ResolvedServerOptions extends ServerOptions {
   fs: Required<FileSystemServeOptions>
   middlewareMode: boolean
+  sourcemapIgnoreList: Exclude<
+    ServerOptions['sourcemapIgnoreList'],
+    false | undefined
+  >
 }
 
 export interface FileSystemServeOptions {
@@ -675,6 +691,10 @@ export async function createServer(
     await initServer()
   }
 
+  // Fire a clean up of stale cache dirs, in case old processes didn't
+  // terminate correctly. Don't await this promise
+  cleanupDepsCacheStaleDirs(config)
+
   return server
 }
 
@@ -746,7 +766,12 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    ...(raw as ResolvedServerOptions),
+    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
+    sourcemapIgnoreList:
+      raw?.sourcemapIgnoreList === false
+        ? () => false
+        : raw?.sourcemapIgnoreList ||
+          ((sourcePath) => sourcePath.includes('node_modules')),
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow
