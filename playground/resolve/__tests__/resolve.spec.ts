@@ -158,3 +158,23 @@ test('resolve package that contains # in path', async () => {
     '[success]',
   )
 })
+
+test('Resolving top level with imports field', async () => {
+  expect(await page.textContent('.imports-top-level')).toMatch('[success]')
+})
+
+test('Resolving nested path with imports field', async () => {
+  expect(await page.textContent('.imports-nested')).toMatch('[success]')
+})
+
+test('Resolving star with imports filed', async () => {
+  expect(await page.textContent('.imports-star')).toMatch('[success]')
+})
+
+test('Resolving slash with imports filed', async () => {
+  expect(await page.textContent('.imports-slash')).toMatch('[success]')
+})
+
+test('Resolving from other package with imports field', async () => {
+  expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
+})

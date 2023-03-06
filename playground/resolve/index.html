@@ -36,6 +36,21 @@
 <h2>Exports with module</h2>
 <p class="exports-with-module">fail</p>
 
+<h2>Resolving top level with imports field</h2>
+<p class="imports-top-level">fail</p>
+
+<h2>Resolving nested path with imports field</h2>
+<p class="imports-nested">fail</p>
+
+<h2>Resolving star with imports filed</h2>
+<p class="imports-star">fail</p>
+
+<h2>Resolving slash with imports filed</h2>
+<p class="imports-slash">fail</p>
+
+<h2>Resolving from other package with imports field</h2>
+<p class="imports-pkg-slash">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -186,6 +201,22 @@
 
   import { msg as exportsWithModule } from '@vitejs/test-resolve-exports-with-module'
   text('.exports-with-module', exportsWithModule)
+
+  // imports field
+  import { msg as importsTopLevel } from '#top-level'
+  text('.imports-top-level', importsTopLevel)
+
+  import { msg as importsNested } from '#nested/path.js'
+  text('.imports-nested', importsNested)
+
+  import { msg as importsStar } from '#star/index.js'
+  text('.imports-star', importsStar)
+
+  import { msg as importsSlash } from '#slash/index.js'
+  text('.imports-slash', importsSlash)
+
+  import { msg as importsPkgSlash } from '#other-pkg-slash/index.js'
+  text('.imports-pkg-slash', importsPkgSlash)
 
   // implicit index resolving
   import { foo } from './util'

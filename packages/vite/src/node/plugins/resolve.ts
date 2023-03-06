@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
-import { exports } from 'resolve.exports'
+import { exports, imports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
@@ -55,6 +55,7 @@ export const browserExternalId = '__vite-browser-external'
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
 const nodeModulesInPathRE = /(?:^|\/)node_modules\//
+const subpathImportsPrefix = '#'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -150,6 +151,29 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isRequire,
         ...resolveOptions,
         scan: resolveOpts?.scan ?? resolveOptions.scan,
+      }
+
+      const resolveSubpathImports = (id: string, importer?: string) => {
+        if (!importer || !id.startsWith(subpathImportsPrefix)) return
+        const basedir = path.dirname(importer)
+        const pkgJsonPath = lookupFile(basedir, ['package.json'], {
+          pathOnly: true,
+        })
+        if (!pkgJsonPath) return
+
+        const pkgData = loadPackageData(pkgJsonPath, options.preserveSymlinks)
+        return resolveExportsOrImports(
+          pkgData.data,
+          id,
+          options,
+          targetWeb,
+          'imports',
+        )
+      }
+
+      const resolvedImports = resolveSubpathImports(id, importer)
+      if (resolvedImports) {
+        id = resolvedImports
       }
 
       if (importer) {
@@ -958,7 +982,13 @@ export function resolvePackageEntry(
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
-      entryPoint = resolveExports(data, '.', options, targetWeb)
+      entryPoint = resolveExportsOrImports(
+        data,
+        '.',
+        options,
+        targetWeb,
+        'exports',
+      )
     }
 
     const resolvedFromExports = !!entryPoint
@@ -1076,11 +1106,12 @@ function packageEntryFailure(id: string, details?: string) {
 
 const conditionalConditions = new Set(['production', 'development', 'module'])
 
-function resolveExports(
+function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
+  type: 'imports' | 'exports',
 ) {
   const overrideConditions = options.overrideConditions
     ? new Set(options.overrideConditions)
@@ -1115,7 +1146,8 @@ function resolveExports(
     conditions.push(...options.conditions)
   }
 
-  const result = exports(pkg, key, {
+  const fn = type === 'imports' ? imports : exports
+  const result = fn(pkg, key, {
     browser: targetWeb && !conditions.includes('node'),
     require: options.isRequire && !conditions.includes('import'),
     conditions,
@@ -1149,7 +1181,13 @@ function resolveDeepImport(
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
       // resolve without postfix (see #7098)
       const { file, postfix } = splitFileAndPostfix(relativeId)
-      const exportsId = resolveExports(data, file, options, targetWeb)
+      const exportsId = resolveExportsOrImports(
+        data,
+        file,
+        options,
+        targetWeb,
+        'exports',
+      )
       if (exportsId !== undefined) {
         relativeId = exportsId + postfix
       } else {
