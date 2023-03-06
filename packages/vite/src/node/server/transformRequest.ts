@@ -281,7 +281,9 @@ async function loadAndTransform(
 
       const sourcemapPath = `${mod.file}.map`
       const ignoreList = config.server.sourcemapIgnoreList(
-        sourcePath,
+        path.isAbsolute(sourcePath)
+          ? sourcePath
+          : path.resolve(path.dirname(sourcemapPath), sourcePath),
         sourcemapPath,
       )
       if (typeof ignoreList !== 'boolean') {
