@@ -13,6 +13,14 @@ test('should load the worker', async () => {
   await untilUpdated(() => page.textContent('.worker-message'), 'module', true)
 })
 
+test('should load the worker modern', async () => {
+  await untilUpdated(
+    () => page.textContent('.worker-modern-message'),
+    'module',
+    true,
+  )
+})
+
 test('should work', async () => {
   await untilUpdated(() => page.textContent('#app'), 'Hello', true)
 })

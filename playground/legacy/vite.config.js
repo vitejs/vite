@@ -3,14 +3,28 @@ import path from 'node:path'
 import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
+const legacyPlugin = legacy({
+  targets: 'IE 11',
+  modernPolyfills: true,
+  worker: true,
+})
+
 export default defineConfig({
   base: './',
-  plugins: [
-    legacy({
-      targets: 'IE 11',
-      modernPolyfills: true,
-    }),
-  ],
+  plugins: [legacyPlugin.plugins],
+
+  worker: {
+    plugins: [legacyPlugin.workerPlugins],
+    rollupOptions: {
+      output: {
+        // TODO: Automate this
+        generatedCode: {
+          preset: 'es5',
+          objectShorthand: false,
+        },
+      },
+    },
+  },
 
   build: {
     cssCodeSplit: false,
