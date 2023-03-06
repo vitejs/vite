@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { Exports, Imports } from 'resolve.exports'
 import { createDebugger, createFilter, resolveFrom } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
@@ -27,7 +28,8 @@ export interface PackageData {
     main: string
     module: string
     browser: string | Record<string, string | false>
-    exports: string | Record<string, any> | string[]
+    exports: Exports
+    imports: Imports
     dependencies: Record<string, string>
   }
 }

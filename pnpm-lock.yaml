@@ -809,6 +809,7 @@ importers:
       '@vitejs/test-resolve-exports-legacy-fallback': link:./exports-legacy-fallback
       '@vitejs/test-resolve-exports-path': link:./exports-path
       '@vitejs/test-resolve-exports-with-module': link:./exports-with-module
+      '@vitejs/test-resolve-imports-pkg': link:./imports-path/other-pkg
       '@vitejs/test-resolve-linked': workspace:*
       es5-ext: 0.10.62
       normalize.css: ^8.0.1
@@ -827,6 +828,7 @@ importers:
       '@vitejs/test-resolve-exports-legacy-fallback': link:exports-legacy-fallback
       '@vitejs/test-resolve-exports-path': link:exports-path
       '@vitejs/test-resolve-exports-with-module': link:exports-with-module
+      '@vitejs/test-resolve-imports-pkg': link:imports-path/other-pkg
       '@vitejs/test-resolve-linked': link:../resolve-linked
       es5-ext: 0.10.62
       normalize.css: 8.0.1
@@ -891,6 +893,9 @@ importers:
     specifiers: {}
 
   playground/resolve/exports-with-module:
+    specifiers: {}
+
+  playground/resolve/imports-path/other-pkg:
     specifiers: {}
 
   playground/resolve/inline-package:
