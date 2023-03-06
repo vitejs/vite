@@ -70,8 +70,7 @@ export default defineConfig({
           path.join(__dirname, 'options/absolute-import.styl'),
         ],
         define: {
-          // @ts-expect-error stylus.Parser is an internal class
-          $definedColor: new stylus.Parser('#33C5FF').peek().val,
+          $definedColor: new stylus.nodes.RGBA(51, 197, 255, 1),
           definedFunction: () => new stylus.nodes.RGBA(255, 0, 98, 1),
         },
       },

@@ -248,7 +248,7 @@ export default defineConfig({
       },
       styl: {
         define: {
-          $specialColor: new stylus.Parser('#33C5FF').peek().val,
+          $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
         },
       },
     },
