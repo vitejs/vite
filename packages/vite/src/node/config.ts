@@ -336,7 +336,7 @@ export type ResolvedConfig = Readonly<
     rawBase: string
     publicDir: string
     cacheDir: string
-    command: 'build' | 'serve'
+    // #12298
     cmd: 'build' | 'dev' | 'preview' | 'optimize'
     mode: string
     isWorker: boolean
