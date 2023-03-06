@@ -146,6 +146,8 @@ test('stylus', async () => {
   const relativeImportAlias = await page.$('.stylus-import-alias')
   const optionsRelativeImport = await page.$('.stylus-options-relative-import')
   const optionsAbsoluteImport = await page.$('.stylus-options-absolute-import')
+  const optionsDefineVar = await page.$('.stylus-options-define-var')
+  const optionsDefineFunc = await page.$('.stylus-options-define-func')
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(additionalData)).toBe('orange')
@@ -156,6 +158,8 @@ test('stylus', async () => {
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
+  expect(await getColor(optionsDefineVar)).toBe('rgb(51, 197, 255)')
+  expect(await getColor(optionsDefineFunc)).toBe('rgb(255, 0, 98)')
 
   editFile('stylus.styl', (code) =>
     code.replace('$color ?= blue', '$color ?= red'),

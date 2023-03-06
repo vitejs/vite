@@ -1453,6 +1453,10 @@ type StylePreprocessorOptions = {
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
 
+type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
+  define?: Record<string, any>
+}
+
 type StylePreprocessor = (
   source: string,
   root: string,
@@ -1464,6 +1468,13 @@ type SassStylePreprocessor = (
   source: string,
   root: string,
   options: SassStylePreprocessorOptions,
+  resolvers: CSSAtImportResolvers,
+) => StylePreprocessorResults | Promise<StylePreprocessorResults>
+
+type StylusStylePreprocessor = (
+  source: string,
+  root: string,
+  options: StylusStylePreprocessorOptions,
   resolvers: CSSAtImportResolvers,
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -1847,7 +1858,7 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = async (source, root, options) => {
+const styl: StylusStylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
@@ -1865,6 +1876,11 @@ const styl: StylePreprocessor = async (source, root, options) => {
   )
   try {
     const ref = nodeStylus(content, options)
+    if (options.define) {
+      for (const key in options.define) {
+        ref.define(key, options.define[key])
+      }
+    }
     if (options.enableSourcemap) {
       ref.set('sourcemap', {
         comment: false,
