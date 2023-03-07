@@ -51,7 +51,7 @@
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^18.14.0",
+    "@types/node": "^18.14.6",
     "@types/picomatch": "^2.3.0",
     "@types/prompts": "^2.4.2",
     "@types/resolve": "^1.20.2",
@@ -59,10 +59,10 @@
     "@types/semver": "^7.3.13",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.4",
-    "@typescript-eslint/eslint-plugin": "^5.53.0",
-    "@typescript-eslint/parser": "^5.53.0",
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "@typescript-eslint/parser": "^5.54.1",
     "conventional-changelog-cli": "^2.2.2",
-    "eslint": "^8.34.0",
+    "eslint": "^8.35.0",
     "eslint-define-config": "^1.15.0",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-node": "^11.1.0",
@@ -74,7 +74,7 @@
     "minimist": "^1.2.8",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.31.1",
+    "playwright-chromium": "^1.31.2",
     "prettier": "2.8.4",
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
@@ -87,8 +87,8 @@
     "typescript": "^4.9.3",
     "unbuild": "^1.1.2",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.47",
-    "vitest": "^0.28.5",
+    "vitepress": "^1.0.0-alpha.49",
+    "vitest": "^0.29.2",
     "vue": "^3.2.47"
   },
   "simple-git-hooks": {
@@ -108,7 +108,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.27.1",
+  "packageManager": "pnpm@7.29.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
