@@ -116,7 +116,7 @@ Vite also supports replacing env variables in HTML files. Any properties in `imp
 <p>Using data from %VITE_API_URL%</p>
 ```
 
-If the env doesn't exist in `import.meta.env`, e.g. `%NON_EXISTENT%`, it will be ignored and not replaced,  unlike `import.meta.env.NON_EXISTENT` in JS where it's replaced as `undefined`.
+If the env doesn't exist in `import.meta.env`, e.g. `%NON_EXISTENT%`, it will be ignored and not replaced, unlike `import.meta.env.NON_EXISTENT` in JS where it's replaced as `undefined`.
 
 ## Modes
 
