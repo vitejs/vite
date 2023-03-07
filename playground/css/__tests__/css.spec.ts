@@ -289,6 +289,14 @@ test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
 })
 
+test('@import dependency w/ style export mapping', async () => {
+  expect(await getColor('.css-dep-exports')).toBe('purple')
+})
+
+test('@import dependency w/ sass export mapping', async () => {
+  expect(await getColor('.css-dep-exports-sass')).toBe('orange')
+})
+
 test('@import dependency w/out package scss', async () => {
   expect(await getColor('.sass-dep')).toBe('lavender')
 })

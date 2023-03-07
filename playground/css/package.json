@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "@vitejs/test-css-dep": "link:./css-dep",
+    "@vitejs/test-css-dep-exports": "link:./css-dep-exports",
     "@vitejs/test-css-js-dep": "file:./css-js-dep",
     "fast-glob": "^3.2.12",
     "less": "^4.1.3",
