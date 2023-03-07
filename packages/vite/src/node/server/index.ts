@@ -359,7 +359,8 @@ export async function createServer(
   }
 
   const watcher = chokidar.watch(
-    path.resolve(root),
+    // config file dependencies might be outside of root
+    [path.resolve(root), ...config.configFileDependencies],
     resolvedWatchOptions,
   ) as FSWatcher
 
