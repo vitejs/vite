@@ -15,15 +15,6 @@ export default defineConfig({
 
   worker: {
     plugins: [legacyPlugin.workerPlugins],
-    rollupOptions: {
-      output: {
-        // TODO: Automate this
-        generatedCode: {
-          preset: 'es5',
-          objectShorthand: false,
-        },
-      },
-    },
   },
 
   build: {
