@@ -257,7 +257,11 @@ async function nodeImport(
   try {
     const mod = await dynamicImport(url)
     return proxyESM(mod)
-  } catch {}
+  } catch (err) {
+    err.message = `\nFailed to import ${url} from ${importer}\n${err.message}`
+
+    throw err
+  }
 }
 
 // rollup-style default import interop for cjs
