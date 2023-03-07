@@ -454,7 +454,11 @@ export async function createPluginContainer(
         err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
       }
 
-      if (err.loc && ctx instanceof TransformContext) {
+      if (
+        ctx instanceof TransformContext &&
+        typeof err.loc?.line === 'number' &&
+        typeof err.loc?.column === 'number'
+      ) {
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
@@ -483,6 +487,15 @@ export async function createPluginContainer(
         }
       }
     }
+
+    if (
+      typeof err.loc?.column !== 'number' &&
+      typeof err.loc?.line !== 'number' &&
+      !err.loc?.file
+    ) {
+      delete err.loc
+    }
+
     return err
   }
 
