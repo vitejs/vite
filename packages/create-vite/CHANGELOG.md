@@ -1,3 +1,9 @@
+## 4.2.0-beta.1 (2023-03-07)
+
+* chore(create-vite): update to beta deps ([5ffcaa0](https://github.com/vitejs/vite/commit/5ffcaa0))
+
+
+
 ## 4.2.0-beta.0 (2023-03-07)
 
 * chore(create-vite): update volar link in helloworld components (#12145) ([7110ddf](https://github.com/vitejs/vite/commit/7110ddf)), closes [#12145](https://github.com/vitejs/vite/issues/12145)
