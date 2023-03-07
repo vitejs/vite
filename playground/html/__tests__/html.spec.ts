@@ -262,6 +262,20 @@ describe('Valid HTML', () => {
   })
 })
 
+describe('env', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/env.html')
+  })
+
+  test('env works', async () => {
+    expect(await page.textContent('.env')).toBe('bar')
+    expect(await page.textContent('.env-define')).toBe('5173')
+    expect(await page.textContent('.env-bar')).toBeTruthy()
+    expect(await page.textContent('.env-prod')).toBe(isBuild + '')
+    expect(await page.textContent('.env-dev')).toBe(isServe + '')
+  })
+})
+
 describe('importmap', () => {
   beforeAll(async () => {
     await page.goto(viteTestUrl + '/importmapOrder.html')

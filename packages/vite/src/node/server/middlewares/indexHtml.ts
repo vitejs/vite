@@ -11,6 +11,7 @@ import {
   assetAttrsConfig,
   getAttrKey,
   getScriptInfo,
+  htmlEnvHook,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
@@ -51,6 +52,7 @@ export function createDevHtmlTransformFn(
       [
         preImportMapHook(server.config),
         ...preHooks,
+        htmlEnvHook(server.config),
         devHtmlHook,
         ...normalHooks,
         ...postHooks,
