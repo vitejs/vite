@@ -129,7 +129,7 @@
     "tsconfck": "^2.0.3",
     "tslib": "^2.5.0",
     "types": "link:./types",
-    "ufo": "^1.1.0",
+    "ufo": "^1.1.1",
     "ws": "^8.12.1"
   },
   "peerDependencies": {
