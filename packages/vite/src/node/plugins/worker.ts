@@ -1,4 +1,5 @@
 import path from 'node:path'
+import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { EmittedAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
@@ -294,6 +295,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
           ).toString('base64')}";`
+
           const blobCode = `${encodedJs}
           const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper() {
@@ -311,9 +313,26 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
           `
 
-          // inline as blob data url
+          // If inlineUrl is not specified, use base64 for SharedWorker and blob for Worker
+          const resolvedInlineUrl = inlineUrl
+            ? inlineUrl
+            : workerConstructor === 'SharedWorker'
+            ? 'base64'
+            : 'blob'
+
+          if (
+            workerConstructor === 'SharedWorker' &&
+            resolvedInlineUrl === 'blob'
+          ) {
+            config.logger.warn(
+              colors.yellow(
+                `\nThe inlined SharedWorker: ${id} does not work with blob URL, considering set 'worker.inlineUrl' to 'base64'. \n`,
+              ),
+            )
+          }
+
           return {
-            code: inlineUrl === 'blob' ? blobCode : base64Code,
+            code: resolvedInlineUrl === 'blob' ? blobCode : base64Code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }

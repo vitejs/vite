@@ -76,7 +76,7 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
     expect(content).toMatch(
-      /try\{return e\?new Worker\(.+\):new Worker\("data:application\/javascript;base64,"\+/,
+      /try\{return .*\?new Worker\(.+\):new Worker\("data:application\/javascript;base64,"\+/,
     )
   })
 

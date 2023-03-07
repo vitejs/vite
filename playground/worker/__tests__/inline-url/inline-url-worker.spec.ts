@@ -11,9 +11,17 @@ describe.runIf(isBuild)('build', () => {
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
 
-    // inlined
+    // inline worker in base64
     expect(content).toMatch(
       `return new Worker("data:application/javascript;base64,"+`,
     )
+
+    // inline sharedworker in base64
+    expect(content).toMatch(
+      `return new SharedWorker("data:application/javascript;base64,"+`,
+    )
+
+    // no blob URL inline worker
+    expect(content).not.toMatch(`window.Blob`)
   })
 })

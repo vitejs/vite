@@ -1,5 +1,15 @@
-const config = require('./vite.config-es')
-config.worker.inlineUrl = 'base64'
-config.base = '/inline-url/'
-config.build.outDir = 'dist/inline-url'
-module.exports = config
+import { defineConfig } from 'vite'
+import config from './vite.config-es'
+
+export default defineConfig({
+  ...config,
+  base: '/inline-url/',
+  worker: {
+    ...config.worker,
+    inlineUrl: 'base64',
+  },
+  build: {
+    ...config.build,
+    outDir: 'dist/inline-url',
+  },
+})

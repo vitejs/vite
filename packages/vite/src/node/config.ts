@@ -320,9 +320,9 @@ export interface LegacyOptions {
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
-  inlineUrl: 'blob' | 'base64'
   plugins: Plugin[]
   rollupOptions: RollupOptions
+  inlineUrl?: 'blob' | 'base64'
 }
 
 export interface InlineConfig extends UserConfig {
@@ -639,7 +639,7 @@ export async function resolveConfig(
   workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
-    inlineUrl: workerConfig.worker?.inlineUrl || 'blob',
+    inlineUrl: workerConfig.worker?.inlineUrl,
     plugins: [],
     rollupOptions: workerConfig.worker?.rollupOptions || {},
     getSortedPlugins: undefined!,

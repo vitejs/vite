@@ -1,6 +1,8 @@
 import vite from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
+/** @type {import('vite').UserConfig} */
+// @ts-expect-error typecast
 export default vite.defineConfig({
   base: '/es/',
   resolve: {
