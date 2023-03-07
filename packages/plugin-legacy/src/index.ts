@@ -17,6 +17,7 @@ import type {
   OutputOptions,
   PreRenderedChunk,
   RenderedChunk,
+  RollupOutput,
 } from 'rollup'
 import type {
   PluginItem as BabelPlugin,
@@ -615,52 +616,105 @@ function viteLegacyPlugin<T extends Options>(
   const legacyWorkerRollupPlugin: RollupPlugin = {
     name: 'vite:legacy-worker-rollup',
 
-    async generateBundle(_opts, bundle) {
-      // TODO: Try to make it work to be in `renderChunk` instead of the final build, since it may undo minification!
+    outputOptions(config) {
+      // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers, or overrite it
+      //console.log("Generate code option of workers: " + JSON.stringify(config.generatedCode));
+    },
 
+    async renderChunk(raw) {
       if (config.build.ssr || !genLegacy) return
 
-      for (const filename in bundle) {
-        const chunk = bundle[filename]
-        if (chunk.type !== 'chunk' || !chunk.isEntry) continue
+      // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers after it has been override before
 
-        // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
+      // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
 
-        // transform the legacy chunk with @babel/preset-env
-        const sourceMaps = !!config.build.sourcemap
-        const babel = await loadBabel()
-        const result = babel.transform(chunk.code, {
-          babelrc: false,
-          configFile: false,
-          compact: !!config.build.minify,
-          sourceMaps,
-          inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
-          presets: [
-            // forcing our plugin to run before preset-env by wrapping it in a
-            // preset so we can catch the injected import statements...
-            [
-              // TODO: Can we omit all these plugins?
-              () => ({
-                plugins: [
-                  //recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                  replaceLegacyEnvBabelPlugin(),
-                  wrapIIFEBabelPlugin(),
-                ],
-              }),
-            ],
-            [
-              '@babel/preset-env',
-              createBabelPresetEnvOptions(targets, {
-                needPolyfills: false,
-                ignoreBrowserslistConfig: false,
-              }),
-            ],
+      // transform the legacy chunk with @babel/preset-env
+      const sourceMaps = !!config.build.sourcemap
+      const babel = await loadBabel()
+      const legacyPolyfills = new Set<string>()
+      const result = babel.transform(raw, {
+        babelrc: false,
+        configFile: false,
+        compact: !!config.build.minify,
+        sourceMaps,
+        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
+        presets: [
+          // forcing our plugin to run before preset-env by wrapping it in a
+          // preset so we can catch the injected import statements...
+          [
+            // TODO: Can we omit all of these plugins?
+            () => ({
+              plugins: [
+                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                replaceLegacyEnvBabelPlugin(),
+                //wrapIIFEBabelPlugin(),
+              ],
+            }),
           ],
-        })
+          [
+            '@babel/preset-env',
+            createBabelPresetEnvOptions(targets, {
+              needPolyfills: true,
+              ignoreBrowserslistConfig: false,
+            }),
+          ],
+        ],
+      })
 
-        chunk.code = result!.code as string
-        chunk.map = result!.map as any
+      // TODO: Just append the new polyfills carefully to the big polyfill,
+      //  and have a "additionalPolyfillsSocumentSensitive" for legacy that will be loaded only on document one(i.e. not within workers).
+      const polyfillId = '\0polyfill'
+      const polyfillPlugin: Plugin = {
+        // TODO: Code reuse
+        name: 'vite:legacy-polyfills',
+        resolveId(id) {
+          if (id === polyfillId) {
+            return id
+          }
+        },
+        load(id) {
+          if (id === polyfillId) {
+            return [...legacyPolyfills]
+              .map((i) => `import ${JSON.stringify(i)};`)
+              .join('')
+          }
+        },
       }
+
+      // TODO: Code reuse
+      const res = (await build({
+        root: path.dirname(fileURLToPath(import.meta.url)),
+        configFile: false,
+        logLevel: 'error',
+        plugins: [polyfillPlugin],
+        build: {
+          rollupOptions: {
+            input: polyfillId,
+            output: {
+              format: 'iife',
+              generatedCode: 'es5',
+            },
+          },
+        },
+        // Don't run esbuild for transpilation or minification
+        // because we don't want to transpile code.
+        esbuild: false,
+        optimizeDeps: {
+          esbuildOptions: {
+            // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
+            // This limits the input code not to include es2015+ codes.
+            // But core-js is the only dependency which includes commonjs code
+            // and core-js doesn't include es2015+ codes.
+            target: 'es5',
+          },
+        },
+      })) as RollupOutput
+      // TODO: Fix some sourcemap issue and prepend it correcty
+      const polyfillCode = res.output[0].code
+
+      //if (result) return { code: result.code!, map: result.map }
+      if (result) return polyfillCode + '\n' + result.code!
+      return null
     },
   }
 
