@@ -466,7 +466,7 @@ export async function createPluginContainer(
             line: Number(err.loc.line),
             column: Number(err.loc.column),
           })
-          if (source) {
+          if (source && line != null && column != null) {
             err.loc = { file: source, line, column }
           }
         }
