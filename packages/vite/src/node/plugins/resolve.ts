@@ -574,7 +574,9 @@ function tryResolveFile(
   try {
     stat = fs.statSync(file, { throwIfNoEntry: false })
   } catch {
-    return
+    // Even with `throwIfNoEntry`, `statSync` throws some errors
+    // Also on Node.js version before 14.17 `throwIfNoEntry` has no effect,
+    // so we need to continue here and not early return
   }
 
   if (stat) {
