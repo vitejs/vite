@@ -117,6 +117,13 @@ It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
 In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
 
+## build.cssMinify
+
+- **Type:** `boolean`
+- **Default:** the same as [`build.minify`](#build-minify)
+
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` to minify CSS.
+
 ## build.sourcemap
 
 - **Type:** `boolean | 'inline' | 'hidden'`

@@ -128,6 +128,12 @@ export interface BuildOptions {
    */
   cssTarget?: TransformOptions['target'] | false
   /**
+   * Override CSS minification specifically instead of defaulting to `build.minify`,
+   * so you can configure minification for JS and CSS separately.
+   * @default minify
+   */
+  cssMinify?: boolean
+  /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
    * 'hidden' works like `true` except that the corresponding sourcemap
@@ -407,6 +413,10 @@ export function resolveBuildOptions(
 
   if (resolved.minify === true) {
     resolved.minify = 'esbuild'
+  }
+
+  if (resolved.cssMinify == null) {
+    resolved.cssMinify = !!resolved.minify
   }
 
   return resolved
