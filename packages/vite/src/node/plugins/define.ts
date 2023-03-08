@@ -46,7 +46,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           // stringified for `import.meta.env`, we can remove the quotes and
           // retain being an identifier
           typeof val === 'string' && /^[\p{L}_$]/u.test(val.trim())
-            ? `__vite__${val}__vite__`
+            ? `__vite__define__${val}`
             : val
       }
     }
@@ -56,22 +56,38 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const importMetaKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
-    const env: Record<string, any> = {
-      ...config.env,
-      SSR: !!config.build.ssr,
-    }
     // set here to allow override with config.define
     importMetaKeys['import.meta.hot'] = `undefined`
-    for (const key in env) {
-      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
+    for (const key in config.env) {
+      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(config.env[key])
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify({ ...env, ...userDefineEnv }).replace(
-        /"__vite__(.+?)__vite__"/g,
-        (_, val) => val,
-      ),
+      'import.meta.env': JSON.stringify({
+        ...config.env,
+        SSR: '__vite__ssr__',
+        ...userDefineEnv,
+      }).replace(/"__vite__define__(.+?)"/g, (_, val) => val),
     })
+  }
+
+  function getImportMetaKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaKeys,
+      'import.meta.env.SSR': ssr + '',
+    }
+  }
+
+  function getImportMetaFallbackKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaFallbackKeys,
+      'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
+        '"__vite__ssr__"',
+        ssr + '',
+      ),
+    }
   }
 
   function generatePattern(
@@ -81,9 +97,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...importMetaKeys,
+      ...getImportMetaKeys(ssr),
       ...userDefine,
-      ...importMetaFallbackKeys,
+      ...getImportMetaFallbackKeys(ssr),
       ...(replaceProcessEnv ? processEnv : {}),
     }
 
