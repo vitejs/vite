@@ -437,7 +437,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = modulesCode
         } else {
           let content = css
-          if (config.build.minify) {
+          if (config.build.cssMinify) {
             content = await minifyCSS(content, config)
           }
           code = `export default ${JSON.stringify(content)}`
@@ -1124,7 +1124,7 @@ async function finalizeCss(
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
-  if (minify && config.build.minify) {
+  if (minify && config.build.cssMinify) {
     css = await minifyCSS(css, config)
   }
   return css
