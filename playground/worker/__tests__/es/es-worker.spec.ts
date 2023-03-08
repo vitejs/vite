@@ -72,11 +72,15 @@ describe.runIf(isBuild)('build', () => {
     // chunk
     expect(content).toMatch(`new Worker("/es/assets`)
     expect(content).toMatch(`new SharedWorker("/es/assets`)
-    // inlined
+    // inlined worker
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
     expect(content).toMatch(
       /try\{return .*\?new Worker\(.+\):new Worker\("data:application\/javascript;base64,"\+/,
+    )
+    // inlined shared worker
+    expect(content).toMatch(
+      `return new SharedWorker("data:application/javascript;base64,"+`,
     )
   })
 
