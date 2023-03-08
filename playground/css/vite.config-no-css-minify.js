@@ -1,9 +1,7 @@
-const baseConfig = require('./vite.config.js')
+import { defineConfig } from 'vite'
+import baseConfig from './vite.config.js'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   ...baseConfig,
   build: {
     ...baseConfig.build,
@@ -11,4 +9,4 @@ module.exports = {
     minify: true,
     cssMinify: false,
   },
-}
+})
