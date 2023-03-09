@@ -4,6 +4,7 @@ import './styles/vars.css'
 import HomeSponsors from './components/HomeSponsors.vue'
 import AsideSponsors from './components/AsideSponsors.vue'
 import SvgImage from './components/SvgImage.vue'
+import ApiLink from './components/ApiLink.vue'
 
 export default {
   ...Theme,
@@ -15,5 +16,6 @@ export default {
   },
   enhanceApp({ app }) {
     app.component('SvgImage', SvgImage)
+    app.component('ApiLink', ApiLink)
   },
 }

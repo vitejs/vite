@@ -1,0 +1,42 @@
+{
+  "build": {
+    "label": "packages/vite/src/node/build.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/build.ts#L466"
+  },
+  "createServer": {
+    "label": "packages/vite/src/node/server/index.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/index.ts#L338"
+  },
+  "loadConfigFromFile": {
+    "label": "packages/vite/src/node/config.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/config.ts#L874"
+  },
+  "loadEnv": {
+    "label": "packages/vite/src/node/env.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/env.ts#L7"
+  },
+  "mergeConfig": {
+    "label": "packages/vite/src/node/utils.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/utils.ts#L1094"
+  },
+  "normalizePath": {
+    "label": "packages/vite/src/node/utils.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/utils.ts#L224"
+  },
+  "preview": {
+    "label": "packages/vite/src/node/preview.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/preview.ts#L78"
+  },
+  "resolveConfig": {
+    "label": "packages/vite/src/node/config.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/config.ts#L380"
+  },
+  "searchForWorkspaceRoot": {
+    "label": "packages/vite/src/node/server/searchRoot.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/searchRoot.ts#L59"
+  },
+  "transformWithEsbuild": {
+    "label": "packages/vite/src/node/plugins/esbuild.ts",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/esbuild.ts#L66"
+  }
+}

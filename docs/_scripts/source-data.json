@@ -1,0 +1,367 @@
+[
+  {
+    "name": "build.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/build.ts"
+  },
+  {
+    "name": "cli.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/cli.ts"
+  },
+  {
+    "name": "config.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/config.ts"
+  },
+  {
+    "name": "constants.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts"
+  },
+  {
+    "name": "env.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/env.ts"
+  },
+  {
+    "name": "http.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/http.ts"
+  },
+  {
+    "name": "index.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/index.ts"
+  },
+  {
+    "name": "logger.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/logger.ts"
+  },
+  {
+    "name": "packages.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/packages.ts"
+  },
+  {
+    "name": "plugin.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugin.ts"
+  },
+  {
+    "name": "preview.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/preview.ts"
+  },
+  {
+    "name": "publicUtils.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/publicUtils.ts"
+  },
+  {
+    "name": "shortcuts.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/shortcuts.ts"
+  },
+  {
+    "name": "utils.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/utils.ts"
+  },
+  {
+    "name": "watch.ts",
+    "path": "packages/vite/src/node",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/watch.ts"
+  },
+  {
+    "name": "esbuildDepPlugin.ts",
+    "path": "packages/vite/src/node/optimizer",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/optimizer/esbuildDepPlugin.ts"
+  },
+  {
+    "name": "index.ts",
+    "path": "packages/vite/src/node/optimizer",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/optimizer/index.ts"
+  },
+  {
+    "name": "optimizer.ts",
+    "path": "packages/vite/src/node/optimizer",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/optimizer/optimizer.ts"
+  },
+  {
+    "name": "scan.ts",
+    "path": "packages/vite/src/node/optimizer",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/optimizer/scan.ts"
+  },
+  {
+    "name": "asset.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/asset.ts"
+  },
+  {
+    "name": "assetImportMetaUrl.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/assetImportMetaUrl.ts"
+  },
+  {
+    "name": "clientInjections.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/clientInjections.ts"
+  },
+  {
+    "name": "completeSystemWrap.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/completeSystemWrap.ts"
+  },
+  {
+    "name": "css.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/css.ts"
+  },
+  {
+    "name": "dataUri.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/dataUri.ts"
+  },
+  {
+    "name": "define.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/define.ts"
+  },
+  {
+    "name": "dynamicImportVars.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/dynamicImportVars.ts"
+  },
+  {
+    "name": "ensureWatch.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/ensureWatch.ts"
+  },
+  {
+    "name": "esbuild.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/esbuild.ts"
+  },
+  {
+    "name": "html.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/html.ts"
+  },
+  {
+    "name": "importAnalysis.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/importAnalysis.ts"
+  },
+  {
+    "name": "importAnalysisBuild.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/importAnalysisBuild.ts"
+  },
+  {
+    "name": "importMetaGlob.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/importMetaGlob.ts"
+  },
+  {
+    "name": "index.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/index.ts"
+  },
+  {
+    "name": "json.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/json.ts"
+  },
+  {
+    "name": "loadFallback.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/loadFallback.ts"
+  },
+  {
+    "name": "manifest.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/manifest.ts"
+  },
+  {
+    "name": "metadata.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/metadata.ts"
+  },
+  {
+    "name": "modulePreloadPolyfill.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/modulePreloadPolyfill.ts"
+  },
+  {
+    "name": "optimizedDeps.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/optimizedDeps.ts"
+  },
+  {
+    "name": "preAlias.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/preAlias.ts"
+  },
+  {
+    "name": "reporter.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/reporter.ts"
+  },
+  {
+    "name": "resolve.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/resolve.ts"
+  },
+  {
+    "name": "splitVendorChunk.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/splitVendorChunk.ts"
+  },
+  {
+    "name": "terser.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/terser.ts"
+  },
+  {
+    "name": "wasm.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/wasm.ts"
+  },
+  {
+    "name": "worker.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/worker.ts"
+  },
+  {
+    "name": "workerImportMetaUrl.ts",
+    "path": "packages/vite/src/node/plugins",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/workerImportMetaUrl.ts"
+  },
+  {
+    "name": "hmr.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/hmr.ts"
+  },
+  {
+    "name": "index.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/index.ts"
+  },
+  {
+    "name": "moduleGraph.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/moduleGraph.ts"
+  },
+  {
+    "name": "openBrowser.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/openBrowser.ts"
+  },
+  {
+    "name": "pluginContainer.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/pluginContainer.ts"
+  },
+  {
+    "name": "searchRoot.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/searchRoot.ts"
+  },
+  {
+    "name": "send.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/send.ts"
+  },
+  {
+    "name": "sourcemap.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/sourcemap.ts"
+  },
+  {
+    "name": "transformRequest.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/transformRequest.ts"
+  },
+  {
+    "name": "ws.ts",
+    "path": "packages/vite/src/node/server",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/ws.ts"
+  },
+  {
+    "name": "base.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/base.ts"
+  },
+  {
+    "name": "compression.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/compression.ts"
+  },
+  {
+    "name": "error.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/error.ts"
+  },
+  {
+    "name": "htmlFallback.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/htmlFallback.ts"
+  },
+  {
+    "name": "indexHtml.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/indexHtml.ts"
+  },
+  {
+    "name": "proxy.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts"
+  },
+  {
+    "name": "static.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/static.ts"
+  },
+  {
+    "name": "time.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/time.ts"
+  },
+  {
+    "name": "transform.ts",
+    "path": "packages/vite/src/node/server/middlewares",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/transform.ts"
+  },
+  {
+    "name": "index.ts",
+    "path": "packages/vite/src/node/ssr",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/ssr/index.ts"
+  },
+  {
+    "name": "ssrExternal.ts",
+    "path": "packages/vite/src/node/ssr",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/ssr/ssrExternal.ts"
+  },
+  {
+    "name": "ssrManifestPlugin.ts",
+    "path": "packages/vite/src/node/ssr",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/ssr/ssrManifestPlugin.ts"
+  },
+  {
+    "name": "ssrModuleLoader.ts",
+    "path": "packages/vite/src/node/ssr",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/ssr/ssrModuleLoader.ts"
+  },
+  {
+    "name": "ssrStacktrace.ts",
+    "path": "packages/vite/src/node/ssr",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/ssr/ssrStacktrace.ts"
+  },
+  {
+    "name": "ssrTransform.ts",
+    "path": "packages/vite/src/node/ssr",
+    "url": "https://github.com/vitejs/vite/blob/main/packages/vite/src/node/ssr/ssrTransform.ts"
+  }
+]
