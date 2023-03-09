@@ -884,9 +884,9 @@ export async function resolveServerUrls(
         (detail) =>
           detail &&
           detail.address &&
-          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+          (detail.family === 'IPv4' ||
             // @ts-expect-error Node 18.0 - 18.3 returns number
-            (typeof detail.family === 'number' && detail.family === 4)),
+            detail.family === 4),
       )
       .forEach((detail) => {
         let host = detail.address.replace('127.0.0.1', hostname.name)
