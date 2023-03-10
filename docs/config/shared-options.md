@@ -397,6 +397,15 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 
 :::warning SECURITY NOTES
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
+
+If you would like to expose an unprefixed variable, you can use [define](#define) to expose it:
+
+```js
+define: {
+  'import.meta.env.ENV_VARIABLE': JSON.stringify(process.env.ENV_VARIABLE)
+}
+```
+
 :::
 
 ## appType
