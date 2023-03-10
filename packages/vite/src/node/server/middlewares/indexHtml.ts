@@ -148,10 +148,11 @@ const resolveAssetUrl = async (server: ViteDevServer, rawUrl: string) => {
     return source
   }
 
-  return getUrlFromCode(source.code).replace(
-    new RegExp(`^${server.config.base}/`),
-    '/',
-  )
+  return getUrlFromCode(source.code)
+    .replace(new RegExp(`^${server.config.base}`), '/')
+    .replace(/[?&](?:import|(t=\d+))(#|$|&)/g, (match) =>
+      match.endsWith('#') ? '#' : match.startsWith('?') ? '?' : '',
+    )
 }
 
 const devHtmlHook: IndexHtmlTransformHook = async (
