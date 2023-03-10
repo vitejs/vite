@@ -342,6 +342,7 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
+    envDir: string
     env: Record<string, any>
     resolve: Required<ResolveOptions> & {
       alias: Alias[]
@@ -659,6 +660,7 @@ export async function resolveConfig(
     server,
     build: resolvedBuildOptions,
     preview: resolvePreviewOptions(config.preview, server),
+    envDir,
     env: {
       ...userEnv,
       BASE_URL,
