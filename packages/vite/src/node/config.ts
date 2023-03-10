@@ -342,7 +342,6 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
-    /** @internal */
     envDir: string
     env: Record<string, any>
     resolve: Required<ResolveOptions> & {
