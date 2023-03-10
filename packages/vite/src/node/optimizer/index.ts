@@ -626,6 +626,14 @@ export function runOptimizeDeps(
 
         return createProcessingResult()
       })
+      .catch((e) => {
+        if (e.errors && e.message.includes('The build was canceled')) {
+          // esbuild logs an error when cancelling, but this is expected so
+          // return an empty result instead
+          return createProcessingResult()
+        }
+        throw e
+      })
       .finally(() => {
         return disposeContext()
       })
