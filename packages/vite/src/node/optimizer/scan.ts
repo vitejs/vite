@@ -111,6 +111,12 @@ export function scanImports(config: ResolvedConfig): {
         })
     })
     .catch(async (e) => {
+      if (e.errors && e.message.includes('The build was canceled')) {
+        // esbuild logs an error when cancelling, but this is expected so
+        // return an empty result instead
+        return { deps: {}, missing: {} }
+      }
+
       const prependMessage = colors.red(`\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
