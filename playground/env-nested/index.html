@@ -1,0 +1,16 @@
+<h1>Nested Environment Variables</h1>
+<p>import.meta.env.MODE: <code class="mode"></code></p>
+<p>
+  import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME: <code class="mode-file"></code>
+</p>
+<p>Empty import.meta.env.VITE_PARENT_ENV: <code class="parent-env"></code></p>
+
+<script type="module">
+  text('.mode', import.meta.env.MODE)
+  text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
+  text('.parent-env', import.meta.env.VITE_PARENT_ENV)
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>

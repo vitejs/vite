@@ -6,11 +6,12 @@ on:
 
 jobs:
   reply-labeled:
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
       - name: contribution welcome
         if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
-        uses: actions-cool/issues-helper@v2
+        uses: actions-cool/issues-helper@v3
         with:
           actions: "create-comment, remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -20,17 +21,26 @@ jobs:
           labels: "pending triage, need reproduction"
 
       - name: remove pending
-        if: github.event.label.name == 'enhancement' || github.event.label.name == 'bug' || (contains(github.event.label.name, 'pending triage') == false && startsWith(github.event.label.name, 'bug:') == true)
-        uses: actions-cool/issues-helper@v2
+        if: contains(github.event.label.description, '(priority)') && contains(github.event.issue.labels.*.name, 'pending triage')
+        uses: actions-cool/issues-helper@v3
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: "pending triage"
 
+      - name: remove enhancement pending
+        if: "(github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)')) && contains(github.event.issue.labels.*.name, 'enhancement: pending triage')"
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "remove-labels"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: "enhancement: pending triage"
+
       - name: need reproduction
         if: github.event.label.name == 'need reproduction'
-        uses: actions-cool/issues-helper@v2
+        uses: actions-cool/issues-helper@v3
         with:
           actions: "create-comment, remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,0 @@
-{
-  "name": "test-package-e-included",
-  "version": "0.1.0",
-  "main": "index.js",
-  "dependencies": {
-    "test-package-e-excluded": "link:../test-package-e-excluded"
-  }
-}

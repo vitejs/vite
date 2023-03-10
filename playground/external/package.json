@@ -1,0 +1,21 @@
+{
+  "name": "@vitejs/test-external",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-dep-that-imports": "file:./dep-that-imports",
+    "@vitejs/test-dep-that-requires": "file:./dep-that-requires"
+  },
+  "devDependencies": {
+    "slash3": "npm:slash@^3.0.0",
+    "slash5": "npm:slash@^5.0.0",
+    "vite": "workspace:*",
+    "vue": "^3.2.47"
+  }
+}

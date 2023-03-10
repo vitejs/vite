@@ -1,5 +1,5 @@
-import { SourceMapConsumer, RawSourceMap } from 'source-map'
-import { ModuleGraph } from '../server/moduleGraph'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import type { ModuleGraph } from '../server/moduleGraph'
 
 let offset: number
 try {
@@ -14,13 +14,13 @@ try {
 
 export function ssrRewriteStacktrace(
   stack: string,
-  moduleGraph: ModuleGraph
+  moduleGraph: ModuleGraph,
 ): string {
   return stack
     .split('\n')
     .map((line) => {
       return line.replace(
-        /^ {4}at (?:(.+?)\s+\()?(?:(.+?):(\d+)(?::(\d+))?)\)?/,
+        /^ {4}at (?:(\S.*?)\s\()?(.+?):(\d+)(?::(\d+))?\)?/,
         (input, varName, url, line, column) => {
           if (!url) return input
 
@@ -31,29 +31,25 @@ export function ssrRewriteStacktrace(
             return input
           }
 
-          // In `source-map:v0.7.0+` this constructor returns a Promise...
-          // How can we make this block async?
-          const consumer = new SourceMapConsumer(
-            rawSourceMap as unknown as RawSourceMap
-          )
+          const traced = new TraceMap(rawSourceMap as any)
 
-          const pos = consumer.originalPositionFor({
+          const pos = originalPositionFor(traced, {
             line: Number(line) - offset,
             column: Number(column),
-            bias: SourceMapConsumer.LEAST_UPPER_BOUND
           })
 
-          if (!pos.source) {
+          if (!pos.source || pos.line == null || pos.column == null) {
             return input
           }
 
-          const source = `${pos.source}:${pos.line || 0}:${pos.column || 0}`
-          if (!varName || varName === 'eval') {
+          const trimmedVarName = varName.trim()
+          const source = `${pos.source}:${pos.line}:${pos.column}`
+          if (!trimmedVarName || trimmedVarName === 'eval') {
             return `    at ${source}`
           } else {
-            return `    at ${varName} (${source})`
+            return `    at ${trimmedVarName} (${source})`
           }
-        }
+        },
       )
     })
     .join('\n')
@@ -62,16 +58,29 @@ export function ssrRewriteStacktrace(
 export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
   const { configurable, writable } = Object.getOwnPropertyDescriptor(
     e,
-    'stack'
+    'stack',
   )!
   if (configurable) {
     Object.defineProperty(e, 'stack', {
       value: stacktrace,
       enumerable: true,
       configurable: true,
-      writable: true
+      writable: true,
     })
   } else if (writable) {
     e.stack = stacktrace
   }
+}
+
+const rewroteStacktraces = new WeakSet()
+
+export function ssrFixStacktrace(e: Error, moduleGraph: ModuleGraph): void {
+  if (!e.stack) return
+  // stacktrace shouldn't be rewritten more than once
+  if (rewroteStacktraces.has(e)) return
+
+  const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+  rebindErrorStacktrace(e, stacktrace)
+
+  rewroteStacktraces.add(e)
 }

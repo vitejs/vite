@@ -1,0 +1,29 @@
+{
+  "name": "@vitejs/test-worker",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite --config ./vite.config-iife.js",
+    "build": "vite --config ./vite.config-iife.js build",
+    "preview": "vite --config ./vite.config-iife.js preview",
+    "dev:es": "vite --config ./vite.config-es.js dev",
+    "build:es": "vite --config ./vite.config-es.js build",
+    "preview:es": "vite --config ./vite.config-es.js preview",
+    "dev:sourcemap": "WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap": "WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap": "WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js preview",
+    "dev:sourcemap-hidden": "WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap-hidden": "WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap-hidden": "WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js preview",
+    "dev:sourcemap-inline": "WORKER_MODE=inline vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap-inline": "WORKER_MODE=inline vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap-inline": "WORKER_MODE=inline vite --config ./vite.config-sourcemap.js preview",
+    "dev:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js dev",
+    "build:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js build",
+    "preview:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js preview",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite"
+  },
+  "dependencies": {
+    "@vitejs/test-dep-to-optimize": "file:./dep-to-optimize"
+  }
+}

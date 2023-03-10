@@ -1,75 +1,129 @@
 import MagicString from 'magic-string'
-import { TransformResult } from 'rollup'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
+
+const nonJsRe = /\.json(?:$|\?)/
+const metaEnvRe = /import\.meta\.env\.(.+)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const isBuildLib = isBuild && config.build.lib
 
-  const processNodeEnv: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    )
-  }
-
-  const userDefine: Record<string, string> = {}
-  for (const key in config.define) {
-    const val = config.define[key]
-    userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
-  }
-
-  // during dev, import.meta properties are handled by importAnalysis plugin
-  const importMetaKeys: Record<string, string> = {}
-  if (isBuild) {
-    const env: Record<string, any> = {
-      ...config.env,
-      SSR: !!config.build.ssr
-    }
-    for (const key in env) {
-      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
-    }
-    Object.assign(importMetaKeys, {
-      'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`
+  // ignore replace process.env in lib build
+  const processEnv: Record<string, string> = {}
+  const processNodeEnv: Record<string, string> = {}
+  if (!isBuildLib) {
+    const nodeEnv = process.env.NODE_ENV || config.mode
+    Object.assign(processEnv, {
+      'process.env.': `({}).`,
+      'global.process.env.': `({}).`,
+      'globalThis.process.env.': `({}).`,
+    })
+    Object.assign(processNodeEnv, {
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv),
     })
   }
 
-  function generatePattern(
-    ssr: boolean
-  ): [Record<string, string | undefined>, RegExp] {
-    const processEnv: Record<string, string> = {}
-    if (!ssr || config.ssr?.target === 'webworker') {
-      Object.assign(processEnv, {
-        'process.env.': `({}).`,
-        'global.process.env.': `({}).`,
-        'globalThis.process.env.': `({}).`
-      })
+  const userDefine: Record<string, string> = {}
+  const userDefineEnv: Record<string, string> = {}
+  for (const key in config.define) {
+    const val = config.define[key]
+    userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
+
+    // make sure `import.meta.env` object has user define properties
+    if (isBuild) {
+      const match = key.match(metaEnvRe)
+      if (match) {
+        userDefineEnv[match[1]] =
+          // test if value is raw identifier to wrap with __vite__ so when
+          // stringified for `import.meta.env`, we can remove the quotes and
+          // retain being an identifier
+          typeof val === 'string' && /^[\p{L}_$]/u.test(val.trim())
+            ? `__vite__define__${val}`
+            : val
+      }
     }
+  }
+
+  // during dev, import.meta properties are handled by importAnalysis plugin.
+  const importMetaKeys: Record<string, string> = {}
+  const importMetaFallbackKeys: Record<string, string> = {}
+  if (isBuild) {
+    // set here to allow override with config.define
+    importMetaKeys['import.meta.hot'] = `undefined`
+    for (const key in config.env) {
+      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(config.env[key])
+    }
+    Object.assign(importMetaFallbackKeys, {
+      'import.meta.env.': `({}).`,
+      'import.meta.env': JSON.stringify({
+        ...config.env,
+        SSR: '__vite__ssr__',
+        ...userDefineEnv,
+      }).replace(/"__vite__define__(.+?)"/g, (_, val) => val),
+    })
+  }
+
+  function getImportMetaKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaKeys,
+      'import.meta.env.SSR': ssr + '',
+    }
+  }
+
+  function getImportMetaFallbackKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaFallbackKeys,
+      'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
+        '"__vite__ssr__"',
+        ssr + '',
+      ),
+    }
+  }
+
+  function generatePattern(
+    ssr: boolean,
+  ): [Record<string, string | undefined>, RegExp | null] {
+    const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
     const replacements: Record<string, string> = {
-      ...processNodeEnv,
+      ...(replaceProcessEnv ? processNodeEnv : {}),
+      ...getImportMetaKeys(ssr),
       ...userDefine,
-      ...importMetaKeys,
-      ...processEnv
+      ...getImportMetaFallbackKeys(ssr),
+      ...(replaceProcessEnv ? processEnv : {}),
     }
 
-    const pattern = new RegExp(
-      // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)\\b(' +
-        Object.keys(replacements)
-          .map((str) => {
-            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-          })
-          .join('|') +
-        ')\\b',
-      'g'
-    )
+    if (isBuild && !replaceProcessEnv) {
+      replacements['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
+    }
+
+    const replacementsKeys = Object.keys(replacements)
+    const pattern = replacementsKeys.length
+      ? new RegExp(
+          // Mustn't be preceded by a char that can be part of an identifier
+          // or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
+            replacementsKeys
+              .map((str) => {
+                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+              })
+              .join('|') +
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
+          'gu',
+        )
+      : null
 
     return [replacements, pattern]
   }
@@ -79,6 +133,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
+
     transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
@@ -88,14 +143,20 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
       }
 
       const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
+      }
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
@@ -113,18 +174,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.update(start, end, replacement)
       }
 
       if (!hasReplaced) {
         return null
       }
 
-      const result: TransformResult = { code: s.toString() }
-      if (config.build.sourcemap) {
-        result.map = s.generateMap({ hires: true })
-      }
-      return result
-    }
+      return transformStableResult(s, id, config)
+    },
   }
 }

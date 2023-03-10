@@ -1,0 +1,11 @@
+{
+  "name": "@vitejs/test-module-condition",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    ".": {
+      "module": "./module.js",
+      "import": "./import.mjs"
+    }
+  }
+}

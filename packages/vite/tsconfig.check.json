@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": true
+  },
+  "include": [
+    // dist
+    "dist/**/*",
+    "types/**/*"
+  ]
+}

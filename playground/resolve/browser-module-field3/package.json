@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-resolve-browser-module-field3",
+  "private": true,
+  "version": "1.0.0",
+  "module": "index.js",
+  "browser": "index.web.js"
+}
