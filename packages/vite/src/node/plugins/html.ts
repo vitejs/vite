@@ -148,24 +148,31 @@ export function nodeIsElement(
   return node.nodeName[0] !== '#'
 }
 
-function traverseNodes(
+async function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
-  visitor: (node: DefaultTreeAdapterMap['node']) => void,
+  visitor: (node: DefaultTreeAdapterMap['node']) => void | Promise<void>,
 ) {
-  visitor(node)
+  const visitorPromise = visitor(node)
+
+  if (visitorPromise) {
+    await visitorPromise
+  }
+
   if (
     nodeIsElement(node) ||
     node.nodeName === '#document' ||
     node.nodeName === '#document-fragment'
   ) {
-    node.childNodes.forEach((childNode) => traverseNodes(childNode, visitor))
+    for (const childNode of node.childNodes) {
+      await traverseNodes(childNode, visitor)
+    }
   }
 }
 
 export async function traverseHtml(
   html: string,
   filePath: string,
-  visitor: (node: DefaultTreeAdapterMap['node']) => void,
+  visitor: (node: DefaultTreeAdapterMap['node']) => void | Promise<void>,
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
@@ -176,7 +183,7 @@ export async function traverseHtml(
       handleParseError(e, html, filePath)
     },
   })
-  traverseNodes(ast, visitor)
+  await traverseNodes(ast, visitor)
 }
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {

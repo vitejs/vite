@@ -27,6 +27,7 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
+  isExternalUrl,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -122,6 +123,37 @@ const processNodeUrl = (
     overwriteAttrValue(s, sourceCodeLocation, processedUrl)
   }
 }
+
+const resolveAssetUrl = async (server: ViteDevServer, rawUrl: string) => {
+  if (isExternalUrl(rawUrl)) {
+    return rawUrl
+  }
+
+  const getUrlFromCode = (code: string) => code.match(/["'](.+)["']/)![1]
+
+  const transform = (url: string) =>
+    server.pluginContainer
+      .transform(
+        `import "${url}"`,
+        path.resolve(server.config.root, '_vite_entry_.js'),
+      )
+      .catch((_) => null)
+
+  rawUrl = rawUrl.replace(/^\//, '')
+
+  // fs-root/rawUrl | fs-root/node_modules/rawUrl
+  const source = (await transform(`./${rawUrl}`)) || (await transform(rawUrl))
+
+  if (!source) {
+    return source
+  }
+
+  return getUrlFromCode(source.code).replace(
+    new RegExp(`^${server.config.base}/`),
+    '/',
+  )
+}
+
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
@@ -195,7 +227,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     )
   }
 
-  await traverseHtml(html, filename, (node) => {
+  await traverseHtml(html, filename, async (node) => {
     if (!nodeIsElement(node)) {
       return
     }
@@ -234,6 +266,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       for (const p of node.attrs) {
         const attrKey = getAttrKey(p)
         if (p.value && assetAttrs.includes(attrKey)) {
+          const url = await resolveAssetUrl(server!, p.value)
+
+          if (url) {
+            p.value = url
+          }
+
           processNodeUrl(
             p,
             node.sourceCodeLocation!.attrs![attrKey],

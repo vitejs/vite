@@ -245,7 +245,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // /foo -> /fs-root/foo
       if (asSrc && id.startsWith('/')) {
         const fsPath = path.resolve(root, id.slice(1))
-        if ((res = tryFsResolve(fsPath, options))) {
+        const modulePath = path.resolve(root, `node_modules${id}`)
+        if (
+          (res =
+            tryFsResolve(fsPath, options) || tryFsResolve(modulePath, options))
+        ) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res)
         }
@@ -587,7 +591,7 @@ function tryResolveFile(
           // path points to a node package
           const pkg = loadPackageData(pkgPath, options.preserveSymlinks)
           const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
-          return resolved
+          return resolved + postfix
         } catch (e) {
           if (e.code !== 'ENOENT') {
             throw e
