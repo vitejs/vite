@@ -1,4 +1,4 @@
-import fs, { realpath } from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
