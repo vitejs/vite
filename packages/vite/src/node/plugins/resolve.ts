@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fs, { realpath } from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
@@ -162,13 +162,26 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (!pkgJsonPath) return
 
         const pkgData = loadPackageData(pkgJsonPath, options.preserveSymlinks)
-        return resolveExportsOrImports(
+        let importsPath = resolveExportsOrImports(
           pkgData.data,
           id,
           options,
           targetWeb,
           'imports',
         )
+
+        if (importsPath?.startsWith('.')) {
+          importsPath = path.relative(
+            basedir,
+            path.join(path.dirname(pkgJsonPath), importsPath),
+          )
+
+          if (!importsPath.startsWith('.')) {
+            importsPath = `./${importsPath}`
+          }
+        }
+
+        return importsPath
       }
 
       const resolvedImports = resolveSubpathImports(id, importer)
