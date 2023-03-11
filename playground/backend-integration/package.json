@@ -1,0 +1,16 @@
+{
+  "name": "@vitejs/test-backend-integration",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "sass": "^1.58.3",
+    "tailwindcss": "^3.2.7",
+    "fast-glob": "^3.2.12"
+  }
+}

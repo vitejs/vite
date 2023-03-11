@@ -1,13 +1,12 @@
-import fs from 'fs'
-import path from 'path'
-import { createFilter } from '@rollup/pluginutils'
-import { createDebugger, resolveFrom } from './utils'
-import { ResolvedConfig } from './config'
-import { Plugin } from './plugin'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createDebugger, createFilter, resolveFrom } from './utils'
+import type { ResolvedConfig } from './config'
+import type { Plugin } from './plugin'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
-  onlyWhenFocused: true
+  onlyWhenFocused: true,
 })
 
 /** Cache for package.json resolution and package.json contents */
@@ -22,18 +21,21 @@ export interface PackageData {
   getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
   data: {
     [field: string]: any
+    name: string
+    type: string
     version: string
     main: string
     module: string
     browser: string | Record<string, string | false>
     exports: string | Record<string, any> | string[]
+    imports: Record<string, any>
     dependencies: Record<string, string>
   }
 }
 
 export function invalidatePackageData(
   packageCache: PackageCache,
-  pkgPath: string
+  pkgPath: string,
 ): void {
   packageCache.delete(pkgPath)
   const pkgDir = path.dirname(pkgPath)
@@ -48,7 +50,7 @@ export function resolvePackageData(
   id: string,
   basedir: string,
   preserveSymlinks = false,
-  packageCache?: PackageCache
+  packageCache?: PackageCache,
 ): PackageData | null {
   let pkg: PackageData | undefined
   let cacheKey: string | undefined
@@ -81,7 +83,7 @@ export function resolvePackageData(
 export function loadPackageData(
   pkgPath: string,
   preserveSymlinks?: boolean,
-  packageCache?: PackageCache
+  packageCache?: PackageCache,
 ): PackageData {
   if (!preserveSymlinks) {
     pkgPath = fs.realpathSync.native(pkgPath)
@@ -103,7 +105,21 @@ export function loadPackageData(
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects && 'no-treeshake'
   } else if (Array.isArray(sideEffects)) {
-    const filter = createFilter(sideEffects, null, { resolve: pkgDir })
+    const finalPackageSideEffects = sideEffects.map((sideEffect) => {
+      /*
+       * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
+       * https://webpack.js.org/guides/tree-shaking/
+       * https://github.com/vitejs/vite/pull/11807
+       */
+      if (sideEffect.includes('/')) {
+        return sideEffect
+      }
+      return `**/${sideEffect}`
+    })
+
+    const filter = createFilter(finalPackageSideEffects, null, {
+      resolve: pkgDir,
+    })
     hasSideEffects = (id) => filter(id) && 'no-treeshake'
   } else {
     // Statically analyze each module for side effects.
@@ -129,7 +145,7 @@ export function loadPackageData(
       } else {
         return pkg.nodeResolvedImports[key]
       }
-    }
+    },
   }
 
   packageCache?.set(pkgPath, pkg)
@@ -165,6 +181,6 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
       if (id.endsWith('/package.json')) {
         invalidatePackageData(packageCache, id)
       }
-    }
+    },
   }
 }

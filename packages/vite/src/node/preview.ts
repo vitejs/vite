@@ -1,22 +1,26 @@
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
+import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from 'compression'
-import { Server } from 'http'
-import { resolveConfig, InlineConfig, ResolvedConfig } from '.'
-import { Connect } from 'types/connect'
-import { ResolvedServerOptions } from './server'
+import type { Connect } from 'dep-types/connect'
+import corsMiddleware from 'cors'
+import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
+import type { CommonServerOptions } from './http'
 import {
-  resolveHttpsConfig,
-  resolveHttpServer,
   httpServerStart,
-  CommonServerOptions
+  resolveHttpServer,
+  resolveHttpsConfig,
+  setClientErrorHandler,
 } from './http'
 import { openBrowser } from './server/openBrowser'
-import corsMiddleware from 'cors'
+import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname } from './utils'
-import { printCommonServerUrls } from './logger'
+import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
+import { printServerUrls } from './logger'
+import { DEFAULT_PREVIEW_PORT } from './constants'
+import { resolveConfig } from '.'
+import type { InlineConfig, ResolvedConfig } from '.'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -24,7 +28,7 @@ export interface ResolvedPreviewOptions extends PreviewOptions {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
-  server: ResolvedServerOptions
+  server: ResolvedServerOptions,
 ): ResolvedPreviewOptions {
   // The preview server inherits every CommonServerOption from the `server` config
   // except for the port to enable having both the dev and preview servers running
@@ -36,7 +40,8 @@ export function resolvePreviewOptions(
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
-    cors: preview?.cors ?? server.cors
+    cors: preview?.cors ?? server.cors,
+    headers: preview?.headers ?? server.headers,
   }
 }
 
@@ -48,30 +53,66 @@ export interface PreviewServer {
   /**
    * native Node http server instance
    */
-  httpServer: Server
+  httpServer: http.Server
+  /**
+   * The resolved urls Vite prints on the CLI
+   */
+  resolvedUrls: ResolvedServerUrls
   /**
    * Print server urls
    */
-  printUrls: () => void
+  printUrls(): void
 }
+
+export type PreviewServerHook = (
+  this: void,
+  server: {
+    middlewares: Connect.Server
+    httpServer: http.Server
+  },
+) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @param config - the resolved Vite config
- * @param serverOptions - what host and port to use
- * @experimental
  */
 export async function preview(
-  inlineConfig: InlineConfig
+  inlineConfig: InlineConfig = {},
 ): Promise<PreviewServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+  const config = await resolveConfig(
+    inlineConfig,
+    'serve',
+    'production',
+    'production',
+  )
+
+  const distDir = path.resolve(config.root, config.build.outDir)
+  if (
+    !fs.existsSync(distDir) &&
+    // error if no plugins implement `configurePreviewServer`
+    config.plugins.every((plugin) => !plugin.configurePreviewServer) &&
+    // error if called in CLI only. programmatic usage could access `httpServer`
+    // and affect file serving
+    process.argv[1]?.endsWith(path.normalize('bin/vite.js')) &&
+    process.argv[2] === 'preview'
+  ) {
+    throw new Error(
+      `The directory "${config.build.outDir}" does not exist. Did you build your project?`,
+    )
+  }
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
+    await resolveHttpsConfig(config.preview?.https),
   )
+  setClientErrorHandler(httpServer, config.logger)
+
+  // apply server hooks from plugins
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
+    postHooks.push(await hook({ middlewares: app, httpServer }))
+  }
 
   // cors
   const { cors } = config.preview
@@ -80,52 +121,74 @@ export async function preview(
   }
 
   // proxy
-  if (config.preview.proxy) {
-    app.use(proxyMiddleware(httpServer, config))
+  const { proxy } = config.preview
+  if (proxy) {
+    app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
   app.use(compression())
 
-  const distDir = path.resolve(config.root, config.build.outDir)
-  app.use(
-    config.base,
-    sirv(distDir, {
-      etag: true,
-      dev: true,
-      single: true
-    })
-  )
+  const previewBase =
+    config.base === './' || config.base === '' ? '/' : config.base
+
+  // static assets
+  const headers = config.preview.headers
+  const assetServer = sirv(distDir, {
+    etag: true,
+    dev: true,
+    single: config.appType === 'spa',
+    setHeaders(res) {
+      if (headers) {
+        for (const name in headers) {
+          res.setHeader(name, headers[name]!)
+        }
+      }
+    },
+    shouldServe(filePath) {
+      return shouldServeFile(filePath, distDir)
+    },
+  })
+  app.use(previewBase, assetServer)
+
+  // apply post server hooks from plugins
+  postHooks.forEach((fn) => fn && fn())
 
   const options = config.preview
-  const hostname = resolveHostname(options.host)
-  const port = options.port ?? 5000
+  const hostname = await resolveHostname(options.host)
+  const port = options.port ?? DEFAULT_PREVIEW_PORT
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
-  const base = config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
-    logger
+    logger,
   })
 
+  const resolvedUrls = await resolveServerUrls(
+    httpServer,
+    config.preview,
+    config,
+  )
+
   if (options.open) {
-    const path = typeof options.open === 'string' ? options.open : base
+    const path = typeof options.open === 'string' ? options.open : previewBase
     openBrowser(
       path.startsWith('http')
         ? path
-        : `${protocol}://${hostname.name}:${serverPort}${path}`,
+        : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
       true,
-      logger
+      logger,
     )
   }
 
   return {
     config,
     httpServer,
+    resolvedUrls,
     printUrls() {
-      printCommonServerUrls(httpServer, config.preview, config)
-    }
+      printServerUrls(resolvedUrls, options.host, logger.info)
+    },
   }
 }
