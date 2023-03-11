@@ -1,3 +1,6 @@
+import type * as Rollup from 'rollup'
+
+export type { Rollup }
 export * from './config'
 export { createServer } from './server'
 export { preview } from './preview'
