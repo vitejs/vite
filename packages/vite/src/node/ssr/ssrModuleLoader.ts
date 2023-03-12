@@ -10,6 +10,7 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
+import type { ModuleNode } from '../server/moduleGraph'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -131,7 +132,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod.file!, resolveOptions)
+      return nodeImport(dep, mod, resolveOptions)
     }
     // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
     dep = unwrapId(dep)
@@ -203,17 +204,21 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
+
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
-      server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${e.stack}`,
-        {
-          timestamp: true,
-          clear: server.config.clearScreen,
-          error: e,
-        },
-      )
     }
+
+    server.config.logger.error(
+      `Error when evaluating SSR module ${url}:` +
+        (e.importee ? ` failed to import '${e.importee}'\n` : '\n'),
+      {
+        timestamp: true,
+        clear: server.config.clearScreen,
+      },
+    )
+
+    delete e.importee
     throw e
   }
 
@@ -223,10 +228,12 @@ async function instantiateModule(
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
-  importer: string,
+  mod: ModuleNode,
   resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
+  const importer = mod.file
+
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
@@ -258,7 +265,7 @@ async function nodeImport(
     const mod = await dynamicImport(url)
     return proxyESM(mod)
   } catch (err) {
-    err.message = `\nFailed to import ${url} from ${importer}\n${err.message}`
+    err.importee = id
 
     throw err
   }
