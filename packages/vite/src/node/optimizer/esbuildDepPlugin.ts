@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES } from '../constants'
+import { CSS_LANGS_RE, KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
 import type { ResolvedConfig } from '..'
 import {
@@ -153,10 +153,12 @@ export function esbuildDepPlugin(
         { filter: /./, namespace: externalWithConversionNamespace },
         (args) => {
           // import itself with prefix (this is the actual part of require-import conversion)
+          const modulePath = `"${convertedExternalPrefix}${args.path}"`
           return {
-            contents:
-              `export { default } from "${convertedExternalPrefix}${args.path}";` +
-              `export * from "${convertedExternalPrefix}${args.path}";`,
+            contents: CSS_LANGS_RE.test(args.path)
+              ? `import ${modulePath};`
+              : `export { default } from ${modulePath};` +
+                `export * from ${modulePath};`,
             loader: 'js',
           }
         },
