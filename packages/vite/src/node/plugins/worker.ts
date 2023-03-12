@@ -416,9 +416,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
       const workerMap = getWorkerCache(config)
-      await Promise.all(
-        [...workerMap.workersData.values()].map(({ bundle }) => bundle.close()),
-      )
+      if (workerMap != null) {
+        await Promise.all(
+          [...workerMap.workersData.values()].map(({ bundle }) =>
+            bundle.close(),
+          ),
+        )
+      }
     },
   }
 }
