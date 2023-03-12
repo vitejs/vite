@@ -262,6 +262,7 @@ async function nodeImport(
     const mod = await dynamicImport(url)
     return proxyESM(mod)
   } catch (err) {
+    // tell external error handler which mod was imported with error
     err.importee = id
 
     throw err
