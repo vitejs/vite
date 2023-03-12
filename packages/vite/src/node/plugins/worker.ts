@@ -82,9 +82,9 @@ async function generateWorker(
 
   const workerOutputConfig = config.worker.rollupOptions.output
   const workerConfig = workerOutputConfig
-    ? // @ts-expect-error this is an internal(currently) option to have output config as a function
-      typeof workerOutputConfig === 'function'
-      ? workerOutputConfig(callerOutputOptions)
+    ? typeof workerOutputConfig === 'function'
+      ? // @ts-expect-error this is an internal(currently) option to have output config as a function
+        workerOutputConfig(callerOutputOptions)
       : Array.isArray(workerOutputConfig)
       ? workerOutputConfig[0] || {}
       : workerOutputConfig
