@@ -851,7 +851,7 @@ function createOptimizeDepsIncludeResolver(
     if (lastArrowIndex === -1) {
       return await resolve(id, undefined, undefined, ssr)
     }
-    // split id by last '>' for nested selected packages, for example:
+    // split nested selected id by last '>', for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
