@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
@@ -203,17 +204,24 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
+
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
-      server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${e.stack}`,
-        {
-          timestamp: true,
-          clear: server.config.clearScreen,
-          error: e,
-        },
-      )
     }
+
+    server.config.logger.error(
+      colors.red(
+        `Error when evaluating SSR module ${url}:` +
+          (e.importee ? ` failed to import "${e.importee}"\n` : '\n'),
+      ),
+      {
+        timestamp: true,
+        clear: server.config.clearScreen,
+        error: e,
+      },
+    )
+
+    delete e.importee
     throw e
   }
 
@@ -257,7 +265,12 @@ async function nodeImport(
   try {
     const mod = await dynamicImport(url)
     return proxyESM(mod)
-  } catch {}
+  } catch (err) {
+    // tell external error handler which mod was imported with error
+    err.importee = id
+
+    throw err
+  }
 }
 
 // rollup-style default import interop for cjs
