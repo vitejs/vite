@@ -170,6 +170,30 @@ function viteLegacyPlugin<T extends Options>(
     })
   }
 
+  const getLegacyOutputFileName = (
+    fileNames: string | ((chunkInfo: PreRenderedChunk) => string) | undefined,
+    defaultFileName = '[name]-legacy-[hash].js',
+  ): string | ((chunkInfo: PreRenderedChunk) => string) => {
+    if (!fileNames) {
+      return path.posix.join(config.build.assetsDir, defaultFileName)
+    }
+
+    return (chunkInfo) => {
+      let fileName =
+        typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
+
+      if (fileName.includes('[name]')) {
+        // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
+        fileName = fileName.replace('[name]', '[name]-legacy')
+      } else {
+        // entry.js -> entry-legacy.js
+        fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+      }
+
+      return fileName
+    }
+  }
+
   let overriddenBuildTarget = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
@@ -229,6 +253,32 @@ function viteLegacyPlugin<T extends Options>(
             `plugin-legacy cannot emit legacy workers chunk when 'config.worker.format' is different than 'iife'!` +
               ` (currently it equals to '${format}')`,
           )
+        }
+      }
+
+      // TODO: Is it needed, or shell we just use the regular plugin with the parameter `isWorker`?
+      const originalOutputOptions = config.worker.rollupOptions?.output
+      // @ts-expect-error this is an internal(currently) option to have output config as a function
+      config.worker.rollupOptions.output = (callerOutputOptions) => {
+        if (
+          callerOutputOptions.format === 'system' &&
+          !callerOutputOptions.build?.ssr
+        ) {
+          const outputOptions =
+            (Array.isArray(originalOutputOptions)
+              ? originalOutputOptions[0]
+              : originalOutputOptions) ?? {}
+          return {
+            ...outputOptions,
+            entryFileNames: getLegacyOutputFileName(
+              outputOptions.entryFileNames,
+            ),
+            chunkFileNames: getLegacyOutputFileName(
+              outputOptions.chunkFileNames,
+            ),
+          }
+        } else {
+          return originalOutputOptions
         }
       }
     },
@@ -322,33 +372,6 @@ function viteLegacyPlugin<T extends Options>(
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
 
-      const getLegacyOutputFileName = (
-        fileNames:
-          | string
-          | ((chunkInfo: PreRenderedChunk) => string)
-          | undefined,
-        defaultFileName = '[name]-legacy-[hash].js',
-      ): string | ((chunkInfo: PreRenderedChunk) => string) => {
-        if (!fileNames) {
-          return path.posix.join(config.build.assetsDir, defaultFileName)
-        }
-
-        return (chunkInfo) => {
-          let fileName =
-            typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
-
-          if (fileName.includes('[name]')) {
-            // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
-            fileName = fileName.replace('[name]', '[name]-legacy')
-          } else {
-            // entry.js -> entry-legacy.js
-            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
-          }
-
-          return fileName
-        }
-      }
-
       const createLegacyOutput = (
         options: OutputOptions = {},
       ): OutputOptions => {
@@ -425,12 +448,6 @@ function viteLegacyPlugin<T extends Options>(
       // minification isn't disabled, because that leaves out the terser plugin
       // entirely.
       opts.__vite_force_terser__ = true
-
-      // @ts-expect-error In the `generateBundle` hook,
-      // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
-      // But that's still a waste of computing resource.
-      // So we add this flag to avoid emitting the asset in the first place whenever possible.
-      opts.__vite_skip_asset_emit__ = true
 
       // avoid emitting assets for legacy bundle
       const needPolyfills =
@@ -596,40 +613,27 @@ function viteLegacyPlugin<T extends Options>(
         tags,
       }
     },
-
-    generateBundle(opts, bundle) {
-      if (config.build.ssr) {
-        return
-      }
-
-      if (isLegacyBundle(bundle, opts)) {
-        // avoid emitting duplicate assets
-        for (const name in bundle) {
-          if (bundle[name].type === 'asset' && !/.+\.map$/.test(name)) {
-            delete bundle[name]
-          }
-        }
-      }
-    },
   }
 
+  // TODO: Is it really a normal vite Plugin instead?
   const legacyWorkerRollupPlugin: RollupPlugin = {
     name: 'vite:legacy-worker-rollup',
 
-    outputOptions(config) {
-      // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers, or overrite it
-      //console.log("Generate code option of workers: " + JSON.stringify(config.generatedCode));
-    },
+    // outputOptions(_outputOptions) {
+    //   TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers, or overrite it
+    //   console.log("Generate code option of workers: " + JSON.stringify(config.generatedCode));
+    // },
 
-    async renderChunk(raw) {
-      if (config.build.ssr || !genLegacy) return
+    async renderChunk(raw, chunk) {
+      if (config.build.ssr || !genLegacy || !chunk.fileName.includes('-legacy'))
+        return
 
       // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers after it has been override before
 
       // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
 
       // transform the legacy chunk with @babel/preset-env
-      const sourceMaps = !!config.build.sourcemap
+      const sourceMaps = /*!!config.build.sourcemap */ false // TODO: Support sourcemaps
       const babel = await loadBabel()
       const legacyPolyfills = new Set<string>()
       const result = babel.transform(raw, {
@@ -709,11 +713,15 @@ function viteLegacyPlugin<T extends Options>(
           },
         },
       })) as RollupOutput
-      // TODO: Fix some sourcemap issue and prepend it correcty
+      // TODO: Fix some sourcemap issue and prepend it correcty to the sourcemap
       const polyfillCode = res.output[0].code
 
       //if (result) return { code: result.code!, map: result.map }
-      if (result) return polyfillCode + '\n' + result.code!
+      if (result)
+        return {
+          code: polyfillCode + '\n' + result.code!,
+          map: { mappings: '' },
+        }
       return null
     },
   }

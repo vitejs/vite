@@ -8,14 +8,13 @@ import {
   cleanUrl,
   evalValue,
   injectQuery,
-  parseRequest,
   slash,
   transformStableResult,
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import { WORKER_FILE_ID, workerIdToToken } from './worker'
 import { fileToUrl } from './asset'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
@@ -110,7 +109,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
-        const query = parseRequest(id)
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
@@ -158,16 +156,17 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let builtUrl: string
           if (isBuild) {
             getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-            builtUrl = await workerFileToUrl(config, file, query)
+            builtUrl = await workerIdToToken(config, id)
           } else {
             builtUrl = await fileToUrl(cleanUrl(file), config, this)
             builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
             builtUrl = injectQuery(builtUrl, `type=${workerType}`)
+            builtUrl = JSON.stringify(builtUrl)
           }
           s.update(
             urlIndex,
             urlIndex + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            `new URL(${builtUrl}, self.location)`,
           )
         }
 
