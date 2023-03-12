@@ -644,13 +644,11 @@ export function tryNodeResolve(
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
-  ssr?: boolean,
+  ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
-
-  ssr ??= false
 
   const possiblePkgIds: string[] = []
   for (let prevSlashIndex = -1; ; ) {
