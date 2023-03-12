@@ -10,7 +10,6 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import type { ModuleNode } from '../server/moduleGraph'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -132,7 +131,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod, resolveOptions)
+      return nodeImport(dep, mod.file!, resolveOptions)
     }
     // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
     dep = unwrapId(dep)
@@ -228,12 +227,10 @@ async function instantiateModule(
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
-  mod: ModuleNode,
+  importer: string,
   resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
-  const importer = mod.file
-
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
