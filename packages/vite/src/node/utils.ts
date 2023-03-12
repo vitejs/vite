@@ -33,7 +33,7 @@ import {
 } from './constants'
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls } from './server'
+import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -815,6 +815,19 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   return isSame ? undefined : nodeResult.address
 }
 
+export function diffDnsOrderChange(
+  oldUrls: ViteDevServer['resolvedUrls'],
+  newUrls: ViteDevServer['resolvedUrls'],
+): boolean {
+  return !(
+    oldUrls === newUrls ||
+    (oldUrls &&
+      newUrls &&
+      arrayEqual(oldUrls.local, newUrls.local) &&
+      arrayEqual(oldUrls.network, newUrls.network))
+  )
+}
+
 export interface Hostname {
   /** undefined sets the default behaviour of server.listen */
   host: string | undefined
@@ -884,9 +897,9 @@ export async function resolveServerUrls(
         (detail) =>
           detail &&
           detail.address &&
-          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+          (detail.family === 'IPv4' ||
             // @ts-expect-error Node 18.0 - 18.3 returns number
-            (typeof detail.family === 'number' && detail.family === 4)),
+            detail.family === 4),
       )
       .forEach((detail) => {
         let host = detail.address.replace('127.0.0.1', hostname.name)

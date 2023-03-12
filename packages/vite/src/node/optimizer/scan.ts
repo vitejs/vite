@@ -61,6 +61,8 @@ export function scanImports(config: ResolvedConfig): {
   const missing: Record<string, string> = {}
   let entries: string[]
 
+  const scanContext = { cancelled: false }
+
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
     config,
   ).then((computedEntries) => {
@@ -78,14 +80,21 @@ export function scanImports(config: ResolvedConfig): {
       }
       return
     }
+    if (scanContext.cancelled) return
 
     debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
-    return prepareEsbuildScanner(config, entries, deps, missing)
+    return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
   })
 
   const result = esbuildContext
     .then((context) => {
-      if (!context) {
+      function disposeContext() {
+        return context?.dispose().catch((e) => {
+          config.logger.error('Failed to dispose esbuild context', { error: e })
+        })
+      }
+      if (!context || scanContext?.cancelled) {
+        disposeContext()
         return { deps: {}, missing: {} }
       }
       return context
@@ -98,10 +107,16 @@ export function scanImports(config: ResolvedConfig): {
           }
         })
         .finally(() => {
-          context.dispose()
+          return disposeContext()
         })
     })
     .catch(async (e) => {
+      if (e.errors && e.message.includes('The build was canceled')) {
+        // esbuild logs an error when cancelling, but this is expected so
+        // return an empty result instead
+        return { deps: {}, missing: {} }
+      }
+
       const prependMessage = colors.red(`\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
@@ -126,7 +141,10 @@ export function scanImports(config: ResolvedConfig): {
     })
 
   return {
-    cancel: () => esbuildContext.then((context) => context?.cancel()),
+    cancel: async () => {
+      scanContext.cancelled = true
+      return esbuildContext.then((context) => context?.cancel())
+    },
     result,
   }
 }
@@ -168,8 +186,12 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-) {
+  scanContext?: { cancelled: boolean },
+): Promise<BuildContext | undefined> {
   const container = await createPluginContainer(config)
+
+  if (scanContext?.cancelled) return
+
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =

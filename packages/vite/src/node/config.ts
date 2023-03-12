@@ -342,6 +342,7 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
+    envDir: string
     env: Record<string, any>
     resolve: Required<ResolveOptions> & {
       alias: Alias[]
@@ -529,7 +530,11 @@ export async function resolveConfig(
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
-  const resolvedBuildOptions = resolveBuildOptions(config.build, logger)
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    logger,
+    resolvedRoot,
+  )
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -655,6 +660,7 @@ export async function resolveConfig(
     server,
     build: resolvedBuildOptions,
     preview: resolvePreviewOptions(config.preview, server),
+    envDir,
     env: {
       ...userEnv,
       BASE_URL,

@@ -171,7 +171,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     if (!_env) {
       _env = `import.meta.env = ${JSON.stringify({
         ...config.env,
-        SSR: '__vite__ssr__vite__',
+        SSR: '__vite__ssr__',
       })};`
       // account for user env defines
       for (const key in config.define) {
@@ -183,7 +183,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
     }
-    return _env.replace('"__vite__ssr__vite__"', ssr + '')
+    return _env.replace('"__vite__ssr__"', ssr + '')
   }
 
   return {

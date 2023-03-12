@@ -34,6 +34,7 @@ import {
   joinUrlSegments,
   lookupFile,
   normalizePath,
+  requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
@@ -126,6 +127,12 @@ export interface BuildOptions {
    * @default target
    */
   cssTarget?: TransformOptions['target'] | false
+  /**
+   * Override CSS minification specifically instead of defaulting to `build.minify`,
+   * so you can configure minification for JS and CSS separately.
+   * @default minify
+   */
+  cssMinify?: boolean
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -298,6 +305,7 @@ export interface ResolvedBuildOptions
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   logger: Logger,
+  root: string,
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   if (raw) {
@@ -378,8 +386,20 @@ export function resolveBuildOptions(
   if (resolved.target === 'modules') {
     resolved.target = ESBUILD_MODULES_TARGET
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    // esnext + terser: limit to es2021 so it can be minified by terser
-    resolved.target = 'es2021'
+    try {
+      const terserPackageJsonPath = requireResolveFromRootWithFallback(
+        root,
+        'terser/package.json',
+      )
+      const terserPackageJson = JSON.parse(
+        fs.readFileSync(terserPackageJsonPath, 'utf-8'),
+      )
+      const v = terserPackageJson.version.split('.')
+      if (v[0] === '5' && v[1] < 16) {
+        // esnext + terser 5.16<: limit to es2021 so it can be minified by terser
+        resolved.target = 'es2021'
+      }
+    } catch {}
   }
 
   if (!resolved.cssTarget) {
@@ -393,6 +413,10 @@ export function resolveBuildOptions(
 
   if (resolved.minify === true) {
     resolved.minify = 'esbuild'
+  }
+
+  if (resolved.cssMinify == null) {
+    resolved.cssMinify = !!resolved.minify
   }
 
   return resolved

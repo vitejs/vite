@@ -107,6 +107,17 @@ If your code relies on types from browser environments such as [DOM](https://git
 }
 ```
 
+## HTML Env Replacement
+
+Vite also supports replacing env variables in HTML files. Any properties in `import.meta.env` can be used in HTML files with a special `%ENV_NAME%` syntax:
+
+```html
+<h1>Vite is running in %MODE%</h1>
+<p>Using data from %VITE_API_URL%</p>
+```
+
+If the env doesn't exist in `import.meta.env`, e.g. `%NON_EXISTENT%`, it will be ignored and not replaced, unlike `import.meta.env.NON_EXISTENT` in JS where it's replaced as `undefined`.
+
 ## Modes
 
 By default, the dev server (`dev` command) runs in `development` mode and the `build` command runs in `production` mode.
