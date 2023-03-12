@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
@@ -209,11 +210,14 @@ async function instantiateModule(
     }
 
     server.config.logger.error(
-      `Error when evaluating SSR module ${url}:` +
-        (e.importee ? ` failed to import '${e.importee}'\n` : '\n'),
+      colors.red(
+        `Error when evaluating SSR module ${url}:` +
+          (e.importee ? ` failed to import "${e.importee}"\n` : '\n'),
+      ),
       {
         timestamp: true,
         clear: server.config.clearScreen,
+        error: e,
       },
     )
 
