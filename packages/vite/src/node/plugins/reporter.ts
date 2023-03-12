@@ -188,7 +188,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             path.resolve(config.root, outDir ?? config.build.outDir),
           ),
         )
-        const assetsDir = `${config.build.assetsDir}/`
+        const assetsDir = path.join(config.build.assetsDir, '/')
 
         for (const group of groups) {
           const filtered = entries.filter((e) => e.group === group.name)
@@ -199,14 +199,15 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
             let log = colors.dim(relativeOutDir + '/')
-            log += entry.name.startsWith(assetsDir)
-              ? colors.dim(assetsDir) +
-                group.color(
-                  entry.name
-                    .slice(assetsDir.length)
-                    .padEnd(longest + 2 - assetsDir.length),
-                )
-              : group.color(entry.name.padEnd(longest + 2))
+            log +=
+              !config.build.lib && entry.name.startsWith(assetsDir)
+                ? colors.dim(assetsDir) +
+                  group.color(
+                    entry.name
+                      .slice(assetsDir.length)
+                      .padEnd(longest + 2 - assetsDir.length),
+                  )
+                : group.color(entry.name.padEnd(longest + 2))
             log += colors.bold(
               sizeColor(displaySize(entry.size).padStart(sizePad)),
             )
