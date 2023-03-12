@@ -856,7 +856,7 @@ function createOptimizeDepsIncludeResolver(
     // 'foo'             => ''          & 'foo'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolveFrom(nestedRoot, config.root)
+    const basedir = nestedResolveFrom(nestedRoot, config.root, false, ssr)
     return await resolve(nestedPath, basedir, undefined, ssr)
   }
 }
