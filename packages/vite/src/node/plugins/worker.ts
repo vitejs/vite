@@ -1,5 +1,4 @@
 import path from 'node:path'
-import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { EmittedAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
@@ -279,7 +278,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       // stringified url or `new URL(...)`
       let url: string
-      const { format, inlineUrl } = config.worker
+      const { format } = config.worker
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerType = isBuild
@@ -288,6 +287,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           : 'classic'
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
@@ -313,26 +313,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
           `
 
-          // If inlineUrl is not specified, use base64 for SharedWorker and blob for Worker
-          const resolvedInlineUrl = inlineUrl
-            ? inlineUrl
-            : workerConstructor === 'SharedWorker'
-            ? 'base64'
-            : 'blob'
-
-          if (
-            workerConstructor === 'SharedWorker' &&
-            resolvedInlineUrl === 'blob'
-          ) {
-            config.logger.warn(
-              colors.yellow(
-                `\nThe inlined SharedWorker: ${id} does not work with blob URL, considering set 'worker.inlineUrl' to 'base64'. \n`,
-              ),
-            )
-          }
-
           return {
-            code: resolvedInlineUrl === 'blob' ? blobCode : base64Code,
+            // SharedWorker does not support blob URL
+            code: workerConstructor === 'Worker' ? blobCode : base64Code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }

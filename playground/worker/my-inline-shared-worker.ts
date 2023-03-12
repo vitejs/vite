@@ -1,13 +1,13 @@
-let sharedWorkerCount = 0
+let inlineSharedWorkerCount = 0
 
 // @ts-expect-error onconnect exists in worker
 self.onconnect = (event) => {
-  sharedWorkerCount++
+  inlineSharedWorkerCount++
   const port = event.ports[0]
-  if (sharedWorkerCount >= 2) {
+  if (inlineSharedWorkerCount >= 2) {
     port.postMessage('pong')
   }
 }
 
 // for sourcemap
-console.log('my-shared-worker.js')
+console.log('my-inline-shared-worker.js')

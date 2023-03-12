@@ -9,13 +9,6 @@ Options related to Web Workers.
 
 Output format for worker bundle.
 
-## worker.inlineUrl
-
-- **Type:** `'blob' | 'base64'`
-- **Default:** `'blob'`
-
-URL type for inline worker, when setting to `'blob'`, the worker will be loaded as a blob URL with a fallback to data URL. Set to `'base64'` to load the worker as a data URL. When not set, `inlineUrl` will be `'blob'` for Worker and `'base64'` for SharedWorker as blob URL not works with a shared worker.
-
 ## worker.plugins
 
 - **Type:** [`(Plugin | Plugin[])[]`](./shared-options#plugins)
