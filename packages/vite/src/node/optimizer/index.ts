@@ -853,7 +853,6 @@ function createOptimizeDepsIncludeResolver(
     }
     // split id by last '>' for nested selected packages, for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
-    // 'foo'             => ''          & 'foo'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
     const basedir = nestedResolveFrom(nestedRoot, config.root, false, ssr)
