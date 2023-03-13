@@ -209,7 +209,7 @@ export async function transformWithEsbuild(
   }
 }
 
-export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
+export function esbuildPlugin(options: ESBuildOptions): Plugin {
   const filter = createFilter(
     options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/,
