@@ -126,6 +126,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
+  const resolvedCache = new Map()
 
   return {
     name: 'vite:resolve',
@@ -338,6 +339,21 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
         const external = options.shouldExternalize?.(id)
+        const key = JSON.stringify({
+          id,
+          external,
+          asSrc,
+          depsOptimizer: !!depsOptimizer,
+          targetWeb,
+          ...options,
+          ssr,
+        })
+        const cache = resolvedCache.get(key)
+
+        if (cache) {
+          return cache
+        }
+
         if (
           !external &&
           asSrc &&
@@ -345,6 +361,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           !options.scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
+          resolvedCache.set(key, res)
           return res
         }
 
@@ -359,6 +376,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             external,
           ))
         ) {
+          resolvedCache.set(key, res)
           return res
         }
 
@@ -373,6 +391,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             external,
           ))
         ) {
+          resolvedCache.set(key, res)
           return res
         }
 
