@@ -1,3 +1,27 @@
+## 4.2.0-beta.2 (2023-03-13)
+
+* chore: fix test misc (#12392) ([a595b11](https://github.com/vitejs/vite/commit/a595b11)), closes [#12392](https://github.com/vitejs/vite/issues/12392)
+* chore: remove build warn filter (#12391) ([0755cf2](https://github.com/vitejs/vite/commit/0755cf2)), closes [#12391](https://github.com/vitejs/vite/issues/12391)
+* chore: update tsconfck to 2.1.0 to add support for typescript 5 config syntax (#12401) ([3f1c379](https://github.com/vitejs/vite/commit/3f1c379)), closes [#12401](https://github.com/vitejs/vite/issues/12401)
+* chore(deps): update all non-major dependencies (#12299) ([b41336e](https://github.com/vitejs/vite/commit/b41336e)), closes [#12299](https://github.com/vitejs/vite/issues/12299)
+* chore(utils): remove redundant type judgment (#12345) ([01a0056](https://github.com/vitejs/vite/commit/01a0056)), closes [#12345](https://github.com/vitejs/vite/issues/12345)
+* feat: default esbuild jsxDev based on config.isProduction (#12386) ([f24c2b0](https://github.com/vitejs/vite/commit/f24c2b0)), closes [#12386](https://github.com/vitejs/vite/issues/12386)
+* feat(css): add build.cssMinify (#12207) ([90431f2](https://github.com/vitejs/vite/commit/90431f2)), closes [#12207](https://github.com/vitejs/vite/issues/12207)
+* feat(types): export Rollup namespace (#12316) ([6e49e52](https://github.com/vitejs/vite/commit/6e49e52)), closes [#12316](https://github.com/vitejs/vite/issues/12316)
+* fix: print urls when dns order change (#12261) ([e57cacf](https://github.com/vitejs/vite/commit/e57cacf)), closes [#12261](https://github.com/vitejs/vite/issues/12261)
+* fix: throw ssr import error directly (fix #12322) (#12324) ([21ffc6a](https://github.com/vitejs/vite/commit/21ffc6a)), closes [#12322](https://github.com/vitejs/vite/issues/12322) [#12324](https://github.com/vitejs/vite/issues/12324)
+* fix(config): watch config even outside of root (#12321) ([7e2fff7](https://github.com/vitejs/vite/commit/7e2fff7)), closes [#12321](https://github.com/vitejs/vite/issues/12321)
+* fix(config): watch envDir even outside of root (#12349) ([131f3ee](https://github.com/vitejs/vite/commit/131f3ee)), closes [#12349](https://github.com/vitejs/vite/issues/12349)
+* fix(define): correctly replace SSR in dev (#12204) ([0f6de4d](https://github.com/vitejs/vite/commit/0f6de4d)), closes [#12204](https://github.com/vitejs/vite/issues/12204)
+* fix(optimizer): suppress esbuild cancel error (#12358) ([86a24e4](https://github.com/vitejs/vite/commit/86a24e4)), closes [#12358](https://github.com/vitejs/vite/issues/12358)
+* fix(optimizer): transform css require to import directly (#12343) ([716286e](https://github.com/vitejs/vite/commit/716286e)), closes [#12343](https://github.com/vitejs/vite/issues/12343)
+* fix(reporter): build.assetsDir should not impact output when in lib mode (#12108) ([b12f457](https://github.com/vitejs/vite/commit/b12f457)), closes [#12108](https://github.com/vitejs/vite/issues/12108)
+* fix(types): avoid resolve.exports types for bundling (#12346) ([6b40f03](https://github.com/vitejs/vite/commit/6b40f03)), closes [#12346](https://github.com/vitejs/vite/issues/12346)
+* fix(worker): force rollup to build worker module under watch mode (#11919) ([d464679](https://github.com/vitejs/vite/commit/d464679)), closes [#11919](https://github.com/vitejs/vite/issues/11919)
+* ci: should exit when build-types-check failed (#12378) ([821d6b8](https://github.com/vitejs/vite/commit/821d6b8)), closes [#12378](https://github.com/vitejs/vite/issues/12378)
+
+
+
 ## 4.2.0-beta.1 (2023-03-07)
 
 * feat: add `sourcemapIgnoreList` configuration option (#12174) ([f875580](https://github.com/vitejs/vite/commit/f875580)), closes [#12174](https://github.com/vitejs/vite/issues/12174)
