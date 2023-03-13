@@ -13,11 +13,9 @@ jobs:
         if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
         uses: actions-cool/issues-helper@v3
         with:
-          actions: "create-comment, remove-labels"
+          actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
-          body: |
-            Hello @${{ github.event.issue.user.login }}. We like your proposal/feedback and would appreciate a contribution via a Pull Request by you or another community member. We thank you in advance for your contribution and are looking forward to reviewing it!
           labels: "pending triage, need reproduction"
 
       - name: remove pending
