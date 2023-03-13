@@ -126,7 +126,7 @@
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.0.1",
     "strip-literal": "^1.0.1",
-    "tsconfck": "^2.0.3",
+    "tsconfck": "^2.1.0",
     "tslib": "^2.5.0",
     "types": "link:./types",
     "ufo": "^1.1.1",

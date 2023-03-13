@@ -222,7 +222,7 @@ importers:
       source-map-support: ^0.5.21
       strip-ansi: ^7.0.1
       strip-literal: ^1.0.1
-      tsconfck: ^2.0.3
+      tsconfck: ^2.1.0
       tslib: ^2.5.0
       types: link:./types
       ufo: ^1.1.1
@@ -286,7 +286,7 @@ importers:
       source-map-support: 0.5.21
       strip-ansi: 7.0.1
       strip-literal: 1.0.1
-      tsconfck: 2.0.3
+      tsconfck: 2.1.0
       tslib: 2.5.0
       types: link:types
       ufo: 1.1.1
@@ -9270,12 +9270,12 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  /tsconfck/2.0.3:
-    resolution: {integrity: sha512-o3DsPZO1+C98KqHMdAbWs30zpxD30kj8r9OLA4ML1yghx4khNDzaaShNalfluh8ZPPhzKe3qyVCP1HiZszSAsw==}
+  /tsconfck/2.1.0:
+    resolution: {integrity: sha512-lztI9ohwclQHISVWrM/hlcgsRpphsii94DV9AQtAw2XJSVNiv+3ppdEsrL5J+xc5oTeHXe1qDqlOAGw8VSa9+Q==}
     engines: {node: ^14.13.1 || ^16 || >=18}
     hasBin: true
     peerDependencies:
-      typescript: ^4.3.5
+      typescript: ^4.3.5 || ^5.0.0
     peerDependenciesMeta:
       typescript:
         optional: true
