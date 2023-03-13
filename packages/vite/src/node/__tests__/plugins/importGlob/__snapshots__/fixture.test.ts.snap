@@ -1,4 +1,4 @@
-// Vitest Snapshot v1
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`fixture > transform 1`] = `
 "import * as __vite_glob_1_0 from \\"./modules/a.ts\\";import * as __vite_glob_1_1 from \\"./modules/b.ts\\";import * as __vite_glob_1_2 from \\"./modules/index.ts\\";import { name as __vite_glob_3_0 } from \\"./modules/a.ts\\";import { name as __vite_glob_3_1 } from \\"./modules/b.ts\\";import { name as __vite_glob_3_2 } from \\"./modules/index.ts\\";import { default as __vite_glob_5_0 } from \\"./modules/a.ts?raw\\";import { default as __vite_glob_5_1 } from \\"./modules/b.ts?raw\\";import \\"types/importMeta\\";

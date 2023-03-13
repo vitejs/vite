@@ -5,7 +5,11 @@ import { createServer } from '../../server'
 const root = fileURLToPath(new URL('./', import.meta.url))
 
 async function createDevServer() {
-  const server = await createServer({ configFile: false, root })
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+  })
   server.pluginContainer.buildStart({})
   return server
 }
