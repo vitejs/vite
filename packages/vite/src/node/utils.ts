@@ -537,7 +537,16 @@ export function writeFile(
 
 export function isFileReadable(filename: string): boolean {
   try {
+    // The "throwIfNoEntry" is performance optimization for cases where file does not exist
+    const fileExists = Boolean(fs.statSync(filename, { throwIfNoEntry: false }))
+
+    if (!fileExists) {
+      return false
+    }
+
+    // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
+
     return true
   } catch {
     return false
