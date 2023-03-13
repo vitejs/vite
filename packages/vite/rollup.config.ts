@@ -71,10 +71,6 @@ const sharedNodeOptions = defineConfig({
     freeze: false,
   },
   onwarn(warning, warn) {
-    // node-resolve complains a lot about this but seems to still work?
-    if (warning.message.includes('Package subpath')) {
-      return
-    }
     // we use the eval('require') trick to deal with optional deps
     if (warning.message.includes('Use of eval')) {
       return
