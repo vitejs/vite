@@ -538,9 +538,7 @@ export function writeFile(
 export function isFileReadable(filename: string): boolean {
   try {
     // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
-    const fileExists = Boolean(fs.statSync(filename, { throwIfNoEntry: false }))
-
-    if (!fileExists) {
+    if (!fs.statSync(filename, { throwIfNoEntry: false })) {
       return false
     }
 
