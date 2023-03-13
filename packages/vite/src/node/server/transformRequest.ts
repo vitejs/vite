@@ -5,7 +5,7 @@ import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
+import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   cleanUrl,
@@ -227,8 +227,15 @@ async function loadAndTransform(
         `going through the plugin transforms, and therefore should not be ` +
         `imported from source code. It can only be referenced via HTML tags.`
       : `Does the file exist?`
+    const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
+      .get(id)
+      ?.importers.values()
+      .next().value
+    const importer = importerMod?.file || importerMod?.url
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id}). ${msg}`,
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
@@ -263,6 +270,43 @@ async function loadAndTransform(
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
+    }
+    for (
+      let sourcesIndex = 0;
+      sourcesIndex < map.sources.length;
+      ++sourcesIndex
+    ) {
+      const sourcePath = map.sources[sourcesIndex]
+      if (!sourcePath) continue
+
+      const sourcemapPath = `${mod.file}.map`
+      const ignoreList = config.server.sourcemapIgnoreList(
+        path.isAbsolute(sourcePath)
+          ? sourcePath
+          : path.resolve(path.dirname(sourcemapPath), sourcePath),
+        sourcemapPath,
+      )
+      if (typeof ignoreList !== 'boolean') {
+        logger.warn('sourcemapIgnoreList function must return a boolean.')
+      }
+      if (ignoreList) {
+        if (map.x_google_ignoreList === undefined) {
+          map.x_google_ignoreList = []
+        }
+        if (!map.x_google_ignoreList.includes(sourcesIndex)) {
+          map.x_google_ignoreList.push(sourcesIndex)
+        }
+      }
+
+      // Rewrite sources to relative paths to give debuggers the chance
+      // to resolve and display them in a meaningful way (rather than
+      // with absolute paths).
+      if (path.isAbsolute(sourcePath) && path.isAbsolute(mod.file)) {
+        map.sources[sourcesIndex] = path.relative(
+          path.dirname(mod.file),
+          sourcePath,
+        )
+      }
     }
   }
 

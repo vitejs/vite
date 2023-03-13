@@ -80,7 +80,9 @@ async function ssrTransformScript(
     if (!err.loc || !err.loc.line) throw err
     const line = err.loc.line
     throw new Error(
-      `Parse failure: ${err.message}\nContents of line ${line}: ${
+      `Parse failure: ${
+        err.message
+      }\nAt file: ${url}\nContents of line ${line}: ${
         code.split('\n')[line - 1]
       }`,
     )

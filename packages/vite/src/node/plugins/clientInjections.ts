@@ -66,7 +66,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
         return code.replace(
-          /\bprocess\.env\.NODE_ENV\b/g,
+          /(\bglobal(This)?\.)?\bprocess\.env\.NODE_ENV\b/g,
           config.define?.['process.env.NODE_ENV'] ||
             JSON.stringify(process.env.NODE_ENV || config.mode),
         )

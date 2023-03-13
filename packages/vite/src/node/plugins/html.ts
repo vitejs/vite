@@ -23,6 +23,7 @@ import {
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
+import { resolveEnvPrefix } from '../env'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -169,6 +170,7 @@ export async function traverseHtml(
   // lazy load compiler
   const { parse } = await import('parse5')
   const ast = parse(html, {
+    scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
       handleParseError(e, html, filePath)
@@ -284,6 +286,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
   )
   preHooks.unshift(preImportMapHook(config))
+  normalHooks.unshift(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
@@ -736,23 +739,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               toScriptTag(chunk, toOutputAssetFilePath, isAsync),
             )
           } else {
+            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
             const { modulePreload } = config.build
-            const resolveDependencies =
-              typeof modulePreload === 'object' &&
-              modulePreload.resolveDependencies
-            const importsFileNames = imports.map((chunk) => chunk.fileName)
-            const resolvedDeps = resolveDependencies
-              ? resolveDependencies(chunk.fileName, importsFileNames, {
-                  hostId: relativeUrlPath,
-                  hostType: 'html',
-                })
-              : importsFileNames
-            assetTags = [
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
-              ...resolvedDeps.map((i) =>
-                toPreloadTag(i, toOutputAssetFilePath),
-              ),
-            ]
+            if (modulePreload !== false) {
+              const resolveDependencies =
+                typeof modulePreload === 'object' &&
+                modulePreload.resolveDependencies
+              const importsFileNames = imports.map((chunk) => chunk.fileName)
+              const resolvedDeps = resolveDependencies
+                ? resolveDependencies(chunk.fileName, importsFileNames, {
+                    hostId: relativeUrlPath,
+                    hostType: 'html',
+                  })
+                : importsFileNames
+              assetTags.push(
+                ...resolvedDeps.map((i) =>
+                  toPreloadTag(i, toOutputAssetFilePath),
+                ),
+              )
+            }
           }
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
@@ -936,6 +941,45 @@ export function postImportMapHook(): IndexHtmlTransformHook {
     }
 
     return html
+  }
+}
+
+/**
+ * Support `%ENV_NAME%` syntax in html files
+ */
+export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
+  const pattern = /%(\S+?)%/g
+  const envPrefix = resolveEnvPrefix({ envPrefix: config.envPrefix })
+  const env: Record<string, any> = { ...config.env }
+  // account for user env defines
+  for (const key in config.define) {
+    if (key.startsWith(`import.meta.env.`)) {
+      const val = config.define[key]
+      env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
+    }
+  }
+  return (html, ctx) => {
+    return html.replace(pattern, (text, key) => {
+      if (key in env) {
+        return env[key]
+      } else {
+        if (envPrefix.some((prefix) => key.startsWith(prefix))) {
+          const relativeHtml = normalizePath(
+            path.relative(config.root, ctx.filename),
+          )
+          config.logger.warn(
+            colors.yellow(
+              colors.bold(
+                `(!) ${text} is not defined in env variables found in /${relativeHtml}. ` +
+                  `Is the variable mistyped?`,
+              ),
+            ),
+          )
+        }
+
+        return text
+      }
+    })
   }
 }
 

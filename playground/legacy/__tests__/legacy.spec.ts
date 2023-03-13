@@ -23,6 +23,7 @@ test('import.meta.env.LEGACY', async () => {
     isBuild ? 'true' : 'false',
     true,
   )
+  await untilUpdated(() => page.textContent('#env-equal'), 'true', true)
 })
 
 // https://github.com/vitejs/vite/issues/3400

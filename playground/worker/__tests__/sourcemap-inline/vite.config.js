@@ -1,1 +1,2 @@
-module.exports = require('../../vite.config-sourcemap')('inline')
+import sourcemap from '../../vite.config-sourcemap'
+export default sourcemap('inline')

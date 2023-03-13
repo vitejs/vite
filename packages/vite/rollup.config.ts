@@ -29,6 +29,9 @@ const envConfig = defineConfig({
     sourcemapPathTransform(relativeSourcePath) {
       return path.basename(relativeSourcePath)
     },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 
@@ -46,6 +49,9 @@ const clientConfig = defineConfig({
     sourcemapPathTransform(relativeSourcePath) {
       return path.basename(relativeSourcePath)
     },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 
@@ -56,7 +62,7 @@ const sharedNodeOptions = defineConfig({
     tryCatchDeoptimization: false,
   },
   output: {
-    dir: path.resolve(__dirname, 'dist'),
+    dir: './dist',
     entryFileNames: `node/[name].js`,
     chunkFileNames: 'node/chunks/dep-[hash].js',
     exports: 'named',
@@ -163,7 +169,7 @@ function createNodeConfig(isProduction: boolean) {
       !isProduction,
       // in production we use api-extractor for dts generation
       // in development we need to rely on the rollup ts plugin
-      isProduction ? false : path.resolve(__dirname, 'dist/node'),
+      isProduction ? false : './dist/node',
     ),
   })
 }
@@ -175,7 +181,7 @@ function createCjsConfig(isProduction: boolean) {
       publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
     },
     output: {
-      dir: path.resolve(__dirname, 'dist'),
+      dir: './dist',
       entryFileNames: `node-cjs/[name].cjs`,
       chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
       exports: 'named',
