@@ -18,6 +18,7 @@ import {
   getHash,
   isOptimizable,
   lookupFile,
+  nestedResolveFrom,
   normalizeId,
   normalizePath,
   removeDir,
@@ -812,18 +813,13 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
-    const resolve = config.createResolver({
-      asSrc: false,
-      scan: true,
-      ssrOptimizeCheck: ssr,
-      ssrConfig: config.ssr,
-    })
+    const resolve = createOptimizeDepsIncludeResolver(config, ssr)
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
-        const entry = await resolve(id, undefined, undefined, ssr)
+        const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
             if (!entry.endsWith('?__vite_skip_optimization')) {
@@ -837,6 +833,35 @@ export async function addManuallyIncludedOptimizeDeps(
         }
       }
     }
+  }
+}
+
+function createOptimizeDepsIncludeResolver(
+  config: ResolvedConfig,
+  ssr: boolean,
+) {
+  const resolve = config.createResolver({
+    asSrc: false,
+    scan: true,
+    ssrOptimizeCheck: ssr,
+    ssrConfig: config.ssr,
+  })
+  return async (id: string) => {
+    const lastArrowIndex = id.lastIndexOf('>')
+    if (lastArrowIndex === -1) {
+      return await resolve(id, undefined, undefined, ssr)
+    }
+    // split nested selected id by last '>', for example:
+    // 'foo > bar > baz' => 'foo > bar' & 'baz'
+    const nestedRoot = id.substring(0, lastArrowIndex).trim()
+    const nestedPath = id.substring(lastArrowIndex + 1).trim()
+    const basedir = nestedResolveFrom(
+      nestedRoot,
+      config.root,
+      config.resolve.preserveSymlinks,
+      ssr,
+    )
+    return await resolve(nestedPath, basedir, undefined, ssr)
   }
 }
 

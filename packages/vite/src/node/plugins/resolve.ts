@@ -33,7 +33,6 @@ import {
   isTsRequest,
   isWindows,
   lookupFile,
-  nestedResolveFrom,
   normalizePath,
   resolveFrom,
   slash,
@@ -645,32 +644,20 @@ export function tryNodeResolve(
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
-  ssr?: boolean,
+  ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
-  ssr ??= false
-
-  // split id by last '>' for nested selected packages, for example:
-  // 'foo > bar > baz' => 'foo > bar' & 'baz'
-  // 'foo'             => ''          & 'foo'
-  const lastArrowIndex = id.lastIndexOf('>')
-  const nestedRoot = id.substring(0, lastArrowIndex).trim()
-  const nestedPath = id.substring(lastArrowIndex + 1).trim()
-
   const possiblePkgIds: string[] = []
   for (let prevSlashIndex = -1; ; ) {
-    let slashIndex = nestedPath.indexOf('/', prevSlashIndex + 1)
+    let slashIndex = id.indexOf('/', prevSlashIndex + 1)
     if (slashIndex < 0) {
-      slashIndex = nestedPath.length
+      slashIndex = id.length
     }
 
-    const part = nestedPath.slice(
-      prevSlashIndex + 1,
-      (prevSlashIndex = slashIndex),
-    )
+    const part = id.slice(prevSlashIndex + 1, (prevSlashIndex = slashIndex))
     if (!part) {
       break
     }
@@ -683,7 +670,7 @@ export function tryNodeResolve(
       continue
     }
 
-    const possiblePkgId = nestedPath.slice(0, slashIndex)
+    const possiblePkgId = id.slice(0, slashIndex)
     possiblePkgIds.push(possiblePkgId)
   }
 
@@ -698,11 +685,6 @@ export function tryNodeResolve(
     basedir = path.dirname(importer)
   } else {
     basedir = root
-  }
-
-  // nested node module, step-by-step resolve to the basedir of the nestedPath
-  if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
   let pkg: PackageData | undefined
@@ -742,9 +724,9 @@ export function tryNodeResolve(
     // if so, we can resolve to a special id that errors only when imported.
     if (
       basedir !== root && // root has no peer dep
-      !isBuiltin(nestedPath) &&
-      !nestedPath.includes('\0') &&
-      bareImportRE.test(nestedPath)
+      !isBuiltin(id) &&
+      !id.includes('\0') &&
+      bareImportRE.test(id)
     ) {
       // find package.json with `name` as main
       const mainPackageJson = lookupFile(basedir, ['package.json'], {
@@ -753,11 +735,11 @@ export function tryNodeResolve(
       if (mainPackageJson) {
         const mainPkg = JSON.parse(mainPackageJson)
         if (
-          mainPkg.peerDependencies?.[nestedPath] &&
-          mainPkg.peerDependenciesMeta?.[nestedPath]?.optional
+          mainPkg.peerDependencies?.[id] &&
+          mainPkg.peerDependenciesMeta?.[id]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`,
+            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
           }
         }
       }
@@ -767,10 +749,10 @@ export function tryNodeResolve(
 
   let resolveId = resolvePackageEntry
   let unresolvedId = pkgId
-  const isDeepImport = unresolvedId !== nestedPath
+  const isDeepImport = unresolvedId !== id
   if (isDeepImport) {
     resolveId = resolveDeepImport
-    unresolvedId = '.' + nestedPath.slice(pkgId.length)
+    unresolvedId = '.' + id.slice(pkgId.length)
   }
 
   let resolved: string | undefined
@@ -865,16 +847,14 @@ export function tryNodeResolve(
     !isJsType ||
     importer?.includes('node_modules') ||
     exclude?.includes(pkgId) ||
-    exclude?.includes(nestedPath) ||
+    exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved) ||
     // During dev SSR, we don't have a way to reload the module graph if
     // a non-optimized dep is found. So we need to skip optimization here.
     // The only optimized deps are the ones explicitly listed in the config.
     (!options.ssrOptimizeCheck && !isBuild && ssr) ||
     // Only optimize non-external CJS deps during SSR by default
-    (ssr &&
-      !isCJS &&
-      !(include?.includes(pkgId) || include?.includes(nestedPath)))
+    (ssr && !isCJS && !(include?.includes(pkgId) || include?.includes(id)))
 
   if (options.ssrOptimizeCheck) {
     return {
