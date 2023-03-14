@@ -15,6 +15,7 @@ import type {
   NormalizedOutputOptions,
   OutputBundle,
   OutputOptions,
+  OutputPlugin,
   PreRenderedChunk,
   RenderedChunk,
   RollupOutput,
@@ -121,16 +122,7 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
-type RollupPlugin = Plugin // TODO: If you import the real Rollup Plugin, there is some error in the build process somehow
-type FullPluginsResult = { plugins: Plugin[]; workerPlugins: RollupPlugin[] }
-
-function viteLegacyPlugin<T extends Options>(
-  options: T = {} as T,
-): T['worker'] extends true
-  ? FullPluginsResult
-  : T['worker'] extends false | undefined
-  ? Plugin[]
-  : Plugin[] | FullPluginsResult {
+function viteLegacyPlugin<T extends Options>(options: T = {} as T): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
 
@@ -194,6 +186,119 @@ function viteLegacyPlugin<T extends Options>(
     }
   }
 
+  // TODO: Since this is a Rollup output plugin, it's running only after Vite minification post plugins (happens in `renderChunk`),
+  //  so make sure the output code is minified.
+  //  Thankfully, this wouldn't be a problem since we're planning on outputing eventually a simple prefix `importScript(POLYFILL_PATH);` to the output.
+  const legacyWorkerRollupOutputPlugin: OutputPlugin = {
+    name: 'vite:legacy-worker-rollup-output-plugin',
+
+    // outputOptions(_outputOptions) {
+    //   TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers, or overrite it
+    //   console.log("Generate code option of workers: " + JSON.stringify(config.generatedCode));
+    // },
+
+    async renderChunk(raw, chunk) {
+      if (config.build.ssr || !genLegacy || !chunk.fileName.includes('-legacy'))
+        return
+
+      // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers after it has been override before
+
+      // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
+
+      // transform the legacy chunk with @babel/preset-env
+      const sourceMaps = /*!!config.build.sourcemap */ false // TODO: Support sourcemaps
+      const babel = await loadBabel()
+      const legacyPolyfills = new Set<string>()
+      const result = babel.transform(raw, {
+        babelrc: false,
+        configFile: false,
+        compact: !!config.build.minify,
+        sourceMaps,
+        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
+        presets: [
+          // forcing our plugin to run before preset-env by wrapping it in a
+          // preset so we can catch the injected import statements...
+          [
+            // TODO: Can we omit all of these plugins?
+            () => ({
+              plugins: [
+                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                replaceLegacyEnvBabelPlugin(),
+                //wrapIIFEBabelPlugin(),
+              ],
+            }),
+          ],
+          [
+            '@babel/preset-env',
+            createBabelPresetEnvOptions(targets, {
+              needPolyfills: true,
+              ignoreBrowserslistConfig: false,
+            }),
+          ],
+        ],
+      })
+
+      // TODO: Just append the new polyfills carefully to the big polyfill,
+      //  and have a "additionalPolyfillsSocumentSensitive" for legacy that will be loaded only on document one(i.e. not within workers).
+      const polyfillId = '\0polyfill'
+      const polyfillPlugin: Plugin = {
+        // TODO: Code reuse
+        name: 'vite:legacy-polyfills',
+        resolveId(id) {
+          if (id === polyfillId) {
+            return id
+          }
+        },
+        load(id) {
+          if (id === polyfillId) {
+            return [...legacyPolyfills]
+              .map((i) => `import ${JSON.stringify(i)};`)
+              .join('')
+          }
+        },
+      }
+
+      // TODO: Code reuse
+      const res = (await build({
+        root: path.dirname(fileURLToPath(import.meta.url)),
+        configFile: false,
+        logLevel: 'error',
+        plugins: [polyfillPlugin],
+        build: {
+          rollupOptions: {
+            input: polyfillId,
+            output: {
+              format: 'iife',
+              generatedCode: 'es5',
+            },
+          },
+        },
+        // Don't run esbuild for transpilation or minification
+        // because we don't want to transpile code.
+        esbuild: false,
+        optimizeDeps: {
+          esbuildOptions: {
+            // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
+            // This limits the input code not to include es2015+ codes.
+            // But core-js is the only dependency which includes commonjs code
+            // and core-js doesn't include es2015+ codes.
+            target: 'es5',
+          },
+        },
+      })) as RollupOutput
+      // TODO: Fix some sourcemap issue and prepend it correcty to the sourcemap
+      const polyfillCode = res.output[0].code
+
+      //if (result) return { code: result.code!, map: result.map }
+      if (result)
+        return {
+          code: polyfillCode + '\n' + result.code!,
+          map: { mappings: '' },
+        }
+      return null
+    },
+  }
+
   let overriddenBuildTarget = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
@@ -254,31 +359,41 @@ function viteLegacyPlugin<T extends Options>(
               ` (currently it equals to '${format}')`,
           )
         }
-      }
 
-      // TODO: Is it needed, or shell we just use the regular plugin with the parameter `isWorker`?
-      const originalOutputOptions = config.worker.rollupOptions?.output
-      // @ts-expect-error this is an internal(currently) option to have output config as a function
-      config.worker.rollupOptions.output = (callerOutputOptions) => {
-        if (
-          callerOutputOptions.format === 'system' &&
-          !callerOutputOptions.build?.ssr
-        ) {
+        // TODO: Can we do this better?
+        const originalOutputOptions = config.worker.rollupOptions?.output
+
+        // @ts-expect-error this is an internal(currently) option to have output config as a function
+        config.worker.rollupOptions.output = (callerOutputOptions) => {
           const outputOptions =
             (Array.isArray(originalOutputOptions)
               ? originalOutputOptions[0]
               : originalOutputOptions) ?? {}
-          return {
-            ...outputOptions,
-            entryFileNames: getLegacyOutputFileName(
-              outputOptions.entryFileNames,
-            ),
-            chunkFileNames: getLegacyOutputFileName(
-              outputOptions.chunkFileNames,
-            ),
+          if (outputOptions != null) {
+            if (!outputOptions.plugins) {
+              outputOptions.plugins = []
+            }
+            outputOptions.plugins = [
+              outputOptions.plugins,
+              legacyWorkerRollupOutputPlugin,
+            ]
           }
-        } else {
-          return originalOutputOptions
+          if (
+            callerOutputOptions.format === 'system' &&
+            !callerOutputOptions.build?.ssr
+          ) {
+            return {
+              ...outputOptions,
+              entryFileNames: getLegacyOutputFileName(
+                outputOptions.entryFileNames,
+              ),
+              chunkFileNames: getLegacyOutputFileName(
+                outputOptions.chunkFileNames,
+              ),
+            }
+          } else {
+            return outputOptions
+          }
         }
       }
     },
@@ -615,128 +730,7 @@ function viteLegacyPlugin<T extends Options>(
     },
   }
 
-  // TODO: Is it really a normal vite Plugin instead?
-  const legacyWorkerRollupPlugin: RollupPlugin = {
-    name: 'vite:legacy-worker-rollup',
-
-    // outputOptions(_outputOptions) {
-    //   TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers, or overrite it
-    //   console.log("Generate code option of workers: " + JSON.stringify(config.generatedCode));
-    // },
-
-    async renderChunk(raw, chunk) {
-      if (config.build.ssr || !genLegacy || !chunk.fileName.includes('-legacy'))
-        return
-
-      // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers after it has been override before
-
-      // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
-
-      // transform the legacy chunk with @babel/preset-env
-      const sourceMaps = /*!!config.build.sourcemap */ false // TODO: Support sourcemaps
-      const babel = await loadBabel()
-      const legacyPolyfills = new Set<string>()
-      const result = babel.transform(raw, {
-        babelrc: false,
-        configFile: false,
-        compact: !!config.build.minify,
-        sourceMaps,
-        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
-        presets: [
-          // forcing our plugin to run before preset-env by wrapping it in a
-          // preset so we can catch the injected import statements...
-          [
-            // TODO: Can we omit all of these plugins?
-            () => ({
-              plugins: [
-                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
-                replaceLegacyEnvBabelPlugin(),
-                //wrapIIFEBabelPlugin(),
-              ],
-            }),
-          ],
-          [
-            '@babel/preset-env',
-            createBabelPresetEnvOptions(targets, {
-              needPolyfills: true,
-              ignoreBrowserslistConfig: false,
-            }),
-          ],
-        ],
-      })
-
-      // TODO: Just append the new polyfills carefully to the big polyfill,
-      //  and have a "additionalPolyfillsSocumentSensitive" for legacy that will be loaded only on document one(i.e. not within workers).
-      const polyfillId = '\0polyfill'
-      const polyfillPlugin: Plugin = {
-        // TODO: Code reuse
-        name: 'vite:legacy-polyfills',
-        resolveId(id) {
-          if (id === polyfillId) {
-            return id
-          }
-        },
-        load(id) {
-          if (id === polyfillId) {
-            return [...legacyPolyfills]
-              .map((i) => `import ${JSON.stringify(i)};`)
-              .join('')
-          }
-        },
-      }
-
-      // TODO: Code reuse
-      const res = (await build({
-        root: path.dirname(fileURLToPath(import.meta.url)),
-        configFile: false,
-        logLevel: 'error',
-        plugins: [polyfillPlugin],
-        build: {
-          rollupOptions: {
-            input: polyfillId,
-            output: {
-              format: 'iife',
-              generatedCode: 'es5',
-            },
-          },
-        },
-        // Don't run esbuild for transpilation or minification
-        // because we don't want to transpile code.
-        esbuild: false,
-        optimizeDeps: {
-          esbuildOptions: {
-            // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
-            // This limits the input code not to include es2015+ codes.
-            // But core-js is the only dependency which includes commonjs code
-            // and core-js doesn't include es2015+ codes.
-            target: 'es5',
-          },
-        },
-      })) as RollupOutput
-      // TODO: Fix some sourcemap issue and prepend it correcty to the sourcemap
-      const polyfillCode = res.output[0].code
-
-      //if (result) return { code: result.code!, map: result.map }
-      if (result)
-        return {
-          code: polyfillCode + '\n' + result.code!,
-          map: { mappings: '' },
-        }
-      return null
-    },
-  }
-
-  const plugins = [
-    legacyConfigPlugin,
-    legacyGenerateBundlePlugin,
-    legacyPostPlugin,
-  ]
-
-  return (
-    options.worker
-      ? { plugins, workerPlugins: [legacyWorkerRollupPlugin] }
-      : plugins
-  ) as any
+  return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
 }
 
 export async function detectPolyfills(
