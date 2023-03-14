@@ -285,7 +285,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
   )
-  preHooks.unshift(htmlEnvHook(config), preImportMapHook(config))
+  preHooks.unshift(preImportMapHook(config))
+  preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
