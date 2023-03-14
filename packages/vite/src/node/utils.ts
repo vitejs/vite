@@ -76,6 +76,7 @@ export function unwrapId(id: string): string {
 
 export const flattenId = (id: string): string =>
   id
+    .replace(/\/#/g, '/[sharp]')
     .replace(/[/:]/g, '_')
     .replace(/\./g, '__')
     .replace(/(\s*>\s*)/g, '___')
