@@ -630,6 +630,8 @@ importers:
       '@vitejs/test-dep-node-env': file:./dep-node-env
       '@vitejs/test-dep-non-optimized': file:./dep-non-optimized
       '@vitejs/test-dep-not-js': file:./dep-not-js
+      '@vitejs/test-dep-optimize-exports-with-glob': file:./dep-optimize-exports-with-glob
+      '@vitejs/test-dep-optimize-with-glob': file:./dep-optimize-with-glob
       '@vitejs/test-dep-relative-to-main': file:./dep-relative-to-main
       '@vitejs/test-dep-with-builtin-module-cjs': file:./dep-with-builtin-module-cjs
       '@vitejs/test-dep-with-builtin-module-esm': file:./dep-with-builtin-module-esm
@@ -661,6 +663,8 @@ importers:
       '@vitejs/test-dep-node-env': file:playground/optimize-deps/dep-node-env
       '@vitejs/test-dep-non-optimized': file:playground/optimize-deps/dep-non-optimized
       '@vitejs/test-dep-not-js': file:playground/optimize-deps/dep-not-js
+      '@vitejs/test-dep-optimize-exports-with-glob': file:playground/optimize-deps/dep-optimize-exports-with-glob
+      '@vitejs/test-dep-optimize-with-glob': file:playground/optimize-deps/dep-optimize-with-glob
       '@vitejs/test-dep-relative-to-main': file:playground/optimize-deps/dep-relative-to-main
       '@vitejs/test-dep-with-builtin-module-cjs': file:playground/optimize-deps/dep-with-builtin-module-cjs
       '@vitejs/test-dep-with-builtin-module-esm': file:playground/optimize-deps/dep-with-builtin-module-esm
@@ -723,6 +727,12 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-not-js:
+    specifiers: {}
+
+  playground/optimize-deps/dep-optimize-exports-with-glob:
+    specifiers: {}
+
+  playground/optimize-deps/dep-optimize-with-glob:
     specifiers: {}
 
   playground/optimize-deps/dep-relative-to-main:
@@ -10078,6 +10088,18 @@ packages:
   file:playground/optimize-deps/dep-not-js:
     resolution: {directory: playground/optimize-deps/dep-not-js, type: directory}
     name: '@vitejs/test-dep-not-js'
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-optimize-exports-with-glob:
+    resolution: {directory: playground/optimize-deps/dep-optimize-exports-with-glob, type: directory}
+    name: '@vitejs/test-dep-optimize-exports-with-glob'
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-optimize-with-glob:
+    resolution: {directory: playground/optimize-deps/dep-optimize-with-glob, type: directory}
+    name: '@vitejs/test-dep-optimize-with-glob'
     version: 1.0.0
     dev: false
 

@@ -1273,3 +1273,17 @@ export function evalValue<T = any>(rawValue: string): T {
   `)
   return fn()
 }
+
+export function getNpmPackageName(importPath: string): string | null {
+  const parts = importPath.split('/')
+  if (parts[0].startsWith('@')) {
+    if (!parts[1]) return null
+    return `${parts[0]}/${parts[1]}`
+  } else {
+    return parts[0]
+  }
+}
+
+export function escapeRegex(str: string): string {
+  return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+}
