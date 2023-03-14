@@ -163,6 +163,12 @@ test('Resolving top level with imports field', async () => {
   expect(await page.textContent('.imports-top-level')).toMatch('[success]')
 })
 
+test('Resolving same level with imports field', async () => {
+  expect(await page.textContent('.imports-same-level')).toMatch(
+    await page.textContent('.imports-top-level'),
+  )
+})
+
 test('Resolving nested path with imports field', async () => {
   expect(await page.textContent('.imports-nested')).toMatch('[success]')
 })
