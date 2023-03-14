@@ -14,7 +14,10 @@ Vite (French word for "quick", pronounced `/vit/`<button style="border:none;padd
 
 Vite is opinionated and comes with sensible defaults out of the box, but is also highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
 
-You can learn more about the rationale behind the project in the [Why Vite](./why) section.
+You can learn more about the rationale behind the project in the [Why 
+
+\\\]
+section.
 
 ## Browser Support
 
