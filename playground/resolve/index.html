@@ -39,6 +39,9 @@
 <h2>Resolving top level with imports field</h2>
 <p class="imports-top-level">fail</p>
 
+<h2>Resolving same level with imports field</h2>
+<p class="imports-same-level">fail</p>
+
 <h2>Resolving nested path with imports field</h2>
 <p class="imports-nested">fail</p>
 
@@ -205,6 +208,9 @@
   // imports field
   import { msg as importsTopLevel } from '#top-level'
   text('.imports-top-level', importsTopLevel)
+
+  import { msg as importsSameLevel } from '#same-level'
+  text('.imports-same-level', importsSameLevel)
 
   import { msg as importsNested } from '#nested/path.js'
   text('.imports-nested', importsNested)
