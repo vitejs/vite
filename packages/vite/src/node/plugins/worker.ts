@@ -299,9 +299,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const blobCode = `${encodedJs}
           const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper() {
-            const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+            let objURL;
             try {
-              return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              if (objURL) throw ''
+              return new ${workerConstructor}(objURL)
+            } catch(e) {
+              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
             } finally {
               objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
             }
@@ -314,7 +318,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           `
 
           return {
-            // SharedWorker does not support blob URL
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
             code: workerConstructor === 'Worker' ? blobCode : base64Code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },

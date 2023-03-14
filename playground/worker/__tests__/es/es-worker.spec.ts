@@ -80,7 +80,7 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
     expect(content).toMatch(
-      /try\{return .*\?new Worker\(.+\):new Worker\("data:application\/javascript;base64,"\+/,
+      /try\{if\(\w+=\w+&&\(window\.URL\|\|window\.webkitURL\)\.createObjectURL\(\w+\),\w+\)throw""/,
     )
     // inlined shared worker
     expect(content).toMatch(
