@@ -79,6 +79,7 @@ export const flattenId = (id: string): string =>
     .replace(/[/:]/g, '_')
     .replace(/\./g, '__')
     .replace(/(\s*>\s*)/g, '___')
+    .replace(/#/g, '____')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')

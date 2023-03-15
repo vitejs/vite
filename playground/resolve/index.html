@@ -340,7 +340,9 @@
   text('.inline-pkg', inlineMsg)
 
   import es5Ext from 'es5-ext'
-  text('.path-contains-sharp-symbol', '[success]')
+  import contains from 'es5-ext/string/#/contains'
+
+  text('.path-contains-sharp-symbol', `[success] ${contains.call('#', '#')}`)
 </script>
 
 <style>
