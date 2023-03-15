@@ -286,7 +286,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
   )
   preHooks.unshift(preImportMapHook(config))
-  normalHooks.unshift(htmlEnvHook(config))
+  preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
