@@ -135,7 +135,7 @@ try {
   isRunningWithYarnPnp = Boolean(_require('pnpapi'))
 } catch {}
 
-const ssrExtensions = ['.js', '.cjs', '.json', '.node']
+const ssrExtensions = ['.js', '.mjs', '.cjs', '.json', '.node']
 
 export function resolveFrom(
   id: string,
