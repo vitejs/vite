@@ -816,7 +816,6 @@ async function restartServer(server: ViteDevServer) {
   const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
-  await server.close()
 
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
@@ -834,8 +833,11 @@ async function restartServer(server: ViteDevServer) {
     server.config.logger.error(err.message, {
       timestamp: true,
     })
+    server.config.logger.error('server restart failed', { timestamp: true })
     return
   }
+
+  await server.close()
 
   // prevent new server `restart` function from calling
   newServer._restartPromise = server._restartPromise
