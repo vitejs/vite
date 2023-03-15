@@ -1,3 +1,25 @@
+## 4.2.0-beta.1 (2023-03-07)
+
+* chore(create-vite): update to beta deps ([5ffcaa0](https://github.com/vitejs/vite/commit/5ffcaa0))
+
+
+
+## 4.2.0-beta.0 (2023-03-07)
+
+* chore(create-vite): update volar link in helloworld components (#12145) ([7110ddf](https://github.com/vitejs/vite/commit/7110ddf)), closes [#12145](https://github.com/vitejs/vite/issues/12145)
+* fix(create-vite): add final newline for package.json (#11906) ([e033e49](https://github.com/vitejs/vite/commit/e033e49)), closes [#11906](https://github.com/vitejs/vite/issues/11906)
+* fix(deps): update all non-major dependencies (#12036) ([48150f2](https://github.com/vitejs/vite/commit/48150f2)), closes [#12036](https://github.com/vitejs/vite/issues/12036)
+
+
+
+## 4.1.0 (2023-02-02)
+
+* chore(create-vite): update plugin-react to 3.1.0 ([8895629](https://github.com/vitejs/vite/commit/8895629))
+* fix: two folders are created when the project name contains spaces (#11630) ([758fc6c](https://github.com/vitejs/vite/commit/758fc6c)), closes [#11630](https://github.com/vitejs/vite/issues/11630)
+* fix(deps): update all non-major dependencies (#11846) ([5d55083](https://github.com/vitejs/vite/commit/5d55083)), closes [#11846](https://github.com/vitejs/vite/issues/11846)
+
+
+
 ## 4.1.0-beta.0 (2023-01-26)
 
 * chore: typecheck create-vite (#11295) ([af86e5b](https://github.com/vitejs/vite/commit/af86e5b)), closes [#11295](https://github.com/vitejs/vite/issues/11295)

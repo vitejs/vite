@@ -140,7 +140,7 @@ cd vite
 pnpm install
 cd packages/vite
 pnpm run build
-pnpm link --global # you can use your preferred package manager for this step
+pnpm link --global # use your preferred package manager for this step
 ```
 
 Then go to your Vite based project and run `pnpm link --global vite` (or the package manager that you used to link `vite` globally). Now restart the development server to ride on the bleeding edge!

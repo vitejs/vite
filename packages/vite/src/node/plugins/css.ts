@@ -437,7 +437,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = modulesCode
         } else {
           let content = css
-          if (config.build.minify) {
+          if (config.build.cssMinify) {
             content = await minifyCSS(content, config)
           }
           code = `export default ${JSON.stringify(content)}`
@@ -464,15 +464,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (
-          !isCSSRequest(id) ||
-          cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
-        ) {
-          isPureCssChunk = false
-        }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
+          // a css module contains JS, so it makes this not a pure css chunk
+          if (cssModuleRE.test(id)) {
+            isPureCssChunk = false
+          }
+        } else {
+          // if the module does not have a style, then it's not a pure css chunk.
+          // this is true because in the `transform` hook above, only modules
+          // that are css gets added to the `styles` map.
+          isPureCssChunk = false
         }
       }
 
@@ -729,6 +731,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         (cssResolve = config.createResolver({
           extensions: ['.css'],
           mainFields: ['style'],
+          conditions: ['style'],
           tryIndex: false,
           preferRelative: true,
         }))
@@ -741,6 +744,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         (sassResolve = config.createResolver({
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
+          conditions: ['sass', 'style'],
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
@@ -754,6 +758,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         (lessResolve = config.createResolver({
           extensions: ['.less', '.css'],
           mainFields: ['less', 'style'],
+          conditions: ['less', 'style'],
           tryIndex: false,
           preferRelative: true,
         }))
@@ -1119,7 +1124,7 @@ async function finalizeCss(
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
-  if (minify && config.build.minify) {
+  if (minify && config.build.cssMinify) {
     css = await minifyCSS(css, config)
   }
   return css
@@ -1451,6 +1456,10 @@ type StylePreprocessorOptions = {
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
 
+type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
+  define?: Record<string, any>
+}
+
 type StylePreprocessor = (
   source: string,
   root: string,
@@ -1462,6 +1471,13 @@ type SassStylePreprocessor = (
   source: string,
   root: string,
   options: SassStylePreprocessorOptions,
+  resolvers: CSSAtImportResolvers,
+) => StylePreprocessorResults | Promise<StylePreprocessorResults>
+
+type StylusStylePreprocessor = (
+  source: string,
+  root: string,
+  options: StylusStylePreprocessorOptions,
   resolvers: CSSAtImportResolvers,
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -1794,8 +1810,8 @@ function createViteLessPlugin(
         this.resolvers = resolvers
         this.alias = alias
       }
-      override supports() {
-        return true
+      override supports(filename: string) {
+        return !isExternalUrl(filename)
       }
       override supportsSync() {
         return false
@@ -1845,7 +1861,7 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = async (source, root, options) => {
+const styl: StylusStylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
@@ -1863,6 +1879,11 @@ const styl: StylePreprocessor = async (source, root, options) => {
   )
   try {
     const ref = nodeStylus(content, options)
+    if (options.define) {
+      for (const key in options.define) {
+        ref.define(key, options.define[key])
+      }
+    }
     if (options.enableSourcemap) {
       ref.set('sourcemap', {
         comment: false,

@@ -18,7 +18,6 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
-  toUpperCaseDriveLetter,
 } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
@@ -27,9 +26,9 @@ import { searchForWorkspaceRoot } from '..'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /^(.*?)((?:const|var) \S+=function\([^)]*\)\{"use strict";)/s
+  /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{.*?"use strict";)/s
 const INJECT_HELPERS_UMD_RE =
-  /^(.*?)(\(function\([^)]*\)\{.+amd.+function\([^)]*\)\{"use strict";)/s
+  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{.*?"use strict";)/s
 
 let server: ViteDevServer
 
@@ -192,9 +191,6 @@ export async function transformWithEsbuild(
           ? JSON.parse(result.map)
           : { mappings: '' }
     }
-    if (Array.isArray(map.sources)) {
-      map.sources = map.sources.map((it) => toUpperCaseDriveLetter(it))
-    }
     return {
       ...result,
       map,
@@ -213,7 +209,7 @@ export async function transformWithEsbuild(
   }
 }
 
-export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
+export function esbuildPlugin(options: ESBuildOptions): Plugin {
   const filter = createFilter(
     options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/,

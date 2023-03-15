@@ -160,14 +160,27 @@ async function createDepsOptimizer(
   // If there wasn't a cache or it is outdated, we need to prepare a first run
   let firstRunCalled = !!cachedMetadata
 
-  let postScanOptimizationResult: Promise<DepOptimizationResult> | undefined
+  let optimizationResult:
+    | {
+        cancel: () => Promise<void>
+        result: Promise<DepOptimizationResult>
+      }
+    | undefined
+
+  let discover:
+    | {
+        cancel: () => Promise<void>
+        result: Promise<Record<string, string>>
+      }
+    | undefined
 
   let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
     await Promise.allSettled([
+      discover?.cancel(),
       depsOptimizer.scanProcessing,
-      postScanOptimizationResult,
+      optimizationResult?.cancel(),
       optimizingNewDeps,
     ])
   }
@@ -204,7 +217,9 @@ async function createDepsOptimizer(
           try {
             debug(colors.green(`scanning for dependencies...`))
 
-            const deps = await discoverProjectDependencies(config)
+            discover = discoverProjectDependencies(config)
+            const deps = await discover.result
+            discover = undefined
 
             debug(
               colors.green(
@@ -231,9 +246,9 @@ async function createDepsOptimizer(
             // run on the background, but we wait until crawling has ended
             // to decide if we send this result to the browser or we need to
             // do another optimize step
-            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+            optimizationResult = runOptimizeDeps(config, knownDeps)
           } catch (e) {
-            logger.error(e.message)
+            logger.error(e.stack || e.message)
           } finally {
             resolve()
             depsOptimizer.scanProcessing = undefined
@@ -272,7 +287,8 @@ async function createDepsOptimizer(
 
     startNextDiscoveredBatch()
 
-    return await runOptimizeDeps(config, knownDeps)
+    optimizationResult = runOptimizeDeps(config, knownDeps)
+    return await optimizationResult.result
   }
 
   function prepareKnownDeps() {
@@ -546,7 +562,7 @@ async function createDepsOptimizer(
       id,
       file: getOptimizedDepPath(id, config, ssr),
       src: resolved,
-      // Assing a browserHash to this missing dependency that is unique to
+      // Adding a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
       // doesn't alter the bundled files of previous known dependencies,
       // we don't need a full reload and this browserHash will be kept
@@ -595,9 +611,9 @@ async function createDepsOptimizer(
     // It normally should be over by the time crawling of user code ended
     await depsOptimizer.scanProcessing
 
-    if (!isBuild && postScanOptimizationResult) {
-      const result = await postScanOptimizationResult
-      postScanOptimizationResult = undefined
+    if (!isBuild && optimizationResult) {
+      const result = await optimizationResult.result
+      optimizationResult = undefined
 
       const scanDeps = Object.keys(result.metadata.optimized)
 

@@ -28,6 +28,7 @@ export interface PackageData {
     module: string
     browser: string | Record<string, string | false>
     exports: string | Record<string, any> | string[]
+    imports: Record<string, any>
     dependencies: Record<string, string>
   }
 }

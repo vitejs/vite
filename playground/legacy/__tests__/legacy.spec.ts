@@ -23,11 +23,20 @@ test('import.meta.env.LEGACY', async () => {
     isBuild ? 'true' : 'false',
     true,
   )
+  await untilUpdated(() => page.textContent('#env-equal'), 'true', true)
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
   await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
+})
+
+test('async generator', async () => {
+  await untilUpdated(
+    () => page.textContent('#async-generator'),
+    '[0,1,2]',
+    true,
+  )
 })
 
 test('wraps with iife', async () => {

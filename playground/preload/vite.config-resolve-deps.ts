@@ -12,6 +12,15 @@ export default defineConfig({
         passes: 3,
       },
     },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('chunk.js')) {
+            return 'chunk'
+          }
+        },
+      },
+    },
     modulePreload: {
       resolveDependencies(filename, deps, { hostId, hostType }) {
         if (filename.includes('hello')) {

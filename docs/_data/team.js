@@ -66,7 +66,7 @@ export const core = [
     title: 'Developer',
     org: 'Vue.js',
     orgLink: 'https://vuejs.org/',
-    desc: 'Vite/Vite core team member. Full-time open sourcerer.',
+    desc: 'Vue/Vite core team member. Full-time open sourcerer.',
     links: [
       { icon: 'github', link: 'https://github.com/sodatea' },
       { icon: 'twitter', link: 'https://twitter.com/haoqunjiang' },
