@@ -859,7 +859,6 @@ function createOptimizeDepsIncludeResolver(
       nestedRoot,
       config.root,
       config.resolve.preserveSymlinks,
-      ssr,
     )
     return await resolve(nestedPath, basedir, undefined, ssr)
   }

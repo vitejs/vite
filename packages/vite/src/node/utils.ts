@@ -160,12 +160,11 @@ export function nestedResolveFrom(
   id: string,
   basedir: string,
   preserveSymlinks = false,
-  ssr = false,
 ): string {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
   try {
     for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir, preserveSymlinks, ssr)
+      basedir = resolveFrom(pkg, basedir, preserveSymlinks)
     }
   } catch {}
   return basedir
