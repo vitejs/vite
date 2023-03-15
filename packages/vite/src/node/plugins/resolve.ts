@@ -116,6 +116,11 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   shouldExternalize?: (id: string) => boolean | undefined
 }
 
+const resolvedCache = new WeakMap<
+  InternalResolveOptions,
+  Map<string, string | PartialResolvedId>
+>()
+
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   const {
     root,
@@ -126,7 +131,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
-  const resolvedCache = new Map()
+  const resolvedIdCache = new Map<string, string | PartialResolvedId>()
+  resolvedCache.set(resolveOptions, resolvedIdCache)
 
   return {
     name: 'vite:resolve',
@@ -348,7 +354,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           ...options,
           ssr,
         })
-        const cache = resolvedCache.get(key)
+        const cache = resolvedIdCache.get(key)
 
         if (cache) {
           return cache
@@ -361,7 +367,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           !options.scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
-          resolvedCache.set(key, res)
+          resolvedIdCache.set(key, res)
           return res
         }
 
@@ -376,7 +382,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             external,
           ))
         ) {
-          resolvedCache.set(key, res)
+          resolvedIdCache.set(key, res)
           return res
         }
 
@@ -391,7 +397,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             external,
           ))
         ) {
-          resolvedCache.set(key, res)
+          resolvedIdCache.set(key, res)
           return res
         }
 
