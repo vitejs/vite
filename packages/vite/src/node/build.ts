@@ -823,7 +823,7 @@ export function resolveBuildOutputs(
   return outputs
 }
 
-const warningIgnoreList = [`CIRCULAR_DEPENDENCY`, `THIS_IS_UNDEFINED`]
+const warningIgnoreList = [`THIS_IS_UNDEFINED`]
 const dynamicImportWarningIgnoreList = [
   `Unsupported expression`,
   `statically analyzed`,
