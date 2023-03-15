@@ -305,7 +305,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             let objURL;
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              if (objURL) throw ''
+              if (!objURL) throw ''
               return new ${workerConstructor}(objURL)
             } catch(e) {
               return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
