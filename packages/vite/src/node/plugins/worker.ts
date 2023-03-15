@@ -257,8 +257,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           if (!isBuild) {
             const result = await bundleWorkerEntry(config, id, {})
 
-            // prepend /@vite/env into worker
-            result.code = injectEnv + result.code
+            // inject /@vite/env into worker
+            result.code = result.code.replace(
+              /'use strict';/,
+              (m) => `${m}\n${injectEnv};`,
+            )
 
             return result
           }
