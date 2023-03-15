@@ -1,17 +1,13 @@
-/**
- * @type {import('vite').UserConfig}
- */
+import { defineConfig } from 'vite'
+import baseConfig from './vite.config.js'
 
-const { DEFAULT_PREVIEW_PORT } = require('vite')
-
-const baseConfig = require('./vite.config.js')
-module.exports = {
+export default defineConfig({
   ...baseConfig,
   base: 'http://localhost:4173/',
   build: {
     ...baseConfig.build,
     outDir: 'dist/url-base',
-    watch: false,
+    watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {
@@ -25,4 +21,4 @@ module.exports = {
   testConfig: {
     baseRoute: '/url-base/',
   },
-}
+})

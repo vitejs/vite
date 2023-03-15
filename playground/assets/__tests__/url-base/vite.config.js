@@ -1,1 +1,1 @@
-module.exports = require('../../vite.config-url-base')
+export { default } from '../../vite.config-url-base'
