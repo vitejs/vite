@@ -1296,8 +1296,11 @@ export async function cleanupDepsCacheStaleDirs(
       for (const dirent of dirents) {
         if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
           const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const { mtime } = await fsp.stat(tempDirPath)
-          if (Date.now() - mtime.getTime() > MAX_TEMP_DIR_AGE_MS) {
+          const stats = await fsp.stat(tempDirPath).catch((_) => null)
+          if (
+            stats?.mtime &&
+            Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
+          ) {
             await removeDir(tempDirPath)
           }
         }
