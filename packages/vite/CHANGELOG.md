@@ -4,7 +4,7 @@ Vite 4.2 is out!
 
 ### Support env variables replacement in HTML files
 
-Vite now supports [replacing env variables in HTML files](https://main.vitejs.dev/guide/env-and-mode.html#html-env-replacement). Any properties in `import.meta.env` can be used in HTML files with a special `%ENV_NAME%` syntax:
+Vite now supports [replacing env variables in HTML files](https://vitejs.dev/guide/env-and-mode.html#html-env-replacement). Any properties in `import.meta.env` can be used in HTML files with a special `%ENV_NAME%` syntax:
 
 ```html
 <h1>Vite is running in %MODE%</h1>
