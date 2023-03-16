@@ -1,3 +1,15 @@
+## 4.2.0 (2023-03-16)
+
+* feat: add status message for 504 caused by optimizer (#12435) ([5cdd3fa](https://github.com/vitejs/vite/commit/5cdd3fa)), closes [#12435](https://github.com/vitejs/vite/issues/12435)
+* fix: html env replacement plugin position (#12404) ([96f36a9](https://github.com/vitejs/vite/commit/96f36a9)), closes [#12404](https://github.com/vitejs/vite/issues/12404)
+* fix(optimizer): # symbol in deps id stripped by browser (#12415) ([e23f690](https://github.com/vitejs/vite/commit/e23f690)), closes [#12415](https://github.com/vitejs/vite/issues/12415)
+* fix(resolve): rebase sub imports relative path (#12373) ([fe1d61a](https://github.com/vitejs/vite/commit/fe1d61a)), closes [#12373](https://github.com/vitejs/vite/issues/12373)
+* fix(server): should close server after create new server (#12379) ([d23605d](https://github.com/vitejs/vite/commit/d23605d)), closes [#12379](https://github.com/vitejs/vite/issues/12379)
+* docs: correct description for UserConfig.envDir when used with relative path (#12429) ([2b37cde](https://github.com/vitejs/vite/commit/2b37cde)), closes [#12429](https://github.com/vitejs/vite/issues/12429)
+* refactor(resolve): remove deep import syntax handling (#12381) ([42e0d6a](https://github.com/vitejs/vite/commit/42e0d6a)), closes [#12381](https://github.com/vitejs/vite/issues/12381)
+
+
+
 ## 4.2.0-beta.2 (2023-03-13)
 
 * chore: fix test misc (#12392) ([a595b11](https://github.com/vitejs/vite/commit/a595b11)), closes [#12392](https://github.com/vitejs/vite/issues/12392)
