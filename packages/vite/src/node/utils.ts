@@ -592,6 +592,11 @@ export const removeDir = isWindows
     }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
+// `fs.realpathSync.native` has a bug in Windows network drive that prepends a slash
+export const safeRealpathSync = isWindows
+  ? fs.realpathSync
+  : fs.realpathSync.native
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,

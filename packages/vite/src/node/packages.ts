@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createDebugger, createFilter } from './utils'
+import { createDebugger, createFilter, safeRealpathSync } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
 
@@ -91,7 +91,7 @@ export function loadPackageData(
   packageCache?: PackageCache,
 ): PackageData {
   if (!preserveSymlinks) {
-    pkgPath = fs.realpathSync.native(pkgPath)
+    pkgPath = safeRealpathSync(pkgPath)
   }
 
   let cached: PackageData | undefined
@@ -200,7 +200,7 @@ export function resolvePkgJsonPath(
     const pkg = path.join(root, 'node_modules', pkgName, 'package.json')
     try {
       if (fs.existsSync(pkg)) {
-        return preserveSymlinks ? pkg : fs.realpathSync.native(pkg)
+        return preserveSymlinks ? pkg : safeRealpathSync(pkg)
       }
     } catch {}
     const nextRoot = path.dirname(root)
