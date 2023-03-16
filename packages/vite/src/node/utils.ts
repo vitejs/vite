@@ -127,14 +127,8 @@ export function isOptimizable(
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-export let isRunningWithYarnPnp: boolean
-
 // TODO: use import()
 const _require = createRequire(import.meta.url)
-
-try {
-  isRunningWithYarnPnp = Boolean(_require('pnpapi'))
-} catch {}
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
@@ -149,7 +143,7 @@ export function resolveFrom(
     paths: [],
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false,
+    preserveSymlinks: preserveSymlinks || !!process.versions.pnp || false,
   })
 }
 
