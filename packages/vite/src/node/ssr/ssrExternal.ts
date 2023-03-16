@@ -256,16 +256,16 @@ function cjsSsrCollectExternals(
       // which returns with '/', require.resolve returns with '\\'
       requireEntry = normalizePath(_require.resolve(id, { paths: [root] }))
     } catch (e) {
-      try {
-        // no main entry, but deep imports may be allowed
-        const pkgPath = resolvePkgJsonPath(id, root)
+      // no main entry, but deep imports may be allowed
+      const pkgPath = resolvePkgJsonPath(id, root)
+      if (pkgPath) {
         if (pkgPath.includes('node_modules')) {
           ssrExternals.add(id)
         } else {
           depsToTrace.add(path.dirname(pkgPath))
         }
         continue
-      } catch {}
+      }
 
       // resolve failed, assume include
       debug(`Failed to resolve entries for package "${id}"\n`, e)
@@ -278,7 +278,10 @@ function cjsSsrCollectExternals(
     // trace the dependencies of linked packages
     else if (!esmEntry.includes('node_modules')) {
       const pkgPath = resolvePkgJsonPath(id, root)
-      depsToTrace.add(path.dirname(pkgPath))
+      // NOTE (temp): if pkg not found, we skip instead of error, is this problematic?
+      if (pkgPath) {
+        depsToTrace.add(path.dirname(pkgPath))
+      }
     }
     // has separate esm/require entry, assume require entry is cjs
     else if (esmEntry !== requireEntry) {
@@ -289,6 +292,11 @@ function cjsSsrCollectExternals(
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
       const pkgPath = resolvePkgJsonPath(id, root)
+      // NOTE (temp): if pkg not found, we skip instead of error, is this problematic?
+      if (!pkgPath) {
+        continue
+      }
+
       const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
 
       if (!pkgContent) {

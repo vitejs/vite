@@ -69,9 +69,9 @@ export function resolvePackageData(
       return pkg
     }
   }
-  let pkgPath: string | undefined
+  const pkgPath = resolvePkgJsonPath(id, basedir, preserveSymlinks)
+  if (!pkgPath) return null
   try {
-    pkgPath = resolvePkgJsonPath(id, basedir, preserveSymlinks)
     pkg = loadPackageData(pkgPath, true, packageCache)
     if (packageCache) {
       packageCache.set(cacheKey!, pkg)
@@ -81,12 +81,8 @@ export function resolvePackageData(
     if (e instanceof SyntaxError) {
       isDebug && debug(`Parsing failed: ${pkgPath}`)
     }
-    // Ignore error for missing package.json
-    else if (e.code !== 'MODULE_NOT_FOUND') {
-      throw e
-    }
+    throw e
   }
-  return null
 }
 
 export function loadPackageData(
@@ -192,12 +188,10 @@ export function resolvePkgJsonPath(
   pkgName: string,
   basedir: string,
   preserveSymlinks = false,
-): string {
+): string | undefined {
   if (pnp) {
     const pkg = pnp.resolveToUnqualified(pkgName, basedir)
-    if (!pkg) {
-      throw pkgNotFoundError(pkgName, basedir)
-    }
+    if (!pkg) return undefined
     return path.join(pkg, 'package.json')
   }
 
@@ -214,14 +208,5 @@ export function resolvePkgJsonPath(
     root = nextRoot
   }
 
-  throw pkgNotFoundError(pkgName, basedir)
-}
-
-function pkgNotFoundError(pkgName: string, basedir: string) {
-  const error = new Error(
-    `Unable to resolve dependency "${pkgName}" from "${basedir}"` +
-      (pnp ? ' in Yarn PnP' : ''),
-  )
-  ;(error as any).code = 'MODULE_NOT_FOUND'
-  return error
+  return undefined
 }

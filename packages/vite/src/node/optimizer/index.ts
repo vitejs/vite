@@ -873,11 +873,9 @@ function nestedResolvePkgJsonPath(
   preserveSymlinks = false,
 ) {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
-  try {
-    for (const pkg of pkgs) {
-      basedir = resolvePkgJsonPath(pkg, basedir, preserveSymlinks)
-    }
-  } catch {}
+  for (const pkg of pkgs) {
+    basedir = resolvePkgJsonPath(pkg, basedir, preserveSymlinks) || basedir
+  }
   return basedir
 }
 
