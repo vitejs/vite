@@ -1,8 +1,17 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { createDebugger, createFilter, resolveFrom } from './utils'
+import { createRequire } from 'node:module'
+import { createDebugger, createFilter } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+let pnp: typeof import('pnpapi') | undefined
+if (process.versions.pnp) {
+  try {
+    pnp = createRequire(import.meta.url)('pnpapi')
+  } catch {}
+}
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -62,7 +71,7 @@ export function resolvePackageData(
   }
   let pkgPath: string | undefined
   try {
-    pkgPath = resolveFrom(`${id}/package.json`, basedir, preserveSymlinks)
+    pkgPath = resolvePkgJsonPath(id, basedir, preserveSymlinks)
     pkg = loadPackageData(pkgPath, true, packageCache)
     if (packageCache) {
       packageCache.set(cacheKey!, pkg)
@@ -177,4 +186,42 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function resolvePkgJsonPath(
+  pkgName: string,
+  basedir: string,
+  preserveSymlinks = false,
+): string {
+  if (pnp) {
+    const pkg = pnp.resolveToUnqualified(pkgName, basedir)
+    if (!pkg) {
+      throw pkgNotFoundError(pkgName, basedir)
+    }
+    return path.join(pkg, 'package.json')
+  }
+
+  let root = basedir
+  while (root) {
+    const pkg = path.join(root, 'node_modules', pkgName, 'package.json')
+    try {
+      if (fs.existsSync(pkg)) {
+        return preserveSymlinks ? pkg : fs.realpathSync.native(pkg)
+      }
+    } catch {}
+    const nextRoot = path.dirname(root)
+    if (nextRoot === root) break
+    root = nextRoot
+  }
+
+  throw pkgNotFoundError(pkgName, basedir)
+}
+
+function pkgNotFoundError(pkgName: string, basedir: string) {
+  const error = new Error(
+    `Unable to resolve dependency "${pkgName}" from "${basedir}"` +
+      (pnp ? ' in Yarn PnP' : ''),
+  )
+  ;(error as any).code = 'MODULE_NOT_FOUND'
+  return error
 }

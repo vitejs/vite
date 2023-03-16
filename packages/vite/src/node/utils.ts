@@ -153,25 +153,6 @@ export function resolveFrom(
   })
 }
 
-/**
- * like `resolveFrom` but supports resolving `>` path in `id`,
- * for example: `foo > bar > baz`
- */
-export function nestedResolveFrom(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-  ssr = false,
-): string {
-  const pkgs = id.split('>').map((pkg) => pkg.trim())
-  try {
-    for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir, preserveSymlinks, ssr)
-    }
-  } catch {}
-  return basedir
-}
-
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
