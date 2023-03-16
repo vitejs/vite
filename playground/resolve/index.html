@@ -341,8 +341,12 @@
 
   import es5Ext from 'es5-ext'
   import contains from 'es5-ext/string/#/contains'
+  import { last } from '@vitejs/test-resolve-sharp-dir'
 
-  text('.path-contains-sharp-symbol', `[success] ${contains.call('#', '#')}`)
+  text(
+    '.path-contains-sharp-symbol',
+    `[success] ${contains.call('#', '#')} ${last.call('#')}`,
+  )
 </script>
 
 <style>

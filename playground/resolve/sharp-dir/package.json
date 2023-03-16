@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-resolve-sharp-dir",
+  "private": true,
+  "version": "1.0.0",
+  "main": "./index.cjs",
+  "dependencies": {
+    "es5-ext": "0.10.62"
+  }
+}

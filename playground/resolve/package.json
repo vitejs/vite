@@ -34,6 +34,7 @@
     "@vitejs/test-resolve-exports-path": "link:./exports-path",
     "@vitejs/test-resolve-exports-with-module": "link:./exports-with-module",
     "@vitejs/test-resolve-linked": "workspace:*",
-    "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg"
+    "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
+    "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir"
   }
 }

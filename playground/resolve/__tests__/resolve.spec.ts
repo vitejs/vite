@@ -155,7 +155,7 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success] true',
+    '[success] true #',
   )
 })
 

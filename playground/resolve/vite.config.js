@@ -101,6 +101,9 @@ export default defineConfig({
     },
   ],
   optimizeDeps: {
-    include: ['@vitejs/test-require-pkg-with-module-field'],
+    include: [
+      '@vitejs/test-require-pkg-with-module-field',
+      '@vitejs/test-resolve-sharp-dir',
+    ],
   },
 })
