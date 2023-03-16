@@ -1,3 +1,13 @@
+## <small>4.0.2 (2023-03-16)</small>
+
+* chore(deps): update all non-major dependencies (#12299) ([b41336e](https://github.com/vitejs/vite/commit/b41336e)), closes [#12299](https://github.com/vitejs/vite/issues/12299)
+* chore(deps): update rollup to 3.17.2 (#12110) ([e54ffbd](https://github.com/vitejs/vite/commit/e54ffbd)), closes [#12110](https://github.com/vitejs/vite/issues/12110)
+* fix(deps): update all non-major dependencies (#12036) ([48150f2](https://github.com/vitejs/vite/commit/48150f2)), closes [#12036](https://github.com/vitejs/vite/issues/12036)
+* fix(plugin-legacy): no `build.target` override on SSR build (#12171) ([a1019f8](https://github.com/vitejs/vite/commit/a1019f8)), closes [#12171](https://github.com/vitejs/vite/issues/12171)
+* docs(plugin-legacy): outdated csp hash (fix #12112) (#12118) ([5f7f5dc](https://github.com/vitejs/vite/commit/5f7f5dc)), closes [#12112](https://github.com/vitejs/vite/issues/12112) [#12118](https://github.com/vitejs/vite/issues/12118)
+
+
+
 ## <small>4.0.1 (2023-02-02)</small>
 
 * fix(legacy): fix browserslist import, close https://github.com/vitejs/vite/issues/11898 (#11899) ([9241d08](https://github.com/vitejs/vite/commit/9241d08)), closes [#11899](https://github.com/vitejs/vite/issues/11899)
