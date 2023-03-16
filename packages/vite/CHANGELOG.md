@@ -32,6 +32,11 @@ import type { Rollup } from 'vite'
 ```
 
 
+### Português Docs Translation
+
+The Vite documentation is now translated to Português at [pt.vitejs.dev](https://pt.vitejs.dev) thanks to [Nazaré Da Piedade](https://twitter.com/nazarepiedady) .
+
+
 ### Features
 
 * feat: add status message for 504 caused by optimizer (#12435) ([5cdd3fa](https://github.com/vitejs/vite/commit/5cdd3fa)), closes [#12435](https://github.com/vitejs/vite/issues/12435)
