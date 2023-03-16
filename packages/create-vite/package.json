@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "4.2.0-beta.1",
+  "version": "4.2.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
