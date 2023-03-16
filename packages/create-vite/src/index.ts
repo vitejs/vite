@@ -28,6 +28,7 @@ type ColorFunc = (str: string | number) => string
 type Framework = {
   name: string
   display: string
+  description?: string
   color: ColorFunc
   variants: FrameworkVariant[]
 }
@@ -132,6 +133,7 @@ const FRAMEWORKS: Framework[] = [
   {
     name: 'lit',
     display: 'Lit',
+    description: 'to create a NPM package',
     color: lightRed,
     variants: [
       {
@@ -266,6 +268,7 @@ async function init() {
             const frameworkColor = framework.color
             return {
               title: frameworkColor(framework.display || framework.name),
+              description: framework.description,
               value: framework,
             }
           }),
