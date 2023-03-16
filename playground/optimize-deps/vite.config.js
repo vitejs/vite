@@ -19,6 +19,7 @@ export default defineConfig({
     include: [
       '@vitejs/test-dep-linked-include',
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
+      '@vitejs/test-dep-css-require',
       // will throw if optimized (should log warning instead)
       '@vitejs/test-non-optimizable-include',
     ],
