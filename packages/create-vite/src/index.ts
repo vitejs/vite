@@ -180,6 +180,12 @@ const FRAMEWORKS: Framework[] = [
         color: reset,
         customCommand: 'npm create vite-extra@latest TARGET_DIR',
       },
+      {
+        name: 'create-electron-vite',
+        display: 'create-electron-vite ↗',
+        color: reset,
+        customCommand: 'npm create electron-vite@latest TARGET_DIR',
+      },
     ],
   },
 ]
