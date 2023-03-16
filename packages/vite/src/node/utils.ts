@@ -592,7 +592,9 @@ export const removeDir = isWindows
     }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
-// `fs.realpathSync.native` has a bug in Windows network drive that prepends a slash
+// `fs.realpathSync.native` resolves differently in Windows network drive,
+// causing file read errors. skip for now.
+// https://github.com/nodejs/node/issues/37737
 export const safeRealpathSync = isWindows
   ? fs.realpathSync
   : fs.realpathSync.native

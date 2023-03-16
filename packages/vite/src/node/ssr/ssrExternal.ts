@@ -278,7 +278,6 @@ function cjsSsrCollectExternals(
     // trace the dependencies of linked packages
     else if (!esmEntry.includes('node_modules')) {
       const pkgPath = resolvePkgJsonPath(id, root)
-      // NOTE (temp): if pkg not found, we skip instead of error, is this problematic?
       if (pkgPath) {
         depsToTrace.add(path.dirname(pkgPath))
       }
@@ -292,7 +291,6 @@ function cjsSsrCollectExternals(
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
       const pkgPath = resolvePkgJsonPath(id, root)
-      // NOTE (temp): if pkg not found, we skip instead of error, is this problematic?
       if (!pkgPath) {
         continue
       }
