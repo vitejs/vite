@@ -16,6 +16,7 @@
     "@vitejs/test-dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
     "@vitejs/test-dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
     "@vitejs/test-dep-cjs-with-assets": "file:./dep-cjs-with-assets",
+    "@vitejs/test-dep-css-require": "file:./dep-css-require",
     "@vitejs/test-dep-esbuild-plugin-transform": "file:./dep-esbuild-plugin-transform",
     "@vitejs/test-dep-linked": "link:./dep-linked",
     "@vitejs/test-dep-linked-include": "link:./dep-linked-include",

@@ -624,6 +624,7 @@ importers:
       '@vitejs/test-dep-cjs-compiled-from-cjs': file:./dep-cjs-compiled-from-cjs
       '@vitejs/test-dep-cjs-compiled-from-esm': file:./dep-cjs-compiled-from-esm
       '@vitejs/test-dep-cjs-with-assets': file:./dep-cjs-with-assets
+      '@vitejs/test-dep-css-require': file:./dep-css-require
       '@vitejs/test-dep-esbuild-plugin-transform': file:./dep-esbuild-plugin-transform
       '@vitejs/test-dep-linked': link:./dep-linked
       '@vitejs/test-dep-linked-include': link:./dep-linked-include
@@ -655,6 +656,7 @@ importers:
       '@vitejs/test-dep-cjs-compiled-from-cjs': file:playground/optimize-deps/dep-cjs-compiled-from-cjs
       '@vitejs/test-dep-cjs-compiled-from-esm': file:playground/optimize-deps/dep-cjs-compiled-from-esm
       '@vitejs/test-dep-cjs-with-assets': file:playground/optimize-deps/dep-cjs-with-assets
+      '@vitejs/test-dep-css-require': file:playground/optimize-deps/dep-css-require
       '@vitejs/test-dep-esbuild-plugin-transform': file:playground/optimize-deps/dep-esbuild-plugin-transform
       '@vitejs/test-dep-linked': link:dep-linked
       '@vitejs/test-dep-linked-include': link:dep-linked-include
@@ -699,6 +701,9 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-cjs-with-assets:
+    specifiers: {}
+
+  playground/optimize-deps/dep-css-require:
     specifiers: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform:
@@ -10062,6 +10067,12 @@ packages:
   file:playground/optimize-deps/dep-cjs-with-assets:
     resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
     name: '@vitejs/test-dep-cjs-with-assets'
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-css-require:
+    resolution: {directory: playground/optimize-deps/dep-css-require, type: directory}
+    name: '@vitejs/test-dep-css-require'
     version: 0.0.0
     dev: false
 
