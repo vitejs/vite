@@ -248,9 +248,13 @@ You can also use CSS modules combined with pre-processors by prepending `.module
 The automatic injection of CSS contents can be turned off via the `?inline` query parameter. In this case, the processed CSS string is returned as the module's default export as usual, but the styles aren't injected to the page.
 
 ```js
-import styles from './foo.css' // will be injected into the page
+import './foo.css' // will be injected into the page
 import otherStyles from './bar.css?inline' // will not be injected
 ```
+
+::: tip NOTE
+Default and named imports from CSS files (e.g `import style from './foo.css'`) are deprecated since Vite 4. Use the `?inline` query instead.
+:::
 
 ## Static Assets
 
