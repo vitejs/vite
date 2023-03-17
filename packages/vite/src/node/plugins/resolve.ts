@@ -186,6 +186,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const resolvedImports = resolveSubpathImports(id, importer)
       if (resolvedImports) {
         id = resolvedImports
+
+        if (resolveOpts.custom?.['glob-imports']) {
+          return id
+        }
       }
 
       if (importer) {
