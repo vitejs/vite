@@ -296,7 +296,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             chunk.code,
           ).toString('base64')}";`
 
-          const blobCode = `${encodedJs}
+          const code =
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
+            workerConstructor === 'Worker'
+              ? `${encodedJs}
           const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper() {
             let objURL;
@@ -310,16 +313,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
             }
           }`
-
-          const base64Code = `${encodedJs}
+              : `${encodedJs}
           export default function WorkerWrapper() {
             return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
           }
           `
 
           return {
-            // Using blob URL for SharedWorker results in multiple instances of a same worker
-            code: workerConstructor === 'Worker' ? blobCode : base64Code,
+            code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }
