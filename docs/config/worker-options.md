@@ -5,7 +5,7 @@ Options related to Web Workers.
 ## worker.format
 
 - **Type:** `'es' | 'iife'`
-- **Default:** `iife`
+- **Default:** `'iife'`
 
 Output format for worker bundle.
 

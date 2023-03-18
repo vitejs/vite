@@ -1,5 +1,6 @@
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
+import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
@@ -26,11 +27,26 @@ inlineWorker.addEventListener('message', (e) => {
   text('.pong-inline', e.data.msg)
 })
 
-const sharedWorker = new mySharedWorker()
-sharedWorker.port.addEventListener('message', (event) => {
-  text('.tick-count', event.data)
-})
-sharedWorker.port.start()
+const startSharedWorker = () => {
+  const sharedWorker = new mySharedWorker()
+  sharedWorker.port.addEventListener('message', (event) => {
+    text('.tick-count', event.data)
+  })
+  sharedWorker.port.start()
+}
+startSharedWorker()
+startSharedWorker()
+
+const startInlineSharedWorker = () => {
+  const inlineSharedWorker = new InlineSharedWorker()
+  inlineSharedWorker.port.addEventListener('message', (event) => {
+    text('.pong-shared-inline', event.data)
+  })
+  inlineSharedWorker.port.start()
+}
+
+startInlineSharedWorker()
+startInlineSharedWorker()
 
 const tsOutputWorker = new TSOutputWorker()
 tsOutputWorker.postMessage('ping')

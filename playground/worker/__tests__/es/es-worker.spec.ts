@@ -34,6 +34,10 @@ test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
 })
 
+test('inline shared worker', async () => {
+  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
+})
+
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
   await untilUpdated(
     () => page.textContent('.nested-worker'),
@@ -72,9 +76,16 @@ describe.runIf(isBuild)('build', () => {
     // chunk
     expect(content).toMatch(`new Worker("/es/assets`)
     expect(content).toMatch(`new SharedWorker("/es/assets`)
-    // inlined
+    // inlined worker
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(
+      /try\{if\(\w+=\w+&&\(window\.URL\|\|window\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
+    )
+    // inlined shared worker
+    expect(content).toMatch(
+      `return new SharedWorker("data:application/javascript;base64,"+`,
+    )
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
