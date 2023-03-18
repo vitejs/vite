@@ -75,6 +75,12 @@ test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
 })
 
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
+})
+
 test('exact extension vs. duplicated (.js.js)', async () => {
   expect(await page.textContent('.exact-extension')).toMatch('[success]')
 })
