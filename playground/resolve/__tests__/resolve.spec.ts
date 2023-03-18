@@ -81,7 +81,7 @@ test('nested extension', async () => {
   )
 })
 
-test('', async () => {
+test('exact extension vs. duplicated (.js.js)', async () => {
   expect(await page.textContent('.exact-extension')).toMatch('[success]')
 })
 
