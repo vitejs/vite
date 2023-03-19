@@ -50,17 +50,17 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         }
 
         return code
-          .replace(`__MODE__`, JSON.stringify(config.mode))
-          .replace(/__BASE__/g, JSON.stringify(devBase))
-          .replace(`__DEFINES__`, serializeDefine(config.define || {}))
-          .replace(`__SERVER_HOST__`, JSON.stringify(serverHost))
-          .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
-          .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
-          .replace(`__HMR_PORT__`, JSON.stringify(port))
-          .replace(`__HMR_DIRECT_TARGET__`, JSON.stringify(directTarget))
-          .replace(`__HMR_BASE__`, JSON.stringify(hmrBase))
-          .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
-          .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
+          .replace(`__MODE__`, escapeReplacement(config.mode))
+          .replace(/__BASE__/g, escapeReplacement(devBase))
+          .replace(`__DEFINES__`, () => serializeDefine(config.define || {}))
+          .replace(`__SERVER_HOST__`, escapeReplacement(serverHost))
+          .replace(`__HMR_PROTOCOL__`, escapeReplacement(protocol))
+          .replace(`__HMR_HOSTNAME__`, escapeReplacement(host))
+          .replace(`__HMR_PORT__`, escapeReplacement(port))
+          .replace(`__HMR_DIRECT_TARGET__`, escapeReplacement(directTarget))
+          .replace(`__HMR_BASE__`, escapeReplacement(hmrBase))
+          .replace(`__HMR_TIMEOUT__`, escapeReplacement(timeout))
+          .replace(`__HMR_ENABLE_OVERLAY__`, escapeReplacement(overlay))
       } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV instead of defining a global
         // for it to avoid shimming a `process` object during dev,
@@ -73,6 +73,10 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+function escapeReplacement(value: any) {
+  return () => JSON.stringify(value);
 }
 
 function serializeDefine(define: Record<string, any>): string {
