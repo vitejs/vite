@@ -201,7 +201,8 @@ export async function createPluginContainer(
     for (const plugin of getSortedPlugins(hookName)) {
       const hook = plugin[hookName]
       if (!hook) continue
-      // @ts-expect-error hook is not a primitive
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore hook is not a primitive
       const handler: Function = 'handler' in hook ? hook.handler : hook
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
