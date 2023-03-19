@@ -76,7 +76,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 }
 
 function escapeReplacement(value: any) {
-  return () => JSON.stringify(value);
+  return () => JSON.stringify(value)
 }
 
 function serializeDefine(define: Record<string, any>): string {
