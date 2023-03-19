@@ -742,7 +742,7 @@ function prepareOutDir(
   }
 }
 
-function getPkgJson(root: string): PackageData['data'] {
+export function getPkgJson(root: string): PackageData['data'] {
   return JSON.parse(lookupFile(root, ['package.json']) || `{}`)
 }
 

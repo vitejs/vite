@@ -21,6 +21,8 @@
 <pre class="escape-relative"></pre>
 <h2>Escape alias glob</h2>
 <pre class="escape-alias"></pre>
+<h2>Package imports</h2>
+<pre class="package-imports"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -139,6 +141,19 @@
     .filter(([_, mod]) => Object.keys(mod?.alias ?? {}).length === 1)
     .map(([glob]) => glob)
   document.querySelector('.escape-alias').textContent = alias.sort().join('\n')
+</script>
+
+<script type="module">
+  const index = import.meta.glob('#dir/')
+  console.log(index)
+  const m = import.meta.glob('#dir/*')
+  console.log(m)
+  const ms = import.meta.glob('#dir/**')
+  console.log(ms)
+  document.querySelector('.package-imports').textContent = Object.entries(ms)
+    .map(([glob]) => glob)
+    .sort()
+    .join('\n')
 </script>
 
 <script type="module">

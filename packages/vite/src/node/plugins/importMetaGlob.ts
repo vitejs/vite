@@ -29,6 +29,7 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
+import { getPkgJson } from '../build'
 import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
@@ -292,10 +293,20 @@ export async function parseImportGlob(
 
     const end = ast.range![1]
 
+    const pkgImportsAlias = getPkgJson(root)['imports'] ?? {}
+
+    const parseGlobs = globs.map((glob) => {
+      for (const key of Object.keys(pkgImportsAlias)) {
+        if (glob.startsWith(key)) {
+          return glob.replace(key, pkgImportsAlias[key])
+        }
+      }
+      return glob
+    })
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
+      parseGlobs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
-    const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const isRelative = parseGlobs.every((i) => '.!'.includes(i[0]))
 
     return {
       match,
