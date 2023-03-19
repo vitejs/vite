@@ -13,7 +13,6 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "skipLibCheck": true
