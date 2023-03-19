@@ -127,8 +127,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
   // In unix systems, absolute paths inside root first needs to be checked as an
-  // absolute URL resulting in failed checks before falling back to checking the path
-  // as absolute (/root/root/path-to-file). If /root/root isn't a valid path, we can
+  // absolute URL (/root/root/path-to-file) resulting in failed checks before falling
+  // back to checking the path as absolute. If /root/root isn't a valid path, we can
   // avoid these checks. Absolute paths inside root are common in user code as many
   // paths are resolved by the user. For example for an alias.
   const rootInRoot =
