@@ -397,13 +397,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
+      // @ts-expect-error avoid esbuild transform on legacy chunks since it produces
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
 
+      // @ts-expect-error force terser for legacy chunks. This only takes effect if
       // minification isn't disabled, because that leaves out the terser plugin
       // entirely.
       opts.__vite_force_terser__ = true
 
+      // @ts-expect-error In the `generateBundle` hook,
       // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
       // But that's still a waste of computing resource.
       // So we add this flag to avoid emitting the asset in the first place whenever possible.
