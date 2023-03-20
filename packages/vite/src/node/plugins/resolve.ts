@@ -266,7 +266,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // relative
       if (
         id.startsWith('.') ||
-        ((preferRelative || importer?.endsWith('.html')) && /^\w/.test(id))
+        ((preferRelative ||
+          importer?.endsWith('.html') ||
+          importer?.endsWith('.htm')) &&
+          /^\w/.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)

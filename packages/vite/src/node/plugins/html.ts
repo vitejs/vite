@@ -301,7 +301,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:build-html',
 
     async transform(html, id) {
-      if (id.endsWith('.html')) {
+      if (isHTMLRequest(id)) {
         const relativeUrlPath = path.posix.relative(
           config.root,
           normalizePath(id),

@@ -34,7 +34,7 @@ type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
 const debug = createDebugger('vite:deps')
 
-const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
+const htmlTypesRE = /\.(html|htm|vue|svelte|astro|imba)$/
 
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since
@@ -366,7 +366,7 @@ function esbuildScanPlugin(
           let raw = fs.readFileSync(path, 'utf-8')
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
-          const isHtml = path.endsWith('.html')
+          const isHtml = path.endsWith('.html') || path.endsWith('.htm')
           const regex = isHtml ? scriptModuleRE : scriptRE
           regex.lastIndex = 0
           let js = ''
