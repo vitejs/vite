@@ -1,3 +1,12 @@
+## <small>4.2.1 (2023-03-20)</small>
+
+* fix: add `virtual:` to virtual module source map ignore (#12444) ([c4aa28f](https://github.com/vitejs/vite/commit/c4aa28f)), closes [#12444](https://github.com/vitejs/vite/issues/12444)
+* fix(css): inject source content conditionally (#12449) ([3e665f6](https://github.com/vitejs/vite/commit/3e665f6)), closes [#12449](https://github.com/vitejs/vite/issues/12449)
+* fix(worker): using data URLs for inline shared worker (#12014) ([79a5007](https://github.com/vitejs/vite/commit/79a5007)), closes [#12014](https://github.com/vitejs/vite/issues/12014)
+* chore: changelog edits for 4.2 (#12438) ([ce047e3](https://github.com/vitejs/vite/commit/ce047e3)), closes [#12438](https://github.com/vitejs/vite/issues/12438)
+
+
+
 ## 4.2.0 (2023-03-16)
 
 Vite 4.2 is out!
