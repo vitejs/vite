@@ -1171,12 +1171,13 @@ async function resolvePostcssConfig(
       }
       return null
     })
+    // replace cached promise to result object when finished
+    result.then((resolved) => {
+      postcssConfigCache.set(config, resolved)
+    })
   }
 
   postcssConfigCache.set(config, result)
-  result.then((resolved) => {
-    postcssConfigCache.set(config, resolved)
-  })
   return result
 }
 
