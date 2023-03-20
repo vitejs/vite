@@ -96,7 +96,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 }
 
 function escapeReplacement(value: string | number | boolean | null) {
-  return () => JSON.stringify(value)
+  const jsonValue = JSON.stringify(value)
+  return () => jsonValue
 }
 
 function serializeDefine(define: Record<string, any>): string {
