@@ -74,6 +74,7 @@ export type {
 export type {
   CSSOptions,
   CSSModulesOptions,
+  PostCSSConfigResolutionOptions,
   PreprocessCSSResult,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
