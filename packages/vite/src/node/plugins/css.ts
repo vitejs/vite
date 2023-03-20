@@ -1174,6 +1174,9 @@ async function resolvePostcssConfig(
   }
 
   postcssConfigCache.set(config, result)
+  result.then((resolved) => {
+    postcssConfigCache.set(config, resolved)
+  })
   return result
 }
 
