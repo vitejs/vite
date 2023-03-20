@@ -14,7 +14,7 @@
     "noImplicitReturns": true,
 
     "useDefineForClassFields": true,
-    "verbatimModuleSyntax": true
+    "importsNotUsedAsValues": "preserve"
   },
   "include": ["./src"]
 }
