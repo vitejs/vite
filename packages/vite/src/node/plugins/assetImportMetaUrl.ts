@@ -42,7 +42,6 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
-
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
           const { 0: exp, 1: emptyUrl, index } = match
 
