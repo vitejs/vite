@@ -53,7 +53,7 @@
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.15.5",
     "@types/picomatch": "^2.3.0",
-    "@types/prompts": "^2.4.3",
+    "@types/prompts": "2.4.2",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
     "@types/semver": "^7.3.13",

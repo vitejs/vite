@@ -34,7 +34,7 @@ importers:
       '@types/minimist': ^1.2.2
       '@types/node': ^18.15.5
       '@types/picomatch': ^2.3.0
-      '@types/prompts': ^2.4.3
+      '@types/prompts': 2.4.2
       '@types/resolve': ^1.20.2
       '@types/sass': ~1.43.1
       '@types/semver': ^7.3.13
@@ -89,7 +89,7 @@ importers:
       '@types/minimist': 1.2.2
       '@types/node': 18.15.5
       '@types/picomatch': 2.3.0
-      '@types/prompts': 2.4.3
+      '@types/prompts': 2.4.2
       '@types/resolve': 1.20.2
       '@types/sass': 1.43.1
       '@types/semver': 7.3.13
@@ -3506,8 +3506,8 @@ packages:
     resolution: {integrity: sha512-O397rnSS9iQI4OirieAtsDqvCj4+3eY1J+EPdNTKuHuRWIfUoGyzX294o8C4KJYaLqgSrd2o60c5EqCU8Zv02g==}
     dev: true
 
-  /@types/prompts/2.4.3:
-    resolution: {integrity: sha512-qpzXlxoPv67TCtTCS+SwYmz1M+G5ARTrE5YVlrZPy/xBD36dzLqiJLDzOzsMXkcJYq6+6UkWqFwtLAOjsfec5Q==}
+  /@types/prompts/2.4.2:
+    resolution: {integrity: sha512-TwNx7qsjvRIUv/BCx583tqF5IINEVjCNqg9ofKHRlSoUHE62WBHrem4B1HGXcIrG511v29d1kJ9a/t2Esz7MIg==}
     dependencies:
       '@types/node': 18.15.5
       kleur: 3.0.3
