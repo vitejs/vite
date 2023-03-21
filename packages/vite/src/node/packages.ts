@@ -69,20 +69,20 @@ export function resolvePackageData(
     return pkgData
   }
 
-  let root = basedir
-  while (root) {
+  const originalBasedir = basedir
+  while (basedir) {
     if (packageCache) {
       const cached = getRpdCache(
         packageCache,
         pkgName,
-        root,
         basedir,
+        originalBasedir,
         preserveSymlinks,
       )
       if (cached) return cached
     }
 
-    const pkg = path.join(root, 'node_modules', pkgName, 'package.json')
+    const pkg = path.join(basedir, 'node_modules', pkgName, 'package.json')
     try {
       if (fs.existsSync(pkg)) {
         const pkgPath = preserveSymlinks ? pkg : safeRealpathSync(pkg)
@@ -93,8 +93,8 @@ export function resolvePackageData(
             packageCache,
             pkgData,
             pkgName,
-            root,
             basedir,
+            originalBasedir,
             preserveSymlinks,
           )
         }
@@ -103,9 +103,9 @@ export function resolvePackageData(
       }
     } catch {}
 
-    const nextRoot = path.dirname(root)
-    if (nextRoot === root) break
-    root = nextRoot
+    const nextBasedir = path.dirname(basedir)
+    if (nextBasedir === basedir) break
+    basedir = nextBasedir
   }
 
   return null
@@ -115,29 +115,29 @@ export function findNearestPackageData(
   basedir: string,
   packageCache?: PackageCache,
 ): PackageData | null {
-  let root = basedir
-  while (root) {
+  const originalBasedir = basedir
+  while (basedir) {
     if (packageCache) {
-      const cached = getFnpdCache(packageCache, root, basedir)
+      const cached = getFnpdCache(packageCache, basedir, originalBasedir)
       if (cached) return cached
     }
 
-    const pkgPath = path.join(root, 'package.json')
+    const pkgPath = path.join(basedir, 'package.json')
     try {
       if (fs.statSync(pkgPath).isFile()) {
         const pkgData = loadPackageData(pkgPath)
 
         if (packageCache) {
-          setFnpdCache(packageCache, pkgData, root, basedir)
+          setFnpdCache(packageCache, pkgData, basedir, originalBasedir)
         }
 
         return pkgData
       }
     } catch {}
 
-    const nextDir = path.dirname(root)
-    if (nextDir === root) break
-    root = nextDir
+    const nextBasedir = path.dirname(basedir)
+    if (nextBasedir === basedir) break
+    basedir = nextBasedir
   }
 
   return null
