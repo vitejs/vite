@@ -71,18 +71,44 @@ export function resolvePackageData(
 
   let root = basedir
   while (root) {
+    if (packageCache) {
+      const cached = getRpdCache(
+        packageCache,
+        pkgName,
+        root,
+        basedir,
+        preserveSymlinks,
+      )
+      if (cached) return cached
+    }
+
     const pkg = path.join(root, 'node_modules', pkgName, 'package.json')
     try {
       if (fs.existsSync(pkg)) {
-        return preserveSymlinks ? pkg : safeRealpathSync(pkg)
+        const pkgPath = preserveSymlinks ? pkg : safeRealpathSync(pkg)
+        const pkgData = loadPackageData(pkgPath)
+
+        if (packageCache) {
+          setRpdCache(
+            packageCache,
+            pkgData,
+            pkgName,
+            root,
+            basedir,
+            preserveSymlinks,
+          )
+        }
+
+        return pkgData
       }
     } catch {}
+
     const nextRoot = path.dirname(root)
     if (nextRoot === root) break
     root = nextRoot
   }
 
-  return undefined
+  return null
 }
 
 export function loadPackageData(pkgPath: string): PackageData {
