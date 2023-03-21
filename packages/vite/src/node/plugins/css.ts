@@ -1212,6 +1212,8 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
     postcssPlugin: 'vite-url-rewrite',
     Once(root) {
       const promises: Promise<void>[] = []
+      const rootVars = {} as Record<string, string>
+      const isCssFile = !root.source?.input.file?.includes('.html')
       root.walkDecls((declaration) => {
         const importer = declaration.source?.input.file
         if (!importer) {
@@ -1234,14 +1236,41 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
           promises.push(
             rewriterToUse(declaration.value, replacerForDeclaration).then(
               (url) => {
-                declaration.value = url
+                let match
+
+                if (
+                  isCssFile &&
+                  (match = url.match(/url\(['"]?data:.+?;base64,.+?\)/))
+                ) {
+                  const [base64] = match
+
+                  rootVars[base64] = `--base64-${getHash(base64)}`
+
+                  declaration.value = url.replace(
+                    base64,
+                    `var(${rootVars[base64]})`,
+                  )
+                } else {
+                  declaration.value = url
+                }
               },
             ),
           )
         }
       })
       if (promises.length) {
-        return Promise.all(promises) as any
+        return Promise.all(promises).then(() => {
+          isCssFile &&
+            root.prepend(
+              `:root{${Object.entries(rootVars).reduce(
+                (cssVars, [url, cssVar]) => {
+                  cssVars += `\n${cssVar}: ${url};`
+                  return cssVars
+                },
+                '',
+              )}}`,
+            )
+        }) as any
       }
     },
   }
