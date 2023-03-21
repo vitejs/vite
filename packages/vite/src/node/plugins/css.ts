@@ -380,9 +380,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const getContentWithSourcemap = async (content: string) => {
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
-            if (sourcemap.mappings && !sourcemap.sourcesContent) {
-              await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
-            }
+            await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
             return getCodeWithSourcemap('css', content, sourcemap)
           }
           return content
