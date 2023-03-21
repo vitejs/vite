@@ -117,29 +117,38 @@ export async function transformWithEsbuild(
       }
     }
 
-    tsconfigRaw = {
-      ...tsconfigRaw,
-      compilerOptions: {
-        ...compilerOptionsForFile,
-        ...tsconfigRaw?.compilerOptions,
-      },
+    const compilerOptions = {
+      ...compilerOptionsForFile,
+      ...tsconfigRaw?.compilerOptions,
     }
 
-    const { compilerOptions } = tsconfigRaw
-    if (compilerOptions) {
-      // esbuild derives `useDefineForClassFields` from `target` instead of `tsconfig.compilerOptions.target`
-      // https://github.com/evanw/esbuild/issues/2584
-      // but we want `useDefineForClassFields` to be derived from `tsconfig.compilerOptions.target`
-      if (compilerOptions.useDefineForClassFields === undefined) {
-        const lowercaseTarget = compilerOptions.target?.toLowerCase() ?? 'es3'
-        if (lowercaseTarget.startsWith('es')) {
-          const esVersion = lowercaseTarget.slice(2)
-          compilerOptions.useDefineForClassFields =
-            esVersion === 'next' || +esVersion >= 2022
-        } else {
-          compilerOptions.useDefineForClassFields = false
-        }
+    // esbuild derives `useDefineForClassFields` from `target` instead of `tsconfig.compilerOptions.target`
+    // https://github.com/evanw/esbuild/issues/2584
+    // but we want `useDefineForClassFields` to be derived from `tsconfig.compilerOptions.target`
+    if (compilerOptions.useDefineForClassFields === undefined) {
+      const lowercaseTarget = compilerOptions.target?.toLowerCase() ?? 'es3'
+      if (lowercaseTarget.startsWith('es')) {
+        const esVersion = lowercaseTarget.slice(2)
+        compilerOptions.useDefineForClassFields =
+          esVersion === 'next' || +esVersion >= 2022
+      } else {
+        compilerOptions.useDefineForClassFields = false
       }
+    }
+
+    // esbuild uses tsconfig fields when both the normal options and tsconfig was set
+    // but we want to prioritize the normal options
+    if (options) {
+      options.jsx && (compilerOptions.jsx = undefined)
+      options.jsxFactory && (compilerOptions.jsxFactory = undefined)
+      options.jsxFragment && (compilerOptions.jsxFragmentFactory = undefined)
+      options.jsxImportSource && (compilerOptions.jsxImportSource = undefined)
+      options.target && (compilerOptions.target = undefined)
+    }
+
+    tsconfigRaw = {
+      ...tsconfigRaw,
+      compilerOptions,
     }
   }
 
@@ -151,29 +160,6 @@ export async function transformWithEsbuild(
     loader,
     tsconfigRaw,
   } as ESBuildOptions
-
-  // esbuild uses tsconfig fields when both the normal options and tsconfig was set
-  // but we want to prioritize the normal options
-  if (
-    options &&
-    typeof resolvedOptions.tsconfigRaw === 'object' &&
-    resolvedOptions.tsconfigRaw.compilerOptions
-  ) {
-    options.jsx && (resolvedOptions.tsconfigRaw.compilerOptions.jsx = undefined)
-    options.jsxFactory &&
-      (resolvedOptions.tsconfigRaw.compilerOptions.jsxFactory = undefined)
-    options.jsxFragment &&
-      (resolvedOptions.tsconfigRaw.compilerOptions.jsxFragmentFactory =
-        undefined)
-    options.jsxImportSource &&
-      (resolvedOptions.tsconfigRaw.compilerOptions.jsxImportSource = undefined)
-    options.target &&
-      (resolvedOptions.tsconfigRaw.compilerOptions.target = undefined)
-  }
-
-  delete resolvedOptions.include
-  delete resolvedOptions.exclude
-  delete resolvedOptions.jsxInject
 
   try {
     const result = await transform(code, resolvedOptions)
@@ -210,17 +196,16 @@ export async function transformWithEsbuild(
 }
 
 export function esbuildPlugin(options: ESBuildOptions): Plugin {
-  const filter = createFilter(
-    options.include || /\.(m?ts|[jt]sx)$/,
-    options.exclude || /\.js$/,
-  )
+  const { jsxInject, include, exclude, ...esbuildTransformOptions } = options
+
+  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
     target: 'esnext',
     charset: 'utf8',
-    ...options,
+    ...esbuildTransformOptions,
     minify: false,
     minifyIdentifiers: false,
     minifySyntax: false,
@@ -256,8 +241,8 @@ export function esbuildPlugin(options: ESBuildOptions): Plugin {
             this.warn(prettifyMessage(m, code))
           })
         }
-        if (options.jsxInject && /\.(?:j|t)sx\b/.test(id)) {
-          result.code = options.jsxInject + ';' + result.code
+        if (jsxInject && /\.(?:j|t)sx\b/.test(id)) {
+          result.code = jsxInject + ';' + result.code
         }
         return {
           code: result.code,
