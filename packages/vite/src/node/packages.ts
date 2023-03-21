@@ -211,6 +211,34 @@ export function resolvePkgJsonPath(
   return undefined
 }
 
+/**
+ * Get cached `resolvePackageData` value based on `basedir`. When one is found,
+ * and we've already traversed some directories between `basedir` and `originalBasedir`,
+ * we cache the value for those in-between directories as well.
+ *
+ * This makes it so the fs is only read once for a shared `basedir`.
+ */
+function getRpdCachedValue(
+  packageCache: PackageCache,
+  pkgName: string,
+  basedir: string,
+  originalBasedir: string,
+  preserveSymlinks: boolean,
+) {
+  const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
+  const pkgData = packageCache.get(cacheKey)
+  if (pkgData) {
+    while (originalBasedir !== basedir) {
+      packageCache.set(
+        getRpdCacheKey(pkgName, originalBasedir, preserveSymlinks),
+        pkgData,
+      )
+      originalBasedir = path.dirname(originalBasedir)
+    }
+    return pkgData
+  }
+}
+
 // package cache key for `resolvePackageData`
 function getRpdCacheKey(
   pkgName: string,
@@ -218,6 +246,29 @@ function getRpdCacheKey(
   preserveSymlinks: boolean,
 ) {
   return `rpd_${pkgName}_${basedir}_${preserveSymlinks}`
+}
+
+/**
+ * Get cached `findNearestPackageData` value based on `basedir`. When one is found,
+ * and we've already traversed some directories between `basedir` and `originalBasedir`,
+ * we cache the value for those in-between directories as well.
+ *
+ * This makes it so the fs is only read once for a shared `basedir`.
+ */
+function getFnpdCachedValue(
+  packageCache: PackageCache,
+  basedir: string,
+  originalBasedir: string,
+) {
+  const cacheKey = getFnpdCacheKey(basedir)
+  const pkgData = packageCache.get(cacheKey)
+  if (pkgData) {
+    while (originalBasedir !== basedir) {
+      packageCache.set(getFnpdCacheKey(originalBasedir), pkgData)
+      originalBasedir = path.dirname(originalBasedir)
+    }
+    return pkgData
+  }
 }
 
 // package cache key for `findNearestPackageData`
