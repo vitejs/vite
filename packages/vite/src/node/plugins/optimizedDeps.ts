@@ -17,7 +17,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
 
-    async resolveId(id, source, { ssr }) {
+    resolveId(id, source, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id
       }
@@ -89,7 +89,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async resolveId(id, importer, { ssr }) {
+    resolveId(id, importer, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id
       }
