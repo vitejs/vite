@@ -9,6 +9,7 @@ import {
   cleanUrl,
   fsPathFromId,
   fsPathFromUrl,
+  initialSlashRemoved,
   isFileReadable,
   isImportRequest,
   isInternalRequest,
@@ -17,6 +18,8 @@ import {
   shouldServeFile,
   slash,
 } from '../../utils'
+
+const knownJavascriptExtensionRE = /\.[tj]sx?$/
 
 const sirvOptions = ({
   headers,
@@ -35,7 +38,7 @@ const sirvOptions = ({
       // for the MIME type video/mp2t. In almost all cases, we can expect
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
-      if (/\.[tj]sx?$/.test(pathname)) {
+      if (knownJavascriptExtensionRE.test(pathname)) {
         res.setHeader('Content-Type', 'application/javascript')
       }
       if (headers) {
@@ -119,7 +122,7 @@ export function serveStaticMiddleware(
     }
 
     const resolvedPathname = redirectedPathname || pathname
-    let fileUrl = path.resolve(dir, resolvedPathname.replace(/^\//, ''))
+    let fileUrl = path.resolve(dir, initialSlashRemoved(resolvedPathname))
     if (resolvedPathname.endsWith('/') && !fileUrl.endsWith('/')) {
       fileUrl = fileUrl + '/'
     }

@@ -4,6 +4,9 @@ import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
 
+const process_env_NODE_ENV_RE =
+  /(\bglobal(This)?\.)?\bprocess\.env\.NODE_ENV\b/g
+
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -86,7 +89,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
         return code.replace(
-          /(\bglobal(This)?\.)?\bprocess\.env\.NODE_ENV\b/g,
+          process_env_NODE_ENV_RE,
           config.define?.['process.env.NODE_ENV'] ||
             JSON.stringify(process.env.NODE_ENV || config.mode),
         )

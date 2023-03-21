@@ -4,6 +4,7 @@ import { CSS_LANGS_RE, KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
 import type { PackageCache, ResolvedConfig } from '..'
 import {
+  escapeForRegex,
   flattenId,
   isBuiltin,
   isExternalUrl,
@@ -290,8 +291,7 @@ export function esbuildCjsExternalPlugin(
   return {
     name: 'cjs-external',
     setup(build) {
-      const escape = (text: string) =>
-        `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const escape = (text: string) => `^${escapeForRegex(text)}$`
       const filter = new RegExp(externals.map(escape).join('|'))
 
       build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
