@@ -1074,6 +1074,8 @@ export async function preprocessCSS(
   return await compileCSS(filename, code, config)
 }
 
+const postcssReturnsVirtualFilesRE = /^<.+>$/
+
 export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string,
@@ -1083,8 +1085,7 @@ export async function formatPostcssSourceMap(
   const sources = rawMap.sources.map((source) => {
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
-    // postcss returns virtual files
-    if (/^<.+>$/.test(cleanSource)) {
+    if (postcssReturnsVirtualFilesRE.test(cleanSource)) {
       return `\0${cleanSource}`
     }
 

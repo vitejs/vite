@@ -30,6 +30,9 @@ const INJECT_HELPERS_IIFE_RE =
 const INJECT_HELPERS_UMD_RE =
   /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{.*?"use strict";)/s
 
+const validExtensionRE = /\.\w+$/
+const jsxExtensionsRE = /\.(?:j|t)sx\b/
+
 let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
@@ -75,7 +78,7 @@ export async function transformWithEsbuild(
     // if the id ends with a valid ext, use it (e.g. vue blocks)
     // otherwise, cleanup the query before checking the ext
     const ext = path
-      .extname(/\.\w+$/.test(filename) ? filename : cleanUrl(filename))
+      .extname(validExtensionRE.test(filename) ? filename : cleanUrl(filename))
       .slice(1)
 
     if (ext === 'cjs' || ext === 'mjs') {
@@ -247,7 +250,7 @@ export function esbuildPlugin(options: ESBuildOptions): Plugin {
             this.warn(prettifyMessage(m, code))
           })
         }
-        if (jsxInject && /\.(?:j|t)sx\b/.test(id)) {
+        if (jsxInject && jsxExtensionsRE.test(id)) {
           result.code = jsxInject + ';' + result.code
         }
         return {

@@ -62,6 +62,8 @@ export const optionalPeerDepId = '__vite-optional-peer-dep'
 const nodeModulesInPathRE = /(?:^|\/)node_modules\//
 const subpathImportsPrefix = '#'
 
+const startsWithWordCharRE = /^\w/
+
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
@@ -279,7 +281,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // relative
       if (
         id.startsWith('.') ||
-        ((preferRelative || importer?.endsWith('.html')) && /^\w/.test(id))
+        ((preferRelative || importer?.endsWith('.html')) &&
+          startsWithWordCharRE.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)

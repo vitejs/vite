@@ -19,6 +19,7 @@ import { toAbsoluteGlob } from './importMetaGlob'
 
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
 
+const relativePathRE = /^\.{1,2}\//
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
 }
@@ -122,7 +123,7 @@ export async function transformDynamicImport(
     await toAbsoluteGlob(rawPattern, root, importer, resolve),
   )
 
-  if (!/^\.{1,2}\//.test(newRawPattern)) {
+  if (!relativePathRE.test(newRawPattern)) {
     newRawPattern = `./${newRawPattern}`
   }
 
