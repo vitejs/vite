@@ -228,13 +228,9 @@ function getRpdCachedValue(
   const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
   const pkgData = packageCache.get(cacheKey)
   if (pkgData) {
-    while (originalBasedir !== basedir) {
-      packageCache.set(
-        getRpdCacheKey(pkgName, originalBasedir, preserveSymlinks),
-        pkgData,
-      )
-      originalBasedir = path.dirname(originalBasedir)
-    }
+    traverseBetweenDirs(originalBasedir, basedir, (dir) => {
+      packageCache.set(getRpdCacheKey(pkgName, dir, preserveSymlinks), pkgData)
+    })
     return pkgData
   }
 }
@@ -263,10 +259,9 @@ function getFnpdCachedValue(
   const cacheKey = getFnpdCacheKey(basedir)
   const pkgData = packageCache.get(cacheKey)
   if (pkgData) {
-    while (originalBasedir !== basedir) {
+    traverseBetweenDirs(originalBasedir, basedir, () => {
       packageCache.set(getFnpdCacheKey(originalBasedir), pkgData)
-      originalBasedir = path.dirname(originalBasedir)
-    }
+    })
     return pkgData
   }
 }
@@ -274,4 +269,20 @@ function getFnpdCachedValue(
 // package cache key for `findNearestPackageData`
 function getFnpdCacheKey(basedir: string) {
   return `fnpd_${basedir}`
+}
+
+/**
+ * Traverse between `longerDir` (inclusive) and `shorterDir` (exclusive) and call `cb` for each dir.
+ * @param longerDir Longer dir path, e.g. `/User/foo/bar/baz`
+ * @param shorterDir Shorter dir path, e.g. `/User/foo`
+ */
+function traverseBetweenDirs(
+  longerDir: string,
+  shorterDir: string,
+  cb: (dir: string) => void,
+) {
+  while (longerDir !== shorterDir) {
+    cb(longerDir)
+    longerDir = path.dirname(longerDir)
+  }
 }
