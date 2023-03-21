@@ -86,6 +86,7 @@
     "@rollup/plugin-node-resolve": "15.0.1",
     "@rollup/plugin-typescript": "^11.0.0",
     "@rollup/pluginutils": "^5.0.2",
+    "@types/pnpapi": "^0.0.2",
     "acorn": "^8.8.2",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",

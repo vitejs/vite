@@ -127,14 +127,8 @@ export function isOptimizable(
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-export let isRunningWithYarnPnp: boolean
-
 // TODO: use import()
 const _require = createRequire(import.meta.url)
-
-try {
-  isRunningWithYarnPnp = Boolean(_require('pnpapi'))
-} catch {}
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
@@ -149,27 +143,8 @@ export function resolveFrom(
     paths: [],
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false,
+    preserveSymlinks: preserveSymlinks || !!process.versions.pnp || false,
   })
-}
-
-/**
- * like `resolveFrom` but supports resolving `>` path in `id`,
- * for example: `foo > bar > baz`
- */
-export function nestedResolveFrom(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-  ssr = false,
-): string {
-  const pkgs = id.split('>').map((pkg) => pkg.trim())
-  try {
-    for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir, preserveSymlinks, ssr)
-    }
-  } catch {}
-  return basedir
 }
 
 // set in bin/vite.js
@@ -606,6 +581,13 @@ export const removeDir = isWindows
       }
     }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
+
+// `fs.realpathSync.native` resolves differently in Windows network drive,
+// causing file read errors. skip for now.
+// https://github.com/nodejs/node/issues/37737
+export const safeRealpathSync = isWindows
+  ? fs.realpathSync
+  : fs.realpathSync.native
 
 export function ensureWatchedFile(
   watcher: FSWatcher,

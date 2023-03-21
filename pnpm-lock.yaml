@@ -177,6 +177,7 @@ importers:
       '@rollup/plugin-node-resolve': 15.0.1
       '@rollup/plugin-typescript': ^11.0.0
       '@rollup/pluginutils': ^5.0.2
+      '@types/pnpapi': ^0.0.2
       acorn: ^8.8.2
       acorn-walk: ^8.2.0
       cac: ^6.7.14
@@ -246,6 +247,7 @@ importers:
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.20.0
       '@rollup/plugin-typescript': 11.0.0_rollup@3.20.0+tslib@2.5.0
       '@rollup/pluginutils': 5.0.2_rollup@3.20.0
+      '@types/pnpapi': 0.0.2
       acorn: 8.8.2
       acorn-walk: 8.2.0_acorn@8.8.2
       cac: 6.7.14
@@ -3489,6 +3491,10 @@ packages:
 
   /@types/picomatch/2.3.0:
     resolution: {integrity: sha512-O397rnSS9iQI4OirieAtsDqvCj4+3eY1J+EPdNTKuHuRWIfUoGyzX294o8C4KJYaLqgSrd2o60c5EqCU8Zv02g==}
+    dev: true
+
+  /@types/pnpapi/0.0.2:
+    resolution: {integrity: sha512-2lqsQt1iXkiTqwuzw2SS50iduoPZNpV/ou4/vJD443C0weF63Gqd3ErGS811CBNMzLO64zVJ+tiyh+4yimdYkg==}
     dev: true
 
   /@types/prompts/2.4.2:
