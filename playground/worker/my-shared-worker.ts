@@ -1,14 +1,11 @@
-const ports = new Set()
+let sharedWorkerCount = 0
 
 // @ts-expect-error onconnect exists in worker
 self.onconnect = (event) => {
+  sharedWorkerCount++
   const port = event.ports[0]
-  ports.add(port)
-  port.postMessage('pong')
-  port.onmessage = () => {
-    ports.forEach((p: any) => {
-      p.postMessage('pong')
-    })
+  if (sharedWorkerCount >= 2) {
+    port.postMessage('pong')
   }
 }
 

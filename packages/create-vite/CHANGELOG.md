@@ -1,3 +1,27 @@
+## 4.2.0 (2023-03-16)
+
+* chore(create-vite): update plugin-vue ([e06cda9](https://github.com/vitejs/vite/commit/e06cda9))
+* chore(deps): update all non-major dependencies (#12299) ([b41336e](https://github.com/vitejs/vite/commit/b41336e)), closes [#12299](https://github.com/vitejs/vite/issues/12299)
+* feat(create-vite): support create-electron-vite (#12390) ([708133e](https://github.com/vitejs/vite/commit/708133e)), closes [#12390](https://github.com/vitejs/vite/issues/12390)
+* style(create-vite): use quotes for attributes consistently (#12383) ([46c5f46](https://github.com/vitejs/vite/commit/46c5f46)), closes [#12383](https://github.com/vitejs/vite/issues/12383)
+* fix(create-vite): fix broken vite logo when base changed (#12374) ([2b472d1](https://github.com/vitejs/vite/commit/2b472d1)), closes [#12374](https://github.com/vitejs/vite/issues/12374)
+
+
+
+## 4.2.0-beta.1 (2023-03-07)
+
+* chore(create-vite): update to beta deps ([5ffcaa0](https://github.com/vitejs/vite/commit/5ffcaa0))
+
+
+
+## 4.2.0-beta.0 (2023-03-07)
+
+* chore(create-vite): update volar link in helloworld components (#12145) ([7110ddf](https://github.com/vitejs/vite/commit/7110ddf)), closes [#12145](https://github.com/vitejs/vite/issues/12145)
+* fix(create-vite): add final newline for package.json (#11906) ([e033e49](https://github.com/vitejs/vite/commit/e033e49)), closes [#11906](https://github.com/vitejs/vite/issues/11906)
+* fix(deps): update all non-major dependencies (#12036) ([48150f2](https://github.com/vitejs/vite/commit/48150f2)), closes [#12036](https://github.com/vitejs/vite/issues/12036)
+
+
+
 ## 4.1.0 (2023-02-02)
 
 * chore(create-vite): update plugin-react to 3.1.0 ([8895629](https://github.com/vitejs/vite/commit/8895629))

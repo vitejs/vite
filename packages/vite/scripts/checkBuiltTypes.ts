@@ -55,12 +55,13 @@ if (errors.length <= 0) {
         )}`
       : ''
     console.log(
-      `${colors.cyan(error.file)}:${pos} - importing ${colors.bold(
+      `${colors.cyan(error.file)}:${pos} - importing from ${colors.bold(
         JSON.stringify(error.value),
       )} is not allowed in built files`,
     )
   })
-  console.log()
+
+  process.exit(1)
 }
 
 function collectImportSpecifiers(file: string) {

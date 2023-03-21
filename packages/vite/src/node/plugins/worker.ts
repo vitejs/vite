@@ -198,6 +198,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   const isWorker = config.isWorker
 
+  const isWorkerQueryId = (id: string) => {
+    const parsedQuery = parseRequest(id)
+    if (
+      parsedQuery &&
+      (parsedQuery.worker ?? parsedQuery.sharedworker) != null
+    ) {
+      return true
+    }
+
+    return false
+  }
+
   return {
     name: 'vite:worker',
 
@@ -217,15 +229,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      if (isBuild) {
-        const parsedQuery = parseRequest(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
-          return ''
-        }
+      if (isBuild && isWorkerQueryId(id)) {
+        return ''
       }
+    },
+
+    shouldTransformCachedModule({ id }) {
+      if (isBuild && isWorkerQueryId(id) && config.build.watch) {
+        return true
+      }
+      return false
     },
 
     async transform(raw, id, options) {
@@ -274,25 +287,40 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           : 'classic'
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
-          // inline as blob data url
-          return {
-            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
-              'base64',
-            )}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`,
+          const encodedJs = `const encodedJs = "${Buffer.from(
+            chunk.code,
+          ).toString('base64')}";`
 
+          const code =
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
+            workerConstructor === 'Worker'
+              ? `${encodedJs}
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper() {
+            let objURL;
+            try {
+              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              if (!objURL) throw ''
+              return new ${workerConstructor}(objURL)
+            } catch(e) {
+              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+            } finally {
+              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }
+          }`
+              : `${encodedJs}
+          export default function WorkerWrapper() {
+            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          }
+          `
+
+          return {
+            code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }

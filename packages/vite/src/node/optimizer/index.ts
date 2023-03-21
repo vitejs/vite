@@ -26,6 +26,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
+import { resolvePkgJsonPath } from '../packages'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -626,6 +627,14 @@ export function runOptimizeDeps(
 
         return createProcessingResult()
       })
+      .catch((e) => {
+        if (e.errors && e.message.includes('The build was canceled')) {
+          // esbuild logs an error when cancelling, but this is expected so
+          // return an empty result instead
+          return createProcessingResult()
+        }
+        throw e
+      })
       .finally(() => {
         return disposeContext()
       })
@@ -804,18 +813,13 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
-    const resolve = config.createResolver({
-      asSrc: false,
-      scan: true,
-      ssrOptimizeCheck: ssr,
-      ssrConfig: config.ssr,
-    })
+    const resolve = createOptimizeDepsIncludeResolver(config, ssr)
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
-        const entry = await resolve(id, undefined, undefined, ssr)
+        const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
             if (!entry.endsWith('?__vite_skip_optimization')) {
@@ -830,6 +834,49 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
+}
+
+function createOptimizeDepsIncludeResolver(
+  config: ResolvedConfig,
+  ssr: boolean,
+) {
+  const resolve = config.createResolver({
+    asSrc: false,
+    scan: true,
+    ssrOptimizeCheck: ssr,
+    ssrConfig: config.ssr,
+  })
+  return async (id: string) => {
+    const lastArrowIndex = id.lastIndexOf('>')
+    if (lastArrowIndex === -1) {
+      return await resolve(id, undefined, undefined, ssr)
+    }
+    // split nested selected id by last '>', for example:
+    // 'foo > bar > baz' => 'foo > bar' & 'baz'
+    const nestedRoot = id.substring(0, lastArrowIndex).trim()
+    const nestedPath = id.substring(lastArrowIndex + 1).trim()
+    const basedir = nestedResolvePkgJsonPath(
+      nestedRoot,
+      config.root,
+      config.resolve.preserveSymlinks,
+    )
+    return await resolve(nestedPath, basedir, undefined, ssr)
+  }
+}
+
+/**
+ * Like `resolvePkgJsonPath`, but supports resolving nested package names with '>'
+ */
+function nestedResolvePkgJsonPath(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+) {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  for (const pkg of pkgs) {
+    basedir = resolvePkgJsonPath(pkg, basedir, preserveSymlinks) || basedir
+  }
+  return basedir
 }
 
 export function newDepOptimizationProcessing(): DepOptimizationProcessing {
@@ -1263,8 +1310,11 @@ export async function cleanupDepsCacheStaleDirs(
       for (const dirent of dirents) {
         if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
           const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const { mtime } = await fsp.stat(tempDirPath)
-          if (Date.now() - mtime.getTime() > MAX_TEMP_DIR_AGE_MS) {
+          const stats = await fsp.stat(tempDirPath).catch((_) => null)
+          if (
+            stats?.mtime &&
+            Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
+          ) {
             await removeDir(tempDirPath)
           }
         }

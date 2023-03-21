@@ -204,6 +204,7 @@ export function transformMiddleware(
         // Skip if response has already been sent
         if (!res.writableEnded) {
           res.statusCode = 504 // status code request timeout
+          res.statusMessage = 'Optimize Deps Processing Error'
           res.end()
         }
         // This timeout is unexpected
@@ -214,6 +215,7 @@ export function transformMiddleware(
         // Skip if response has already been sent
         if (!res.writableEnded) {
           res.statusCode = 504 // status code request timeout
+          res.statusMessage = 'Outdated Optimize Dep'
           res.end()
         }
         // We don't need to log an error in this case, the request
