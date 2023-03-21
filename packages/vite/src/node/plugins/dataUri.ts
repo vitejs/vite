@@ -5,37 +5,35 @@ import { URL } from 'node:url'
 import type { Plugin } from '../plugin'
 
 const dataUriRE = /^([^/]+\/[^;,]+)(;base64)?,([\s\S]*)$/
-
-const dataUriPrefix = `/@data-uri/`
+const base64RE = /base64/i
+const dataUriPrefix = `\0/@data-uri/`
 
 /**
  * Build only, since importing from a data URI works natively.
  */
 export function dataURIPlugin(): Plugin {
-  let resolved: {
-    [key: string]: string
-  }
+  let resolved: Map<string, string>
 
   return {
     name: 'vite:data-uri',
 
     buildStart() {
-      resolved = {}
+      resolved = new Map()
     },
 
     resolveId(id) {
       if (!dataUriRE.test(id)) {
-        return null
+        return
       }
 
       const uri = new URL(id)
       if (uri.protocol !== 'data:') {
-        return null
+        return
       }
 
       const match = uri.pathname.match(dataUriRE)
       if (!match) {
-        return null
+        return
       }
 
       const [, mime, format, data] = match
@@ -46,18 +44,17 @@ export function dataURIPlugin(): Plugin {
       }
 
       // decode data
-      const base64 = format && /base64/i.test(format.substring(1))
+      const base64 = format && base64RE.test(format.substring(1))
       const content = base64
         ? Buffer.from(data, 'base64').toString('utf-8')
         : data
-      resolved[id] = content
+      resolved.set(id, content)
       return dataUriPrefix + id
     },
 
     load(id) {
       if (id.startsWith(dataUriPrefix)) {
-        id = id.slice(dataUriPrefix.length)
-        return resolved[id] || null
+        return resolved.get(id.slice(dataUriPrefix.length))
       }
     },
   }
