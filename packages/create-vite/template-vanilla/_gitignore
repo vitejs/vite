@@ -7,7 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
 node_modules
 # Comment for zero-install
 .pnp.*
@@ -20,9 +19,6 @@ node_modules
 !.yarn/sdks
 !.yarn/versions
 
-# Production
 dist
 dist-ssr
-
-# Miscellaneous
 *.local
