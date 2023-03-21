@@ -166,10 +166,10 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
-const postcssConfigCache: Record<
-  string,
-  WeakMap<ResolvedConfig, PostCSSConfigResult | null>
-> = {}
+const postcssConfigCache = new WeakMap<
+  ResolvedConfig,
+  PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
+>()
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
@@ -187,6 +187,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: [],
   })
+
+  // warm up cache for resolved postcss config
+  resolvePostcssConfig(config)
 
   return {
     name: 'vite:css',
@@ -803,7 +806,7 @@ async function compileCSS(
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
-  const postcssConfig = await resolvePostcssConfig(config, getCssDialect(lang))
+  const postcssConfig = await resolvePostcssConfig(config)
 
   // 1. plain css that needs no processing
   if (
@@ -883,14 +886,6 @@ async function compileCSS(
 
   // 3. postcss
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
-
-  // for sugarss change parser
-  if (lang === 'sss') {
-    postcssOptions.parser = loadPreprocessor(
-      PostCssDialectLang.sss,
-      config.root,
-    )
-  }
 
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
@@ -974,6 +969,10 @@ async function compileCSS(
       .default(postcssPlugins)
       .process(code, {
         ...postcssOptions,
+        parser:
+          lang === 'sss'
+            ? loadPreprocessor(PostCssDialectLang.sss, config.root)
+            : postcssOptions.parser,
         to: source,
         from: source,
         ...(devSourcemap
@@ -1139,16 +1138,10 @@ interface PostCSSConfigResult {
 
 async function resolvePostcssConfig(
   config: ResolvedConfig,
-  dialect = 'css',
 ): Promise<PostCSSConfigResult | null> {
-  postcssConfigCache[dialect] ??= new WeakMap<
-    ResolvedConfig,
-    PostCSSConfigResult | null
-  >()
-
-  let result = postcssConfigCache[dialect].get(config)
+  let result = postcssConfigCache.get(config)
   if (result !== undefined) {
-    return result
+    return await result
   }
 
   // inline postcss config via vite config
@@ -1164,9 +1157,7 @@ async function resolvePostcssConfig(
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    try {
-      result = await postcssrc({}, searchPath)
-    } catch (e) {
+    result = postcssrc({}, searchPath).catch((e) => {
       if (!/No PostCSS Config found/.test(e.message)) {
         if (e instanceof Error) {
           const { name, message, stack } = e
@@ -1178,11 +1169,15 @@ async function resolvePostcssConfig(
           throw new Error(`Failed to load PostCSS config: ${e}`)
         }
       }
-      result = null
-    }
+      return null
+    })
+    // replace cached promise to result object when finished
+    result.then((resolved) => {
+      postcssConfigCache.set(config, resolved)
+    })
   }
 
-  postcssConfigCache[dialect].set(config, result)
+  postcssConfigCache.set(config, result)
   return result
 }
 
@@ -1976,8 +1971,4 @@ const preProcessors = Object.freeze({
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
-}
-
-function getCssDialect(lang: CssLang | undefined): string {
-  return lang === 'sss' ? 'sss' : 'css'
 }
