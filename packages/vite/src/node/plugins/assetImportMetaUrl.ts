@@ -16,8 +16,6 @@ import { preloadHelperId } from './importAnalysisBuild'
 const assetImportMetaUrlRE =
   /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
 
-const placeholderRE = /\$\{/
-
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
  *
@@ -56,7 +54,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (!s) s = new MagicString(code)
 
           // potential dynamic template string
-          if (rawUrl[0] === '`' && placeholderRE.test(rawUrl)) {
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             const ast = this.parse(rawUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
