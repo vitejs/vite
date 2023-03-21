@@ -210,3 +210,17 @@ export function resolvePkgJsonPath(
 
   return undefined
 }
+
+// package cache key for `resolvePackageData`
+function getRpdCacheKey(
+  pkgName: string,
+  basedir: string,
+  preserveSymlinks: boolean,
+) {
+  return `rpd_${pkgName}_${basedir}_${preserveSymlinks}`
+}
+
+// package cache key for `findNearestPackageData`
+function getFnpdCacheKey(basedir: string) {
+  return `fnpd_${basedir}`
+}
