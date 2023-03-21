@@ -96,6 +96,9 @@
 <h2>Non Optimized Module isn't duplicated</h2>
 <div class="non-optimized-module-is-not-duplicated"></div>
 
+<h2>Pre bundle css require</h2>
+<div class="css-require">css require</div>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -123,6 +126,7 @@
   }
 
   import '@vitejs/test-dep-cjs-with-assets'
+  import '@vitejs/test-dep-css-require'
 
   import { env } from '@vitejs/test-dep-node-env'
   text('.node-env', env)

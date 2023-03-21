@@ -75,6 +75,12 @@ test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
 })
 
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
+})
+
 test('exact extension vs. duplicated (.js.js)', async () => {
   expect(await page.textContent('.exact-extension')).toMatch('[success]')
 })
@@ -155,7 +161,7 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success] true',
+    '[success] true #',
   )
 })
 
