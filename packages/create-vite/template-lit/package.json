@@ -3,16 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "dist/my-element.es.js",
-  "exports": {
-    ".": "./dist/my-element.es.js"
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "lit": "^2.6.1"
