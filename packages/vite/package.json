@@ -76,8 +76,8 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.21.2",
-    "@babel/types": "^7.21.2",
+    "@babel/parser": "^7.21.3",
+    "@babel/types": "^7.21.3",
     "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.3",
     "@rollup/plugin-commonjs": "^24.0.1",
@@ -109,7 +109,7 @@
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.30.0",
     "micromatch": "^4.0.5",
-    "mlly": "^1.1.1",
+    "mlly": "^1.2.0",
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.2",
@@ -131,7 +131,7 @@
     "tslib": "^2.5.0",
     "types": "link:./types",
     "ufo": "^1.1.1",
-    "ws": "^8.12.1"
+    "ws": "^8.13.0"
   },
   "peerDependencies": {
     "@types/node": ">= 14",
