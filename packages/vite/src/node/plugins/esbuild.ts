@@ -161,6 +161,12 @@ export async function transformWithEsbuild(
     tsconfigRaw,
   } as ESBuildOptions
 
+  // Some projects in the ecosystem are calling this function with an ESBuildOptions
+  // object and esbuild throws an error for extra fields
+  delete resolvedOptions.include
+  delete resolvedOptions.exclude
+  delete resolvedOptions.jsxInject
+
   try {
     const result = await transform(code, resolvedOptions)
     let map: SourceMap
