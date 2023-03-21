@@ -59,13 +59,14 @@ export function esbuildDepPlugin(
 
   // use separate package cache for optimizer as it caches paths around node_modules
   // and it's unlikely for the core Vite process to traverse into node_modules again
-  const packageCache: PackageCache = new Map()
+  const esmPackageCache: PackageCache = new Map()
+  const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
   const _resolve = config.createResolver({
     asSrc: false,
     scan: true,
-    packageCache,
+    packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
@@ -73,7 +74,7 @@ export function esbuildDepPlugin(
     asSrc: false,
     isRequire: true,
     scan: true,
-    packageCache,
+    packageCache: cjsPackageCache,
   })
 
   const resolve = (
@@ -127,7 +128,8 @@ export function esbuildDepPlugin(
     setup(build) {
       // clear package cache when esbuild is finished
       build.onEnd(() => {
-        packageCache.clear()
+        esmPackageCache.clear()
+        cjsPackageCache.clear()
       })
 
       // externalize assets and commonly known non-js file types
