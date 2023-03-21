@@ -583,6 +583,7 @@ export async function resolveConfig(
                 asSrc: true,
                 preferRelative: false,
                 tryIndex: true,
+                packageCache: resolved.packageCache,
                 ...options,
               }),
             ],
