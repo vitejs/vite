@@ -1252,38 +1252,21 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
 }
 
 /**
- * if importer was not resolved by vite's resolver previously
- * (when esbuild resolved it)
- * resolve importer's pkg and add to idToPkgMap
+ * Load closest `package.json` to `importer`
  */
 function resolvePkg(importer: string, options: InternalResolveOptions) {
-  const { root, preserveSymlinks, packageCache } = options
+  const { preserveSymlinks, packageCache } = options
 
   if (importer.includes('\x00')) {
     return null
   }
 
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
-    if (slashIndex < 0) {
-      break
-    }
-
-    prevSlashIndex = slashIndex + 1
-
-    const possiblePkgId = importer.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
-
-  let pkg: PackageData | undefined
-  possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
-    return pkg
-  })!
-
-  if (pkg) {
+  const pkgPath = lookupFile(importer, ['package.json'], { pathOnly: true })
+  if (pkgPath) {
+    const pkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
     idToPkgMap.set(importer, pkg)
+    return pkg
   }
-  return pkg
+
+  return undefined
 }

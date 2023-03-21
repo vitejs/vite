@@ -18,7 +18,6 @@ import {
   getHash,
   isOptimizable,
   lookupFile,
-  nestedResolveFrom,
   normalizeId,
   normalizePath,
   removeDir,
@@ -27,6 +26,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
+import { resolvePkgJsonPath } from '../packages'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -855,14 +855,28 @@ function createOptimizeDepsIncludeResolver(
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolveFrom(
+    const basedir = nestedResolvePkgJsonPath(
       nestedRoot,
       config.root,
       config.resolve.preserveSymlinks,
-      ssr,
     )
     return await resolve(nestedPath, basedir, undefined, ssr)
   }
+}
+
+/**
+ * Like `resolvePkgJsonPath`, but supports resolving nested package names with '>'
+ */
+function nestedResolvePkgJsonPath(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+) {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  for (const pkg of pkgs) {
+    basedir = resolvePkgJsonPath(pkg, basedir, preserveSymlinks) || basedir
+  }
+  return basedir
 }
 
 export function newDepOptimizationProcessing(): DepOptimizationProcessing {
