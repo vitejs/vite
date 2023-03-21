@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "DEV=1 node worker",
-    "start": "pnpm run dev",
     "build:worker": "vite build --ssr src/entry-worker.jsx --outDir dist/worker"
   },
   "dependencies": {

@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "node server",
-    "start": "node server",
     "build": "vite build --ssr src/entry-server.js",
     "serve": "NODE_ENV=production node server",
     "debug": "node --inspect-brk server"

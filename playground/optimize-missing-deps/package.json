@@ -3,8 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "node server",
-    "start": "node server"
+    "dev": "node server"
   },
   "dependencies": {
     "@vitejs/test-missing-dep": "file:./missing-dep"

@@ -31,7 +31,6 @@
     "docs-serve": "vitepress serve docs",
     "build": "pnpm -r --filter='./packages/*' run build",
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
-    "start": "pnpm run dev",
     "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publishCI.ts",
     "ci-docs": "run-s build docs-build"
