@@ -26,7 +26,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import { resolvePkgJsonPath } from '../packages'
+import { resolvePackageData } from '../packages'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -855,7 +855,7 @@ function createOptimizeDepsIncludeResolver(
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolvePkgJsonPath(
+    const basedir = nestedResolveBasedir(
       nestedRoot,
       config.root,
       config.resolve.preserveSymlinks,
@@ -865,16 +865,16 @@ function createOptimizeDepsIncludeResolver(
 }
 
 /**
- * Like `resolvePkgJsonPath`, but supports resolving nested package names with '>'
+ * Continously resolve the basedir of packages separated by '>'
  */
-function nestedResolvePkgJsonPath(
+function nestedResolveBasedir(
   id: string,
   basedir: string,
   preserveSymlinks = false,
 ) {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
   for (const pkg of pkgs) {
-    basedir = resolvePkgJsonPath(pkg, basedir, preserveSymlinks) || basedir
+    basedir = resolvePackageData(pkg, basedir, preserveSymlinks)?.dir || basedir
   }
   return basedir
 }
