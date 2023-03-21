@@ -78,20 +78,7 @@ export function resolvePackageData(
   return undefined
 }
 
-export function loadPackageData(
-  pkgPath: string,
-  preserveSymlinks?: boolean,
-  packageCache?: PackageCache,
-): PackageData {
-  if (!preserveSymlinks) {
-    pkgPath = safeRealpathSync(pkgPath)
-  }
-
-  let cached: PackageData | undefined
-  if ((cached = packageCache?.get(pkgPath))) {
-    return cached
-  }
-
+export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)
   const { sideEffects } = data
