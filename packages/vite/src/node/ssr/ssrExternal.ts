@@ -13,7 +13,7 @@ import {
   normalizePath,
 } from '../utils'
 import type { Logger, ResolvedConfig } from '..'
-import { resolvePkgJsonPath } from '../packages'
+import { resolvePackageData } from '../packages'
 
 const debug = createDebugger('vite:ssr-external')
 
@@ -257,12 +257,12 @@ function cjsSsrCollectExternals(
       requireEntry = normalizePath(_require.resolve(id, { paths: [root] }))
     } catch (e) {
       // no main entry, but deep imports may be allowed
-      const pkgPath = resolvePkgJsonPath(id, root)
-      if (pkgPath) {
-        if (pkgPath.includes('node_modules')) {
+      const pkgDir = resolvePackageData(id, root)?.dir
+      if (pkgDir) {
+        if (pkgDir.includes('node_modules')) {
           ssrExternals.add(id)
         } else {
-          depsToTrace.add(path.dirname(pkgPath))
+          depsToTrace.add(path.dirname(pkgDir))
         }
         continue
       }
@@ -277,9 +277,9 @@ function cjsSsrCollectExternals(
     }
     // trace the dependencies of linked packages
     else if (!esmEntry.includes('node_modules')) {
-      const pkgPath = resolvePkgJsonPath(id, root)
-      if (pkgPath) {
-        depsToTrace.add(path.dirname(pkgPath))
+      const pkgDir = resolvePackageData(id, root)?.dir
+      if (pkgDir) {
+        depsToTrace.add(pkgDir)
       }
     }
     // has separate esm/require entry, assume require entry is cjs
@@ -290,17 +290,10 @@ function cjsSsrCollectExternals(
     // or are there others like SystemJS / AMD that we'd need to handle?
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
-      const pkgPath = resolvePkgJsonPath(id, root)
-      if (!pkgPath) {
+      const pkg = resolvePackageData(id, root)?.data
+      if (!pkg) {
         continue
       }
-
-      const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
-
-      if (!pkgContent) {
-        continue
-      }
-      const pkg = JSON.parse(pkgContent)
 
       if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)

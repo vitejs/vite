@@ -36,13 +36,18 @@ import {
   lookupFile,
   normalizePath,
   resolveFrom,
+  safeRealpathSync,
   slash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
-import { loadPackageData, resolvePackageData } from '../packages'
+import {
+  findNearestPackageData,
+  loadPackageData,
+  resolvePackageData,
+} from '../packages'
 import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -166,12 +171,9 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const resolveSubpathImports = (id: string, importer?: string) => {
         if (!importer || !id.startsWith(subpathImportsPrefix)) return
         const basedir = path.dirname(importer)
-        const pkgJsonPath = lookupFile(basedir, ['package.json'], {
-          pathOnly: true,
-        })
-        if (!pkgJsonPath) return
+        const pkgData = findNearestPackageData(basedir, options.packageCache)
+        if (!pkgData) return
 
-        const pkgData = loadPackageData(pkgJsonPath, options.preserveSymlinks)
         let importsPath = resolveExportsOrImports(
           pkgData.data,
           id,
@@ -183,7 +185,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (importsPath?.startsWith('.')) {
           importsPath = path.relative(
             basedir,
-            path.join(path.dirname(pkgJsonPath), importsPath),
+            path.join(pkgData.dir, importsPath),
           )
 
           if (!importsPath.startsWith('.')) {
@@ -608,12 +610,17 @@ function tryResolveFile(
       return getRealPath(file, options.preserveSymlinks) + postfix
     } else if (tryIndex) {
       if (!skipPackageJson) {
-        const pkgPath = file + '/package.json'
+        let pkgPath = file + '/package.json'
         try {
-          // path points to a node package
-          const pkg = loadPackageData(pkgPath, options.preserveSymlinks)
-          const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
-          return resolved
+          if (fs.existsSync(pkgPath)) {
+            if (!options.preserveSymlinks) {
+              pkgPath = safeRealpathSync(pkgPath)
+            }
+            // path points to a node package
+            const pkg = loadPackageData(pkgPath)
+            const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
+            return resolved
+          }
         } catch (e) {
           if (e.code !== 'ENOENT') {
             throw e
@@ -822,7 +829,9 @@ export function tryNodeResolve(
     (ssr &&
       !(
         ext === '.cjs' ||
-        (ext === '.js' && resolvePkg(resolved, options)?.data.type !== 'module')
+        (ext === '.js' &&
+          findNearestPackageData(resolved, options.packageCache)?.data.type !==
+            'module')
       ) &&
       !(include?.includes(pkgId) || include?.includes(id)))
 
@@ -1191,7 +1200,9 @@ function tryResolveBrowserMapping(
 ) {
   let res: string | undefined
   const pkg =
-    importer && (idToPkgMap.get(importer) || resolvePkg(importer, options))
+    importer &&
+    (idToPkgMap.get(importer) ||
+      findNearestPackageData(importer, options.packageCache))
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
@@ -1252,24 +1263,4 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
     resolved = fs.realpathSync(resolved)
   }
   return normalizePath(resolved)
-}
-
-/**
- * Load closest `package.json` to `importer`
- */
-function resolvePkg(importer: string, options: InternalResolveOptions) {
-  const { preserveSymlinks, packageCache } = options
-
-  if (importer.includes('\x00')) {
-    return null
-  }
-
-  const pkgPath = lookupFile(importer, ['package.json'], { pathOnly: true })
-  if (pkgPath) {
-    const pkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
-    idToPkgMap.set(importer, pkg)
-    return pkg
-  }
-
-  return undefined
 }
