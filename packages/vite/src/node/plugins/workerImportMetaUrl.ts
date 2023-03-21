@@ -20,9 +20,6 @@ import { fileToUrl } from './asset'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
-const workerImportMetaUrlRE =
-  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
-
 interface WorkerOptions {
   type?: WorkerType
 }
@@ -116,9 +113,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const query = parseRequest(id)
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
+        const workerImportMetaUrlRE =
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 
         let match: RegExpExecArray | null
-        workerImportMetaUrlRE.lastIndex = 0
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
           const { 0: allExp, 1: exp, 2: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index

@@ -13,9 +13,6 @@ import {
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 
-const assetImportMetaUrlRE =
-  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
-
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
  *
@@ -40,10 +37,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes(`import.meta.url`)
       ) {
         let s: MagicString | undefined
+        const assetImportMetaUrlRE =
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
-        assetImportMetaUrlRE.lastIndex = 0
+
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
           const { 0: exp, 1: emptyUrl, index } = match
 
