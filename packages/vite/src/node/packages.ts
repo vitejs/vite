@@ -57,9 +57,16 @@ export function resolvePackageData(
   packageCache?: PackageCache,
 ): PackageData | null {
   if (pnp) {
+    const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
+    if (packageCache?.has(cacheKey)) return packageCache.get(cacheKey)!
+
     const pkg = pnp.resolveToUnqualified(pkgName, basedir)
-    if (!pkg) return undefined
-    return path.join(pkg, 'package.json')
+    if (!pkg) return null
+
+    const pkgData = loadPackageData(path.join(pkg, 'package.json'))
+    packageCache?.set(cacheKey, pkgData)
+
+    return pkgData
   }
 
   let root = basedir
