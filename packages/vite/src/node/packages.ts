@@ -111,19 +111,35 @@ export function resolvePackageData(
   return null
 }
 
-export function findNearestPackageData(basedir: string): PackageData | null {
+export function findNearestPackageData(
+  basedir: string,
+  packageCache?: PackageCache,
+): PackageData | null {
   let root = basedir
   while (root) {
+    if (packageCache) {
+      const cached = getFnpdCache(packageCache, root, basedir)
+      if (cached) return cached
+    }
+
     const pkgPath = path.join(root, 'package.json')
     try {
       if (fs.statSync(pkgPath).isFile()) {
-        return loadPackageData(pkgPath)
+        const pkgData = loadPackageData(pkgPath)
+
+        if (packageCache) {
+          setFnpdCache(packageCache, pkgData, root, basedir)
+        }
+
+        return pkgData
       }
     } catch {}
+
     const nextDir = path.dirname(root)
     if (nextDir === root) break
     root = nextDir
   }
+
   return null
 }
 
