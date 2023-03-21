@@ -487,11 +487,14 @@ function tryFsResolve(
 ): string | undefined {
   const { file, postfix } = splitFileAndPostfix(fsPath)
 
+  // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
+  // source code so we only need to perform the check for dependencies.
+  const tryUnsplitted = fsPath.includes('#') && fsPath.includes('node_modules')
+
   let res: string | undefined
 
-  // if there is a postfix, try resolving it as a complete path first (#4703)
   if (
-    postfix &&
+    tryUnsplitted &&
     (res = tryResolveFile(
       fsPath,
       '',
@@ -521,7 +524,7 @@ function tryFsResolve(
 
   for (const ext of options.extensions) {
     if (
-      postfix &&
+      tryUnsplitted &&
       (res = tryResolveFile(
         fsPath + ext,
         '',
@@ -556,7 +559,7 @@ function tryFsResolve(
   if (!tryIndex) return
 
   if (
-    postfix &&
+    tryUnsplitted &&
     (res = tryResolveFile(
       fsPath,
       '',

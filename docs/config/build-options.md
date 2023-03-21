@@ -10,7 +10,7 @@ Browser compatibility target for the final bundle. The default value is a Vite s
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
-- If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2021'`.
+- If the [`build.minify`](#build-minify) option is `'terser'` and the installed Terser version is below 5.16.0, `'esnext'` will be forced down to `'es2021'`.
 - In other cases, it will perform no transpilation at all.
 
 The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be an ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
