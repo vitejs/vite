@@ -111,6 +111,22 @@ export function resolvePackageData(
   return null
 }
 
+export function findNearestPackageData(basedir: string): PackageData | null {
+  let root = basedir
+  while (root) {
+    const pkgPath = path.join(root, 'package.json')
+    try {
+      if (fs.statSync(pkgPath).isFile()) {
+        return loadPackageData(pkgPath)
+      }
+    } catch {}
+    const nextDir = path.dirname(root)
+    if (nextDir === root) break
+    root = nextDir
+  }
+  return null
+}
+
 export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)
@@ -160,7 +176,6 @@ export function loadPackageData(pkgPath: string): PackageData {
     },
   }
 
-  packageCache?.set(pkgPath, pkg)
   return pkg
 }
 
