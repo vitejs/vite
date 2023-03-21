@@ -609,13 +609,15 @@ function tryResolveFile(
       if (!skipPackageJson) {
         let pkgPath = file + '/package.json'
         try {
-          if (!options.preserveSymlinks) {
-            pkgPath = safeRealpathSync(pkgPath)
+          if (fs.existsSync(pkgPath)) {
+            if (!options.preserveSymlinks) {
+              pkgPath = safeRealpathSync(pkgPath)
+            }
+            // path points to a node package
+            const pkg = loadPackageData(pkgPath)
+            const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
+            return resolved
           }
-          // path points to a node package
-          const pkg = loadPackageData(pkgPath)
-          const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
-          return resolved
         } catch (e) {
           if (e.code !== 'ENOENT') {
             throw e

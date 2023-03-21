@@ -124,7 +124,7 @@ export function findNearestPackageData(
 
     const pkgPath = path.join(basedir, 'package.json')
     try {
-      if (fs.statSync(pkgPath).isFile()) {
+      if (fs.statSync(pkgPath, { throwIfNoEntry: false })?.isFile()) {
         const pkgData = loadPackageData(pkgPath)
 
         if (packageCache) {
