@@ -218,7 +218,7 @@ export function resolvePkgJsonPath(
  *
  * This makes it so the fs is only read once for a shared `basedir`.
  */
-function getRpdCachedValue(
+function getRpdCache(
   packageCache: PackageCache,
   pkgName: string,
   basedir: string,
@@ -233,6 +233,20 @@ function getRpdCachedValue(
     })
     return pkgData
   }
+}
+
+function setRpdCache(
+  packageCache: PackageCache,
+  pkgData: PackageData,
+  pkgName: string,
+  basedir: string,
+  originalBasedir: string,
+  preserveSymlinks: boolean,
+) {
+  packageCache.set(getRpdCacheKey(pkgName, basedir, preserveSymlinks), pkgData)
+  traverseBetweenDirs(originalBasedir, basedir, (dir) => {
+    packageCache.set(getRpdCacheKey(pkgName, dir, preserveSymlinks), pkgData)
+  })
 }
 
 // package cache key for `resolvePackageData`
@@ -251,7 +265,7 @@ function getRpdCacheKey(
  *
  * This makes it so the fs is only read once for a shared `basedir`.
  */
-function getFnpdCachedValue(
+function getFnpdCache(
   packageCache: PackageCache,
   basedir: string,
   originalBasedir: string,
@@ -259,11 +273,23 @@ function getFnpdCachedValue(
   const cacheKey = getFnpdCacheKey(basedir)
   const pkgData = packageCache.get(cacheKey)
   if (pkgData) {
-    traverseBetweenDirs(originalBasedir, basedir, () => {
-      packageCache.set(getFnpdCacheKey(originalBasedir), pkgData)
+    traverseBetweenDirs(originalBasedir, basedir, (dir) => {
+      packageCache.set(getFnpdCacheKey(dir), pkgData)
     })
     return pkgData
   }
+}
+
+function setFnpdCache(
+  packageCache: PackageCache,
+  pkgData: PackageData,
+  basedir: string,
+  originalBasedir: string,
+) {
+  packageCache.set(getFnpdCacheKey(basedir), pkgData)
+  traverseBetweenDirs(originalBasedir, basedir, (dir) => {
+    packageCache.set(getFnpdCacheKey(dir), pkgData)
+  })
 }
 
 // package cache key for `findNearestPackageData`
