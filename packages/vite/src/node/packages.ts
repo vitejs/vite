@@ -1,8 +1,17 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { createDebugger, createFilter, resolveFrom } from './utils'
+import { createRequire } from 'node:module'
+import { createDebugger, createFilter, safeRealpathSync } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+let pnp: typeof import('pnpapi') | undefined
+if (process.versions.pnp) {
+  try {
+    pnp = createRequire(import.meta.url)('pnpapi')
+  } catch {}
+}
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -60,9 +69,9 @@ export function resolvePackageData(
       return pkg
     }
   }
-  let pkgPath: string | undefined
+  const pkgPath = resolvePkgJsonPath(id, basedir, preserveSymlinks)
+  if (!pkgPath) return null
   try {
-    pkgPath = resolveFrom(`${id}/package.json`, basedir, preserveSymlinks)
     pkg = loadPackageData(pkgPath, true, packageCache)
     if (packageCache) {
       packageCache.set(cacheKey!, pkg)
@@ -72,12 +81,8 @@ export function resolvePackageData(
     if (e instanceof SyntaxError) {
       isDebug && debug(`Parsing failed: ${pkgPath}`)
     }
-    // Ignore error for missing package.json
-    else if (e.code !== 'MODULE_NOT_FOUND') {
-      throw e
-    }
+    throw e
   }
-  return null
 }
 
 export function loadPackageData(
@@ -86,7 +91,7 @@ export function loadPackageData(
   packageCache?: PackageCache,
 ): PackageData {
   if (!preserveSymlinks) {
-    pkgPath = fs.realpathSync.native(pkgPath)
+    pkgPath = safeRealpathSync(pkgPath)
   }
 
   let cached: PackageData | undefined
@@ -177,4 +182,31 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function resolvePkgJsonPath(
+  pkgName: string,
+  basedir: string,
+  preserveSymlinks = false,
+): string | undefined {
+  if (pnp) {
+    const pkg = pnp.resolveToUnqualified(pkgName, basedir)
+    if (!pkg) return undefined
+    return path.join(pkg, 'package.json')
+  }
+
+  let root = basedir
+  while (root) {
+    const pkg = path.join(root, 'node_modules', pkgName, 'package.json')
+    try {
+      if (fs.existsSync(pkg)) {
+        return preserveSymlinks ? pkg : safeRealpathSync(pkg)
+      }
+    } catch {}
+    const nextRoot = path.dirname(root)
+    if (nextRoot === root) break
+    root = nextRoot
+  }
+
+  return undefined
 }

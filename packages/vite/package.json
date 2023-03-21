@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -69,15 +69,15 @@
     "esbuild": "^0.17.5",
     "postcss": "^8.4.21",
     "resolve": "^1.22.1",
-    "rollup": "^3.18.0"
+    "rollup": "^3.20.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.21.2",
-    "@babel/types": "^7.21.2",
+    "@babel/parser": "^7.21.3",
+    "@babel/types": "^7.21.3",
     "@jridgewell/trace-mapping": "^0.3.17",
     "@rollup/plugin-alias": "^4.0.3",
     "@rollup/plugin-commonjs": "^24.0.1",
@@ -86,6 +86,7 @@
     "@rollup/plugin-node-resolve": "15.0.1",
     "@rollup/plugin-typescript": "^11.0.0",
     "@rollup/pluginutils": "^5.0.2",
+    "@types/pnpapi": "^0.0.2",
     "acorn": "^8.8.2",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
@@ -108,7 +109,7 @@
     "launch-editor-middleware": "^2.6.0",
     "magic-string": "^0.30.0",
     "micromatch": "^4.0.5",
-    "mlly": "^1.1.1",
+    "mlly": "^1.2.0",
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.2",
@@ -130,7 +131,7 @@
     "tslib": "^2.5.0",
     "types": "link:./types",
     "ufo": "^1.1.1",
-    "ws": "^8.12.1"
+    "ws": "^8.13.0"
   },
   "peerDependencies": {
     "@types/node": ">= 14",

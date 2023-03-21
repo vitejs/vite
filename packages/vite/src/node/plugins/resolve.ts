@@ -19,6 +19,7 @@ import {
   bareImportRE,
   cleanUrl,
   createDebugger,
+  deepImportRE,
   ensureVolumeInPath,
   fsPathFromId,
   getPotentialTsSrcPaths,
@@ -125,6 +126,16 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
+
+  // In unix systems, absolute paths inside root first needs to be checked as an
+  // absolute URL (/root/root/path-to-file) resulting in failed checks before falling
+  // back to checking the path as absolute. If /root/root isn't a valid path, we can
+  // avoid these checks. Absolute paths inside root are common in user code as many
+  // paths are resolved by the user. For example for an alias.
+  const rootInRoot =
+    fs
+      .statSync(path.join(root, root), { throwIfNoEntry: false })
+      ?.isDirectory() ?? false
 
   return {
     name: 'vite:resolve',
@@ -255,7 +266,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id.startsWith('/')) {
+      if (asSrc && id.startsWith('/') && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
@@ -474,11 +485,14 @@ function tryFsResolve(
 ): string | undefined {
   const { file, postfix } = splitFileAndPostfix(fsPath)
 
+  // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
+  // source code so we only need to perform the check for dependencies.
+  const tryUnsplitted = fsPath.includes('#') && fsPath.includes('node_modules')
+
   let res: string | undefined
 
-  // if there is a postfix, try resolving it as a complete path first (#4703)
   if (
-    postfix &&
+    tryUnsplitted &&
     (res = tryResolveFile(
       fsPath,
       '',
@@ -508,7 +522,7 @@ function tryFsResolve(
 
   for (const ext of options.extensions) {
     if (
-      postfix &&
+      tryUnsplitted &&
       (res = tryResolveFile(
         fsPath + ext,
         '',
@@ -543,7 +557,7 @@ function tryFsResolve(
   if (!tryIndex) return
 
   if (
-    postfix &&
+    tryUnsplitted &&
     (res = tryResolveFile(
       fsPath,
       '',
@@ -663,32 +677,12 @@ export function tryNodeResolve(
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    let slashIndex = id.indexOf('/', prevSlashIndex + 1)
-    if (slashIndex < 0) {
-      slashIndex = id.length
-    }
-
-    const part = id.slice(prevSlashIndex + 1, (prevSlashIndex = slashIndex))
-    if (!part) {
-      break
-    }
-
-    // Assume path parts with an extension are not package roots, except for the
-    // first path part (since periods are sadly allowed in package names).
-    // At the same time, skip the first path part if it begins with "@"
-    // (since "@foo/bar" should be treated as the top-level path).
-    if (possiblePkgIds.length ? path.extname(part) : part[0] === '@') {
-      continue
-    }
-
-    const possiblePkgId = id.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
+  // check for deep import, e.g. "my-lib/foo"
+  const deepMatch = id.match(deepImportRE)
+  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
 
   let basedir: string
-  if (dedupe?.some((id) => possiblePkgIds.includes(id))) {
+  if (dedupe?.includes(pkgId)) {
     basedir = root
   } else if (
     importer &&
@@ -700,39 +694,8 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  let pkg: PackageData | undefined
-  let pkgId: string | undefined
-  // nearest package.json
-  let nearestPkg: PackageData | undefined
-
-  const rootPkgId = possiblePkgIds[0]
-
-  const rootPkg = resolvePackageData(
-    rootPkgId,
-    basedir,
-    preserveSymlinks,
-    packageCache,
-  )!
-
-  const nearestPkgId = [...possiblePkgIds].reverse().find((pkgId) => {
-    nearestPkg = resolvePackageData(
-      pkgId,
-      basedir,
-      preserveSymlinks,
-      packageCache,
-    )!
-    return nearestPkg
-  })!
-
-  if (rootPkg?.data?.exports) {
-    pkgId = rootPkgId
-    pkg = rootPkg
-  } else {
-    pkgId = nearestPkgId
-    pkg = nearestPkg
-  }
-
-  if (!pkg || !nearestPkg) {
+  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+  if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
@@ -760,13 +723,8 @@ export function tryNodeResolve(
     return
   }
 
-  let resolveId = resolvePackageEntry
-  let unresolvedId = pkgId
-  const isDeepImport = unresolvedId !== id
-  if (isDeepImport) {
-    resolveId = resolveDeepImport
-    unresolvedId = '.' + id.slice(pkgId.length)
-  }
+  const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
+  const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : pkgId
 
   let resolved: string | undefined
   try {
@@ -807,14 +765,10 @@ export function tryNodeResolve(
       return resolved
     }
     let resolvedId = id
-    if (isDeepImport) {
-      if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
-        resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-        isDebug &&
-          debug(
-            `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`,
-          )
-      }
+    if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
+      resolvedId = resolved.id.slice(resolved.id.indexOf(id))
+      isDebug &&
+        debug(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
     }
     return { ...resolved, id: resolvedId, external: true }
   }
@@ -831,8 +785,6 @@ export function tryNodeResolve(
   }
 
   const ext = path.extname(resolved)
-  const isCJS =
-    ext === '.cjs' || (ext === '.js' && nearestPkg.data.type !== 'module')
 
   if (
     !options.ssrOptimizeCheck &&
@@ -867,7 +819,12 @@ export function tryNodeResolve(
     // The only optimized deps are the ones explicitly listed in the config.
     (!options.ssrOptimizeCheck && !isBuild && ssr) ||
     // Only optimize non-external CJS deps during SSR by default
-    (ssr && !isCJS && !(include?.includes(pkgId) || include?.includes(id)))
+    (ssr &&
+      !(
+        ext === '.cjs' ||
+        (ext === '.js' && resolvePkg(resolved, options)?.data.type !== 'module')
+      ) &&
+      !(include?.includes(pkgId) || include?.includes(id)))
 
   if (options.ssrOptimizeCheck) {
     return {
@@ -1298,38 +1255,21 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
 }
 
 /**
- * if importer was not resolved by vite's resolver previously
- * (when esbuild resolved it)
- * resolve importer's pkg and add to idToPkgMap
+ * Load closest `package.json` to `importer`
  */
 function resolvePkg(importer: string, options: InternalResolveOptions) {
-  const { root, preserveSymlinks, packageCache } = options
+  const { preserveSymlinks, packageCache } = options
 
   if (importer.includes('\x00')) {
     return null
   }
 
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
-    if (slashIndex < 0) {
-      break
-    }
-
-    prevSlashIndex = slashIndex + 1
-
-    const possiblePkgId = importer.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
-
-  let pkg: PackageData | undefined
-  possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
-    return pkg
-  })!
-
-  if (pkg) {
+  const pkgPath = lookupFile(importer, ['package.json'], { pathOnly: true })
+  if (pkgPath) {
+    const pkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
     idToPkgMap.set(importer, pkg)
+    return pkg
   }
-  return pkg
+
+  return undefined
 }
