@@ -127,6 +127,16 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
+  // In unix systems, absolute paths inside root first needs to be checked as an
+  // absolute URL (/root/root/path-to-file) resulting in failed checks before falling
+  // back to checking the path as absolute. If /root/root isn't a valid path, we can
+  // avoid these checks. Absolute paths inside root are common in user code as many
+  // paths are resolved by the user. For example for an alias.
+  const rootInRoot =
+    fs
+      .statSync(path.join(root, root), { throwIfNoEntry: false })
+      ?.isDirectory() ?? false
+
   return {
     name: 'vite:resolve',
 
@@ -256,7 +266,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id.startsWith('/')) {
+      if (asSrc && id.startsWith('/') && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
