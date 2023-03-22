@@ -1250,7 +1250,7 @@ export function stripBase(path: string, base: string): string {
     return '/'
   }
   const devBase = base.endsWith('/') ? base : base + '/'
-  return path.startsWith(base) ? path.slice(devBase.length) : path
+  return path.startsWith(devBase) ? path.slice(devBase.length) : path
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {
