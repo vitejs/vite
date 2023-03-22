@@ -173,6 +173,11 @@ declare module '*.aac' {
   export default src
 }
 
+declare module '*.opus' {
+  const src: string
+  export default src
+}
+
 // fonts
 declare module '*.woff' {
   const src: string
