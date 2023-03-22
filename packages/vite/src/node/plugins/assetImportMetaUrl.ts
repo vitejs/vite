@@ -52,7 +52,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (!s) s = new MagicString(code)
 
           // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             const ast = this.parse(rawUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {

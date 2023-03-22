@@ -126,7 +126,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const rawUrl = code.slice(urlStart, urlEnd)
 
           // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
               urlIndex,
