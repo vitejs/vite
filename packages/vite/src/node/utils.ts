@@ -107,8 +107,13 @@ const builtins = new Set([
   'wasi',
 ])
 
+const NODE_BUILTIN_NAMESPACE = 'node:'
 export function isBuiltin(id: string): boolean {
-  return builtins.has(id.replace(/^node:/, ''))
+  return builtins.has(
+    id.startsWith(NODE_BUILTIN_NAMESPACE)
+      ? id.slice(NODE_BUILTIN_NAMESPACE.length)
+      : id,
+  )
 }
 
 export function moduleListContains(
@@ -275,8 +280,10 @@ const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
+
+const splitFilePathAndQueryRE = /(\.(?:[cm]?js|jsx))(\?.*)?$/
 export function getPotentialTsSrcPaths(filePath: string): string[] {
-  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
+  const [name, type, query = ''] = filePath.split(splitFilePathAndQueryRE)
   const paths = [name + type.replace('js', 'ts') + query]
   if (!type.endsWith('x')) {
     paths.push(name + type.replace('js', 'tsx') + query)
@@ -1243,7 +1250,7 @@ export function stripBase(path: string, base: string): string {
     return '/'
   }
   const devBase = base.endsWith('/') ? base : base + '/'
-  return path.replace(RegExp('^' + devBase), '/')
+  return path.startsWith(base) ? path.slice(devBase.length) : path
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {
