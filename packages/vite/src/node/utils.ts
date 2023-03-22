@@ -1263,7 +1263,7 @@ export function evalValue<T = any>(rawValue: string): T {
   return fn()
 }
 
-const escapeForRegexRE = /[-/\\^$*+?.()|[\]{}]/g
-export function escapeForRegex(str: string): string {
-  return str.replace(escapeForRegexRE, '\\$&')
+const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
+export function escapeRegex(str: string): string {
+  return str.replace(escapeRegexRE, '\\$&')
 }
