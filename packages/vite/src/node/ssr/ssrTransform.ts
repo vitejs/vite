@@ -94,13 +94,11 @@ async function ssrTransformScript(
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
-  function defineImport(source: string) {
+  function defineImport(node: Node, source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
-    // There will be an error if the module is called before it is imported,
-    // so the module import statement is hoisted to the top
-    s.appendLeft(
-      0,
+    s.appendRight(
+      node.start,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`,
     )
     return importId
@@ -120,8 +118,8 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
-      const importId = defineImport(node.source.value as string)
       s.remove(node.start, node.end)
+      const importId = defineImport(node, node.source.value as string)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
           idToImportMap.set(
@@ -163,7 +161,7 @@ async function ssrTransformScript(
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(node.source.value as string)
+          const importId = defineImport(node, node.source.value as string)
           for (const spec of node.specifiers) {
             defineExport(
               node.end,
@@ -212,7 +210,7 @@ async function ssrTransformScript(
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
       s.remove(node.start, node.end)
-      const importId = defineImport(node.source.value as string)
+      const importId = defineImport(node, node.source.value as string)
       if (node.exported) {
         defineExport(node.end, node.exported.name, `${importId}`)
       } else {
