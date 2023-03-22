@@ -16,7 +16,13 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
+import {
+  cleanUrl,
+  getHash,
+  joinUrlSegments,
+  normalizePath,
+  removeLeadingSlash,
+} from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
@@ -24,6 +30,7 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 const jsSourceMapRE = /\.[cm]?js\.map$/
+const unnededFinalQueryCharRE = /[?&]$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -47,6 +54,8 @@ export function registerCustomMime(): void {
   mrmime.mimes['flac'] = 'audio/flac'
   // mrmime and mime-db is not released yet: https://github.com/jshttp/mime-db/commit/c9242a9b7d4bb25d7a0c9244adec74aeef08d8a1
   mrmime.mimes['aac'] = 'audio/aac'
+  // https://wiki.xiph.org/MIME_Types_and_File_Extensions#.opus_-_audio/ogg
+  mrmime.mimes['opus'] = 'audio/ogg'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
 }
@@ -167,7 +176,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
+      id = id.replace(urlRE, '$1').replace(unnededFinalQueryCharRE, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
@@ -253,7 +262,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     rtn = path.posix.join(FS_PREFIX, id)
   }
   const base = joinUrlSegments(config.server?.origin ?? '', config.base)
-  return joinUrlSegments(base, rtn.replace(/^\//, ''))
+  return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
 export function getPublicAssetFilename(
