@@ -19,9 +19,9 @@ import type { ResolvedConfig } from '../config'
 import {
   cleanUrl,
   getHash,
-  initialSlashRemoved,
   joinUrlSegments,
   normalizePath,
+  removeLeadingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 
@@ -260,7 +260,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     rtn = path.posix.join(FS_PREFIX, id)
   }
   const base = joinUrlSegments(config.server?.origin ?? '', config.base)
-  return joinUrlSegments(base, initialSlashRemoved(rtn))
+  return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
 export function getPublicAssetFilename(

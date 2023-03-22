@@ -1234,8 +1234,8 @@ export function joinUrlSegments(a: string, b: string): string {
   return a + b
 }
 
-export function initialSlashRemoved(str: string): string {
-  return str.startsWith('/') ? str.slice(1) : str
+export function removeLeadingSlash(str: string): string {
+  return str[0] === '/' ? str.slice(1) : str
 }
 
 export function stripBase(path: string, base: string): string {

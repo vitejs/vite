@@ -16,11 +16,11 @@ import {
   cleanUrl,
   generateCodeFrame,
   getHash,
-  initialSlashRemoved,
   isDataUrl,
   isExternalUrl,
   normalizePath,
   processSrcSet,
+  removeLeadingSlash,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
@@ -538,7 +538,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
-            !namedOutput.includes(initialSlashRemoved(content)) // Allow for absolute references as named output can't be an absolute path
+            !namedOutput.includes(removeLeadingSlash(content)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
               const url =

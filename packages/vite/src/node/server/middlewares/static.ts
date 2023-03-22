@@ -9,12 +9,12 @@ import {
   cleanUrl,
   fsPathFromId,
   fsPathFromUrl,
-  initialSlashRemoved,
   isFileReadable,
   isImportRequest,
   isInternalRequest,
   isParentDirectory,
   isWindows,
+  removeLeadingSlash,
   shouldServeFile,
   slash,
 } from '../../utils'
@@ -122,7 +122,7 @@ export function serveStaticMiddleware(
     }
 
     const resolvedPathname = redirectedPathname || pathname
-    let fileUrl = path.resolve(dir, initialSlashRemoved(resolvedPathname))
+    let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
     if (resolvedPathname.endsWith('/') && !fileUrl.endsWith('/')) {
       fileUrl = fileUrl + '/'
     }
