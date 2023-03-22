@@ -10,6 +10,7 @@
 
 import { join } from 'node:path'
 import { exec } from 'node:child_process'
+import type { ExecOptions } from 'node:child_process'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
@@ -54,7 +55,6 @@ function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
       )
     }
   })
-  return true
 }
 
 const supportedChromiumBrowsers = [
@@ -86,14 +86,14 @@ async function startBrowserProcess(
 
   if (shouldTryOpenChromeWithAppleScript) {
     try {
-      const ps = await exec('ps cax').toString()
+      const ps = await execAsync('ps cax')
       const openedBrowser =
         preferredOSXBrowser && ps.includes(preferredOSXBrowser)
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       if (openedBrowser) {
         // Try our best to reuse existing tab with AppleScript
-        await exec(
+        await execAsync(
           `osascript openChrome.applescript "${encodeURI(
             url,
           )}" "${openedBrowser}"`,
@@ -127,4 +127,16 @@ async function startBrowserProcess(
   } catch (err) {
     return false
   }
+}
+
+function execAsync(command: string, options?: ExecOptions): Promise<string> {
+  return new Promise((resolve, reject) => {
+    exec(command, options, (error, stdout) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(stdout.toString())
+      }
+    })
+  })
 }
