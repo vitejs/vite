@@ -50,8 +50,9 @@ export const createFilter = _createFilter as (
   options?: { resolve?: string | false | null },
 ) => (id: string | unknown) => boolean
 
+const windowsSlashRE = /\\/g
 export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
+  return p.replace(windowsSlashRE, '/')
 }
 
 /**
@@ -74,15 +75,19 @@ export function unwrapId(id: string): string {
     : id
 }
 
+const replaceSlashOrColonRE = /[/:]/g
+const replaceDotRE = /\./g
+const replaceNestedIdRE = /(\s*>\s*)/g
+const replaceHashRE = /#/g
 export const flattenId = (id: string): string =>
   id
-    .replace(/[/:]/g, '_')
-    .replace(/\./g, '__')
-    .replace(/(\s*>\s*)/g, '___')
-    .replace(/#/g, '____')
+    .replace(replaceSlashOrColonRE, '_')
+    .replace(replaceDotRE, '__')
+    .replace(replaceNestedIdRE, '___')
+    .replace(replaceHashRE, '____')
 
 export const normalizeId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, ' > ')
+  id.replace(replaceNestedIdRE, ' > ')
 
 //TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
 const builtins = new Set([
@@ -102,8 +107,13 @@ const builtins = new Set([
   'wasi',
 ])
 
+const NODE_BUILTIN_NAMESPACE = 'node:'
 export function isBuiltin(id: string): boolean {
-  return builtins.has(id.replace(/^node:/, ''))
+  return builtins.has(
+    id.startsWith(NODE_BUILTIN_NAMESPACE)
+      ? id.slice(NODE_BUILTIN_NAMESPACE.length)
+      : id,
+  )
 }
 
 export function moduleListContains(
@@ -192,6 +202,15 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
+export function isUrl(path: string): boolean {
+  try {
+    new URL(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
 export const isWindows = os.platform() === 'win32'
@@ -206,9 +225,7 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
-    ? fsPath
-    : `/${fsPath}`
+  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {
@@ -270,8 +287,10 @@ const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
+
+const splitFilePathAndQueryRE = /(\.(?:[cm]?js|jsx))(\?.*)?$/
 export function getPotentialTsSrcPaths(filePath: string): string[] {
-  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
+  const [name, type, query = ''] = filePath.split(splitFilePathAndQueryRE)
   const paths = [name + type.replace('js', 'ts') + query]
   if (!type.endsWith('x')) {
     paths.push(name + type.replace('js', 'tsx') + query)
@@ -300,10 +319,14 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
+const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  const resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
+  const resolvedUrl = new URL(
+    url.replace(replacePercentageRE, '%25'),
+    'relative:///',
+  )
   const { search, hash } = resolvedUrl
   let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
@@ -659,13 +682,12 @@ export function processSrcSetSync(
   )
 }
 
+const cleanSrcSetRE =
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
-  const cleanedSrcs = srcs.replace(
-    /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
-    blankReplacer,
-  )
+  const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
   do {
@@ -678,22 +700,26 @@ function splitSrcSet(srcs: string) {
   return parts
 }
 
+const windowsDriveRE = /^[A-Z]:/
+const replaceWindowsDriveRE = /^([A-Z]):\//
+const linuxAbsolutePathRE = /^\/[^/]/
 function escapeToLinuxLikePath(path: string) {
-  if (/^[A-Z]:/.test(path)) {
-    return path.replace(/^([A-Z]):\//, '/windows/$1/')
+  if (windowsDriveRE.test(path)) {
+    return path.replace(replaceWindowsDriveRE, '/windows/$1/')
   }
-  if (/^\/[^/]/.test(path)) {
+  if (linuxAbsolutePathRE.test(path)) {
     return `/linux${path}`
   }
   return path
 }
 
+const revertWindowsDriveRE = /^\/windows\/([A-Z])\//
 function unescapeToLinuxLikePath(path: string) {
   if (path.startsWith('/linux/')) {
     return path.slice('/linux'.length)
   }
   if (path.startsWith('/windows/')) {
-    return path.replace(/^\/windows\/([A-Z])\//, '$1:/')
+    return path.replace(revertWindowsDriveRE, '$1:/')
   }
   return path
 }
@@ -1178,7 +1204,7 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
  * this function returns false for them but true for absolute paths (e.g. C:/something)
  */
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p.startsWith('/')
+  if (!isWindows) return p[0] === '/'
   return windowsDrivePathPrefixRE.test(p)
 }
 
@@ -1216,10 +1242,14 @@ export function joinUrlSegments(a: string, b: string): string {
   if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
-  if (!b.startsWith('/')) {
+  if (b[0] !== '/') {
     b = '/' + b
   }
   return a + b
+}
+
+export function removeLeadingSlash(str: string): string {
+  return str[0] === '/' ? str.slice(1) : str
 }
 
 export function stripBase(path: string, base: string): string {
@@ -1227,7 +1257,7 @@ export function stripBase(path: string, base: string): string {
     return '/'
   }
   const devBase = base.endsWith('/') ? base : base + '/'
-  return path.replace(RegExp('^' + devBase), '/')
+  return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {
@@ -1245,4 +1275,9 @@ export function evalValue<T = any>(rawValue: string): T {
     return (\n${rawValue}\n)
   `)
   return fn()
+}
+
+const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
+export function escapeRegex(str: string): string {
+  return str.replace(escapeRegexRE, '\\$&')
 }

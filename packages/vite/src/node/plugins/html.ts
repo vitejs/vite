@@ -18,8 +18,10 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
+  isUrl,
   normalizePath,
   processSrcSet,
+  removeLeadingSlash,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
@@ -290,7 +292,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    url.startsWith('#') ||
+    url[0] === '#' ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
@@ -537,7 +539,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
-            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+            !namedOutput.includes(removeLeadingSlash(content)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
               const url =
@@ -811,11 +813,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
-          return normalizePath(
-            toOutputPublicAssetFilePath(
-              getPublicAssetFilename(fileHash, config)!,
-            ),
+          const publicAssetPath = toOutputPublicAssetFilePath(
+            getPublicAssetFilename(fileHash, config)!,
           )
+
+          return isUrl(publicAssetPath)
+            ? publicAssetPath
+            : normalizePath(publicAssetPath)
         })
 
         if (chunk && canInlineEntry) {

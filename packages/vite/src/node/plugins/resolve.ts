@@ -219,7 +219,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id.startsWith('/') && (rootInRoot || !id.startsWith(root))) {
+      if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
@@ -229,7 +229,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // relative
       if (
-        id.startsWith('.') ||
+        id[0] === '.' ||
         ((preferRelative || importer?.endsWith('.html')) &&
           startsWithWordCharRE.test(id))
       ) {
@@ -279,7 +279,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       // drive relative fs paths (only windows)
-      if (isWindows && id.startsWith('/')) {
+      if (isWindows && id[0] === '/') {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
@@ -435,10 +435,10 @@ function resolveSubpathImports(
     'imports',
   )
 
-  if (importsPath?.startsWith('.')) {
+  if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
 
-    if (!importsPath.startsWith('.')) {
+    if (importsPath[0] !== '.') {
       importsPath = `./${importsPath}`
     }
   }
