@@ -475,7 +475,7 @@ export function lexAcceptedHmrExports(
 }
 
 export function normalizeHmrUrl(url: string): string {
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     url = wrapId(url)
   }
   return url

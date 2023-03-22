@@ -338,7 +338,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        const isRelative = url.startsWith('.')
+        const isRelative = url[0] === '.'
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
@@ -364,7 +364,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // if the resolved id is not a valid browser import specifier,
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
-        if (!url.startsWith('.') && !url.startsWith('/')) {
+        if (url[0] !== '.' && url[0] !== '/') {
           url = wrapId(resolved.id)
         }
 
@@ -496,7 +496,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // warn imports to non-asset /public files
           if (
-            specifier.startsWith('/') &&
+            specifier[0] === '/' &&
             !config.assetsInclude(cleanUrl(specifier)) &&
             !specifier.endsWith('.json') &&
             checkPublicFile(specifier, config)

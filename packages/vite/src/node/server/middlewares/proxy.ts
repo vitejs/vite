@@ -141,7 +141,7 @@ export function proxyMiddleware(
 
 function doesProxyContextMatchUrl(context: string, url: string): boolean {
   return (
-    (context.startsWith('^') && new RegExp(context).test(url)) ||
+    (context[0] === '^' && new RegExp(context).test(url)) ||
     url.startsWith(context)
   )
 }

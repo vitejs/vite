@@ -505,9 +505,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const toRelative = (filename: string, importer: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
-          return relativePath.startsWith('.')
-            ? relativePath
-            : './' + relativePath
+          return relativePath[0] === '.' ? relativePath : './' + relativePath
         }
 
         // replace asset url references with resolved url.
@@ -1314,7 +1312,7 @@ async function doUrlReplace(
   if (
     isExternalUrl(rawUrl) ||
     isDataUrl(rawUrl) ||
-    rawUrl.startsWith('#') ||
+    rawUrl[0] === '#' ||
     varRE.test(rawUrl)
   ) {
     return matched
@@ -1339,7 +1337,7 @@ async function doImportCSSReplace(
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl[0] === '#') {
     return matched
   }
 
@@ -1690,7 +1688,7 @@ async function rebaseUrls(
 
   let rebased
   const rebaseFn = (url: string) => {
-    if (url.startsWith('/')) return url
+    if (url[0] === '/') return url
     // ignore url's starting with variable
     if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite

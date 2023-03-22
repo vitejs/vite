@@ -560,7 +560,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
  */
 export function injectQuery(url: string, queryToInject: string): string {
   // skip urls that won't be handled by vite
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     return url
   }
 
