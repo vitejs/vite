@@ -828,7 +828,7 @@ export function resolveBaseUrl(
   isBuild: boolean,
   logger: Logger,
 ): string {
-  if (base.startsWith('.')) {
+  if (base[0] === '.') {
     logger.warn(
       colors.yellow(
         colors.bold(
@@ -843,7 +843,7 @@ export function resolveBaseUrl(
   // external URL flag
   const isExternal = isExternalUrl(base)
   // no leading slash warn
-  if (!isExternal && !base.startsWith('/')) {
+  if (!isExternal && base[0] !== '/') {
     logger.warn(
       colors.yellow(
         colors.bold(`(!) "base" option should start with a slash.`),
@@ -855,7 +855,7 @@ export function resolveBaseUrl(
   if (!isBuild || !isExternal) {
     base = new URL(base, 'http://vitejs.dev').pathname
     // ensure leading slash
-    if (!base.startsWith('/')) {
+    if (base[0] !== '/') {
       base = '/' + base
     }
   }

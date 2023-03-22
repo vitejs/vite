@@ -211,9 +211,7 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
-    ? fsPath
-    : `/${fsPath}`
+  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {
@@ -1190,7 +1188,7 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
  * this function returns false for them but true for absolute paths (e.g. C:/something)
  */
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p.startsWith('/')
+  if (!isWindows) return p[0] === '/'
   return windowsDrivePathPrefixRE.test(p)
 }
 
@@ -1228,7 +1226,7 @@ export function joinUrlSegments(a: string, b: string): string {
   if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
-  if (!b.startsWith('/')) {
+  if (b[0] !== '/') {
     b = '/' + b
   }
   return a + b

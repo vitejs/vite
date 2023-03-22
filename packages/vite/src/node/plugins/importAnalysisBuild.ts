@@ -44,7 +44,7 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
-  return relPath.startsWith('.') ? relPath : `./${relPath}`
+  return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
 /**

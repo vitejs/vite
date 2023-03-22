@@ -747,7 +747,7 @@ function getPkgJson(root: string): PackageData['data'] {
 }
 
 function getPkgName(name: string) {
-  return name?.startsWith('@') ? name.split('/')[1] : name
+  return name?.[0] === '@' ? name.split('/')[1] : name
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'

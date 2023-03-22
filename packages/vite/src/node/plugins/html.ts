@@ -291,7 +291,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    url.startsWith('#') ||
+    url[0] === '#' ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
