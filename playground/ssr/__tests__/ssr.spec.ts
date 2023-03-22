@@ -11,3 +11,9 @@ test(`circular dependencies modules doesn't throw`, async () => {
     'circ-dep-init-a circ-dep-init-b',
   )
 })
+
+test(`deadlock doesn't happen`, async () => {
+  await page.goto(`${url}/forked-deadlock`)
+
+  expect(await page.textContent('.forked-deadlock')).toMatch('rendered')
+})
