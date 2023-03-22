@@ -105,7 +105,6 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   asSrc?: boolean
   tryIndex?: boolean
   tryPrefix?: string
-  skipPackageJson?: boolean
   preferRelative?: boolean
   isRequire?: boolean
   // #3040
@@ -487,6 +486,7 @@ function tryFsResolve(
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true,
+  skipPackageJson = false,
 ): string | undefined {
   const { file, postfix } = splitFileAndPostfix(fsPath)
 
@@ -505,7 +505,7 @@ function tryFsResolve(
       false,
       targetWeb,
       options.tryPrefix,
-      options.skipPackageJson,
+      skipPackageJson,
     ))
   ) {
     return res
@@ -519,7 +519,7 @@ function tryFsResolve(
       false,
       targetWeb,
       options.tryPrefix,
-      options.skipPackageJson,
+      skipPackageJson,
     ))
   ) {
     return res
@@ -535,7 +535,7 @@ function tryFsResolve(
         false,
         targetWeb,
         options.tryPrefix,
-        options.skipPackageJson,
+        skipPackageJson,
         false,
       ))
     ) {
@@ -550,7 +550,7 @@ function tryFsResolve(
         false,
         targetWeb,
         options.tryPrefix,
-        options.skipPackageJson,
+        skipPackageJson,
         false,
       ))
     ) {
@@ -570,7 +570,7 @@ function tryFsResolve(
       tryIndex,
       targetWeb,
       options.tryPrefix,
-      options.skipPackageJson,
+      skipPackageJson,
     ))
   ) {
     return res
@@ -584,7 +584,7 @@ function tryFsResolve(
       tryIndex,
       targetWeb,
       options.tryPrefix,
-      options.skipPackageJson,
+      skipPackageJson,
     ))
   ) {
     return res
@@ -1025,22 +1025,29 @@ export function resolvePackageEntry(
 
     for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
+      let skipPackageJson = false
       if (
         options.mainFields[0] === 'sass' &&
         !options.extensions.includes(path.extname(entry))
       ) {
         entry = ''
-        options.skipPackageJson = true
-      }
-
-      // resolve object browser field in package.json
-      const { browser: browserField } = data
-      if (targetWeb && options.browserField && isObject(browserField)) {
-        entry = mapWithBrowserField(entry, browserField) || entry
+        skipPackageJson = true
+      } else {
+        // resolve object browser field in package.json
+        const { browser: browserField } = data
+        if (targetWeb && options.browserField && isObject(browserField)) {
+          entry = mapWithBrowserField(entry, browserField) || entry
+        }
       }
 
       const entryPointPath = path.join(dir, entry)
-      const resolvedEntryPoint = tryFsResolve(entryPointPath, options)
+      const resolvedEntryPoint = tryFsResolve(
+        entryPointPath,
+        options,
+        true,
+        true,
+        skipPackageJson,
+      )
       if (resolvedEntryPoint) {
         isDebug &&
           debug(
