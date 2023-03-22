@@ -199,7 +199,7 @@ function createIsSsrExternal(
       return processedIds.get(id)
     }
     let external = false
-    if (!id.startsWith('.') && !path.isAbsolute(id)) {
+    if (id[0] !== '.' && !path.isAbsolute(id)) {
       external = isBuiltin(id) || isConfiguredAsExternal(id)
     }
     processedIds.set(id, external)
@@ -339,7 +339,7 @@ export function cjsShouldExternalizeForSSR(
 
 function getNpmPackageName(importPath: string): string | null {
   const parts = importPath.split('/')
-  if (parts[0].startsWith('@')) {
+  if (parts[0][0] === '@') {
     if (!parts[1]) return null
     return `${parts[0]}/${parts[1]}`
   } else {

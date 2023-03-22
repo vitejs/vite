@@ -72,7 +72,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
-          if (url.startsWith('.')) {
+          if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
           } else {
             assetResolver ??= config.createResolver({
