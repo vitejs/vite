@@ -197,6 +197,15 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
+export function isUrl(path: string): boolean {
+  try {
+    new URL(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
 export const isWindows = os.platform() === 'win32'

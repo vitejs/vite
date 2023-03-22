@@ -12,6 +12,9 @@
     "preview:relative-base": "vite --config ./vite.config-relative-base.js preview",
     "dev:runtime-base": "vite --config ./vite.config-runtime-base.js dev",
     "build:runtime-base": "vite --config ./vite.config-runtime-base.js build",
-    "preview:runtime-base": "vite --config ./vite.config-runtime-base.js preview"
+    "preview:runtime-base": "vite --config ./vite.config-runtime-base.js preview",
+    "dev:url-base": "vite --config ./vite.config-url-base.js dev",
+    "build:url-base": "vite --config ./vite.config-url-base.js build",
+    "preview:url-base": "vite --config ./vite.config-url-base.js preview"
   }
 }
