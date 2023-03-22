@@ -54,7 +54,6 @@ function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
       )
     }
   })
-  return true
 }
 
 const supportedChromiumBrowsers = [
@@ -73,6 +72,9 @@ async function startBrowserProcess(
   browserArgs: string[],
   url: string,
 ) {
+  const crossPlatformStart = () =>
+    crossPlatformOpenBrowser(browser, browserArgs, url)
+
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
   // a Chromium browser with AppleScript. This lets us reuse an
@@ -85,29 +87,35 @@ async function startBrowserProcess(
       supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
   if (shouldTryOpenChromeWithAppleScript) {
-    try {
-      const ps = await exec('ps cax').toString()
+    exec('ps cax', (error, stdout) => {
+      if (error) return crossPlatformStart()
+
+      const ps = stdout.toString()
       const openedBrowser =
         preferredOSXBrowser && ps.includes(preferredOSXBrowser)
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       if (openedBrowser) {
         // Try our best to reuse existing tab with AppleScript
-        await exec(
+        exec(
           `osascript openChrome.applescript "${encodeURI(
             url,
           )}" "${openedBrowser}"`,
           {
             cwd: join(VITE_PACKAGE_DIR, 'bin'),
           },
+          (error) => error && crossPlatformStart(),
         )
-        return true
-      }
-    } catch (err) {
-      // Ignore errors
-    }
-  }
+      } else crossPlatformStart()
+    })
+  } else crossPlatformStart()
+}
 
+async function crossPlatformOpenBrowser(
+  browser: string | undefined,
+  browserArgs: string[],
+  url: string,
+) {
   // Another special case: on OS X, check if BROWSER has been set to "open".
   // In this case, instead of passing the string `open` to `open` function (which won't work),
   // just ignore it (thus ensuring the intended behavior, i.e. opening the system browser):
@@ -123,8 +131,7 @@ async function startBrowserProcess(
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
     open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
-    return true
   } catch (err) {
-    return false
+    // Ignore errors
   }
 }
