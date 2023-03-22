@@ -4,6 +4,7 @@ import { CSS_LANGS_RE, KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
 import type { PackageCache, ResolvedConfig } from '..'
 import {
+  escapeRegex,
   flattenId,
   isBuiltin,
   isExternalUrl,
@@ -281,6 +282,8 @@ module.exports = Object.create(new Proxy({}, {
   }
 }
 
+const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
+
 // esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
 export function esbuildCjsExternalPlugin(
@@ -290,9 +293,7 @@ export function esbuildCjsExternalPlugin(
   return {
     name: 'cjs-external',
     setup(build) {
-      const escape = (text: string) =>
-        `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
-      const filter = new RegExp(externals.map(escape).join('|'))
+      const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
       build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
         return {

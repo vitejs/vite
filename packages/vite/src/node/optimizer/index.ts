@@ -21,6 +21,7 @@ import {
   normalizeId,
   normalizePath,
   removeDir,
+  removeLeadingSlash,
   renameDir,
   writeFile,
 } from '../utils'
@@ -41,6 +42,7 @@ const isDebugEnabled = _debug('vite:deps').enabled
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
+const reExportRE = /export\s+\*\s+from/
 
 export type ExportsData = {
   hasImports: boolean
@@ -956,7 +958,7 @@ export function createIsOptimizedDepUrl(
   const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
     ? // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${normalizePath(depsCacheDir).replace(/^\//, '')}`
+      `/@fs/${removeLeadingSlash(normalizePath(depsCacheDir))}`
     : // if the cache directory is inside root, the url prefix would be something
       // like '/node_modules/.vite'
       `/${depsCacheDirRelative}`
@@ -1140,7 +1142,7 @@ export async function extractExportsData(
     facade,
     hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)
-      return /export\s+\*\s+from/.test(exp)
+      return reExportRE.test(exp)
     }),
     jsxLoader: usedJsxLoader,
   }

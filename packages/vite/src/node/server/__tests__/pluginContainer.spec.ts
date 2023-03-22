@@ -196,7 +196,7 @@ async function getPluginContainer(
   )
 
   // @ts-expect-error This plugin requires a ViteDevServer instance.
-  config.plugins = config.plugins.filter((p) => !/pre-alias/.test(p.name))
+  config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   resolveId = (id) => container.resolveId(id)
   const container = await createPluginContainer(config, moduleGraph)

@@ -14,6 +14,8 @@ import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
 
+const whitespaceRE = /\s/
+
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
 export interface HmrOptions {
@@ -388,7 +390,7 @@ export function lexAcceptedHmrDeps(
         } else if (char === '`') {
           prevState = state
           state = LexerState.inTemplateString
-        } else if (/\s/.test(char)) {
+        } else if (whitespaceRE.test(char)) {
           continue
         } else {
           if (state === LexerState.inCall) {

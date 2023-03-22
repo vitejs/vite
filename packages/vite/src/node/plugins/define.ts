@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { transformStableResult } from '../utils'
+import { escapeRegex, transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -113,11 +113,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           // Mustn't be preceded by a char that can be part of an identifier
           // or a '.' that isn't part of a spread operator
           '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
-            replacementsKeys
-              .map((str) => {
-                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-              })
-              .join('|') +
+            replacementsKeys.map(escapeRegex).join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
             ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
