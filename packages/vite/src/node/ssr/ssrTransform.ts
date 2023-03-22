@@ -164,9 +164,10 @@ async function ssrTransformScript(
         if (node.source) {
           // export { foo, bar } from './foo'
           const importId = defineImport(node.source.value as string)
+          // hoist re-exports near the defined import so they are immediately exported
           for (const spec of node.specifiers) {
             defineExport(
-              node.end,
+              0,
               spec.exported.name,
               `${importId}.${spec.local.name}`,
             )
@@ -213,10 +214,11 @@ async function ssrTransformScript(
     if (node.type === 'ExportAllDeclaration') {
       s.remove(node.start, node.end)
       const importId = defineImport(node.source.value as string)
+      // hoist re-exports near the defined import so they are immediately exported
       if (node.exported) {
-        defineExport(node.end, node.exported.name, `${importId}`)
+        defineExport(0, node.exported.name, `${importId}`)
       } else {
-        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
+        s.appendLeft(0, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
