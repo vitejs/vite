@@ -10,6 +10,7 @@
 
 import { join } from 'node:path'
 import { exec } from 'node:child_process'
+import type { ExecOptions } from 'node:child_process'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
@@ -72,9 +73,6 @@ async function startBrowserProcess(
   browserArgs: string[],
   url: string,
 ) {
-  const crossPlatformStart = () =>
-    crossPlatformOpenBrowser(browser, browserArgs, url)
-
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
   // a Chromium browser with AppleScript. This lets us reuse an
@@ -87,35 +85,29 @@ async function startBrowserProcess(
       supportedChromiumBrowsers.includes(preferredOSXBrowser))
 
   if (shouldTryOpenChromeWithAppleScript) {
-    exec('ps cax', (error, stdout) => {
-      if (error) return crossPlatformStart()
-
-      const ps = stdout.toString()
+    try {
+      const ps = await execAsync('ps cax')
       const openedBrowser =
         preferredOSXBrowser && ps.includes(preferredOSXBrowser)
           ? preferredOSXBrowser
           : supportedChromiumBrowsers.find((b) => ps.includes(b))
       if (openedBrowser) {
         // Try our best to reuse existing tab with AppleScript
-        exec(
+        await execAsync(
           `osascript openChrome.applescript "${encodeURI(
             url,
           )}" "${openedBrowser}"`,
           {
             cwd: join(VITE_PACKAGE_DIR, 'bin'),
           },
-          (error) => error && crossPlatformStart(),
         )
-      } else crossPlatformStart()
-    })
-  } else crossPlatformStart()
-}
+        return true
+      }
+    } catch (err) {
+      // Ignore errors
+    }
+  }
 
-async function crossPlatformOpenBrowser(
-  browser: string | undefined,
-  browserArgs: string[],
-  url: string,
-) {
   // Another special case: on OS X, check if BROWSER has been set to "open".
   // In this case, instead of passing the string `open` to `open` function (which won't work),
   // just ignore it (thus ensuring the intended behavior, i.e. opening the system browser):
@@ -131,7 +123,20 @@ async function crossPlatformOpenBrowser(
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
     open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
+    return true
   } catch (err) {
-    // Ignore errors
+    return false
   }
+}
+
+function execAsync(command: string, options?: ExecOptions): Promise<string> {
+  return new Promise((resolve, reject) => {
+    exec(command, options, (error, stdout) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(stdout.toString())
+      }
+    })
+  })
 }
