@@ -242,7 +242,7 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  if (!dir.endsWith('/')) {
+  if (dir[dir.length - 1] !== '/') {
     dir = `${dir}/`
   }
   return (
@@ -276,7 +276,7 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && !url.endsWith('/')) {
+  if (!path.extname(url) && url[url.length - 1] !== '/') {
     return true
   }
   return false
@@ -292,7 +292,7 @@ const splitFilePathAndQueryRE = /(\.(?:[cm]?js|jsx))(\?.*)?$/
 export function getPotentialTsSrcPaths(filePath: string): string[] {
   const [name, type, query = ''] = filePath.split(splitFilePathAndQueryRE)
   const paths = [name + type.replace('js', 'ts') + query]
-  if (!type.endsWith('x')) {
+  if (type[type.length - 1] !== 'x') {
     paths.push(name + type.replace('js', 'tsx') + query)
   }
   return paths
@@ -1146,8 +1146,8 @@ function normalizeSingleAlias({
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
-    find.endsWith('/') &&
-    replacement.endsWith('/')
+    find[find.length - 1] === '/' &&
+    replacement[replacement.length - 1] === '/'
   ) {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
@@ -1239,7 +1239,7 @@ export function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a.endsWith('/')) {
+  if (a[a.length - 1] === '/') {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {
@@ -1256,7 +1256,7 @@ export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base.endsWith('/') ? base : base + '/'
+  const devBase = base[base.length - 1] === '/' ? base : base + '/'
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
