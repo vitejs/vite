@@ -1257,7 +1257,7 @@ export function stripBase(path: string, base: string): string {
     return '/'
   }
   const devBase = base[base.length - 1] === '/' ? base : base + '/'
-  return path.replace(RegExp('^' + devBase), '/')
+  return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {
