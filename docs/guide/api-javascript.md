@@ -1,3 +1,8 @@
+<script setup>
+  // https://vitepress.dev/guide/data-loading#data-from-local-files
+  import { data } from '../_data/links.data.js'
+</script>
+
 # JavaScript API
 
 Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the intellisense and validation.
@@ -36,6 +41,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 ::: tip NOTE
 When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
 :::
+
+<ApiLink v-bind="data.createServer" />
 
 ## `InlineConfig`
 
@@ -173,6 +180,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 })()
 ```
 
+<ApiLink v-bind="data.build" />
+
 ## `preview`
 
 **Type Signature:**
@@ -198,6 +207,8 @@ import { preview } from 'vite'
 })()
 ```
 
+<ApiLink v-bind="data.preview" />
+
 ## `resolveConfig`
 
 **Type Signature:**
@@ -212,6 +223,8 @@ async function resolveConfig(
 
 The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
 
+<ApiLink v-bind="data.resolveConfig" />
+
 ## `mergeConfig`
 
 **Type Signature:**
@@ -225,6 +238,8 @@ function mergeConfig(
 ```
 
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
+
+<ApiLink v-bind="data.mergeConfig" />
 
 ## `searchForWorkspaceRoot`
 
@@ -246,6 +261,8 @@ Search for the root of the potential workspace if it meets the following conditi
   - `lerna.json`
   - `pnpm-workspace.yaml`
 
+<ApiLink v-bind="data.searchForWorkspaceRoot" />
+
 ## `loadEnv`
 
 **Type Signature:**
@@ -262,6 +279,8 @@ function loadEnv(
 
 Load `.env` files within the `envDir`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
 
+<ApiLink v-bind="data.loadEnv" />
+
 ## `normalizePath`
 
 **Type Signature:**
@@ -273,6 +292,8 @@ function normalizePath(id: string): string
 **Related:** [Path Normalization](./api-plugin.md#path-normalization)
 
 Normalizes a path to interoperate between Vite plugins.
+
+<ApiLink v-bind="data.normalizePath" />
 
 ## `transformWithEsbuild`
 
@@ -288,6 +309,8 @@ async function transformWithEsbuild(
 ```
 
 Transform JavaScript or TypeScript with esbuild. Useful for plugins that prefer matching Vite's internal esbuild transform.
+
+<ApiLink v-bind="data.transformWithEsbuild" />
 
 ## `loadConfigFromFile`
 
@@ -307,3 +330,5 @@ async function loadConfigFromFile(
 ```
 
 Load a Vite config file manually with esbuild.
+
+<ApiLink v-bind="data.loadConfigFromFile" />
