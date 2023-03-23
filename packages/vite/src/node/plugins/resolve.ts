@@ -105,7 +105,6 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   asSrc?: boolean
   tryIndex?: boolean
   tryPrefix?: string
-  skipPackageJson?: boolean
   preferRelative?: boolean
   isRequire?: boolean
   // #3040
@@ -496,180 +495,166 @@ function tryFsResolve(
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true,
+  skipPackageJson = false,
 ): string | undefined {
-  const { file, postfix } = splitFileAndPostfix(fsPath)
+  let postfixIndex = fsPath.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = fsPath.indexOf('#')
 
-  // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
-  // source code so we only need to perform the check for dependencies.
-  const tryUnsplitted = fsPath.includes('#') && fsPath.includes('node_modules')
-
-  let res: string | undefined
-
-  if (
-    tryUnsplitted &&
-    (res = tryResolveFile(
-      fsPath,
-      '',
-      options,
-      false,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson,
-    ))
-  ) {
-    return res
-  }
-
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      false,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson,
-    ))
-  ) {
-    return res
-  }
-
-  for (const ext of options.extensions) {
-    if (
-      tryUnsplitted &&
-      (res = tryResolveFile(
-        fsPath + ext,
-        '',
-        options,
-        false,
-        targetWeb,
-        options.tryPrefix,
-        options.skipPackageJson,
-        false,
-      ))
-    ) {
-      return res
-    }
-
-    if (
-      (res = tryResolveFile(
-        file + ext,
-        postfix,
-        options,
-        false,
-        targetWeb,
-        options.tryPrefix,
-        options.skipPackageJson,
-        false,
-      ))
-    ) {
-      return res
-    }
-  }
-
-  // if `tryIndex` false, skip as we've already tested above
-  if (!tryIndex) return
-
-  if (
-    tryUnsplitted &&
-    (res = tryResolveFile(
-      fsPath,
-      '',
-      options,
-      tryIndex,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson,
-    ))
-  ) {
-    return res
-  }
-
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      tryIndex,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson,
-    ))
-  ) {
-    return res
-  }
-}
-
-function tryResolveFile(
-  file: string,
-  postfix: string,
-  options: InternalResolveOptions,
-  tryIndex: boolean,
-  targetWeb: boolean,
-  tryPrefix?: string,
-  skipPackageJson?: boolean,
-  skipTsExtension?: boolean,
-): string | undefined {
-  let stat: fs.Stats | undefined
-  try {
-    stat = fs.statSync(file, { throwIfNoEntry: false })
-  } catch {
-    return
-  }
-
-  if (stat) {
-    if (!stat.isDirectory()) {
-      return getRealPath(file, options.preserveSymlinks) + postfix
-    } else if (tryIndex) {
-      if (!skipPackageJson) {
-        let pkgPath = file + '/package.json'
-        try {
-          if (fs.existsSync(pkgPath)) {
-            if (!options.preserveSymlinks) {
-              pkgPath = safeRealpathSync(pkgPath)
-            }
-            // path points to a node package
-            const pkg = loadPackageData(pkgPath)
-            const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
-            return resolved
-          }
-        } catch (e) {
-          if (e.code !== 'ENOENT') {
-            throw e
-          }
-        }
-      }
-      const index = tryFsResolve(file + '/index', options)
-      if (index) return index + postfix
-    }
-  }
-
-  // try resolve .js import to typescript file
-  if (
-    !skipTsExtension &&
-    options.isFromTsImporter &&
-    isPossibleTsOutput(file)
-  ) {
-    const tsSrcPaths = getPotentialTsSrcPaths(file)
-    for (const srcPath of tsSrcPaths) {
-      const res = tryResolveFile(
-        srcPath,
-        postfix,
+    // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
+    // source code so we only need to perform the check for dependencies.
+    // We don't support `?` in node_modules paths, so we only need to check in this branch.
+    if (postfixIndex >= 0 && fsPath.includes('node_modules')) {
+      const res = tryCleanFsResolve(
+        fsPath,
         options,
         tryIndex,
         targetWeb,
-        tryPrefix,
         skipPackageJson,
-        true,
       )
       if (res) return res
     }
-    return
   }
 
-  if (tryPrefix) {
-    const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, postfix, options, tryIndex, targetWeb)
+  let file = fsPath
+  let postfix = ''
+  if (postfixIndex >= 0) {
+    file = fsPath.slice(0, postfixIndex)
+    postfix = fsPath.slice(postfixIndex)
+  }
+
+  const res = tryCleanFsResolve(
+    file,
+    options,
+    tryIndex,
+    targetWeb,
+    skipPackageJson,
+  )
+  if (res) return res + postfix
+}
+
+function tryCleanFsResolve(
+  file: string,
+  options: InternalResolveOptions,
+  tryIndex = true,
+  targetWeb = true,
+  skipPackageJson = false,
+): string | undefined {
+  const { tryPrefix, extensions, preserveSymlinks } = options
+
+  const fileStat = tryStatSync(file)
+
+  // Try direct match first
+  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
+
+  let res: string | undefined
+
+  // If path.dirname is a valid directory, try extensions and ts resolution logic
+  const possibleJsToTs = options.isFromTsImporter && isPossibleTsOutput(file)
+  if (possibleJsToTs || extensions.length || tryPrefix) {
+    const dirPath = path.dirname(file)
+    const dirStat = tryStatSync(dirPath)
+    if (dirStat?.isDirectory()) {
+      if (possibleJsToTs) {
+        // try resolve .js, .mjs, .mts or .jsx import to typescript file
+        const tsSrcPaths = getPotentialTsSrcPaths(file)
+        for (const srcPath of tsSrcPaths) {
+          if ((res = tryResolveRealFile(srcPath, preserveSymlinks))) return res
+        }
+      }
+
+      if (
+        (res = tryResolveRealFileWithExtensions(
+          file,
+          extensions,
+          preserveSymlinks,
+        ))
+      )
+        return res
+
+      if (tryPrefix) {
+        const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
+
+        if ((res = tryResolveRealFile(prefixed, preserveSymlinks))) return res
+
+        if (
+          (res = tryResolveRealFileWithExtensions(
+            prefixed,
+            extensions,
+            preserveSymlinks,
+          ))
+        )
+          return res
+      }
+    }
+  }
+
+  if (tryIndex && fileStat) {
+    // Path points to a directory, check for package.json and entry and /index file
+    const dirPath = file
+
+    if (!skipPackageJson) {
+      let pkgPath = `${dirPath}/package.json`
+      try {
+        if (fs.existsSync(pkgPath)) {
+          if (!options.preserveSymlinks) {
+            pkgPath = safeRealpathSync(pkgPath)
+          }
+          // path points to a node package
+          const pkg = loadPackageData(pkgPath)
+          return resolvePackageEntry(dirPath, pkg, targetWeb, options)
+        }
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e
+      }
+    }
+
+    if (
+      (res = tryResolveRealFileWithExtensions(
+        `${dirPath}/index`,
+        extensions,
+        preserveSymlinks,
+      ))
+    )
+      return res
+
+    if (tryPrefix) {
+      if (
+        (res = tryResolveRealFileWithExtensions(
+          `${dirPath}/${options.tryPrefix}index`,
+          extensions,
+          preserveSymlinks,
+        ))
+      )
+        return res
+    }
+  }
+}
+
+function tryResolveRealFile(
+  file: string,
+  preserveSymlinks: boolean,
+): string | undefined {
+  const stat = tryStatSync(file)
+  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
+}
+
+function tryResolveRealFileWithExtensions(
+  filePath: string,
+  extensions: string[],
+  preserveSymlinks: boolean,
+): string | undefined {
+  for (const ext of extensions) {
+    const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
+    if (res) return res
+  }
+}
+
+function tryStatSync(file: string): fs.Stats | undefined {
+  try {
+    return fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    // Ignore errors
   }
 }
 
@@ -1034,22 +1019,29 @@ export function resolvePackageEntry(
 
     for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
+      let skipPackageJson = false
       if (
         options.mainFields[0] === 'sass' &&
         !options.extensions.includes(path.extname(entry))
       ) {
         entry = ''
-        options.skipPackageJson = true
-      }
-
-      // resolve object browser field in package.json
-      const { browser: browserField } = data
-      if (targetWeb && options.browserField && isObject(browserField)) {
-        entry = mapWithBrowserField(entry, browserField) || entry
+        skipPackageJson = true
+      } else {
+        // resolve object browser field in package.json
+        const { browser: browserField } = data
+        if (targetWeb && options.browserField && isObject(browserField)) {
+          entry = mapWithBrowserField(entry, browserField) || entry
+        }
       }
 
       const entryPointPath = path.join(dir, entry)
-      const resolvedEntryPoint = tryFsResolve(entryPointPath, options)
+      const resolvedEntryPoint = tryFsResolve(
+        entryPointPath,
+        options,
+        true,
+        true,
+        skipPackageJson,
+      )
       if (resolvedEntryPoint) {
         isDebug &&
           debug(
