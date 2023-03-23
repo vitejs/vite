@@ -113,9 +113,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
   tryEsmOnly?: boolean
-  /**
-   * @deprecated resolveId is called with a custom `scan` option instead
-   */
+  // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
   ssrOptimizeCheck?: boolean
@@ -158,7 +156,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
-      const scan = resolveOpts?.scan ?? false
+      const scan = resolveOpts?.scan ?? resolveOptions.scan ?? false
 
       // this is passed by @rollup/plugin-commonjs
       const isRequire = resolveOpts?.custom?.['node-resolve']?.isRequire

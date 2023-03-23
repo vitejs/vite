@@ -844,6 +844,7 @@ function createOptimizeDepsIncludeResolver(
 ) {
   const resolve = config.createResolver({
     asSrc: false,
+    scan: true,
     ssrOptimizeCheck: ssr,
     ssrConfig: config.ssr,
   })
