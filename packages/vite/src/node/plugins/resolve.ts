@@ -827,8 +827,8 @@ export function tryNodeResolve(
       !(
         ext === '.cjs' ||
         (ext === '.js' &&
-          findNearestPackageData(resolved, options.packageCache)?.data.type !==
-            'module')
+          findNearestPackageData(path.dirname(resolved), options.packageCache)
+            ?.data.type !== 'module')
       ) &&
       !(include?.includes(pkgId) || include?.includes(id)))
 
@@ -1206,7 +1206,7 @@ function tryResolveBrowserMapping(
   const pkg =
     importer &&
     (idToPkgMap.get(importer) ||
-      findNearestPackageData(importer, options.packageCache))
+      findNearestPackageData(path.dirname(importer), options.packageCache))
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
