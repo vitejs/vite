@@ -434,10 +434,8 @@ function prettifyMessage(m: Message, code: string): string {
 }
 
 let tsconfckRoot: string | undefined
-let tsconfckParseOptions:
-  | TSConfckParseOptions
-  | Promise<TSConfckParseOptions>
-  | undefined
+let tsconfckParseOptions: TSConfckParseOptions | Promise<TSConfckParseOptions> =
+  { resolveWithEmptyIfConfigNotFound: true }
 
 function initTSConfck(root: string, force = false) {
   // bail if already cached
