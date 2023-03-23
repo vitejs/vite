@@ -170,35 +170,12 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const resolveSubpathImports = (id: string, importer?: string) => {
-        if (!importer || !id.startsWith(subpathImportsPrefix)) return
-        const basedir = path.dirname(importer)
-        const pkgData = findNearestPackageData(basedir, options.packageCache)
-        if (!pkgData) return
-
-        let importsPath = resolveExportsOrImports(
-          pkgData.data,
-          id,
-          options,
-          targetWeb,
-          'imports',
-        )
-
-        if (importsPath?.[0] === '.') {
-          importsPath = path.relative(
-            basedir,
-            path.join(pkgData.dir, importsPath),
-          )
-
-          if (importsPath[0] !== '.') {
-            importsPath = `./${importsPath}`
-          }
-        }
-
-        return importsPath
-      }
-
-      const resolvedImports = resolveSubpathImports(id, importer)
+      const resolvedImports = resolveSubpathImports(
+        id,
+        importer,
+        options,
+        targetWeb,
+      )
       if (resolvedImports) {
         id = resolvedImports
       }
@@ -230,34 +207,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         return optimizedPath
       }
 
-      const ensureVersionQuery = (resolved: string): string => {
-        if (
-          !options.isBuild &&
-          !options.scan &&
-          depsOptimizer &&
-          !(
-            resolved === normalizedClientEntry ||
-            resolved === normalizedEnvEntry
-          )
-        ) {
-          // Ensure that direct imports of node_modules have the same version query
-          // as if they would have been imported through a bare import
-          // Use the original id to do the check as the resolved id may be the real
-          // file path after symlinks resolution
-          const isNodeModule =
-            nodeModulesInPathRE.test(normalizePath(id)) ||
-            nodeModulesInPathRE.test(normalizePath(resolved))
-
-          if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
-            const versionHash = depsOptimizer.metadata.browserHash
-            if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
-              resolved = injectQuery(resolved, `v=${versionHash}`)
-            }
-          }
-        }
-        return resolved
-      }
-
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
@@ -265,7 +214,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
-        return ensureVersionQuery(res || fsPath)
+        return ensureVersionQuery(res || fsPath, id, options, depsOptimizer)
       }
 
       // URL
@@ -274,7 +223,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res)
+          return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
 
@@ -314,7 +263,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          res = ensureVersionQuery(res)
+          res = ensureVersionQuery(res, id, options, depsOptimizer)
           isDebug &&
             debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           const pkg = importer != null && idToPkgMap.get(importer)
@@ -336,7 +285,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug &&
             debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res)
+          return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
 
@@ -346,7 +295,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         (res = tryFsResolve(id, options))
       ) {
         isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        return ensureVersionQuery(res)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // external
@@ -465,6 +414,66 @@ export default new Proxy({}, {
       }
     },
   }
+}
+
+function resolveSubpathImports(
+  id: string,
+  importer: string | undefined,
+  options: InternalResolveOptions,
+  targetWeb: boolean,
+) {
+  if (!importer || !id.startsWith(subpathImportsPrefix)) return
+  const basedir = path.dirname(importer)
+  const pkgData = findNearestPackageData(basedir, options.packageCache)
+  if (!pkgData) return
+
+  let importsPath = resolveExportsOrImports(
+    pkgData.data,
+    id,
+    options,
+    targetWeb,
+    'imports',
+  )
+
+  if (importsPath?.[0] === '.') {
+    importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
+
+    if (importsPath[0] !== '.') {
+      importsPath = `./${importsPath}`
+    }
+  }
+
+  return importsPath
+}
+
+function ensureVersionQuery(
+  resolved: string,
+  id: string,
+  options: InternalResolveOptions,
+  depsOptimizer?: DepsOptimizer,
+): string {
+  if (
+    !options.isBuild &&
+    !options.scan &&
+    depsOptimizer &&
+    !(resolved === normalizedClientEntry || resolved === normalizedEnvEntry)
+  ) {
+    // Ensure that direct imports of node_modules have the same version query
+    // as if they would have been imported through a bare import
+    // Use the original id to do the check as the resolved id may be the real
+    // file path after symlinks resolution
+    const isNodeModule =
+      nodeModulesInPathRE.test(normalizePath(id)) ||
+      nodeModulesInPathRE.test(normalizePath(resolved))
+
+    if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
+      const versionHash = depsOptimizer.metadata.browserHash
+      if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
+        resolved = injectQuery(resolved, `v=${versionHash}`)
+      }
+    }
+  }
+  return resolved
 }
 
 function splitFileAndPostfix(path: string) {
