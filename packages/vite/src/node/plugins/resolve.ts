@@ -628,7 +628,7 @@ function tryResolveRealFile(
   preserveSymlinks: boolean,
 ): string | undefined {
   const stat = tryStatSync(file)
-  if (stat && !stat.isDirectory()) return getRealPath(file, preserveSymlinks)
+  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
 }
 
 function tryResolveRealFileWithExtensions(
