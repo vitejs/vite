@@ -536,7 +536,7 @@ function tryCleanFsResolve(
   const fileStat = tryStatSync(file)
 
   // Try direct match first
-  if (fileStat && !fileStat.isDirectory())
+  if (fileStat?.isFile())
     return getRealPath(file, options.preserveSymlinks)
 
   let res: string | undefined
