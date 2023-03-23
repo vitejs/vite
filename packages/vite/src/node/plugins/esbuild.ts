@@ -9,7 +9,7 @@ import type {
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
-import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
+import type { TSConfckParseOptions } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
   cleanUrl,
@@ -18,11 +18,13 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
+  timeFrom,
 } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
+const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
@@ -204,7 +206,8 @@ export async function transformWithEsbuild(
   }
 }
 
-export function esbuildPlugin(options: ESBuildOptions): Plugin {
+export function esbuildPlugin(config: ResolvedConfig): Plugin {
+  const options = config.esbuild as ESBuildOptions
   const { jsxInject, include, exclude, ...esbuildTransformOptions } = options
 
   const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
@@ -226,6 +229,8 @@ export function esbuildPlugin(options: ESBuildOptions): Plugin {
     keepNames: false,
   }
 
+  initTSConfck(config.root)
+
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
@@ -234,9 +239,6 @@ export function esbuildPlugin(options: ESBuildOptions): Plugin {
         .on('add', reloadOnTsconfigChange)
         .on('change', reloadOnTsconfigChange)
         .on('unlink', reloadOnTsconfigChange)
-    },
-    async configResolved(config) {
-      await initTSConfck(config)
     },
     buildEnd() {
       // recycle serve to avoid preventing Node self-exit (#6815)
@@ -281,11 +283,10 @@ const rollupToEsbuildFormatMap: Record<
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+  initTSConfck(config.root)
+
   return {
     name: 'vite:esbuild-transpile',
-    async configResolved(config) {
-      await initTSConfck(config)
-    },
     async renderChunk(code, chunk, opts) {
       // @ts-expect-error injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
@@ -432,32 +433,51 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-const tsconfckParseOptions: TSConfckParseOptions = {
-  cache: new Map<string, TSConfckParseResult>(),
-  tsConfigPaths: undefined,
-  root: undefined,
-  resolveWithEmptyIfConfigNotFound: true,
+let tsconfckRoot: string | undefined
+let tsconfckParseOptions: TSConfckParseOptions | Promise<TSConfckParseOptions> =
+  { resolveWithEmptyIfConfigNotFound: true }
+
+function initTSConfck(root: string, force = false) {
+  // bail if already cached
+  if (!force && root === tsconfckRoot) return
+
+  const workspaceRoot = searchForWorkspaceRoot(root)
+
+  tsconfckRoot = root
+  tsconfckParseOptions = initTSConfckParseOptions(workspaceRoot)
+
+  // cached as the options value itself when promise is resolved
+  tsconfckParseOptions.then((options) => {
+    if (root === tsconfckRoot) {
+      tsconfckParseOptions = options
+    }
+  })
 }
 
-async function initTSConfck(config: ResolvedConfig) {
-  const workspaceRoot = searchForWorkspaceRoot(config.root)
-  debug(`init tsconfck (root: ${colors.cyan(workspaceRoot)})`)
+async function initTSConfckParseOptions(workspaceRoot: string) {
+  const start = isDebug ? performance.now() : 0
 
-  tsconfckParseOptions.cache!.clear()
-  tsconfckParseOptions.root = workspaceRoot
-  tsconfckParseOptions.tsConfigPaths = new Set([
-    ...(await findAll(workspaceRoot, {
-      skip: (dir) => dir === 'node_modules' || dir === '.git',
-    })),
-  ])
-  debug(`init tsconfck end`)
+  const options: TSConfckParseOptions = {
+    cache: new Map(),
+    root: workspaceRoot,
+    tsConfigPaths: new Set(
+      await findAll(workspaceRoot, {
+        skip: (dir) => dir === 'node_modules' || dir === '.git',
+      }),
+    ),
+    resolveWithEmptyIfConfigNotFound: true,
+  }
+
+  isDebug && debug(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
+
+  return options
 }
 
 async function loadTsconfigJsonForFile(
   filename: string,
 ): Promise<TSConfigJSON> {
   try {
-    const result = await parse(filename, tsconfckParseOptions)
+    const result = await parse(filename, await tsconfckParseOptions)
     // tsconfig could be out of root, make sure it is watched on dev
     if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
@@ -474,7 +494,7 @@ async function loadTsconfigJsonForFile(
   }
 }
 
-function reloadOnTsconfigChange(changedFile: string) {
+async function reloadOnTsconfigChange(changedFile: string) {
   // server could be closed externally after a file change is detected
   if (!server) return
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
@@ -482,7 +502,7 @@ function reloadOnTsconfigChange(changedFile: string) {
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
     (changedFile.endsWith('.json') &&
-      tsconfckParseOptions?.cache?.has(changedFile))
+      (await tsconfckParseOptions)?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
@@ -493,15 +513,15 @@ function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    initTSConfck(server.config).finally(() => {
-      // server may not be available if vite config is updated at the same time
-      if (server) {
-        // force full reload
-        server.ws.send({
-          type: 'full-reload',
-          path: '*',
-        })
-      }
-    })
+    initTSConfck(server.config.root, true)
+
+    // server may not be available if vite config is updated at the same time
+    if (server) {
+      // force full reload
+      server.ws.send({
+        type: 'full-reload',
+        path: '*',
+      })
+    }
   }
 }
