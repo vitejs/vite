@@ -138,10 +138,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   // back to checking the path as absolute. If /root/root isn't a valid path, we can
   // avoid these checks. Absolute paths inside root are common in user code as many
   // paths are resolved by the user. For example for an alias.
-  const rootInRoot =
-    fs
-      .statSync(path.join(root, root), { throwIfNoEntry: false })
-      ?.isDirectory() ?? false
+  const rootInRoot = tryStatSync(path.join(root, root))?.isDirectory() ?? false
 
   return {
     name: 'vite:resolve',
