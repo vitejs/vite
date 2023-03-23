@@ -113,7 +113,9 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
   tryEsmOnly?: boolean
-  // True when resolving during the scan phase to discover dependencies
+  /**
+   * @deprecated resolveId is called with a custom `scan` option instead
+   */
   scan?: boolean
   // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
   ssrOptimizeCheck?: boolean
@@ -156,15 +158,14 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
-      // this is passed by @rollup/plugin-commonjs
-      const isRequire: boolean =
-        resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
+      const scan = resolveOpts?.scan ?? false
 
-      const options: InternalResolveOptions = {
-        isRequire,
-        ...resolveOptions,
-        scan: resolveOpts?.scan ?? resolveOptions.scan,
-      }
+      // this is passed by @rollup/plugin-commonjs
+      const isRequire = resolveOpts?.custom?.['node-resolve']?.isRequire
+
+      const options = isRequire
+        ? { isRequire, ...resolveOptions }
+        : resolveOptions
 
       const resolvedImports = resolveSubpathImports(
         id,
@@ -210,7 +211,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
-        return ensureVersionQuery(res || fsPath, id, options, depsOptimizer)
+        return ensureVersionQuery(
+          res || fsPath,
+          id,
+          options,
+          scan,
+          depsOptimizer,
+        )
       }
 
       // URL
@@ -219,7 +226,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return ensureVersionQuery(res, id, options, scan, depsOptimizer)
         }
       }
 
@@ -259,7 +266,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          res = ensureVersionQuery(res, id, options, depsOptimizer)
+          res = ensureVersionQuery(res, id, options, scan, depsOptimizer)
           isDebug &&
             debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           const pkg = importer != null && idToPkgMap.get(importer)
@@ -281,7 +288,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug &&
             debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, depsOptimizer)
+          return ensureVersionQuery(res, id, options, scan, depsOptimizer)
         }
       }
 
@@ -291,7 +298,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         (res = tryFsResolve(id, options))
       ) {
         isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        return ensureVersionQuery(res, id, options, depsOptimizer)
+        return ensureVersionQuery(res, id, options, scan, depsOptimizer)
       }
 
       // external
@@ -315,7 +322,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           !external &&
           asSrc &&
           depsOptimizer &&
-          !options.scan &&
+          !scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
           return res
@@ -446,11 +453,12 @@ function ensureVersionQuery(
   resolved: string,
   id: string,
   options: InternalResolveOptions,
+  scan: boolean,
   depsOptimizer?: DepsOptimizer,
 ): string {
   if (
     !options.isBuild &&
-    !options.scan &&
+    !scan &&
     depsOptimizer &&
     !(resolved === normalizedClientEntry || resolved === normalizedEnvEntry)
   ) {
@@ -675,6 +683,7 @@ export function tryNodeResolve(
   ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
+  scan: boolean = false,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -791,7 +800,7 @@ export function tryNodeResolve(
     !options.ssrOptimizeCheck &&
     (!resolved.includes('node_modules') || // linked
       !depsOptimizer || // resolving before listening to the server
-      options.scan) // initial esbuild scan phase
+      scan) // initial esbuild scan phase
   ) {
     return { id: resolved }
   }

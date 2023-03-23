@@ -66,7 +66,6 @@ export function esbuildDepPlugin(
   // default resolver which prefers ESM
   const _resolve = config.createResolver({
     asSrc: false,
-    scan: true,
     packageCache: esmPackageCache,
   })
 
@@ -74,7 +73,6 @@ export function esbuildDepPlugin(
   const _resolveRequire = config.createResolver({
     asSrc: false,
     isRequire: true,
-    scan: true,
     packageCache: cjsPackageCache,
   })
 
