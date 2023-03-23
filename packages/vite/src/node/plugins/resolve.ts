@@ -1264,7 +1264,7 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
 function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
   resolved = ensureVolumeInPath(resolved)
   if (!preserveSymlinks && browserExternalId !== resolved) {
-    resolved = fs.realpathSync(resolved)
+    resolved = safeRealpathSync(resolved)
   }
   return normalizePath(resolved)
 }
