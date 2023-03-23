@@ -27,7 +27,6 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
-  isHtmlExt,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -289,7 +288,7 @@ export function indexHtmlMiddleware(
 
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
-    if (url && isHtmlExt(url) && req.headers['sec-fetch-dest'] !== 'script') {
+    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {
         try {

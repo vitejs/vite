@@ -18,7 +18,6 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
-  isHtmlExt,
   isUrl,
   normalizePath,
   processSrcSet,
@@ -304,7 +303,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:build-html',
 
     async transform(html, id) {
-      if (isHtmlExt(id)) {
+      if (id.endsWith('.html')) {
         const relativeUrlPath = path.posix.relative(
           config.root,
           normalizePath(id),

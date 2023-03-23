@@ -11,7 +11,6 @@ import {
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
-  isHtmlExt,
   isObject,
   prettifyUrl,
   removeTimestampQuery,
@@ -177,7 +176,7 @@ async function loadAndTransform(
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
-    if (options.html && !isHtmlExt(id)) {
+    if (options.html && !id.endsWith('.html')) {
       return null
     }
     // try fallback loading it from fs as string

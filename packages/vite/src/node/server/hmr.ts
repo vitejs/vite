@@ -5,13 +5,7 @@ import colors from 'picocolors'
 import type { Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import {
-  createDebugger,
-  isHtmlExt,
-  normalizePath,
-  unique,
-  wrapId,
-} from '../utils'
+import { createDebugger, normalizePath, unique, wrapId } from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
@@ -116,7 +110,7 @@ export async function handleHMRUpdate(
 
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
-    if (isHtmlExt(file)) {
+    if (file.endsWith('.html')) {
       config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
         clear: true,
         timestamp: true,

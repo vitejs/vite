@@ -17,12 +17,8 @@ import {
   createDebugger,
   dataUrlRE,
   externalRE,
-  isAstroExt,
-  isHtmlExt,
   isObject,
   isOptimizable,
-  isSvelteExt,
-  isVueExt,
   moduleListContains,
   multilineCommentsRE,
   normalizePath,
@@ -370,7 +366,7 @@ function esbuildScanPlugin(
           let raw = fs.readFileSync(path, 'utf-8')
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
-          const isHtml = isHtmlExt(path)
+          const isHtml = path.endsWith('.html')
           const regex = isHtml ? scriptModuleRE : scriptRE
           regex.lastIndex = 0
           let js = ''
@@ -398,7 +394,7 @@ function esbuildScanPlugin(
             let loader: Loader = 'js'
             if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
               loader = lang
-            } else if (isAstroExt(path)) {
+            } else if (path.endsWith('.astro')) {
               loader = 'ts'
             }
             const srcMatch = openTag.match(srcRE)
@@ -449,7 +445,7 @@ function esbuildScanPlugin(
               // Especially for Svelte files, exports in <script context="module"> means module exports,
               // exports in <script> means component props. To avoid having two same export name from the
               // star exports, we need to ignore exports in <script>
-              if (isSvelteExt(path) && context !== 'module') {
+              if (path.endsWith('.svelte') && context !== 'module') {
                 js += `import ${virtualModulePath}\n`
               } else {
                 js += `export * from ${virtualModulePath}\n`
@@ -461,7 +457,7 @@ function esbuildScanPlugin(
           // anywhere in a string. Svelte and Astro files can't have
           // `export default` as code so we know if it's encountered it's a
           // false positive (e.g. contained in a string)
-          if (!isVueExt(path) || !js.includes('export default')) {
+          if (!path.endsWith('.vue') || !js.includes('export default')) {
             js += '\nexport default {}'
           }
 

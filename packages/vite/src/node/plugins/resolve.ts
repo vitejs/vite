@@ -27,8 +27,6 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isHtmlExt,
-  isMjsExt,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
@@ -283,7 +281,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // relative
       if (
         id[0] === '.' ||
-        ((preferRelative || isHtmlExt(importer)) &&
+        ((preferRelative || importer?.endsWith('.html')) &&
           startsWithWordCharRE.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
@@ -964,7 +962,7 @@ export function resolvePackageEntry(
     if (
       targetWeb &&
       options.browserField &&
-      (!entryPoint || isMjsExt(entryPoint))
+      (!entryPoint || entryPoint.endsWith('.mjs'))
     ) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
@@ -1008,7 +1006,7 @@ export function resolvePackageEntry(
 
     // fallback to mainFields if still not resolved
     // TODO: review if `.mjs` check is still needed
-    if (!resolvedFromExports && (!entryPoint || isMjsExt(entryPoint))) {
+    if (!resolvedFromExports && (!entryPoint || entryPoint.endsWith('.mjs'))) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {

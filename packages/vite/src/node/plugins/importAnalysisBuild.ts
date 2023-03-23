@@ -9,7 +9,6 @@ import {
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
-  isCssExt,
   isDataUrl,
   isExternalUrl,
   moduleListContains,
@@ -528,7 +527,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     const cssDeps: string[] = []
                     const otherDeps: string[] = []
                     for (const dep of depsArray) {
-                      ;(isCssExt(dep) ? cssDeps : otherDeps).push(dep)
+                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                     }
                     resolvedDeps = [
                       ...resolveDependencies(normalizedFile, otherDeps, {

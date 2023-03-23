@@ -4,7 +4,7 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isCssExt, isDefined, isSourceMapExt, normalizePath } from '../utils'
+import { isDefined, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -142,8 +142,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     mapSize: chunk.map ? chunk.map.toString().length : null,
                   }
                 } else {
-                  if (isSourceMapExt(chunk.fileName)) return null
-                  const isCSS = isCssExt(chunk.fileName)
+                  if (chunk.fileName.endsWith('.map')) return null
+                  const isCSS = chunk.fileName.endsWith('.css')
                   return {
                     name: chunk.fileName,
                     group: isCSS ? 'CSS' : 'Assets',
