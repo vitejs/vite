@@ -20,6 +20,8 @@ type LogEntry = {
   mapSize: number | null
 }
 
+const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
+
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
@@ -144,12 +146,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                 } else {
                   if (chunk.fileName.endsWith('.map')) return null
                   const isCSS = chunk.fileName.endsWith('.css')
+                  const isCompressible =
+                    isCSS || COMPRESSIBLE_ASSETS_RE.test(chunk.fileName)
                   return {
                     name: chunk.fileName,
                     group: isCSS ? 'CSS' : 'Assets',
                     size: chunk.source.length,
                     mapSize: null, // Rollup doesn't support CSS maps?
-                    compressedSize: isCSS
+                    compressedSize: isCompressible
                       ? await getCompressedSize(chunk.source)
                       : null,
                   }
