@@ -536,8 +536,7 @@ function tryCleanFsResolve(
   const fileStat = tryStatSync(file)
 
   // Try direct match first
-  if (fileStat?.isFile())
-    return getRealPath(file, options.preserveSymlinks)
+  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
 
   let res: string | undefined
 
@@ -546,7 +545,7 @@ function tryCleanFsResolve(
   if (possibleJsToTs || extensions.length || tryPrefix) {
     const dirPath = path.dirname(file)
     const dirStat = tryStatSync(dirPath)
-    if (dirStat && dirStat.isDirectory()) {
+    if (dirStat?.isDirectory()) {
       if (possibleJsToTs) {
         // try resolve .js, .mjs, .mts or .jsx import to typescript file
         const tsSrcPaths = getPotentialTsSrcPaths(file)
