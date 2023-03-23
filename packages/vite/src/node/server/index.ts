@@ -24,6 +24,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  isJsonExt,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -516,7 +517,7 @@ export async function createServer(
   const { packageCache } = config
   const setPackageData = packageCache.set.bind(packageCache)
   packageCache.set = (id, pkg) => {
-    if (id.endsWith('.json')) {
+    if (isJsonExt(id)) {
       watcher.add(id)
     }
     return setPackageData(id, pkg)

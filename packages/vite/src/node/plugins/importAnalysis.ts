@@ -33,6 +33,10 @@ import {
   isDataUrl,
   isExternalUrl,
   isJSRequest,
+  isJsonExt,
+  isJsxExt,
+  isTsxExt,
+  isVueExt,
   joinUrlSegments,
   moduleListContains,
   normalizePath,
@@ -223,8 +227,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       try {
         ;[imports, exports] = parseImports(source)
       } catch (e: any) {
-        const isVue = importer.endsWith('.vue')
-        const isJsx = importer.endsWith('.jsx') || importer.endsWith('.tsx')
+        const isVue = isVueExt(importer)
+        const isJsx = isJsxExt(importer) || isTsxExt(importer)
         const maybeJSX = !isVue && isJSRequest(importer)
 
         const msg = isVue
@@ -498,7 +502,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (
             specifier[0] === '/' &&
             !config.assetsInclude(cleanUrl(specifier)) &&
-            !specifier.endsWith('.json') &&
+            !isJsonExt(specifier) &&
             checkPublicFile(specifier, config)
           ) {
             throw new Error(

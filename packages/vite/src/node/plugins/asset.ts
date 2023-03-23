@@ -19,6 +19,8 @@ import type { ResolvedConfig } from '../config'
 import {
   cleanUrl,
   getHash,
+  isHtmlExt,
+  isSvgExt,
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
@@ -333,8 +335,8 @@ async function fileToBuiltUrl(
   let url: string
   if (
     config.build.lib ||
-    (!file.endsWith('.svg') &&
-      !file.endsWith('.html') &&
+    (!isSvgExt(file) &&
+      !isHtmlExt(file) &&
       content.length < Number(config.build.assetsInlineLimit) &&
       !isGitLfsPlaceholder(content))
   ) {

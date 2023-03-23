@@ -18,6 +18,7 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
+  isJsonExt,
 } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
@@ -481,8 +482,7 @@ function reloadOnTsconfigChange(changedFile: string) {
   // any json file in the tsconfig cache could have been used to compile ts
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
-    (changedFile.endsWith('.json') &&
-      tsconfckParseOptions?.cache?.has(changedFile))
+    (isJsonExt(changedFile) && tsconfckParseOptions?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,

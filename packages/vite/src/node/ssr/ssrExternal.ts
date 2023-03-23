@@ -9,6 +9,8 @@ import {
   createFilter,
   isBuiltin,
   isDefined,
+  isJsExt,
+  isMjsExt,
   lookupFile,
   normalizePath,
 } from '../utils'
@@ -295,7 +297,7 @@ function cjsSsrCollectExternals(
         continue
       }
 
-      if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
+      if (pkg.type === 'module' || isMjsExt(esmEntry)) {
         ssrExternals.add(id)
         continue
       }
@@ -330,7 +332,7 @@ export function cjsShouldExternalizeForSSR(
     }
     // deep imports, check ext before externalizing - only externalize
     // extension-less imports and explicit .js imports
-    if (id.startsWith(e + '/') && (!path.extname(id) || id.endsWith('.js'))) {
+    if (id.startsWith(e + '/') && (!path.extname(id) || isJsExt(id))) {
       return true
     }
   })

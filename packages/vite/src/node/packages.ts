@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createFilter, safeRealpathSync } from './utils'
+import { createFilter, isJsonExt, safeRealpathSync } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
 
@@ -204,7 +204,7 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
   const { packageCache } = config
   const setPackageData = packageCache.set.bind(packageCache)
   packageCache.set = (id, pkg) => {
-    if (id.endsWith('.json')) {
+    if (isJsonExt(id)) {
       watchFile(id)
     }
     return setPackageData(id, pkg)

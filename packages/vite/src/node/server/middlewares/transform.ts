@@ -11,6 +11,7 @@ import {
   injectQuery,
   isImportRequest,
   isJSRequest,
+  isSourceMapExt,
   normalizePath,
   prettifyUrl,
   removeImportQuery,
@@ -68,7 +69,7 @@ export function transformMiddleware(
     const withoutQuery = cleanUrl(url)
 
     try {
-      const isSourceMap = withoutQuery.endsWith('.map')
+      const isSourceMap = isSourceMapExt(withoutQuery)
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
         const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr

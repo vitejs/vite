@@ -237,7 +237,7 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  if (!dir.endsWith('/')) {
+  if (!isTrailingSlash(dir)) {
     dir = `${dir}/`
   }
   return (
@@ -271,7 +271,7 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && !url.endsWith('/')) {
+  if (!path.extname(url) && !isTrailingSlash(url)) {
     return true
   }
   return false
@@ -1139,8 +1139,8 @@ function normalizeSingleAlias({
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
-    find.endsWith('/') &&
-    replacement.endsWith('/')
+    isTrailingSlash(find) &&
+    isTrailingSlash(replacement)
   ) {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
@@ -1232,7 +1232,7 @@ export function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a.endsWith('/')) {
+  if (isTrailingSlash(a)) {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {
@@ -1249,7 +1249,7 @@ export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base.endsWith('/') ? base : base + '/'
+  const devBase = isTrailingSlash(base) ? base : base + '/'
   return path.replace(RegExp('^' + devBase), '/')
 }
 
@@ -1273,4 +1273,145 @@ export function evalValue<T = any>(rawValue: string): T {
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
+}
+
+export function isTrailingSlash(file: string): boolean {
+  return file[file.length - 1] === '/'
+}
+
+export function isJsonExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'n' &&
+    file[len - 2] === 'o' &&
+    file[len - 3] === 's' &&
+    file[len - 4] === 'j' &&
+    file[len - 5] === '.'
+  )
+}
+
+export function isJsExt(file: string): boolean {
+  const len = file.length
+
+  return file[len - 1] === 's' && file[len - 2] === 'j' && file[len - 3] === '.'
+}
+
+export function isMjsExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 's' &&
+    file[len - 2] === 'j' &&
+    file[len - 3] === 'm' &&
+    file[len - 4] === '.'
+  )
+}
+
+export function isCssExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 's' &&
+    file[len - 2] === 's' &&
+    file[len - 3] === 'c' &&
+    file[len - 4] === '.'
+  )
+}
+
+export function isHtmlExt(file?: string): boolean {
+  if (!file) {
+    return false
+  }
+  const len = file.length
+
+  return (
+    file[len - 1] === 'l' &&
+    file[len - 2] === 'm' &&
+    file[len - 3] === 't' &&
+    file[len - 4] === 'h' &&
+    file[len - 5] === '.'
+  )
+}
+
+export function isSourceMapExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'p' &&
+    file[len - 2] === 'a' &&
+    file[len - 3] === 'm' &&
+    file[len - 4] === '.'
+  )
+}
+
+export function isVueExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'e' &&
+    file[len - 2] === 'u' &&
+    file[len - 3] === 'v' &&
+    file[len - 4] === '.'
+  )
+}
+
+export function isJsxExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'x' &&
+    file[len - 2] === 's' &&
+    file[len - 3] === 'j' &&
+    file[len - 4] === '.'
+  )
+}
+
+export function isTsxExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'x' &&
+    file[len - 2] === 's' &&
+    file[len - 3] === 't' &&
+    file[len - 4] === '.'
+  )
+}
+
+export function isAstroExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'o' &&
+    file[len - 2] === 'r' &&
+    file[len - 3] === 't' &&
+    file[len - 4] === 's' &&
+    file[len - 5] === 'a' &&
+    file[len - 6] === '.'
+  )
+}
+
+export function isSvelteExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'e' &&
+    file[len - 2] === 't' &&
+    file[len - 3] === 'l' &&
+    file[len - 4] === 'e' &&
+    file[len - 5] === 'v' &&
+    file[len - 6] === 's' &&
+    file[len - 7] === '.'
+  )
+}
+
+export function isSvgExt(file: string): boolean {
+  const len = file.length
+
+  return (
+    file[len - 1] === 'g' &&
+    file[len - 2] === 'v' &&
+    file[len - 3] === 's' &&
+    file[len - 4] === '.'
+  )
 }
