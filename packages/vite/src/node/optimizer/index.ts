@@ -233,7 +233,7 @@ export async function optimizeDeps(
 
   const ssr = config.command === 'build' && !!config.build.ssr
 
-  const cachedMetadata = loadCachedDepOptimizationMetadata(
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
     ssr,
     force,
@@ -263,7 +263,7 @@ export async function optimizeServerSsrDeps(
   config: ResolvedConfig,
 ): Promise<DepOptimizationMetadata> {
   const ssr = true
-  const cachedMetadata = loadCachedDepOptimizationMetadata(
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
     ssr,
     config.optimizeDeps.force,
@@ -340,12 +340,12 @@ export function addOptimizedDepInfo(
  * Creates the initial dep optimization metadata, loading it from the deps cache
  * if it exists and pre-bundling isn't forced
  */
-export function loadCachedDepOptimizationMetadata(
+export async function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
   ssr: boolean,
   force = config.optimizeDeps.force,
   asCommand = false,
-): DepOptimizationMetadata | undefined {
+): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
   // Before Vite 2.9, dependencies were cached in the root of the cacheDir
@@ -361,7 +361,7 @@ export function loadCachedDepOptimizationMetadata(
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
       cachedMetadata = parseDepsOptimizerMetadata(
-        fs.readFileSync(cachedMetadataPath, 'utf-8'),
+        await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
     } catch (e) {}
@@ -377,7 +377,7 @@ export function loadCachedDepOptimizationMetadata(
   }
 
   // Start with a fresh cache
-  fs.rmSync(depsCacheDir, { recursive: true, force: true })
+  await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
 /**
@@ -508,7 +508,11 @@ export function runOptimizeDeps(
   const cleanUp = () => {
     if (!cleaned) {
       cleaned = true
-      fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      // No need to wait, we can clean up in the background because temp folders
+      // are unique per run
+      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+        // Ignore errors
+      })
     }
   }
   const createProcessingResult = () => ({
@@ -1114,7 +1118,7 @@ export async function extractExportsData(
   let parseResult: ReturnType<typeof parse>
   let usedJsxLoader = false
 
-  const entryContent = fs.readFileSync(filePath, 'utf-8')
+  const entryContent = await fsp.readFile(filePath, 'utf-8')
   try {
     parseResult = parse(entryContent)
   } catch {

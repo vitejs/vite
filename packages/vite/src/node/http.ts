@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type {
   Server as HttpServer,
@@ -129,18 +129,18 @@ export async function resolveHttpsConfig(
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
-    ca: readFileIfExists(ca),
-    cert: readFileIfExists(cert),
-    key: readFileIfExists(key),
-    pfx: readFileIfExists(pfx),
+    ca: await readFileIfExists(ca),
+    cert: await readFileIfExists(cert),
+    key: await readFileIfExists(key),
+    pfx: await readFileIfExists(pfx),
   })
   return httpsOption
 }
 
-function readFileIfExists(value?: string | Buffer | any[]) {
+async function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value))
+      return fsp.readFile(path.resolve(value))
     } catch (e) {
       return value
     }
