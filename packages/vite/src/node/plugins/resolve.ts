@@ -1214,7 +1214,7 @@ function tryResolveBrowserMapping(
   const pkg =
     importer &&
     (idToPkgMap.get(importer) ||
-      findNearestPackageData(importer, options.packageCache))
+      findNearestPackageData(path.dirname(importer), options.packageCache))
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
