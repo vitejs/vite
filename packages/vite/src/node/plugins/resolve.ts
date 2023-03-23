@@ -842,8 +842,8 @@ export function tryNodeResolve(
       !(
         ext === '.cjs' ||
         (ext === '.js' &&
-          findNearestPackageData(resolved, options.packageCache)?.data.type !==
-            'module')
+          findNearestPackageData(path.dirname(resolved), options.packageCache)
+            ?.data.type !== 'module')
       ) &&
       !(include?.includes(pkgId) || include?.includes(id)))
 
