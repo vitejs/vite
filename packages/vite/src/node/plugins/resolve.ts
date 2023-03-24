@@ -489,8 +489,10 @@ function tryFsResolve(
   // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
   // source code so we only need to perform the check for dependencies.
   // We don't support `?` in node_modules paths, so we only need to check in this branch.
-  if (fsPath.includes('#') && fsPath.includes('node_modules')) {
-    const file = fsPath.replace(queryRE, '')
+  const hashIndex = fsPath.indexOf('#')
+  if (hashIndex > 0 && fsPath.includes('node_modules')) {
+    const queryIndex = fsPath.indexOf('?')
+    const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
     const res = tryCleanFsResolve(
       file,
       options,
