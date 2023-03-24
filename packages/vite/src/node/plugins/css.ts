@@ -1349,6 +1349,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      charset: 'utf8',
       ...resolveEsbuildMinifyOptions(config.esbuild || {}),
     })
     if (warnings.length) {
