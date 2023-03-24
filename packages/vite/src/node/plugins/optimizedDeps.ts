@@ -116,35 +116,21 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       // If all the inputs are dependencies, we aren't going to get any
       const info = optimizedDepInfoFromFile(depsOptimizer.metadata, file)
       if (info) {
-        try {
-          // This is an entry point, it may still not be bundled
-          await info.processing
-        } catch {
-          // If the refresh has not happened after timeout, Vite considers
-          // something unexpected has happened. In this case, Vite
-          // returns an empty response that will error.
-          throwBuildProcessingError(id)
-        }
+        await info.processing
         isDebug && debug(`load ${colors.cyan(file)}`)
       } else {
-        throwBuildProcessingError(id)
+        throw new Error(
+          `Something unexpected happened while optimizing "${id}".`,
+        )
       }
 
       // Load the file from the cache instead of waiting for other plugin
       // load hooks to avoid race conditions, once processing is resolved,
       // we are sure that the file has been properly save to disk
-      try {
-        return await fs.readFile(file, 'utf-8')
-      } catch (e) {
-        // Outdated non-entry points (CHUNK), loaded after a rerun
-        throwBuildProcessingError(id)
-      }
+
+      return await fs.readFile(file, 'utf-8')
     },
   }
-}
-
-function throwBuildProcessingError(id: string): never {
-  throw new Error(`Something unexpected happened while optimizing "${id}".`)
 }
 
 function throwProcessingError(id: string): never {
