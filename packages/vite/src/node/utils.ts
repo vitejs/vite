@@ -20,6 +20,7 @@ import type MagicString from 'magic-string'
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
+  CLIENT_DIR,
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   DEFAULT_EXTENSIONS,
@@ -404,7 +405,7 @@ export function lookupFile(
 ): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+    if (fastStatSync(fullPath) === FAST_STAT_IS_FILE) {
       const result = options?.pathOnly
         ? fullPath
         : fs.readFileSync(fullPath, 'utf-8')
@@ -534,6 +535,39 @@ export function isFileReadable(filename: string): boolean {
   }
 }
 
+export const FAST_STAT_IS_FILE = 0
+export const FAST_STAT_IS_DIRECTORY = 1
+export type FastStatResult = number
+
+export let fastStatSync: (file: string) => FastStatResult
+
+function fallbackStatSync(file: string): FastStatResult {
+  try {
+    const stat = fs.statSync(file, { throwIfNoEntry: false })
+    if (stat) return stat.isFile() ? FAST_STAT_IS_FILE : FAST_STAT_IS_DIRECTORY
+  } catch {
+    // Ignore errors
+  }
+  return -1
+}
+
+try {
+  // @ts-expect-error node internals
+  const { internalModuleStat } = process.binding('fs')
+  if (
+    internalModuleStat(CLIENT_ENTRY) === FAST_STAT_IS_FILE &&
+    internalModuleStat(CLIENT_DIR) === FAST_STAT_IS_DIRECTORY
+  ) {
+    fastStatSync = !isWindows
+      ? internalModuleStat
+      : function (file: string): FastStatResult {
+          return internalModuleStat(path.toNamespacedPath(file))
+        }
+  }
+} catch {
+  fastStatSync = fallbackStatSync
+}
+
 const splitFirstDirRE = /(.+?)[\\/](.+)/
 
 /**
@@ -584,8 +618,7 @@ export function copyDir(srcDir: string, destDir: string): void {
       continue
     }
     const destFile = path.resolve(destDir, file)
-    const stat = fs.statSync(srcFile)
-    if (stat.isDirectory()) {
+    if (fastStatSync(srcFile) === FAST_STAT_IS_DIRECTORY) {
       copyDir(srcFile, destFile)
     } else {
       fs.copyFileSync(srcFile, destFile)

@@ -16,11 +16,14 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
+  FAST_STAT_IS_DIRECTORY,
+  FAST_STAT_IS_FILE,
   bareImportRE,
   cleanUrl,
   createDebugger,
   deepImportRE,
   ensureVolumeInPath,
+  fastStatSync,
   fsPathFromId,
   getPotentialTsSrcPaths,
   injectQuery,
@@ -138,7 +141,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   // back to checking the path as absolute. If /root/root isn't a valid path, we can
   // avoid these checks. Absolute paths inside root are common in user code as many
   // paths are resolved by the user. For example for an alias.
-  const rootInRoot = tryStatSync(path.join(root, root))?.isDirectory() ?? false
+  const rootInRoot =
+    fastStatSync(path.join(root, root)) === FAST_STAT_IS_DIRECTORY
 
   return {
     name: 'vite:resolve',
@@ -540,10 +544,11 @@ function tryCleanFsResolve(
 ): string | undefined {
   const { tryPrefix, extensions, preserveSymlinks } = options
 
-  const fileStat = tryStatSync(file)
+  const fileStat = fastStatSync(file)
 
   // Try direct match first
-  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
+  if (fileStat === FAST_STAT_IS_FILE)
+    return getRealPath(file, options.preserveSymlinks)
 
   let res: string | undefined
 
@@ -551,8 +556,7 @@ function tryCleanFsResolve(
   const possibleJsToTs = options.isFromTsImporter && isPossibleTsOutput(file)
   if (possibleJsToTs || extensions.length || tryPrefix) {
     const dirPath = path.dirname(file)
-    const dirStat = tryStatSync(dirPath)
-    if (dirStat?.isDirectory()) {
+    if (fastStatSync(dirPath) === FAST_STAT_IS_DIRECTORY) {
       if (possibleJsToTs) {
         // try resolve .js, .mjs, .mts or .jsx import to typescript file
         const tsSrcPaths = getPotentialTsSrcPaths(file)
@@ -587,7 +591,7 @@ function tryCleanFsResolve(
     }
   }
 
-  if (tryIndex && fileStat) {
+  if (tryIndex && fileStat === FAST_STAT_IS_DIRECTORY) {
     // Path points to a directory, check for package.json and entry and /index file
     const dirPath = file
 
@@ -633,8 +637,8 @@ function tryResolveRealFile(
   file: string,
   preserveSymlinks: boolean,
 ): string | undefined {
-  const stat = tryStatSync(file)
-  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
+  if (fastStatSync(file) === FAST_STAT_IS_FILE)
+    return getRealPath(file, preserveSymlinks)
 }
 
 function tryResolveRealFileWithExtensions(
@@ -645,14 +649,6 @@ function tryResolveRealFileWithExtensions(
   for (const ext of extensions) {
     const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
     if (res) return res
-  }
-}
-
-function tryStatSync(file: string): fs.Stats | undefined {
-  try {
-    return fs.statSync(file, { throwIfNoEntry: false })
-  } catch {
-    // Ignore errors
   }
 }
 
