@@ -35,6 +35,7 @@ import {
   isWindows,
   lookupFile,
   normalizePath,
+  queryRE,
   resolveFrom,
   safeRealpathSync,
   slash,
@@ -474,18 +475,8 @@ function ensureVersionQuery(
 }
 
 function splitFileAndPostfix(path: string) {
-  let file = path
-  let postfix = ''
-
-  let postfixIndex = path.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = path.indexOf('#')
-  }
-  if (postfixIndex > 0) {
-    file = path.slice(0, postfixIndex)
-    postfix = path.slice(postfixIndex)
-  }
-  return { file, postfix }
+  const file = cleanUrl(path)
+  return { file, postfix: path.slice(file.length) }
 }
 
 function tryFsResolve(
@@ -495,32 +486,22 @@ function tryFsResolve(
   targetWeb = true,
   skipPackageJson = false,
 ): string | undefined {
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
-
-    // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
-    // source code so we only need to perform the check for dependencies.
-    // We don't support `?` in node_modules paths, so we only need to check in this branch.
-    if (postfixIndex >= 0 && fsPath.includes('node_modules')) {
-      const res = tryCleanFsResolve(
-        fsPath,
-        options,
-        tryIndex,
-        targetWeb,
-        skipPackageJson,
-      )
-      if (res) return res
-    }
+  // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
+  // source code so we only need to perform the check for dependencies.
+  // We don't support `?` in node_modules paths, so we only need to check in this branch.
+  if (fsPath.includes('#') && fsPath.includes('node_modules')) {
+    const file = fsPath.replace(queryRE, '')
+    const res = tryCleanFsResolve(
+      file,
+      options,
+      tryIndex,
+      targetWeb,
+      skipPackageJson,
+    )
+    if (res) return res + fsPath.slice(file.length)
   }
 
-  let file = fsPath
-  let postfix = ''
-  if (postfixIndex >= 0) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
-
+  const { file, postfix } = splitFileAndPostfix(fsPath)
   const res = tryCleanFsResolve(
     file,
     options,
