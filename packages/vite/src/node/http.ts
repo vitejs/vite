@@ -124,17 +124,15 @@ export async function resolveHttpsConfig(
   https: boolean | HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
+  if (!isObject(https)) return {}
 
-  const httpsOption = isObject(https) ? { ...https } : {}
-
-  const { ca, cert, key, pfx } = httpsOption
-  Object.assign(httpsOption, {
-    ca: await readFileIfExists(ca),
-    cert: await readFileIfExists(cert),
-    key: await readFileIfExists(key),
-    pfx: await readFileIfExists(pfx),
-  })
-  return httpsOption
+  const [ca, cert, key, pfx] = await Promise.all([
+    readFileIfExists(https.ca),
+    readFileIfExists(https.cert),
+    readFileIfExists(https.key),
+    readFileIfExists(https.pfx),
+  ])
+  return { ...https, ca, cert, key, pfx }
 }
 
 async function readFileIfExists(value?: string | Buffer | any[]) {
