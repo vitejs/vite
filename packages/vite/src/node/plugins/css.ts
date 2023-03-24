@@ -316,6 +316,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
   let pureCssChunks: Set<RenderedChunk>
+  let emitTasks: Set<{ name: string; emit: () => Promise<void> }>
+  let sortedEmitTasks: { name: string; emit: () => Promise<void> }[]
+  let emitTaskRunning = false
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -352,6 +355,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
+      emitTasks = new Set<{ name: string; emit: () => Promise<void> }>()
+      sortedEmitTasks = []
+      emitTaskRunning = false
     },
 
     async transform(css, id, options) {
@@ -562,20 +568,53 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
+          const emitName = path.basename(cssFileName)
 
-          // emit corresponding css file
-          const referenceId = this.emitFile({
-            name: path.basename(cssFileName),
-            type: 'asset',
-            source: chunkCSS,
+          emitTasks.add({
+            name: emitName,
+            emit: async () => {
+              chunkCSS = await finalizeCss(chunkCSS, true, config)
+
+              // emit corresponding css file
+              const referenceId = this.emitFile({
+                name: emitName,
+                type: 'asset',
+                source: chunkCSS,
+              })
+              const originalName = isPreProcessor(lang)
+                ? cssAssetName
+                : cssFileName
+              const isEntry = chunk.isEntry && isPureCssChunk
+              generatedAssets
+                .get(config)!
+                .set(referenceId, { originalName, isEntry })
+              chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+            },
           })
-          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
-          const isEntry = chunk.isEntry && isPureCssChunk
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName, isEntry })
-          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+
+          const runEmitTasks = async () => {
+            if (emitTaskRunning) {
+              return
+            }
+            emitTaskRunning = true
+            for (const { emit } of sortedEmitTasks) {
+              await emit()
+            }
+          }
+
+          // wait for collecting all emitFile
+          await sortedEmitTasks
+
+          if (!sortedEmitTasks.length) {
+            sortedEmitTasks = Array.from(emitTasks).sort((next, cur) => {
+              return next.name.length > cur.name.length ||
+                (next.name.length === cur.name.length && next.name > cur.name)
+                ? 1
+                : -1
+            })
+          }
+
+          await runEmitTasks()
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
