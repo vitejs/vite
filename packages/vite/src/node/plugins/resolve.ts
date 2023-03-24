@@ -262,9 +262,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           isDebug &&
             debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          const pkg = importer != null && idToPkgMap.get(importer)
+          const pkg =
+            importer &&
+            findNearestPackageData(path.dirname(importer), options.packageCache)
           if (pkg) {
-            idToPkgMap.set(res, pkg)
             return {
               id: res,
               moduleSideEffects: pkg.hasSideEffects(res),
@@ -664,8 +665,6 @@ export type InternalResolveOptionsWithOverrideConditions =
     overrideConditions?: string[]
   }
 
-export const idToPkgMap = new Map<string, PackageData>()
-
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
@@ -774,8 +773,6 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  // link id to pkg for browser field mapping check
-  idToPkgMap.set(resolved, pkg)
   if ((isBuild && !depsOptimizer) || externalize) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
@@ -1202,8 +1199,7 @@ function tryResolveBrowserMapping(
   let res: string | undefined
   const pkg =
     importer &&
-    (idToPkgMap.get(importer) ||
-      findNearestPackageData(path.dirname(importer), options.packageCache))
+    findNearestPackageData(path.dirname(importer), options.packageCache)
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
@@ -1215,7 +1211,6 @@ function tryResolveBrowserMapping(
       ) {
         isDebug &&
           debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        idToPkgMap.set(res, pkg)
         const result = {
           id: res,
           moduleSideEffects: pkg.hasSideEffects(res),
