@@ -539,8 +539,6 @@ export const FAST_STAT_IS_FILE = 0
 export const FAST_STAT_IS_DIRECTORY = 1
 export type FastStatResult = number
 
-export let fastStatSync: (file: string) => FastStatResult
-
 function fallbackStatSync(file: string): FastStatResult {
   try {
     const stat = fs.statSync(file, { throwIfNoEntry: false })
@@ -551,6 +549,7 @@ function fallbackStatSync(file: string): FastStatResult {
   return -1
 }
 
+export let fastStatSync = fallbackStatSync
 try {
   // @ts-expect-error node internals
   const { internalModuleStat } = process.binding('fs')
@@ -564,9 +563,7 @@ try {
           return internalModuleStat(path.toNamespacedPath(file))
         }
   }
-} catch {
-  fastStatSync = fallbackStatSync
-}
+} catch {}
 
 const splitFirstDirRE = /(.+?)[\\/](.+)/
 
