@@ -123,13 +123,11 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
           // If the refresh has not happened after timeout, Vite considers
           // something unexpected has happened. In this case, Vite
           // returns an empty response that will error.
-          // throwProcessingError(id)
-          return
+          throwBuildProcessingError(id)
         }
         isDebug && debug(`load ${colors.cyan(file)}`)
       } else {
-        // TODO: error
-        return
+        throwBuildProcessingError(id)
       }
 
       // Load the file from the cache instead of waiting for other plugin
@@ -139,10 +137,14 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
         return await fs.readFile(file, 'utf-8')
       } catch (e) {
         // Outdated non-entry points (CHUNK), loaded after a rerun
-        return ''
+        throwBuildProcessingError(id)
       }
     },
   }
+}
+
+function throwBuildProcessingError(id: string): never {
+  throw new Error(`Something unexpected happened while optimizing "${id}".`)
 }
 
 function throwProcessingError(id: string): never {
