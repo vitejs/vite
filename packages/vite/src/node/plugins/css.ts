@@ -318,7 +318,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let pureCssChunks: Set<RenderedChunk>
   let emitTasks: Set<{ name: string; emit: () => Promise<void> }>
   let sortedEmitTasks: { name: string; emit: () => Promise<void> }[]
-  let emitTaskRunning = false
+  let emitTaskRunning: Promise<void> | null
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -357,7 +357,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
       emitTasks = new Set<{ name: string; emit: () => Promise<void> }>()
       sortedEmitTasks = []
-      emitTaskRunning = false
+      emitTaskRunning = null
     },
 
     async transform(css, id, options) {
@@ -592,16 +592,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             },
           })
 
-          const runEmitTasks = async () => {
-            if (emitTaskRunning) {
-              return
-            }
-            emitTaskRunning = true
-            for (const { emit } of sortedEmitTasks) {
-              await emit()
-            }
-          }
-
           // wait for collecting all emitFile
           await sortedEmitTasks
 
@@ -612,9 +602,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 ? 1
                 : -1
             })
+            emitTaskRunning = (async () => {
+              for (const { emit } of sortedEmitTasks) {
+                await emit()
+              }
+            })()
           }
 
-          await runEmitTasks()
+          await emitTaskRunning
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
