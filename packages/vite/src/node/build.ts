@@ -32,7 +32,6 @@ import {
   copyDir,
   emptyDir,
   joinUrlSegments,
-  lookupFile,
   normalizePath,
   requireResolveFromRootWithFallback,
 } from './utils'
@@ -52,8 +51,8 @@ import {
   initDepsOptimizer,
 } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
-import type { PackageData } from './packages'
-import { watchPackageDataPlugin } from './packages'
+import { findNearestPackageData, watchPackageDataPlugin } from './packages'
+import type { PackageCache } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
@@ -578,7 +577,11 @@ export async function build(
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
         ssrNodeBuild || libOptions
-          ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
+          ? resolveOutputJsExtension(
+              format,
+              findNearestPackageData(config.root, config.packageCache)?.data
+                .type,
+            )
           : 'js'
       return {
         dir: outDir,
@@ -595,7 +598,14 @@ export async function build(
           ? `[name].${jsExt}`
           : libOptions
           ? ({ name }) =>
-              resolveLibFilename(libOptions, format, name, config.root, jsExt)
+              resolveLibFilename(
+                libOptions,
+                format,
+                name,
+                config.root,
+                jsExt,
+                config.packageCache,
+              )
           : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name]-[hash].${jsExt}`
@@ -742,10 +752,6 @@ function prepareOutDir(
   }
 }
 
-function getPkgJson(root: string): PackageData['data'] {
-  return JSON.parse(lookupFile(root, ['package.json']) || `{}`)
-}
-
 function getPkgName(name: string) {
   return name?.[0] === '@' ? name.split('/')[1] : name
 }
@@ -769,15 +775,16 @@ export function resolveLibFilename(
   entryName: string,
   root: string,
   extension?: JsExt,
+  packageCache?: PackageCache,
 ): string {
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format, entryName)
   }
 
-  const packageJson = getPkgJson(root)
+  const packageJson = findNearestPackageData(root, packageCache)?.data
   const name =
     libOptions.fileName ||
-    (typeof libOptions.entry === 'string'
+    (packageJson && typeof libOptions.entry === 'string'
       ? getPkgName(packageJson.name)
       : entryName)
 
@@ -786,7 +793,7 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.',
     )
 
-  extension ??= resolveOutputJsExtension(format, packageJson.type)
+  extension ??= resolveOutputJsExtension(format, packageJson?.type)
 
   if (format === 'cjs' || format === 'es') {
     return `${name}.${extension}`
