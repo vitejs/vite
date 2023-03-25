@@ -23,6 +23,7 @@ import {
   removeDir,
   removeLeadingSlash,
   renameDir,
+  tryStatSync,
   writeFile,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
@@ -1212,11 +1213,9 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
     if (checkPatches) {
       // Default of https://github.com/ds300/patch-package
       const fullPath = path.join(path.dirname(lockfilePath), 'patches')
-      if (fs.existsSync(fullPath)) {
-        const stats = fs.statSync(fullPath)
-        if (stats.isDirectory()) {
-          content += stats.mtimeMs.toString()
-        }
+      const stat = tryStatSync(fullPath)
+      if (stat?.isDirectory()) {
+        content += stat.mtimeMs.toString()
       }
     }
   }

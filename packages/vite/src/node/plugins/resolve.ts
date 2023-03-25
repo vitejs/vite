@@ -38,6 +38,7 @@ import {
   resolveFrom,
   safeRealpathSync,
   slash,
+  tryStatSync,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
@@ -645,14 +646,6 @@ function tryResolveRealFileWithExtensions(
   for (const ext of extensions) {
     const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
     if (res) return res
-  }
-}
-
-function tryStatSync(file: string): fs.Stats | undefined {
-  try {
-    return fs.statSync(file, { throwIfNoEntry: false })
-  } catch {
-    // Ignore errors
   }
 }
 
