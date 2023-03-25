@@ -143,6 +143,23 @@ export function findNearestPackageData(
   return null
 }
 
+// Finds the nearest package.json with a `name` field
+export function findNearestMainPackageData(
+  basedir: string,
+  packageCache?: PackageCache,
+): PackageData | null {
+  const nearestPackage = findNearestPackageData(basedir, packageCache)
+  return (
+    nearestPackage &&
+    (nearestPackage.data.name
+      ? nearestPackage
+      : findNearestMainPackageData(
+          path.dirname(nearestPackage.dir),
+          packageCache,
+        ))
+  )
+}
+
 export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)

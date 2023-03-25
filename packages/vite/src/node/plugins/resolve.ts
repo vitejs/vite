@@ -31,7 +31,6 @@ import {
   isOptimizable,
   isTsRequest,
   isWindows,
-  lookupFile,
   normalizePath,
   resolveFrom,
   safeRealpathSync,
@@ -43,6 +42,7 @@ import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import {
+  findNearestMainPackageData,
   findNearestPackageData,
   loadPackageData,
   resolvePackageData,
@@ -705,12 +705,8 @@ export function tryNodeResolve(
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
-      // find package.json with `name` as main
-      const mainPackageJson = lookupFile(basedir, ['package.json'], {
-        predicate: (content) => !!JSON.parse(content).name,
-      })
-      if (mainPackageJson) {
-        const mainPkg = JSON.parse(mainPackageJson)
+      const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
+      if (mainPkg) {
         if (
           mainPkg.peerDependencies?.[id] &&
           mainPkg.peerDependenciesMeta?.[id]?.optional
