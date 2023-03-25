@@ -81,7 +81,6 @@ async function generateWorker(
       ? workerOutputConfig[0] || {}
       : workerOutputConfig
     : {}
-  // TODO: Figure out why it doesn't emit it to the `worker/` dir, but insted to `assets/`
   const rollupOutput = await bundle.generate({
     entryFileNames: path.posix.join(config.build.assetsDir, '[name]-[hash].js'),
     chunkFileNames: path.posix.join(config.build.assetsDir, '[name]-[hash].js'),
@@ -318,7 +317,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             outputOptions,
           )
           const entry = output[0]
-          // TODO: Emit back again all these assets into the dir 'workers/'
           // TODO: Emit in a lazy way, meaning emit them only if we need to reference the worker in the main rendered chunks
           // TODO: Make sure we're not emitting the same source twice or more, and in this case just share the same output file
           const referencedId = this.emitFile({
