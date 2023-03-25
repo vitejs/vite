@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import glob from 'fast-glob'
@@ -1675,7 +1676,7 @@ async function rebaseUrls(
     return { file }
   }
 
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   // no url()
   const hasUrls = cssUrlRE.test(content)
   // data-uri() calls
@@ -1834,7 +1835,7 @@ function createViteLessPlugin(
           if (result && 'contents' in result) {
             contents = result.contents
           } else {
-            contents = fs.readFileSync(resolved, 'utf-8')
+            contents = await fsp.readFile(resolved, 'utf-8')
           }
           return {
             filename: path.resolve(resolved),

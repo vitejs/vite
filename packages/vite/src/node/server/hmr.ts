@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
@@ -494,14 +494,14 @@ function error(pos: number) {
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
-    const mtime = fs.statSync(file).mtimeMs
+    const mtime = (await fsp.stat(file)).mtimeMs
     await new Promise((r) => {
       let n = 0
       const poll = async () => {
         n++
-        const newMtime = fs.statSync(file).mtimeMs
+        const newMtime = (await fsp.stat(file)).mtimeMs
         if (newMtime !== mtime || n > 10) {
           r(0)
         } else {
@@ -510,7 +510,7 @@ async function readModifiedFile(file: string): Promise<string> {
       }
       setTimeout(poll, 10)
     })
-    return fs.readFileSync(file, 'utf-8')
+    return await fsp.readFile(file, 'utf-8')
   } else {
     return content
   }
