@@ -551,19 +551,19 @@ function tryCleanFsResolve(
     const dirStat = tryStatSync(dirPath)
     if (dirStat?.isDirectory()) {
       if (possibleJsToTs) {
-        // try resolve .js, .mjs, .mts or .jsx import to typescript file
-        const type = path.extname(file)
-        const fileName = file.slice(0, -type.length)
+        // try resolve .js, .mjs, .cjs or .jsx import to typescript file
+        const fileExt = path.extname(file)
+        const fileName = file.slice(0, -fileExt.length)
         if (
           (res = tryResolveRealFile(
-            fileName + type.replace('js', 'ts'),
+            fileName + fileExt.replace('js', 'ts'),
             preserveSymlinks,
           ))
         )
           return res
         // for .js, also try .tsx
         if (
-          type === '.js' &&
+          fileExt === '.js' &&
           (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
         )
           return res
