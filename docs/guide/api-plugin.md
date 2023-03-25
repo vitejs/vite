@@ -311,7 +311,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `(server: PreviewServerForHook) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
-- **See also:** [PreviewServer](./api-javascript#previewserver)
+- **See also:** [PreviewServerForHook](./api-javascript#previewserverforhook)
 
   Same as [`configureServer`](/guide/api-plugin.html#configureserver) but for the preview server. Similarly to `configureServer`, the `configurePreviewServer` hook is called before other middlewares are installed. If you want to inject a middleware **after** other middlewares, you can return a function from `configurePreviewServer`, which will be called after internal middlewares are installed:
 
