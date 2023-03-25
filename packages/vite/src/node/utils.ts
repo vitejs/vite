@@ -392,6 +392,13 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
+export function tryStatSync(file: string): fs.Stats | undefined {
+  try {
+    return fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    // Ignore errors
+  }
+}
 interface LookupFileOptions {
   pathOnly?: boolean
   rootDir?: string
@@ -405,7 +412,7 @@ export function lookupFile(
 ): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+    if (tryStatSync(fullPath)?.isFile()) {
       const result = options?.pathOnly
         ? fullPath
         : fs.readFileSync(fullPath, 'utf-8')
