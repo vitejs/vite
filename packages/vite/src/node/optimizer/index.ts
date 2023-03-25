@@ -630,7 +630,9 @@ export function runOptimizeDeps(
           stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
         )
 
-        debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
+        debug(
+          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
+        )
 
         return createProcessingResult()
       })
