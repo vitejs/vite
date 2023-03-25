@@ -99,7 +99,7 @@ async function createDepsOptimizer(
 
   const sessionTimestamp = Date.now().toString()
 
-  const cachedMetadata = loadCachedDepOptimizationMetadata(config, ssr)
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(config, ssr)
 
   let handle: NodeJS.Timeout | undefined
 
@@ -220,16 +220,6 @@ async function createDepsOptimizer(
             discover = discoverProjectDependencies(config)
             const deps = await discover.result
             discover = undefined
-
-            debug(
-              colors.green(
-                Object.keys(deps).length > 0
-                  ? `dependencies found by scanner: ${depsLogString(
-                      Object.keys(deps),
-                    )}`
-                  : `no dependencies found by scanner`,
-              ),
-            )
 
             // Add these dependencies to the discovered list, as these are currently
             // used by the preAliasPlugin to support aliased and optimized deps.

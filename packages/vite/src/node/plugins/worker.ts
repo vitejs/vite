@@ -46,14 +46,6 @@ const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 const getWorkerCache = (config: ResolvedConfig) =>
   workerCache.get(config.mainConfig || config)!
 
-export function isWorkerRequest(id: string): boolean {
-  const query = parseRequest(id)
-  if (query && query[WORKER_FILE_ID] != null) {
-    return true
-  }
-  return false
-}
-
 export async function bundleWorker(
   config: ResolvedConfig,
   id: string,
@@ -252,22 +244,37 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           : 'classic'
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+
       if (isBuild) {
         if (query.inline != null) {
           const codeBase64Token = await workerIdToToken(config, id, true)
-          // inline as blob data url
-          return {
-            code: `const encodedJs = ${codeBase64Token};
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`,
+          const encodedJs = `const encodedJs = ${codeBase64Token};`
 
+          const code =
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
+            workerConstructor === 'Worker'
+              ? `${encodedJs}
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper() {
+            let objURL;
+            try {
+              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              if (!objURL) throw ''
+              return new ${workerConstructor}(objURL)
+            } catch(e) {
+              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+            } finally {
+              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }
+          }`
+              : `${encodedJs}
+          export default function WorkerWrapper() {
+            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          }
+          `
+
+          return {
+            code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }

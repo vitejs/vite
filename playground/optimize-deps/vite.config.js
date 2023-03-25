@@ -49,6 +49,13 @@ export default defineConfig({
     commonjsOptions: {
       include: [],
     },
+    rollupOptions: {
+      onwarn(msg, warn) {
+        // filter `"Buffer" is not exported by "__vite-browser-external"` warning
+        if (msg.message.includes('Buffer')) return
+        warn(msg)
+      },
+    },
   },
 
   plugins: [

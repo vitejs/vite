@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
@@ -102,7 +103,7 @@ const processNodeUrl = (
     const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
   } else if (
-    url.startsWith('.') &&
+    url[0] === '.' &&
     originalUrl &&
     originalUrl !== '/' &&
     htmlPath === '/index.html'
@@ -166,7 +167,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const code = contentNode.value
 
     let map: SourceMapInput | undefined
-    if (!proxyModulePath.startsWith('\0')) {
+    if (proxyModulePath[0] !== '\0') {
       map = new MagicString(html)
         .snip(
           contentNode.sourceCodeLocation!.startOffset,
@@ -292,7 +293,7 @@ export function indexHtmlMiddleware(
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {
         try {
-          let html = fs.readFileSync(filename, 'utf-8')
+          let html = await fsp.readFile(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
           return send(req, res, html, 'html', {
             headers: server.config.server.headers,

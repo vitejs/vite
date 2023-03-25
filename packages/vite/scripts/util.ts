@@ -17,8 +17,9 @@ export function rewriteImports(
   })
 }
 
+const windowsSlashRE = /\\/g
 export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
+  return p.replace(windowsSlashRE, '/')
 }
 
 export function walkDir(dir: string, handleFile: (file: string) => void): void {

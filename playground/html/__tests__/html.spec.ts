@@ -273,6 +273,11 @@ describe('env', () => {
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
     expect(await page.textContent('.env-dev')).toBe(isServe + '')
+
+    const iconLink = await page.$('link[rel=icon]')
+    expect(await iconLink.getAttribute('href')).toBe(
+      `${isBuild ? './' : '/'}sprite.svg`,
+    )
   })
 })
 

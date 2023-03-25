@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
@@ -232,7 +233,7 @@ export interface UserConfig {
   clearScreen?: boolean
   /**
    * Environment files directory. Can be an absolute path, or a path relative from
-   * the location of the config file itself.
+   * root.
    * @default root
    */
   envDir?: string
@@ -348,6 +349,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
@@ -657,6 +659,13 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
+    esbuild:
+      config.esbuild === false
+        ? false
+        : {
+            jsxDev: !isProduction,
+            ...config.esbuild,
+          },
     server,
     build: resolvedBuildOptions,
     preview: resolvePreviewOptions(config.preview, server),
@@ -820,7 +829,7 @@ export function resolveBaseUrl(
   isBuild: boolean,
   logger: Logger,
 ): string {
-  if (base.startsWith('.')) {
+  if (base[0] === '.') {
     logger.warn(
       colors.yellow(
         colors.bold(
@@ -835,7 +844,7 @@ export function resolveBaseUrl(
   // external URL flag
   const isExternal = isExternalUrl(base)
   // no leading slash warn
-  if (!isExternal && !base.startsWith('/')) {
+  if (!isExternal && base[0] !== '/') {
     logger.warn(
       colors.yellow(
         colors.bold(`(!) "base" option should start with a slash.`),
@@ -847,7 +856,7 @@ export function resolveBaseUrl(
   if (!isBuild || !isExternal) {
     base = new URL(base, 'http://vitejs.dev').pathname
     // ensure leading slash
-    if (!base.startsWith('/')) {
+    if (base[0] !== '/') {
       base = '/' + base
     }
   }
@@ -1072,15 +1081,17 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}`
+    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)})}`
     const fileNameTmp = `${fileBase}.mjs`
     const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    fs.writeFileSync(fileNameTmp, bundledCode)
+    await fsp.writeFile(fileNameTmp, bundledCode)
     try {
       return (await dynamicImport(fileUrl)).default
     } finally {
       try {
-        fs.unlinkSync(fileNameTmp)
+        await fsp.unlink(fileNameTmp)
       } catch {
         // already removed if this function is called twice simultaneously
       }
@@ -1089,7 +1100,7 @@ async function loadConfigFromBundledFile(
   // for cjs, we can register a custom loader via `_require.extensions`
   else {
     const extension = path.extname(fileName)
-    const realFileName = fs.realpathSync(fileName)
+    const realFileName = await fsp.realpath(fileName)
     const loaderExt = extension in _require.extensions ? extension : '.js'
     const defaultLoader = _require.extensions[loaderExt]!
     _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {

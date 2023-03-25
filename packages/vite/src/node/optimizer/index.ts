@@ -21,11 +21,14 @@ import {
   normalizeId,
   normalizePath,
   removeDir,
+  removeLeadingSlash,
   renameDir,
+  tryStatSync,
   writeFile,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
+import { resolvePackageData } from '../packages'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -40,6 +43,7 @@ const isDebugEnabled = _debug('vite:deps').enabled
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
+const reExportRE = /export\s+\*\s+from/
 
 export type ExportsData = {
   hasImports: boolean
@@ -230,7 +234,7 @@ export async function optimizeDeps(
 
   const ssr = config.command === 'build' && !!config.build.ssr
 
-  const cachedMetadata = loadCachedDepOptimizationMetadata(
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
     ssr,
     force,
@@ -260,7 +264,7 @@ export async function optimizeServerSsrDeps(
   config: ResolvedConfig,
 ): Promise<DepOptimizationMetadata> {
   const ssr = true
-  const cachedMetadata = loadCachedDepOptimizationMetadata(
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
     ssr,
     config.optimizeDeps.force,
@@ -337,12 +341,12 @@ export function addOptimizedDepInfo(
  * Creates the initial dep optimization metadata, loading it from the deps cache
  * if it exists and pre-bundling isn't forced
  */
-export function loadCachedDepOptimizationMetadata(
+export async function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
   ssr: boolean,
   force = config.optimizeDeps.force,
   asCommand = false,
-): DepOptimizationMetadata | undefined {
+): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
   // Before Vite 2.9, dependencies were cached in the root of the cacheDir
@@ -358,7 +362,7 @@ export function loadCachedDepOptimizationMetadata(
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
       cachedMetadata = parseDepsOptimizerMetadata(
-        fs.readFileSync(cachedMetadataPath, 'utf-8'),
+        await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
     } catch (e) {}
@@ -374,7 +378,7 @@ export function loadCachedDepOptimizationMetadata(
   }
 
   // Start with a fresh cache
-  fs.rmSync(depsCacheDir, { recursive: true, force: true })
+  await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
 /**
@@ -505,7 +509,11 @@ export function runOptimizeDeps(
   const cleanUp = () => {
     if (!cleaned) {
       cleaned = true
-      fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      // No need to wait, we can clean up in the background because temp folders
+      // are unique per run
+      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+        // Ignore errors
+      })
     }
   }
   const createProcessingResult = () => ({
@@ -622,7 +630,9 @@ export function runOptimizeDeps(
           stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
         )
 
-        debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
+        debug(
+          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
+        )
 
         return createProcessingResult()
       })
@@ -812,18 +822,13 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
-    const resolve = config.createResolver({
-      asSrc: false,
-      scan: true,
-      ssrOptimizeCheck: ssr,
-      ssrConfig: config.ssr,
-    })
+    const resolve = createOptimizeDepsIncludeResolver(config, ssr)
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
-        const entry = await resolve(id, undefined, undefined, ssr)
+        const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
             if (!entry.endsWith('?__vite_skip_optimization')) {
@@ -838,6 +843,49 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
+}
+
+function createOptimizeDepsIncludeResolver(
+  config: ResolvedConfig,
+  ssr: boolean,
+) {
+  const resolve = config.createResolver({
+    asSrc: false,
+    scan: true,
+    ssrOptimizeCheck: ssr,
+    ssrConfig: config.ssr,
+  })
+  return async (id: string) => {
+    const lastArrowIndex = id.lastIndexOf('>')
+    if (lastArrowIndex === -1) {
+      return await resolve(id, undefined, undefined, ssr)
+    }
+    // split nested selected id by last '>', for example:
+    // 'foo > bar > baz' => 'foo > bar' & 'baz'
+    const nestedRoot = id.substring(0, lastArrowIndex).trim()
+    const nestedPath = id.substring(lastArrowIndex + 1).trim()
+    const basedir = nestedResolveBasedir(
+      nestedRoot,
+      config.root,
+      config.resolve.preserveSymlinks,
+    )
+    return await resolve(nestedPath, basedir, undefined, ssr)
+  }
+}
+
+/**
+ * Continously resolve the basedir of packages separated by '>'
+ */
+function nestedResolveBasedir(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+) {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  for (const pkg of pkgs) {
+    basedir = resolvePackageData(pkg, basedir, preserveSymlinks)?.dir || basedir
+  }
+  return basedir
 }
 
 export function newDepOptimizationProcessing(): DepOptimizationProcessing {
@@ -917,7 +965,7 @@ export function createIsOptimizedDepUrl(
   const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
     ? // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${normalizePath(depsCacheDir).replace(/^\//, '')}`
+      `/@fs/${removeLeadingSlash(normalizePath(depsCacheDir))}`
     : // if the cache directory is inside root, the url prefix would be something
       // like '/node_modules/.vite'
       `/${depsCacheDirRelative}`
@@ -1073,7 +1121,7 @@ export async function extractExportsData(
   let parseResult: ReturnType<typeof parse>
   let usedJsxLoader = false
 
-  const entryContent = fs.readFileSync(filePath, 'utf-8')
+  const entryContent = await fsp.readFile(filePath, 'utf-8')
   try {
     parseResult = parse(entryContent)
   } catch {
@@ -1101,7 +1149,7 @@ export async function extractExportsData(
     facade,
     hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)
-      return /export\s+\*\s+from/.test(exp)
+      return reExportRE.test(exp)
     }),
     jsxLoader: usedJsxLoader,
   }
@@ -1167,11 +1215,9 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
     if (checkPatches) {
       // Default of https://github.com/ds300/patch-package
       const fullPath = path.join(path.dirname(lockfilePath), 'patches')
-      if (fs.existsSync(fullPath)) {
-        const stats = fs.statSync(fullPath)
-        if (stats.isDirectory()) {
-          content += stats.mtimeMs.toString()
-        }
+      const stat = tryStatSync(fullPath)
+      if (stat?.isDirectory()) {
+        content += stat.mtimeMs.toString()
       }
     }
   }
@@ -1271,8 +1317,11 @@ export async function cleanupDepsCacheStaleDirs(
       for (const dirent of dirents) {
         if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
           const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const { mtime } = await fsp.stat(tempDirPath)
-          if (Date.now() - mtime.getTime() > MAX_TEMP_DIR_AGE_MS) {
+          const stats = await fsp.stat(tempDirPath).catch((_) => null)
+          if (
+            stats?.mtime &&
+            Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
+          ) {
             await removeDir(tempDirPath)
           }
         }

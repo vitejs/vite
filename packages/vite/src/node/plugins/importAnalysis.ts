@@ -78,6 +78,13 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
+const hasImportInQueryParamsRE = /[?&]import=?\b/
+
+const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+
+const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
+const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
+
 export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
 }
@@ -331,7 +338,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        const isRelative = url.startsWith('.')
+        const isRelative = url[0] === '.'
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
@@ -357,7 +364,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // if the resolved id is not a valid browser import specifier,
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
-        if (!url.startsWith('.') && !url.startsWith('/')) {
+        if (url[0] !== '.' && url[0] !== '/') {
           url = wrapId(resolved.id)
         }
 
@@ -373,7 +380,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // query can break 3rd party plugin's extension checks.
           if (
             (isRelative || isSelfImport) &&
-            !/[?&]import=?\b/.test(url) &&
+            !hasImportInQueryParamsRE.test(url) &&
             !url.match(DEP_VERSION_RE)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
@@ -489,7 +496,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // warn imports to non-asset /public files
           if (
-            specifier.startsWith('/') &&
+            specifier[0] === '/' &&
             !config.assetsInclude(cleanUrl(specifier)) &&
             !specifier.endsWith('.json') &&
             checkPublicFile(specifier, config)
@@ -613,7 +620,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         } else if (!importer.startsWith(clientDir)) {
           if (!importer.includes('node_modules')) {
             // check @vite-ignore which suppresses dynamic import warning
-            const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
+            const hasViteIgnore = hasViteIgnoreRE.test(
               // complete expression inside parens
               source.slice(dynamicIndex + 1, end),
             )
@@ -637,11 +644,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (!ssr) {
-            const url = rawUrl
-              .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-              .trim()
+            const url = rawUrl.replace(cleanUpRawUrlRE, '').trim()
             if (
-              !/^(?:'.*'|".*"|`.*`)$/.test(url) ||
+              !urlIsStringRE.test(url) ||
               isExplicitImportRequired(url.slice(1, -1))
             ) {
               needQueryInjectHelper = true
