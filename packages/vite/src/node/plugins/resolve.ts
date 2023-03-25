@@ -35,7 +35,6 @@ import {
   isWindows,
   lookupFile,
   normalizePath,
-  queryRE,
   resolveFrom,
   safeRealpathSync,
   slash,
