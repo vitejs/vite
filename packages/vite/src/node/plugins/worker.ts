@@ -310,7 +310,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const { workersData } = getWorkerCache(config)
       await Promise.all(
         [...workersData.values()].map(async (data) => {
-          //for (const data of workersData.values()) {// TODO: Remove this and back to the parallel version above
           const { output, sourceMap } = await generateWorker(
             data.bundle,
             config,
