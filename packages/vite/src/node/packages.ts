@@ -153,7 +153,10 @@ export function findNearestMainPackageData(
     nearestPackage &&
     (nearestPackage.data.name
       ? nearestPackage
-      : findNearestMainPackageData(path.dirname(nearestPackage.dir), packageCache))
+      : findNearestMainPackageData(
+          path.dirname(nearestPackage.dir),
+          packageCache,
+        ))
   )
 }
 
