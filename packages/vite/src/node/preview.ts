@@ -119,6 +119,9 @@ export async function preview(
   )
   setClientErrorHandler(httpServer, config.logger)
 
+  const options = config.preview
+  const logger = config.logger
+
   const server: PreviewServerForHook = {
     config,
     middlewares: app,
@@ -178,11 +181,9 @@ export async function preview(
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
-  const options = config.preview
   const hostname = await resolveHostname(options.host)
   const port = options.port ?? DEFAULT_PREVIEW_PORT
   const protocol = options.https ? 'https' : 'http'
-  const logger = config.logger
 
   const serverPort = await httpServerStart(httpServer, {
     port,
