@@ -22,7 +22,6 @@ import {
   deepImportRE,
   ensureVolumeInPath,
   fsPathFromId,
-  getPotentialTsSrcPaths,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -30,7 +29,6 @@ import {
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
-  isPossibleTsOutput,
   isTsRequest,
   isWindows,
   lookupFile,
@@ -177,7 +175,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       if (importer) {
         if (
-          isTsRequest(cleanUrl(importer)) ||
+          isTsRequest(importer) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
@@ -527,6 +525,9 @@ function tryFsResolve(
   if (res) return res + postfix
 }
 
+const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const isPossibleTsOutput = (url: string): boolean => knownTsOutputRE.test(url)
+
 function tryCleanFsResolve(
   file: string,
   options: InternalResolveOptions,
@@ -551,10 +552,21 @@ function tryCleanFsResolve(
     if (dirStat?.isDirectory()) {
       if (possibleJsToTs) {
         // try resolve .js, .mjs, .mts or .jsx import to typescript file
-        const tsSrcPaths = getPotentialTsSrcPaths(file)
-        for (const srcPath of tsSrcPaths) {
-          if ((res = tryResolveRealFile(srcPath, preserveSymlinks))) return res
-        }
+        const type = path.extname(file)
+        const fileName = file.slice(0, -type.length)
+        if (
+          (res = tryResolveRealFile(
+            fileName + type.replace('js', 'ts'),
+            preserveSymlinks,
+          ))
+        )
+          return res
+        // for .js, also try .tsx
+        if (
+          type === '.js' &&
+          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
+        )
+          return res
       }
 
       if (
