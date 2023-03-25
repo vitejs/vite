@@ -22,7 +22,6 @@ import {
   deepImportRE,
   ensureVolumeInPath,
   fsPathFromId,
-  getPotentialTsSrcPaths,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -30,7 +29,6 @@ import {
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
-  isPossibleTsOutput,
   isTsRequest,
   isWindows,
   lookupFile,
@@ -49,7 +47,6 @@ import {
   loadPackageData,
   resolvePackageData,
 } from '../packages'
-import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -178,16 +175,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       if (importer) {
-        const _importer = isWorkerRequest(importer)
-          ? splitFileAndPostfix(importer).file
-          : importer
         if (
-          isTsRequest(_importer) ||
+          isTsRequest(importer) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(_importer)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
@@ -532,6 +526,9 @@ function tryFsResolve(
   if (res) return res + postfix
 }
 
+const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const isPossibleTsOutput = (url: string): boolean => knownTsOutputRE.test(url)
+
 function tryCleanFsResolve(
   file: string,
   options: InternalResolveOptions,
@@ -555,11 +552,22 @@ function tryCleanFsResolve(
     const dirStat = tryStatSync(dirPath)
     if (dirStat?.isDirectory()) {
       if (possibleJsToTs) {
-        // try resolve .js, .mjs, .mts or .jsx import to typescript file
-        const tsSrcPaths = getPotentialTsSrcPaths(file)
-        for (const srcPath of tsSrcPaths) {
-          if ((res = tryResolveRealFile(srcPath, preserveSymlinks))) return res
-        }
+        // try resolve .js, .mjs, .cjs or .jsx import to typescript file
+        const fileExt = path.extname(file)
+        const fileName = file.slice(0, -fileExt.length)
+        if (
+          (res = tryResolveRealFile(
+            fileName + fileExt.replace('js', 'ts'),
+            preserveSymlinks,
+          ))
+        )
+          return res
+        // for .js, also try .tsx
+        if (
+          fileExt === '.js' &&
+          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
+        )
+          return res
       }
 
       if (

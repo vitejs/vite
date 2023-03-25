@@ -283,21 +283,8 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const knownTsRE = /\.(?:ts|mts|cts|tsx)$/
-const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const knownTsRE = /\.(?:ts|mts|cts|tsx)(?:$|\?)/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
-export const isPossibleTsOutput = (url: string): boolean =>
-  knownTsOutputRE.test(cleanUrl(url))
-
-const splitFilePathAndQueryRE = /(\.(?:[cm]?js|jsx))(\?.*)?$/
-export function getPotentialTsSrcPaths(filePath: string): string[] {
-  const [name, type, query = ''] = filePath.split(splitFilePathAndQueryRE)
-  const paths = [name + type.replace('js', 'ts') + query]
-  if (type[type.length - 1] !== 'x') {
-    paths.push(name + type.replace('js', 'tsx') + query)
-  }
-  return paths
-}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
