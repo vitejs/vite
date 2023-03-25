@@ -322,7 +322,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             fileName: entry.fileName,
             source: entry.code,
             type: 'asset',
-            //needsCodeReference: true, // TODO: Shell we use this option?
           })
           data.entryMap.set(outputOptions, { referencedId, chunk: entry })
 
