@@ -389,7 +389,6 @@ export function tryStatSync(file: string): fs.Stats | undefined {
 interface LookupFileOptions {
   pathOnly?: boolean
   rootDir?: string
-  predicate?: (file: string) => boolean
 }
 
 export function lookupFile(
@@ -400,12 +399,7 @@ export function lookupFile(
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (tryStatSync(fullPath)?.isFile()) {
-      const result = options?.pathOnly
-        ? fullPath
-        : fs.readFileSync(fullPath, 'utf-8')
-      if (!options?.predicate || options.predicate(result)) {
-        return result
-      }
+      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }
   const parentDir = path.dirname(dir)
