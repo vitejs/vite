@@ -256,10 +256,11 @@ export function ensureVolumeInPath(file: string): string {
 }
 
 export const queryRE = /\?.*$/s
-export const hashRE = /#.*$/s
 
-export const cleanUrl = (url: string): string =>
-  url.replace(hashRE, '').replace(queryRE, '')
+const postfixRE = /[?#].*$/s
+export function cleanUrl(url: string): string {
+  return url.replace(postfixRE, '')
+}
 
 export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
