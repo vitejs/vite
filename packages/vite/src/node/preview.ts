@@ -45,7 +45,8 @@ export function resolvePreviewOptions(
   }
 }
 
-export interface PreviewServer {
+// TODO: merge with PreviewServer in Vite 5
+export interface PreviewServerForHook {
   /**
    * The resolved vite config object
    */
@@ -66,16 +67,20 @@ export interface PreviewServer {
   /**
    * The resolved urls Vite prints on the CLI
    */
-  resolvedUrls: ResolvedServerUrls
+  resolvedUrls: ResolvedServerUrls | null
   /**
    * Print server urls
    */
   printUrls(): void
 }
 
+export interface PreviewServer extends PreviewServerForHook {
+  resolvedUrls: ResolvedServerUrls
+}
+
 export type PreviewServerHook = (
   this: void,
-  server: PreviewServer,
+  server: PreviewServerForHook,
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
@@ -106,15 +111,7 @@ export async function preview(
     )
   }
 
-  const options = config.preview
-  const logger = config.logger
-
   const app = connect() as Connect.Server
-
-  const hostname = await resolveHostname(options.host)
-  const port = options.port ?? DEFAULT_PREVIEW_PORT
-  const protocol = options.https ? 'https' : 'http'
-
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
@@ -122,26 +119,17 @@ export async function preview(
   )
   setClientErrorHandler(httpServer, config.logger)
 
-  const serverPort = await httpServerStart(httpServer, {
-    port,
-    strictPort: options.strictPort,
-    host: hostname.host,
-    logger,
-  })
-
-  const resolvedUrls = await resolveServerUrls(
-    httpServer,
-    config.preview,
-    config,
-  )
-
-  const server: PreviewServer = {
+  const server: PreviewServerForHook = {
     config,
     middlewares: app,
     httpServer,
-    resolvedUrls,
+    resolvedUrls: null,
     printUrls() {
-      printServerUrls(resolvedUrls, options.host, logger.info)
+      if (server.resolvedUrls) {
+        printServerUrls(server.resolvedUrls, options.host, logger.info)
+      } else {
+        throw new Error('cannot print server URLs before server is listening.')
+      }
     },
   }
 
@@ -190,6 +178,24 @@ export async function preview(
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
+  const options = config.preview
+  const logger = config.logger
+  const hostname = await resolveHostname(options.host)
+  const port = options.port ?? DEFAULT_PREVIEW_PORT
+  const protocol = options.https ? 'https' : 'http'
+
+  const serverPort = await httpServerStart(httpServer, {
+    port,
+    strictPort: options.strictPort,
+    host: hostname.host,
+    logger,
+  })
+
+  server.resolvedUrls = await resolveServerUrls(
+    httpServer,
+    config.preview,
+    config,
+  )
 
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : previewBase
@@ -202,5 +208,5 @@ export async function preview(
     )
   }
 
-  return server
+  return server as PreviewServer
 }

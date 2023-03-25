@@ -309,7 +309,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `configurePreviewServer`
 
-- **Type:** `(server: PreviewServer) => (() => void) | void | Promise<(() => void) | void>`
+- **Type:** `(server: PreviewServerForHook) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [PreviewServer](./api-javascript#previewserver)
 
