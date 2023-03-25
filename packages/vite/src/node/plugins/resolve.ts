@@ -704,14 +704,14 @@ export function tryNodeResolve(
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
-      const mainPkg = findNearestMainPackageData(basedir, packageCache)
+      const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
       if (mainPkg) {
         if (
-          mainPkg.data.peerDependencies?.[id] &&
-          mainPkg.data.peerDependenciesMeta?.[id]?.optional
+          mainPkg.peerDependencies?.[id] &&
+          mainPkg.peerDependenciesMeta?.[id]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${id}:${mainPkg.data.name}`,
+            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
           }
         }
       }
