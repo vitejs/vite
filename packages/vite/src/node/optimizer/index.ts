@@ -1295,7 +1295,7 @@ async function cleanupDepsCacheStaleFiles(
   for (const file of files) {
     if (file !== 'package.json' && file !== '_metadata.json') {
       const filePath = path.join(depsCacheDir, file)
-      if (!optimizedDepInfoFromFile(metadata, filePath)) {
+      if (!optimizedDepInfoFromFile(metadata, normalizePath(filePath))) {
         fsp.unlink(filePath)
       }
     }
