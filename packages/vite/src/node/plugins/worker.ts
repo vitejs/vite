@@ -32,14 +32,6 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
-export function isWorkerRequest(id: string): boolean {
-  const query = parseRequest(id)
-  if (query && query[WORKER_FILE_ID] != null) {
-    return true
-  }
-  return false
-}
-
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
   asset: EmittedAsset,
