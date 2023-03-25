@@ -395,7 +395,6 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 interface LookupFileOptions {
   pathOnly?: boolean
   rootDir?: string
-  predicate?: (file: string) => boolean
 }
 
 export function lookupFile(
@@ -406,12 +405,7 @@ export function lookupFile(
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      const result = options?.pathOnly
-        ? fullPath
-        : fs.readFileSync(fullPath, 'utf-8')
-      if (!options?.predicate || options.predicate(result)) {
-        return result
-      }
+      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }
   const parentDir = path.dirname(dir)
