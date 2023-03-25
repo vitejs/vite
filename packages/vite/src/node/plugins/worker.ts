@@ -349,7 +349,34 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       )
     },
 
+    async closeBundle() {
+      if (isWorker) {
+        return
+      }
+      const workerMap = getWorkerCache(config)
+      if (workerMap != null) {
+        await Promise.all(
+          [...workerMap.workersData.values()].map(({ bundle }) =>
+            bundle.close(),
+          ),
+        )
+      }
+    },
+  }
+}
+
+export function webWorkerPostBuildPlugin(config: ResolvedConfig): Plugin {
+  const isWorker = config.isWorker
+
+  return {
+    name: 'vite:worker-post-build',
+
     renderChunk(code, chunk, outputOptions) {
+      if (isWorker) {
+        return
+      }
+      // otherwise
+
       let s: MagicString
       const result = () => {
         return (
@@ -412,20 +439,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
       }
       return result()
-    },
-
-    async closeBundle() {
-      if (isWorker) {
-        return
-      }
-      const workerMap = getWorkerCache(config)
-      if (workerMap != null) {
-        await Promise.all(
-          [...workerMap.workersData.values()].map(({ bundle }) =>
-            bundle.close(),
-          ),
-        )
-      }
     },
   }
 }
