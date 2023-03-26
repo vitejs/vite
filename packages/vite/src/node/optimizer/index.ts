@@ -590,45 +590,50 @@ export function runOptimizeDeps(
           async commit() {
             // Write this run of pre-bundled dependencies to the deps cache
 
-            // Get a list of old files in the deps directory to delete the stale ones
-            const oldFilesPaths: string[] = []
-            if (!fs.existsSync(depsCacheDir)) {
-              fs.mkdirSync(depsCacheDir, { recursive: true })
-            } else {
-              oldFilesPaths.push(
-                ...(await fsp.readdir(depsCacheDir)).map((f) =>
-                  path.join(depsCacheDir, f),
-                ),
+            // create temp sibling dir
+            const tempDir = findNonExistingSibling(depsCacheDir, 'temp')
+            fs.mkdirSync(tempDir, { recursive: true })
+
+            // write files with callback api, use write count to resolve
+            await new Promise<void>((resolve, reject) => {
+              let numWrites = result.outputFiles!.length + 2 // two metadata files
+              const callback = (err: any) => {
+                if (err) {
+                  reject(err)
+                } else {
+                  if (--numWrites === 0) {
+                    resolve()
+                  }
+                }
+              }
+              fs.writeFile(
+                `${tempDir}/package.json`,
+                '{\n  "type": "module"\n}\n',
+                callback,
               )
+              fs.writeFile(
+                `${tempDir}/_metadata.json`,
+                stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+                callback,
+              )
+              result.outputFiles!.forEach(({ path, contents }) => {
+                fs.writeFile(
+                  path.replace(depsCacheDir, tempDir),
+                  contents,
+                  callback,
+                )
+              })
+            })
+
+            // replace depsCacheDir with newly written dir
+            if (fs.existsSync(depsCacheDir)) {
+              const deleteMe = findNonExistingSibling(depsCacheDir, 'delete')
+              fs.renameSync(depsCacheDir, deleteMe)
+              fs.renameSync(tempDir, depsCacheDir)
+              fs.rmdir(deleteMe, () => {}) // ignore errors
+            } else {
+              fs.renameSync(tempDir, depsCacheDir)
             }
-
-            const newFilesPaths = new Set<string>()
-            const files: Promise<void>[] = []
-            const write = (filePath: string, content: string) => {
-              newFilesPaths.add(filePath)
-              files.push(fsp.writeFile(filePath, content))
-            }
-
-            // a hint for Node.js
-            // all files in the cache directory should be recognized as ES modules
-            write(
-              path.resolve(depsCacheDir, 'package.json'),
-              '{\n  "type": "module"\n}\n',
-            )
-
-            write(
-              path.join(depsCacheDir, '_metadata.json'),
-              stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
-            )
-
-            for (const outputFile of result.outputFiles!)
-              write(outputFile.path, outputFile.text)
-
-            // Clean up old files in the background
-            for (const filePath of oldFilesPaths)
-              if (!newFilesPaths.has(filePath)) fs.unlink(filePath, () => {}) // ignore errors
-
-            await Promise.all(files)
           },
           cancel: () => {},
         }
@@ -1288,4 +1293,25 @@ export async function optimizedDepNeedsInterop(
     )
   }
   return depInfo?.needsInterop
+}
+
+function findNonExistingSibling(file: string, suffix: string): string {
+  let tries = 0
+  let name
+  while (
+    fs.existsSync(
+      (name = `${file}_${suffix}_${Date.now()}${`${Math.random()}`.slice(
+        -10,
+      )}`),
+    )
+  ) {
+    if (tries++ > 9) {
+      throw new Error(
+        `Too many "${path.basename(
+          file,
+        )}_${suffix}_" directories in ${path.dirname(file)}`,
+      )
+    }
+  }
+  return name
 }
