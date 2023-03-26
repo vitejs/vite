@@ -484,15 +484,18 @@ function tryFsResolve(
   const hashIndex = fsPath.indexOf('#')
   if (hashIndex > 0 && isInNodeModules(fsPath)) {
     const queryIndex = fsPath.indexOf('?')
-    const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
-    const res = tryCleanFsResolve(
-      file,
-      options,
-      tryIndex,
-      targetWeb,
-      skipPackageJson,
-    )
-    if (res) return res + fsPath.slice(file.length)
+    // We only need to check foo#bar?baz and foo#bar, ignore foo?bar#baz
+    if (queryIndex < 0 || queryIndex > hashIndex) {
+      const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
+      const res = tryCleanFsResolve(
+        file,
+        options,
+        tryIndex,
+        targetWeb,
+        skipPackageJson,
+      )
+      if (res) return res + fsPath.slice(file.length)
+    }
   }
 
   const { file, postfix } = splitFileAndPostfix(fsPath)
