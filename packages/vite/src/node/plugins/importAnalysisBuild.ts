@@ -11,6 +11,7 @@ import {
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   moduleListContains,
 } from '../utils'
 import type { Plugin } from '../plugin'
@@ -44,7 +45,7 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
-  return relPath.startsWith('.') ? relPath : `./${relPath}`
+  return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
 /**
@@ -185,10 +186,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (
-        importer.includes('node_modules') &&
-        !dynamicImportPrefixRE.test(source)
-      ) {
+      if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
         return
       }
 

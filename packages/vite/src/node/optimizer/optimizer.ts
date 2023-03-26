@@ -1,11 +1,12 @@
 import colors from 'picocolors'
 import _debug from 'debug'
 import { getHash } from '../utils'
-import { getDepOptimizationConfig } from '..'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
+  createIsOptimizedDepFile,
   createIsOptimizedDepUrl,
   debuggerViteDeps as debug,
   depsFromOptimizedDepInfo,
@@ -14,7 +15,6 @@ import {
   extractExportsData,
   getOptimizedDepPath,
   initDepsOptimizerMetadata,
-  isOptimizedDepFile,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   optimizeServerSsrDeps,
@@ -99,7 +99,7 @@ async function createDepsOptimizer(
 
   const sessionTimestamp = Date.now().toString()
 
-  const cachedMetadata = loadCachedDepOptimizationMetadata(config, ssr)
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(config, ssr)
 
   let handle: NodeJS.Timeout | undefined
 
@@ -112,7 +112,7 @@ async function createDepsOptimizer(
     metadata,
     registerMissingImport,
     run: () => debouncedProcessing(0),
-    isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
+    isOptimizedDepFile: createIsOptimizedDepFile(config),
     isOptimizedDepUrl: createIsOptimizedDepUrl(config),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
@@ -122,6 +122,7 @@ async function createDepsOptimizer(
     ensureFirstRun,
     close,
     options: getDepOptimizationConfig(config, ssr),
+    server,
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
@@ -220,16 +221,6 @@ async function createDepsOptimizer(
             discover = discoverProjectDependencies(config)
             const deps = await discover.result
             discover = undefined
-
-            debug(
-              colors.green(
-                Object.keys(deps).length > 0
-                  ? `dependencies found by scanner: ${depsLogString(
-                      Object.keys(deps),
-                    )}`
-                  : `no dependencies found by scanner`,
-              ),
-            )
 
             // Add these dependencies to the discovered list, as these are currently
             // used by the preAliasPlugin to support aliased and optimized deps.
@@ -485,13 +476,13 @@ async function createDepsOptimizer(
   }
 
   function fullReload() {
-    if (server) {
+    if (depsOptimizer.server) {
       // Cached transform results have stale imports (resolved to
       // old locations) so they need to be invalidated before the page is
       // reloaded.
-      server.moduleGraph.invalidateAll()
+      depsOptimizer.server.moduleGraph.invalidateAll()
 
-      server.ws.send({
+      depsOptimizer.server.ws.send({
         type: 'full-reload',
         path: '*',
       })
@@ -764,7 +755,7 @@ async function createDevSsrDepsOptimizer(
 
   const depsOptimizer = {
     metadata,
-    isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
+    isOptimizedDepFile: createIsOptimizedDepFile(config),
     isOptimizedDepUrl: createIsOptimizedDepUrl(config),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       `${depInfo.file}?v=${depInfo.browserHash}`,
