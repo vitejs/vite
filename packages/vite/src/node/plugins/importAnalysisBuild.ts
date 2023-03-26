@@ -11,6 +11,7 @@ import {
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   moduleListContains,
 } from '../utils'
 import type { Plugin } from '../plugin'
@@ -185,10 +186,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (
-        importer.includes('node_modules') &&
-        !dynamicImportPrefixRE.test(source)
-      ) {
+      if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
         return
       }
 
