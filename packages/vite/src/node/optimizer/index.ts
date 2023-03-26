@@ -20,11 +20,8 @@ import {
   lookupFile,
   normalizeId,
   normalizePath,
-  removeDir,
   removeLeadingSlash,
-  renameDir,
   tryStatSync,
-  writeFile,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
@@ -164,6 +161,9 @@ export interface DepOptimizationResult {
    * to be able to discard the result
    */
   commit: () => Promise<void>
+  /**
+   * @deprecated noop
+   */
   cancel: () => void
 }
 
@@ -474,23 +474,6 @@ export function runOptimizeDeps(
   }
 
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
-  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
-
-  // Create a temporal directory so we don't need to delete optimized deps
-  // until they have been processed. This also avoids leaving the deps cache
-  // directory in a corrupted state if there is an error
-  if (fs.existsSync(processingCacheDir)) {
-    emptyDir(processingCacheDir)
-  } else {
-    fs.mkdirSync(processingCacheDir, { recursive: true })
-  }
-
-  // a hint for Node.js
-  // all files in the cache directory should be recognized as ES modules
-  writeFile(
-    path.resolve(processingCacheDir, 'package.json'),
-    JSON.stringify({ type: 'module' }),
-  )
 
   const metadata = initDepsOptimizerMetadata(config, ssr)
 
@@ -505,38 +488,16 @@ export function runOptimizeDeps(
 
   const qualifiedIds = Object.keys(depsInfo)
 
-  let cleaned = false
-  const cleanUp = () => {
-    if (!cleaned) {
-      cleaned = true
-      // No need to wait, we can clean up in the background because temp folders
-      // are unique per run
-      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
-        // Ignore errors
-      })
-    }
-  }
-  const createProcessingResult = () => ({
+  const createEmptyProcessingResult = () => ({
     metadata,
-    async commit() {
-      if (cleaned) {
-        throw new Error(
-          `Vite Internal Error: Can't commit optimizeDeps processing result, it has already been cancelled.`,
-        )
-      }
-      // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-      // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-      // Rewire the file paths from the temporal processing dir to the final deps cache dir
-      await removeDir(depsCacheDir)
-      await renameDir(processingCacheDir, depsCacheDir)
-    },
-    cancel: cleanUp,
+    commit: async () => {},
+    cancel: async () => {},
   })
 
   if (!qualifiedIds.length) {
     return {
-      cancel: async () => cleanUp(),
-      result: Promise.resolve(createProcessingResult()),
+      result: Promise.resolve(createEmptyProcessingResult()),
+      cancel: async () => {},
     }
   }
 
@@ -546,11 +507,11 @@ export function runOptimizeDeps(
     resolvedConfig,
     depsInfo,
     ssr,
-    processingCacheDir,
+    depsCacheDir,
     optimizerContext,
   )
 
-  const result = preparedRun.then(({ context, idToExports }) => {
+  const runResult = preparedRun.then(({ context, idToExports }) => {
     function disposeContext() {
       return context?.dispose().catch((e) => {
         config.logger.error('Failed to dispose esbuild context', { error: e })
@@ -558,7 +519,7 @@ export function runOptimizeDeps(
     }
     if (!context || optimizerContext.cancelled) {
       disposeContext()
-      return createProcessingResult()
+      return createEmptyProcessingResult()
     }
 
     return context
@@ -569,15 +530,11 @@ export function runOptimizeDeps(
         // the paths in `meta.outputs` are relative to `process.cwd()`
         const processingCacheDirOutputPath = path.relative(
           process.cwd(),
-          processingCacheDir,
+          depsCacheDir,
         )
 
         for (const id in depsInfo) {
-          const output = esbuildOutputFromId(
-            meta.outputs,
-            id,
-            processingCacheDir,
-          )
+          const output = esbuildOutputFromId(meta.outputs, id, depsCacheDir)
 
           const { exportsData, ...info } = depsInfo[id]
           addOptimizedDepInfo(metadata, 'optimized', {
@@ -624,23 +581,64 @@ export function runOptimizeDeps(
           }
         }
 
-        const dataPath = path.join(processingCacheDir, '_metadata.json')
-        writeFile(
-          dataPath,
-          stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
-        )
-
         debug(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        return createProcessingResult()
+        return {
+          metadata,
+          async commit() {
+            // Write this run of pre-bundled dependencies to the deps cache
+
+            // Get a list of old files in the deps directory to delete the stale ones
+            const oldFilesPaths: string[] = []
+            if (!fs.existsSync(depsCacheDir)) {
+              fs.mkdirSync(depsCacheDir, { recursive: true })
+            } else {
+              oldFilesPaths.push(
+                ...(await fsp.readdir(depsCacheDir)).map((f) =>
+                  path.join(depsCacheDir, f),
+                ),
+              )
+            }
+
+            const newFilesPaths = new Set<string>()
+            const files: Promise<void>[] = []
+            const write = (filePath: string, content: string) => {
+              newFilesPaths.add(filePath)
+              files.push(fsp.writeFile(filePath, content))
+            }
+
+            // a hint for Node.js
+            // all files in the cache directory should be recognized as ES modules
+            write(
+              path.resolve(depsCacheDir, 'package.json'),
+              '{\n  "type": "module"\n}\n',
+            )
+
+            write(
+              path.join(depsCacheDir, '_metadata.json'),
+              stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+            )
+
+            for (const outputFile of result.outputFiles!)
+              write(outputFile.path, outputFile.text)
+
+            // Clean up old files in the background
+            for (const filePath of oldFilesPaths)
+              if (!newFilesPaths.has(filePath)) fsp.unlink(filePath)
+
+            await Promise.all(files)
+          },
+          cancel: () => {},
+        }
       })
+
       .catch((e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
           // esbuild logs an error when cancelling, but this is expected so
           // return an empty result instead
-          return createProcessingResult()
+          return createEmptyProcessingResult()
         }
         throw e
       })
@@ -649,18 +647,13 @@ export function runOptimizeDeps(
       })
   })
 
-  result.catch(() => {
-    cleanUp()
-  })
-
   return {
     async cancel() {
       optimizerContext.cancelled = true
       const { context } = await preparedRun
       await context?.cancel()
-      cleanUp()
     },
-    result,
+    result: runResult,
   }
 }
 
@@ -760,6 +753,9 @@ async function prepareEsbuildOptimizerRun(
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
+    // Don't write to disk, we'll only write the files if the build isn't invalidated
+    // by newly discovered dependencies
+    write: false,
     // We can't use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated
     // by using mainFields and conditions
@@ -932,15 +928,6 @@ function getDepsCacheSuffix(config: ResolvedConfig, ssr: boolean): string {
 
 export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
   return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr)
-}
-
-function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
-  return (
-    getDepsCacheDirPrefix(config) +
-    getDepsCacheSuffix(config, ssr) +
-    '_temp_' +
-    getHash(Date.now().toString())
-  )
 }
 
 export function getDepsCacheDirPrefix(config: ResolvedConfig): string {
@@ -1304,30 +1291,4 @@ export async function optimizedDepNeedsInterop(
     )
   }
   return depInfo?.needsInterop
-}
-
-const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
-export async function cleanupDepsCacheStaleDirs(
-  config: ResolvedConfig,
-): Promise<void> {
-  try {
-    const cacheDir = path.resolve(config.cacheDir)
-    if (fs.existsSync(cacheDir)) {
-      const dirents = await fsp.readdir(cacheDir, { withFileTypes: true })
-      for (const dirent of dirents) {
-        if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
-          const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const stats = await fsp.stat(tempDirPath).catch((_) => null)
-          if (
-            stats?.mtime &&
-            Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
-          ) {
-            await removeDir(tempDirPath)
-          }
-        }
-      }
-    }
-  } catch (err) {
-    config.logger.error(err)
-  }
 }
