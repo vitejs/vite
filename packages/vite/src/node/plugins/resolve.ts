@@ -482,7 +482,7 @@ function tryFsResolve(
   // source code so we only need to perform the check for dependencies.
   // We don't support `?` in node_modules paths, so we only need to check in this branch.
   const hashIndex = fsPath.indexOf('#')
-  if (hashIndex > 0 && isInNodeModules(fsPath)) {
+  if (hashIndex >= 0 && isInNodeModules(fsPath)) {
     const queryIndex = fsPath.indexOf('?')
     // We only need to check foo#bar?baz and foo#bar, ignore foo?bar#baz
     if (queryIndex < 0 || queryIndex > hashIndex) {
