@@ -35,7 +35,6 @@ import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
-  cleanupDepsCacheStaleDirs,
   getDepsOptimizer,
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -692,10 +691,6 @@ export async function createServer(
   } else {
     await initServer()
   }
-
-  // Fire a clean up of stale cache dirs, in case old processes didn't
-  // terminate correctly. Don't await this promise
-  cleanupDepsCacheStaleDirs(config)
 
   return server
 }
