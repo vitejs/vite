@@ -24,6 +24,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  isInNodeModules,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -35,7 +36,6 @@ import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
-  cleanupDepsCacheStaleDirs,
   getDepsOptimizer,
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -361,7 +361,7 @@ export async function createServer(
 
   const watcher = chokidar.watch(
     // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, config.envDir],
+    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -693,10 +693,6 @@ export async function createServer(
     await initServer()
   }
 
-  // Fire a clean up of stale cache dirs, in case old processes didn't
-  // terminate correctly. Don't await this promise
-  cleanupDepsCacheStaleDirs(config)
-
   return server
 }
 
@@ -772,8 +768,7 @@ export function resolveServerOptions(
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
         ? () => false
-        : raw?.sourcemapIgnoreList ||
-          ((sourcePath) => sourcePath.includes('node_modules')),
+        : raw?.sourcemapIgnoreList || isInNodeModules,
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow

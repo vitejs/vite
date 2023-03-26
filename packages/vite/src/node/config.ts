@@ -62,6 +62,7 @@ import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
+import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
@@ -390,6 +391,7 @@ export async function resolveConfig(
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
   const isNodeEnvSet = !!process.env.NODE_ENV
+  const packageCache: PackageCache = new Map()
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it early on
@@ -539,12 +541,12 @@ export async function resolveConfig(
   )
 
   // resolve cache directory
-  const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
+  const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
   const cacheDir = normalizePath(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgPath
-      ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
+      : pkgDir
+      ? path.join(pkgDir, `node_modules/.vite`)
       : path.join(resolvedRoot, `.vite`),
   )
 
@@ -681,7 +683,7 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    packageCache: new Map(),
+    packageCache,
     createResolver,
     optimizeDeps: {
       disabled: 'build',
@@ -926,7 +928,8 @@ export async function loadConfigFromFile(
     // check package.json for type: "module" and set `isESM` to true
     try {
       const pkg = lookupFile(configRoot, ['package.json'])
-      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+      isESM =
+        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
     } catch (e) {}
   }
 
@@ -1090,11 +1093,7 @@ async function loadConfigFromBundledFile(
     try {
       return (await dynamicImport(fileUrl)).default
     } finally {
-      try {
-        await fsp.unlink(fileNameTmp)
-      } catch {
-        // already removed if this function is called twice simultaneously
-      }
+      fs.unlink(fileNameTmp, () => {}) // Ignore errors
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`

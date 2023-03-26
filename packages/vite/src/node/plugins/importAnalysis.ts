@@ -32,6 +32,7 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   isJSRequest,
   joinUrlSegments,
   moduleListContains,
@@ -53,11 +54,7 @@ import {
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
-import {
-  getDepsCacheDirPrefix,
-  getDepsOptimizer,
-  optimizedDepNeedsInterop,
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { checkPublicFile } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
@@ -347,7 +344,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
-          resolved.id.startsWith(getDepsCacheDirPrefix(config)) ||
+          depsOptimizer?.isOptimizedDepFile(resolved.id) ||
           fs.existsSync(cleanUrl(resolved.id))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
@@ -618,7 +615,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir)) {
-          if (!importer.includes('node_modules')) {
+          if (!isInNodeModules(importer)) {
             // check @vite-ignore which suppresses dynamic import warning
             const hasViteIgnore = hasViteIgnoreRE.test(
               // complete expression inside parens

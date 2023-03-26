@@ -12,6 +12,9 @@ patchedDependencies:
   sirv@2.0.2:
     hash: hmoqtj4vy3i7wnpchga2a2mu3y
     path: patches/sirv@2.0.2.patch
+  chokidar@3.5.3:
+    hash: dzxbf3kgof5pdmbsyih2x43sq4
+    path: patches/chokidar@3.5.3.patch
 
 importers:
 
@@ -251,7 +254,7 @@ importers:
       acorn: 8.8.2
       acorn-walk: 8.2.0_acorn@8.8.2
       cac: 6.7.14
-      chokidar: 3.5.3
+      chokidar: 3.5.3_dzxbf3kgof5pdmbsyih2x43sq4
       connect: 3.7.0
       connect-history-api-fallback: 2.0.0
       convert-source-map: 2.0.0
@@ -4381,7 +4384,7 @@ packages:
     resolution: {integrity: sha512-BrgHpW9NURQgzoNyjfq0Wu6VFO6D7IZEmJNdtgNqpzGG8RuNFHt2jQxWlAs4HMe119chBnv+34syEZtc6IhLtA==}
     dev: true
 
-  /chokidar/3.5.3:
+  /chokidar/3.5.3_dzxbf3kgof5pdmbsyih2x43sq4:
     resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}
     engines: {node: '>= 8.10.0'}
     dependencies:
@@ -7226,7 +7229,7 @@ packages:
       '@iarna/toml': 2.2.5
       '@mrbbot/node-fetch': 4.6.0
       '@peculiar/webcrypto': 1.3.3
-      chokidar: 3.5.3
+      chokidar: 3.5.3_dzxbf3kgof5pdmbsyih2x43sq4
       cjstoesm: 1.1.4_typescript@4.6.4
       dotenv: 8.6.0
       env-paths: 2.2.1
@@ -8619,7 +8622,7 @@ packages:
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
-      chokidar: 3.5.3
+      chokidar: 3.5.3_dzxbf3kgof5pdmbsyih2x43sq4
       immutable: 4.0.0
       source-map-js: 1.0.2
     dev: true
@@ -9097,7 +9100,7 @@ packages:
     hasBin: true
     dependencies:
       arg: 5.0.2
-      chokidar: 3.5.3
+      chokidar: 3.5.3_dzxbf3kgof5pdmbsyih2x43sq4
       color-name: 1.1.4
       detective: 5.2.1
       didyoumean: 1.2.2
@@ -9128,7 +9131,7 @@ packages:
     hasBin: true
     dependencies:
       arg: 5.0.2
-      chokidar: 3.5.3
+      chokidar: 3.5.3_dzxbf3kgof5pdmbsyih2x43sq4
       color-name: 1.1.4
       detective: 5.2.1
       didyoumean: 1.2.2

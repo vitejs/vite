@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { promisify } from 'node:util'
 import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
@@ -114,6 +114,10 @@ export function isBuiltin(id: string): boolean {
       ? id.slice(NODE_BUILTIN_NAMESPACE.length)
       : id,
   )
+}
+
+export function isInNodeModules(id: string): boolean {
+  return id.includes('node_modules')
 }
 
 export function moduleListContains(
@@ -283,21 +287,8 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const knownTsRE = /\.(?:ts|mts|cts|tsx)$/
-const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const knownTsRE = /\.(?:ts|mts|cts|tsx)(?:$|\?)/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
-export const isPossibleTsOutput = (url: string): boolean =>
-  knownTsOutputRE.test(cleanUrl(url))
-
-const splitFilePathAndQueryRE = /(\.(?:[cm]?js|jsx))(\?.*)?$/
-export function getPotentialTsSrcPaths(filePath: string): string[] {
-  const [name, type, query = ''] = filePath.split(splitFilePathAndQueryRE)
-  const paths = [name + type.replace('js', 'ts') + query]
-  if (type[type.length - 1] !== 'x') {
-    paths.push(name + type.replace('js', 'tsx') + query)
-  }
-  return paths
-}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
@@ -392,34 +383,27 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
-interface LookupFileOptions {
-  pathOnly?: boolean
-  rootDir?: string
-  predicate?: (file: string) => boolean
+export function tryStatSync(file: string): fs.Stats | undefined {
+  try {
+    return fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    // Ignore errors
+  }
 }
 
 export function lookupFile(
   dir: string,
-  formats: string[],
-  options?: LookupFileOptions,
+  fileNames: string[],
 ): string | undefined {
-  for (const format of formats) {
-    const fullPath = path.join(dir, format)
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      const result = options?.pathOnly
-        ? fullPath
-        : fs.readFileSync(fullPath, 'utf-8')
-      if (!options?.predicate || options.predicate(result)) {
-        return result
-      }
+  while (dir) {
+    for (const fileName of fileNames) {
+      const fullPath = path.join(dir, fileName)
+      if (tryStatSync(fullPath)?.isFile()) return fullPath
     }
-  }
-  const parentDir = path.dirname(dir)
-  if (
-    parentDir !== dir &&
-    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
-  ) {
-    return lookupFile(parentDir, formats, options)
+    const parentDir = path.dirname(dir)
+    if (parentDir === dir) return
+
+    dir = parentDir
   }
 }
 
@@ -515,17 +499,6 @@ export function generateCodeFrame(
   return res.join('\n')
 }
 
-export function writeFile(
-  filename: string,
-  content: string | Uint8Array,
-): void {
-  const dir = path.dirname(filename)
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
-  }
-  fs.writeFileSync(filename, content)
-}
-
 export function isFileReadable(filename: string): boolean {
   try {
     fs.accessSync(filename, fs.constants.R_OK)
@@ -594,24 +567,53 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
-export const removeDir = isWindows
-  ? promisify(gracefulRemoveDir)
-  : function removeDirSync(dir: string) {
-      // when removing `.vite/deps`, if it doesn't exist, nodejs may also remove
-      // other directories within `.vite/`, including `.vite/deps_temp` (bug).
-      // workaround by checking for directory existence before removing for now.
-      if (fs.existsSync(dir)) {
-        fs.rmSync(dir, { recursive: true, force: true })
-      }
-    }
-export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
-
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export const safeRealpathSync = isWindows
-  ? fs.realpathSync
+export let safeRealpathSync = isWindows
+  ? windowsSafeRealPathSync
   : fs.realpathSync.native
+
+// Based on https://github.com/larrybahr/windows-network-drive
+// MIT License, Copyright (c) 2017 Larry Bahr
+const windowsNetworkMap = new Map()
+function windowsMappedRealpathSync(path: string) {
+  const realPath = fs.realpathSync.native(path)
+  if (realPath.startsWith('\\\\')) {
+    for (const [network, volume] of windowsNetworkMap) {
+      if (realPath.startsWith(network)) return realPath.replace(network, volume)
+    }
+  }
+  return realPath
+}
+const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
+let firstSafeRealPathSyncRun = false
+
+function windowsSafeRealPathSync(path: string): string {
+  if (!firstSafeRealPathSyncRun) {
+    optimizeSafeRealPathSync()
+    firstSafeRealPathSyncRun = true
+  }
+  return fs.realpathSync(path)
+}
+
+function optimizeSafeRealPathSync() {
+  exec('net use', (error, stdout) => {
+    if (error) return
+    const lines = stdout.split('\n')
+    // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
+    // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
+    for (const line of lines) {
+      const m = line.match(parseNetUseRE)
+      if (m) windowsNetworkMap.set(m[3], m[2])
+    }
+    if (windowsNetworkMap.size === 0) {
+      safeRealpathSync = fs.realpathSync.native
+    } else {
+      safeRealpathSync = windowsMappedRealpathSync
+    }
+  })
+}
 
 export function ensureWatchedFile(
   watcher: FSWatcher,
@@ -973,75 +975,6 @@ export const requireResolveFromRootWithFallback = (
 
   // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
   return _require.resolve(id, { paths })
-}
-
-// Based on node-graceful-fs
-
-// The ISC License
-// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
-// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
-
-// On Windows, A/V software can lock the directory, causing this
-// to fail with an EACCES or EPERM if the directory contains newly
-// created files. The original tried for up to 60 seconds, we only
-// wait for 5 seconds, as a longer time would be seen as an error
-
-const GRACEFUL_RENAME_TIMEOUT = 5000
-function gracefulRename(
-  from: string,
-  to: string,
-  cb: (error: NodeJS.ErrnoException | null) => void,
-) {
-  const start = Date.now()
-  let backoff = 0
-  fs.rename(from, to, function CB(er) {
-    if (
-      er &&
-      (er.code === 'EACCES' || er.code === 'EPERM') &&
-      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
-    ) {
-      setTimeout(function () {
-        fs.stat(to, function (stater, st) {
-          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
-          else CB(er)
-        })
-      }, backoff)
-      if (backoff < 100) backoff += 10
-      return
-    }
-    if (cb) cb(er)
-  })
-}
-
-const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
-function gracefulRemoveDir(
-  dir: string,
-  cb: (error: NodeJS.ErrnoException | null) => void,
-) {
-  const start = Date.now()
-  let backoff = 0
-  fs.rm(dir, { recursive: true }, function CB(er) {
-    if (er) {
-      if (
-        (er.code === 'ENOTEMPTY' ||
-          er.code === 'EACCES' ||
-          er.code === 'EPERM') &&
-        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
-      ) {
-        setTimeout(function () {
-          fs.rm(dir, { recursive: true }, CB)
-        }, backoff)
-        if (backoff < 100) backoff += 10
-        return
-      }
-
-      if (er.code === 'ENOENT') {
-        er = null
-      }
-    }
-
-    if (cb) cb(er)
-  })
 }
 
 export function emptyCssComments(raw: string): string {

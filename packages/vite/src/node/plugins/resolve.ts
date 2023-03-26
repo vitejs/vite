@@ -22,33 +22,32 @@ import {
   deepImportRE,
   ensureVolumeInPath,
   fsPathFromId,
-  getPotentialTsSrcPaths,
   injectQuery,
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
-  isPossibleTsOutput,
   isTsRequest,
   isWindows,
-  lookupFile,
   normalizePath,
   resolveFrom,
   safeRealpathSync,
   slash,
+  tryStatSync,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import {
+  findNearestMainPackageData,
   findNearestPackageData,
   loadPackageData,
   resolvePackageData,
 } from '../packages'
-import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -59,7 +58,6 @@ export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
-const nodeModulesInPathRE = /(?:^|\/)node_modules\//
 const subpathImportsPrefix = '#'
 
 const startsWithWordCharRE = /^\w/
@@ -177,16 +175,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       if (importer) {
-        const _importer = isWorkerRequest(importer)
-          ? splitFileAndPostfix(importer).file
-          : importer
         if (
-          isTsRequest(_importer) ||
+          isTsRequest(importer) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(_importer)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
@@ -459,9 +454,7 @@ function ensureVersionQuery(
     // as if they would have been imported through a bare import
     // Use the original id to do the check as the resolved id may be the real
     // file path after symlinks resolution
-    const isNodeModule =
-      nodeModulesInPathRE.test(normalizePath(id)) ||
-      nodeModulesInPathRE.test(normalizePath(resolved))
+    const isNodeModule = isInNodeModules(id) || isInNodeModules(resolved)
 
     if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
       const versionHash = depsOptimizer.metadata.browserHash
@@ -489,7 +482,7 @@ function tryFsResolve(
   // source code so we only need to perform the check for dependencies.
   // We don't support `?` in node_modules paths, so we only need to check in this branch.
   const hashIndex = fsPath.indexOf('#')
-  if (hashIndex > 0 && fsPath.includes('node_modules')) {
+  if (hashIndex > 0 && isInNodeModules(fsPath)) {
     const queryIndex = fsPath.indexOf('?')
     const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
     const res = tryCleanFsResolve(
@@ -512,6 +505,9 @@ function tryFsResolve(
   )
   if (res) return res + postfix
 }
+
+const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const isPossibleTsOutput = (url: string): boolean => knownTsOutputRE.test(url)
 
 function tryCleanFsResolve(
   file: string,
@@ -536,11 +532,22 @@ function tryCleanFsResolve(
     const dirStat = tryStatSync(dirPath)
     if (dirStat?.isDirectory()) {
       if (possibleJsToTs) {
-        // try resolve .js, .mjs, .mts or .jsx import to typescript file
-        const tsSrcPaths = getPotentialTsSrcPaths(file)
-        for (const srcPath of tsSrcPaths) {
-          if ((res = tryResolveRealFile(srcPath, preserveSymlinks))) return res
-        }
+        // try resolve .js, .mjs, .cjs or .jsx import to typescript file
+        const fileExt = path.extname(file)
+        const fileName = file.slice(0, -fileExt.length)
+        if (
+          (res = tryResolveRealFile(
+            fileName + fileExt.replace('js', 'ts'),
+            preserveSymlinks,
+          ))
+        )
+          return res
+        // for .js, also try .tsx
+        if (
+          fileExt === '.js' &&
+          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
+        )
+          return res
       }
 
       if (
@@ -630,14 +637,6 @@ function tryResolveRealFileWithExtensions(
   }
 }
 
-function tryStatSync(file: string): fs.Stats | undefined {
-  try {
-    return fs.statSync(file, { throwIfNoEntry: false })
-  } catch {
-    // Ignore errors
-  }
-}
-
 export type InternalResolveOptionsWithOverrideConditions =
   InternalResolveOptions & {
     /**
@@ -686,12 +685,8 @@ export function tryNodeResolve(
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
-      // find package.json with `name` as main
-      const mainPackageJson = lookupFile(basedir, ['package.json'], {
-        predicate: (content) => !!JSON.parse(content).name,
-      })
-      if (mainPackageJson) {
-        const mainPkg = JSON.parse(mainPackageJson)
+      const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
+      if (mainPkg) {
         if (
           mainPkg.peerDependencies?.[id] &&
           mainPkg.peerDependenciesMeta?.[id]?.optional
@@ -733,7 +728,7 @@ export function tryNodeResolve(
       return resolved
     }
     // don't external symlink packages
-    if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
+    if (!allowLinkedExternal && !isInNodeModules(resolved.id)) {
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
@@ -768,7 +763,7 @@ export function tryNodeResolve(
 
   if (
     !options.ssrOptimizeCheck &&
-    (!resolved.includes('node_modules') || // linked
+    (!isInNodeModules(resolved) || // linked
       !depsOptimizer || // resolving before listening to the server
       options.scan) // initial esbuild scan phase
   ) {
@@ -790,7 +785,7 @@ export function tryNodeResolve(
 
   const skipOptimization =
     !isJsType ||
-    importer?.includes('node_modules') ||
+    (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved) ||

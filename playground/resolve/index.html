@@ -92,6 +92,12 @@
 <p class="mjs-extension">fail</p>
 
 <h2>
+  A ts module can import another ESM module using its corresponding mjs file
+  name with query parameters
+</h2>
+<p class="mjs-extension-with-query">fail</p>
+
+<h2>
   A ts module can import another CommonJS module using its corresponding cjs
   file name
 </h2>
@@ -261,6 +267,9 @@
 
   import { msgMjs as tsMjsExtensionMsg } from './ts-extension'
   text('.mjs-extension', tsMjsExtensionMsg)
+
+  import { msgMjs as tsMjsExtensionWithQueryMsg } from './ts-extension?query=1'
+  text('.mjs-extension-with-query', tsMjsExtensionWithQueryMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
