@@ -31,9 +31,10 @@ import {
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
+  stripBase,
+  unwrapId,
   wrapId,
 } from '../../utils'
-import type { ModuleGraph } from '../moduleGraph'
 
 interface AssetNode {
   start: number
@@ -87,12 +88,12 @@ const processNodeUrl = (
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
-  moduleGraph?: ModuleGraph,
+  server?: ViteDevServer,
 ) => {
   let url = attr.value || ''
 
-  if (moduleGraph) {
-    const mod = moduleGraph.urlToModuleMap.get(url)
+  if (server?.moduleGraph) {
+    const mod = server.moduleGraph.urlToModuleMap.get(url)
     if (mod && mod.lastHMRTimestamp > 0) {
       url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
     }
@@ -102,6 +103,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
+    if (server) preTransformRequest(server, fullUrl, devBase)
   } else if (
     url[0] === '.' &&
     originalUrl &&
@@ -109,7 +111,11 @@ const processNodeUrl = (
     htmlPath === '/index.html'
   ) {
     // prefix with base (dev only, base is never relative)
-    const replacer = (url: string) => path.posix.join(devBase, url)
+    const replacer = (url: string) => {
+      const fullUrl = path.posix.join(devBase, url)
+      if (server) preTransformRequest(server, fullUrl, devBase)
+      return fullUrl
+    }
 
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
@@ -194,6 +200,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${modulePath}"></script>`,
     )
+    preTransformRequest(server!, modulePath, base)
   }
 
   await traverseHtml(html, filename, (node) => {
@@ -213,7 +220,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
-          moduleGraph,
+          server,
         )
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
@@ -305,4 +312,16 @@ export function indexHtmlMiddleware(
     }
     next()
   }
+}
+
+function preTransformRequest(server: ViteDevServer, url: string, base: string) {
+  if (!server.config.server.preTransformRequests) return
+
+  url = unwrapId(stripBase(url, base))
+
+  // transform all url as non-ssr as html includes client-side assets only
+  server.transformRequest(url).catch((e) => {
+    // Unexpected error, log the issue but avoid an unhandled exception
+    server.config.logger.error(e)
+  })
 }
