@@ -116,6 +116,10 @@ export function isBuiltin(id: string): boolean {
   )
 }
 
+export function isInNodeModules(id: string): boolean {
+  return id.includes('node_modules')
+}
+
 export function moduleListContains(
   moduleList: string[] | undefined,
   id: string,

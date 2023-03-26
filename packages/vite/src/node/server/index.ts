@@ -24,6 +24,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  isInNodeModules,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -767,8 +768,7 @@ export function resolveServerOptions(
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
         ? () => false
-        : raw?.sourcemapIgnoreList ||
-          ((sourcePath) => sourcePath.includes('node_modules')),
+        : raw?.sourcemapIgnoreList || isInNodeModules,
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow

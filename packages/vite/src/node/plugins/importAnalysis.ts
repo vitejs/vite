@@ -32,6 +32,7 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   isJSRequest,
   joinUrlSegments,
   moduleListContains,
@@ -618,7 +619,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir)) {
-          if (!importer.includes('node_modules')) {
+          if (!isInNodeModules(importer)) {
             // check @vite-ignore which suppresses dynamic import warning
             const hasViteIgnore = hasViteIgnoreRE.test(
               // complete expression inside parens
