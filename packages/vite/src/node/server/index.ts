@@ -340,6 +340,13 @@ export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
+
+  // start optimizer in the background
+  let depsOptimizerReady: Promise<void> | undefined
+  if (isDepsOptimizerEnabled(config, false)) {
+    depsOptimizerReady = initDepsOptimizer(config)
+  }
+
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -656,25 +663,15 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
-  let initingServer: Promise<void> | undefined
-  let serverInited = false
-  const initServer = async () => {
-    if (serverInited) {
-      return
-    }
-    if (initingServer) {
-      return initingServer
-    }
-    initingServer = (async function () {
-      await container.buildStart({})
-      if (isDepsOptimizerEnabled(config, false)) {
-        // non-ssr
-        await initDepsOptimizer(config, server)
+  // when the optimizer is ready, hook server so that it can reload the page
+  // or invalidate the module graph when needed
+  if (depsOptimizerReady) {
+    depsOptimizerReady.then(() => {
+      const depsOptimizer = getDepsOptimizer(config)
+      if (depsOptimizer) {
+        depsOptimizer.server = server
       }
-      initingServer = undefined
-      serverInited = true
-    })()
-    return initingServer
+    })
   }
 
   if (!middlewareMode && httpServer) {
@@ -682,7 +679,7 @@ export async function createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        await initServer()
+        await container.buildStart({})
       } catch (e) {
         httpServer.emit('error', e)
         return
@@ -690,7 +687,7 @@ export async function createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    await initServer()
+    await container.buildStart({})
   }
 
   return server
