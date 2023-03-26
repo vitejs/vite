@@ -1186,13 +1186,10 @@ const lockfileFormats = [
   { name: 'pnpm-lock.yaml', checkPatches: false }, // Included in lockfile
   { name: 'bun.lockb', checkPatches: true },
 ]
+const lockfileNames = lockfileFormats.map((l) => l.name)
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  const lockfilePath = lookupFile(
-    config.root,
-    lockfileFormats.map((l) => l.name),
-    { pathOnly: true },
-  )
+  const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)
