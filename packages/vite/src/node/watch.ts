@@ -10,9 +10,27 @@ export function resolveChokidarOptions(
 
   const resolvedWatchOptions: WatchOptions = {
     ignored: [
-      '**/.git/**',
-      '**/node_modules/**',
-      '**/test-results/**', // Playwright
+      ...[
+        '.git/**',
+        '.git*',
+        '.github/**',
+        '.vscode/**',
+        '.stackblitz/**',
+        'node_modules/**',
+        'test-results/**', // Playwright
+        'coverage/**',
+        '.editorconfig',
+        '.eslint*',
+        '.prettier*',
+        '.npmrc',
+        '.yarnrc',
+        '*.toml',
+        '*.yaml',
+        '*.md',
+        '*.log',
+        '*.cpuprofile',
+        'LICENSE',
+      ].map((pattern) => '**/' + pattern),
       glob.escapePath(config.cacheDir) + '/**',
       ...(Array.isArray(ignored) ? ignored : [ignored]),
     ],
