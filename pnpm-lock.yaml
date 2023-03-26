@@ -12,6 +12,9 @@ patchedDependencies:
   sirv@2.0.2:
     hash: hmoqtj4vy3i7wnpchga2a2mu3y
     path: patches/sirv@2.0.2.patch
+  chokidar@3.5.3:
+    hash: dzxbf3kgof5pdmbsyih2x43sq4
+    path: patches/chokidar@3.5.3.patch
 
 importers:
 
