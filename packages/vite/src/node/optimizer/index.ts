@@ -17,7 +17,6 @@ import {
   flattenId,
   getHash,
   isOptimizable,
-  lookupFile,
   normalizeId,
   normalizePath,
   removeDir,
@@ -1199,13 +1198,23 @@ const lockfileFormats = [
   { name: 'pnpm-lock.yaml', checkPatches: false }, // Included in lockfile
   { name: 'bun.lockb', checkPatches: true },
 ]
+const lockfileNames = lockfileFormats.map((l) => l.name)
+
+function findNearestLockfile(dir: string) {
+  while (dir) {
+    for (const fileName of lockfileNames) {
+      const fullPath = path.join(dir, fileName)
+      if (tryStatSync(fullPath)?.isFile()) return fullPath
+    }
+    const parentDir = path.dirname(dir)
+    if (parentDir === dir) return
+
+    dir = parentDir
+  }
+}
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  const lockfilePath = lookupFile(
-    config.root,
-    lockfileFormats.map((l) => l.name),
-    { pathOnly: true },
-  )
+  const lockfilePath = findNearestLockfile(config.root)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)

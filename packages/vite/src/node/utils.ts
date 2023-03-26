@@ -387,28 +387,16 @@ export function tryStatSync(file: string): fs.Stats | undefined {
     // Ignore errors
   }
 }
-interface LookupFileOptions {
-  pathOnly?: boolean
-  rootDir?: string
-}
 
-export function lookupFile(
-  dir: string,
-  formats: string[],
-  options?: LookupFileOptions,
-): string | undefined {
-  for (const format of formats) {
-    const fullPath = path.join(dir, format)
-    if (tryStatSync(fullPath)?.isFile()) {
-      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
-    }
-  }
-  const parentDir = path.dirname(dir)
-  if (
-    parentDir !== dir &&
-    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
-  ) {
-    return lookupFile(parentDir, formats, options)
+export function lookupFile(dir: string, fileName: string): string | undefined {
+  while (dir) {
+    const fullPath = path.join(dir, fileName)
+    if (tryStatSync(fullPath)?.isFile()) return fullPath
+
+    const parentDir = path.dirname(dir)
+    if (parentDir === dir) return
+
+    dir = parentDir
   }
 }
 

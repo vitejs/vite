@@ -927,8 +927,9 @@ export async function loadConfigFromFile(
   } else {
     // check package.json for type: "module" and set `isESM` to true
     try {
-      const pkg = lookupFile(configRoot, ['package.json'])
-      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+      const pkg = lookupFile(configRoot, 'package.json')
+      isESM =
+        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
     } catch (e) {}
   }
 
