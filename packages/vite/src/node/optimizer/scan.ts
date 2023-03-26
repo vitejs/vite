@@ -18,6 +18,7 @@ import {
   createDebugger,
   dataUrlRE,
   externalRE,
+  isInNodeModules,
   isObject,
   isOptimizable,
   moduleListContains,
@@ -360,7 +361,7 @@ function esbuildScanPlugin(
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
         if (
-          resolved.includes('node_modules') &&
+          isInNodeModules(resolved) &&
           isOptimizable(resolved, config.optimizeDeps)
         )
           return
@@ -501,7 +502,7 @@ function esbuildScanPlugin(
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
             }
-            if (resolved.includes('node_modules') || include?.includes(id)) {
+            if (isInNodeModules(resolved) || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
               if (isOptimizable(resolved, config.optimizeDeps)) {
                 depImports[id] = resolved

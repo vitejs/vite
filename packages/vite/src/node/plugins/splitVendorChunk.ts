@@ -4,6 +4,7 @@ import type {
   ManualChunkMeta,
   OutputOptions,
 } from 'rollup'
+import { isInNodeModules } from '../utils'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
@@ -41,7 +42,7 @@ export function splitVendorChunk(
   const cache = options.cache ?? new SplitVendorChunkCache()
   return (id, { getModuleInfo }) => {
     if (
-      id.includes('node_modules') &&
+      isInNodeModules(id) &&
       !isCSSRequest(id) &&
       staticImportedByEntry(id, getModuleInfo, cache.cache)
     ) {

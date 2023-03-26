@@ -9,6 +9,7 @@ import {
   createFilter,
   isBuiltin,
   isDefined,
+  isInNodeModules,
   lookupFile,
   normalizePath,
 } from '../utils'
@@ -259,7 +260,7 @@ function cjsSsrCollectExternals(
       // no main entry, but deep imports may be allowed
       const pkgDir = resolvePackageData(id, root)?.dir
       if (pkgDir) {
-        if (pkgDir.includes('node_modules')) {
+        if (isInNodeModules(pkgDir)) {
           ssrExternals.add(id)
         } else {
           depsToTrace.add(path.dirname(pkgDir))
@@ -276,7 +277,7 @@ function cjsSsrCollectExternals(
       ssrExternals.add(id)
     }
     // trace the dependencies of linked packages
-    else if (!esmEntry.includes('node_modules')) {
+    else if (!isInNodeModules(esmEntry)) {
       const pkgDir = resolvePackageData(id, root)?.dir
       if (pkgDir) {
         depsToTrace.add(pkgDir)

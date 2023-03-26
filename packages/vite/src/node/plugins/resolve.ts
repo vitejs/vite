@@ -26,6 +26,7 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
@@ -57,7 +58,6 @@ export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
-const nodeModulesInPathRE = /(?:^|\/)node_modules\//
 const subpathImportsPrefix = '#'
 
 const startsWithWordCharRE = /^\w/
@@ -454,9 +454,7 @@ function ensureVersionQuery(
     // as if they would have been imported through a bare import
     // Use the original id to do the check as the resolved id may be the real
     // file path after symlinks resolution
-    const isNodeModule =
-      nodeModulesInPathRE.test(normalizePath(id)) ||
-      nodeModulesInPathRE.test(normalizePath(resolved))
+    const isNodeModule = isInNodeModules(id) || isInNodeModules(resolved)
 
     if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
       const versionHash = depsOptimizer.metadata.browserHash
@@ -497,7 +495,7 @@ function tryFsResolve(
     // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
     // source code so we only need to perform the check for dependencies.
     // We don't support `?` in node_modules paths, so we only need to check in this branch.
-    if (postfixIndex >= 0 && fsPath.includes('node_modules')) {
+    if (postfixIndex >= 0 && isInNodeModules(fsPath)) {
       const res = tryCleanFsResolve(
         fsPath,
         options,
@@ -748,7 +746,7 @@ export function tryNodeResolve(
       return resolved
     }
     // don't external symlink packages
-    if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
+    if (!allowLinkedExternal && !isInNodeModules(resolved.id)) {
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
@@ -783,7 +781,7 @@ export function tryNodeResolve(
 
   if (
     !options.ssrOptimizeCheck &&
-    (!resolved.includes('node_modules') || // linked
+    (!isInNodeModules(resolved) || // linked
       !depsOptimizer || // resolving before listening to the server
       options.scan) // initial esbuild scan phase
   ) {
@@ -805,7 +803,7 @@ export function tryNodeResolve(
 
   const skipOptimization =
     !isJsType ||
-    importer?.includes('node_modules') ||
+    (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved) ||
