@@ -1092,11 +1092,7 @@ async function loadConfigFromBundledFile(
     try {
       return (await dynamicImport(fileUrl)).default
     } finally {
-      try {
-        await fsp.unlink(fileNameTmp)
-      } catch {
-        // already removed if this function is called twice simultaneously
-      }
+      fs.unlink(fileNameTmp, () => {}) // Ignore errors
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
