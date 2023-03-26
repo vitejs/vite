@@ -1,7 +1,7 @@
 import colors from 'picocolors'
 import _debug from 'debug'
 import { getHash } from '../utils'
-import { getDepOptimizationConfig } from '..'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addManuallyIncludedOptimizeDeps,
@@ -122,6 +122,7 @@ async function createDepsOptimizer(
     ensureFirstRun,
     close,
     options: getDepOptimizationConfig(config, ssr),
+    server,
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
@@ -475,13 +476,13 @@ async function createDepsOptimizer(
   }
 
   function fullReload() {
-    if (server) {
+    if (depsOptimizer.server) {
       // Cached transform results have stale imports (resolved to
       // old locations) so they need to be invalidated before the page is
       // reloaded.
-      server.moduleGraph.invalidateAll()
+      depsOptimizer.server.moduleGraph.invalidateAll()
 
-      server.ws.send({
+      depsOptimizer.server.ws.send({
         type: 'full-reload',
         path: '*',
       })
