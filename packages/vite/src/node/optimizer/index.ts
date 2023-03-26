@@ -626,7 +626,7 @@ export function runOptimizeDeps(
 
             // Clean up old files in the background
             for (const filePath of oldFilesPaths)
-              if (!newFilesPaths.has(filePath)) fsp.unlink(filePath)
+              if (!newFilesPaths.has(filePath)) fs.unlink(filePath, () => {}) // ignore errors
 
             await Promise.all(files)
           },
