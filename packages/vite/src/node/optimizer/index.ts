@@ -930,15 +930,15 @@ export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
   return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr)
 }
 
-export function getDepsCacheDirPrefix(config: ResolvedConfig): string {
+function getDepsCacheDirPrefix(config: ResolvedConfig): string {
   return normalizePath(path.resolve(config.cacheDir, 'deps'))
 }
 
-export function isOptimizedDepFile(
-  id: string,
+export function createIsOptimizedDepFile(
   config: ResolvedConfig,
-): boolean {
-  return id.startsWith(getDepsCacheDirPrefix(config))
+): (id: string) => boolean {
+  const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
+  return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
 export function createIsOptimizedDepUrl(
