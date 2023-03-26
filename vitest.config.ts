@@ -10,7 +10,7 @@ export default defineConfig({
     ],
     testTimeout: 20000,
     // node14 segfaults often with threads
-    threads: process.versions.node.startsWith('14'),
+    threads: !process.versions.node.startsWith('14'),
   },
   esbuild: {
     target: 'node14',
