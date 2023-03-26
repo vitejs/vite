@@ -17,6 +17,7 @@ import {
   flattenId,
   getHash,
   isOptimizable,
+  lookupFile,
   normalizeId,
   normalizePath,
   removeDir,
@@ -1200,21 +1201,8 @@ const lockfileFormats = [
 ]
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
-function findNearestLockfile(dir: string) {
-  while (dir) {
-    for (const fileName of lockfileNames) {
-      const fullPath = path.join(dir, fileName)
-      if (tryStatSync(fullPath)?.isFile()) return fullPath
-    }
-    const parentDir = path.dirname(dir)
-    if (parentDir === dir) return
-
-    dir = parentDir
-  }
-}
-
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  const lockfilePath = findNearestLockfile(config.root)
+  const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)
