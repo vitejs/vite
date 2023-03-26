@@ -620,7 +620,7 @@ let firstSafeRealPathSyncRun = false
 function windowsSafeRealPathSync(path: string): string {
   if (!firstSafeRealPathSyncRun) {
     optimizeSafeRealPathSync()
-    firstSafeRealPathSyncRun = false
+    firstSafeRealPathSyncRun = true
   }
   return fs.realpathSync(path)
 }
