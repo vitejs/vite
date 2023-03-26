@@ -635,7 +635,11 @@ function optimizeSafeRealPathSync() {
       const m = line.match(parseNetUseRE)
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
-    safeRealpathSync = windowsMappedRealpathSync
+    if (windowsNetworkMap.size === 0) {
+      safeRealpathSync = fs.realpathSync.native
+    } else {
+      safeRealpathSync = windowsMappedRealpathSync
+    }
   })
 }
 
