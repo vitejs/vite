@@ -26,6 +26,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
+import type { ViteDevServer } from '../server'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -71,6 +72,7 @@ export interface DepsOptimizer {
   close: () => Promise<void>
 
   options: DepOptimizationOptions
+  server?: ViteDevServer
 }
 
 export interface DepOptimizationConfig {
