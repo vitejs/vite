@@ -588,24 +588,32 @@ export function runOptimizeDeps(
         return {
           metadata,
           async commit() {
-            // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-            // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-            // Rewire the file paths from the temporal processing dir to the final deps cache dir
+            // Write this run of pre-bundled dependencies to the deps cache
 
+            let oldFilesNames: string[]
             if (!fs.existsSync(depsCacheDir)) {
               fs.mkdirSync(depsCacheDir, { recursive: true })
+              oldFilesNames = []
+            } else {
+              oldFilesNames = await fsp.readdir(depsCacheDir)
             }
 
             const files = []
 
             // a hint for Node.js
             // all files in the cache directory should be recognized as ES modules
-            files.push(
-              fsp.writeFile(
-                path.resolve(depsCacheDir, 'package.json'),
-                JSON.stringify({ type: 'module' }),
-              ),
+            const packageJsonFilePath = path.resolve(
+              depsCacheDir,
+              'package.json',
             )
+            if (!fs.existsSync(packageJsonFilePath)) {
+              files.push(
+                fsp.writeFile(
+                  packageJsonFilePath,
+                  '{\n  "type": "module"\n}\n',
+                ),
+              )
+            }
 
             const dataPath = path.join(depsCacheDir, '_metadata.json')
             files.push(
@@ -619,10 +627,10 @@ export function runOptimizeDeps(
               files.push(fsp.writeFile(outputFile.path, outputFile.text))
             }
 
-            await Promise.all(files)
-
             // Clean up old files in the background
-            cleanupDepsCacheStaleFiles(depsCacheDir, metadata)
+            cleanupDepsCacheStaleFiles(oldFilesNames, depsCacheDir, metadata)
+
+            await Promise.all(files)
           },
           cancel: () => {},
         }
@@ -1288,13 +1296,13 @@ export async function optimizedDepNeedsInterop(
 }
 
 async function cleanupDepsCacheStaleFiles(
+  oldFilesNames: string[],
   depsCacheDir: string,
   metadata: DepOptimizationMetadata,
 ) {
-  const files = await fsp.readdir(depsCacheDir)
-  for (const file of files) {
-    if (file !== 'package.json' && file !== '_metadata.json') {
-      const filePath = path.join(depsCacheDir, file)
+  for (const fileName of oldFilesNames) {
+    if (fileName !== 'package.json' && fileName !== '_metadata.json') {
+      const filePath = path.join(depsCacheDir, fileName)
       if (!optimizedDepInfoFromFile(metadata, normalizePath(filePath))) {
         fsp.unlink(filePath)
       }
