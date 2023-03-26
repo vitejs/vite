@@ -615,7 +615,12 @@ export function runOptimizeDeps(
 
           // Keep the output files in memory while we write them to disk in the
           // background. These files are going to be sent right away to the browser
-          optimizedDepsCache.set(metadata, result.outputFiles!)
+          optimizedDepsCache.set(
+            metadata,
+            new Map(
+              result.outputFiles!.map((f) => [normalizePath(f.path), f.text]),
+            ),
+          )
 
           // Get a list of old files in the deps directory to delete the stale ones
           const oldFilesPaths: string[] = []
@@ -1339,7 +1344,7 @@ export async function optimizedDepNeedsInterop(
 
 const optimizedDepsCache = new WeakMap<
   DepOptimizationMetadata,
-  esbuild.OutputFile[]
+  Map<string, string>
 >()
 export async function loadOptimizedDep(
   file: string,
@@ -1347,8 +1352,8 @@ export async function loadOptimizedDep(
 ): Promise<string> {
   const outputFiles = optimizedDepsCache.get(depsOptimizer.metadata)
   if (outputFiles) {
-    const outputFile = outputFiles.find((o) => normalizePath(o.path) === file)
-    if (outputFile) return outputFile.text
+    const outputFile = outputFiles.get(file)
+    if (outputFile) return outputFile
   }
   return fsp.readFile(file, 'utf-8')
 }
