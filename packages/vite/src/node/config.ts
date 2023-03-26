@@ -541,12 +541,12 @@ export async function resolveConfig(
   )
 
   // resolve cache directory
-  const pkgPath = findNearestPackageData(resolvedRoot, packageCache)?.dir
+  const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
   const cacheDir = normalizePath(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgPath
-      ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
+      : pkgDir
+      ? path.join(pkgDir, `node_modules/.vite`)
       : path.join(resolvedRoot, `.vite`),
   )
 
