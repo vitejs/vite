@@ -663,31 +663,15 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
-  let initingServer: Promise<void> | undefined
-  let serverInited = false
-  const initServer = async () => {
-    if (serverInited) {
-      return
-    }
-    if (initingServer) {
-      return initingServer
-    }
-    initingServer = (async function () {
-      await container.buildStart({})
-
-      // when the optimizer is ready, hook server so that it can reload the page
-      // or invalidate the module graph when needed
-      depsOptimizerReady?.then(() => {
-        const depsOptimizer = getDepsOptimizer(config)
-        if (depsOptimizer) {
-          depsOptimizer.server = server
-        }
-      })
-
-      initingServer = undefined
-      serverInited = true
-    })()
-    return initingServer
+  // when the optimizer is ready, hook server so that it can reload the page
+  // or invalidate the module graph when needed
+  if (depsOptimizerReady) {
+    depsOptimizerReady.then(() => {
+      const depsOptimizer = getDepsOptimizer(config)
+      if (depsOptimizer) {
+        depsOptimizer.server = server
+      }
+    })
   }
 
   if (!middlewareMode && httpServer) {
@@ -695,7 +679,7 @@ export async function createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        await initServer()
+        await container.buildStart({})
       } catch (e) {
         httpServer.emit('error', e)
         return
@@ -703,7 +687,7 @@ export async function createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    await initServer()
+    await container.buildStart({})
   }
 
   return server
