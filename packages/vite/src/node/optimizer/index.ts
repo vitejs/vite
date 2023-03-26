@@ -611,30 +611,22 @@ export function runOptimizeDeps(
 
             // a hint for Node.js
             // all files in the cache directory should be recognized as ES modules
-            const packageJsonFilePath = path.resolve(
-              depsCacheDir,
-              'package.json',
-            )
-            if (!fs.existsSync(packageJsonFilePath))
-              write(packageJsonFilePath, '{\n  "type": "module"\n}\n')
-            else newFilesPaths.add(packageJsonFilePath)
-
-            const dataPath = path.join(depsCacheDir, '_metadata.json')
             write(
-              dataPath,
+              path.resolve(depsCacheDir, 'package.json'),
+              '{\n  "type": "module"\n}\n',
+            )
+
+            write(
+              path.join(depsCacheDir, '_metadata.json'),
               stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
             )
 
-            for (const outputFile of result.outputFiles!) {
+            for (const outputFile of result.outputFiles!)
               write(outputFile.path, outputFile.text)
-            }
 
             // Clean up old files in the background
-            for (const filePath of oldFilesPaths) {
-              if (!newFilesPaths.has(filePath)) {
-                fsp.unlink(filePath)
-              }
-            }
+            for (const filePath of oldFilesPaths)
+              if (!newFilesPaths.has(filePath)) fsp.unlink(filePath)
 
             await Promise.all(files)
           },
