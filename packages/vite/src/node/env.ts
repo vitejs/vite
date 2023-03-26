@@ -1,7 +1,8 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
-import { arraify, lookupFile } from './utils'
+import { arraify, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
 export function loadEnv(
@@ -26,12 +27,10 @@ export function loadEnv(
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((file) => {
-      const path = lookupFile(envDir, [file], {
-        pathOnly: true,
-        rootDir: envDir,
-      })
-      if (!path) return []
-      return Object.entries(parse(fs.readFileSync(path)))
+      const filePath = path.join(envDir, file)
+      if (!tryStatSync(filePath)?.isFile()) return []
+
+      return Object.entries(parse(fs.readFileSync(filePath)))
     }),
   )
 

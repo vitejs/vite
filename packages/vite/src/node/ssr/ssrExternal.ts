@@ -217,7 +217,11 @@ function cjsSsrCollectExternals(
   seen: Set<string>,
   logger: Logger,
 ) {
-  const rootPkgContent = lookupFile(root, ['package.json'])
+  const rootPkgPath = lookupFile(root, ['package.json'])
+  if (!rootPkgPath) {
+    return
+  }
+  const rootPkgContent = fs.readFileSync(rootPkgPath, 'utf-8')
   if (!rootPkgContent) {
     return
   }
