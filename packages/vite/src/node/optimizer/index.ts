@@ -639,7 +639,7 @@ export function runOptimizeDeps(
 
           const newFilesPaths = new Set<string>()
           const files: Promise<void>[] = []
-          const write = (filePath: string, content: string) => {
+          const write = (filePath: string, content: string | Uint8Array) => {
             newFilesPaths.add(filePath)
             files.push(fsp.writeFile(filePath, content))
           }
@@ -658,7 +658,7 @@ export function runOptimizeDeps(
           )
 
           for (const outputFile of result.outputFiles!)
-            write(outputFile.path, outputFile.text)
+            write(outputFile.path, outputFile.contents)
 
           // Clean up old files in the background
           for (const filePath of oldFilesPaths)
