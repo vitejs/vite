@@ -27,7 +27,6 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
 import type { ViteDevServer } from '../server'
-import type { Logger } from '../logger'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -593,7 +592,7 @@ export function runOptimizeDeps(
           // Write this run of pre-bundled dependencies to the deps cache
 
           // create temp sibling dir
-          const tempDir = findNonExistingSibling(depsCacheDir, 'temp')
+          const tempDir = getTempSiblingName(depsCacheDir, 'temp')
           fs.mkdirSync(tempDir, { recursive: true })
 
           // write files with callback api, use write count to resolve
@@ -629,7 +628,7 @@ export function runOptimizeDeps(
 
           // replace depsCacheDir with newly written dir
           if (fs.existsSync(depsCacheDir)) {
-            const deleteMe = findNonExistingSibling(depsCacheDir, 'delete')
+            const deleteMe = getTempSiblingName(depsCacheDir, 'delete')
             fs.renameSync(depsCacheDir, deleteMe)
             fs.renameSync(tempDir, depsCacheDir)
             fs.rmdir(deleteMe, () => {}) // ignore errors
@@ -1335,23 +1334,7 @@ export async function loadOptimizedDep(
   return fsp.readFile(file, 'utf-8')
 }
 
-function findNonExistingSibling(file: string, suffix: string): string {
-  let tries = 0
-  let name
-  while (
-    fs.existsSync(
-      (name = `${file}_${suffix}_${Date.now()}${`${Math.random()}`.slice(
-        -10,
-      )}`),
-    )
-  ) {
-    if (tries++ > 9) {
-      throw new Error(
-        `Too many "${path.basename(
-          file,
-        )}_${suffix}_" directories in ${path.dirname(file)}`,
-      )
-    }
-  }
-  return name
+function getTempSiblingName(file: string, suffix: string): string {
+  // timestamp + pid is unique, we never create the same suffix in the same process twice in the same ms
+  return `${file}_${suffix}_${Date.now()}_${process.pid}`
 }
