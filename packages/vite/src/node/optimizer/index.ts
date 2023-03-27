@@ -360,11 +360,8 @@ export async function loadCachedDepOptimizationMetadata(
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
-  const unlockSuccess = await waitOptimizerWriteLock(
-    depsCacheDir,
-    config.logger,
-  )
-  if (!unlockSuccess) {
+  // If the lock timed out, we cancel and return undefined
+  if (!(await waitOptimizerWriteLock(depsCacheDir, config.logger))) {
     return
   }
 
