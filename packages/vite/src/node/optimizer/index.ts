@@ -596,23 +596,27 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
+        // Write this run of pre-bundled dependencies to the deps cache
         async function commitFiles() {
-          // Write this run of pre-bundled dependencies to the deps cache
-
           // Get a list of old files in the deps directory to delete the stale ones
           const oldFilesPaths: string[] = []
-          if (!fs.existsSync(depsCacheDir)) {
+          // File used to tell other processes that we're writing the deps cache directory
+          const writingFilePath = path.resolve(depsCacheDir, '_writing')
+
+          if (
+            !fs.existsSync(depsCacheDir) ||
+            !(await waitOptimizerWriteLock(depsCacheDir, config.logger)) // unlock timed out
+          ) {
             fs.mkdirSync(depsCacheDir, { recursive: true })
+            fs.writeFileSync(writingFilePath, '')
           } else {
+            fs.writeFileSync(writingFilePath, '')
             oldFilesPaths.push(
               ...(await fsp.readdir(depsCacheDir)).map((f) =>
                 path.join(depsCacheDir, f),
               ),
             )
           }
-
-          const writingFilePath = path.resolve(depsCacheDir, '_writing')
-          await fsp.writeFile(writingFilePath, '')
 
           const newFilesPaths = new Set<string>()
           const files: Promise<void>[] = []
