@@ -195,7 +195,7 @@ async function createDepsOptimizer(
     const deps: Record<string, string> = {}
     await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
-    const discovered = await toDiscoveredDependencies(
+    const discovered = toDiscoveredDependencies(
       config,
       deps,
       ssr,

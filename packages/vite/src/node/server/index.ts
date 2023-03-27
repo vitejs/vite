@@ -341,10 +341,9 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
-  // start optimizer in the background
-  let depsOptimizerReady: Promise<void> | undefined
   if (isDepsOptimizerEnabled(config, false)) {
-    depsOptimizerReady = initDepsOptimizer(config)
+    // start optimizer in the background, we still need to await the setup
+    await initDepsOptimizer(config)
   }
 
   const { root, server: serverConfig } = config
@@ -665,13 +664,9 @@ export async function createServer(
 
   // when the optimizer is ready, hook server so that it can reload the page
   // or invalidate the module graph when needed
-  if (depsOptimizerReady) {
-    depsOptimizerReady.then(() => {
-      const depsOptimizer = getDepsOptimizer(config)
-      if (depsOptimizer) {
-        depsOptimizer.server = server
-      }
-    })
+  const depsOptimizer = getDepsOptimizer(config)
+  if (depsOptimizer) {
+    depsOptimizer.server = server
   }
 
   if (!middlewareMode && httpServer) {

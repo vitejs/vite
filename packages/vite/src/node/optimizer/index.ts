@@ -27,6 +27,7 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
 import type { ViteDevServer } from '../server'
+import type { Logger } from '../logger'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -359,6 +360,11 @@ export async function loadCachedDepOptimizationMetadata(
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
+  // If the lock timed out, we cancel and return undefined
+  if (!(await waitOptimizerWriteLock(depsCacheDir, config.logger))) {
+    return
+  }
+
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
@@ -587,30 +593,37 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        return {
-          metadata,
-          async commit() {
-            // Write this run of pre-bundled dependencies to the deps cache
+        // Write this run of pre-bundled dependencies to the deps cache
+        async function commitFiles() {
+          // Get a list of old files in the deps directory to delete the stale ones
+          const oldFilesPaths: string[] = []
+          // File used to tell other processes that we're writing the deps cache directory
+          const writingFilePath = path.resolve(depsCacheDir, '_writing')
 
-            // Get a list of old files in the deps directory to delete the stale ones
-            const oldFilesPaths: string[] = []
-            if (!fs.existsSync(depsCacheDir)) {
-              fs.mkdirSync(depsCacheDir, { recursive: true })
-            } else {
-              oldFilesPaths.push(
-                ...(await fsp.readdir(depsCacheDir)).map((f) =>
-                  path.join(depsCacheDir, f),
-                ),
-              )
-            }
+          if (
+            !fs.existsSync(depsCacheDir) ||
+            !(await waitOptimizerWriteLock(depsCacheDir, config.logger)) // unlock timed out
+          ) {
+            fs.mkdirSync(depsCacheDir, { recursive: true })
+            fs.writeFileSync(writingFilePath, '')
+          } else {
+            fs.writeFileSync(writingFilePath, '')
+            oldFilesPaths.push(
+              ...(await fsp.readdir(depsCacheDir)).map((f) =>
+                path.join(depsCacheDir, f),
+              ),
+            )
+          }
 
-            const newFilesPaths = new Set<string>()
-            const files: Promise<void>[] = []
-            const write = (filePath: string, content: string) => {
-              newFilesPaths.add(filePath)
-              files.push(fsp.writeFile(filePath, content))
-            }
+          const newFilesPaths = new Set<string>()
+          newFilesPaths.add(writingFilePath)
+          const files: Promise<void>[] = []
+          const write = (filePath: string, content: string | Uint8Array) => {
+            newFilesPaths.add(filePath)
+            files.push(fsp.writeFile(filePath, content))
+          }
 
+          path.join(depsCacheDir, '_metadata.json'),
             // a hint for Node.js
             // all files in the cache directory should be recognized as ES modules
             write(
@@ -618,19 +631,44 @@ export function runOptimizeDeps(
               '{\n  "type": "module"\n}\n',
             )
 
-            write(
-              path.join(depsCacheDir, '_metadata.json'),
-              stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+          write(
+            path.join(depsCacheDir, '_metadata.json'),
+            stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+          )
+
+          for (const outputFile of result.outputFiles!)
+            write(outputFile.path, outputFile.contents)
+
+          // Clean up old files in the background
+          for (const filePath of oldFilesPaths)
+            if (!newFilesPaths.has(filePath)) fs.unlink(filePath, () => {}) // ignore errors
+
+          await Promise.all(files)
+
+          // Successful write
+          fsp.unlink(writingFilePath)
+
+          setTimeout(() => {
+            // Free up memory, these files aren't going to be re-requested because
+            // the requests are cached. If they do, then let them read from disk.
+            optimizedDepsCache.delete(metadata)
+          }, 5000)
+        }
+
+        return {
+          metadata,
+          async commit() {
+            // Keep the output files in memory while we write them to disk in the
+            // background. These files are going to be sent right away to the browser
+            optimizedDepsCache.set(
+              metadata,
+              new Map(
+                result.outputFiles!.map((f) => [normalizePath(f.path), f.text]),
+              ),
             )
 
-            for (const outputFile of result.outputFiles!)
-              write(outputFile.path, outputFile.text)
-
-            // Clean up old files in the background
-            for (const filePath of oldFilesPaths)
-              if (!newFilesPaths.has(filePath)) fs.unlink(filePath, () => {}) // ignore errors
-
-            await Promise.all(files)
+            // No need to wait, files are written in the background
+            setTimeout(commitFiles, 0)
           },
           cancel: () => {},
         }
@@ -1290,4 +1328,65 @@ export async function optimizedDepNeedsInterop(
     )
   }
   return depInfo?.needsInterop
+}
+
+const optimizedDepsCache = new WeakMap<
+  DepOptimizationMetadata,
+  Map<string, string>
+>()
+export async function loadOptimizedDep(
+  file: string,
+  depsOptimizer: DepsOptimizer,
+): Promise<string> {
+  const outputFiles = optimizedDepsCache.get(depsOptimizer.metadata)
+  if (outputFiles) {
+    const outputFile = outputFiles.get(file)
+    if (outputFile) return outputFile
+  }
+  return fsp.readFile(file, 'utf-8')
+}
+
+/**
+ * Processes that write to the deps cache directory adds a `_writing` lock to
+ * inform other processes of so. So before doing any work on it, they can wait
+ * for the file to be removed to know it's ready.
+ *
+ * Returns true if successfully waited for unlock, false if lock timed out.
+ */
+async function waitOptimizerWriteLock(depsCacheDir: string, logger: Logger) {
+  const writingPath = path.join(depsCacheDir, '_writing')
+  const tryAgainMs = 100
+
+  // if _writing exist, we wait for a maximum of 500ms before assuming something
+  // is not right
+  let maxWaitTime = 500
+  let waited = 0
+  let filesLength: number
+
+  while (fs.existsSync(writingPath)) {
+    // on the first run, we check the number of files it started with for later use
+    filesLength ??= (await fsp.readdir(depsCacheDir)).length
+
+    await new Promise((r) => setTimeout(r, tryAgainMs))
+    waited += tryAgainMs
+
+    if (waited >= maxWaitTime) {
+      const newFilesLength = (await fsp.readdir(depsCacheDir)).length
+
+      // after 500ms, if the number of files is the same, assume previous process
+      // terminated and didn't cleanup `_writing` lock. clear the directory.
+      if (filesLength === newFilesLength) {
+        logger.info('Outdated deps cache, forcing re-optimization...')
+        await fsp.rm(depsCacheDir, { recursive: true, force: true })
+        return false
+      }
+      // new files were saved, wait a bit longer to decide again.
+      else {
+        maxWaitTime += 500
+        filesLength = newFilesLength
+      }
+    }
+  }
+
+  return true
 }
