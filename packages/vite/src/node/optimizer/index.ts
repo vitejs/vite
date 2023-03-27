@@ -27,6 +27,7 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
 import type { ViteDevServer } from '../server'
+import type { Logger } from '../logger'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -359,27 +360,12 @@ export async function loadCachedDepOptimizationMetadata(
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
-  const writingPath = path.join(depsCacheDir, '_writing')
-  const maxWaitTime = 500
-  const tryAgainMs = 100
-  let waited = 0
-  let files
-  while (fs.existsSync(writingPath)) {
-    files ??= await fsp.readdir(depsCacheDir)
-    await new Promise((r) => setTimeout(r, tryAgainMs))
-    waited += tryAgainMs
-    if (waited >= maxWaitTime) {
-      const newFiles = await fsp.readdir(depsCacheDir)
-      if (files.length === newFiles.length) {
-        // no new files, outdated deps cache
-        config.logger.info('Outdated deps cache, forcing re-optimization...')
-        await fsp.rm(depsCacheDir, { recursive: true, force: true })
-        return
-      } else {
-        // new files were saved, try again
-        return loadCachedDepOptimizationMetadata(config, ssr, force, asCommand)
-      }
-    }
+  const unlockSuccess = await waitOptimizerWriteLock(
+    depsCacheDir,
+    config.logger,
+  )
+  if (!unlockSuccess) {
+    return
   }
 
   if (!force) {
@@ -1356,4 +1342,49 @@ export async function loadOptimizedDep(
     if (outputFile) return outputFile
   }
   return fsp.readFile(file, 'utf-8')
+}
+
+/**
+ * Processes that write to the deps cache directory adds a `_writing` lock to
+ * inform other processes of so. So before doing any work on it, they can wait
+ * for the file to be removed to know it's ready.
+ *
+ * Returns true if successfully waited for unlock, false if lock timed out.
+ */
+async function waitOptimizerWriteLock(depsCacheDir: string, logger: Logger) {
+  const writingPath = path.join(depsCacheDir, '_writing')
+  const tryAgainMs = 100
+
+  // if _writing exist, we wait for a maximum of 500ms before assuming something
+  // is not right
+  let maxWaitTime = 500
+  let waited = 0
+  let filesLength: number
+
+  while (fs.existsSync(writingPath)) {
+    // on the first run, we check the number of files it started with for later use
+    filesLength ??= (await fsp.readdir(depsCacheDir)).length
+
+    await new Promise((r) => setTimeout(r, tryAgainMs))
+    waited += tryAgainMs
+
+    if (waited >= maxWaitTime) {
+      const newFilesLength = (await fsp.readdir(depsCacheDir)).length
+
+      // after 500ms, if the number of files is the same, assume previous process
+      // terminated and didn't cleanup `_writing` lock. clear the directory.
+      if (filesLength === newFilesLength) {
+        logger.info('Outdated deps cache, forcing re-optimization...')
+        await fsp.rm(depsCacheDir, { recursive: true, force: true })
+        return false
+      }
+      // new files were saved, wait a bit longer to decide again.
+      else {
+        maxWaitTime += 500
+        filesLength = newFilesLength
+      }
+    }
+  }
+
+  return true
 }
