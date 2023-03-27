@@ -48,6 +48,7 @@ import {
   loadPackageData,
   resolvePackageData,
 } from '../packages'
+import { createLogger } from '../logger'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -66,6 +67,8 @@ const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
+
+const logger = createLogger()
 
 export interface ResolveOptions {
   /**
@@ -370,6 +373,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               debug(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
+              )
+            }
+            if (isProduction) {
+              logger.warn(
+                colors.yellow(
+                  `\n Module "${id}" has been externalized for browser compatibility. Cannot access "${id}" in client code.  See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\n`,
+                ),
               )
             }
             return isProduction
