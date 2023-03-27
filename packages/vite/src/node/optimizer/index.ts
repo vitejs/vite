@@ -26,6 +26,8 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
+import type { ViteDevServer } from '../server'
+import type { Logger } from '../logger'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -71,6 +73,7 @@ export interface DepsOptimizer {
   close: () => Promise<void>
 
   options: DepOptimizationOptions
+  server?: ViteDevServer
 }
 
 export interface DepOptimizationConfig {
@@ -585,55 +588,76 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
+        // Write this run of pre-bundled dependencies to the deps cache
+        async function commitFiles() {
+          // Write this run of pre-bundled dependencies to the deps cache
+
+          // create temp sibling dir
+          const tempDir = findNonExistingSibling(depsCacheDir, 'temp')
+          fs.mkdirSync(tempDir, { recursive: true })
+
+          // write files with callback api, use write count to resolve
+          await new Promise<void>((resolve, reject) => {
+            let numWrites = result.outputFiles!.length + 2 // two metadata files
+            const callback = (err: any) => {
+              if (err) {
+                reject(err)
+              } else {
+                if (--numWrites === 0) {
+                  resolve()
+                }
+              }
+            }
+            fs.writeFile(
+              `${tempDir}/package.json`,
+              '{\n  "type": "module"\n}\n',
+              callback,
+            )
+            fs.writeFile(
+              `${tempDir}/_metadata.json`,
+              stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+              callback,
+            )
+            result.outputFiles!.forEach(({ path, contents }) => {
+              fs.writeFile(
+                path.replace(depsCacheDir, tempDir),
+                contents,
+                callback,
+              )
+            })
+          })
+
+          // replace depsCacheDir with newly written dir
+          if (fs.existsSync(depsCacheDir)) {
+            const deleteMe = findNonExistingSibling(depsCacheDir, 'delete')
+            fs.renameSync(depsCacheDir, deleteMe)
+            fs.renameSync(tempDir, depsCacheDir)
+            fs.rmdir(deleteMe, () => {}) // ignore errors
+          } else {
+            fs.renameSync(tempDir, depsCacheDir)
+          }
+
+          setTimeout(() => {
+            // Free up memory, these files aren't going to be re-requested because
+            // the requests are cached. If they do, then let them read from disk.
+            optimizedDepsCache.delete(metadata)
+          }, 5000)
+        }
+
         return {
           metadata,
           async commit() {
-            // Write this run of pre-bundled dependencies to the deps cache
+            // Keep the output files in memory while we write them to disk in the
+            // background. These files are going to be sent right away to the browser
+            optimizedDepsCache.set(
+              metadata,
+              new Map(
+                result.outputFiles!.map((f) => [normalizePath(f.path), f.text]),
+              ),
+            )
 
-            // create temp sibling dir
-            const tempDir = findNonExistingSibling(depsCacheDir, 'temp')
-            fs.mkdirSync(tempDir, { recursive: true })
-
-            // write files with callback api, use write count to resolve
-            await new Promise<void>((resolve, reject) => {
-              let numWrites = result.outputFiles!.length + 2 // two metadata files
-              const callback = (err: any) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  if (--numWrites === 0) {
-                    resolve()
-                  }
-                }
-              }
-              fs.writeFile(
-                `${tempDir}/package.json`,
-                '{\n  "type": "module"\n}\n',
-                callback,
-              )
-              fs.writeFile(
-                `${tempDir}/_metadata.json`,
-                stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
-                callback,
-              )
-              result.outputFiles!.forEach(({ path, contents }) => {
-                fs.writeFile(
-                  path.replace(depsCacheDir, tempDir),
-                  contents,
-                  callback,
-                )
-              })
-            })
-
-            // replace depsCacheDir with newly written dir
-            if (fs.existsSync(depsCacheDir)) {
-              const deleteMe = findNonExistingSibling(depsCacheDir, 'delete')
-              fs.renameSync(depsCacheDir, deleteMe)
-              fs.renameSync(tempDir, depsCacheDir)
-              fs.rmdir(deleteMe, () => {}) // ignore errors
-            } else {
-              fs.renameSync(tempDir, depsCacheDir)
-            }
+            // No need to wait, files are written in the background
+            setTimeout(commitFiles, 0)
           },
           cancel: () => {},
         }
@@ -935,15 +959,15 @@ export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
   return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr)
 }
 
-export function getDepsCacheDirPrefix(config: ResolvedConfig): string {
+function getDepsCacheDirPrefix(config: ResolvedConfig): string {
   return normalizePath(path.resolve(config.cacheDir, 'deps'))
 }
 
-export function isOptimizedDepFile(
-  id: string,
+export function createIsOptimizedDepFile(
   config: ResolvedConfig,
-): boolean {
-  return id.startsWith(getDepsCacheDirPrefix(config))
+): (id: string) => boolean {
+  const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
+  return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
 export function createIsOptimizedDepUrl(
@@ -1293,6 +1317,22 @@ export async function optimizedDepNeedsInterop(
     )
   }
   return depInfo?.needsInterop
+}
+
+const optimizedDepsCache = new WeakMap<
+  DepOptimizationMetadata,
+  Map<string, string>
+>()
+export async function loadOptimizedDep(
+  file: string,
+  depsOptimizer: DepsOptimizer,
+): Promise<string> {
+  const outputFiles = optimizedDepsCache.get(depsOptimizer.metadata)
+  if (outputFiles) {
+    const outputFile = outputFiles.get(file)
+    if (outputFile) return outputFile
+  }
+  return fsp.readFile(file, 'utf-8')
 }
 
 function findNonExistingSibling(file: string, suffix: string): string {
