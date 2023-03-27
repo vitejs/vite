@@ -616,6 +616,7 @@ export function runOptimizeDeps(
           }
 
           const newFilesPaths = new Set<string>()
+          newFilesPaths.add(writingFilePath)
           const files: Promise<void>[] = []
           const write = (filePath: string, content: string | Uint8Array) => {
             newFilesPaths.add(filePath)
