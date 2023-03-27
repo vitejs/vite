@@ -488,11 +488,7 @@ export function runOptimizeDeps(
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
-  if (fs.existsSync(processingCacheDir)) {
-    emptyDir(processingCacheDir)
-  } else {
-    fs.mkdirSync(processingCacheDir, { recursive: true })
-  }
+  fs.mkdirSync(processingCacheDir, { recursive: true })
 
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
@@ -558,7 +554,7 @@ export function runOptimizeDeps(
     }
   }
 
-  const canceledResult: DepOptimizationResult = {
+  const cancelledResult: DepOptimizationResult = {
     metadata,
     commit: async () => cleanUp(),
     cancel: cleanUp,
@@ -582,7 +578,7 @@ export function runOptimizeDeps(
     }
     if (!context || optimizerContext.cancelled) {
       disposeContext()
-      return canceledResult
+      return cancelledResult
     }
 
     return context
@@ -665,7 +661,7 @@ export function runOptimizeDeps(
         if (e.errors && e.message.includes('The build was canceled')) {
           // esbuild logs an error when cancelling, but this is expected so
           // return an empty result instead
-          return canceledResult
+          return cancelledResult
         }
         throw e
       })
@@ -970,7 +966,7 @@ function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
 function getTempSuffix() {
   return (
     '_temp_' +
-    getHash(Date.now().toString() + Math.random().toString(16).slice(8))
+    getHash(Date.now().toString() + Math.random().toString(16).slice(2))
   )
 }
 
