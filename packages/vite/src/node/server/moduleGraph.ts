@@ -150,15 +150,24 @@ export class ModuleGraph {
     const prevImports = mod.importedModules
     const nextImports = (mod.importedModules = new Set())
     let noLongerImported: Set<ModuleNode> | undefined
+    let resolvePromises = []
     // update import graph
     for (const imported of importedModules) {
-      const dep =
-        typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported, ssr)
-          : imported
-      dep.importers.add(mod)
-      nextImports.add(dep)
+      if (typeof imported === 'string') {
+        resolvePromises.push(
+          this.ensureEntryFromUrl(imported, ssr).then((dep) => {
+            dep.importers.add(mod)
+            nextImports.add(dep)
+          }),
+        )
+      } else {
+        imported.importers.add(mod)
+        nextImports.add(imported)
+      }
     }
+
+    resolvePromises.length && (await Promise.all(resolvePromises))
+
     // remove the importer from deps that were imported but no longer are.
     prevImports.forEach((dep) => {
       if (!nextImports.has(dep)) {
@@ -169,15 +178,22 @@ export class ModuleGraph {
         }
       }
     })
+
     // update accepted hmr deps
     const deps = (mod.acceptedHmrDeps = new Set())
+    resolvePromises = []
     for (const accepted of acceptedModules) {
-      const dep =
-        typeof accepted === 'string'
-          ? await this.ensureEntryFromUrl(accepted, ssr)
-          : accepted
-      deps.add(dep)
+      if (typeof accepted === 'string') {
+        resolvePromises.push(
+          this.ensureEntryFromUrl(accepted, ssr).then((dep) => deps.add(dep)),
+        )
+      } else {
+        deps.add(accepted)
+      }
     }
+
+    resolvePromises.length && (await Promise.all(resolvePromises))
+
     // update accepted hmr exports
     mod.acceptedHmrExports = acceptedExports
     mod.importedBindings = importedBindings
