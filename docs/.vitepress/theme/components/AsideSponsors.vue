@@ -3,20 +3,27 @@ import { computed } from 'vue'
 import { VPDocAsideSponsors } from 'vitepress/theme'
 import { useSponsor } from '../composables/sponsor'
 
-const { data } = useSponsor()
+const { evanSponsorData, viteSponsorData } = useSponsor()
 
 const sponsors = computed(() => {
-  return (
-    data?.value.map((sponsor) => {
+  const viteSponsors =
+    viteSponsorData?.value?.map((sponsor) => {
       return {
         size: sponsor.size === 'big' ? 'mini' : 'xmini',
         items: sponsor.items,
       }
     }) ?? []
-  )
+  const evanSponsors =
+    evanSponsorData?.value?.map((sponsor) => {
+      return {
+        size: sponsor.size === 'big' ? 'mini' : 'xmini',
+        items: sponsor.items,
+      }
+    }) ?? []
+  return [...viteSponsors, ...evanSponsors]
 })
 </script>
 
 <template>
-  <VPDocAsideSponsors v-if="data" :data="sponsors" />
+  <VPDocAsideSponsors v-if="evanSponsorData" :data="sponsors" />
 </template>

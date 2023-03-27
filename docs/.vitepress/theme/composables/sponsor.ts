@@ -16,25 +16,36 @@ interface Sponsor {
 }
 
 // shared data across instances so we load only once.
-const data = ref()
+const evanSponsorData = ref()
+const viteSponsorData = ref()
 
 const dataHost = 'https://sponsors.vuejs.org'
 const dataUrl = `${dataHost}/vite.json`
 
 export function useSponsor() {
   onMounted(async () => {
-    if (data.value) {
+    if (evanSponsorData.value) {
       return
     }
 
     const result = await fetch(dataUrl)
     const json = await result.json()
 
-    data.value = mapSponsors(json)
+    evanSponsorData.value = mapSponsors(json)
+
+    // No gold sponsors yet :(
+    // viteSponsorData.value = [
+    //   {
+    //     tier: 'Gold Sponsors',
+    //     size: 'medium',
+    //     items: [],
+    //   },
+    // ]
   })
 
   return {
-    data,
+    evanSponsorData,
+    viteSponsorData,
   }
 }
 
