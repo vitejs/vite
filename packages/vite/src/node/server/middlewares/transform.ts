@@ -1,4 +1,3 @@
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
@@ -34,7 +33,7 @@ import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
-import { getDepsOptimizer } from '../../optimizer'
+import { getDepsOptimizer, loadOptimizedDep } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -81,7 +80,7 @@ export function transformMiddleware(
                 ensureVolumeInPath(path.resolve(root, url.slice(1))),
               )
           try {
-            const map = await fs.readFile(mapFile, 'utf-8')
+            const map = await loadOptimizedDep(mapFile, depsOptimizer)
             return send(req, res, map, 'json', {
               headers: server.config.server.headers,
             })
