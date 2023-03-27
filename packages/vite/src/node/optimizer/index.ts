@@ -525,6 +525,12 @@ export function runOptimizeDeps(
     metadata,
     cancel: cleanUp,
     commit: async () => {
+      const dataPath = path.join(processingCacheDir, '_metadata.json')
+      fs.writeFileSync(
+        dataPath,
+        stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+      )
+
       // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
       // Processing is done, we can now replace the depsCacheDir with processingCacheDir
       // Rewire the file paths from the temporal processing dir to the final deps cache dir
@@ -643,12 +649,6 @@ export function runOptimizeDeps(
             }
           }
         }
-
-        const dataPath = path.join(processingCacheDir, '_metadata.json')
-        fs.writeFileSync(
-          dataPath,
-          stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
-        )
 
         debug(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
