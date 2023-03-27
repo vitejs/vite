@@ -613,15 +613,6 @@ export function runOptimizeDeps(
         async function commitFiles() {
           // Write this run of pre-bundled dependencies to the deps cache
 
-          // Keep the output files in memory while we write them to disk in the
-          // background. These files are going to be sent right away to the browser
-          optimizedDepsCache.set(
-            metadata,
-            new Map(
-              result.outputFiles!.map((f) => [normalizePath(f.path), f.text]),
-            ),
-          )
-
           // Get a list of old files in the deps directory to delete the stale ones
           const oldFilesPaths: string[] = []
           if (!fs.existsSync(depsCacheDir)) {
@@ -679,8 +670,17 @@ export function runOptimizeDeps(
         return {
           metadata,
           async commit() {
+            // Keep the output files in memory while we write them to disk in the
+            // background. These files are going to be sent right away to the browser
+            optimizedDepsCache.set(
+              metadata,
+              new Map(
+                result.outputFiles!.map((f) => [normalizePath(f.path), f.text]),
+              ),
+            )
+
             // No need to wait, files are written in the background
-            commitFiles()
+            setTimeout(commitFiles, 0)
           },
           cancel: () => {},
         }
