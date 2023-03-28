@@ -1,13 +1,10 @@
+import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import {
-  getDepsOptimizer,
-  loadOptimizedDep,
-  optimizedDepInfoFromFile,
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
@@ -70,7 +67,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
         try {
-          return loadOptimizedDep(file, depsOptimizer)
+          return await fsp.readFile(file, 'utf-8')
         } catch (e) {
           // Outdated non-entry points (CHUNK), loaded after a rerun
           throwOutdatedRequest(id)
@@ -130,8 +127,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       // Load the file from the cache instead of waiting for other plugin
       // load hooks to avoid race conditions, once processing is resolved,
       // we are sure that the file has been properly save to disk
-
-      return loadOptimizedDep(file, depsOptimizer)
+      return fsp.readFile(file, 'utf-8')
     },
   }
 }
