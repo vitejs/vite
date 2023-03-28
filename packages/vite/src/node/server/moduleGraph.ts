@@ -72,6 +72,13 @@ export class ModuleGraph {
     rawUrl: string,
     ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
+    // Quick path, if we already have a module for this rawUrl (even without extension)
+    const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    const mod = this.urlToModuleMap.get(cleanedUrl)
+    if (mod) {
+      return mod
+    }
+
     const [url] = await this.resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
   }
@@ -188,9 +195,20 @@ export class ModuleGraph {
     rawUrl: string,
     ssr?: boolean,
     setIsSelfAccepting = true,
+    // Optimization, avoid resolving the same url twice if the caller already did it
+    resolved?: PartialResolvedId,
   ): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.idToModuleMap.get(resolvedId)
+    // Quick path, if we already have a module for this rawUrl (even without extension)
+    const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    let mod = this.urlToModuleMap.get(cleanedUrl)
+    if (mod) {
+      return mod
+    }
+
+    const [url, resolvedId, meta] = resolved
+      ? optimizedResolveUrl(rawUrl, resolved)
+      : await this.resolveUrl(rawUrl, ssr)
+    mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -209,6 +227,11 @@ export class ModuleGraph {
     // the url to the existing module in that case
     else if (!this.urlToModuleMap.has(url)) {
       this.urlToModuleMap.set(url, mod)
+    }
+    // Also register the clean url to the module, so that we can short-circuit
+    // resolving the same url twice
+    if (!this.urlToModuleMap.has(cleanedUrl)) {
+      this.urlToModuleMap.set(cleanedUrl, mod)
     }
     return mod
   }
@@ -246,17 +269,33 @@ export class ModuleGraph {
     url = removeImportQuery(removeTimestampQuery(url))
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
-    if (
-      url !== resolvedId &&
-      !url.includes('\0') &&
-      !url.startsWith(`virtual:`)
-    ) {
-      const ext = extname(cleanUrl(resolvedId))
-      const { pathname, search, hash } = new URL(url, 'relative://')
-      if (ext && !pathname!.endsWith(ext)) {
-        url = pathname + ext + search + hash
-      }
-    }
+    url = ensureExtension(url, resolvedId)
     return [url, resolvedId, resolved?.meta]
   }
+}
+
+// Shortcircuit resolveId if we already have it
+function optimizedResolveUrl(
+  url: string,
+  resolved: PartialResolvedId,
+): ResolvedUrl {
+  url = removeImportQuery(removeTimestampQuery(url))
+  const resolvedId = resolved.id
+  url = ensureExtension(url, resolvedId)
+  return [url, resolvedId, resolved?.meta]
+}
+
+function ensureExtension(url: string, resolvedId: string) {
+  if (
+    url !== resolvedId &&
+    !url.includes('\0') &&
+    !url.startsWith(`virtual:`)
+  ) {
+    const ext = extname(cleanUrl(resolvedId))
+    const { pathname, search, hash } = new URL(url, 'relative://')
+    if (ext && !pathname!.endsWith(ext)) {
+      return pathname + ext + search + hash
+    }
+  }
+  return url
 }
