@@ -553,7 +553,7 @@ export function runOptimizeDeps(
       }
 
       // Delete temporal path in the background
-      fsp.rm(temporalPath, { recursive: true, force: true })
+      if(depsCacheDirPresent) fsp.rm(temporalPath, { recursive: true, force: true })
     },
   }
 
