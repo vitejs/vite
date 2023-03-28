@@ -166,7 +166,9 @@ export class ModuleGraph {
       }
     }
 
-    resolvePromises.length && (await Promise.all(resolvePromises))
+    if (resolvePromises.length) {
+      await Promise.all(resolvePromises)
+    }
 
     // remove the importer from deps that were imported but no longer are.
     prevImports.forEach((dep) => {
@@ -192,7 +194,9 @@ export class ModuleGraph {
       }
     }
 
-    resolvePromises.length && (await Promise.all(resolvePromises))
+    if (resolvePromises.length) {
+      await Promise.all(resolvePromises)
+    }
 
     // update accepted hmr exports
     mod.acceptedHmrExports = acceptedExports
