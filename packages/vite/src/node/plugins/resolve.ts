@@ -254,19 +254,20 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
+          const resPkg = findNearestPackageData(
+            path.dirname(res),
+            options.packageCache,
+          )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           isDebug &&
             debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          const pkg =
-            importer &&
-            findNearestPackageData(path.dirname(importer), options.packageCache)
-          if (pkg) {
-            return {
-              id: res,
-              moduleSideEffects: pkg.hasSideEffects(res),
-            }
-          }
-          return res
+
+          return resPkg
+            ? {
+                id: res,
+                moduleSideEffects: resPkg.hasSideEffects(res),
+              }
+            : res
         }
       }
 
@@ -1191,10 +1192,16 @@ function tryResolveBrowserMapping(
       ) {
         isDebug &&
           debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        const result = {
-          id: res,
-          moduleSideEffects: pkg.hasSideEffects(res),
-        }
+        const resPkg = findNearestPackageData(
+          path.dirname(res),
+          options.packageCache,
+        )
+        const result = resPkg
+          ? {
+              id: res,
+              moduleSideEffects: resPkg.hasSideEffects(res),
+            }
+          : { id: res }
         return externalize ? { ...result, external: true } : result
       }
     } else if (browserMappedPath === false) {
