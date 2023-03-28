@@ -38,4 +38,5 @@ export default defineConfig({
       return { relative: true }
     },
   },
+  cacheDir: 'node_modules/.vite-resolve-deps',
 })

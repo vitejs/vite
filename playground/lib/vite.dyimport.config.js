@@ -11,4 +11,5 @@ export default defineConfig({
     },
     outDir: 'dist/lib',
   },
+  cacheDir: 'node_modules/.vite-dyimport',
 })
