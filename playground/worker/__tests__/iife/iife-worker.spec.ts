@@ -85,11 +85,11 @@ describe.runIf(isBuild)('build', () => {
 test('module worker', async () => {
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url'),
-    'A string',
+    /A\sstring.*\/iife\/.+\/url-worker\.js\?type=ignore&worker_file/,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
-    'A string',
+    /A\sstring.*\/iife\/.+\/url-worker\.js\?type=ignore&worker_file/,
   )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),

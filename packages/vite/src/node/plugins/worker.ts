@@ -64,6 +64,18 @@ export async function bundleWorkerEntry(
   return promise
 }
 
+const workerPostPlugin: Plugin = {
+  name: 'vite:worker-post',
+  resolveImportMeta(property, { chunkId, format }) {
+    // document is undefined in the worker, so we need to avoid iife generate it
+    if (property === 'url' && format === 'iife') {
+      return `new URL('${chunkId}', self.location.href).href`
+    }
+
+    return null
+  },
+}
+
 async function serialBundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
@@ -75,7 +87,7 @@ async function serialBundleWorkerEntry(
   const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
-    plugins,
+    plugins: plugins.concat(workerPostPlugin),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
