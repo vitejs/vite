@@ -974,7 +974,11 @@ function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
 function getTempSuffix() {
   return (
     '_temp_' +
-    getHash(Date.now().toString() + Math.random().toString(16).slice(2))
+    getHash(
+      `${process.pid}:${Date.now().toString()}:${Math.random()
+        .toString(16)
+        .slice(2)}`,
+    )
   )
 }
 
