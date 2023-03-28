@@ -83,3 +83,43 @@ export function getCodeWithSourcemap(
 
   return code
 }
+
+export function applySourcemapIgnoreList(
+  map: SourceMap,
+  sourcemapPath: string,
+  sourcemapIgnoreList: (sourcePath: string, sourcemapPath: string) => boolean,
+  logger?: Logger,
+): void {
+  // @ts-expect-error x_google_ignoreList isn't yet in the SourceMap type
+  let { x_google_ignoreList } = map
+  if (x_google_ignoreList === undefined) {
+    x_google_ignoreList = []
+  }
+  for (
+    let sourcesIndex = 0;
+    sourcesIndex < map.sources.length;
+    ++sourcesIndex
+  ) {
+    const sourcePath = map.sources[sourcesIndex]
+    if (!sourcePath) continue
+
+    const ignoreList = sourcemapIgnoreList(
+      path.isAbsolute(sourcePath)
+        ? sourcePath
+        : path.resolve(path.dirname(sourcemapPath), sourcePath),
+      sourcemapPath,
+    )
+    if (logger && typeof ignoreList !== 'boolean') {
+      logger.warn('sourcemapIgnoreList function must return a boolean.')
+    }
+
+    if (ignoreList && !x_google_ignoreList.includes(sourcesIndex)) {
+      x_google_ignoreList.push(sourcesIndex)
+    }
+  }
+
+  if (x_google_ignoreList.length > 0) {
+    // @ts-expect-error x_google_ignoreList isn't yet in the SourceMap type
+    if (!map.x_google_ignoreList) map.x_google_ignoreList = x_google_ignoreList
+  }
+}

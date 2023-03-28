@@ -1,6 +1,7 @@
 import path from 'node:path'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
+import type { SourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
   cleanUrl,
@@ -18,6 +19,7 @@ import {
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
+import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
 import {
   DEP_VERSION_RE,
@@ -74,14 +76,24 @@ export function transformMiddleware(
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
-          const mapFile = url.startsWith(FS_PREFIX)
+          const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(
                 ensureVolumeInPath(path.resolve(root, url.slice(1))),
               )
           try {
-            const map = await loadOptimizedDep(mapFile, depsOptimizer)
-            return send(req, res, map, 'json', {
+            const map = JSON.parse(
+              await loadOptimizedDep(sourcemapPath, depsOptimizer),
+            ) as SourceMap
+
+            applySourcemapIgnoreList(
+              map,
+              sourcemapPath,
+              server.config.server.sourcemapIgnoreList,
+              logger,
+            )
+
+            return send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
             })
           } catch (e) {
@@ -90,7 +102,7 @@ export function transformMiddleware(
             // Send back an empty source map so the browser doesn't issue warnings
             const dummySourceMap = {
               version: 3,
-              file: mapFile.replace(/\.map$/, ''),
+              file: sourcemapPath.replace(/\.map$/, ''),
               sources: [],
               sourcesContent: [],
               names: [],
