@@ -47,4 +47,5 @@ export default vite.defineConfig({
     },
   },
   plugins: [workerPluginTestPlugin()],
+  cacheDir: 'node_modules/.vite-iife',
 })

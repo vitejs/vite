@@ -9,4 +9,5 @@ export default defineConfig({
     minify: true,
     cssMinify: false,
   },
+  cacheDir: 'node_modules/.vite-no-css-minify',
 })

@@ -9,4 +9,5 @@ export default defineConfig({
     outDir: 'dist/nominify',
   },
   plugins: [],
+  cacheDir: 'node_modules/.vite-nominify',
 })

@@ -12,10 +12,11 @@ export default (sourcemap) => {
     sourcemap = true
   }
 
+  const typeName =
+    typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
+
   return vite.defineConfig({
-    base: `/iife-${
-      typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-    }/`,
+    base: `/iife-${typeName}/`,
     resolve: {
       alias: {
         '@': __dirname,
@@ -33,9 +34,7 @@ export default (sourcemap) => {
       },
     },
     build: {
-      outDir: `dist/iife-${
-        typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-      }/`,
+      outDir: `dist/iife-${typeName}/`,
       sourcemap: sourcemap,
       rollupOptions: {
         output: {
@@ -46,5 +45,6 @@ export default (sourcemap) => {
       },
     },
     plugins: [workerPluginTestPlugin()],
+    cacheDir: `node_modules/.vite-sourcemap-${typeName}`,
   })
 }

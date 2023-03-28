@@ -21,4 +21,5 @@ export default defineConfig({
   testConfig: {
     baseRoute: '/url-base/',
   },
+  cacheDir: 'node_modules/.vite-url-base',
 })
