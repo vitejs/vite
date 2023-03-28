@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
@@ -17,6 +18,7 @@ import {
   flattenId,
   getHash,
   isOptimizable,
+  isWindows,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -27,7 +29,6 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
 import type { ViteDevServer } from '../server'
-import type { Logger } from '../logger'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -352,18 +353,18 @@ export async function loadCachedDepOptimizationMetadata(
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
-  // Before Vite 2.9, dependencies were cached in the root of the cacheDir
-  // For compat, we remove the cache if we find the old structure
-  if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
-    emptyDir(config.cacheDir)
-  }
+  setTimeout(() => {
+    // Before Vite 2.9, dependencies were cached in the root of the cacheDir
+    // For compat, we remove the cache if we find the old structure
+    if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
+      emptyDir(config.cacheDir)
+    }
+    // Fire a clean up of stale cache dirs, in case old processes didn't
+    // terminate correctly
+    cleanupDepsCacheStaleDirs(config)
+  }, 100)
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
-
-  // If the lock timed out, we cancel and return undefined
-  if (!(await waitOptimizerWriteLock(depsCacheDir, config.logger))) {
-    return
-  }
 
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
@@ -482,6 +483,19 @@ export function runOptimizeDeps(
   }
 
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
+  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
+
+  // Create a temporal directory so we don't need to delete optimized deps
+  // until they have been processed. This also avoids leaving the deps cache
+  // directory in a corrupted state if there is an error
+  fs.mkdirSync(processingCacheDir, { recursive: true })
+
+  // a hint for Node.js
+  // all files in the cache directory should be recognized as ES modules
+  fs.writeFileSync(
+    path.resolve(processingCacheDir, 'package.json'),
+    `{\n  "type": "module"\n}\n`,
+  )
 
   const metadata = initDepsOptimizerMetadata(config, ssr)
 
@@ -495,18 +509,69 @@ export function runOptimizeDeps(
   // the optimizedDepInfo.processing promise for each dep
 
   const qualifiedIds = Object.keys(depsInfo)
+  let cleaned = false
+  const cleanUp = () => {
+    if (!cleaned) {
+      cleaned = true
+      // No need to wait, we can clean up in the background because temp folders
+      // are unique per run
+      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+        // Ignore errors
+      })
+    }
+  }
 
-  const createEmptyProcessingResult = () => ({
+  const succesfulResult: DepOptimizationResult = {
     metadata,
-    commit: async () => {},
-    cancel: async () => {},
-  })
+    cancel: cleanUp,
+    commit: async () => {
+      // Write metadata file, then commit the processing folder to the global deps cache
+      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+
+      const dataPath = path.join(processingCacheDir, '_metadata.json')
+      fs.writeFileSync(
+        dataPath,
+        stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+      )
+
+      // In order to minimize the time where the deps folder isn't in a consistent state,
+      // we first rename the old depsCacheDir to a temporal path, then we rename the
+      // new processing cache dir to the depsCacheDir. In systems where doing so in sync
+      // is safe, we do an atomic operation (at least for this thread). For Windows, we
+      // found there are cases where the rename operation may finish before it's done
+      // so we do a graceful rename checking that the folder has been properly renamed.
+      // We found that the rename-rename (then delete the old folder in the background)
+      // is safer than a delete-rename operation.
+      const temporalPath = depsCacheDir + getTempSuffix()
+      const depsCacheDirPresent = fs.existsSync(depsCacheDir)
+      if (isWindows) {
+        if (depsCacheDirPresent) await safeRename(depsCacheDir, temporalPath)
+        await safeRename(processingCacheDir, depsCacheDir)
+      } else {
+        if (depsCacheDirPresent) fs.renameSync(depsCacheDir, temporalPath)
+        fs.renameSync(processingCacheDir, depsCacheDir)
+      }
+
+      // Delete temporal path in the background
+      if (depsCacheDirPresent)
+        fsp.rm(temporalPath, { recursive: true, force: true })
+    },
+  }
 
   if (!qualifiedIds.length) {
+    // No deps to optimize, we still commit the processing cache dir to remove
+    // the previous optimized deps if they exist, and let the next server start
+    // skip the scanner step if the lockfile hasn't changed
     return {
-      result: Promise.resolve(createEmptyProcessingResult()),
-      cancel: async () => {},
+      cancel: async () => cleanUp(),
+      result: Promise.resolve(succesfulResult),
     }
+  }
+
+  const cancelledResult: DepOptimizationResult = {
+    metadata,
+    commit: async () => cleanUp(),
+    cancel: cleanUp,
   }
 
   const start = performance.now()
@@ -515,7 +580,7 @@ export function runOptimizeDeps(
     resolvedConfig,
     depsInfo,
     ssr,
-    depsCacheDir,
+    processingCacheDir,
     optimizerContext,
   )
 
@@ -527,7 +592,7 @@ export function runOptimizeDeps(
     }
     if (!context || optimizerContext.cancelled) {
       disposeContext()
-      return createEmptyProcessingResult()
+      return cancelledResult
     }
 
     return context
@@ -538,11 +603,15 @@ export function runOptimizeDeps(
         // the paths in `meta.outputs` are relative to `process.cwd()`
         const processingCacheDirOutputPath = path.relative(
           process.cwd(),
-          depsCacheDir,
+          processingCacheDir,
         )
 
         for (const id in depsInfo) {
-          const output = esbuildOutputFromId(meta.outputs, id, depsCacheDir)
+          const output = esbuildOutputFromId(
+            meta.outputs,
+            id,
+            processingCacheDir,
+          )
 
           const { exportsData, ...info } = depsInfo[id]
           addOptimizedDepInfo(metadata, 'optimized', {
@@ -593,92 +662,14 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        // Write this run of pre-bundled dependencies to the deps cache
-        async function commitFiles() {
-          // Get a list of old files in the deps directory to delete the stale ones
-          const oldFilesPaths: string[] = []
-          // File used to tell other processes that we're writing the deps cache directory
-          const writingFilePath = path.resolve(depsCacheDir, '_writing')
-
-          if (
-            !fs.existsSync(depsCacheDir) ||
-            !(await waitOptimizerWriteLock(depsCacheDir, config.logger)) // unlock timed out
-          ) {
-            fs.mkdirSync(depsCacheDir, { recursive: true })
-            fs.writeFileSync(writingFilePath, '')
-          } else {
-            fs.writeFileSync(writingFilePath, '')
-            oldFilesPaths.push(
-              ...(await fsp.readdir(depsCacheDir)).map((f) =>
-                path.join(depsCacheDir, f),
-              ),
-            )
-          }
-
-          const newFilesPaths = new Set<string>()
-          newFilesPaths.add(writingFilePath)
-          const files: Promise<void>[] = []
-          const write = (filePath: string, content: string | Uint8Array) => {
-            newFilesPaths.add(filePath)
-            files.push(fsp.writeFile(filePath, content))
-          }
-
-          path.join(depsCacheDir, '_metadata.json'),
-            // a hint for Node.js
-            // all files in the cache directory should be recognized as ES modules
-            write(
-              path.resolve(depsCacheDir, 'package.json'),
-              '{\n  "type": "module"\n}\n',
-            )
-
-          write(
-            path.join(depsCacheDir, '_metadata.json'),
-            stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
-          )
-
-          for (const outputFile of result.outputFiles!)
-            write(outputFile.path, outputFile.contents)
-
-          // Clean up old files in the background
-          for (const filePath of oldFilesPaths)
-            if (!newFilesPaths.has(filePath)) fs.unlink(filePath, () => {}) // ignore errors
-
-          await Promise.all(files)
-
-          // Successful write
-          fsp.unlink(writingFilePath)
-
-          setTimeout(() => {
-            // Free up memory, these files aren't going to be re-requested because
-            // the requests are cached. If they do, then let them read from disk.
-            optimizedDepsCache.delete(metadata)
-          }, 5000)
-        }
-
-        return {
-          metadata,
-          async commit() {
-            // Keep the output files in memory while we write them to disk in the
-            // background. These files are going to be sent right away to the browser
-            optimizedDepsCache.set(
-              metadata,
-              new Map(
-                result.outputFiles!.map((f) => [normalizePath(f.path), f.text]),
-              ),
-            )
-
-            // No need to wait, files are written in the background
-            setTimeout(commitFiles, 0)
-          },
-          cancel: () => {},
-        }
+        return succesfulResult
       })
 
       .catch((e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
           // esbuild logs an error when cancelling, but this is expected so
           // return an empty result instead
-          return createEmptyProcessingResult()
+          return cancelledResult
         }
         throw e
       })
@@ -687,11 +678,16 @@ export function runOptimizeDeps(
       })
   })
 
+  runResult.catch(() => {
+    cleanUp()
+  })
+
   return {
     async cancel() {
       optimizerContext.cancelled = true
       const { context } = await preparedRun
       await context?.cancel()
+      cleanUp()
     },
     result: runResult,
   }
@@ -793,9 +789,6 @@ async function prepareEsbuildOptimizerRun(
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    // Don't write to disk, we'll only write the files if the build isn't invalidated
-    // by newly discovered dependencies
-    write: false,
     // We can't use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated
     // by using mainFields and conditions
@@ -968,6 +961,25 @@ function getDepsCacheSuffix(config: ResolvedConfig, ssr: boolean): string {
 
 export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
   return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr)
+}
+
+function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
+  return (
+    getDepsCacheDirPrefix(config) +
+    getDepsCacheSuffix(config, ssr) +
+    getTempSuffix()
+  )
+}
+
+function getTempSuffix() {
+  return (
+    '_temp_' +
+    getHash(
+      `${process.pid}:${Date.now().toString()}:${Math.random()
+        .toString(16)
+        .slice(2)}`,
+    )
+  )
 }
 
 function getDepsCacheDirPrefix(config: ResolvedConfig): string {
@@ -1330,63 +1342,69 @@ export async function optimizedDepNeedsInterop(
   return depInfo?.needsInterop
 }
 
-const optimizedDepsCache = new WeakMap<
-  DepOptimizationMetadata,
-  Map<string, string>
->()
-export async function loadOptimizedDep(
-  file: string,
-  depsOptimizer: DepsOptimizer,
-): Promise<string> {
-  const outputFiles = optimizedDepsCache.get(depsOptimizer.metadata)
-  if (outputFiles) {
-    const outputFile = outputFiles.get(file)
-    if (outputFile) return outputFile
-  }
-  return fsp.readFile(file, 'utf-8')
-}
-
-/**
- * Processes that write to the deps cache directory adds a `_writing` lock to
- * inform other processes of so. So before doing any work on it, they can wait
- * for the file to be removed to know it's ready.
- *
- * Returns true if successfully waited for unlock, false if lock timed out.
- */
-async function waitOptimizerWriteLock(depsCacheDir: string, logger: Logger) {
-  const writingPath = path.join(depsCacheDir, '_writing')
-  const tryAgainMs = 100
-
-  // if _writing exist, we wait for a maximum of 500ms before assuming something
-  // is not right
-  let maxWaitTime = 500
-  let waited = 0
-  let filesLength: number
-
-  while (fs.existsSync(writingPath)) {
-    // on the first run, we check the number of files it started with for later use
-    filesLength ??= (await fsp.readdir(depsCacheDir)).length
-
-    await new Promise((r) => setTimeout(r, tryAgainMs))
-    waited += tryAgainMs
-
-    if (waited >= maxWaitTime) {
-      const newFilesLength = (await fsp.readdir(depsCacheDir)).length
-
-      // after 500ms, if the number of files is the same, assume previous process
-      // terminated and didn't cleanup `_writing` lock. clear the directory.
-      if (filesLength === newFilesLength) {
-        logger.info('Outdated deps cache, forcing re-optimization...')
-        await fsp.rm(depsCacheDir, { recursive: true, force: true })
-        return false
-      }
-      // new files were saved, wait a bit longer to decide again.
-      else {
-        maxWaitTime += 500
-        filesLength = newFilesLength
+const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
+export async function cleanupDepsCacheStaleDirs(
+  config: ResolvedConfig,
+): Promise<void> {
+  try {
+    const cacheDir = path.resolve(config.cacheDir)
+    if (fs.existsSync(cacheDir)) {
+      const dirents = await fsp.readdir(cacheDir, { withFileTypes: true })
+      for (const dirent of dirents) {
+        if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
+          const tempDirPath = path.resolve(config.cacheDir, dirent.name)
+          const stats = await fsp.stat(tempDirPath).catch((_) => null)
+          if (
+            stats?.mtime &&
+            Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
+          ) {
+            await fsp.rm(tempDirPath, { recursive: true, force: true })
+          }
+        }
       }
     }
+  } catch (err) {
+    config.logger.error(err)
   }
-
-  return true
 }
+
+// We found issues with renaming folders in some systems. This is a custom
+// implementation for the optimizer. It isn't intended to be a general utility
+
+// Based on node-graceful-fs
+
+// The ISC License
+// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
+// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+
+// On Windows, A/V software can lock the directory, causing this
+// to fail with an EACCES or EPERM if the directory contains newly
+// created files. The original tried for up to 60 seconds, we only
+// wait for 5 seconds, as a longer time would be seen as an error
+
+const GRACEFUL_RENAME_TIMEOUT = 5000
+const safeRename = promisify(function gracefulRename(
+  from: string,
+  to: string,
+  cb: (error: NodeJS.ErrnoException | null) => void,
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rename(from, to, function CB(er) {
+    if (
+      er &&
+      (er.code === 'EACCES' || er.code === 'EPERM') &&
+      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
+    ) {
+      setTimeout(function () {
+        fs.stat(to, function (stater, st) {
+          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
+          else CB(er)
+        })
+      }, backoff)
+      if (backoff < 100) backoff += 10
+      return
+    }
+    if (cb) cb(er)
+  })
+})
