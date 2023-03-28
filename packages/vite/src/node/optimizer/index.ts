@@ -525,23 +525,30 @@ export function runOptimizeDeps(
     metadata,
     cancel: cleanUp,
     commit: async () => {
+      // Write metadata file, then commit the processing folder to the global deps cache
+      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+
       const dataPath = path.join(processingCacheDir, '_metadata.json')
       fs.writeFileSync(
         dataPath,
         stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
       )
 
-      // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-      // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+      // In order to minimize the time where the deps folder isn't in a consistent state,
+      // we first rename the old depsCacheDir to a temporal path, then we rename the
+      // new processing cache dir to the depsCacheDir. In systems where doing so in sync
+      // is safe, we do an atomic operation (at least for this thread). For Windows, we
+      // found there are cases where the rename operation may finish before it's done
+      // so we do a graceful rename checking that the folder has been properly renamed.
+      // We found that the rename-rename (then delete the old folder in the background)
+      // is safer than a delete-rename operation.
       const temporalPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
-
       if (isWindows) {
-        depsCacheDirPresent && (await safeRename(depsCacheDir, temporalPath))
+        if (depsCacheDirPresent) await safeRename(depsCacheDir, temporalPath)
         await safeRename(processingCacheDir, depsCacheDir)
       } else {
-        depsCacheDirPresent && fs.renameSync(depsCacheDir, temporalPath)
+        if (depsCacheDirPresent) fs.renameSync(depsCacheDir, temporalPath)
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
