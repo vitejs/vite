@@ -2,7 +2,7 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
-import type { SourceMap } from 'rollup'
+import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
   cleanUrl,
@@ -85,7 +85,7 @@ export function transformMiddleware(
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
-            ) as SourceMap
+            ) as ExistingRawSourceMap
 
             applySourcemapIgnoreList(
               map,

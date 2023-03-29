@@ -274,7 +274,7 @@ async function loadAndTransform(
 
     const sourcemapPath = `${mod.file}.map`
     applySourcemapIgnoreList(
-      map as SourceMap,
+      map,
       sourcemapPath,
       config.server.sourcemapIgnoreList,
       logger,

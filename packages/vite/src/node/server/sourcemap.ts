@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
-import type { SourceMap } from 'rollup'
+import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
@@ -85,12 +85,11 @@ export function getCodeWithSourcemap(
 }
 
 export function applySourcemapIgnoreList(
-  map: SourceMap,
+  map: ExistingRawSourceMap,
   sourcemapPath: string,
   sourcemapIgnoreList: (sourcePath: string, sourcemapPath: string) => boolean,
   logger?: Logger,
 ): void {
-  // @ts-expect-error x_google_ignoreList isn't yet in the SourceMap type
   let { x_google_ignoreList } = map
   if (x_google_ignoreList === undefined) {
     x_google_ignoreList = []
@@ -119,7 +118,6 @@ export function applySourcemapIgnoreList(
   }
 
   if (x_google_ignoreList.length > 0) {
-    // @ts-expect-error x_google_ignoreList isn't yet in the SourceMap type
     if (!map.x_google_ignoreList) map.x_google_ignoreList = x_google_ignoreList
   }
 }
