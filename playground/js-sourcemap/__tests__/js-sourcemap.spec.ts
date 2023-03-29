@@ -1,7 +1,8 @@
 import { URL } from 'node:url'
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   extractSourcemap,
+  findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
   page,
@@ -40,14 +41,31 @@ if (!isBuild) {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
   })
-} else {
-  test('this file only includes test for serve', () => {
-    expect(true).toBe(true)
-  })
 }
 
-test.runIf(isBuild)('should not output sourcemap warning (#4939)', () => {
-  serverLogs.forEach((log) => {
-    expect(log).not.toMatch('Sourcemap is likely to be incorrect')
+describe.runIf(isBuild)('build tests', () => {
+  test('should not output sourcemap warning (#4939)', () => {
+    serverLogs.forEach((log) => {
+      expect(log).not.toMatch('Sourcemap is likely to be incorrect')
+    })
+  })
+
+  test('sourcemap is correct when preload information is injected', async () => {
+    const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
+    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
+      {
+        "mappings": "stBAAAA,aAAO,2BAAuB,EAAC,sEAE/B,QAAQ,IAAI,uBAAuB",
+        "sources": [
+          "../../after-preload-dynamic.js",
+        ],
+        "sourcesContent": [
+          "import('./dynamic/dynamic-foo')
+
+      console.log('after preload dynamic')
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 })
