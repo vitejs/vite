@@ -395,6 +395,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               unwrapId(url),
               ssr,
               canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+              resolved,
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
