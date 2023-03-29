@@ -195,8 +195,6 @@ export class ModuleGraph {
     rawUrl: string,
     ssr?: boolean,
     setIsSelfAccepting = true,
-    // Optimization, avoid resolving the same url twice if the caller already did it
-    resolved?: PartialResolvedId,
   ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
@@ -205,9 +203,7 @@ export class ModuleGraph {
       return mod
     }
 
-    const [url, resolvedId, meta] = resolved
-      ? optimizedResolveUrl(rawUrl, resolved)
-      : await this.resolveUrl(rawUrl, ssr)
+    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
@@ -272,17 +268,6 @@ export class ModuleGraph {
     url = ensureExtension(url, resolvedId)
     return [url, resolvedId, resolved?.meta]
   }
-}
-
-// Shortcircuit resolveId if we already have it
-function optimizedResolveUrl(
-  url: string,
-  resolved: PartialResolvedId,
-): ResolvedUrl {
-  url = removeImportQuery(removeTimestampQuery(url))
-  const resolvedId = resolved.id
-  url = ensureExtension(url, resolvedId)
-  return [url, resolvedId, resolved?.meta]
 }
 
 function ensureExtension(url: string, resolvedId: string) {
