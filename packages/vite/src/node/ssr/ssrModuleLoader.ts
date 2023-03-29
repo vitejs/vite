@@ -212,7 +212,8 @@ async function instantiateModule(
     server.config.logger.error(
       colors.red(
         `Error when evaluating SSR module ${url}:` +
-          (e.importee ? ` failed to import "${e.importee}"\n` : '\n'),
+          (e.importee ? ` failed to import "${e.importee}"` : '') +
+          `\n|- ${e.stack}\n`,
       ),
       {
         timestamp: true,
