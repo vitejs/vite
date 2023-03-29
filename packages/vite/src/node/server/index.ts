@@ -683,6 +683,7 @@ export async function createServer(
       initingServer = undefined
       serverInited = true
     })()
+    return initingServer
   }
 
   if (!middlewareMode && httpServer) {
