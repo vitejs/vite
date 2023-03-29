@@ -115,7 +115,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const fullUrl = path.posix.join(devBase, url)
-      if (server) {
+      if (server && !checkPublicFile(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
