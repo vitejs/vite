@@ -239,7 +239,7 @@ export class ModuleGraph {
   }
 
   // for incoming urls, it is important to:
-  // 1. remove the HMR timestamp query (?t=xxxx)
+  // 1. remove the HMR timestamp query (?t=xxxx) and the ?import query
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
