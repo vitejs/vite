@@ -18,7 +18,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
-import { injectSourcesContent } from './sourcemap'
+import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
@@ -271,41 +271,33 @@ async function loadAndTransform(
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }
-    for (
-      let sourcesIndex = 0;
-      sourcesIndex < map.sources.length;
-      ++sourcesIndex
-    ) {
-      const sourcePath = map.sources[sourcesIndex]
-      if (!sourcePath) continue
 
-      const sourcemapPath = `${mod.file}.map`
-      const ignoreList = config.server.sourcemapIgnoreList(
-        path.isAbsolute(sourcePath)
-          ? sourcePath
-          : path.resolve(path.dirname(sourcemapPath), sourcePath),
-        sourcemapPath,
-      )
-      if (typeof ignoreList !== 'boolean') {
-        logger.warn('sourcemapIgnoreList function must return a boolean.')
-      }
-      if (ignoreList) {
-        if (map.x_google_ignoreList === undefined) {
-          map.x_google_ignoreList = []
-        }
-        if (!map.x_google_ignoreList.includes(sourcesIndex)) {
-          map.x_google_ignoreList.push(sourcesIndex)
-        }
-      }
+    const sourcemapPath = `${mod.file}.map`
+    applySourcemapIgnoreList(
+      map,
+      sourcemapPath,
+      config.server.sourcemapIgnoreList,
+      logger,
+    )
 
-      // Rewrite sources to relative paths to give debuggers the chance
-      // to resolve and display them in a meaningful way (rather than
-      // with absolute paths).
-      if (path.isAbsolute(sourcePath) && path.isAbsolute(mod.file)) {
-        map.sources[sourcesIndex] = path.relative(
-          path.dirname(mod.file),
-          sourcePath,
-        )
+    if (path.isAbsolute(mod.file)) {
+      for (
+        let sourcesIndex = 0;
+        sourcesIndex < map.sources.length;
+        ++sourcesIndex
+      ) {
+        const sourcePath = map.sources[sourcesIndex]
+        if (sourcePath) {
+          // Rewrite sources to relative paths to give debuggers the chance
+          // to resolve and display them in a meaningful way (rather than
+          // with absolute paths).
+          if (path.isAbsolute(sourcePath)) {
+            map.sources[sourcesIndex] = path.relative(
+              path.dirname(mod.file),
+              sourcePath,
+            )
+          }
+        }
       }
     }
   }
