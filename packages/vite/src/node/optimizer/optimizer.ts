@@ -670,7 +670,7 @@ async function createDepsOptimizer(
     }
   }
 
-  const runOptimizerIfIdleAfterMs = 100
+  const runOptimizerIfIdleAfterMs = 50
 
   let registeredIds: { id: string; done: () => Promise<any> }[] = []
   let seenIds = new Set<string>()
