@@ -252,9 +252,11 @@ export class ModuleGraph {
       !url.startsWith(`virtual:`)
     ) {
       const ext = extname(cleanUrl(resolvedId))
-      const { pathname, search, hash } = new URL(url, 'relative://')
-      if (ext && !pathname!.endsWith(ext)) {
-        url = pathname + ext + search + hash
+      if (ext) {
+        const pathname = cleanUrl(url)
+        if (!pathname.endsWith(ext)) {
+          url = pathname + ext + url.slice(pathname.length)
+        }
       }
     }
     return [url, resolvedId, resolved?.meta]
