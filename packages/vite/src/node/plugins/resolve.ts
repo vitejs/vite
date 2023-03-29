@@ -146,11 +146,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         id[0] === '\0' ||
         id.startsWith('virtual:') ||
         // When injected directly in html/client code
-        id.startsWith('/virtual:') ||
-        // This virtual file from the React plugin is hardcoded in integrations
-        // like Ruby & Laravel so adding this instead of migrating both React
-        // plugins to use /virtual:
-        id === '/@react-refresh'
+        id.startsWith('/virtual:')
       ) {
         return
       }
