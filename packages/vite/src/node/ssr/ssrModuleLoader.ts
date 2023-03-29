@@ -147,7 +147,10 @@ async function instantiateModule(
         context,
         urlStack,
         fixStacktrace,
-      )
+      ).catch((err) => {
+        err.importee = dep
+        throw err
+      })
       if (pendingDeps.length === 1) {
         pendingImports.delete(url)
       } else {
@@ -222,7 +225,6 @@ async function instantiateModule(
       },
     )
 
-    delete e.importee
     throw e
   }
 
