@@ -320,7 +320,7 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
   url = unwrapId(stripBase(url, base))
 
   // transform all url as non-ssr as html includes client-side assets only
-  server.transformRequest(url).catch((e) => {
+  server.transformRequest(url, { html: true }).catch((e) => {
     // Unexpected error, log the issue but avoid an unhandled exception
     server.config.logger.error(e)
   })
