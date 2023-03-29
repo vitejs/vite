@@ -61,6 +61,8 @@ export class ModuleGraph {
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
 
+  #rawUrlToModuleMap = new Map<string, ModuleNode>()
+
   constructor(
     private resolveId: (
       url: string,
@@ -74,7 +76,7 @@ export class ModuleGraph {
   ): Promise<ModuleNode | undefined> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    const mod = this.urlToModuleMap.get(cleanedUrl)
+    const mod = this.#rawUrlToModuleMap.get(cleanedUrl)
     if (mod) {
       return mod
     }
@@ -198,7 +200,7 @@ export class ModuleGraph {
   ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    let mod = this.urlToModuleMap.get(cleanedUrl)
+    let mod = this.#rawUrlToModuleMap.get(cleanedUrl)
     if (mod) {
       return mod
     }
@@ -208,9 +210,13 @@ export class ModuleGraph {
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
+
       this.urlToModuleMap.set(url, mod)
+      this.#rawUrlToModuleMap.set(cleanedUrl, mod)
+
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
+
       const file = (mod.file = cleanUrl(resolvedId))
       let fileMappedModules = this.fileToModulesMap.get(file)
       if (!fileMappedModules) {
@@ -221,14 +227,17 @@ export class ModuleGraph {
     }
     // multiple urls can map to the same module and id, make sure we register
     // the url to the existing module in that case
-    else if (!this.urlToModuleMap.has(url)) {
-      this.urlToModuleMap.set(url, mod)
+    else {
+      if (!this.urlToModuleMap.has(url)) {
+        this.urlToModuleMap.set(url, mod)
+      }
+      // Also register the clean url to the module, so that we can short-circuit
+      // resolving the same url twice
+      if (!this.#rawUrlToModuleMap.has(cleanedUrl)) {
+        this.#rawUrlToModuleMap.set(cleanedUrl, mod)
+      }
     }
-    // Also register the clean url to the module, so that we can short-circuit
-    // resolving the same url twice
-    if (!this.urlToModuleMap.has(cleanedUrl)) {
-      this.urlToModuleMap.set(cleanedUrl, mod)
-    }
+
     return mod
   }
 
