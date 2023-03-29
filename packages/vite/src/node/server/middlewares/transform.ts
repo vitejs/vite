@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fsp from 'node:fs/promises'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { SourceMap } from 'rollup'
@@ -35,7 +36,7 @@ import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
-import { getDepsOptimizer, loadOptimizedDep } from '../../optimizer'
+import { getDepsOptimizer } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -83,7 +84,7 @@ export function transformMiddleware(
               )
           try {
             const map = JSON.parse(
-              await loadOptimizedDep(sourcemapPath, depsOptimizer),
+              await fsp.readFile(sourcemapPath, 'utf-8'),
             ) as SourceMap
 
             applySourcemapIgnoreList(
