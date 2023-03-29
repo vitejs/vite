@@ -239,7 +239,7 @@ export class ModuleGraph {
   }
 
   // for incoming urls, it is important to:
-  // 1. remove the HMR timestamp query (?t=xxxx)
+  // 1. remove the HMR timestamp query (?t=xxxx) and the ?import query
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
@@ -252,9 +252,11 @@ export class ModuleGraph {
       !url.startsWith(`virtual:`)
     ) {
       const ext = extname(cleanUrl(resolvedId))
-      const { pathname, search, hash } = new URL(url, 'relative://')
-      if (ext && !pathname!.endsWith(ext)) {
-        url = pathname + ext + search + hash
+      if (ext) {
+        const pathname = cleanUrl(url)
+        if (!pathname.endsWith(ext)) {
+          url = pathname + ext + url.slice(pathname.length)
+        }
       }
     }
     return [url, resolvedId, resolved?.meta]
