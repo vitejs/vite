@@ -81,7 +81,6 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
-const startsWithSingleSlashRE = /^\/(?!\/)/
 const processNodeUrl = (
   attr: Token.Attribute,
   sourceCodeLocation: Token.Location,
@@ -100,7 +99,7 @@ const processNodeUrl = (
     }
   }
   const devBase = config.base
-  if (startsWithSingleSlashRE.test(url)) {
+  if (url[0] === '/' && url[1] !== '/') {
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
@@ -116,7 +115,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const fullUrl = path.posix.join(devBase, url)
-      if (server && !checkPublicFile(url, config)) {
+      if (server) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
