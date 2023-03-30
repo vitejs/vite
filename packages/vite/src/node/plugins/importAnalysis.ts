@@ -601,7 +601,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // record for HMR import chain analysis
           // make sure to unwrap and normalize away base
           const hmrUrl = unwrapId(stripBase(url, base))
-          importedUrls.add(hmrUrl)
+          const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
+          if (isLocalImport) {
+            importedUrls.add(hmrUrl)
+          }
 
           if (enablePartialAccept && importedBindings) {
             extractImportedBindings(
@@ -612,7 +615,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
-          if (!isDynamicImport) {
+          if (!isDynamicImport && isLocalImport) {
             // for pre-transforming
             staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
           }
