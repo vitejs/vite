@@ -255,7 +255,6 @@ export class ModuleGraph {
       if (meta) mod.meta = meta
 
       this.urlToModuleMap.set(url, mod)
-      this.#setCleanUrlToModule(cleanedUrl, mod, ssr)
 
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
@@ -270,14 +269,13 @@ export class ModuleGraph {
     }
     // multiple urls can map to the same module and id, make sure we register
     // the url to the existing module in that case
-    else {
-      if (!this.urlToModuleMap.has(url)) {
-        this.urlToModuleMap.set(url, mod)
-      }
-      // Also register the clean url to the module, so that we can short-circuit
-      // resolving the same url twice
-      this.#setCleanUrlToModule(cleanedUrl, mod, ssr)
+    else if (!this.urlToModuleMap.has(url)) {
+      this.urlToModuleMap.set(url, mod)
     }
+
+    // Also register the clean url to the module, so that we can short-circuit
+    // resolving the same url twice
+    this.#setCleanUrlToModule(cleanedUrl, mod, ssr)
 
     return mod
   }
