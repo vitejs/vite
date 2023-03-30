@@ -5,6 +5,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
+import convertSourceMap from 'convert-source-map'
 import {
   bareImportRE,
   cleanUrl,
@@ -608,6 +609,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               ) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
+
+              if (config.build.sourcemap === 'inline') {
+                chunk.code = chunk.code.replace(
+                  convertSourceMap.mapFileCommentRegex,
+                  '',
+                )
+                chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
+              } else if (config.build.sourcemap) {
+                const mapAsset = bundle[chunk.fileName + '.map']
+                if (mapAsset && mapAsset.type === 'asset') {
+                  mapAsset.source = map.toString()
+                }
+              }
             }
           }
         }

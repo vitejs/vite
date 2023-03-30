@@ -4,7 +4,7 @@
     "outDir": "dist",
     "target": "ES2020",
     "module": "ES2020",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
     "declaration": false,

@@ -501,7 +501,14 @@ export function generateCodeFrame(
 
 export function isFileReadable(filename: string): boolean {
   try {
+    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
+    if (!fs.statSync(filename, { throwIfNoEntry: false })) {
+      return false
+    }
+
+    // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
+
     return true
   } catch {
     return false
