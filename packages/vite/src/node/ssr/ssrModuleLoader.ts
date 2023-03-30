@@ -160,7 +160,9 @@ async function instantiateModule(
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
       // tell external error handler which mod was imported with error
+      // add a counter to infer importer count, once counter = 0, remove the importee prop
       err.importee = dep
+      err.importerCount = (err.importerCount || 0) + 1
       throw err
     }
   }
@@ -227,6 +229,13 @@ async function instantiateModule(
         error: e,
       },
     )
+
+    e.importerCount--
+
+    if (!e.importerCount) {
+      delete e.importee
+      delete e.importerCount
+    }
 
     throw e
   }
