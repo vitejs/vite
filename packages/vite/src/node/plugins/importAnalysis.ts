@@ -694,7 +694,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(markExplicitImport(url)),
+          toAbsoluteUrl(url),
           ssr,
         )
         normalizedAcceptedUrls.add(normalized)
