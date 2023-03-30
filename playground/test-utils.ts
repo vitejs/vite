@@ -73,9 +73,8 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
   if (typeof el === 'string') {
     const realEl = await page.$(el)
     if (realEl == null) {
-      throw new Error(`can not find element: "${el}"`)
+      throw new Error(`Cannot find element: "${el}"`)
     }
-
     return realEl
   }
   return el
