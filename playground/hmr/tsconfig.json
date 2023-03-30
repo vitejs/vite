@@ -8,7 +8,7 @@
     "outDir": "dist",
     "allowJs": true,
     "esModuleInterop": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "jsx": "preserve",
     "types": ["vite/client", "node"]
