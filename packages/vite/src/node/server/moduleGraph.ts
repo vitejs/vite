@@ -61,7 +61,19 @@ export class ModuleGraph {
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
 
-  #rawUrlToModuleMap = new Map<string, ModuleNode>()
+  #cleanUrlToModuleMap = new Map<string, ModuleNode>()
+  #ssrCleanUrlToModuleMap = new Map<string, ModuleNode>()
+  #getCleanUrlToModule(cleanUrl: string, ssr?: boolean) {
+    return (ssr ? this.#ssrCleanUrlToModuleMap : this.#cleanUrlToModuleMap).get(
+      cleanUrl,
+    )
+  }
+  #setCleanUrlToModule(cleanUrl: string, mod: ModuleNode, ssr?: boolean) {
+    return (ssr ? this.#ssrCleanUrlToModuleMap : this.#cleanUrlToModuleMap).set(
+      cleanUrl,
+      mod,
+    )
+  }
 
   constructor(
     private resolveId: (
@@ -76,7 +88,7 @@ export class ModuleGraph {
   ): Promise<ModuleNode | undefined> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    const mod = this.#rawUrlToModuleMap.get(cleanedUrl)
+    const mod = this.#getCleanUrlToModule(cleanedUrl, ssr)
     if (mod) {
       return mod
     }
@@ -200,7 +212,7 @@ export class ModuleGraph {
   ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    let mod = this.#rawUrlToModuleMap.get(cleanedUrl)
+    let mod = this.#getCleanUrlToModule(cleanedUrl, ssr)
     if (mod) {
       return mod
     }
@@ -212,7 +224,7 @@ export class ModuleGraph {
       if (meta) mod.meta = meta
 
       this.urlToModuleMap.set(url, mod)
-      this.#rawUrlToModuleMap.set(cleanedUrl, mod)
+      this.#setCleanUrlToModule(cleanedUrl, mod, ssr)
 
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
@@ -233,9 +245,7 @@ export class ModuleGraph {
       }
       // Also register the clean url to the module, so that we can short-circuit
       // resolving the same url twice
-      if (!this.#rawUrlToModuleMap.has(cleanedUrl)) {
-        this.#rawUrlToModuleMap.set(cleanedUrl, mod)
-      }
+      this.#setCleanUrlToModule(cleanedUrl, mod, ssr)
     }
 
     return mod
