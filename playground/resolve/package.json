@@ -8,8 +8,16 @@
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
+  "imports": {
+    "#top-level": "./imports-path/top-level.js",
+    "#same-level": "./imports-path/same-level.js",
+    "#nested/path.js": "./imports-path/nested-path.js",
+    "#star/*": "./imports-path/star/*",
+    "#slash/": "./imports-path/slash/",
+    "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/"
+  },
   "dependencies": {
-    "@babel/runtime": "^7.20.7",
+    "@babel/runtime": "^7.21.0",
     "es5-ext": "0.10.62",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
@@ -25,6 +33,8 @@
     "@vitejs/test-resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
     "@vitejs/test-resolve-exports-path": "link:./exports-path",
     "@vitejs/test-resolve-exports-with-module": "link:./exports-with-module",
-    "@vitejs/test-resolve-linked": "workspace:*"
+    "@vitejs/test-resolve-linked": "workspace:*",
+    "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
+    "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir"
   }
 }

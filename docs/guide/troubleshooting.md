@@ -1,6 +1,6 @@
 # Troubleshooting
 
-See [Rollup's troubleshooting guide](https://rollupjs.org/guide/en/#troubleshooting) for more information too.
+See [Rollup's troubleshooting guide](https://rollupjs.org/troubleshooting/) for more information too.
 
 If the suggestions here don't work, please try posting questions on [GitHub Discussions](https://github.com/vitejs/vite/discussions) or in the `#help` channel of [Vite Land Discord](https://chat.vitejs.dev).
 
@@ -48,6 +48,8 @@ If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as 
 
 - /etc/systemd/system.conf
 - /etc/systemd/user.conf
+
+For Ubuntu Linux, you may need to add the line `* - nofile 65536` to the file `/etc/security/limits.conf` instead of updating systemd config files.
 
 Note that these settings persist but a **restart is required**.
 
@@ -120,6 +122,16 @@ See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/e
 You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
 ## Others
+
+### Module externalized for browser compatibility
+
+When you use a Node.js module in the browser, Vite will output the following warning.
+
+> Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFile" in client code.
+
+This is because Vite does not automatically polyfill Node.js modules.
+
+We recommend avoiding Node.js modules for browser code to reduce the bundle size, although you can add polyfills manually. If the module is imported from a third-party library (that's meant to be used in the browser), it's advised to report the issue to the respective library.
 
 ### Syntax Error / Type Error happens
 

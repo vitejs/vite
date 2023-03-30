@@ -20,6 +20,9 @@ if (import.meta.env.LEGACY) {
 
 text('#env', `is legacy: ${isLegacy}`)
 
+const metaEnvObj = import.meta.env
+text('#env-equal', import.meta.env.LEGACY === metaEnvObj.LEGACY)
+
 // Iterators
 text('#iterators', [...new Set(['hello'])].join(''))
 
@@ -28,6 +31,21 @@ text(
   '#features-after-corejs-3',
   JSON.stringify(structuredClone({ foo: 'foo' })),
 )
+
+// async generator
+async function* asyncGenerator() {
+  for (let i = 0; i < 3; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    yield i
+  }
+}
+;(async () => {
+  const result = []
+  for await (const i of asyncGenerator()) {
+    result.push(i)
+  }
+  text('#async-generator', JSON.stringify(result))
+})()
 
 // babel-helpers
 // Using `String.raw` to inject `@babel/plugin-transform-template-literals`

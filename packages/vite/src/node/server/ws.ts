@@ -152,6 +152,12 @@ export function createWebSocketServer(
       const client = getSocketClient(socket)
       listeners.forEach((listener) => listener(parsed.data, client))
     })
+    socket.on('error', (err) => {
+      config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
+        timestamp: true,
+        error: err,
+      })
+    })
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))

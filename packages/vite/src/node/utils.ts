@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { promisify } from 'node:util'
 import { URL, URLSearchParams } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
@@ -33,7 +33,7 @@ import {
 } from './constants'
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls } from './server'
+import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -50,8 +50,9 @@ export const createFilter = _createFilter as (
   options?: { resolve?: string | false | null },
 ) => (id: string | unknown) => boolean
 
+const windowsSlashRE = /\\/g
 export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
+  return p.replace(windowsSlashRE, '/')
 }
 
 /**
@@ -74,14 +75,19 @@ export function unwrapId(id: string): string {
     : id
 }
 
+const replaceSlashOrColonRE = /[/:]/g
+const replaceDotRE = /\./g
+const replaceNestedIdRE = /(\s*>\s*)/g
+const replaceHashRE = /#/g
 export const flattenId = (id: string): string =>
   id
-    .replace(/[/:]/g, '_')
-    .replace(/\./g, '__')
-    .replace(/(\s*>\s*)/g, '___')
+    .replace(replaceSlashOrColonRE, '_')
+    .replace(replaceDotRE, '__')
+    .replace(replaceNestedIdRE, '___')
+    .replace(replaceHashRE, '____')
 
 export const normalizeId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, ' > ')
+  id.replace(replaceNestedIdRE, ' > ')
 
 //TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
 const builtins = new Set([
@@ -101,8 +107,17 @@ const builtins = new Set([
   'wasi',
 ])
 
+const NODE_BUILTIN_NAMESPACE = 'node:'
 export function isBuiltin(id: string): boolean {
-  return builtins.has(id.replace(/^node:/, ''))
+  return builtins.has(
+    id.startsWith(NODE_BUILTIN_NAMESPACE)
+      ? id.slice(NODE_BUILTIN_NAMESPACE.length)
+      : id,
+  )
+}
+
+export function isInNodeModules(id: string): boolean {
+  return id.includes('node_modules')
 }
 
 export function moduleListContains(
@@ -126,14 +141,8 @@ export function isOptimizable(
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
-export let isRunningWithYarnPnp: boolean
-
 // TODO: use import()
 const _require = createRequire(import.meta.url)
-
-try {
-  isRunningWithYarnPnp = Boolean(_require('pnpapi'))
-} catch {}
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
 
@@ -148,26 +157,8 @@ export function resolveFrom(
     paths: [],
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false,
+    preserveSymlinks: preserveSymlinks || !!process.versions.pnp || false,
   })
-}
-
-/**
- * like `resolveFrom` but supports resolving `>` path in `id`,
- * for example: `foo > bar > baz`
- */
-export function nestedResolveFrom(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-): string {
-  const pkgs = id.split('>').map((pkg) => pkg.trim())
-  try {
-    for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir, preserveSymlinks)
-    }
-  } catch {}
-  return basedir
 }
 
 // set in bin/vite.js
@@ -215,6 +206,15 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
+export function isUrl(path: string): boolean {
+  try {
+    new URL(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
 export const isWindows = os.platform() === 'win32'
@@ -229,9 +229,7 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
-    ? fsPath
-    : `/${fsPath}`
+  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {
@@ -248,7 +246,7 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  if (!dir.endsWith('/')) {
+  if (dir[dir.length - 1] !== '/') {
     dir = `${dir}/`
   }
   return (
@@ -262,10 +260,11 @@ export function ensureVolumeInPath(file: string): string {
 }
 
 export const queryRE = /\?.*$/s
-export const hashRE = /#.*$/s
 
-export const cleanUrl = (url: string): string =>
-  url.replace(hashRE, '').replace(queryRE, '')
+const postfixRE = /[?#].*$/s
+export function cleanUrl(url: string): string {
+  return url.replace(postfixRE, '')
+}
 
 export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
@@ -282,25 +281,14 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && !url.endsWith('/')) {
+  if (!path.extname(url) && url[url.length - 1] !== '/') {
     return true
   }
   return false
 }
 
-const knownTsRE = /\.(?:ts|mts|cts|tsx)$/
-const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const knownTsRE = /\.(?:ts|mts|cts|tsx)(?:$|\?)/
 export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
-export const isPossibleTsOutput = (url: string): boolean =>
-  knownTsOutputRE.test(cleanUrl(url))
-export function getPotentialTsSrcPaths(filePath: string): string[] {
-  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
-  const paths = [name + type.replace('js', 'ts') + query]
-  if (!type.endsWith('x')) {
-    paths.push(name + type.replace('js', 'tsx') + query)
-  }
-  return paths
-}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
@@ -323,10 +311,14 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
+const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
   // see #2614 for details
-  const resolvedUrl = new URL(url.replace(/%/g, '%25'), 'relative:///')
+  const resolvedUrl = new URL(
+    url.replace(replacePercentageRE, '%25'),
+    'relative:///',
+  )
   const { search, hash } = resolvedUrl
   let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
@@ -376,17 +368,7 @@ export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    let file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
-    const seg = file.split('/')
-    const npmIndex = seg.indexOf(`node_modules`)
-    const isSourceMap = file.endsWith('.map')
-    if (npmIndex > 0) {
-      file = seg[npmIndex + 1]
-      if (file.startsWith('@')) {
-        file = `${file}/${seg[npmIndex + 2]}`
-      }
-      file = `npm: ${colors.dim(file)}${isSourceMap ? ` (source map)` : ``}`
-    }
+    const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     return colors.dim(file)
   } else {
     return colors.dim(url)
@@ -401,34 +383,27 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
-interface LookupFileOptions {
-  pathOnly?: boolean
-  rootDir?: string
-  predicate?: (file: string) => boolean
+export function tryStatSync(file: string): fs.Stats | undefined {
+  try {
+    return fs.statSync(file, { throwIfNoEntry: false })
+  } catch {
+    // Ignore errors
+  }
 }
 
 export function lookupFile(
   dir: string,
-  formats: string[],
-  options?: LookupFileOptions,
+  fileNames: string[],
 ): string | undefined {
-  for (const format of formats) {
-    const fullPath = path.join(dir, format)
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      const result = options?.pathOnly
-        ? fullPath
-        : fs.readFileSync(fullPath, 'utf-8')
-      if (!options?.predicate || options.predicate(result)) {
-        return result
-      }
+  while (dir) {
+    for (const fileName of fileNames) {
+      const fullPath = path.join(dir, fileName)
+      if (tryStatSync(fullPath)?.isFile()) return fullPath
     }
-  }
-  const parentDir = path.dirname(dir)
-  if (
-    parentDir !== dir &&
-    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
-  ) {
-    return lookupFile(parentDir, formats, options)
+    const parentDir = path.dirname(dir)
+    if (parentDir === dir) return
+
+    dir = parentDir
   }
 }
 
@@ -524,20 +499,16 @@ export function generateCodeFrame(
   return res.join('\n')
 }
 
-export function writeFile(
-  filename: string,
-  content: string | Uint8Array,
-): void {
-  const dir = path.dirname(filename)
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
-  }
-  fs.writeFileSync(filename, content)
-}
-
 export function isFileReadable(filename: string): boolean {
   try {
+    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
+    if (!fs.statSync(filename, { throwIfNoEntry: false })) {
+      return false
+    }
+
+    // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
+
     return true
   } catch {
     return false
@@ -603,17 +574,53 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
-export const removeDir = isWindows
-  ? promisify(gracefulRemoveDir)
-  : function removeDirSync(dir: string) {
-      // when removing `.vite/deps`, if it doesn't exist, nodejs may also remove
-      // other directories within `.vite/`, including `.vite/deps_temp` (bug).
-      // workaround by checking for directory existence before removing for now.
-      if (fs.existsSync(dir)) {
-        fs.rmSync(dir, { recursive: true, force: true })
-      }
+// `fs.realpathSync.native` resolves differently in Windows network drive,
+// causing file read errors. skip for now.
+// https://github.com/nodejs/node/issues/37737
+export let safeRealpathSync = isWindows
+  ? windowsSafeRealPathSync
+  : fs.realpathSync.native
+
+// Based on https://github.com/larrybahr/windows-network-drive
+// MIT License, Copyright (c) 2017 Larry Bahr
+const windowsNetworkMap = new Map()
+function windowsMappedRealpathSync(path: string) {
+  const realPath = fs.realpathSync.native(path)
+  if (realPath.startsWith('\\\\')) {
+    for (const [network, volume] of windowsNetworkMap) {
+      if (realPath.startsWith(network)) return realPath.replace(network, volume)
     }
-export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
+  }
+  return realPath
+}
+const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
+let firstSafeRealPathSyncRun = false
+
+function windowsSafeRealPathSync(path: string): string {
+  if (!firstSafeRealPathSyncRun) {
+    optimizeSafeRealPathSync()
+    firstSafeRealPathSyncRun = true
+  }
+  return fs.realpathSync(path)
+}
+
+function optimizeSafeRealPathSync() {
+  exec('net use', (error, stdout) => {
+    if (error) return
+    const lines = stdout.split('\n')
+    // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
+    // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
+    for (const line of lines) {
+      const m = line.match(parseNetUseRE)
+      if (m) windowsNetworkMap.set(m[3], m[2])
+    }
+    if (windowsNetworkMap.size === 0) {
+      safeRealpathSync = fs.realpathSync.native
+    } else {
+      safeRealpathSync = windowsMappedRealpathSync
+    }
+  })
+}
 
 export function ensureWatchedFile(
   watcher: FSWatcher,
@@ -685,13 +692,12 @@ export function processSrcSetSync(
   )
 }
 
+const cleanSrcSetRE =
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
-  const cleanedSrcs = srcs.replace(
-    /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
-    blankReplacer,
-  )
+  const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
   do {
@@ -704,22 +710,26 @@ function splitSrcSet(srcs: string) {
   return parts
 }
 
+const windowsDriveRE = /^[A-Z]:/
+const replaceWindowsDriveRE = /^([A-Z]):\//
+const linuxAbsolutePathRE = /^\/[^/]/
 function escapeToLinuxLikePath(path: string) {
-  if (/^[A-Z]:/.test(path)) {
-    return path.replace(/^([A-Z]):\//, '/windows/$1/')
+  if (windowsDriveRE.test(path)) {
+    return path.replace(replaceWindowsDriveRE, '/windows/$1/')
   }
-  if (/^\/[^/]/.test(path)) {
+  if (linuxAbsolutePathRE.test(path)) {
     return `/linux${path}`
   }
   return path
 }
 
+const revertWindowsDriveRE = /^\/windows\/([A-Z])\//
 function unescapeToLinuxLikePath(path: string) {
   if (path.startsWith('/linux/')) {
     return path.slice('/linux'.length)
   }
   if (path.startsWith('/windows/')) {
-    return path.replace(/^\/windows\/([A-Z])\//, '$1:/')
+    return path.replace(revertWindowsDriveRE, '$1:/')
   }
   return path
 }
@@ -815,6 +825,19 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   return isSame ? undefined : nodeResult.address
 }
 
+export function diffDnsOrderChange(
+  oldUrls: ViteDevServer['resolvedUrls'],
+  newUrls: ViteDevServer['resolvedUrls'],
+): boolean {
+  return !(
+    oldUrls === newUrls ||
+    (oldUrls &&
+      newUrls &&
+      arrayEqual(oldUrls.local, newUrls.local) &&
+      arrayEqual(oldUrls.network, newUrls.network))
+  )
+}
+
 export interface Hostname {
   /** undefined sets the default behaviour of server.listen */
   host: string | undefined
@@ -884,9 +907,9 @@ export async function resolveServerUrls(
         (detail) =>
           detail &&
           detail.address &&
-          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+          (detail.family === 'IPv4' ||
             // @ts-expect-error Node 18.0 - 18.3 returns number
-            (typeof detail.family === 'number' && detail.family === 4)),
+            detail.family === 4),
       )
       .forEach((detail) => {
         let host = detail.address.replace('127.0.0.1', hostname.name)
@@ -907,10 +930,6 @@ export async function resolveServerUrls(
 
 export function arraify<T>(target: T | T[]): T[] {
   return Array.isArray(target) ? target : [target]
-}
-
-export function toUpperCaseDriveLetter(pathName: string): string {
-  return pathName.replace(/^\w:/, (letter) => letter.toUpperCase())
 }
 
 // Taken from https://stackoverflow.com/a/36328890
@@ -963,75 +982,6 @@ export const requireResolveFromRootWithFallback = (
 
   // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
   return _require.resolve(id, { paths })
-}
-
-// Based on node-graceful-fs
-
-// The ISC License
-// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
-// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
-
-// On Windows, A/V software can lock the directory, causing this
-// to fail with an EACCES or EPERM if the directory contains newly
-// created files. The original tried for up to 60 seconds, we only
-// wait for 5 seconds, as a longer time would be seen as an error
-
-const GRACEFUL_RENAME_TIMEOUT = 5000
-function gracefulRename(
-  from: string,
-  to: string,
-  cb: (error: NodeJS.ErrnoException | null) => void,
-) {
-  const start = Date.now()
-  let backoff = 0
-  fs.rename(from, to, function CB(er) {
-    if (
-      er &&
-      (er.code === 'EACCES' || er.code === 'EPERM') &&
-      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
-    ) {
-      setTimeout(function () {
-        fs.stat(to, function (stater, st) {
-          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
-          else CB(er)
-        })
-      }, backoff)
-      if (backoff < 100) backoff += 10
-      return
-    }
-    if (cb) cb(er)
-  })
-}
-
-const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
-function gracefulRemoveDir(
-  dir: string,
-  cb: (error: NodeJS.ErrnoException | null) => void,
-) {
-  const start = Date.now()
-  let backoff = 0
-  fs.rm(dir, { recursive: true }, function CB(er) {
-    if (er) {
-      if (
-        (er.code === 'ENOTEMPTY' ||
-          er.code === 'EACCES' ||
-          er.code === 'EPERM') &&
-        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
-      ) {
-        setTimeout(function () {
-          fs.rm(dir, { recursive: true }, CB)
-        }, backoff)
-        if (backoff < 100) backoff += 10
-        return
-      }
-
-      if (er.code === 'ENOENT') {
-        er = null
-      }
-    }
-
-    if (cb) cb(er)
-  })
 }
 
 export function emptyCssComments(raw: string): string {
@@ -1137,8 +1087,8 @@ function normalizeSingleAlias({
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
-    find.endsWith('/') &&
-    replacement.endsWith('/')
+    find[find.length - 1] === '/' &&
+    replacement[replacement.length - 1] === '/'
   ) {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
@@ -1195,7 +1145,7 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
  * this function returns false for them but true for absolute paths (e.g. C:/something)
  */
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
-  if (!isWindows) return p.startsWith('/')
+  if (!isWindows) return p[0] === '/'
   return windowsDrivePathPrefixRE.test(p)
 }
 
@@ -1230,21 +1180,25 @@ export function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a.endsWith('/')) {
+  if (a[a.length - 1] === '/') {
     a = a.substring(0, a.length - 1)
   }
-  if (!b.startsWith('/')) {
+  if (b[0] !== '/') {
     b = '/' + b
   }
   return a + b
+}
+
+export function removeLeadingSlash(str: string): string {
+  return str[0] === '/' ? str.slice(1) : str
 }
 
 export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base.endsWith('/') ? base : base + '/'
-  return path.replace(RegExp('^' + devBase), '/')
+  const devBase = base[base.length - 1] === '/' ? base : base + '/'
+  return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {
@@ -1262,4 +1216,9 @@ export function evalValue<T = any>(rawValue: string): T {
     return (\n${rawValue}\n)
   `)
   return fn()
+}
+
+const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
+export function escapeRegex(str: string): string {
+  return str.replace(escapeRegexRE, '\\$&')
 }

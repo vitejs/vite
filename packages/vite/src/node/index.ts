@@ -1,3 +1,6 @@
+import type * as Rollup from 'rollup'
+
+export type { Rollup }
 export * from './config'
 export { createServer } from './server'
 export { preview } from './preview'
@@ -31,6 +34,7 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
+  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'

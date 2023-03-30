@@ -6,6 +6,7 @@ import {
   isBuild,
   isServe,
   page,
+  viteTestUrl,
 } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
@@ -143,6 +144,12 @@ test('import aliased package with colon', async () => {
   expect(await page.textContent('.url')).toBe('vitejs.dev')
 })
 
+test('import aliased package using absolute path', async () => {
+  expect(await page.textContent('.alias-using-absolute-path')).toBe(
+    'From dep-alias-using-absolute-path',
+  )
+})
+
 test('variable names are reused in different scripts', async () => {
   expect(await page.textContent('.reused-variable-names')).toBe('reused')
 })
@@ -185,8 +192,25 @@ test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserErrors.map((error) => error.message)).toEqual(
     expect.arrayContaining([
       // from user source code
-      'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
-      'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
+      expect.stringContaining(
+        'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
+      ),
+      expect.stringContaining(
+        'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
+      ),
     ]),
   )
+})
+
+test('pre bundle css require', async () => {
+  if (isServe) {
+    const response = page.waitForResponse(/@vitejs_test-dep-css-require\.js/)
+    await page.goto(viteTestUrl)
+    const content = await (await response).text()
+    expect(content).toMatch(
+      /import\s"\/@fs.+@vitejs\/test-dep-css-require\/style\.css"/,
+    )
+  }
+
+  expect(await getColor('.css-require')).toBe('red')
 })

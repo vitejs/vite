@@ -1,9 +1,7 @@
-const path = require('node:path')
+import path from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   build: {
     rollupOptions: {
       input: {
@@ -31,4 +29,4 @@ module.exports = {
   define: {
     ROOT: JSON.stringify(path.dirname(__dirname).replace(/\\/g, '/')),
   },
-}
+})

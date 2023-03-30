@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
@@ -13,6 +13,8 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
+
+const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
@@ -42,6 +44,7 @@ export function getShortName(file: string, root: string): string {
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
+  configOnly: boolean,
 ): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
@@ -68,6 +71,10 @@ export async function handleHMRUpdate(
     } catch (e) {
       config.logger.error(colors.red(e))
     }
+    return
+  }
+
+  if (configOnly) {
     return
   }
 
@@ -383,7 +390,7 @@ export function lexAcceptedHmrDeps(
         } else if (char === '`') {
           prevState = state
           state = LexerState.inTemplateString
-        } else if (/\s/.test(char)) {
+        } else if (whitespaceRE.test(char)) {
           continue
         } else {
           if (state === LexerState.inCall) {
@@ -468,7 +475,7 @@ export function lexAcceptedHmrExports(
 }
 
 export function normalizeHmrUrl(url: string): string {
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     url = wrapId(url)
   }
   return url
@@ -487,14 +494,14 @@ function error(pos: number) {
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
-    const mtime = fs.statSync(file).mtimeMs
+    const mtime = (await fsp.stat(file)).mtimeMs
     await new Promise((r) => {
       let n = 0
       const poll = async () => {
         n++
-        const newMtime = fs.statSync(file).mtimeMs
+        const newMtime = (await fsp.stat(file)).mtimeMs
         if (newMtime !== mtime || n > 10) {
           r(0)
         } else {
@@ -503,7 +510,7 @@ async function readModifiedFile(file: string): Promise<string> {
       }
       setTimeout(poll, 10)
     })
-    return fs.readFileSync(file, 'utf-8')
+    return await fsp.readFile(file, 'utf-8')
   } else {
     return content
   }

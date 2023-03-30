@@ -409,3 +409,10 @@ test.skip('url() contains file in publicDir, as inline style', async () => {
   // (I built the playground to verify)
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
 })
+
+test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="noscript" src="\/foo\/assets\/asset-\w+\.png" \/>/,
+  )
+})

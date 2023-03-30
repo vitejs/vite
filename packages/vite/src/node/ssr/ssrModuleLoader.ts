@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
@@ -10,7 +11,6 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { genSourceMapUrl } from '../server/sourcemap'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -25,16 +25,6 @@ interface SSRContext {
 }
 
 type SSRModule = Record<string, any>
-
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const AsyncFunction = async function () {}.constructor as typeof Function
-let fnDeclarationLineCount = 0
-{
-  const body = '/*code*/'
-  const source = new AsyncFunction('a', 'b', body).toString()
-  fnDeclarationLineCount =
-    source.slice(0, source.indexOf(body)).split('\n').length - 1
-}
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
@@ -192,17 +182,9 @@ async function instantiateModule(
     }
   }
 
-  let sourceMapSuffix = ''
-  if (result.map) {
-    const moduleSourceMap = Object.assign({}, result.map, {
-      // offset the first three lines of the module (function declaration and 'use strict')
-      mappings: ';'.repeat(fnDeclarationLineCount + 1) + result.map.mappings,
-    })
-    sourceMapSuffix =
-      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
-  }
-
   try {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const AsyncFunction = async function () {}.constructor as typeof Function
     const initModule = new AsyncFunction(
       `global`,
       ssrModuleExportsKey,
@@ -210,9 +192,7 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";\n' +
-        result.code +
-        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
+      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`,
     )
     await initModule(
       context.global,
@@ -224,17 +204,24 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
+
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
-      server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${e.stack}`,
-        {
-          timestamp: true,
-          clear: server.config.clearScreen,
-          error: e,
-        },
-      )
     }
+
+    server.config.logger.error(
+      colors.red(
+        `Error when evaluating SSR module ${url}:` +
+          (e.importee ? ` failed to import "${e.importee}"\n` : '\n'),
+      ),
+      {
+        timestamp: true,
+        clear: server.config.clearScreen,
+        error: e,
+      },
+    )
+
+    delete e.importee
     throw e
   }
 
@@ -248,7 +235,7 @@ async function nodeImport(
   resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
-  if (id.startsWith('node:') || isBuiltin(id)) {
+  if (id.startsWith('node:') || id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(
@@ -278,7 +265,12 @@ async function nodeImport(
   try {
     const mod = await dynamicImport(url)
     return proxyESM(mod)
-  } catch {}
+  } catch (err) {
+    // tell external error handler which mod was imported with error
+    err.importee = id
+
+    throw err
+  }
 }
 
 // rollup-style default import interop for cjs

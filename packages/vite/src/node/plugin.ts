@@ -91,8 +91,9 @@ export interface Plugin extends RollupPlugin {
    */
   configureServer?: ObjectHook<ServerHook>
   /**
-   * Configure the preview server. The hook receives the connect server and
-   * its underlying http server.
+   * Configure the preview server. The hook receives the {@link PreviewServerForHook}
+   * instance. This can also be used to store a reference to the server
+   * for use in other hooks.
    *
    * The hooks are called before other middlewares are applied. A hook can
    * return a post hook that will be called after other middlewares are
