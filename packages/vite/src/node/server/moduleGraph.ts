@@ -253,12 +253,9 @@ export class ModuleGraph {
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
-
       this.urlToModuleMap.set(url, mod)
-
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
-
       const file = (mod.file = cleanUrl(resolvedId))
       let fileMappedModules = this.fileToModulesMap.get(file)
       if (!fileMappedModules) {
