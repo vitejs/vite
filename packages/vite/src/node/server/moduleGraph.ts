@@ -48,16 +48,6 @@ export class ModuleNode {
   }
 }
 
-function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
-  if (seen.has(mod)) {
-    return
-  }
-  seen.add(mod)
-  mod.ssrModule = null
-  mod.ssrError = null
-  mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
-}
-
 export type ResolvedUrl = [
   url: string,
   resolvedId: string,
@@ -108,15 +98,30 @@ export class ModuleGraph {
     mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
     timestamp: number = Date.now(),
+    isHmr: boolean = false,
   ): void {
-    // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
-    // processing being done for this module
-    mod.lastInvalidationTimestamp = timestamp
+    if (seen.has(mod)) {
+      return
+    }
+    seen.add(mod)
+    if (isHmr) {
+      mod.lastHMRTimestamp = timestamp
+    } else {
+      // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
+      // processing being done for this module
+      mod.lastInvalidationTimestamp = timestamp
+    }
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
     mod.ssrTransformResult = null
-    invalidateSSRModule(mod, seen)
+    mod.ssrModule = null
+    mod.ssrError = null
+    mod.importers.forEach((importer) => {
+      if (!importer.acceptedHmrDeps.has(mod)) {
+        this.invalidateModule(importer, seen, timestamp, isHmr)
+      }
+    })
   }
 
   invalidateAll(): void {
@@ -143,17 +148,33 @@ export class ModuleGraph {
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
-    const nextImports = (mod.importedModules = new Set())
     let noLongerImported: Set<ModuleNode> | undefined
+
+    let resolvePromises = []
+    let resolveResults = new Array(importedModules.size)
+    let index = 0
     // update import graph
     for (const imported of importedModules) {
-      const dep =
-        typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported, ssr)
-          : imported
-      dep.importers.add(mod)
-      nextImports.add(dep)
+      const nextIndex = index++
+      if (typeof imported === 'string') {
+        resolvePromises.push(
+          this.ensureEntryFromUrl(imported, ssr).then((dep) => {
+            dep.importers.add(mod)
+            resolveResults[nextIndex] = dep
+          }),
+        )
+      } else {
+        imported.importers.add(mod)
+        resolveResults[nextIndex] = imported
+      }
     }
+
+    if (resolvePromises.length) {
+      await Promise.all(resolvePromises)
+    }
+
+    const nextImports = (mod.importedModules = new Set(resolveResults))
+
     // remove the importer from deps that were imported but no longer are.
     prevImports.forEach((dep) => {
       if (!nextImports.has(dep)) {
@@ -164,15 +185,30 @@ export class ModuleGraph {
         }
       }
     })
+
     // update accepted hmr deps
-    const deps = (mod.acceptedHmrDeps = new Set())
+    resolvePromises = []
+    resolveResults = new Array(acceptedModules.size)
+    index = 0
     for (const accepted of acceptedModules) {
-      const dep =
-        typeof accepted === 'string'
-          ? await this.ensureEntryFromUrl(accepted, ssr)
-          : accepted
-      deps.add(dep)
+      const nextIndex = index++
+      if (typeof accepted === 'string') {
+        resolvePromises.push(
+          this.ensureEntryFromUrl(accepted, ssr).then((dep) => {
+            resolveResults[nextIndex] = dep
+          }),
+        )
+      } else {
+        resolveResults[nextIndex] = accepted
+      }
     }
+
+    if (resolvePromises.length) {
+      await Promise.all(resolvePromises)
+    }
+
+    mod.acceptedHmrDeps = new Set(resolveResults)
+
     // update accepted hmr exports
     mod.acceptedHmrExports = acceptedExports
     mod.importedBindings = importedBindings
@@ -234,7 +270,7 @@ export class ModuleGraph {
   }
 
   // for incoming urls, it is important to:
-  // 1. remove the HMR timestamp query (?t=xxxx)
+  // 1. remove the HMR timestamp query (?t=xxxx) and the ?import query
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
@@ -247,9 +283,11 @@ export class ModuleGraph {
       !url.startsWith(`virtual:`)
     ) {
       const ext = extname(cleanUrl(resolvedId))
-      const { pathname, search, hash } = new URL(url, 'relative://')
-      if (ext && !pathname!.endsWith(ext)) {
-        url = pathname + ext + search + hash
+      if (ext) {
+        const pathname = cleanUrl(url)
+        if (!pathname.endsWith(ext)) {
+          url = pathname + ext + url.slice(pathname.length)
+        }
       }
     }
     return [url, resolvedId, resolved?.meta]

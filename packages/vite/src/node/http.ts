@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type {
   Server as HttpServer,
@@ -124,23 +124,21 @@ export async function resolveHttpsConfig(
   https: boolean | HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
+  if (!isObject(https)) return {}
 
-  const httpsOption = isObject(https) ? { ...https } : {}
-
-  const { ca, cert, key, pfx } = httpsOption
-  Object.assign(httpsOption, {
-    ca: readFileIfExists(ca),
-    cert: readFileIfExists(cert),
-    key: readFileIfExists(key),
-    pfx: readFileIfExists(pfx),
-  })
-  return httpsOption
+  const [ca, cert, key, pfx] = await Promise.all([
+    readFileIfExists(https.ca),
+    readFileIfExists(https.cert),
+    readFileIfExists(https.key),
+    readFileIfExists(https.pfx),
+  ])
+  return { ...https, ca, cert, key, pfx }
 }
 
-function readFileIfExists(value?: string | Buffer | any[]) {
+async function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value))
+      return fsp.readFile(path.resolve(value))
     } catch (e) {
       return value
     }

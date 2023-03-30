@@ -9,6 +9,12 @@ test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
 })
 
+test('exports and a nested package scope with a different type', async () => {
+  expect(await page.textContent('.exports-and-nested-scope')).toMatch(
+    '[success]',
+  )
+})
+
 test('entry with exports field', async () => {
   expect(await page.textContent('.exports-entry')).toMatch('[success]')
 })
@@ -36,6 +42,10 @@ test('deep import with exports field + mapped dir', async () => {
   )
 })
 
+test('exports read from the root package.json', async () => {
+  expect(await page.textContent('.exports-from-root')).toMatch('[success]')
+})
+
 // this is how Svelte 3 is packaged
 test('deep import with exports and legacy fallback', async () => {
   expect(await page.textContent('.exports-legacy-fallback')).toMatch(
@@ -53,12 +63,22 @@ test('Respect production/development conditionals', async () => {
   )
 })
 
+test('Respect exports to take precedence over mainFields', async () => {
+  expect(await page.textContent('.exports-with-module')).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })
 
 test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
+})
+
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
 })
 
 test('exact extension vs. duplicated (.js.js)', async () => {
@@ -141,6 +161,32 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success]',
+    '[success] true #',
   )
+})
+
+test('Resolving top level with imports field', async () => {
+  expect(await page.textContent('.imports-top-level')).toMatch('[success]')
+})
+
+test('Resolving same level with imports field', async () => {
+  expect(await page.textContent('.imports-same-level')).toMatch(
+    await page.textContent('.imports-top-level'),
+  )
+})
+
+test('Resolving nested path with imports field', async () => {
+  expect(await page.textContent('.imports-nested')).toMatch('[success]')
+})
+
+test('Resolving star with imports filed', async () => {
+  expect(await page.textContent('.imports-star')).toMatch('[success]')
+})
+
+test('Resolving slash with imports filed', async () => {
+  expect(await page.textContent('.imports-slash')).toMatch('[success]')
+})
+
+test('Resolving from other package with imports field', async () => {
+  expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })

@@ -5,7 +5,7 @@ import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
+import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   cleanUrl,
@@ -18,7 +18,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
-import { injectSourcesContent } from './sourcemap'
+import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
@@ -227,8 +227,15 @@ async function loadAndTransform(
         `going through the plugin transforms, and therefore should not be ` +
         `imported from source code. It can only be referenced via HTML tags.`
       : `Does the file exist?`
+    const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
+      .get(id)
+      ?.importers.values()
+      .next().value
+    const importer = importerMod?.file || importerMod?.url
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id}). ${msg}`,
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
@@ -264,15 +271,45 @@ async function loadAndTransform(
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }
+
+    const sourcemapPath = `${mod.file}.map`
+    applySourcemapIgnoreList(
+      map,
+      sourcemapPath,
+      config.server.sourcemapIgnoreList,
+      logger,
+    )
+
+    if (path.isAbsolute(mod.file)) {
+      for (
+        let sourcesIndex = 0;
+        sourcesIndex < map.sources.length;
+        ++sourcesIndex
+      ) {
+        const sourcePath = map.sources[sourcesIndex]
+        if (sourcePath) {
+          // Rewrite sources to relative paths to give debuggers the chance
+          // to resolve and display them in a meaningful way (rather than
+          // with absolute paths).
+          if (path.isAbsolute(sourcePath)) {
+            map.sources[sourcesIndex] = path.relative(
+              path.dirname(mod.file),
+              sourcePath,
+            )
+          }
+        }
+      }
+    }
   }
 
-  const result = ssr
-    ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
-    : ({
-        code,
-        map,
-        etag: getEtag(code, { weak: true }),
-      } as TransformResult)
+  const result =
+    ssr && !server.config.experimental.skipSsrTransform
+      ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
+      : ({
+          code,
+          map,
+          etag: getEtag(code, { weak: true }),
+        } as TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale

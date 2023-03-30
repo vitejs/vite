@@ -29,6 +29,10 @@ test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong')
 })
 
+test('inline shared worker', async () => {
+  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
+})
+
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
   await untilUpdated(() => page.textContent('.nested-worker'), '/worker-nested')
   await untilUpdated(
