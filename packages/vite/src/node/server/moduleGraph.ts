@@ -88,7 +88,7 @@ export class ModuleGraph {
       return mod
     }
 
-    const [url] = await this.resolveUrl(rawUrl, ssr)
+    const [url] = await this._resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
   }
 
