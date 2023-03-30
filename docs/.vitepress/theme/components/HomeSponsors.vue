@@ -31,7 +31,7 @@ const { data } = useSponsor()
   </div>
 </template>
 
-<style>
+<style scoped>
 .action {
   display: flex;
   justify-content: center;
