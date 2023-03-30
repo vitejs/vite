@@ -82,8 +82,8 @@ export class ModuleGraph {
     ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
-    const unresolvedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    const mod = this._getUnresolvedUrlToModule(unresolvedUrl, ssr)
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    const mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
     if (mod) {
       return mod
     }
