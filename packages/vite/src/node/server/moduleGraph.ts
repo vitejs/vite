@@ -61,19 +61,14 @@ export class ModuleGraph {
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
 
-  #cleanUrlToModuleMap = new Map<string, ModuleNode>()
-  #ssrCleanUrlToModuleMap = new Map<string, ModuleNode>()
-  #getCleanUrlToModule(cleanUrl: string, ssr?: boolean) {
-    return (ssr ? this.#ssrCleanUrlToModuleMap : this.#cleanUrlToModuleMap).get(
-      cleanUrl,
-    )
-  }
-  #setCleanUrlToModule(cleanUrl: string, mod: ModuleNode, ssr?: boolean) {
-    return (ssr ? this.#ssrCleanUrlToModuleMap : this.#cleanUrlToModuleMap).set(
-      cleanUrl,
-      mod,
-    )
-  }
+  /**
+   * @internal
+   */
+  _cleanUrlToModuleMap = new Map<string, ModuleNode>()
+  /**
+   * @internal
+   */
+  _ssrCleanUrlToModuleMap = new Map<string, ModuleNode>()
 
   constructor(
     private resolveId: (
@@ -88,7 +83,7 @@ export class ModuleGraph {
   ): Promise<ModuleNode | undefined> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    const mod = this.#getCleanUrlToModule(cleanedUrl, ssr)
+    const mod = this._getCleanUrlToModule(cleanedUrl, ssr)
     if (mod) {
       return mod
     }
@@ -243,12 +238,12 @@ export class ModuleGraph {
   ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     const cleanedUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    let mod = this.#getCleanUrlToModule(cleanedUrl, ssr)
+    let mod = this._getCleanUrlToModule(cleanedUrl, ssr)
     if (mod) {
       return mod
     }
 
-    const [url, resolvedId, meta] = await this.#resolveCleanUrl(cleanedUrl, ssr)
+    const [url, resolvedId, meta] = await this._resolveCleanUrl(cleanedUrl, ssr)
     mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
@@ -272,7 +267,7 @@ export class ModuleGraph {
 
     // Also register the clean url to the module, so that we can short-circuit
     // resolving the same url twice
-    this.#setCleanUrlToModule(cleanedUrl, mod, ssr)
+    this._setCleanUrlToModule(cleanedUrl, mod, ssr)
 
     return mod
   }
@@ -308,13 +303,38 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     const cleanedUrl = removeImportQuery(removeTimestampQuery(url))
-    const mod = this.#getCleanUrlToModule(cleanedUrl, ssr)
+    const mod = this._getCleanUrlToModule(cleanedUrl, ssr)
     if (mod?.id) {
       return [mod.url, mod.id, mod.meta]
     }
-    return this.#resolveCleanUrl(url, ssr)
+    return this._resolveCleanUrl(url, ssr)
   }
-  async #resolveCleanUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
+
+  /**
+   * @internal
+   */
+  _getCleanUrlToModule(
+    cleanUrl: string,
+    ssr?: boolean,
+  ): ModuleNode | undefined {
+    return (ssr ? this._ssrCleanUrlToModuleMap : this._cleanUrlToModuleMap).get(
+      cleanUrl,
+    )
+  }
+  /**
+   * @internal
+   */
+  _setCleanUrlToModule(cleanUrl: string, mod: ModuleNode, ssr?: boolean): void {
+    ;(ssr ? this._ssrCleanUrlToModuleMap : this._cleanUrlToModuleMap).set(
+      cleanUrl,
+      mod,
+    )
+  }
+
+  /**
+   * @internal
+   */
+  async _resolveCleanUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     if (

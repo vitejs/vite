@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "moduleResolution": "node",
     "noEmit": true,
     "strict": true,
     "exactOptionalPropertyTypes": true
