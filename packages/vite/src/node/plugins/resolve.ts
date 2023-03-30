@@ -40,7 +40,7 @@ import {
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import type { ResolvedConfig, SSROptions } from '..'
+import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import {
   findNearestMainPackageData,
