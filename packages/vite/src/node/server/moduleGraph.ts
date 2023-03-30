@@ -61,6 +61,15 @@ export class ModuleGraph {
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
 
+  /**
+   * @internal
+   */
+  _unresolvedUrlToModuleMap = new Map<string, ModuleNode>()
+  /**
+   * @internal
+   */
+  _ssrUnresolvedUrlToModuleMap = new Map<string, ModuleNode>()
+
   constructor(
     private resolveId: (
       url: string,
@@ -72,7 +81,14 @@ export class ModuleGraph {
     rawUrl: string,
     ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
-    const [url] = await this.resolveUrl(rawUrl, ssr)
+    // Quick path, if we already have a module for this rawUrl (even without extension)
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    const mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
+    if (mod) {
+      return mod
+    }
+
+    const [url] = await this._resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
   }
 
@@ -220,8 +236,15 @@ export class ModuleGraph {
     ssr?: boolean,
     setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.idToModuleMap.get(resolvedId)
+    // Quick path, if we already have a module for this rawUrl (even without extension)
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    let mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
+    if (mod) {
+      return mod
+    }
+
+    const [url, resolvedId, meta] = await this._resolveUrl(rawUrl, ssr)
+    mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -241,6 +264,11 @@ export class ModuleGraph {
     else if (!this.urlToModuleMap.has(url)) {
       this.urlToModuleMap.set(url, mod)
     }
+
+    // Also register the clean url to the module, so that we can short-circuit
+    // resolving the same url twice
+    this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
+
     return mod
   }
 
@@ -275,6 +303,38 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
+    const mod = this._getUnresolvedUrlToModule(url, ssr)
+    if (mod?.id) {
+      return [mod.url, mod.id, mod.meta]
+    }
+    return this._resolveUrl(url, ssr)
+  }
+
+  /**
+   * @internal
+   */
+  _getUnresolvedUrlToModule(
+    url: string,
+    ssr?: boolean,
+  ): ModuleNode | undefined {
+    return (
+      ssr ? this._ssrUnresolvedUrlToModuleMap : this._unresolvedUrlToModuleMap
+    ).get(url)
+  }
+  /**
+   * @internal
+   */
+  _setUnresolvedUrlToModule(url: string, mod: ModuleNode, ssr?: boolean): void {
+    ;(ssr
+      ? this._ssrUnresolvedUrlToModuleMap
+      : this._unresolvedUrlToModuleMap
+    ).set(url, mod)
+  }
+
+  /**
+   * @internal
+   */
+  async _resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     if (
