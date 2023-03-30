@@ -217,7 +217,7 @@ export class ModuleGraph {
       return mod
     }
 
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
+    const [url, resolvedId, meta] = await this.#resolveCleanUrl(cleanedUrl, ssr)
     mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
@@ -281,7 +281,14 @@ export class ModuleGraph {
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
-    url = removeImportQuery(removeTimestampQuery(url))
+    const cleanedUrl = removeImportQuery(removeTimestampQuery(url))
+    const mod = this.#getCleanUrlToModule(cleanedUrl, ssr)
+    if (mod?.id) {
+      return [mod.url, mod.id, mod.meta]
+    }
+    return this.#resolveCleanUrl(url, ssr)
+  }
+  async #resolveCleanUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     if (
