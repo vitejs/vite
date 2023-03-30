@@ -391,10 +391,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // up-to-date version of this module.
           try {
             // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            const depModule = await moduleGraph.ensureEntryFromUrl(
+            // We use an internal function to avoid resolving the url again
+            const depModule = await moduleGraph._ensureEntryFromUrl(
               unwrapId(url),
               ssr,
               canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+              resolved,
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)

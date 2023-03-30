@@ -236,14 +236,30 @@ export class ModuleGraph {
     ssr?: boolean,
     setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
+    return this._ensureEntryFromUrl(rawUrl, ssr, setIsSelfAccepting)
+  }
+
+  /**
+   * @internal
+   */
+  async _ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true,
+    // Optimization, avoid resolving the same url twice if the caller already did it
+    resolved?: PartialResolvedId,
+  ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
     let mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
     if (mod) {
       return mod
     }
-
-    const [url, resolvedId, meta] = await this._resolveUrl(rawUrl, ssr)
+    const [url, resolvedId, meta] = await this._resolveUrl(
+      rawUrl,
+      ssr,
+      resolved,
+    )
     mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
@@ -334,8 +350,12 @@ export class ModuleGraph {
   /**
    * @internal
    */
-  async _resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
-    const resolved = await this.resolveId(url, !!ssr)
+  async _resolveUrl(
+    url: string,
+    ssr?: boolean,
+    alreadyResolved?: PartialResolvedId,
+  ): Promise<ResolvedUrl> {
+    const resolved = alreadyResolved ?? (await this.resolveId(url, !!ssr))
     const resolvedId = resolved?.id || url
     if (
       url !== resolvedId &&
