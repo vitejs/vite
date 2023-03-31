@@ -62,7 +62,6 @@ const subpathImportsPrefix = '#'
 
 const startsWithWordCharRE = /^\w/
 
-const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
@@ -211,7 +210,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
         res = tryFsResolve(fsPath, options)
-        isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug.enabled && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
         return ensureVersionQuery(res || fsPath, id, options, depsOptimizer)
@@ -222,7 +221,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug.enabled &&
+            debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -268,7 +268,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             options.packageCache,
           )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
-          isDebug &&
+          debug.enabled &&
             debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
           return resPkg
@@ -285,7 +285,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug &&
+          debug.enabled &&
             debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -296,7 +296,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isNonDriveRelativeAbsolutePath(id) &&
         (res = tryFsResolve(id, options))
       ) {
-        isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug.enabled && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
@@ -389,7 +389,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
       }
 
-      isDebug && debug(`[fallthrough] ${colors.dim(id)}`)
+      debug.enabled && debug(`[fallthrough] ${colors.dim(id)}`)
     },
 
     load(id) {
@@ -757,7 +757,7 @@ export function tryNodeResolve(
     let resolvedId = id
     if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
       resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-      isDebug &&
+      debug.enabled &&
         debug(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
     }
     return { ...resolved, id: resolvedId, external: true }
@@ -1027,7 +1027,7 @@ export function resolvePackageEntry(
         skipPackageJson,
       )
       if (resolvedEntryPoint) {
-        isDebug &&
+        debug.enabled &&
           debug(
             `[package entry] ${colors.cyan(id)} -> ${colors.dim(
               resolvedEntryPoint,
@@ -1169,7 +1169,7 @@ function resolveDeepImport(
       targetWeb,
     )
     if (resolved) {
-      isDebug &&
+      debug.enabled &&
         debug(
           `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
         )
@@ -1199,7 +1199,7 @@ function tryResolveBrowserMapping(
           ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
-        isDebug &&
+        debug.enabled &&
           debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         const resPkg = findNearestPackageData(
           path.dirname(res),

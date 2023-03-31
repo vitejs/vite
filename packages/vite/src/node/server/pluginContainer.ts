@@ -141,7 +141,6 @@ export async function createPluginContainer(
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
-  const isDebug = process.env.DEBUG
   const {
     plugins,
     logger,
@@ -159,10 +158,6 @@ export async function createPluginContainer(
   const debugPluginTransform = createDebugger('vite:plugin-transform', {
     onlyWhenFocused: 'vite:plugin',
   })
-  const debugSourcemapCombineFlag = 'vite:sourcemap-combine'
-  const isDebugSourcemapCombineFocused = process.env.DEBUG?.includes(
-    debugSourcemapCombineFlag,
-  )
   const debugSourcemapCombineFilter =
     process.env.DEBUG_VITE_SOURCEMAP_COMBINE_FILTER
   const debugSourcemapCombine = createDebugger('vite:sourcemap-combine', {
@@ -512,7 +507,7 @@ export async function createPluginContainer(
       this.filename = filename
       this.originalCode = code
       if (inMap) {
-        if (isDebugSourcemapCombineFocused) {
+        if (debugSourcemapCombine.enabled) {
           // @ts-expect-error inject name for debug purpose
           inMap.name = '$inMap'
         }
@@ -611,7 +606,7 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
-      const resolveStart = isDebug ? performance.now() : 0
+      const resolveStart = debugPluginResolve.enabled ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
@@ -621,7 +616,9 @@ export async function createPluginContainer(
 
         ctx._activePlugin = plugin
 
-        const pluginResolveStart = isDebug ? performance.now() : 0
+        const pluginResolveStart = debugPluginResolve.enabled
+          ? performance.now()
+          : 0
         const handler =
           'handler' in plugin.resolveId
             ? plugin.resolveId.handler
@@ -642,7 +639,7 @@ export async function createPluginContainer(
           Object.assign(partial, result)
         }
 
-        isDebug &&
+        debugPluginResolve.enabled &&
           debugPluginResolve(
             timeFrom(pluginResolveStart),
             plugin.name,
@@ -653,7 +650,11 @@ export async function createPluginContainer(
         break
       }
 
-      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
+      if (
+        debugResolve.enabled &&
+        rawId !== id &&
+        !rawId.startsWith(FS_PREFIX)
+      ) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
@@ -704,7 +705,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = isDebug ? performance.now() : 0
+        const start = debugPluginTransform.enabled ? performance.now() : 0
         let result: TransformResult | string | undefined
         const handler =
           'handler' in plugin.transform
@@ -716,7 +717,7 @@ export async function createPluginContainer(
           ctx.error(e)
         }
         if (!result) continue
-        isDebug &&
+        debugPluginTransform.enabled &&
           debugPluginTransform(
             timeFrom(start),
             plugin.name,
@@ -726,7 +727,7 @@ export async function createPluginContainer(
           if (result.code !== undefined) {
             code = result.code
             if (result.map) {
-              if (isDebugSourcemapCombineFocused) {
+              if (debugSourcemapCombine.enabled) {
                 // @ts-expect-error inject plugin name for debug purpose
                 result.map.name = plugin.name
               }

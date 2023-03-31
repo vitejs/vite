@@ -3,7 +3,6 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import _debug from 'debug'
 import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
@@ -37,9 +36,7 @@ export {
   getDepsOptimizer,
 } from './optimizer'
 
-export const debuggerViteDeps = createDebugger('vite:deps')
-const debug = debuggerViteDeps
-const isDebugEnabled = _debug('vite:deps').enabled
+const debug = createDebugger('vite:deps')
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
@@ -448,7 +445,7 @@ export function toDiscoveredDependencies(
 }
 
 export function depsLogString(qualifiedIds: string[]): string {
-  if (isDebugEnabled) {
+  if (debug.enabled) {
     return colors.yellow(qualifiedIds.join(`, `))
   } else {
     const total = qualifiedIds.length

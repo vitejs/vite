@@ -1,6 +1,5 @@
 import colors from 'picocolors'
-import _debug from 'debug'
-import { getHash } from '../utils'
+import { createDebugger, getHash } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
@@ -8,7 +7,6 @@ import {
   addOptimizedDepInfo,
   createIsOptimizedDepFile,
   createIsOptimizedDepUrl,
-  debuggerViteDeps as debug,
   depsFromOptimizedDepInfo,
   depsLogString,
   discoverProjectDependencies,
@@ -28,7 +26,7 @@ import type {
   OptimizedDepInfo,
 } from '.'
 
-const isDebugEnabled = _debug('vite:deps').enabled
+const debug = createDebugger('vite:deps')
 
 /**
  * The amount to wait for requests to register newly found dependencies before triggering
@@ -398,7 +396,7 @@ async function createDepsOptimizer(
       if (!needsReload) {
         await commitProcessing()
 
-        if (!isDebugEnabled) {
+        if (!debug.enabled) {
           if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
           newDepsToLogHandle = setTimeout(() => {
             newDepsToLogHandle = undefined
@@ -431,7 +429,7 @@ async function createDepsOptimizer(
         } else {
           await commitProcessing()
 
-          if (!isDebugEnabled) {
+          if (!debug.enabled) {
             if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()

@@ -775,7 +775,7 @@ export async function resolveConfig(
     )
   }
 
-  if (process.env.DEBUG) {
+  if (debug.enabled) {
     debug(`using resolved config: %O`, {
       ...resolved,
       plugins: resolved.plugins.map((p) => p.name),

@@ -24,7 +24,6 @@ import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
-const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
@@ -455,7 +454,7 @@ function initTSConfck(root: string, force = false) {
 }
 
 async function initTSConfckParseOptions(workspaceRoot: string) {
-  const start = isDebug ? performance.now() : 0
+  const start = debug.enabled ? performance.now() : 0
 
   const options: TSConfckParseOptions = {
     cache: new Map(),
@@ -468,7 +467,8 @@ async function initTSConfckParseOptions(workspaceRoot: string) {
     resolveWithEmptyIfConfigNotFound: true,
   }
 
-  isDebug && debug(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
+  debug.enabled &&
+    debug(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
 
   return options
 }

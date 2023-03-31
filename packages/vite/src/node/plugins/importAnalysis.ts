@@ -62,7 +62,6 @@ import {
 import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
-const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
@@ -207,7 +206,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
+        debug.enabled && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -259,7 +258,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
-        isDebug &&
+        debug.enabled &&
           debug(
             `${timeFrom(start)} ${colors.dim(
               `[no imports] ${prettyImporter}`,
@@ -752,7 +751,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      isDebug &&
+      debug.enabled &&
         debug(
           `${timeFrom(start)} ${colors.dim(
             `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
