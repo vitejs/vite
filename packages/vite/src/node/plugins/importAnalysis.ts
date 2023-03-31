@@ -53,7 +53,6 @@ import {
   cjsShouldExternalizeForSSR,
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
-import { transformRequest } from '../server/transformRequest'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { checkPublicFile } from './asset'
 import {
@@ -276,7 +275,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
-      const staticImportedUrls = new Set<{ url: string; id: string }>()
+      const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -617,7 +616,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (!isDynamicImport && isLocalImport) {
             // for pre-transforming
-            staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
+            staticImportedUrls.add(hmrUrl)
           }
         } else if (!importer.startsWith(clientDir)) {
           if (!isInNodeModules(importer)) {
@@ -764,9 +763,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // These requests will also be registered in transformRequest to be awaited
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach(({ url }) => {
+        for (let url of staticImportedUrls) {
           url = removeImportQuery(url)
-          transformRequest(url, server, { ssr }).catch((e) => {
+          server.transformRequest(url, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
               return
@@ -774,7 +773,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-        })
+        }
       }
 
       if (s) {
