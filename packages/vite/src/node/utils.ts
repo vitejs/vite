@@ -172,23 +172,34 @@ interface DebuggerOptions {
 
 export type ViteDebugScope = `vite:${string}`
 
+export interface Debugger {
+  (...args: any[]): void
+  enabled: boolean
+}
+
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
-): debug.Debugger['log'] {
+): Debugger {
   const log = debug(namespace)
   const { onlyWhenFocused } = options
-  const focus =
-    typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
-  return (msg: string, ...args: any[]) => {
-    if (filter && !msg.includes(filter)) {
-      return
-    }
-    if (onlyWhenFocused && !DEBUG?.includes(focus)) {
+
+  let enabled = log.enabled
+  if (enabled && onlyWhenFocused) {
+    const ns = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
+    enabled = !!DEBUG?.includes(ns)
+  }
+
+  const fn = ((msg: string, ...args: any[]) => {
+    if (!enabled || (filter && !msg.includes(filter))) {
       return
     }
     log(msg, ...args)
-  }
+  }) as Debugger
+
+  fn.enabled = enabled
+
+  return fn
 }
 
 function testCaseInsensitiveFS() {
