@@ -28,6 +28,7 @@ type SSRModule = Record<string, any>
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
+const importErrors = new WeakMap<Error, { importee: string }>()
 
 export async function ssrLoadModule(
   url: string,
@@ -159,10 +160,15 @@ async function instantiateModule(
       }
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
+      let errorData = importErrors.get(err)
       // tell external error handler which mod was imported with error
-      // add a counter to infer importer count, once counter = 0, remove the importee prop
-      err.importee = dep
-      err.importerCount = (err.importerCount || 0) + 1
+      if (errorData) {
+        errorData.importee = dep
+      } else {
+        errorData = { importee: dep }
+      }
+      importErrors.set(err, errorData)
+
       throw err
     }
   }
@@ -212,6 +218,7 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
+    const errorData = importErrors.get(e)
 
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
@@ -220,7 +227,9 @@ async function instantiateModule(
     server.config.logger.error(
       colors.red(
         `Error when evaluating SSR module ${url}:` +
-          (e.importee ? ` failed to import "${e.importee}"` : '') +
+          (errorData?.importee
+            ? ` failed to import "${errorData.importee}"`
+            : '') +
           `\n|- ${e.stack}\n`,
       ),
       {
@@ -229,13 +238,6 @@ async function instantiateModule(
         error: e,
       },
     )
-
-    e.importerCount--
-
-    if (!e.importerCount) {
-      delete e.importee
-      delete e.importerCount
-    }
 
     throw e
   }
