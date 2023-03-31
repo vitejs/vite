@@ -5,6 +5,7 @@ import type {
   NormalizedOutputOptions,
   OutputChunk,
   OutputOptions,
+  PluginContext,
   RollupBuild,
 } from 'rollup'
 import type { ResolvedConfig } from '../config'
@@ -19,13 +20,17 @@ import {
 } from '../build'
 import { fileToUrl } from './asset'
 
-type WorkerOutput = [OutputChunk, ...(OutputChunk | EmittedAsset)[]]
+type WorkerOutput = [
+  OutputChunk, // The entry point
+  ...(OutputChunk | EmittedAsset)[],
+]
+type WorkerOutputResult = { output: WorkerOutput; referencedId?: string }
 
 interface WorkerData {
   bundle: RollupBuild
   entryMap: Map<
     NormalizedOutputOptions,
-    { referencedId: string; chunk: OutputChunk }
+    { promise: Promise<WorkerOutputResult> } | { result: WorkerOutputResult }
   >
   hash: string
 }
@@ -34,6 +39,9 @@ interface WorkerCache {
   // save the bundle and the hash that are created per each worker
   // <workerId, data>
   workersData: Map<string, WorkerData>
+
+  // assets created by the workers (including the worker themself)
+  workersAssets: Map<string, { referencedId: string; asset: EmittedAsset }>
 
   // <hash, id>
   idHash: Map<string, string>
@@ -45,6 +53,55 @@ export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 const getWorkerCache = (config: ResolvedConfig) =>
   workerCache.get(config.mainConfig || config)!
+
+function getReferencedId(
+  context: PluginContext,
+  workerCache: WorkerCache,
+  result: WorkerOutputResult,
+): string {
+  if (result.referencedId) {
+    // If this processs already was done for this worker
+    return result.referencedId
+  }
+
+  const { output } = result
+
+  // emit assets
+  for (let i = 0; i < output.length; ++i) {
+    const file = output[i]
+    const description: EmittedAsset =
+      file.type === 'asset'
+        ? file
+        : {
+            fileName: file.fileName,
+            source: file.code,
+            type: 'asset',
+          }
+
+    const existingAsset = workerCache.workersAssets.get(description.fileName!)
+
+    let referencedId: string
+
+    if (existingAsset === undefined) {
+      referencedId = context.emitFile(description)
+    } else {
+      if (existingAsset.asset.source !== description.source) {
+        // Should never be triggered because of proper hashing
+        throw `vite: worker error! asset filename ${JSON.stringify(
+          description.fileName!,
+        )} for some worker was already emitted by a different worker but with a different name.`
+      }
+
+      referencedId = existingAsset.referencedId
+    }
+
+    if (i === 0) {
+      result.referencedId = referencedId
+    }
+  }
+
+  return result.referencedId!
+}
 
 export async function bundleWorker(
   config: ResolvedConfig,
@@ -69,7 +126,7 @@ async function generateWorker(
   bundle: RollupBuild,
   config: ResolvedConfig,
   callerOutputOptions: OutputOptions,
-): Promise<{ output: WorkerOutput; sourceMap: EmittedAsset | undefined }> {
+): Promise<{ output: WorkerOutput }> {
   const { format } = config.worker
 
   const workerOutputConfig = config.worker.rollupOptions.output
@@ -93,37 +150,12 @@ async function generateWorker(
     sourcemap: config.build.sourcemap && 'hidden',
   })
   const output: WorkerOutput = rollupOutput.output
-  //const entry = output[0]
-  const sourceMap = /*emitSourcemapForWorkerEntry(config, entry)*/ undefined // TODO: Reenable sourceMap in a lazy way later
-  return { output, sourceMap }
+  return { output }
 }
-
-// function emitSourcemapForWorkerEntry(
-//   config: ResolvedConfig,
-//   chunk: OutputChunk,
-// ): EmittedAsset | undefined {
-//   const { map: sourcemap } = chunk
-
-//   if (sourcemap) {
-//     if (
-//       config.build.sourcemap === 'hidden' ||
-//       config.build.sourcemap === true
-//     ) {
-//       const data = sourcemap.toString()
-//       const mapFileName = chunk.fileName + '.map'
-//       return {
-//         fileName: mapFileName,
-//         type: 'asset',
-//         source: data,
-//       }
-//     }
-//   }
-// }
 
 export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 export const workerInlineRE = /__VITE_WORKER_INLINE__([a-z\d]{8})__/g
 
-// TODO: We can also start worker build and never block, and just in the end of `buildEnd` we shall wait for all builds to finish
 /**
  * Return a token that will be replaced by the actual URL (or the inlined code in base64, when `isInline` is `true`) of the worker.
  * If the worker hasn't been built yet, it will also build the worker bundle (but the output will be generated only later!).
@@ -181,6 +213,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
       workerCache.set(config, {
         workersData: new Map(),
+        workersAssets: new Map(),
         idHash: new Map(),
       })
     },
@@ -302,50 +335,33 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    // TODO: We can just start rendering the workers output without waiting here
     async renderStart(outputOptions) {
       if (isWorker) {
         return
       }
       const { workersData } = getWorkerCache(config)
+
+      for (const { bundle, entryMap } of workersData.values()) {
+        const promise = generateWorker(bundle, config, outputOptions)
+        entryMap.set(outputOptions, { promise })
+      }
+    },
+
+    async generateBundle(outputOptions) {
+      if (isWorker) {
+        return
+      }
+      const { workersData } = getWorkerCache(config)
+
       await Promise.all(
-        [...workersData.values()].map(async (data) => {
-          const { output, sourceMap } = await generateWorker(
-            data.bundle,
-            config,
-            outputOptions,
-          )
-          const entry = output[0]
-          // TODO: Emit in a lazy way, meaning emit them only if we need to reference the worker in the main rendered chunks
-          // TODO: Make sure we're not emitting the same source twice or more, and in this case just share the same output file
-          const referencedId = this.emitFile({
-            fileName: entry.fileName,
-            source: entry.code,
-            type: 'asset',
+        [...workersData.values()]
+          .map(async ({ entryMap }) => {
+            const resultOrPromise = entryMap.get(outputOptions)!
+            return 'promise' in resultOrPromise
+              ? await resultOrPromise.promise
+              : undefined
           })
-          data.entryMap.set(outputOptions, { referencedId, chunk: entry })
-
-          if (sourceMap) {
-            this.emitFile(sourceMap)
-          }
-
-          // @ts-expect-error asset emits are skipped in legacy bundle (but not now)
-          if (!outputOptions.__vite_skip_asset_emit__) {
-            // emit the rest
-            for (let i = 1; i < output.length; ++i) {
-              const file = output[i]
-              if (file.type === 'asset') {
-                this.emitFile(file)
-              } else if (file.type === 'chunk') {
-                this.emitFile({
-                  fileName: file.fileName,
-                  source: file.code,
-                  type: 'asset',
-                })
-              }
-            }
-          }
-        }),
+          .filter(Boolean),
       )
     },
 
@@ -356,9 +372,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerMap = getWorkerCache(config)
       if (workerMap != null) {
         await Promise.all(
-          [...workerMap.workersData.values()].map(({ bundle }) =>
-            bundle.close(),
-          ),
+          [...workerMap.workersData.values()].map(async ({ bundle }) => {
+            await bundle.close()
+          }),
         )
       }
     },
@@ -371,7 +387,7 @@ export function webWorkerPostBuildPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:worker-post-build',
 
-    renderChunk(code, chunk, outputOptions) {
+    async renderChunk(code, chunk, outputOptions) {
       if (isWorker) {
         return
       }
@@ -408,9 +424,14 @@ export function webWorkerPostBuildPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const id = idHash.get(hash)!
-          const { referencedId } = workers_data
+          const resultOrPromise = workers_data
             .get(id)!
             .entryMap.get(outputOptions)!
+          const result =
+            'promise' in resultOrPromise
+              ? await resultOrPromise.promise
+              : resultOrPromise.result
+          const referencedId = getReferencedId(this, workerMap, result)
           const filename = this.getFileName(referencedId)
           const replacement = toOutputFilePathInJS(
             filename,
@@ -430,10 +451,16 @@ export function webWorkerPostBuildPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerInlineRE.exec(code))) {
           const [full, hash] = match
           const id = idHash.get(hash)!
-          const { chunk: entryChunk } = workers_data
+          const resultOrPromise = workers_data
             .get(id)!
             .entryMap.get(outputOptions)!
-          const replacement = Buffer.from(entryChunk.code).toString('base64')
+          const result =
+            'promise' in resultOrPromise
+              ? await resultOrPromise.promise
+              : resultOrPromise.result
+          const replacement = Buffer.from(result.output[0].code).toString(
+            'base64',
+          )
           const replacementString = JSON.stringify(replacement)
           s.update(match.index, match.index + full.length, replacementString)
         }
