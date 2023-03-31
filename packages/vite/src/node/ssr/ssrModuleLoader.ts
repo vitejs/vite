@@ -160,14 +160,8 @@ async function instantiateModule(
       }
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
-      let errorData = importErrors.get(err)
       // tell external error handler which mod was imported with error
-      if (errorData) {
-        errorData.importee = dep
-      } else {
-        errorData = { importee: dep }
-      }
-      importErrors.set(err, errorData)
+      importErrors.set(err, { importee: dep })
 
       throw err
     }
