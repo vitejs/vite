@@ -39,7 +39,6 @@ export {
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
-const isDebugEnabled = _debug('vite:deps').enabled
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
@@ -448,18 +447,7 @@ export function toDiscoveredDependencies(
 }
 
 export function depsLogString(qualifiedIds: string[]): string {
-  if (isDebugEnabled) {
-    return colors.yellow(qualifiedIds.join(`, `))
-  } else {
-    const total = qualifiedIds.length
-    const maxListed = 5
-    const listed = Math.min(total, maxListed)
-    const extra = Math.max(0, total - maxListed)
-    return colors.yellow(
-      qualifiedIds.slice(0, listed).join(`, `) +
-        (extra > 0 ? `, ...and ${extra} more` : ``),
-    )
-  }
+  return colors.yellow(qualifiedIds.join(`, `))
 }
 
 /**
