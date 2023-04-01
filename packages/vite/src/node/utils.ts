@@ -255,10 +255,6 @@ export function isParentDirectory(dir: string, file: string): boolean {
   )
 }
 
-export function ensureVolumeInPath(file: string): string {
-  return isWindows ? path.resolve(file) : file
-}
-
 export const queryRE = /\?.*$/s
 
 const postfixRE = /[?#].*$/s
