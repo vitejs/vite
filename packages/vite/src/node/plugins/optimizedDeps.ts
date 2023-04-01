@@ -61,7 +61,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
             }
           }
         }
-        debug.enabled && debug(`load ${colors.cyan(file)}`)
+        debug?.(`load ${colors.cyan(file)}`)
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
@@ -116,7 +116,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       const info = optimizedDepInfoFromFile(depsOptimizer.metadata, file)
       if (info) {
         await info.processing
-        debug.enabled && debug(`load ${colors.cyan(file)}`)
+        debug?.(`load ${colors.cyan(file)}`)
       } else {
         throw new Error(
           `Something unexpected happened while optimizing "${id}".`,

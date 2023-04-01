@@ -192,7 +192,7 @@ export async function transformWithEsbuild(
       map,
     }
   } catch (e: any) {
-    debug(`esbuild error with options used: `, resolvedOptions)
+    debug?.(`esbuild error with options used: `, resolvedOptions)
     // patch error information
     if (e.errors) {
       e.frame = ''
@@ -454,7 +454,7 @@ function initTSConfck(root: string, force = false) {
 }
 
 async function initTSConfckParseOptions(workspaceRoot: string) {
-  const start = debug.enabled ? performance.now() : 0
+  const start = debug ? performance.now() : 0
 
   const options: TSConfckParseOptions = {
     cache: new Map(),
@@ -467,8 +467,7 @@ async function initTSConfckParseOptions(workspaceRoot: string) {
     resolveWithEmptyIfConfigNotFound: true,
   }
 
-  debug.enabled &&
-    debug(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
+  debug?.(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
 
   return options
 }

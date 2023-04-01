@@ -214,7 +214,7 @@ async function createDepsOptimizer(
         // Ensure server listen is called before the scanner
         setTimeout(async () => {
           try {
-            debug(colors.green(`scanning for dependencies...`))
+            debug?.(colors.green(`scanning for dependencies...`))
 
             discover = discoverProjectDependencies(config)
             const deps = await discover.result
@@ -396,7 +396,7 @@ async function createDepsOptimizer(
       if (!needsReload) {
         await commitProcessing()
 
-        if (!debug.enabled) {
+        if (!debug) {
           if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
           newDepsToLogHandle = setTimeout(() => {
             newDepsToLogHandle = undefined
@@ -421,7 +421,7 @@ async function createDepsOptimizer(
           // once a rerun is committed
           processingResult.cancel()
 
-          debug(
+          debug?.(
             colors.green(
               `✨ delaying reload as new dependencies have been found...`,
             ),
@@ -429,7 +429,7 @@ async function createDepsOptimizer(
         } else {
           await commitProcessing()
 
-          if (!debug.enabled) {
+          if (!debug) {
             if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()
@@ -493,7 +493,7 @@ async function createDepsOptimizer(
     // optimizeDeps processing is finished
     const deps = Object.keys(metadata.discovered)
     const depsString = depsLogString(deps)
-    debug(colors.green(`new dependencies found: ${depsString}`))
+    debug?.(colors.green(`new dependencies found: ${depsString}`))
     runOptimizer()
   }
 
@@ -587,7 +587,7 @@ async function createDepsOptimizer(
   }
 
   async function onCrawlEnd() {
-    debug(colors.green(`✨ static imports crawl ended`))
+    debug?.(colors.green(`✨ static imports crawl ended`))
     if (firstRunCalled) {
       return
     }
@@ -607,7 +607,7 @@ async function createDepsOptimizer(
       const scanDeps = Object.keys(result.metadata.optimized)
 
       if (scanDeps.length === 0 && crawlDeps.length === 0) {
-        debug(
+        debug?.(
           colors.green(
             `✨ no dependencies found by the scanner or crawling static imports`,
           ),
@@ -636,16 +636,16 @@ async function createDepsOptimizer(
           }
         }
         if (scannerMissedDeps) {
-          debug(
+          debug?.(
             colors.yellow(
               `✨ new dependencies were found while crawling that weren't detected by the scanner`,
             ),
           )
         }
-        debug(colors.green(`✨ re-running optimizer`))
+        debug?.(colors.green(`✨ re-running optimizer`))
         debouncedProcessing(0)
       } else {
-        debug(
+        debug?.(
           colors.green(
             `✨ using post-scan optimizer result, the scanner found every used dependency`,
           ),
@@ -655,7 +655,7 @@ async function createDepsOptimizer(
       }
     } else {
       if (crawlDeps.length === 0) {
-        debug(
+        debug?.(
           colors.green(
             `✨ no dependencies found while crawling the static imports`,
           ),
@@ -809,7 +809,7 @@ function findInteropMismatches(
         // This only happens when a discovered dependency has mixed ESM and CJS syntax
         // and it hasn't been manually added to optimizeDeps.needsInterop
         needsInteropMismatch.push(dep)
-        debug(colors.cyan(`✨ needsInterop mismatch detected for ${dep}`))
+        debug?.(colors.cyan(`✨ needsInterop mismatch detected for ${dep}`))
       }
     }
   }

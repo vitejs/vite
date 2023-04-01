@@ -206,7 +206,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        debug.enabled && debug(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -258,12 +258,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
-        debug.enabled &&
-          debug(
-            `${timeFrom(start)} ${colors.dim(
-              `[no imports] ${prettyImporter}`,
-            )}`,
-          )
+        debug?.(
+          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+        )
         return source
       }
 
@@ -572,7 +569,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   )
                 }
               } else if (needsInterop) {
-                debug(`${url} needs interop`)
+                debug?.(`${url} needs interop`)
                 interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
@@ -667,7 +664,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (hasHMR && !ssr) {
-        debugHmr(
+        debugHmr?.(
           `${
             isSelfAccepting
               ? `[self-accepts]`
@@ -751,12 +748,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      debug.enabled &&
-        debug(
-          `${timeFrom(start)} ${colors.dim(
-            `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
-          )}`,
-        )
+      debug?.(
+        `${timeFrom(start)} ${colors.dim(
+          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+        )}`,
+      )
 
       // pre-transform known direct imports
       // These requests will also be registered in transformRequest to be awaited

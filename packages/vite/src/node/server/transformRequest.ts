@@ -122,7 +122,7 @@ async function doTransform(
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
-  const prettyUrl = debugCache.enabled ? prettifyUrl(url, config.root) : ''
+  const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
@@ -137,7 +137,7 @@ async function doTransform(
     // in this case, we can reuse its previous cached result and only update
     // its import timestamps.
 
-    debugCache.enabled && debugCache(`[memory] ${prettyUrl}`)
+    debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
 
@@ -164,9 +164,7 @@ async function loadAndTransform(
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
   const prettyUrl =
-    debugLoad.enabled || debugTransform.enabled
-      ? prettifyUrl(url, config.root)
-      : ''
+    debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const file = cleanUrl(id)
@@ -175,7 +173,7 @@ async function loadAndTransform(
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = debugLoad.enabled ? performance.now() : 0
+  const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, { ssr })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
@@ -191,8 +189,7 @@ async function loadAndTransform(
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
         code = await fs.readFile(file, 'utf-8')
-        debugLoad.enabled &&
-          debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
+        debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
           throw e
@@ -217,8 +214,7 @@ async function loadAndTransform(
       }
     }
   } else {
-    debugLoad.enabled &&
-      debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
+    debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
@@ -251,7 +247,7 @@ async function loadAndTransform(
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = debugTransform.enabled ? performance.now() : 0
+  const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
     ssr,
@@ -262,13 +258,11 @@ async function loadAndTransform(
     (isObject(transformResult) && transformResult.code == null)
   ) {
     // no transform applied, keep code as-is
-    debugTransform.enabled &&
-      debugTransform(
-        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
-      )
+    debugTransform?.(
+      timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
+    )
   } else {
-    debugTransform.enabled &&
-      debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
+    debugTransform?.(`${timeFrom(transformStart)} ${prettyUrl}`)
     code = transformResult.code!
     map = transformResult.map
   }

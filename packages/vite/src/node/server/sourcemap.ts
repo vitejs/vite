@@ -54,7 +54,7 @@ export async function injectSourcesContent(
   // …to log the missing sources.
   if (missingSources.length) {
     logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
-    debug.enabled && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
+    debug?.(`Missing sources:\n  ` + missingSources.join(`\n  `))
   }
 }
 
@@ -70,7 +70,7 @@ export function getCodeWithSourcemap(
   code: string,
   map: SourceMap,
 ): string {
-  if (debug.enabled) {
+  if (debug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }
 

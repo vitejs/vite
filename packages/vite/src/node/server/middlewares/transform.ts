@@ -187,7 +187,7 @@ export function transformMiddleware(
           (await moduleGraph.getModuleByUrl(url, false))?.transformResult
             ?.etag === ifNoneMatch
         ) {
-          debugCache.enabled && debugCache(`[304] ${prettifyUrl(url, root)}`)
+          debugCache?.(`[304] ${prettifyUrl(url, root)}`)
           res.statusCode = 304
           return res.end()
         }

@@ -210,7 +210,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
         res = tryFsResolve(fsPath, options)
-        debug.enabled && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
         return ensureVersionQuery(res || fsPath, id, options, depsOptimizer)
@@ -221,8 +221,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
-          debug.enabled &&
-            debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -268,8 +267,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             options.packageCache,
           )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
-          debug.enabled &&
-            debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
           return resPkg
             ? {
@@ -285,8 +283,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
-          debug.enabled &&
-            debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -296,7 +293,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isNonDriveRelativeAbsolutePath(id) &&
         (res = tryFsResolve(id, options))
       ) {
-        debug.enabled && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
@@ -377,7 +374,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             }
           } else {
             if (!asSrc) {
-              debug(
+              debug?.(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
               )
@@ -389,7 +386,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
       }
 
-      debug.enabled && debug(`[fallthrough] ${colors.dim(id)}`)
+      debug?.(`[fallthrough] ${colors.dim(id)}`)
     },
 
     load(id) {
@@ -757,8 +754,7 @@ export function tryNodeResolve(
     let resolvedId = id
     if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
       resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-      debug.enabled &&
-        debug(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
+      debug?.(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
     }
     return { ...resolved, id: resolvedId, external: true }
   }
@@ -1027,12 +1023,11 @@ export function resolvePackageEntry(
         skipPackageJson,
       )
       if (resolvedEntryPoint) {
-        debug.enabled &&
-          debug(
-            `[package entry] ${colors.cyan(id)} -> ${colors.dim(
-              resolvedEntryPoint,
-            )}`,
-          )
+        debug?.(
+          `[package entry] ${colors.cyan(id)} -> ${colors.dim(
+            resolvedEntryPoint,
+          )}`,
+        )
         setResolvedCache('.', resolvedEntryPoint, targetWeb)
         return resolvedEntryPoint
       }
@@ -1169,10 +1164,9 @@ function resolveDeepImport(
       targetWeb,
     )
     if (resolved) {
-      debug.enabled &&
-        debug(
-          `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
-        )
+      debug?.(
+        `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
+      )
       setResolvedCache(id, resolved, targetWeb)
       return resolved
     }
@@ -1199,8 +1193,7 @@ function tryResolveBrowserMapping(
           ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
-        debug.enabled &&
-          debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         const resPkg = findNearestPackageData(
           path.dirname(res),
           options.packageCache,

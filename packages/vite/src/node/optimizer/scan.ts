@@ -84,7 +84,7 @@ export function scanImports(config: ResolvedConfig): {
     }
     if (scanContext.cancelled) return
 
-    debug(
+    debug?.(
       `Crawling dependencies using entries: ${entries
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
@@ -140,7 +140,7 @@ export function scanImports(config: ResolvedConfig): {
       throw e
     })
     .finally(() => {
-      if (debug.enabled) {
+      if (debug) {
         const duration = (performance.now() - start).toFixed(2)
         const depsStr =
           Object.keys(orderedDependencies(deps))
