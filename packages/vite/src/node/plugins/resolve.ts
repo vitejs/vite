@@ -20,7 +20,6 @@ import {
   cleanUrl,
   createDebugger,
   deepImportRE,
-  ensureVolumeInPath,
   fsPathFromId,
   injectQuery,
   isBuiltin,
@@ -203,7 +202,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && depsOptimizer?.isOptimizedDepUrl(id)) {
         const optimizedPath = id.startsWith(FS_PREFIX)
           ? fsPathFromId(id)
-          : normalizePath(ensureVolumeInPath(path.resolve(root, id.slice(1))))
+          : normalizePath(path.resolve(root, id.slice(1)))
         return optimizedPath
       }
 
@@ -1250,7 +1249,6 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
 }
 
 function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
-  resolved = ensureVolumeInPath(resolved)
   if (!preserveSymlinks && browserExternalId !== resolved) {
     resolved = safeRealpathSync(resolved)
   }
