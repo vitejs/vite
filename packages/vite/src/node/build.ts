@@ -453,8 +453,10 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),
-      ...(options.manifest ? [manifestPlugin(config)] : []),
-      ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
+      ...(options.manifest && !config.isWorker ? [manifestPlugin(config)] : []),
+      ...(options.ssrManifest && !config.isWorker
+        ? [ssrManifestPlugin(config)]
+        : []),
       ...(!config.isWorker ? [buildReporterPlugin(config)] : []),
       loadFallbackPlugin(),
     ],
