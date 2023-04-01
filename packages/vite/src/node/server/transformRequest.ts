@@ -163,7 +163,10 @@ async function loadAndTransform(
 ) {
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
-  const prettyUrl = debugLoad.enabled ? prettifyUrl(url, config.root) : ''
+  const prettyUrl =
+    debugLoad.enabled || debugTransform.enabled
+      ? prettifyUrl(url, config.root)
+      : ''
   const ssr = !!options.ssr
 
   const file = cleanUrl(id)
