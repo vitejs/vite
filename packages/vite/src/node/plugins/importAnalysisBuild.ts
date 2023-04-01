@@ -342,9 +342,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                let rewrittenUrl = JSON.stringify(file)
-                if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
-                str().update(start, end, rewrittenUrl)
+                const rewrittenUrl = JSON.stringify(file)
+                const s = isDynamicImport ? start : start - 1
+                const e = isDynamicImport ? end : end + 1
+                str().update(s, e, rewrittenUrl)
               }
             }
           }
