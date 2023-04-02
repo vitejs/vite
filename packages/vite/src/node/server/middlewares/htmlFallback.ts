@@ -6,7 +6,7 @@ import { createDebugger } from '../../utils'
 
 export function htmlFallbackMiddleware(
   root: string,
-  spaFallback: boolean
+  spaFallback: boolean,
 ): Connect.NextHandleFunction {
   const historyHtmlFallbackMiddleware = history({
     logger: createDebugger('vite:html-fallback'),
@@ -14,20 +14,18 @@ export function htmlFallbackMiddleware(
     rewrites: [
       {
         from: /\/$/,
-        to({ parsedUrl }: any) {
+        to({ parsedUrl, request }: any) {
           const rewritten =
             decodeURIComponent(parsedUrl.pathname) + 'index.html'
 
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
-          } else {
-            if (spaFallback) {
-              return `/index.html`
-            }
           }
-        }
-      }
-    ]
+
+          return spaFallback ? `/index.html` : request.url
+        },
+      },
+    ],
   })
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`

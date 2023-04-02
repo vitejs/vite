@@ -1,4 +1,8 @@
-module.exports = {
+import { defineConfig } from 'vite'
+
+/** @type {import('vite').UserConfig} */
+// @ts-expect-error typecast
+export default defineConfig({
   define: {
     __EXP__: 'false',
     __STRING__: '"hello"',
@@ -7,19 +11,19 @@ module.exports = {
     __OBJ__: {
       foo: 1,
       bar: {
-        baz: 2
+        baz: 2,
       },
       process: {
         env: {
-          SOMEVAR: '"PROCESS MAY BE PROPERTY"'
-        }
-      }
+          SOMEVAR: '"PROCESS MAY BE PROPERTY"',
+        },
+      },
     },
     'process.env.NODE_ENV': '"dev"',
     'process.env.SOMEVAR': '"SOMEVAR"',
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789,
     __VAR_NAME__: false,
-    __STRINGIFIED_OBJ__: JSON.stringify({ foo: true })
-  }
-}
+    __STRINGIFIED_OBJ__: JSON.stringify({ foo: true }),
+  },
+})

@@ -1,5 +1,5 @@
 {
-  "name": "resolve-exports-path",
+  "name": "@vitejs/test-resolve-exports-path",
   "private": true,
   "version": "1.0.0",
   "exports": {

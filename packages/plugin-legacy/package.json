@@ -1,10 +1,16 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "2.3.0-beta.0",
+  "version": "4.0.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
     "dist"
+  ],
+  "keywords": [
+    "frontend",
+    "vite",
+    "vite-plugin",
+    "@vitejs/plugin-legacy"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -35,18 +41,20 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "dependencies": {
-    "@babel/standalone": "^7.19.5",
-    "core-js": "^3.25.5",
-    "magic-string": "^0.26.7",
-    "regenerator-runtime": "^0.13.10",
-    "systemjs": "^6.13.0"
+    "@babel/core": "^7.21.3",
+    "@babel/preset-env": "^7.20.2",
+    "browserslist": "^4.21.5",
+    "core-js": "^3.29.1",
+    "magic-string": "^0.30.0",
+    "regenerator-runtime": "^0.13.11",
+    "systemjs": "^6.14.0"
   },
   "peerDependencies": {
     "terser": "^5.4.0",
-    "vite": "^3.0.0"
+    "vite": "^4.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.19.3",
+    "acorn": "^8.8.2",
     "picocolors": "^1.0.0",
     "vite": "workspace:*"
   }

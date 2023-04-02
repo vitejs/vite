@@ -1,5 +1,5 @@
-import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
+import legacy from '@vitejs/plugin-legacy'
 
 export default defineConfig({
   plugins: [legacy({ modernPolyfills: true })],
@@ -10,19 +10,19 @@ export default defineConfig({
       output: [
         {
           assetFileNames() {
-            return 'assets/subdir/[name].[hash][extname]'
+            return 'assets/subdir/[name]-[hash][extname]'
           },
           entryFileNames: `assets/subdir/[name].js`,
-          chunkFileNames: `assets/subdir/[name].js`
+          chunkFileNames: `assets/subdir/[name].js`,
         },
         {
           assetFileNames() {
-            return 'assets/subdir/[name].[hash][extname]'
+            return 'assets/subdir/[name]-[hash][extname]'
           },
           entryFileNames: `assets/anotherSubdir/[name].js`,
-          chunkFileNames: `assets/anotherSubdir/[name].js`
-        }
-      ]
-    }
-  }
+          chunkFileNames: `assets/anotherSubdir/[name].js`,
+        },
+      ],
+    },
+  },
 })

@@ -1,5 +1,5 @@
 {
-  "name": "test-minify",
+  "name": "@vitejs/test-minify",
   "private": true,
   "version": "0.0.0",
   "scripts": {

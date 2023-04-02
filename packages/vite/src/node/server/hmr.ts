@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
@@ -13,6 +13,8 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
+
+const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
@@ -41,7 +43,8 @@ export function getShortName(file: string, root: string): string {
 
 export async function handleHMRUpdate(
   file: string,
-  server: ViteDevServer
+  server: ViteDevServer,
+  configOnly: boolean,
 ): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
@@ -49,7 +52,7 @@ export async function handleHMRUpdate(
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
-    (name) => file === name
+    (name) => file === name,
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&
@@ -59,9 +62,9 @@ export async function handleHMRUpdate(
     debugHmr(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
-        `${path.relative(process.cwd(), file)} changed, restarting server...`
+        `${path.relative(process.cwd(), file)} changed, restarting server...`,
       ),
-      { clear: true, timestamp: true }
+      { clear: true, timestamp: true },
     )
     try {
       await server.restart()
@@ -71,13 +74,17 @@ export async function handleHMRUpdate(
     return
   }
 
+  if (configOnly) {
+    return
+  }
+
   debugHmr(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(normalizedClientDir)) {
     ws.send({
       type: 'full-reload',
-      path: '*'
+      path: '*',
     })
     return
   }
@@ -91,7 +98,7 @@ export async function handleHMRUpdate(
     timestamp,
     modules: mods ? [...mods] : [],
     read: () => readModifiedFile(file),
-    server
+    server,
   }
 
   for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
@@ -106,13 +113,13 @@ export async function handleHMRUpdate(
     if (file.endsWith('.html')) {
       config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
         clear: true,
-        timestamp: true
+        timestamp: true,
       })
       ws.send({
         type: 'full-reload',
         path: config.server.middlewareMode
           ? '*'
-          : '/' + normalizePath(path.relative(config.root, file))
+          : '/' + normalizePath(path.relative(config.root, file)),
       })
     } else {
       // loaded but not in the module graph, probably not js
@@ -128,14 +135,15 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, ws }: ViteDevServer
+  { config, ws, moduleGraph }: ViteDevServer,
+  afterInvalidation?: boolean,
 ): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false
 
   for (const mod of modules) {
-    invalidate(mod, timestamp, invalidatedModules)
+    moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
     if (needFullReload) {
       continue
     }
@@ -159,18 +167,18 @@ export function updateModules(
           boundary.type === 'js'
             ? isExplicitImportRequired(acceptedVia.url)
             : undefined,
-        acceptedPath: normalizeHmrUrl(acceptedVia.url)
-      }))
+        acceptedPath: normalizeHmrUrl(acceptedVia.url),
+      })),
     )
   }
 
   if (needFullReload) {
     config.logger.info(colors.green(`page reload `) + colors.dim(file), {
-      clear: true,
-      timestamp: true
+      clear: !afterInvalidation,
+      timestamp: true,
     })
     ws.send({
-      type: 'full-reload'
+      type: 'full-reload',
     })
     return
   }
@@ -181,20 +189,19 @@ export function updateModules(
   }
 
   config.logger.info(
-    updates
-      .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
-      .join('\n'),
-    { clear: true, timestamp: true }
+    colors.green(`hmr update `) +
+      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
+    { clear: !afterInvalidation, timestamp: true },
   )
   ws.send({
     type: 'update',
-    updates
+    updates,
   })
 }
 
 export async function handleFileAddUnlink(
   file: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Promise<void> {
   const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
 
@@ -205,14 +212,14 @@ export async function handleFileAddUnlink(
       getShortName(file, server.config.root),
       unique(modules),
       Date.now(),
-      server
+      server,
     )
   }
 }
 
 function areAllImportsAccepted(
   importedBindings: Set<string>,
-  acceptedExports: Set<string>
+  acceptedExports: Set<string>,
 ) {
   for (const binding of importedBindings) {
     if (!acceptedExports.has(binding)) {
@@ -228,7 +235,7 @@ function propagateUpdate(
     boundary: ModuleNode
     acceptedVia: ModuleNode
   }>,
-  currentChain: ModuleNode[] = [node]
+  currentChain: ModuleNode[] = [node],
 ): boolean /* hasDeadEnd */ {
   // #7561
   // if the imports of `node` have not been analyzed, then `node` has not
@@ -236,8 +243,8 @@ function propagateUpdate(
   if (node.id && node.isSelfAccepting === undefined) {
     debugHmr(
       `[propagate update] stop propagation because not analyzed: ${colors.dim(
-        node.id
-      )}`
+        node.id,
+      )}`,
     )
     return false
   }
@@ -245,7 +252,7 @@ function propagateUpdate(
   if (node.isSelfAccepting) {
     boundaries.add({
       boundary: node,
-      acceptedVia: node
+      acceptedVia: node,
     })
 
     // additionally check for CSS importers, since a PostCSS plugin like
@@ -267,7 +274,7 @@ function propagateUpdate(
   if (node.acceptedHmrExports) {
     boundaries.add({
       boundary: node,
-      acceptedVia: node
+      acceptedVia: node,
     })
   } else {
     if (!node.importers.size) {
@@ -290,7 +297,7 @@ function propagateUpdate(
     if (importer.acceptedHmrDeps.has(node)) {
       boundaries.add({
         boundary: importer,
-        acceptedVia: node
+        acceptedVia: node,
       })
       continue
     }
@@ -317,26 +324,9 @@ function propagateUpdate(
   return false
 }
 
-function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
-  if (seen.has(mod)) {
-    return
-  }
-  seen.add(mod)
-  mod.lastHMRTimestamp = timestamp
-  mod.transformResult = null
-  mod.ssrModule = null
-  mod.ssrError = null
-  mod.ssrTransformResult = null
-  mod.importers.forEach((importer) => {
-    if (!importer.acceptedHmrDeps.has(mod)) {
-      invalidate(importer, timestamp, seen)
-    }
-  })
-}
-
 export function handlePrunedModules(
   mods: Set<ModuleNode>,
-  { ws }: ViteDevServer
+  { ws }: ViteDevServer,
 ): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
@@ -348,7 +338,7 @@ export function handlePrunedModules(
   })
   ws.send({
     type: 'prune',
-    paths: [...mods].map((m) => m.url)
+    paths: [...mods].map((m) => m.url),
   })
 }
 
@@ -357,7 +347,7 @@ const enum LexerState {
   inSingleQuoteString,
   inDoubleQuoteString,
   inTemplateString,
-  inArray
+  inArray,
 }
 
 /**
@@ -370,7 +360,7 @@ const enum LexerState {
 export function lexAcceptedHmrDeps(
   code: string,
   start: number,
-  urls: Set<{ url: string; start: number; end: number }>
+  urls: Set<{ url: string; start: number; end: number }>,
 ): boolean {
   let state: LexerState = LexerState.inCall
   // the state can only be 2 levels deep so no need for a stack
@@ -381,7 +371,7 @@ export function lexAcceptedHmrDeps(
     urls.add({
       url: currentDep,
       start: index - currentDep.length - 1,
-      end: index + 1
+      end: index + 1,
     })
     currentDep = ''
   }
@@ -400,7 +390,7 @@ export function lexAcceptedHmrDeps(
         } else if (char === '`') {
           prevState = state
           state = LexerState.inTemplateString
-        } else if (/\s/.test(char)) {
+        } else if (whitespaceRE.test(char)) {
           continue
         } else {
           if (state === LexerState.inCall) {
@@ -474,7 +464,7 @@ export function lexAcceptedHmrDeps(
 export function lexAcceptedHmrExports(
   code: string,
   start: number,
-  exportNames: Set<string>
+  exportNames: Set<string>,
 ): boolean {
   const urls = new Set<{ url: string; start: number; end: number }>()
   lexAcceptedHmrDeps(code, start, urls)
@@ -485,7 +475,7 @@ export function lexAcceptedHmrExports(
 }
 
 export function normalizeHmrUrl(url: string): string {
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     url = wrapId(url)
   }
   return url
@@ -494,7 +484,7 @@ export function normalizeHmrUrl(url: string): string {
 function error(pos: number) {
   const err = new Error(
     `import.meta.hot.accept() can only accept string literals or an ` +
-      `Array of string literals.`
+      `Array of string literals.`,
   ) as RollupError
   err.pos = pos
   throw err
@@ -504,14 +494,14 @@ function error(pos: number) {
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
-    const mtime = fs.statSync(file).mtimeMs
+    const mtime = (await fsp.stat(file)).mtimeMs
     await new Promise((r) => {
       let n = 0
       const poll = async () => {
         n++
-        const newMtime = fs.statSync(file).mtimeMs
+        const newMtime = (await fsp.stat(file)).mtimeMs
         if (newMtime !== mtime || n > 10) {
           r(0)
         } else {
@@ -520,7 +510,7 @@ async function readModifiedFile(file: string): Promise<string> {
       }
       setTimeout(poll, 10)
     })
-    return fs.readFileSync(file, 'utf-8')
+    return await fsp.readFile(file, 'utf-8')
   } else {
     return content
   }

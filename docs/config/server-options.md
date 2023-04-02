@@ -61,15 +61,17 @@ A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-ba
 
 - **Type:** `boolean | string`
 
-Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
+Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). You can also set `process.env.BROWSER_ARGS` to pass additional arguments (e.g. `--incognito`).
+
+`BROWSER` and `BROWSER_ARGS` are also special environment variables you can set in the `.env` file to configure it. See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
 
 **Example:**
 
 ```js
 export default defineConfig({
   server: {
-    open: '/docs/index.html'
-  }
+    open: '/docs/index.html',
+  },
 })
 ```
 
@@ -77,9 +79,11 @@ export default defineConfig({
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
+Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Any requests that request path starts with that key will be proxied to that specified target. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
 
-Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
+
+Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). Additional options are [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts#L13).
 
 In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
 
@@ -89,19 +93,19 @@ In some cases, you might also want to configure the underlying dev server (e.g. 
 export default defineConfig({
   server: {
     proxy: {
-      // string shorthand
+      // string shorthand: http://localhost:5173/foo -> http://localhost:4567/foo
       '/foo': 'http://localhost:4567',
-      // with options
+      // with options: http://localhost:5173/api/bar-> http://jsonplaceholder.typicode.com/bar
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // with RegEx
+      // with RegEx: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/fallback/, '')
+        rewrite: (path) => path.replace(/^\/fallback/, ''),
       },
       // Using the proxy instance
       '/api': {
@@ -109,15 +113,15 @@ export default defineConfig({
         changeOrigin: true,
         configure: (proxy, options) => {
           // proxy will be an instance of 'http-proxy'
-        }
+        },
       },
-      // Proxying websockets or socket.io
+      // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
       '/socket.io': {
-        target: 'ws://localhost:5173',
-        ws: true
-      }
-    }
-  }
+        target: 'ws://localhost:5174',
+        ws: true,
+      },
+    },
+  },
 })
 ```
 
@@ -125,7 +129,7 @@ export default defineConfig({
 
 - **Type:** `boolean | CorsOptions`
 
-Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
+Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `false` to disable.
 
 ## server.headers
 
@@ -175,14 +179,14 @@ The Vite server watcher skips `.git/` and `node_modules/` directories by default
 export default defineConfig({
   server: {
     watch: {
-      ignored: ['!**/node_modules/your-package-name/**']
-    }
+      ignored: ['!**/node_modules/your-package-name/**'],
+    },
   },
   // The watched package must be excluded from optimization,
   // so that it can appear in the dependency graph and trigger hot reload.
   optimizeDeps: {
-    exclude: ['your-package-name']
-  }
+    exclude: ['your-package-name'],
+  },
 })
 ```
 
@@ -220,7 +224,7 @@ async function createServer() {
   // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom' // don't include Vite's default HTML handling middlewares
+    appType: 'custom', // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -240,7 +244,7 @@ createServer()
 
 - **Type:** `string | undefined`
 
-Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start and end with the `/` character.
+Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start with the `/` character.
 
 ## server.fs.strict
 
@@ -269,9 +273,9 @@ export default defineConfig({
   server: {
     fs: {
       // Allow serving files from one level up to the project root
-      allow: ['..']
-    }
-  }
+      allow: ['..'],
+    },
+  },
 })
 ```
 
@@ -287,17 +291,17 @@ export default defineConfig({
         // search up for workspace root
         searchForWorkspaceRoot(process.cwd()),
         // your custom rules
-        '/path/to/custom/allow'
-      ]
-    }
-  }
+        '/path/to/custom/allow',
+      ],
+    },
+  },
 })
 ```
 
 ## server.fs.deny
 
 - **Type:** `string[]`
-- **Default:** `['.env', '.env.*', '*.{pem,crt}']`
+- **Default:** `['.env', '.env.*', '*.{crt,pem}']`
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
@@ -310,7 +314,34 @@ Defines the origin of the generated asset URLs during development.
 ```js
 export default defineConfig({
   server: {
-    origin: 'http://127.0.0.1:8080'
-  }
+    origin: 'http://127.0.0.1:8080',
+  },
 })
 ```
+
+## server.sourcemapIgnoreList
+
+- **Type:** `false | (sourcePath: string, sourcemapPath: string) => boolean`
+- **Default:** `(sourcePath) => sourcePath.includes('node_modules')`
+
+Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+
+`server.sourcemapIgnoreList` is the equivalent of [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
+
+By default, it excludes all paths containing `node_modules`. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
+
+```js
+export default defineConfig({
+  server: {
+    // This is the default value, and will add all files with node_modules
+    // in their paths to the ignore list.
+    sourcemapIgnoreList(sourcePath, sourcemapPath) {
+      return sourcePath.includes('node_modules')
+    }
+  }
+};
+```
+
+::: tip Note
+[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined rollup options.
+:::

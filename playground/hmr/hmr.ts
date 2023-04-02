@@ -1,8 +1,9 @@
-// @ts-ignore
 import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
 import './invalidation/parent'
+import './file-delete-restore'
+import './optional-chaining/parent'
 
 export const foo = 1
 text('.app', foo)
@@ -45,22 +46,25 @@ if (import.meta.hot) {
     console.log(`foo was:`, foo)
   })
 
+  import.meta.hot.on('vite:afterUpdate', (event) => {
+    console.log(`>>> vite:afterUpdate -- ${event.type}`)
+  })
+
   import.meta.hot.on('vite:beforeUpdate', (event) => {
     console.log(`>>> vite:beforeUpdate -- ${event.type}`)
 
     const cssUpdate = event.updates.find(
       (update) =>
-        update.type === 'css-update' && update.path.match('global.css')
+        update.type === 'css-update' && update.path.match('global.css'),
     )
     if (cssUpdate) {
       text(
         '.css-prev',
-        (document.querySelector('.global-css') as HTMLLinkElement).href
+        (document.querySelector('.global-css') as HTMLLinkElement).href,
       )
 
-      // We don't have a vite:afterUpdate event.
-      // We need to wait until the tag has been swapped out, which
-      // includes the time taken to download and parse the new stylesheet.
+      // Wait until the tag has been swapped out, which includes the time taken
+      // to download and parse the new stylesheet. Assert the swapped link.
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
@@ -79,7 +83,7 @@ if (import.meta.hot) {
               text('.link-tag-removed', 'yes')
               text(
                 '.css-post',
-                (document.querySelector('.global-css') as HTMLLinkElement).href
+                (document.querySelector('.global-css') as HTMLLinkElement).href,
               )
             }
           })
@@ -87,13 +91,13 @@ if (import.meta.hot) {
       })
 
       observer.observe(document.querySelector('#style-tags-wrapper'), {
-        childList: true
+        childList: true,
       })
     }
   })
 
   import.meta.hot.on('vite:error', (event) => {
-    console.log(`>>> vite:error -- ${event.type}`)
+    console.log(`>>> vite:error -- ${event.err.message}`)
   })
 
   import.meta.hot.on('vite:invalidate', ({ path }) => {

@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { normalizePath } from 'vite'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
+import { normalizePath } from '../../../utils'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -12,7 +12,7 @@ async function run(input: string) {
       input,
       normalizePath(resolve(__dirname, 'index.js')),
       (id) => id.replace('@', resolve(__dirname, './mods/')),
-      __dirname
+      __dirname,
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
@@ -52,7 +52,7 @@ describe('parse positives', () => {
 
   it('with multi ../ and itself', async () => {
     expect(
-      await run('`../../plugins/dynamicImportVar/${name}.js`')
+      await run('`../../plugins/dynamicImportVar/${name}.js`'),
     ).toMatchSnapshot()
   })
 })

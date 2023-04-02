@@ -1,5 +1,5 @@
 {
-  "name": "multi-entry-dep",
+  "name": "@vitejs/test-multi-entry-dep",
   "private": true,
   "version": "0.0.0",
   "main": "index.js",

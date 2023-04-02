@@ -239,7 +239,7 @@
   const obj = {
     import(t) {
       text('.obj-import-express', t)
-    }
+    },
   }
   const stringImport = "const t = import('package')"
   function text(el, text) {
@@ -319,6 +319,12 @@
     />
   </g>
 </svg>
+
+<h3>assets in noscript</h3>
+<noscript>
+  <img class="noscript" src="./nested/asset.png" />
+</noscript>
+
 <link rel="stylesheet" href="asset/style.css" />
 <div class="relative-css">link style</div>
 <div class="relative-js"></div>

@@ -1,9 +1,11 @@
 # Worker Options
 
+Options related to Web Workers.
+
 ## worker.format
 
 - **Type:** `'es' | 'iife'`
-- **Default:** `iife`
+- **Default:** `'iife'`
 
 Output format for worker bundle.
 
@@ -11,10 +13,10 @@ Output format for worker bundle.
 
 - **Type:** [`(Plugin | Plugin[])[]`](./shared-options#plugins)
 
-Vite plugins that apply to worker bundle. Note that [config.plugins](./shared-options#plugins) does not apply to workers, it should be configured here instead.
+Vite plugins that apply to worker bundle. Note that [config.plugins](./shared-options#plugins) only applies to workers in dev, it should be configured here instead for build.
 
 ## worker.rollupOptions
 
-- **Type:** [`RollupOptions`](https://rollupjs.org/guide/en/#big-list-of-options)
+- **Type:** [`RollupOptions`](https://rollupjs.org/configuration-options/)
 
 Rollup options to build worker bundle.

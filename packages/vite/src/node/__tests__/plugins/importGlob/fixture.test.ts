@@ -18,20 +18,42 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transformGlobImport(code, id, root, resolveId))?.s.toString()
+      (
+        await transformGlobImport(code, id, root, resolveId, true)
+      )?.s.toString(),
     ).toMatchSnapshot()
+  })
+
+  it('preserve line count', async () => {
+    const getTransformedLineCount = async (code: string) =>
+      (
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
+      )?.s
+        .toString()
+        .split('\n').length
+
+    expect(await getTransformedLineCount("import.meta.glob('./*.js')")).toBe(1)
+    expect(
+      await getTransformedLineCount(
+        `
+          import.meta.glob(
+            './*.js'
+          )
+        `.trim(),
+      ),
+    ).toBe(3)
   })
 
   it('virtual modules', async () => {
     const root = resolve(__dirname, './fixture-a')
     const code = [
       "import.meta.glob('/modules/*.ts')",
-      "import.meta.glob(['/../fixture-b/*.ts'])"
+      "import.meta.glob(['/../fixture-b/*.ts'])",
     ].join('\n')
     expect(
       (
-        await transformGlobImport(code, 'virtual:module', root, resolveId)
-      )?.s.toString()
+        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
+      )?.s.toString(),
     ).toMatchSnapshot()
 
     try {
@@ -39,12 +61,13 @@ describe('fixture', async () => {
         "import.meta.glob('./modules/*.ts')",
         'virtual:module',
         root,
-        resolveId
+        resolveId,
+        true,
       )
       expect('no error').toBe('should throw an error')
     } catch (err) {
       expect(err).toMatchInlineSnapshot(
-        "[Error: In virtual modules, all globs must start with '/']"
+        "[Error: In virtual modules, all globs must start with '/']",
       )
     }
   })
@@ -56,7 +79,9 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transformGlobImport(code, id, root, resolveId, true))?.s.toString()
+      (
+        await transformGlobImport(code, id, root, resolveId, true, true)
+      )?.s.toString(),
     ).toMatchSnapshot()
   })
 })

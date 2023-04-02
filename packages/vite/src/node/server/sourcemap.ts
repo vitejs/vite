@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
-import type { SourceMap } from 'rollup'
+import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
-  onlyWhenFocused: true
+  onlyWhenFocused: true,
 })
 
 // Virtual modules should be prefixed with a null byte to avoid a
 // false positive "missing source" warning. We also check for certain
 // prefixes used for special handling in esbuildDepPlugin.
-const virtualSourceRE = /^(\0|dep:|browser-external:)/
+const virtualSourceRE = /^(?:dep:|browser-external:|virtual:)|\0/
 
 interface SourceMapLike {
   sources: string[]
@@ -23,13 +23,13 @@ interface SourceMapLike {
 export async function injectSourcesContent(
   map: SourceMapLike,
   file: string,
-  logger: Logger
+  logger: Logger,
 ): Promise<void> {
   let sourceRoot: string | undefined
   try {
     // The source root is undefined for virtual modules and permission errors.
     sourceRoot = await fs.realpath(
-      path.resolve(path.dirname(file), map.sourceRoot || '')
+      path.resolve(path.dirname(file), map.sourceRoot || ''),
     )
   } catch {}
 
@@ -47,7 +47,7 @@ export async function injectSourcesContent(
         })
       }
       return null
-    })
+    }),
   )
 
   // Use this command…
@@ -59,7 +59,7 @@ export async function injectSourcesContent(
   }
 }
 
-export function genSourceMapUrl(map: SourceMap | string | undefined): string {
+export function genSourceMapUrl(map: SourceMap | string): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -69,17 +69,55 @@ export function genSourceMapUrl(map: SourceMap | string | undefined): string {
 export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
-  map: SourceMap | null
+  map: SourceMap,
 ): string {
   if (isDebug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }
 
   if (type === 'js') {
-    code += `\n//# sourceMappingURL=${genSourceMapUrl(map ?? undefined)}`
+    code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
   } else if (type === 'css') {
-    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map ?? undefined)} */`
+    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map)} */`
   }
 
   return code
+}
+
+export function applySourcemapIgnoreList(
+  map: ExistingRawSourceMap,
+  sourcemapPath: string,
+  sourcemapIgnoreList: (sourcePath: string, sourcemapPath: string) => boolean,
+  logger?: Logger,
+): void {
+  let { x_google_ignoreList } = map
+  if (x_google_ignoreList === undefined) {
+    x_google_ignoreList = []
+  }
+  for (
+    let sourcesIndex = 0;
+    sourcesIndex < map.sources.length;
+    ++sourcesIndex
+  ) {
+    const sourcePath = map.sources[sourcesIndex]
+    if (!sourcePath) continue
+
+    const ignoreList = sourcemapIgnoreList(
+      path.isAbsolute(sourcePath)
+        ? sourcePath
+        : path.resolve(path.dirname(sourcemapPath), sourcePath),
+      sourcemapPath,
+    )
+    if (logger && typeof ignoreList !== 'boolean') {
+      logger.warn('sourcemapIgnoreList function must return a boolean.')
+    }
+
+    if (ignoreList && !x_google_ignoreList.includes(sourcesIndex)) {
+      x_google_ignoreList.push(sourcesIndex)
+    }
+  }
+
+  if (x_google_ignoreList.length > 0) {
+    if (!map.x_google_ignoreList) map.x_google_ignoreList = x_google_ignoreList
+  }
 }
