@@ -366,7 +366,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         )
       }
-      if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+      if (code.match(workerAssetUrlRE)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
         )
