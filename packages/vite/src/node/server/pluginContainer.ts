@@ -201,7 +201,8 @@ export async function createPluginContainer(
     for (const plugin of getSortedPlugins(hookName)) {
       const hook = plugin[hookName]
       if (!hook) continue
-      // @ts-expect-error hook is not a primitive
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore hook is not a primitive
       const handler: Function = 'handler' in hook ? hook.handler : hook
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
@@ -454,7 +455,11 @@ export async function createPluginContainer(
         err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
       }
 
-      if (err.loc && ctx instanceof TransformContext) {
+      if (
+        ctx instanceof TransformContext &&
+        typeof err.loc?.line === 'number' &&
+        typeof err.loc?.column === 'number'
+      ) {
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
@@ -483,6 +488,15 @@ export async function createPluginContainer(
         }
       }
     }
+
+    if (
+      typeof err.loc?.column !== 'number' &&
+      typeof err.loc?.line !== 'number' &&
+      !err.loc?.file
+    ) {
+      delete err.loc
+    }
+
     return err
   }
 

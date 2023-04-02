@@ -32,8 +32,8 @@ import {
   copyDir,
   emptyDir,
   joinUrlSegments,
-  lookupFile,
   normalizePath,
+  requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
@@ -51,8 +51,8 @@ import {
   initDepsOptimizer,
 } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
-import type { PackageData } from './packages'
-import { watchPackageDataPlugin } from './packages'
+import { findNearestPackageData, watchPackageDataPlugin } from './packages'
+import type { PackageCache } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
@@ -126,6 +126,12 @@ export interface BuildOptions {
    * @default target
    */
   cssTarget?: TransformOptions['target'] | false
+  /**
+   * Override CSS minification specifically instead of defaulting to `build.minify`,
+   * so you can configure minification for JS and CSS separately.
+   * @default minify
+   */
+  cssMinify?: boolean
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -298,6 +304,7 @@ export interface ResolvedBuildOptions
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   logger: Logger,
+  root: string,
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   if (raw) {
@@ -378,8 +385,20 @@ export function resolveBuildOptions(
   if (resolved.target === 'modules') {
     resolved.target = ESBUILD_MODULES_TARGET
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    // esnext + terser: limit to es2021 so it can be minified by terser
-    resolved.target = 'es2021'
+    try {
+      const terserPackageJsonPath = requireResolveFromRootWithFallback(
+        root,
+        'terser/package.json',
+      )
+      const terserPackageJson = JSON.parse(
+        fs.readFileSync(terserPackageJsonPath, 'utf-8'),
+      )
+      const v = terserPackageJson.version.split('.')
+      if (v[0] === '5' && v[1] < 16) {
+        // esnext + terser 5.16<: limit to es2021 so it can be minified by terser
+        resolved.target = 'es2021'
+      }
+    } catch {}
   }
 
   if (!resolved.cssTarget) {
@@ -393,6 +412,10 @@ export function resolveBuildOptions(
 
   if (resolved.minify === true) {
     resolved.minify = 'esbuild'
+  }
+
+  if (resolved.cssMinify == null) {
+    resolved.cssMinify = !!resolved.minify
   }
 
   return resolved
@@ -427,9 +450,13 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),
-      ...(options.manifest ? [manifestPlugin(config)] : []),
-      ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      ...(!config.isWorker ? [buildReporterPlugin(config)] : []),
+      ...(!config.isWorker
+        ? [
+            ...(options.manifest ? [manifestPlugin(config)] : []),
+            ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
+            buildReporterPlugin(config),
+          ]
+        : []),
       loadFallbackPlugin(),
     ],
   }
@@ -554,7 +581,11 @@ export async function build(
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
         ssrNodeBuild || libOptions
-          ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
+          ? resolveOutputJsExtension(
+              format,
+              findNearestPackageData(config.root, config.packageCache)?.data
+                .type,
+            )
           : 'js'
       return {
         dir: outDir,
@@ -571,7 +602,14 @@ export async function build(
           ? `[name].${jsExt}`
           : libOptions
           ? ({ name }) =>
-              resolveLibFilename(libOptions, format, name, config.root, jsExt)
+              resolveLibFilename(
+                libOptions,
+                format,
+                name,
+                config.root,
+                jsExt,
+                config.packageCache,
+              )
           : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name]-[hash].${jsExt}`
@@ -718,12 +756,8 @@ function prepareOutDir(
   }
 }
 
-function getPkgJson(root: string): PackageData['data'] {
-  return JSON.parse(lookupFile(root, ['package.json']) || `{}`)
-}
-
 function getPkgName(name: string) {
-  return name?.startsWith('@') ? name.split('/')[1] : name
+  return name?.[0] === '@' ? name.split('/')[1] : name
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
@@ -745,15 +779,16 @@ export function resolveLibFilename(
   entryName: string,
   root: string,
   extension?: JsExt,
+  packageCache?: PackageCache,
 ): string {
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format, entryName)
   }
 
-  const packageJson = getPkgJson(root)
+  const packageJson = findNearestPackageData(root, packageCache)?.data
   const name =
     libOptions.fileName ||
-    (typeof libOptions.entry === 'string'
+    (packageJson && typeof libOptions.entry === 'string'
       ? getPkgName(packageJson.name)
       : entryName)
 
@@ -762,7 +797,7 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.',
     )
 
-  extension ??= resolveOutputJsExtension(format, packageJson.type)
+  extension ??= resolveOutputJsExtension(format, packageJson?.type)
 
   if (format === 'cjs' || format === 'es') {
     return `${name}.${extension}`

@@ -8,7 +8,6 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noUnusedLocals": true,
-    "forceConsistentCasingInFileNames": true
+    "noUnusedLocals": true
   }
 }

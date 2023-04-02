@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, './index.html'),
         other: resolve(__dirname, './other.js'),
+        style2: resolve(__dirname, './style2.js'),
       },
       output: {
         manualChunks(id) {

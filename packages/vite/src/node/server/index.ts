@@ -23,6 +23,8 @@ import {
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
+  diffDnsOrderChange,
+  isInNodeModules,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -116,6 +118,17 @@ export interface ServerOptions extends CommonServerOptions {
    */
   preTransformRequests?: boolean
   /**
+   * Whether or not to ignore-list source files in the dev server sourcemap, used to populate
+   * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+   *
+   * By default, it excludes all paths containing `node_modules`. You can pass `false` to
+   * disable this behavior, or, for full control, a function that takes the source path and
+   * sourcemap path and returns whether to ignore the source path.
+   */
+  sourcemapIgnoreList?:
+    | false
+    | ((sourcePath: string, sourcemapPath: string) => boolean)
+  /**
    * Force dep pre-optimization regardless of whether deps have changed.
    *
    * @deprecated Use optimizeDeps.force instead, this option may be removed
@@ -127,6 +140,10 @@ export interface ServerOptions extends CommonServerOptions {
 export interface ResolvedServerOptions extends ServerOptions {
   fs: Required<FileSystemServeOptions>
   middlewareMode: boolean
+  sourcemapIgnoreList: Exclude<
+    ServerOptions['sourcemapIgnoreList'],
+    false | undefined
+  >
 }
 
 export interface FileSystemServeOptions {
@@ -323,6 +340,12 @@ export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
+
+  if (isDepsOptimizerEnabled(config, false)) {
+    // start optimizer in the background, we still need to await the setup
+    await initDepsOptimizer(config)
+  }
+
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -343,7 +366,8 @@ export async function createServer(
   }
 
   const watcher = chokidar.watch(
-    path.resolve(root),
+    // config file dependencies and env file might be outside of root
+    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -638,21 +662,24 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
+  // when the optimizer is ready, hook server so that it can reload the page
+  // or invalidate the module graph when needed
+  const depsOptimizer = getDepsOptimizer(config)
+  if (depsOptimizer) {
+    depsOptimizer.server = server
+  }
+
+  // httpServer.listen can be called multiple times
+  // when port when using next port number
+  // this code is to avoid calling buildStart multiple times
   let initingServer: Promise<void> | undefined
   let serverInited = false
   const initServer = async () => {
-    if (serverInited) {
-      return
-    }
-    if (initingServer) {
-      return initingServer
-    }
+    if (serverInited) return
+    if (initingServer) return initingServer
+
     initingServer = (async function () {
       await container.buildStart({})
-      if (isDepsOptimizerEnabled(config, false)) {
-        // non-ssr
-        await initDepsOptimizer(config, server)
-      }
       initingServer = undefined
       serverInited = true
     })()
@@ -746,7 +773,11 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    ...(raw as ResolvedServerOptions),
+    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
+    sourcemapIgnoreList:
+      raw?.sourcemapIgnoreList === false
+        ? () => false
+        : raw?.sourcemapIgnoreList || isInNodeModules,
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow
@@ -788,8 +819,7 @@ async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
-
-  await server.close()
+  const oldUrls = server.resolvedUrls
 
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
@@ -807,8 +837,11 @@ async function restartServer(server: ViteDevServer) {
     server.config.logger.error(err.message, {
       timestamp: true,
     })
+    server.config.logger.error('server restart failed', { timestamp: true })
     return
   }
+
+  await server.close()
 
   // prevent new server `restart` function from calling
   newServer._restartPromise = server._restartPromise
@@ -824,7 +857,8 @@ async function restartServer(server: ViteDevServer) {
     logger.info('server restarted.', { timestamp: true })
     if (
       (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
-      host !== prevHost
+      host !== prevHost ||
+      diffDnsOrderChange(oldUrls, newServer.resolvedUrls)
     ) {
       logger.info('')
       server.printUrls()

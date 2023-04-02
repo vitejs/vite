@@ -18,7 +18,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
-import { injectSourcesContent } from './sourcemap'
+import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
@@ -144,7 +144,9 @@ async function doTransform(
 
   // resolve
   const id =
-    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
+    module?.id ??
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id ??
+    url
 
   const result = loadAndTransform(id, url, server, options, timestamp)
 
@@ -271,25 +273,33 @@ async function loadAndTransform(
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }
-    for (
-      let sourcesIndex = 0;
-      sourcesIndex < map.sources.length;
-      ++sourcesIndex
-    ) {
-      const sourcePath = map.sources[sourcesIndex]
 
-      // Rewrite sources to relative paths to give debuggers the chance
-      // to resolve and display them in a meaningful way (rather than
-      // with absolute paths).
-      if (
-        sourcePath &&
-        path.isAbsolute(sourcePath) &&
-        path.isAbsolute(mod.file)
+    const sourcemapPath = `${mod.file}.map`
+    applySourcemapIgnoreList(
+      map,
+      sourcemapPath,
+      config.server.sourcemapIgnoreList,
+      logger,
+    )
+
+    if (path.isAbsolute(mod.file)) {
+      for (
+        let sourcesIndex = 0;
+        sourcesIndex < map.sources.length;
+        ++sourcesIndex
       ) {
-        map.sources[sourcesIndex] = path.relative(
-          path.dirname(mod.file),
-          sourcePath,
-        )
+        const sourcePath = map.sources[sourcesIndex]
+        if (sourcePath) {
+          // Rewrite sources to relative paths to give debuggers the chance
+          // to resolve and display them in a meaningful way (rather than
+          // with absolute paths).
+          if (path.isAbsolute(sourcePath)) {
+            map.sources[sourcesIndex] = path.relative(
+              path.dirname(mod.file),
+              sourcePath,
+            )
+          }
+        }
       }
     }
   }

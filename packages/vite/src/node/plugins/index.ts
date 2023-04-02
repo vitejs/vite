@@ -72,7 +72,7 @@ export async function resolvePlugins(
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
-    config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
+    config.esbuild !== false ? esbuildPlugin(config) : null,
     jsonPlugin(
       {
         namedExports: true,

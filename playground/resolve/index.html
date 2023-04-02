@@ -36,6 +36,24 @@
 <h2>Exports with module</h2>
 <p class="exports-with-module">fail</p>
 
+<h2>Resolving top level with imports field</h2>
+<p class="imports-top-level">fail</p>
+
+<h2>Resolving same level with imports field</h2>
+<p class="imports-same-level">fail</p>
+
+<h2>Resolving nested path with imports field</h2>
+<p class="imports-nested">fail</p>
+
+<h2>Resolving star with imports filed</h2>
+<p class="imports-star">fail</p>
+
+<h2>Resolving slash with imports filed</h2>
+<p class="imports-slash">fail</p>
+
+<h2>Resolving from other package with imports field</h2>
+<p class="imports-pkg-slash">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -44,6 +62,9 @@
 
 <h2>Resolve to non-duplicated file extension</h2>
 <p class="exact-extension">fail</p>
+
+<h2>Resolve nested file extension</h2>
+<p class="nested-extension">fail</p>
 
 <h2>Don't add extensions to directory names</h2>
 <p class="dir-with-ext">fail</p>
@@ -69,6 +90,12 @@
   name
 </h2>
 <p class="mjs-extension">fail</p>
+
+<h2>
+  A ts module can import another ESM module using its corresponding mjs file
+  name with query parameters
+</h2>
+<p class="mjs-extension-with-query">fail</p>
 
 <h2>
   A ts module can import another CommonJS module using its corresponding cjs
@@ -187,6 +214,25 @@
   import { msg as exportsWithModule } from '@vitejs/test-resolve-exports-with-module'
   text('.exports-with-module', exportsWithModule)
 
+  // imports field
+  import { msg as importsTopLevel } from '#top-level'
+  text('.imports-top-level', importsTopLevel)
+
+  import { msg as importsSameLevel } from '#same-level'
+  text('.imports-same-level', importsSameLevel)
+
+  import { msg as importsNested } from '#nested/path.js'
+  text('.imports-nested', importsNested)
+
+  import { msg as importsStar } from '#star/index.js'
+  text('.imports-star', importsStar)
+
+  import { msg as importsSlash } from '#slash/index.js'
+  text('.imports-slash', importsSlash)
+
+  import { msg as importsPkgSlash } from '#other-pkg-slash/index.js'
+  text('.imports-pkg-slash', importsPkgSlash)
+
   // implicit index resolving
   import { foo } from './util'
   text('.index', foo())
@@ -195,9 +241,13 @@
   import { file } from './dir'
   text('.dir-vs-file', file)
 
-  // // exact extension vs. duplicated (.js.js)
+  // exact extension vs. duplicated (.js.js)
   import { file as exactExtMsg } from './exact-extension/file.js'
   text('.exact-extension', exactExtMsg)
+
+  // nested extension
+  import { file as fileJsonMsg } from './exact-extension/file.json'
+  text('.nested-extension', fileJsonMsg)
 
   // don't add extensions to dir name (./dir-with-ext.js/index.js)
   import { file as dirWithExtMsg } from './dir-with-ext'
@@ -218,6 +268,9 @@
   import { msgMjs as tsMjsExtensionMsg } from './ts-extension'
   text('.mjs-extension', tsMjsExtensionMsg)
 
+  import { msgMjs as tsMjsExtensionWithQueryMsg } from './ts-extension?query=1'
+  text('.mjs-extension-with-query', tsMjsExtensionWithQueryMsg)
+
   // filename with dot
   import { bar } from './util/bar.util'
   text('.dot', bar())
@@ -233,6 +286,7 @@
   import f from '@vitejs/test-resolve-browser-field/ext-index'
   import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
   import h from '@vitejs/test-resolve-browser-field/no-ext?query'
+  import i from '@vitejs/test-resolve-browser-field/bare-import'
 
   import {
     ra,
@@ -244,7 +298,7 @@
     rg,
   } from '@vitejs/test-resolve-browser-field/relative'
 
-  const success = [main, a, c, d, e, f, h, ra, rc, rd, re, rf]
+  const success = [main, a, c, d, e, f, h, i, ra, rc, rd, re, rf]
   const noSuccess = [b, g, rb, rg]
 
   if (
@@ -302,7 +356,13 @@
   text('.inline-pkg', inlineMsg)
 
   import es5Ext from 'es5-ext'
-  text('.path-contains-sharp-symbol', '[success]')
+  import contains from 'es5-ext/string/#/contains'
+  import { last } from '@vitejs/test-resolve-sharp-dir'
+
+  text(
+    '.path-contains-sharp-symbol',
+    `[success] ${contains.call('#', '#')} ${last.call('#')}`,
+  )
 </script>
 
 <style>

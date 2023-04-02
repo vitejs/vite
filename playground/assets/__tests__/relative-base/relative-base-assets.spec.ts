@@ -9,6 +9,8 @@ import {
   viteConfig,
 } from '~utils'
 
+const getBase = () => (viteConfig ? viteConfig?.testConfig?.baseRoute : '')
+
 const absoluteAssetMatch = isBuild
   ? /http.*\/other-assets\/asset-\w{8}\.png/
   : '/nested/asset.png'
@@ -138,7 +140,7 @@ describe('css url() references', () => {
 describe.runIf(isBuild)('index.css URLs', () => {
   let css: string
   beforeAll(() => {
-    const base = viteConfig ? viteConfig?.testConfig?.baseRoute : ''
+    const base = getBase()
     css = findAssetFile(/index.*\.css$/, base, 'other-assets')
   })
 
@@ -200,6 +202,10 @@ test('?url import on css', async () => {
   expect(txt).toMatch(
     isBuild ? /http.*\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css',
   )
+  isBuild &&
+    expect(findAssetFile(/index.*\.js$/, getBase(), 'entries')).toMatch(
+      /icons-.+\.css(?!\?used)/,
+    )
 })
 
 test('new URL(..., import.meta.url)', async () => {

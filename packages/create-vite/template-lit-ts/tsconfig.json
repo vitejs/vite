@@ -2,22 +2,17 @@
   "compilerOptions": {
     "module": "ESNext",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "outDir": "./types",
+    "noEmit": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }

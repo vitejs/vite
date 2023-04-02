@@ -18,11 +18,14 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
+  isUrl,
   normalizePath,
   processSrcSet,
+  removeLeadingSlash,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
+import { resolveEnvPrefix } from '../env'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -285,10 +288,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
   )
   preHooks.unshift(preImportMapHook(config))
+  preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    url.startsWith('#') ||
+    url[0] === '#' ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
@@ -535,7 +539,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
-            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+            !namedOutput.includes(removeLeadingSlash(content)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
               const url =
@@ -809,11 +813,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
-          return normalizePath(
-            toOutputPublicAssetFilePath(
-              getPublicAssetFilename(fileHash, config)!,
-            ),
+          const publicAssetPath = toOutputPublicAssetFilePath(
+            getPublicAssetFilename(fileHash, config)!,
           )
+
+          return isUrl(publicAssetPath)
+            ? publicAssetPath
+            : normalizePath(publicAssetPath)
         })
 
         if (chunk && canInlineEntry) {
@@ -939,6 +945,45 @@ export function postImportMapHook(): IndexHtmlTransformHook {
     }
 
     return html
+  }
+}
+
+/**
+ * Support `%ENV_NAME%` syntax in html files
+ */
+export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
+  const pattern = /%(\S+?)%/g
+  const envPrefix = resolveEnvPrefix({ envPrefix: config.envPrefix })
+  const env: Record<string, any> = { ...config.env }
+  // account for user env defines
+  for (const key in config.define) {
+    if (key.startsWith(`import.meta.env.`)) {
+      const val = config.define[key]
+      env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
+    }
+  }
+  return (html, ctx) => {
+    return html.replace(pattern, (text, key) => {
+      if (key in env) {
+        return env[key]
+      } else {
+        if (envPrefix.some((prefix) => key.startsWith(prefix))) {
+          const relativeHtml = normalizePath(
+            path.relative(config.root, ctx.filename),
+          )
+          config.logger.warn(
+            colors.yellow(
+              colors.bold(
+                `(!) ${text} is not defined in env variables found in /${relativeHtml}. ` +
+                  `Is the variable mistyped?`,
+              ),
+            ),
+          )
+        }
+
+        return text
+      }
+    })
   }
 }
 
