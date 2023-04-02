@@ -1033,7 +1033,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/c5269747cd3dd14c4b306e8cea36f248d9c1aa01/src/ast/nodes/MetaProperty.ts#L189-L232
+  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
@@ -1042,14 +1042,29 @@ function injectSsrFlag<T extends Record<string, any>>(
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
+const needsEscapeRegEx = /[\n\r'\\\u2028\u2029]/
+const quoteNewlineRegEx = /([\n\r'\u2028\u2029])/g
+const backSlashRegEx = /\\/g
+
+function escapeId(id: string): string {
+  if (!needsEscapeRegEx.test(id)) return id
+  return id.replace(backSlashRegEx, '\\\\').replace(quoteNewlineRegEx, '\\$1')
+}
+
 const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${relativePath}', ${
+    `'${escapeId(relativePath)}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
+
+const getFileUrlFromFullPath = (path: string) =>
+  `require('u' + 'rl').pathToFileURL(${path}).href`
+
+const getFileUrlFromRelativePath = (path: string) =>
+  getFileUrlFromFullPath(`__dirname + '/${path}'`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1060,18 +1075,16 @@ const relativeUrlMechanisms: Record<
     return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
   },
   cjs: (relativePath) =>
-    `(typeof document === 'undefined' ? ${getResolveUrl(
-      `'file:' + __dirname + '/${relativePath}'`,
-      `(require('u' + 'rl').URL)`,
+    `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
+      relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
   es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
   system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
   umd: (relativePath) =>
-    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(
-      `'file:' + __dirname + '/${relativePath}'`,
-      `(require('u' + 'rl').URL)`,
+    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
+      relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath, true)})`,
 }
 /* end of copy */
