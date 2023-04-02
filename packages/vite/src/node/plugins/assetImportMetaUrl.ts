@@ -59,13 +59,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
               if (pattern.startsWith('**')) {
-                config.logger.warnOnce(
-                  colors.yellow(
-                    `${colors.cyan(
-                      `new URL(${rawUrl}, import.meta.url)`,
-                    )} matches most files in system. It will be left as-is.`,
-                  ),
-                )
+                // don't transform for patterns like this
+                // because users won't intend to do that in most cases
                 continue
               }
 
