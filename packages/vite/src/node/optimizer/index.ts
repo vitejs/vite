@@ -1245,7 +1245,6 @@ const lockfileNames = lockfileFormats.map((l) => l.name)
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
   const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
-
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)
     const { checkPatches } = lockfileFormats.find(
