@@ -15,8 +15,10 @@ import type {
   NormalizedOutputOptions,
   OutputBundle,
   OutputOptions,
+  OutputPlugin,
   PreRenderedChunk,
   RenderedChunk,
+  RollupOutput,
 } from 'rollup'
 import type {
   PluginItem as BabelPlugin,
@@ -120,7 +122,7 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
-function viteLegacyPlugin(options: Options = {}): Plugin[] {
+function viteLegacyPlugin<T extends Options>(options: T = {} as T): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
 
@@ -158,6 +160,143 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     options.additionalLegacyPolyfills.forEach((i) => {
       legacyPolyfills.add(i)
     })
+  }
+
+  const getLegacyOutputFileName = (
+    fileNames: string | ((chunkInfo: PreRenderedChunk) => string) | undefined,
+    defaultFileName = '[name]-legacy-[hash].js',
+  ): string | ((chunkInfo: PreRenderedChunk) => string) => {
+    if (!fileNames) {
+      return path.posix.join(config.build.assetsDir, defaultFileName)
+    }
+
+    return (chunkInfo) => {
+      let fileName =
+        typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
+
+      if (fileName.includes('[name]')) {
+        // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
+        fileName = fileName.replace('[name]', '[name]-legacy')
+      } else {
+        // entry.js -> entry-legacy.js
+        fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+      }
+
+      return fileName
+    }
+  }
+
+  // TODO: Since this is a Rollup output plugin, it's running only after Vite minification post plugins (happens in `renderChunk`),
+  //  so make sure the output code is minified.
+  //  Thankfully, this wouldn't be a problem since we're planning on outputing eventually a simple prefix `importScript(POLYFILL_PATH);` to the output.
+  const legacyWorkerRollupOutputPlugin: OutputPlugin = {
+    name: 'vite:legacy-worker-rollup-output-plugin',
+
+    // outputOptions(_outputOptions) {
+    //   TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers, or overrite it
+    //   console.log("Generate code option of workers: " + JSON.stringify(config.generatedCode));
+    // },
+
+    async renderChunk(raw, chunk) {
+      if (config.build.ssr || !genLegacy || !chunk.fileName.includes('-legacy'))
+        return
+
+      // TODO: Warn the user if `config.generatedCode` options aren't compatible with the target browsers after it has been override before
+
+      // TODO: Avoid this code duplication, we must have an option to use a shared function for babel transformation!
+
+      // transform the legacy chunk with @babel/preset-env
+      const sourceMaps = /*!!config.build.sourcemap */ false // TODO: Support sourcemaps
+      const babel = await loadBabel()
+      const legacyPolyfills = new Set<string>()
+      const result = babel.transform(raw, {
+        babelrc: false,
+        configFile: false,
+        compact: !!config.build.minify,
+        sourceMaps,
+        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
+        presets: [
+          // forcing our plugin to run before preset-env by wrapping it in a
+          // preset so we can catch the injected import statements...
+          [
+            // TODO: Can we omit all of these plugins?
+            () => ({
+              plugins: [
+                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                replaceLegacyEnvBabelPlugin(),
+                //wrapIIFEBabelPlugin(),
+              ],
+            }),
+          ],
+          [
+            '@babel/preset-env',
+            createBabelPresetEnvOptions(targets, {
+              needPolyfills: true,
+              ignoreBrowserslistConfig: false,
+            }),
+          ],
+        ],
+      })
+
+      // TODO: Just append the new polyfills carefully to the big polyfill,
+      //  and have a "additionalPolyfillsSocumentSensitive" for legacy that will be loaded only on document one(i.e. not within workers).
+      const polyfillId = '\0polyfill'
+      const polyfillPlugin: Plugin = {
+        // TODO: Code reuse
+        name: 'vite:legacy-polyfills',
+        resolveId(id) {
+          if (id === polyfillId) {
+            return id
+          }
+        },
+        load(id) {
+          if (id === polyfillId) {
+            return [...legacyPolyfills]
+              .map((i) => `import ${JSON.stringify(i)};`)
+              .join('')
+          }
+        },
+      }
+
+      // TODO: Code reuse
+      const res = (await build({
+        root: path.dirname(fileURLToPath(import.meta.url)),
+        configFile: false,
+        logLevel: 'error',
+        plugins: [polyfillPlugin],
+        build: {
+          rollupOptions: {
+            input: polyfillId,
+            output: {
+              format: 'iife',
+              generatedCode: 'es5',
+            },
+          },
+        },
+        // Don't run esbuild for transpilation or minification
+        // because we don't want to transpile code.
+        esbuild: false,
+        optimizeDeps: {
+          esbuildOptions: {
+            // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
+            // This limits the input code not to include es2015+ codes.
+            // But core-js is the only dependency which includes commonjs code
+            // and core-js doesn't include es2015+ codes.
+            target: 'es5',
+          },
+        },
+      })) as RollupOutput
+      // TODO: Fix some sourcemap issue and prepend it correcty to the sourcemap
+      const polyfillCode = res.output[0].code
+
+      //if (result) return { code: result.code!, map: result.map }
+      if (result)
+        return {
+          code: polyfillCode + '\n' + result.code!,
+          map: { mappings: '' },
+        }
+      return null
+    },
   }
 
   let overriddenBuildTarget = false
@@ -210,6 +349,52 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
           ),
         )
+      }
+
+      if (options.worker && !config.build?.ssr) {
+        const format = config.worker?.format ?? 'iife'
+        if (format !== 'iife') {
+          throw new Error(
+            `plugin-legacy cannot emit legacy workers chunk when 'config.worker.format' is different than 'iife'!` +
+              ` (currently it equals to '${format}')`,
+          )
+        }
+
+        // TODO: Can we do this better?
+        const originalOutputOptions = config.worker.rollupOptions?.output
+
+        // @ts-expect-error this is an internal(currently) option to have output config as a function
+        config.worker.rollupOptions.output = (callerOutputOptions) => {
+          const outputOptions =
+            (Array.isArray(originalOutputOptions)
+              ? originalOutputOptions[0]
+              : originalOutputOptions) ?? {}
+          if (outputOptions != null) {
+            if (!outputOptions.plugins) {
+              outputOptions.plugins = []
+            }
+            outputOptions.plugins = [
+              outputOptions.plugins,
+              legacyWorkerRollupOutputPlugin,
+            ]
+          }
+          if (
+            callerOutputOptions.format === 'system' &&
+            !callerOutputOptions.build?.ssr
+          ) {
+            return {
+              ...outputOptions,
+              entryFileNames: getLegacyOutputFileName(
+                outputOptions.entryFileNames,
+              ),
+              chunkFileNames: getLegacyOutputFileName(
+                outputOptions.chunkFileNames,
+              ),
+            }
+          } else {
+            return outputOptions
+          }
+        }
       }
     },
   }
@@ -302,33 +487,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
 
-      const getLegacyOutputFileName = (
-        fileNames:
-          | string
-          | ((chunkInfo: PreRenderedChunk) => string)
-          | undefined,
-        defaultFileName = '[name]-legacy-[hash].js',
-      ): string | ((chunkInfo: PreRenderedChunk) => string) => {
-        if (!fileNames) {
-          return path.posix.join(config.build.assetsDir, defaultFileName)
-        }
-
-        return (chunkInfo) => {
-          let fileName =
-            typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
-
-          if (fileName.includes('[name]')) {
-            // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
-            fileName = fileName.replace('[name]', '[name]-legacy')
-          } else {
-            // entry.js -> entry-legacy.js
-            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
-          }
-
-          return fileName
-        }
-      }
-
       const createLegacyOutput = (
         options: OutputOptions = {},
       ): OutputOptions => {
@@ -405,12 +563,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       // minification isn't disabled, because that leaves out the terser plugin
       // entirely.
       opts.__vite_force_terser__ = true
-
-      // @ts-expect-error In the `generateBundle` hook,
-      // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
-      // But that's still a waste of computing resource.
-      // So we add this flag to avoid emitting the asset in the first place whenever possible.
-      opts.__vite_skip_asset_emit__ = true
 
       // avoid emitting assets for legacy bundle
       const needPolyfills =
@@ -574,21 +726,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       return {
         html,
         tags,
-      }
-    },
-
-    generateBundle(opts, bundle) {
-      if (config.build.ssr) {
-        return
-      }
-
-      if (isLegacyBundle(bundle, opts)) {
-        // avoid emitting duplicate assets
-        for (const name in bundle) {
-          if (bundle[name].type === 'asset' && !/.+\.map$/.test(name)) {
-            delete bundle[name]
-          }
-        }
       }
     },
   }

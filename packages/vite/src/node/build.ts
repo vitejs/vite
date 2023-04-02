@@ -24,6 +24,7 @@ import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
+import { webWorkerPostBuildPlugin } from './plugins/worker'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -447,6 +448,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ).filter(Boolean) as Plugin[]),
     ],
     post: [
+      webWorkerPostBuildPlugin(config),
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),

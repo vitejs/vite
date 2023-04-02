@@ -9,6 +9,7 @@ export default defineConfig({
     legacy({
       targets: 'IE 11',
       modernPolyfills: true,
+      worker: true,
     }),
   ],
 

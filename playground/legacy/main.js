@@ -1,6 +1,7 @@
 import './style.css'
 import viteSvgPath from './vite.svg'
 import MyWorker from './worker?worker'
+import MyWorkerModern from './worker-modern?worker'
 
 async function run() {
   const { fn } = await import('./async.js')
@@ -80,4 +81,10 @@ const worker = new MyWorker()
 worker.postMessage('ping')
 worker.addEventListener('message', (ev) => {
   text('.worker-message', JSON.stringify(ev.data))
+})
+
+const workerModern = new MyWorkerModern()
+workerModern.postMessage('ping')
+workerModern.addEventListener('message', (ev) => {
+  text('.worker-modern-message', JSON.stringify(ev.data))
 })
