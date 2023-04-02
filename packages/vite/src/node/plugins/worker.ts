@@ -191,7 +191,7 @@ export function webWorkerPostPlugin(): Plugin {
     resolveImportMeta(property, { chunkId, format }) {
       // document is undefined in the worker, so we need to avoid it in iife
       if (property === 'url' && format === 'iife') {
-        return `new URL('${chunkId}', self.location.href).href`
+        return 'self.location.href'
       }
 
       return null
