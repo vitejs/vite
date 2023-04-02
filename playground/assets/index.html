@@ -226,6 +226,11 @@
   <code class="non-existent-import-meta-url"></code>
 </p>
 
+<h2>new URL(`${dynamic}`, import.meta.url)</h2>
+<p>
+  <code class="dynamic-import-meta-url-all"></code>
+</p>
+
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
 <code class="obj-import-express"></code>
@@ -427,9 +432,17 @@
   testDynamicImportMetaUrlWithComma('icon', 1)
   testDynamicImportMetaUrlWithComma('asset', 2)
 
-  const name = 'test'
-  const js = new URL(`./nested/${name}.js`, import.meta.url).href
-  text('.dynamic-import-meta-url-js', js)
+  {
+    const name = 'test'
+    const js = new URL(`./nested/${name}.js`, import.meta.url).href
+    text('.dynamic-import-meta-url-js', js)
+  }
+
+  {
+    const name = './nested/icon'
+    const metaUrl = new URL(`${name}.png`, import.meta.url)
+    text(`.dynamic-import-meta-url-all`, metaUrl)
+  }
 
   function text(el, text) {
     document.querySelector(el).textContent = text
