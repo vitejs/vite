@@ -1091,6 +1091,12 @@ const relativeUrlMechanisms: Record<
 }
 /* end of copy */
 
+const customRelativeUrlMechanisms = {
+  ...relativeUrlMechanisms,
+  'worker-iife': (relativePath) =>
+    getResolveUrl(`'${relativePath}', self.location.href`),
+} as const satisfies Record<string, (relativePath: string) => string>
+
 export type RenderBuiltAssetUrl = (
   filename: string,
   type: {
@@ -1140,8 +1146,10 @@ export function toOutputFilePathInJS(
 
 export function createToImportMetaURLBasedRelativeRuntime(
   format: InternalModuleFormat,
+  isWorker: boolean,
 ): (filename: string, importer: string) => { runtime: string } {
-  const toRelativePath = relativeUrlMechanisms[format]
+  const formatLong = isWorker && format === 'iife' ? 'worker-iife' : format
+  const toRelativePath = customRelativeUrlMechanisms[formatLong]
   return (filename, importer) => ({
     runtime: toRelativePath(
       path.posix.relative(path.dirname(importer), filename),
