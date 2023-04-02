@@ -58,6 +58,7 @@ import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
+import { webWorkerPostPlugin } from './plugins/worker'
 
 export interface BuildOptions {
   /**
@@ -445,6 +446,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             : [rollupOptionsPlugins],
         )
       ).filter(Boolean) as Plugin[]),
+      ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),
