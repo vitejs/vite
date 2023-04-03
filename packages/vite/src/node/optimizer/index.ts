@@ -165,9 +165,6 @@ export interface DepOptimizationResult {
    * to be able to discard the result
    */
   commit: () => Promise<void>
-  /**
-   * @deprecated noop
-   */
   cancel: () => void
 }
 
@@ -510,8 +507,11 @@ export function runOptimizeDeps(
 
   const qualifiedIds = Object.keys(depsInfo)
   let cleaned = false
+  let committed = false
   const cleanUp = () => {
-    if (!cleaned) {
+    // If commit was already called, ignore the clean up even if a cancel was requested
+    // This minimizes the chances of leaving the deps cache in a corrupted state
+    if (!cleaned && !committed) {
       cleaned = true
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
@@ -525,9 +525,12 @@ export function runOptimizeDeps(
     metadata,
     cancel: cleanUp,
     commit: async () => {
+      // Ignore clean up requests after this point so the temp folder isn't deleted before
+      // we finish commiting the new deps cache files to the deps folder
+      committed = true
+
       // Write metadata file, then commit the processing folder to the global deps cache
       // Rewire the file paths from the temporal processing dir to the final deps cache dir
-
       const dataPath = path.join(processingCacheDir, '_metadata.json')
       fs.writeFileSync(
         dataPath,
