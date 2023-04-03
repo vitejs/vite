@@ -232,7 +232,7 @@ Specify options to pass to CSS pre-processors. The file extensions are used as k
 - `less` - [Options](https://lesscss.org/usage/#less-options).
 - `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
 
-All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content.
+All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
 
 Example:
 
