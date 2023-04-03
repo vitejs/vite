@@ -275,7 +275,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
-      const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -615,9 +614,23 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
-          if (!isDynamicImport && isLocalImport) {
-            // for pre-transforming
-            staticImportedUrls.add(hmrUrl)
+          if (
+            !isDynamicImport &&
+            isLocalImport &&
+            config.server.preTransformRequests
+          ) {
+            // pre-transform known direct imports
+            // These requests will also be registered in transformRequest to be awaited
+            // by the deps optimizer
+            const url = removeImportQuery(hmrUrl)
+            server.transformRequest(url, { ssr }).catch((e) => {
+              if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+                // This are expected errors
+                return
+              }
+              // Unexpected error, log the issue but avoid an unhandled exception
+              config.logger.error(e.message)
+            })
           }
         } else if (!importer.startsWith(clientDir)) {
           if (!isInNodeModules(importer)) {
@@ -759,23 +772,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
           )}`,
         )
-
-      // pre-transform known direct imports
-      // These requests will also be registered in transformRequest to be awaited
-      // by the deps optimizer
-      if (config.server.preTransformRequests && staticImportedUrls.size) {
-        for (let url of staticImportedUrls) {
-          url = removeImportQuery(url)
-          server.transformRequest(url, { ssr }).catch((e) => {
-            if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
-              // This are expected errors
-              return
-            }
-            // Unexpected error, log the issue but avoid an unhandled exception
-            config.logger.error(e.message)
-          })
-        }
-      }
 
       if (s) {
         return transformStableResult(s, importer, config)
