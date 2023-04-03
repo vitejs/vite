@@ -213,8 +213,8 @@ async function createDepsOptimizer(
     if (!isBuild) {
       // Important, the scanner is dev only
       depsOptimizer.scanProcessing = new Promise((resolve) => {
-        // Ensure server listen is called before the scanner
-        setTimeout(async () => {
+        // Runs in the background in case blocking high priority tasks
+        ;(async () => {
           try {
             debug(colors.green(`scanning for dependencies...`))
 
@@ -244,7 +244,7 @@ async function createDepsOptimizer(
             resolve()
             depsOptimizer.scanProcessing = undefined
           }
-        }, 0)
+        })()
       })
     }
   }
