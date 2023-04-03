@@ -315,21 +315,51 @@ async function waitForSuccessfulPing(
 ) {
   const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  const ping = async () => {
+    // A fetch on a websocket URL will return a successful promise with status 400,
+    // but will reject a networking error.
+    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
     try {
-      // A fetch on a websocket URL will return a successful promise with status 400,
-      // but will reject a networking error.
-      // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
       await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
       })
-      break
-    } catch (e) {
-      // wait ms before attempting to ping again
-      await new Promise((resolve) => setTimeout(resolve, ms))
+      return true
+    } catch {}
+    return false
+  }
+
+  if (await ping()) {
+    return
+  }
+  await wait(ms)
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    if (document.visibilityState === 'visible') {
+      if (await ping()) {
+        break
+      }
+      await wait(ms)
+    } else {
+      await waitForWindowShow()
     }
   }
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function waitForWindowShow() {
+  return new Promise<void>((resolve) => {
+    const onChange = async () => {
+      if (document.visibilityState === 'visible') {
+        resolve()
+        document.removeEventListener('visibilitychange', onChange)
+      }
+    }
+    document.addEventListener('visibilitychange', onChange)
+  })
 }
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
