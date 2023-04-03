@@ -328,6 +328,8 @@ async function waitForSuccessfulPing(
     return false
   }
 
+  let waitForWindowShowPromise: Promise<void> | undefined
+
   // eslint-disable-next-line no-constant-condition
   while (true) {
     if (document.visibilityState === 'visible') {
@@ -336,7 +338,12 @@ async function waitForSuccessfulPing(
       }
       await wait(ms)
     } else {
-      await Promise.race([wait(ms), waitForWindowShow()])
+      if (!waitForWindowShowPromise) {
+        waitForWindowShowPromise = waitForWindowShow().then(() => {
+          waitForWindowShowPromise = undefined
+        })
+      }
+      await Promise.race([wait(ms), waitForWindowShowPromise])
     }
   }
 }
