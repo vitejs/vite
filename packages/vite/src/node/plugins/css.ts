@@ -891,9 +891,7 @@ async function compileCSS(
 
   if (needInlineImport) {
     postcssPlugins.unshift(
-      (
-        await cachedImport('postcss-import', () => import('postcss-import'))
-      ).default({
+      (await importPostcssImport()).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
@@ -928,9 +926,7 @@ async function compileCSS(
 
   if (isModule) {
     postcssPlugins.unshift(
-      (
-        await cachedImport('postcss-modules', () => import('postcss-modules'))
-      ).default({
+      (await importPostcssModules()).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
@@ -967,7 +963,7 @@ async function compileCSS(
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
-    const postcss = await cachedImport('postcss', () => import('postcss'))
+    const postcss = await importPostcss()
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await postcss.default(postcssPlugins).process(code, {
       ...postcssOptions,
@@ -1059,17 +1055,31 @@ async function compileCSS(
 }
 
 const lazyImportCache = new Map()
-function cachedImport<T>(name: string, imp: () => Promise<T>): T | Promise<T> {
-  const cached = lazyImportCache.get(name)
-  if (cached) return cached
+function createCachedImport<T>(
+  name: string,
+  imp: () => Promise<T>,
+): () => T | Promise<T> {
+  return () => {
+    const cached = lazyImportCache.get(name)
+    if (cached) return cached
 
-  const promise = imp().then((module) => {
-    lazyImportCache.set(name, module)
-    return module
-  })
-  lazyImportCache.set(name, promise)
-  return promise
+    const promise = imp().then((module) => {
+      lazyImportCache.set(name, module)
+      return module
+    })
+    lazyImportCache.set(name, promise)
+    return promise
+  }
 }
+const importPostcssImport = createCachedImport(
+  'postcss-import',
+  () => import('postcss-import'),
+)
+const importPostcssModules = createCachedImport(
+  'postcss-modules',
+  () => import('postcss-modules'),
+)
+const importPostcss = createCachedImport('postcss', () => import('postcss'))
 
 export interface PreprocessCSSResult {
   code: string
