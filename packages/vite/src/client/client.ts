@@ -331,6 +331,7 @@ async function waitForSuccessfulPing(
   if (await ping()) {
     return
   }
+  await wait(ms)
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
