@@ -13,11 +13,6 @@
     "template-*",
     "dist"
   ],
-  "exports": {
-    ".": {
-      "import": "./index.js"
-    }
-  },
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild",
