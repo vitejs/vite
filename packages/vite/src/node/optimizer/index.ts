@@ -165,9 +165,6 @@ export interface DepOptimizationResult {
    * to be able to discard the result
    */
   commit: () => Promise<void>
-  /**
-   * @deprecated noop
-   */
   cancel: () => void
 }
 

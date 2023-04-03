@@ -175,14 +175,12 @@ async function createDepsOptimizer(
       }
     | undefined
 
-  let optimizingNewDeps: Promise<DepOptimizationResult> | undefined
   async function close() {
     closed = true
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
       optimizationResult?.cancel(),
-      optimizingNewDeps,
     ])
   }
 
@@ -261,27 +259,6 @@ async function createDepsOptimizer(
     depOptimizationProcessing = newDepOptimizationProcessing()
   }
 
-  async function optimizeNewDeps() {
-    // a successful completion of the optimizeDeps rerun will end up
-    // creating new bundled version of all current and discovered deps
-    // in the cache dir and a new metadata info object assigned
-    // to _metadata. A fullReload is only issued if the previous bundled
-    // dependencies have changed.
-
-    // if the rerun fails, _metadata remains untouched, current discovered
-    // deps are cleaned, and a fullReload is issued
-
-    // All deps, previous known and newly discovered are rebundled,
-    // respect insertion order to keep the metadata file stable
-
-    const knownDeps = prepareKnownDeps()
-
-    startNextDiscoveredBatch()
-
-    optimizationResult = runOptimizeDeps(config, knownDeps)
-    return await optimizationResult.result
-  }
-
   function prepareKnownDeps() {
     const knownDeps: Record<string, OptimizedDepInfo> = {}
     // Clone optimized info objects, fileHash, browserHash may be changed for them
@@ -297,6 +274,18 @@ async function createDepsOptimizer(
   }
 
   async function runOptimizer(preRunResult?: DepOptimizationResult) {
+    // a successful completion of the optimizeDeps rerun will end up
+    // creating new bundled version of all current and discovered deps
+    // in the cache dir and a new metadata info object assigned
+    // to _metadata. A fullReload is only issued if the previous bundled
+    // dependencies have changed.
+
+    // if the rerun fails, _metadata remains untouched, current discovered
+    // deps are cleaned, and a fullReload is issued
+
+    // All deps, previous known and newly discovered are rebundled,
+    // respect insertion order to keep the metadata file stable
+
     const isRerun = firstRunCalled
     firstRunCalled = true
 
@@ -314,9 +303,17 @@ async function createDepsOptimizer(
     currentlyProcessing = true
 
     try {
-      const processingResult =
-        preRunResult ?? (await (optimizingNewDeps = optimizeNewDeps()))
-      optimizingNewDeps = undefined
+      let processingResult: DepOptimizationResult
+      if (preRunResult) {
+        processingResult = preRunResult
+      } else {
+        const knownDeps = prepareKnownDeps()
+        startNextDiscoveredBatch()
+
+        optimizationResult = runOptimizeDeps(config, knownDeps)
+        processingResult = await optimizationResult.result
+        optimizationResult = undefined
+      }
 
       if (closed) {
         currentlyProcessing = false
