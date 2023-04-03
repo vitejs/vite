@@ -328,6 +328,10 @@ async function waitForSuccessfulPing(
     return false
   }
 
+  if (await ping()) {
+    return
+  }
+
   let waitForWindowShowPromise: Promise<void> | undefined
 
   // eslint-disable-next-line no-constant-condition
