@@ -1,9 +1,6 @@
 import fs from 'node:fs'
-import path from 'node:path'
 import license from 'rollup-plugin-license'
 import colors from 'picocolors'
-import fg from 'fast-glob'
-import resolve from 'resolve'
 import type { Plugin } from 'rollup'
 
 export default function licensePlugin(
@@ -65,21 +62,6 @@ export default function licensePlugin(
               text += `Repository: ${
                 typeof repository === 'string' ? repository : repository.url
               }\n`
-            }
-            if (!licenseText && name) {
-              try {
-                const pkgDir = path.dirname(
-                  resolve.sync(path.join(name, 'package.json'), {
-                    preserveSymlinks: false,
-                  }),
-                )
-                const licenseFile = fg.sync(`${pkgDir}/LICENSE*`, {
-                  caseSensitiveMatch: false,
-                })[0]
-                if (licenseFile) {
-                  licenseText = fs.readFileSync(licenseFile, 'utf-8')
-                }
-              } catch {}
             }
             if (licenseText) {
               text +=
