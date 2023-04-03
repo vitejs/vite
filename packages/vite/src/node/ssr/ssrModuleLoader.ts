@@ -28,7 +28,10 @@ type SSRModule = Record<string, any>
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
-const importErrors = new WeakMap<Error, { importee: string }>()
+const errorStacks = new WeakMap<
+  Error,
+  WeakMap<string[], { importee: string }>
+>()
 
 export async function ssrLoadModule(
   url: string,
@@ -161,7 +164,12 @@ async function instantiateModule(
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
       // tell external error handler which mod was imported with error
-      importErrors.set(err, { importee: dep })
+      const stack = errorStacks.get(err)
+      if (stack) {
+        stack.set(urlStack, { importee: dep })
+      } else {
+        errorStacks.set(err, new WeakMap([[urlStack, { importee: dep }]]))
+      }
 
       throw err
     }
@@ -212,7 +220,7 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
-    const errorData = importErrors.get(e)
+    const stack = errorStacks.get(e)
 
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
@@ -221,8 +229,8 @@ async function instantiateModule(
     server.config.logger.error(
       colors.red(
         `Error when evaluating SSR module ${url}:` +
-          (errorData?.importee
-            ? ` failed to import "${errorData.importee}"`
+          (stack
+            ? `\n|- Failed to import ${composeErrorDepsStack(stack, urlStack)}`
             : '') +
           `\n|- ${e.stack}\n`,
       ),
@@ -301,4 +309,16 @@ function proxyESM(mod: any) {
 
 function isPrimitive(value: any) {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
+}
+
+function composeErrorDepsStack(
+  errorStack: WeakMap<string[], { importee: string }>,
+  urlStack: string[],
+) {
+  const { importee } = errorStack.get(urlStack)!
+  return urlStack
+    .concat(importee)
+    .filter((dep) => !dep.startsWith('virtual:'))
+    .reverse()
+    .join('\n    at ')
 }
