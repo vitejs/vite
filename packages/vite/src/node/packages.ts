@@ -60,7 +60,12 @@ export function resolvePackageData(
     const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
     if (packageCache?.has(cacheKey)) return packageCache.get(cacheKey)!
 
-    const pkg = pnp.resolveToUnqualified(pkgName, basedir)
+    let pkg: string | null
+    try {
+      pkg = pnp.resolveToUnqualified(pkgName, basedir)
+    } catch {
+      return null
+    }
     if (!pkg) return null
 
     const pkgData = loadPackageData(path.join(pkg, 'package.json'))
