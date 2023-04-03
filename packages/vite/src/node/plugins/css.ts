@@ -891,7 +891,7 @@ async function compileCSS(
 
   if (needInlineImport) {
     postcssPlugins.unshift(
-      (await import('postcss-import')).default({
+      (await importPostcssImport()).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
@@ -926,7 +926,7 @@ async function compileCSS(
 
   if (isModule) {
     postcssPlugins.unshift(
-      (await import('postcss-modules')).default({
+      (await importPostcssModules()).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
@@ -963,31 +963,30 @@ async function compileCSS(
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
+    const postcss = await importPostcss()
     // postcss is an unbundled dep and should be lazy imported
-    postcssResult = await (await import('postcss'))
-      .default(postcssPlugins)
-      .process(code, {
-        ...postcssOptions,
-        parser:
-          lang === 'sss'
-            ? loadPreprocessor(PostCssDialectLang.sss, config.root)
-            : postcssOptions.parser,
-        to: source,
-        from: source,
-        ...(devSourcemap
-          ? {
-              map: {
-                inline: false,
-                annotation: false,
-                // postcss may return virtual files
-                // we cannot obtain content of them, so this needs to be enabled
-                sourcesContent: true,
-                // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-                // prev: preprocessorMap,
-              },
-            }
-          : {}),
-      })
+    postcssResult = await postcss.default(postcssPlugins).process(code, {
+      ...postcssOptions,
+      parser:
+        lang === 'sss'
+          ? loadPreprocessor(PostCssDialectLang.sss, config.root)
+          : postcssOptions.parser,
+      to: source,
+      from: source,
+      ...(devSourcemap
+        ? {
+            map: {
+              inline: false,
+              annotation: false,
+              // postcss may return virtual files
+              // we cannot obtain content of them, so this needs to be enabled
+              sourcesContent: true,
+              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+              // prev: preprocessorMap,
+            },
+          }
+        : {}),
+    })
 
     // record CSS dependencies from @imports
     for (const message of postcssResult.messages) {
@@ -1054,6 +1053,33 @@ async function compileCSS(
     deps,
   }
 }
+
+const lazyImportCache = new Map()
+function createCachedImport<T>(
+  name: string,
+  imp: () => Promise<T>,
+): () => T | Promise<T> {
+  return () => {
+    const cached = lazyImportCache.get(name)
+    if (cached) return cached
+
+    const promise = imp().then((module) => {
+      lazyImportCache.set(name, module)
+      return module
+    })
+    lazyImportCache.set(name, promise)
+    return promise
+  }
+}
+const importPostcssImport = createCachedImport(
+  'postcss-import',
+  () => import('postcss-import'),
+)
+const importPostcssModules = createCachedImport(
+  'postcss-modules',
+  () => import('postcss-modules'),
+)
+const importPostcss = createCachedImport('postcss', () => import('postcss'))
 
 export interface PreprocessCSSResult {
   code: string
