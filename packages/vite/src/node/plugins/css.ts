@@ -892,7 +892,7 @@ async function compileCSS(
   if (needInlineImport) {
     postcssPlugins.unshift(
       (
-        await lazyImport('postcss-import', () => import('postcss-import'))
+        await cachedImport('postcss-import', () => import('postcss-import'))
       ).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
@@ -929,7 +929,7 @@ async function compileCSS(
   if (isModule) {
     postcssPlugins.unshift(
       (
-        await lazyImport('postcss-modules', () => import('postcss-modules'))
+        await cachedImport('postcss-modules', () => import('postcss-modules'))
       ).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
@@ -967,7 +967,7 @@ async function compileCSS(
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
-    const postcss = await lazyImport('postcss', () => import('postcss'))
+    const postcss = await cachedImport('postcss', () => import('postcss'))
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await postcss.default(postcssPlugins).process(code, {
       ...postcssOptions,
@@ -1059,7 +1059,7 @@ async function compileCSS(
 }
 
 const lazyImportCache = new Map()
-function lazyImport<T>(name: string, imp: () => Promise<T>): T | Promise<T> {
+function cachedImport<T>(name: string, imp: () => Promise<T>): T | Promise<T> {
   const cached = lazyImportCache.get(name)
   if (cached) return cached
 
