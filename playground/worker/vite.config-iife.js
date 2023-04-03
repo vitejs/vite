@@ -38,6 +38,7 @@ export default vite.defineConfig({
   },
   build: {
     outDir: 'dist/iife',
+    manifest: true,
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name].[ext]',

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, page, testDir, untilUpdated } from '~utils'
+import { isBuild, page, readManifest, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong')
@@ -79,6 +79,11 @@ describe.runIf(isBuild)('build', () => {
       () => page.textContent('.nested-worker-constructor'),
       '"type":"constructor"',
     )
+  })
+
+  test('should not emit worker manifest', async () => {
+    const manifest = readManifest('iife')
+    expect(manifest['index.html']).toBeDefined()
   })
 })
 
