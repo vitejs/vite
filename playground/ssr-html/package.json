@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node server",
     "serve": "NODE_ENV=production node server",
-    "debug": "node --inspect-brk server"
+    "debug": "node --inspect-brk server",
+    "test-stacktrace:off": "node test-stacktrace false",
+    "test-stacktrace:on": "node test-stacktrace true"
   },
   "dependencies": {},
   "devDependencies": {

@@ -1,3 +1,6 @@
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import path from 'node:path'
 import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
@@ -54,4 +57,28 @@ describe.runIf(isServe)('hmr', () => {
       return await el.textContent()
     }, '[wow]')
   })
+})
+
+describe.runIf(isServe)('stacktrace', () => {
+  const execFileAsync = promisify(execFile)
+
+  for (const sourcemapsEnabled of [false, true]) {
+    test(`stacktrace is correct when sourcemaps is${
+      sourcemapsEnabled ? '' : ' not'
+    } enabled in Node.js`, async () => {
+      const testStacktraceFile = path.resolve(
+        __dirname,
+        '../test-stacktrace.js',
+      )
+
+      const p = await execFileAsync('node', [
+        testStacktraceFile,
+        '' + sourcemapsEnabled,
+      ])
+      const line = p.stdout
+        .split('\n')
+        .find((line) => line.includes('Module.error'))
+      expect(line.trim()).toMatch(/[\\/]src[\\/]error\.js:2:9/)
+    })
+  }
 })

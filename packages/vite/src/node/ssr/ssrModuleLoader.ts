@@ -11,6 +11,7 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
+import { genSourceMapUrl } from '../server/sourcemap'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -25,6 +26,16 @@ interface SSRContext {
 }
 
 type SSRModule = Record<string, any>
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const AsyncFunction = async function () {}.constructor as typeof Function
+let fnDeclarationLineCount = 0
+{
+  const body = '/*code*/'
+  const source = new AsyncFunction('a', 'b', body).toString()
+  fnDeclarationLineCount =
+    source.slice(0, source.indexOf(body)).split('\n').length - 1
+}
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
@@ -190,9 +201,18 @@ async function instantiateModule(
     }
   }
 
+  let sourceMapSuffix = ''
+  if (result.map) {
+    const moduleSourceMap = Object.assign({}, result.map, {
+      // currently we need to offset the line
+      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
+      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
+    })
+    sourceMapSuffix =
+      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
+  }
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const AsyncFunction = async function () {}.constructor as typeof Function
     const initModule = new AsyncFunction(
       `global`,
       ssrModuleExportsKey,
@@ -200,7 +220,9 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`,
+      '"use strict";' +
+        result.code +
+        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
