@@ -43,16 +43,11 @@ const isDebugEnabled = _debug('vite:deps').enabled
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
-const reExportRE = /export\s+\*\s+from/
 
 export type ExportsData = {
   hasImports: boolean
   // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
-  facade: boolean
-  // es-module-lexer has a facade detection but isn't always accurate for our
-  // use case when the module has default export
-  hasReExports?: boolean
   // hint if the dep requires loading as jsx
   jsxLoader?: boolean
 }
@@ -731,7 +726,7 @@ async function prepareEsbuildOptimizerRun(
     const src = depsInfo[id].src!
     const exportsData = await (depsInfo[id].exportsData ??
       extractExportsData(src, config, ssr))
-    if (exportsData.jsxLoader) {
+    if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
       // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
       // This is useful for packages such as Gatsby.
       esbuildOptions.loader = {
@@ -1152,11 +1147,10 @@ export async function extractExportsData(
       write: false,
       format: 'esm',
     })
-    const [imports, exports, facade] = parse(result.outputFiles[0].text)
+    const [imports, exports] = parse(result.outputFiles[0].text)
     return {
       hasImports: imports.length > 0,
       exports: exports.map((e) => e.n),
-      facade,
     }
   }
 
@@ -1174,25 +1168,14 @@ export async function extractExportsData(
     const transformed = await transformWithEsbuild(entryContent, filePath, {
       loader,
     })
-    // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-    // This is useful for packages such as Gatsby.
-    esbuildOptions.loader = {
-      '.js': 'jsx',
-      ...esbuildOptions.loader,
-    }
     parseResult = parse(transformed.code)
     usedJsxLoader = true
   }
 
-  const [imports, exports, facade] = parseResult
+  const [imports, exports] = parseResult
   const exportsData: ExportsData = {
     hasImports: imports.length > 0,
     exports: exports.map((e) => e.n),
-    facade,
-    hasReExports: imports.some(({ ss, se }) => {
-      const exp = entryContent.slice(ss, se)
-      return reExportRE.test(exp)
-    }),
     jsxLoader: usedJsxLoader,
   }
   return exportsData
