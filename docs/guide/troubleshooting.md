@@ -145,6 +145,6 @@ For example, you might see these errors.
 
 If these code are used inside dependencies, you could use [`patch-package`](https://github.com/ds300/patch-package) (or [`yarn patch`](https://yarnpkg.com/cli/patch) or [`pnpm patch`](https://pnpm.io/cli/patch)) for an escape hatch.
 
-### Browser extension blocker
+### Browser extensions
 
-Some browser extensions(e.g ad-blocker) may prevent vite client from sending requests to vite dev server. This might make the vite client page become white screen without any errors output. Try to disable these extensions before you visit the page.
+Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.
