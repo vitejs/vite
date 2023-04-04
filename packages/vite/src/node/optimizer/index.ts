@@ -1236,11 +1236,13 @@ function isSingleDefaultExport(exports: readonly string[]) {
 }
 
 const lockfileFormats = [
-  { name: 'package-lock.json', checkPatches: true },
-  { name: 'yarn.lock', checkPatches: true }, // Included in lockfile for v2+
-  { name: 'pnpm-lock.yaml', checkPatches: false }, // Included in lockfile
-  { name: 'bun.lockb', checkPatches: true },
-]
+  { name: 'package-lock.json', checkPatches: true, manager: 'npm' },
+  { name: 'yarn.lock', checkPatches: true, manager: 'yarn' }, // Included in lockfile for v2+
+  { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
+  { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
+].sort((_, { manager }) => {
+  return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
+})
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
