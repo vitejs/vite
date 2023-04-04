@@ -339,6 +339,13 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
+  return _createServer(inlineConfig, { ws: true })
+}
+
+export async function _createServer(
+  inlineConfig: InlineConfig = {},
+  options: { ws: boolean },
+): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
   if (isDepsOptimizerEnabled(config, false)) {
@@ -699,6 +706,9 @@ export async function createServer(
       return listen(port, ...args)
     }) as any
   } else {
+    if (options.ws) {
+      ws.listen()
+    }
     await initServer()
   }
 
@@ -832,7 +842,8 @@ async function restartServer(server: ViteDevServer) {
 
   let newServer = null
   try {
-    newServer = await createServer(inlineConfig)
+    // delay ws server listen
+    newServer = await _createServer(inlineConfig, { ws: false })
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true,
@@ -864,6 +875,7 @@ async function restartServer(server: ViteDevServer) {
       server.printUrls()
     }
   } else {
+    server.ws.listen()
     logger.info('server restarted.', { timestamp: true })
   }
 
