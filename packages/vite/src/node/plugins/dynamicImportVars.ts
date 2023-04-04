@@ -7,6 +7,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
   normalizePath,
@@ -167,7 +168,11 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (!filter(importer) || !hasDynamicImportRE.test(source)) {
+      if (
+        !filter(importer) ||
+        importer === CLIENT_ENTRY ||
+        !hasDynamicImportRE.test(source)
+      ) {
         return
       }
 
