@@ -315,10 +315,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
+  // list of css emit tasks to guarantee the files are emitted in a deterministic order
+  let emitTasks: Promise<void>[] = []
   let pureCssChunks: Set<RenderedChunk>
-  let emitTasks: Set<{ name: string; emit: () => Promise<void> }>
-  let sortedEmitTasks: { name: string; emit: () => Promise<void> }[]
-  let emitTaskRunning: Promise<void> | null
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -355,9 +354,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
-      emitTasks = new Set<{ name: string; emit: () => Promise<void> }>()
-      sortedEmitTasks = []
-      emitTaskRunning = null
+      emitTasks = []
     },
 
     async transform(css, id, options) {
@@ -568,48 +565,40 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
-          const emitName = path.basename(cssFileName)
 
-          emitTasks.add({
-            name: emitName,
-            emit: async () => {
-              chunkCSS = await finalizeCss(chunkCSS, true, config)
-
-              // emit corresponding css file
-              const referenceId = this.emitFile({
-                name: emitName,
-                type: 'asset',
-                source: chunkCSS,
-              })
-              const originalName = isPreProcessor(lang)
-                ? cssAssetName
-                : cssFileName
-              const isEntry = chunk.isEntry && isPureCssChunk
-              generatedAssets
-                .get(config)!
-                .set(referenceId, { originalName, isEntry })
-              chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-            },
+          const previousTask = emitTasks[emitTasks.length - 1]
+          // finalizeCss is async which makes `emitFile` non-deterministic, so
+          // we use a `.then` to wait for previous tasks before finishing this
+          const thisTask = finalizeCss(chunkCSS, true, config).then((css) => {
+            chunkCSS = css
+            // make sure the previous task is also finished, this works recursively
+            return previousTask
           })
 
-          // wait for collecting all emitFile
-          await sortedEmitTasks
+          // push this task so the next task can wait for this one
+          emitTasks.push(thisTask)
+          const emitTasksLength = emitTasks.length
 
-          if (!sortedEmitTasks.length) {
-            sortedEmitTasks = Array.from(emitTasks).sort((next, cur) => {
-              return next.name.length > cur.name.length ||
-                (next.name.length === cur.name.length && next.name > cur.name)
-                ? 1
-                : -1
-            })
-            emitTaskRunning = (async () => {
-              for (const { emit } of sortedEmitTasks) {
-                await emit()
-              }
-            })()
+          // wait for this and previous tasks to finish
+          await thisTask
+
+          // emit corresponding css file
+          const referenceId = this.emitFile({
+            name: path.basename(cssFileName),
+            type: 'asset',
+            source: chunkCSS,
+          })
+          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
+          const isEntry = chunk.isEntry && isPureCssChunk
+          generatedAssets
+            .get(config)!
+            .set(referenceId, { originalName, isEntry })
+          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+
+          if (emitTasksLength === emitTasks.length) {
+            // this is the last task, clear `emitTasks` to free up memory
+            emitTasks = []
           }
-
-          await emitTaskRunning
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
