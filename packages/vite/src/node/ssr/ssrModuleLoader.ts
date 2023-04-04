@@ -226,10 +226,10 @@ async function instantiateModule(
       ssrFixStacktrace(e, moduleGraph)
     }
 
-    const errorDepsStack = stack ? getErrorDepsStack(stack, urlStack) : []
+    const errorDepsStack = getErrorDepsStack(urlStack, stack)
 
-    // only log origin error or the top url's error
-    if (!stack || errorDepsStack[0] === url) {
+    // only log the top url's error
+    if (errorDepsStack[0] === url) {
       server.config.logger.error(
         colors.red(
           `Error when evaluating SSR module ${url}:` +
@@ -319,9 +319,13 @@ function isPrimitive(value: any) {
 }
 
 function getErrorDepsStack(
-  errorStack: WeakMap<string[], { importee: string }>,
   urlStack: string[],
+  errorStack: WeakMap<string[], { importee: string }> | undefined,
 ) {
-  const { importee } = errorStack.get(urlStack)!
-  return urlStack.concat(importee).filter((dep) => !dep.startsWith('virtual:'))
+  if (errorStack) {
+    const { importee } = errorStack.get(urlStack)!
+    urlStack = urlStack.concat(importee)
+  }
+
+  return urlStack.filter((dep) => !dep.startsWith('virtual:'))
 }
