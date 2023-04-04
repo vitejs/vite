@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import glob from 'fast-glob'
@@ -913,7 +914,7 @@ async function compileCSS(
 
   if (needInlineImport) {
     postcssPlugins.unshift(
-      (await import('postcss-import')).default({
+      (await importPostcssImport()).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
@@ -948,7 +949,7 @@ async function compileCSS(
 
   if (isModule) {
     postcssPlugins.unshift(
-      (await import('postcss-modules')).default({
+      (await importPostcssModules()).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
@@ -985,31 +986,30 @@ async function compileCSS(
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
+    const postcss = await importPostcss()
     // postcss is an unbundled dep and should be lazy imported
-    postcssResult = await (await import('postcss'))
-      .default(postcssPlugins)
-      .process(code, {
-        ...postcssOptions,
-        parser:
-          lang === 'sss'
-            ? loadPreprocessor(PostCssDialectLang.sss, config.root)
-            : postcssOptions.parser,
-        to: source,
-        from: source,
-        ...(devSourcemap
-          ? {
-              map: {
-                inline: false,
-                annotation: false,
-                // postcss may return virtual files
-                // we cannot obtain content of them, so this needs to be enabled
-                sourcesContent: true,
-                // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-                // prev: preprocessorMap,
-              },
-            }
-          : {}),
-      })
+    postcssResult = await postcss.default(postcssPlugins).process(code, {
+      ...postcssOptions,
+      parser:
+        lang === 'sss'
+          ? loadPreprocessor(PostCssDialectLang.sss, config.root)
+          : postcssOptions.parser,
+      to: source,
+      from: source,
+      ...(devSourcemap
+        ? {
+            map: {
+              inline: false,
+              annotation: false,
+              // postcss may return virtual files
+              // we cannot obtain content of them, so this needs to be enabled
+              sourcesContent: true,
+              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+              // prev: preprocessorMap,
+            },
+          }
+        : {}),
+    })
 
     // record CSS dependencies from @imports
     for (const message of postcssResult.messages) {
@@ -1076,6 +1076,33 @@ async function compileCSS(
     deps,
   }
 }
+
+const lazyImportCache = new Map()
+function createCachedImport<T>(
+  name: string,
+  imp: () => Promise<T>,
+): () => T | Promise<T> {
+  return () => {
+    const cached = lazyImportCache.get(name)
+    if (cached) return cached
+
+    const promise = imp().then((module) => {
+      lazyImportCache.set(name, module)
+      return module
+    })
+    lazyImportCache.set(name, promise)
+    return promise
+  }
+}
+const importPostcssImport = createCachedImport(
+  'postcss-import',
+  () => import('postcss-import'),
+)
+const importPostcssModules = createCachedImport(
+  'postcss-modules',
+  () => import('postcss-modules'),
+)
+const importPostcss = createCachedImport('postcss', () => import('postcss'))
 
 export interface PreprocessCSSResult {
   code: string
@@ -1372,6 +1399,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      charset: 'utf8',
       ...resolveEsbuildMinifyOptions(config.esbuild || {}),
     })
     if (warnings.length) {
@@ -1697,7 +1725,7 @@ async function rebaseUrls(
     return { file }
   }
 
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   // no url()
   const hasUrls = cssUrlRE.test(content)
   // data-uri() calls
@@ -1856,7 +1884,7 @@ function createViteLessPlugin(
           if (result && 'contents' in result) {
             contents = result.contents
           } else {
-            contents = fs.readFileSync(resolved, 'utf-8')
+            contents = await fsp.readFile(resolved, 'utf-8')
           }
           return {
             filename: path.resolve(resolved),

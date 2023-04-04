@@ -60,7 +60,12 @@ export function resolvePackageData(
     const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
     if (packageCache?.has(cacheKey)) return packageCache.get(cacheKey)!
 
-    const pkg = pnp.resolveToUnqualified(pkgName, basedir)
+    let pkg: string | null
+    try {
+      pkg = pnp.resolveToUnqualified(pkgName, basedir)
+    } catch {
+      return null
+    }
     if (!pkg) return null
 
     const pkgData = loadPackageData(path.join(pkg, 'package.json'))
@@ -141,6 +146,23 @@ export function findNearestPackageData(
   }
 
   return null
+}
+
+// Finds the nearest package.json with a `name` field
+export function findNearestMainPackageData(
+  basedir: string,
+  packageCache?: PackageCache,
+): PackageData | null {
+  const nearestPackage = findNearestPackageData(basedir, packageCache)
+  return (
+    nearestPackage &&
+    (nearestPackage.data.name
+      ? nearestPackage
+      : findNearestMainPackageData(
+          path.dirname(nearestPackage.dir),
+          packageCache,
+        ))
+  )
 }
 
 export function loadPackageData(pkgPath: string): PackageData {

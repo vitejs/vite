@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
@@ -17,17 +18,17 @@ import {
   flattenId,
   getHash,
   isOptimizable,
+  isWindows,
   lookupFile,
   normalizeId,
   normalizePath,
-  removeDir,
   removeLeadingSlash,
-  renameDir,
-  writeFile,
+  tryStatSync,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
+import type { ViteDevServer } from '../server'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -73,6 +74,7 @@ export interface DepsOptimizer {
   close: () => Promise<void>
 
   options: DepOptimizationOptions
+  server?: ViteDevServer
 }
 
 export interface DepOptimizationConfig {
@@ -233,7 +235,7 @@ export async function optimizeDeps(
 
   const ssr = config.command === 'build' && !!config.build.ssr
 
-  const cachedMetadata = loadCachedDepOptimizationMetadata(
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
     ssr,
     force,
@@ -263,7 +265,7 @@ export async function optimizeServerSsrDeps(
   config: ResolvedConfig,
 ): Promise<DepOptimizationMetadata> {
   const ssr = true
-  const cachedMetadata = loadCachedDepOptimizationMetadata(
+  const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
     ssr,
     config.optimizeDeps.force,
@@ -340,19 +342,24 @@ export function addOptimizedDepInfo(
  * Creates the initial dep optimization metadata, loading it from the deps cache
  * if it exists and pre-bundling isn't forced
  */
-export function loadCachedDepOptimizationMetadata(
+export async function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
   ssr: boolean,
   force = config.optimizeDeps.force,
   asCommand = false,
-): DepOptimizationMetadata | undefined {
+): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
-  // Before Vite 2.9, dependencies were cached in the root of the cacheDir
-  // For compat, we remove the cache if we find the old structure
-  if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
-    emptyDir(config.cacheDir)
-  }
+  setTimeout(() => {
+    // Before Vite 2.9, dependencies were cached in the root of the cacheDir
+    // For compat, we remove the cache if we find the old structure
+    if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
+      emptyDir(config.cacheDir)
+    }
+    // Fire a clean up of stale cache dirs, in case old processes didn't
+    // terminate correctly
+    cleanupDepsCacheStaleDirs(config)
+  }, 100)
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
@@ -361,7 +368,7 @@ export function loadCachedDepOptimizationMetadata(
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
       cachedMetadata = parseDepsOptimizerMetadata(
-        fs.readFileSync(cachedMetadataPath, 'utf-8'),
+        await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
     } catch (e) {}
@@ -377,7 +384,7 @@ export function loadCachedDepOptimizationMetadata(
   }
 
   // Start with a fresh cache
-  fs.rmSync(depsCacheDir, { recursive: true, force: true })
+  await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
 /**
@@ -478,17 +485,13 @@ export function runOptimizeDeps(
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
-  if (fs.existsSync(processingCacheDir)) {
-    emptyDir(processingCacheDir)
-  } else {
-    fs.mkdirSync(processingCacheDir, { recursive: true })
-  }
+  fs.mkdirSync(processingCacheDir, { recursive: true })
 
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
-  writeFile(
+  fs.writeFileSync(
     path.resolve(processingCacheDir, 'package.json'),
-    JSON.stringify({ type: 'module' }),
+    `{\n  "type": "module"\n}\n`,
   )
 
   const metadata = initDepsOptimizerMetadata(config, ssr)
@@ -503,36 +506,75 @@ export function runOptimizeDeps(
   // the optimizedDepInfo.processing promise for each dep
 
   const qualifiedIds = Object.keys(depsInfo)
-
   let cleaned = false
+  let committed = false
   const cleanUp = () => {
-    if (!cleaned) {
+    // If commit was already called, ignore the clean up even if a cancel was requested
+    // This minimizes the chances of leaving the deps cache in a corrupted state
+    if (!cleaned && !committed) {
       cleaned = true
-      fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      // No need to wait, we can clean up in the background because temp folders
+      // are unique per run
+      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+        // Ignore errors
+      })
     }
   }
-  const createProcessingResult = () => ({
+
+  const succesfulResult: DepOptimizationResult = {
     metadata,
-    async commit() {
-      if (cleaned) {
-        throw new Error(
-          `Vite Internal Error: Can't commit optimizeDeps processing result, it has already been cancelled.`,
-        )
-      }
-      // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-      // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-      // Rewire the file paths from the temporal processing dir to the final deps cache dir
-      await removeDir(depsCacheDir)
-      await renameDir(processingCacheDir, depsCacheDir)
-    },
     cancel: cleanUp,
-  })
+    commit: async () => {
+      // Ignore clean up requests after this point so the temp folder isn't deleted before
+      // we finish commiting the new deps cache files to the deps folder
+      committed = true
+
+      // Write metadata file, then commit the processing folder to the global deps cache
+      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+      const dataPath = path.join(processingCacheDir, '_metadata.json')
+      fs.writeFileSync(
+        dataPath,
+        stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+      )
+
+      // In order to minimize the time where the deps folder isn't in a consistent state,
+      // we first rename the old depsCacheDir to a temporal path, then we rename the
+      // new processing cache dir to the depsCacheDir. In systems where doing so in sync
+      // is safe, we do an atomic operation (at least for this thread). For Windows, we
+      // found there are cases where the rename operation may finish before it's done
+      // so we do a graceful rename checking that the folder has been properly renamed.
+      // We found that the rename-rename (then delete the old folder in the background)
+      // is safer than a delete-rename operation.
+      const temporalPath = depsCacheDir + getTempSuffix()
+      const depsCacheDirPresent = fs.existsSync(depsCacheDir)
+      if (isWindows) {
+        if (depsCacheDirPresent) await safeRename(depsCacheDir, temporalPath)
+        await safeRename(processingCacheDir, depsCacheDir)
+      } else {
+        if (depsCacheDirPresent) fs.renameSync(depsCacheDir, temporalPath)
+        fs.renameSync(processingCacheDir, depsCacheDir)
+      }
+
+      // Delete temporal path in the background
+      if (depsCacheDirPresent)
+        fsp.rm(temporalPath, { recursive: true, force: true })
+    },
+  }
 
   if (!qualifiedIds.length) {
+    // No deps to optimize, we still commit the processing cache dir to remove
+    // the previous optimized deps if they exist, and let the next server start
+    // skip the scanner step if the lockfile hasn't changed
     return {
       cancel: async () => cleanUp(),
-      result: Promise.resolve(createProcessingResult()),
+      result: Promise.resolve(succesfulResult),
     }
+  }
+
+  const cancelledResult: DepOptimizationResult = {
+    metadata,
+    commit: async () => cleanUp(),
+    cancel: cleanUp,
   }
 
   const start = performance.now()
@@ -545,7 +587,7 @@ export function runOptimizeDeps(
     optimizerContext,
   )
 
-  const result = preparedRun.then(({ context, idToExports }) => {
+  const runResult = preparedRun.then(({ context, idToExports }) => {
     function disposeContext() {
       return context?.dispose().catch((e) => {
         config.logger.error('Failed to dispose esbuild context', { error: e })
@@ -553,7 +595,7 @@ export function runOptimizeDeps(
     }
     if (!context || optimizerContext.cancelled) {
       disposeContext()
-      return createProcessingResult()
+      return cancelledResult
     }
 
     return context
@@ -619,21 +661,18 @@ export function runOptimizeDeps(
           }
         }
 
-        const dataPath = path.join(processingCacheDir, '_metadata.json')
-        writeFile(
-          dataPath,
-          stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+        debug(
+          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
-
-        return createProcessingResult()
+        return succesfulResult
       })
+
       .catch((e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
           // esbuild logs an error when cancelling, but this is expected so
           // return an empty result instead
-          return createProcessingResult()
+          return cancelledResult
         }
         throw e
       })
@@ -642,7 +681,7 @@ export function runOptimizeDeps(
       })
   })
 
-  result.catch(() => {
+  runResult.catch(() => {
     cleanUp()
   })
 
@@ -653,7 +692,7 @@ export function runOptimizeDeps(
       await context?.cancel()
       cleanUp()
     },
-    result,
+    result: runResult,
   }
 }
 
@@ -931,20 +970,30 @@ function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
   return (
     getDepsCacheDirPrefix(config) +
     getDepsCacheSuffix(config, ssr) +
-    '_temp_' +
-    getHash(Date.now().toString())
+    getTempSuffix()
   )
 }
 
-export function getDepsCacheDirPrefix(config: ResolvedConfig): string {
+function getTempSuffix() {
+  return (
+    '_temp_' +
+    getHash(
+      `${process.pid}:${Date.now().toString()}:${Math.random()
+        .toString(16)
+        .slice(2)}`,
+    )
+  )
+}
+
+function getDepsCacheDirPrefix(config: ResolvedConfig): string {
   return normalizePath(path.resolve(config.cacheDir, 'deps'))
 }
 
-export function isOptimizedDepFile(
-  id: string,
+export function createIsOptimizedDepFile(
   config: ResolvedConfig,
-): boolean {
-  return id.startsWith(getDepsCacheDirPrefix(config))
+): (id: string) => boolean {
+  const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
+  return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
 export function createIsOptimizedDepUrl(
@@ -1114,7 +1163,7 @@ export async function extractExportsData(
   let parseResult: ReturnType<typeof parse>
   let usedJsxLoader = false
 
-  const entryContent = fs.readFileSync(filePath, 'utf-8')
+  const entryContent = await fsp.readFile(filePath, 'utf-8')
   try {
     parseResult = parse(entryContent)
   } catch {
@@ -1192,13 +1241,10 @@ const lockfileFormats = [
   { name: 'pnpm-lock.yaml', checkPatches: false }, // Included in lockfile
   { name: 'bun.lockb', checkPatches: true },
 ]
+const lockfileNames = lockfileFormats.map((l) => l.name)
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  const lockfilePath = lookupFile(
-    config.root,
-    lockfileFormats.map((l) => l.name),
-    { pathOnly: true },
-  )
+  const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)
@@ -1208,11 +1254,9 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
     if (checkPatches) {
       // Default of https://github.com/ds300/patch-package
       const fullPath = path.join(path.dirname(lockfilePath), 'patches')
-      if (fs.existsSync(fullPath)) {
-        const stats = fs.statSync(fullPath)
-        if (stats.isDirectory()) {
-          content += stats.mtimeMs.toString()
-        }
+      const stat = tryStatSync(fullPath)
+      if (stat?.isDirectory()) {
+        content += stat.mtimeMs.toString()
       }
     }
   }
@@ -1317,7 +1361,7 @@ export async function cleanupDepsCacheStaleDirs(
             stats?.mtime &&
             Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
           ) {
-            await removeDir(tempDirPath)
+            await fsp.rm(tempDirPath, { recursive: true, force: true })
           }
         }
       }
@@ -1326,3 +1370,44 @@ export async function cleanupDepsCacheStaleDirs(
     config.logger.error(err)
   }
 }
+
+// We found issues with renaming folders in some systems. This is a custom
+// implementation for the optimizer. It isn't intended to be a general utility
+
+// Based on node-graceful-fs
+
+// The ISC License
+// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
+// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+
+// On Windows, A/V software can lock the directory, causing this
+// to fail with an EACCES or EPERM if the directory contains newly
+// created files. The original tried for up to 60 seconds, we only
+// wait for 5 seconds, as a longer time would be seen as an error
+
+const GRACEFUL_RENAME_TIMEOUT = 5000
+const safeRename = promisify(function gracefulRename(
+  from: string,
+  to: string,
+  cb: (error: NodeJS.ErrnoException | null) => void,
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rename(from, to, function CB(er) {
+    if (
+      er &&
+      (er.code === 'EACCES' || er.code === 'EPERM') &&
+      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
+    ) {
+      setTimeout(function () {
+        fs.stat(to, function (stater, st) {
+          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
+          else CB(er)
+        })
+      }, backoff)
+      if (backoff < 100) backoff += 10
+      return
+    }
+    if (cb) cb(er)
+  })
+})

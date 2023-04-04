@@ -32,14 +32,6 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
-export function isWorkerRequest(id: string): boolean {
-  const query = parseRequest(id)
-  if (query && query[WORKER_FILE_ID] != null) {
-    return true
-  }
-  return false
-}
-
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
   asset: EmittedAsset,
@@ -191,6 +183,20 @@ export async function workerFileToUrl(
     workerMap.bundle.set(id, fileName)
   }
   return encodeWorkerAssetFileName(fileName, workerMap)
+}
+
+export function webWorkerPostPlugin(): Plugin {
+  return {
+    name: 'vite:worker-post',
+    resolveImportMeta(property, { chunkId, format }) {
+      // document is undefined in the worker, so we need to avoid it in iife
+      if (property === 'url' && format === 'iife') {
+        return 'self.location.href'
+      }
+
+      return null
+    },
+  }
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -360,7 +366,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         )
       }
-      if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+      if (code.match(workerAssetUrlRE)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
         )

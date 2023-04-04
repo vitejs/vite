@@ -24,6 +24,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  isInNodeModules,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -35,7 +36,6 @@ import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
-  cleanupDepsCacheStaleDirs,
   getDepsOptimizer,
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -340,6 +340,12 @@ export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
+
+  if (isDepsOptimizerEnabled(config, false)) {
+    // start optimizer in the background, we still need to await the setup
+    await initDepsOptimizer(config)
+  }
+
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -361,7 +367,7 @@ export async function createServer(
 
   const watcher = chokidar.watch(
     // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, config.envDir],
+    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -656,21 +662,24 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
+  // when the optimizer is ready, hook server so that it can reload the page
+  // or invalidate the module graph when needed
+  const depsOptimizer = getDepsOptimizer(config)
+  if (depsOptimizer) {
+    depsOptimizer.server = server
+  }
+
+  // httpServer.listen can be called multiple times
+  // when port when using next port number
+  // this code is to avoid calling buildStart multiple times
   let initingServer: Promise<void> | undefined
   let serverInited = false
   const initServer = async () => {
-    if (serverInited) {
-      return
-    }
-    if (initingServer) {
-      return initingServer
-    }
+    if (serverInited) return
+    if (initingServer) return initingServer
+
     initingServer = (async function () {
       await container.buildStart({})
-      if (isDepsOptimizerEnabled(config, false)) {
-        // non-ssr
-        await initDepsOptimizer(config, server)
-      }
       initingServer = undefined
       serverInited = true
     })()
@@ -692,10 +701,6 @@ export async function createServer(
   } else {
     await initServer()
   }
-
-  // Fire a clean up of stale cache dirs, in case old processes didn't
-  // terminate correctly. Don't await this promise
-  cleanupDepsCacheStaleDirs(config)
 
   return server
 }
@@ -772,8 +777,7 @@ export function resolveServerOptions(
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
         ? () => false
-        : raw?.sourcemapIgnoreList ||
-          ((sourcePath) => sourcePath.includes('node_modules')),
+        : raw?.sourcemapIgnoreList || isInNodeModules,
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow

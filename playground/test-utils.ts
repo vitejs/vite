@@ -22,6 +22,7 @@ export const ports = {
   lib: 9521,
   'optimize-missing-deps': 9522,
   'legacy/client-and-ssr': 9523,
+  'assets/url-base': 9524, // not imported but used in `assets/vite.config-url-base.js`
   ssr: 9600,
   'ssr-deps': 9601,
   'ssr-html': 9602,
@@ -70,7 +71,11 @@ const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
 async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
   if (typeof el === 'string') {
-    return await page.$(el)
+    const realEl = await page.$(el)
+    if (realEl == null) {
+      throw new Error(`Cannot find element: "${el}"`)
+    }
+    return realEl
   }
   return el
 }
@@ -152,14 +157,19 @@ export function readManifest(base = ''): Manifest {
  */
 export async function untilUpdated(
   poll: () => string | Promise<string>,
-  expected: string,
+  expected: string | RegExp,
   runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
-    if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
+    if (
+      (typeof expected === 'string'
+        ? actual.indexOf(expected) > -1
+        : actual.match(expected)) ||
+      tries === maxTries - 1
+    ) {
       expect(actual).toMatch(expected)
       break
     } else {

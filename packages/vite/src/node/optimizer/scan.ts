@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
@@ -17,6 +18,7 @@ import {
   createDebugger,
   dataUrlRE,
   externalRE,
+  isInNodeModules,
   isObject,
   isOptimizable,
   moduleListContains,
@@ -32,6 +34,7 @@ import { transformGlobImport } from '../plugins/importMetaGlob'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
+const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
@@ -82,7 +85,11 @@ export function scanImports(config: ResolvedConfig): {
     }
     if (scanContext.cancelled) return
 
-    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
+    debug(
+      `Crawling dependencies using entries: ${entries
+        .map((entry) => `\n  ${colors.dim(entry)}`)
+        .join('')}`,
+    )
     return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
   })
 
@@ -134,10 +141,15 @@ export function scanImports(config: ResolvedConfig): {
       throw e
     })
     .finally(() => {
-      debug(
-        `Scan completed in ${(performance.now() - start).toFixed(2)}ms:`,
-        deps,
-      )
+      if (isDebug) {
+        const duration = (performance.now() - start).toFixed(2)
+        const depsStr =
+          Object.keys(orderedDependencies(deps))
+            .sort()
+            .map((id) => `\n  ${colors.cyan(id)} -> ${colors.dim(deps[id])}`)
+            .join('') || colors.dim('no dependencies found')
+        debug(`Scan completed in ${duration}ms: ${depsStr}`)
+      }
     })
 
   return {
@@ -349,7 +361,7 @@ function esbuildScanPlugin(
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
         if (
-          resolved.includes('node_modules') &&
+          isInNodeModules(resolved) &&
           isOptimizable(resolved, config.optimizeDeps)
         )
           return
@@ -363,7 +375,7 @@ function esbuildScanPlugin(
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'html' },
         async ({ path }) => {
-          let raw = fs.readFileSync(path, 'utf-8')
+          let raw = await fsp.readFile(path, 'utf-8')
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
@@ -490,7 +502,7 @@ function esbuildScanPlugin(
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
             }
-            if (resolved.includes('node_modules') || include?.includes(id)) {
+            if (isInNodeModules(resolved) || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
               if (isOptimizable(resolved, config.optimizeDeps)) {
                 depImports[id] = resolved
@@ -576,7 +588,7 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
-        let contents = fs.readFileSync(id, 'utf-8')
+        let contents = await fsp.readFile(id, 'utf-8')
         if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
           contents = config.esbuild.jsxInject + `\n` + contents
         }
