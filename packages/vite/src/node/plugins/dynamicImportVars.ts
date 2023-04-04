@@ -20,6 +20,11 @@ import { toAbsoluteGlob } from './importMetaGlob'
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
 
 const relativePathRE = /^\.{1,2}\//
+// fast path to check if source contains a dynamic import. we check for a
+// trailing slash too as a dynamic import statement can have comments between
+// the `import` and the `(`.
+const hasDynamicImportRE = /\bimport\s*[(/]/
+
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
 }
@@ -162,7 +167,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (!filter(importer)) {
+      if (!filter(importer) || !hasDynamicImportRE.test(source)) {
         return
       }
 
