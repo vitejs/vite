@@ -226,20 +226,27 @@ async function instantiateModule(
       ssrFixStacktrace(e, moduleGraph)
     }
 
-    server.config.logger.error(
-      colors.red(
-        `Error when evaluating SSR module ${url}:` +
-          (stack
-            ? `\n|- Failed to import ${composeErrorDepsStack(stack, urlStack)}`
-            : '') +
-          `\n|- ${e.stack}\n`,
-      ),
-      {
-        timestamp: true,
-        clear: server.config.clearScreen,
-        error: e,
-      },
-    )
+    const errorDepsStack = stack ? getErrorDepsStack(stack, urlStack) : []
+
+    // only log origin error or the top url's error
+    if (!stack || errorDepsStack[0] === url) {
+      server.config.logger.error(
+        colors.red(
+          `Error when evaluating SSR module ${url}:` +
+            (stack
+              ? `\n|- Failed to import ${errorDepsStack
+                  .reverse()
+                  .join('\n    at ')}`
+              : '') +
+            `\n|- ${e.stack}\n`,
+        ),
+        {
+          timestamp: true,
+          clear: server.config.clearScreen,
+          error: e,
+        },
+      )
+    }
 
     throw e
   }
@@ -311,14 +318,10 @@ function isPrimitive(value: any) {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
 }
 
-function composeErrorDepsStack(
+function getErrorDepsStack(
   errorStack: WeakMap<string[], { importee: string }>,
   urlStack: string[],
 ) {
   const { importee } = errorStack.get(urlStack)!
-  return urlStack
-    .concat(importee)
-    .filter((dep) => !dep.startsWith('virtual:'))
-    .reverse()
-    .join('\n    at ')
+  return urlStack.concat(importee).filter((dep) => !dep.startsWith('virtual:'))
 }
