@@ -1054,32 +1054,21 @@ async function compileCSS(
   }
 }
 
-const lazyImportCache = new Map()
-function createCachedImport<T>(
-  name: string,
-  imp: () => Promise<T>,
-): () => T | Promise<T> {
+function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
+  let cached: T | Promise<T>
   return () => {
-    const cached = lazyImportCache.get(name)
-    if (cached) return cached
-
-    const promise = imp().then((module) => {
-      lazyImportCache.set(name, module)
-      return module
-    })
-    lazyImportCache.set(name, promise)
-    return promise
+    if (!cached) {
+      cached = imp().then((module) => {
+        cached = module
+        return module
+      })
+    }
+    return cached
   }
 }
-const importPostcssImport = createCachedImport(
-  'postcss-import',
-  () => import('postcss-import'),
-)
-const importPostcssModules = createCachedImport(
-  'postcss-modules',
-  () => import('postcss-modules'),
-)
-const importPostcss = createCachedImport('postcss', () => import('postcss'))
+const importPostcssImport = createCachedImport(() => import('postcss-import'))
+const importPostcssModules = createCachedImport(() => import('postcss-modules'))
+const importPostcss = createCachedImport(() => import('postcss'))
 
 export interface PreprocessCSSResult {
   code: string
