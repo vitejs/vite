@@ -185,6 +185,20 @@ export async function workerFileToUrl(
   return encodeWorkerAssetFileName(fileName, workerMap)
 }
 
+export function webWorkerPostPlugin(): Plugin {
+  return {
+    name: 'vite:worker-post',
+    resolveImportMeta(property, { chunkId, format }) {
+      // document is undefined in the worker, so we need to avoid it in iife
+      if (property === 'url' && format === 'iife') {
+        return 'self.location.href'
+      }
+
+      return null
+    },
+  }
+}
+
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let server: ViteDevServer
@@ -352,7 +366,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         )
       }
-      if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+      if (code.match(workerAssetUrlRE)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
         )

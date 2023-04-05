@@ -157,14 +157,19 @@ export function readManifest(base = ''): Manifest {
  */
 export async function untilUpdated(
   poll: () => string | Promise<string>,
-  expected: string,
+  expected: string | RegExp,
   runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
-    if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
+    if (
+      (typeof expected === 'string'
+        ? actual.indexOf(expected) > -1
+        : actual.match(expected)) ||
+      tries === maxTries - 1
+    ) {
       expect(actual).toMatch(expected)
       break
     } else {
