@@ -148,6 +148,49 @@ The `dev` script in `package.json` should also be changed to use the server scri
   }
 ```
 
+## Running the Dev Server with HTTPS
+
+To run the devserver with HTTPS, we can use the helpful [`mkcert()` plugin](https://github.com/liuweiGL/vite-plugin-mkcert).
+
+**vite.config.js**
+
+```diff
++ import mkcert from 'vite-plugin-mkcert';
+```
+
+```diff
+plugins: [
++ mkcert({ hosts: ["example.com", "localhost"], force: true })
+],
+```
+
+**server.js**
+
+```diff
++ import https from 'node:https';
+```
+
+```diff
+server: { 
++ https: true,
+  middlewareMode: true
+},
+```
+
+```diff
+- app.listen(5173)
++ const SSL_PORT = 3443
++ const YOUR_DOMAIN = 'example.com'
++ const cert = vite?.config?.server?.https?.cert;
++ const key = vite?.config?.server?.https?.key;
++ if (!cert || !key) {
++   throw new Error("There is a problem with your cert");
++ }
++ https.createServer({ cert, key }, app).listen(SSL_PORT, () => {
++   console.log(`> HTTPS ready on https://${YOUR_DOMAIN}:${SSL_PORT}`);
++ });
+```
+
 ## Building for Production
 
 To ship an SSR project for production, we need to:
