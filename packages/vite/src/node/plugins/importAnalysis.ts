@@ -62,7 +62,6 @@ import {
 import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
-const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
@@ -207,7 +206,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -259,12 +258,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
-        isDebug &&
-          debug(
-            `${timeFrom(start)} ${colors.dim(
-              `[no imports] ${prettyImporter}`,
-            )}`,
-          )
+        debug?.(
+          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+        )
         return source
       }
 
@@ -572,7 +568,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   )
                 }
               } else if (needsInterop) {
-                debug(`${url} needs interop`)
+                debug?.(`${url} needs interop`)
                 interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
@@ -682,7 +678,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (hasHMR && !ssr) {
-        debugHmr(
+        debugHmr?.(
           `${
             isSelfAccepting
               ? `[self-accepts]`
@@ -766,12 +762,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      isDebug &&
-        debug(
-          `${timeFrom(start)} ${colors.dim(
-            `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
-          )}`,
-        )
+      debug?.(
+        `${timeFrom(start)} ${colors.dim(
+          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+        )}`,
+      )
 
       if (s) {
         return transformStableResult(s, importer, config)
