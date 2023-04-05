@@ -7,7 +7,6 @@ import type { ViteDevServer } from '..'
 import {
   cleanUrl,
   createDebugger,
-  ensureVolumeInPath,
   fsPathFromId,
   injectQuery,
   isImportRequest,
@@ -39,7 +38,6 @@ import {
 import { getDepsOptimizer } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
-const isDebug = !!process.env.DEBUG
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
@@ -79,9 +77,7 @@ export function transformMiddleware(
           // means that the dependency has already been pre-bundled and loaded
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
-            : normalizePath(
-                ensureVolumeInPath(path.resolve(root, url.slice(1))),
-              )
+            : normalizePath(path.resolve(root, url.slice(1)))
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
@@ -188,7 +184,7 @@ export function transformMiddleware(
           (await moduleGraph.getModuleByUrl(url, false))?.transformResult
             ?.etag === ifNoneMatch
         ) {
-          isDebug && debugCache(`[304] ${prettifyUrl(url, root)}`)
+          debugCache?.(`[304] ${prettifyUrl(url, root)}`)
           res.statusCode = 304
           return res.end()
         }
