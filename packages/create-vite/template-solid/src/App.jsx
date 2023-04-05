@@ -1,6 +1,6 @@
 import { useSignal } from 'solid-js'
 import solidLogo from './assets/solid.svg'
-import './App/module.css'
+import './App.module.css'
 
 function App() {
   const [count, setCount] = useSignal(0)
@@ -12,7 +12,7 @@ function App() {
           <img src="/vite.svg" className="logo" alt="Vite logo" />
         </a>
         <a href="https://solidjs.com" target="_blank">
-          <img src={solidLogo} className="logo solid" alt="React logo" />
+          <img src={solidLogo} className="logo solid" alt="Solid logo" />
         </a>
       </div>
       <h1>Vite + Solid</h1>
