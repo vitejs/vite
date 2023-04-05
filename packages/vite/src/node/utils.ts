@@ -975,7 +975,9 @@ export const requireResolveFromRootWithFallback = (
   // https://github.com/nodejs/node/issues/44663
   const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
   if (!found) {
-    throw new Error(`${JSON.stringify(id)} not found.`)
+    const error = new Error(`${JSON.stringify(id)} not found.`)
+    ;(error as any).code = 'MODULE_NOT_FOUND'
+    throw error
   }
 
   // actually resolve
