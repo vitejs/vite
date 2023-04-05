@@ -140,6 +140,7 @@ export function updateModules(
 ): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
+  const traversedModules = new Set<ModuleNode>()
   let needFullReload = false
 
   for (const mod of modules) {
@@ -148,18 +149,15 @@ export function updateModules(
       continue
     }
 
-    const boundaries = new Set<{
-      boundary: ModuleNode
-      acceptedVia: ModuleNode
-    }>()
-    const hasDeadEnd = propagateUpdate(mod, boundaries)
+    const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
+    const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
     if (hasDeadEnd) {
       needFullReload = true
       continue
     }
 
     updates.push(
-      ...[...boundaries].map(({ boundary, acceptedVia }) => ({
+      ...boundaries.map(({ boundary, acceptedVia }) => ({
         type: `${boundary.type}-update` as const,
         timestamp,
         path: normalizeHmrUrl(boundary.url),
@@ -231,12 +229,15 @@ function areAllImportsAccepted(
 
 function propagateUpdate(
   node: ModuleNode,
-  boundaries: Set<{
-    boundary: ModuleNode
-    acceptedVia: ModuleNode
-  }>,
+  traversedModules: Set<ModuleNode>,
+  boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[],
   currentChain: ModuleNode[] = [node],
 ): boolean /* hasDeadEnd */ {
+  if (traversedModules.has(node)) {
+    return false
+  }
+  traversedModules.add(node)
+
   // #7561
   // if the imports of `node` have not been analyzed, then `node` has not
   // been loaded in the browser and we should stop propagation.
@@ -250,16 +251,18 @@ function propagateUpdate(
   }
 
   if (node.isSelfAccepting) {
-    boundaries.add({
-      boundary: node,
-      acceptedVia: node,
-    })
+    boundaries.push({ boundary: node, acceptedVia: node })
 
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
       if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
-        propagateUpdate(importer, boundaries, currentChain.concat(importer))
+        propagateUpdate(
+          importer,
+          traversedModules,
+          boundaries,
+          currentChain.concat(importer),
+        )
       }
     }
 
@@ -272,10 +275,7 @@ function propagateUpdate(
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
   if (node.acceptedHmrExports) {
-    boundaries.add({
-      boundary: node,
-      acceptedVia: node,
-    })
+    boundaries.push({ boundary: node, acceptedVia: node })
   } else {
     if (!node.importers.size) {
       return true
@@ -295,10 +295,7 @@ function propagateUpdate(
   for (const importer of node.importers) {
     const subChain = currentChain.concat(importer)
     if (importer.acceptedHmrDeps.has(node)) {
-      boundaries.add({
-        boundary: importer,
-        acceptedVia: node,
-      })
+      boundaries.push({ boundary: importer, acceptedVia: node })
       continue
     }
 
@@ -317,7 +314,7 @@ function propagateUpdate(
       return true
     }
 
-    if (propagateUpdate(importer, boundaries, subChain)) {
+    if (propagateUpdate(importer, traversedModules, boundaries, subChain)) {
       return true
     }
   }
