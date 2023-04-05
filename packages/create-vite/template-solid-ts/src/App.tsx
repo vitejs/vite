@@ -1,6 +1,6 @@
 import { useSignal } from 'solid-js'
 import solidLogo from './assets/solid.svg'
-import './App.module.css'
+import './App.css'
 
 function App() {
   const [count, setCount] = useSignal(0)
