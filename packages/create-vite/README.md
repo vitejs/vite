@@ -58,7 +58,7 @@ Currently supported template presets include:
 - `svelte`
 - `svelte-ts`
 - `solid`
-- `solid-js`
+- `solid-ts`
 
 You can use `.` for the project name to scaffold in the current directory.
 
