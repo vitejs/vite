@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { URL, URLSearchParams } from 'node:url'
+import { URL, URLSearchParams, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -34,6 +34,7 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
+import { resolvePackageData } from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -966,21 +967,25 @@ export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
+const _dirname = path.dirname(fileURLToPath(import.meta.url))
+
 export const requireResolveFromRootWithFallback = (
   root: string,
   id: string,
 ): string => {
-  const paths = _require.resolve.paths?.(id) || []
-  // Search in the root directory first, and fallback to the default require paths.
-  paths.unshift(root)
-
-  // Use `resolve` package to check existence first, so if the package is not found,
+  // check existence first, so if the package is not found,
   // it won't be cached by nodejs, since there isn't a way to invalidate them:
   // https://github.com/nodejs/node/issues/44663
-  resolve.sync(id, { basedir: root, paths })
+  const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
+  if (!found) {
+    const error = new Error(`${JSON.stringify(id)} not found.`)
+    ;(error as any).code = 'MODULE_NOT_FOUND'
+    throw error
+  }
 
-  // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
-  return _require.resolve(id, { paths })
+  // actually resolve
+  // Search in the root directory first, and fallback to the default require paths.
+  return _require.resolve(id, { paths: [root, _dirname] })
 }
 
 export function emptyCssComments(raw: string): string {
