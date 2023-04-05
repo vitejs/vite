@@ -13,7 +13,6 @@
     "template-*",
     "dist"
   ],
-  "main": "index.js",
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild",
@@ -33,6 +32,8 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "devDependencies": {
+    "@types/minimist": "^1.2.2",
+    "@types/prompts": "^2.4.4",
     "cross-spawn": "^7.0.3",
     "kolorist": "^1.7.0",
     "minimist": "^1.2.8",

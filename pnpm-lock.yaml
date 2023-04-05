@@ -34,17 +34,15 @@ importers:
       '@types/json-stable-stringify': ^1.0.34
       '@types/less': ^3.0.3
       '@types/micromatch': ^4.0.2
-      '@types/minimist': ^1.2.2
       '@types/node': ^18.15.5
       '@types/picomatch': ^2.3.0
-      '@types/prompts': 2.4.2
       '@types/resolve': ^1.20.2
       '@types/sass': ~1.43.1
-      '@types/semver': ^7.3.13
       '@types/stylus': ^0.48.38
       '@types/ws': ^8.5.4
       '@typescript-eslint/eslint-plugin': ^5.56.0
       '@typescript-eslint/parser': ^5.56.0
+      '@vitejs/release-scripts': ^1.1.0
       conventional-changelog-cli: ^2.2.2
       eslint: ^8.36.0
       eslint-define-config: ^1.17.0
@@ -55,16 +53,13 @@ importers:
       fast-glob: ^3.2.12
       fs-extra: ^11.1.1
       lint-staged: ^13.2.0
-      minimist: ^1.2.8
       npm-run-all: ^4.1.5
       picocolors: ^1.0.0
       playwright-chromium: ^1.31.2
       prettier: 2.8.5
-      prompts: ^2.4.2
       resolve: ^1.22.1
       rimraf: ^4.4.0
       rollup: ^3.20.2
-      semver: ^7.3.8
       simple-git-hooks: ^2.8.1
       tslib: ^2.5.0
       tsx: ^3.12.6
@@ -89,17 +84,15 @@ importers:
       '@types/json-stable-stringify': 1.0.34
       '@types/less': 3.0.3
       '@types/micromatch': 4.0.2
-      '@types/minimist': 1.2.2
       '@types/node': 18.15.5
       '@types/picomatch': 2.3.0
-      '@types/prompts': 2.4.2
       '@types/resolve': 1.20.2
       '@types/sass': 1.43.1
-      '@types/semver': 7.3.13
       '@types/stylus': 0.48.38
       '@types/ws': 8.5.4
       '@typescript-eslint/eslint-plugin': 5.56.0_2hcjazgfnbtq42tcc73br2vup4
       '@typescript-eslint/parser': 5.56.0_j4766f7ecgqbon3u7zlxn5zszu
+      '@vitejs/release-scripts': 1.1.0
       conventional-changelog-cli: 2.2.2
       eslint: 8.36.0
       eslint-define-config: 1.17.0
@@ -110,16 +103,13 @@ importers:
       fast-glob: 3.2.12
       fs-extra: 11.1.1
       lint-staged: 13.2.0
-      minimist: 1.2.8
       npm-run-all: 4.1.5
       picocolors: 1.0.0
       playwright-chromium: 1.31.2
       prettier: 2.8.5
-      prompts: 2.4.2
       resolve: 1.22.1
       rimraf: 4.4.0
       rollup: 3.20.2
-      semver: 7.3.8
       simple-git-hooks: 2.8.1
       tslib: 2.5.0
       tsx: 3.12.6
@@ -132,11 +122,15 @@ importers:
 
   packages/create-vite:
     specifiers:
+      '@types/minimist': ^1.2.2
+      '@types/prompts': ^2.4.4
       cross-spawn: ^7.0.3
       kolorist: ^1.7.0
       minimist: ^1.2.8
       prompts: ^2.4.2
     devDependencies:
+      '@types/minimist': 1.2.2
+      '@types/prompts': 2.4.4
       cross-spawn: 7.0.3
       kolorist: 1.7.0
       minimist: 1.2.8
@@ -3521,8 +3515,8 @@ packages:
     resolution: {integrity: sha512-2lqsQt1iXkiTqwuzw2SS50iduoPZNpV/ou4/vJD443C0weF63Gqd3ErGS811CBNMzLO64zVJ+tiyh+4yimdYkg==}
     dev: true
 
-  /@types/prompts/2.4.2:
-    resolution: {integrity: sha512-TwNx7qsjvRIUv/BCx583tqF5IINEVjCNqg9ofKHRlSoUHE62WBHrem4B1HGXcIrG511v29d1kJ9a/t2Esz7MIg==}
+  /@types/prompts/2.4.4:
+    resolution: {integrity: sha512-p5N9uoTH76lLvSAaYSZtBCdEXzpOOufsRjnhjVSrZGXikVGHX9+cc9ERtHRV4hvBKHyZb1bg4K+56Bd2TqUn4A==}
     dependencies:
       '@types/node': 18.15.5
       kleur: 3.0.3
@@ -3711,6 +3705,17 @@ packages:
       vue: ^3.2.25
     dependencies:
       vue: 3.2.47
+    dev: true
+
+  /@vitejs/release-scripts/1.1.0:
+    resolution: {integrity: sha512-pxP72AGDRGu6vufj8vrdmFll++N0K7aNDSWWYzPb28NgE5RjOdo99uLgJEpl3Ee/wEOnHKT2zJ9HN2GN44SUPQ==}
+    dependencies:
+      execa: 6.1.0
+      minimist: 1.2.8
+      picocolors: 1.0.0
+      prompts: 2.4.2
+      publint: 0.1.11
+      semver: 7.3.8
     dev: true
 
   /@vitest/expect/0.29.7:
@@ -5746,6 +5751,21 @@ packages:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
     dev: true
 
+  /execa/6.1.0:
+    resolution: {integrity: sha512-QVWlX2e50heYJcCPG0iWtf8r0xjEYfz/OYLGDYH+IyjWezzPNxz63qNFOu0l4YftGWuizFVZHHs8PrLU5p2IDA==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      cross-spawn: 7.0.3
+      get-stream: 6.0.1
+      human-signals: 3.0.1
+      is-stream: 3.0.0
+      merge-stream: 2.0.0
+      npm-run-path: 5.1.0
+      onetime: 6.0.0
+      signal-exit: 3.0.7
+      strip-final-newline: 3.0.0
+    dev: true
+
   /execa/7.1.1:
     resolution: {integrity: sha512-wH0eMf/UXckdUYnO21+HDztteVv05rq2GXksxT4fCGeHkBhw1DROXh40wcjMcRqDOWE7iPJ4n3M7e2+YFP+76Q==}
     engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
@@ -6366,6 +6386,11 @@ packages:
       - supports-color
     dev: false
 
+  /human-signals/3.0.1:
+    resolution: {integrity: sha512-rQLskxnM/5OCldHo+wNXbpVgDn5A17CUoKX+7Sokwaknlq7CdSnphy0W39GU8dw59XiCXmFXDg4fRuckQRKewQ==}
+    engines: {node: '>=12.20.0'}
+    dev: true
+
   /human-signals/4.3.0:
     resolution: {integrity: sha512-zyzVyMjpGBX2+6cDVZeFPCdtOtdsxOeseRhB9tkQ6xXmGUNrcnBzdEKPy3VPNYz+4gy1oukVOXcrJCunSyc6QQ==}
     engines: {node: '>=14.18.0'}
@@ -6392,6 +6417,13 @@ packages:
       postcss: ^8.1.0
     dependencies:
       postcss: 8.4.21
+    dev: true
+
+  /ignore-walk/5.0.1:
+    resolution: {integrity: sha512-yemi4pMf51WKT7khInJqAvsIGzoqYXblnsz0ql8tM+yi1EKYTY1evX4NAbJrLL/Aanr2HyZeluqU+Oi7MGHokw==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dependencies:
+      minimatch: 5.1.0
     dev: true
 
   /ignore/5.2.0:
@@ -7510,6 +7542,29 @@ packages:
     resolution: {integrity: sha512-qizSNPO93t1YUuUhP22btGOo3chcvDFqFaj2TRybP0DMxkHOCTYwp3n34fel4a31ORXy4m1Xq0Gyqpb5m33qIg==}
     dev: false
 
+  /npm-bundled/2.0.1:
+    resolution: {integrity: sha512-gZLxXdjEzE/+mOstGDqR6b0EkhJ+kM6fxM6vUuckuctuVPh80Q6pw/rSZj9s4Gex9GxWtIicO1pc8DB9KZWudw==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dependencies:
+      npm-normalize-package-bin: 2.0.0
+    dev: true
+
+  /npm-normalize-package-bin/2.0.0:
+    resolution: {integrity: sha512-awzfKUO7v0FscrSpRoogyNm0sajikhBWpU0QMrW09AMi9n1PoKU6WaIqUzuJSQnpciZZmJ/jMZ2Egfmb/9LiWQ==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dev: true
+
+  /npm-packlist/5.1.3:
+    resolution: {integrity: sha512-263/0NGrn32YFYi4J533qzrQ/krmmrWwhKkzwTuM4f/07ug51odoaNjUexxO4vxlzURHcmYMH1QjvHjsNDKLVg==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    hasBin: true
+    dependencies:
+      glob: 8.0.3
+      ignore-walk: 5.0.1
+      npm-bundled: 2.0.1
+      npm-normalize-package-bin: 2.0.0
+    dev: true
+
   /npm-run-all/4.1.5:
     resolution: {integrity: sha512-Oo82gJDAVcaMdi3nuoKFavkIHBRVqQ1qvMb+9LHk/cF4P6B2m8aP04hGf7oL6wZ9BuGwX1onlLhpuoofSyoQDQ==}
     engines: {node: '>= 4'}
@@ -8135,6 +8190,16 @@ packages:
     dev: true
     optional: true
 
+  /publint/0.1.11:
+    resolution: {integrity: sha512-sD0rtIEadks83MkpomJswBO/YHExJLkta1TyqUhb0/aVV+o3ZlVnwsDPjCAow8tpfxmLGutCSLWq32yfhPB98w==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dependencies:
+      npm-packlist: 5.1.3
+      picocolors: 1.0.0
+      sade: 1.8.1
+    dev: true
+
   /pug-attrs/3.0.0:
     resolution: {integrity: sha512-azINV9dUtzPMFQktvTXciNAfAuVh/L/JCl0vtPCwvOA21uZrC08K/UnmrL+SXGEVc1FwzjW62+xw5S/uaLj6cA==}
     dependencies:
@@ -8592,6 +8657,13 @@ packages:
     resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
     dependencies:
       tslib: 2.5.0
+    dev: true
+
+  /sade/1.8.1:
+    resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
+    engines: {node: '>=6'}
+    dependencies:
+      mri: 1.2.0
     dev: true
 
   /safe-buffer/5.1.2:
