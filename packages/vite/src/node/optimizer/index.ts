@@ -437,18 +437,7 @@ export function toDiscoveredDependencies(
 }
 
 export function depsLogString(qualifiedIds: string[]): string {
-  if (debug) {
-    return colors.yellow(qualifiedIds.join(`, `))
-  } else {
-    const total = qualifiedIds.length
-    const maxListed = 5
-    const listed = Math.min(total, maxListed)
-    const extra = Math.max(0, total - maxListed)
-    return colors.yellow(
-      qualifiedIds.slice(0, listed).join(`, `) +
-        (extra > 0 ? `, ...and ${extra} more` : ``),
-    )
-  }
+  return colors.yellow(qualifiedIds.join(`, `))
 }
 
 /**
