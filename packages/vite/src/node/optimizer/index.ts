@@ -878,6 +878,7 @@ function createOptimizeDepsIncludeResolver(
     scan: true,
     ssrOptimizeCheck: ssr,
     ssrConfig: config.ssr,
+    packageCache: new Map(),
   })
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')

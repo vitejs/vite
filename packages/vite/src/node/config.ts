@@ -1001,6 +1001,7 @@ async function bundleConfigFile(
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
             preserveSymlinks: false,
+            packageCache: new Map(),
           }
 
           // externalize bare imports
