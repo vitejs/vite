@@ -607,7 +607,7 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
-      const resolveStart = debugPluginResolve ? performance.now() : 0
+      const resolveStart = debugResolve ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
