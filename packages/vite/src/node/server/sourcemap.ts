@@ -4,7 +4,6 @@ import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
-const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,
 })
@@ -55,7 +54,7 @@ export async function injectSourcesContent(
   // …to log the missing sources.
   if (missingSources.length) {
     logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
-    isDebug && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
+    debug?.(`Missing sources:\n  ` + missingSources.join(`\n  `))
   }
 }
 
@@ -71,7 +70,7 @@ export function getCodeWithSourcemap(
   code: string,
   map: SourceMap,
 ): string {
-  if (isDebug) {
+  if (debug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }
 

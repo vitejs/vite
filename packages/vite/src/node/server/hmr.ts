@@ -59,7 +59,7 @@ export async function handleHMRUpdate(
     (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
-    debugHmr(`[config change] ${colors.dim(shortFile)}`)
+    debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
         `${path.relative(process.cwd(), file)} changed, restarting server...`,
@@ -78,7 +78,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  debugHmr(`[file change] ${colors.dim(shortFile)}`)
+  debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(normalizedClientDir)) {
@@ -123,7 +123,7 @@ export async function handleHMRUpdate(
       })
     } else {
       // loaded but not in the module graph, probably not js
-      debugHmr(`[no modules matched] ${colors.dim(shortFile)}`)
+      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
     }
     return
   }
@@ -184,7 +184,7 @@ export function updateModules(
   }
 
   if (updates.length === 0) {
-    debugHmr(colors.yellow(`no update happened `) + colors.dim(file))
+    debugHmr?.(colors.yellow(`no update happened `) + colors.dim(file))
     return
   }
 
@@ -241,7 +241,7 @@ function propagateUpdate(
   // if the imports of `node` have not been analyzed, then `node` has not
   // been loaded in the browser and we should stop propagation.
   if (node.id && node.isSelfAccepting === undefined) {
-    debugHmr(
+    debugHmr?.(
       `[propagate update] stop propagation because not analyzed: ${colors.dim(
         node.id,
       )}`,
@@ -334,7 +334,7 @@ export function handlePrunedModules(
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
-    debugHmr(`[dispose] ${colors.dim(mod.file)}`)
+    debugHmr?.(`[dispose] ${colors.dim(mod.file)}`)
   })
   ws.send({
     type: 'prune',

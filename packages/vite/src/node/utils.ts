@@ -175,19 +175,22 @@ export type ViteDebugScope = `vite:${string}`
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
-): debug.Debugger['log'] {
+): debug.Debugger['log'] | undefined {
   const log = debug(namespace)
   const { onlyWhenFocused } = options
-  const focus =
-    typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
-  return (msg: string, ...args: any[]) => {
-    if (filter && !msg.includes(filter)) {
-      return
+
+  let enabled = log.enabled
+  if (enabled && onlyWhenFocused) {
+    const ns = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
+    enabled = !!DEBUG?.includes(ns)
+  }
+
+  if (enabled) {
+    return (msg: string, ...args: any[]) => {
+      if (!filter || msg.includes(filter)) {
+        log(msg, ...args)
+      }
     }
-    if (onlyWhenFocused && !DEBUG?.includes(focus)) {
-      return
-    }
-    log(msg, ...args)
   }
 }
 

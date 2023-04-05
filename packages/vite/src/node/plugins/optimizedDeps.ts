@@ -10,7 +10,6 @@ export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 
-const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
 export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
@@ -62,7 +61,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
             }
           }
         }
-        isDebug && debug(`load ${colors.cyan(file)}`)
+        debug?.(`load ${colors.cyan(file)}`)
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
@@ -117,7 +116,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       const info = optimizedDepInfoFromFile(depsOptimizer.metadata, file)
       if (info) {
         await info.processing
-        isDebug && debug(`load ${colors.cyan(file)}`)
+        debug?.(`load ${colors.cyan(file)}`)
       } else {
         throw new Error(
           `Something unexpected happened while optimizing "${id}".`,

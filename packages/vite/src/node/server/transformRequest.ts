@@ -27,7 +27,6 @@ export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
 const debugCache = createDebugger('vite:cache')
-const isDebug = !!process.env.DEBUG
 
 export interface TransformResult {
   code: string
@@ -123,7 +122,7 @@ async function doTransform(
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
-  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
+  const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
@@ -138,7 +137,7 @@ async function doTransform(
     // in this case, we can reuse its previous cached result and only update
     // its import timestamps.
 
-    isDebug && debugCache(`[memory] ${prettyUrl}`)
+    debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
 
@@ -164,7 +163,8 @@ async function loadAndTransform(
 ) {
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
-  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
+  const prettyUrl =
+    debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const file = cleanUrl(id)
@@ -173,7 +173,7 @@ async function loadAndTransform(
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = isDebug ? performance.now() : 0
+  const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, { ssr })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
@@ -189,7 +189,7 @@ async function loadAndTransform(
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
         code = await fs.readFile(file, 'utf-8')
-        isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
+        debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
           throw e
@@ -214,7 +214,7 @@ async function loadAndTransform(
       }
     }
   } else {
-    isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
+    debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
@@ -247,7 +247,7 @@ async function loadAndTransform(
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
-  const transformStart = isDebug ? performance.now() : 0
+  const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
     ssr,
@@ -258,12 +258,11 @@ async function loadAndTransform(
     (isObject(transformResult) && transformResult.code == null)
   ) {
     // no transform applied, keep code as-is
-    isDebug &&
-      debugTransform(
-        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
-      )
+    debugTransform?.(
+      timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
+    )
   } else {
-    isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
+    debugTransform?.(`${timeFrom(transformStart)} ${prettyUrl}`)
     code = transformResult.code!
     map = transformResult.map
   }

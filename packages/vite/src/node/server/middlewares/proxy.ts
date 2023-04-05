@@ -98,7 +98,7 @@ export function proxyMiddleware(
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
-            debug(`${req.url} -> ws ${opts.target}`)
+            debug?.(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
             return
           }
@@ -119,15 +119,15 @@ export function proxyMiddleware(
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
-            debug(`bypass: ${req.url} -> ${bypassResult}`)
+            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
             return next()
           } else if (bypassResult === false) {
-            debug(`bypass: ${req.url} -> 404`)
+            debug?.(`bypass: ${req.url} -> 404`)
             return res.end(404)
           }
         }
 
-        debug(`${req.url} -> ${opts.target || opts.forward}`)
+        debug?.(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }

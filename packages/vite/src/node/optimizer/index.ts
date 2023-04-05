@@ -3,7 +3,6 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import _debug from 'debug'
 import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
@@ -37,9 +36,7 @@ export {
   getDepsOptimizer,
 } from './optimizer'
 
-export const debuggerViteDeps = createDebugger('vite:deps')
-const debug = debuggerViteDeps
-const isDebugEnabled = _debug('vite:deps').enabled
+const debug = createDebugger('vite:deps')
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
@@ -243,7 +240,7 @@ export async function optimizeDeps(
   const deps = await discoverProjectDependencies(config).result
 
   const depsString = depsLogString(Object.keys(deps))
-  log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
+  log?.(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
   await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
@@ -369,7 +366,7 @@ export async function loadCachedDepOptimizationMetadata(
     } catch (e) {}
     // hash is consistent, no need to re-bundle
     if (cachedMetadata && cachedMetadata.hash === getDepHash(config, ssr)) {
-      log('Hash is consistent. Skipping. Use --force to override.')
+      log?.('Hash is consistent. Skipping. Use --force to override.')
       // Nothing to commit or cancel as we are using the cache, we only
       // need to resolve the processing promise so requests can move on
       return cachedMetadata
@@ -440,7 +437,7 @@ export function toDiscoveredDependencies(
 }
 
 export function depsLogString(qualifiedIds: string[]): string {
-  if (isDebugEnabled) {
+  if (debug) {
     return colors.yellow(qualifiedIds.join(`, `))
   } else {
     const total = qualifiedIds.length
@@ -656,7 +653,7 @@ export function runOptimizeDeps(
           }
         }
 
-        debug(
+        debug?.(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
@@ -1162,7 +1159,7 @@ export async function extractExportsData(
     parseResult = parse(entryContent)
   } catch {
     const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
-    debug(
+    debug?.(
       `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`,
     )
     const transformed = await transformWithEsbuild(entryContent, filePath, {

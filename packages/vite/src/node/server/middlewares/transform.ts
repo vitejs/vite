@@ -38,7 +38,6 @@ import {
 import { getDepsOptimizer } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
-const isDebug = !!process.env.DEBUG
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
@@ -185,7 +184,7 @@ export function transformMiddleware(
           (await moduleGraph.getModuleByUrl(url, false))?.transformResult
             ?.etag === ifNoneMatch
         ) {
-          isDebug && debugCache(`[304] ${prettifyUrl(url, root)}`)
+          debugCache?.(`[304] ${prettifyUrl(url, root)}`)
           res.statusCode = 304
           return res.end()
         }

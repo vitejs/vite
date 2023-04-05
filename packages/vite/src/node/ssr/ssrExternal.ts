@@ -146,7 +146,7 @@ export function createIsConfiguredAsSsrExternal(
         !!configuredAsExternal,
       )?.external
     } catch (e) {
-      debug(
+      debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
       )
       // may be an invalid import that's resolved by a plugin
@@ -273,7 +273,7 @@ function cjsSsrCollectExternals(
       }
 
       // resolve failed, assume include
-      debug(`Failed to resolve entries for package "${id}"\n`, e)
+      debug?.(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
     // no esm entry but has require entry

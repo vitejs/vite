@@ -775,16 +775,14 @@ export async function resolveConfig(
     )
   }
 
-  if (process.env.DEBUG) {
-    debug(`using resolved config: %O`, {
-      ...resolved,
-      plugins: resolved.plugins.map((p) => p.name),
-      worker: {
-        ...resolved.worker,
-        plugins: resolved.worker.plugins.map((p) => p.name),
-      },
-    })
-  }
+  debug?.(`using resolved config: %O`, {
+    ...resolved,
+    plugins: resolved.plugins.map((p) => p.name),
+    worker: {
+      ...resolved.worker,
+      plugins: resolved.worker.plugins.map((p) => p.name),
+    },
+  })
 
   if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
@@ -915,7 +913,7 @@ export async function loadConfigFromFile(
   }
 
   if (!resolvedPath) {
-    debug('no config file found.')
+    debug?.('no config file found.')
     return null
   }
 
@@ -940,7 +938,7 @@ export async function loadConfigFromFile(
       bundled.code,
       isESM,
     )
-    debug(`bundled config file loaded in ${getTime()}`)
+    debug?.(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)

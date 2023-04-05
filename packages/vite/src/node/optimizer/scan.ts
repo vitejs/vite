@@ -34,7 +34,6 @@ import { transformGlobImport } from '../plugins/importMetaGlob'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
-const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
@@ -85,7 +84,7 @@ export function scanImports(config: ResolvedConfig): {
     }
     if (scanContext.cancelled) return
 
-    debug(
+    debug?.(
       `Crawling dependencies using entries: ${entries
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
@@ -141,7 +140,7 @@ export function scanImports(config: ResolvedConfig): {
       throw e
     })
     .finally(() => {
-      if (isDebug) {
+      if (debug) {
         const duration = (performance.now() - start).toFixed(2)
         const depsStr =
           Object.keys(orderedDependencies(deps))
