@@ -1,5 +1,5 @@
 {
-  "name": "test-dynamic-import",
+  "name": "@vitejs/test-dynamic-import",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "pkg": "file:./pkg"
+    "@vitejs/test-pkg": "file:./pkg"
   }
 }

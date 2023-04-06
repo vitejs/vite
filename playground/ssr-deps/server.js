@@ -6,7 +6,7 @@ import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITEST
 
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
@@ -27,41 +27,44 @@ export async function createServer(root = process.cwd(), hmrPort) {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
+        interval: 100,
       },
       hmr: {
-        port: hmrPort
-      }
+        port: hmrPort,
+      },
     },
     appType: 'custom',
     ssr: {
       noExternal: [
-        'no-external-cjs',
-        'import-builtin-cjs',
-        'no-external-css',
-        'external-entry'
+        '@vitejs/test-no-external-cjs',
+        '@vitejs/test-import-builtin-cjs',
+        '@vitejs/test-no-external-css',
+        '@vitejs/test-external-entry',
       ],
-      external: ['nested-external', 'external-entry/entry'],
+      external: [
+        '@vitejs/test-nested-external',
+        '@vitejs/test-external-entry/entry',
+      ],
       optimizeDeps: {
-        disabled: 'build'
-      }
+        disabled: 'build',
+      },
     },
     plugins: [
       {
         name: 'dep-virtual',
         enforce: 'pre',
         resolveId(id) {
-          if (id === 'pkg-exports/virtual') {
-            return 'pkg-exports/virtual'
+          if (id === '@vitejs/test-pkg-exports/virtual') {
+            return '@vitejs/test-pkg-exports/virtual'
           }
         },
         load(id) {
-          if (id === 'pkg-exports/virtual') {
+          if (id === '@vitejs/test-pkg-exports/virtual') {
             return 'export default "[success]"'
           }
-        }
-      }
-    ]
+        },
+      },
+    ],
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -94,6 +97,6 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }

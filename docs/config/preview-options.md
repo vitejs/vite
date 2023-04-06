@@ -29,11 +29,11 @@ Specify server port. Note if the port is already being used, Vite will automatic
 ```js
 export default defineConfig({
   server: {
-    port: 3030
+    port: 3030,
   },
   preview: {
-    port: 8080
-  }
+    port: 8080,
+  },
 })
 ```
 
@@ -58,7 +58,9 @@ The value can also be an [options object](https://nodejs.org/api/https.html#http
 - **Type:** `boolean | string`
 - **Default:** [`server.open`](./server-options#server-open)
 
-Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
+Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). You can also set `process.env.BROWSER_ARGS` to pass additional arguments (e.g. `--incognito`).
+
+`BROWSER` and `BROWSER_ARGS` are also special environment variables you can set in the `.env` file to configure it. See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
 
 ## preview.proxy
 
@@ -74,7 +76,7 @@ Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options
 - **Type:** `boolean | CorsOptions`
 - **Default:** [`server.cors`](./server-options#server-cors)
 
-Configure CORS for the preview server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
+Configure CORS for the preview server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `false` to disable.
 
 ## preview.headers
 

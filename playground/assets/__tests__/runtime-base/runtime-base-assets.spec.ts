@@ -5,11 +5,11 @@ import {
   getBg,
   getColor,
   isBuild,
-  page
+  page,
 } from '~utils'
 
 const absoluteAssetMatch = isBuild
-  ? /\/other-assets\/asset\.\w{8}\.png/
+  ? /\/other-assets\/asset-\w{8}\.png/
   : '/nested/asset.png'
 
 // Asset URLs in CSS are relative to the same dir, the computed
@@ -19,7 +19,7 @@ const cssBgAssetMatch = absoluteAssetMatch
 const iconMatch = `/icon.png`
 
 const absoluteIconMatch = isBuild
-  ? /\/other-assets\/icon\.\w{8}\.png/
+  ? /\/other-assets\/icon-\w{8}\.png/
   : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild ? /\/icon\.png/ : '/icon.png'
@@ -42,26 +42,26 @@ describe('raw references from /public', () => {
 
 test('import-expression from simple script', async () => {
   expect(await page.textContent('.import-expression')).toMatch(
-    '[success][success]'
+    '[success][success]',
   )
 })
 
 describe('asset imports from js', () => {
   test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(
-      cssBgAssetMatch
+      cssBgAssetMatch,
     )
   })
 
   test('absolute', async () => {
     expect(await page.textContent('.asset-import-absolute')).toMatch(
-      cssBgAssetMatch
+      cssBgAssetMatch,
     )
   })
 
   test('from /public', async () => {
     expect(await page.textContent('.public-import')).toMatch(
-      absolutePublicIconMatch
+      absolutePublicIconMatch,
     )
   })
 })
@@ -71,7 +71,7 @@ describe('css url() references', () => {
     expect(
       await page.evaluate(() => {
         return (document as any).fonts.check('700 32px Inter')
-      })
+      }),
     ).toBe(true)
   })
 
@@ -110,7 +110,7 @@ describe('css url() references', () => {
 
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(
-      cssBgAssetMatch
+      cssBgAssetMatch,
     )
   })
 
@@ -137,11 +137,11 @@ describe('css url() references', () => {
 describe.runIf(isBuild)('index.css URLs', () => {
   let css: string
   beforeAll(() => {
-    css = findAssetFile(/index.*\.css$/, '', 'other-assets')
+    css = findAssetFile(/index-\w{8}\.css$/, '', 'other-assets')
   })
 
   test('relative asset URL', () => {
-    expect(css).toMatch(`./asset.`)
+    expect(css).toMatch(`./asset-`)
   })
 
   test('preserve postfix query/hash', () => {
@@ -156,8 +156,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /other-assets\/asset\.\w{8}\.png \dx/
-          : /\.\/nested\/asset\.png \dx/
+          ? /other-assets\/asset-\w{8}\.png \dx/
+          : /\.\/nested\/asset\.png \dx/,
       )
     })
   })
@@ -189,14 +189,14 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /\/other-assets\/foo\.\w{8}\.js/ : `/foo.js`
+    isBuild ? /\/other-assets\/foo-\w{8}\.js/ : `/foo.js`,
   )
 })
 
 test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
-    isBuild ? /\/other-assets\/icons\.\w{8}\.css/ : '/css/icons.css'
+    isBuild ? /\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css',
   )
 })
 
@@ -213,7 +213,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    '/non-existent'
+    '/non-existent',
   )
 })
 
@@ -224,7 +224,7 @@ test('inline style test', async () => {
 
 test('html import word boundary', async () => {
   expect(await page.textContent('.obj-import-express')).toMatch(
-    'ignore object import prop'
+    'ignore object import prop',
   )
   expect(await page.textContent('.string-import-express')).toMatch('no load')
 })

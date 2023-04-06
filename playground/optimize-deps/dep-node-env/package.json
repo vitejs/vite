@@ -1,5 +1,5 @@
 {
-  "name": "dep-node-env",
+  "name": "@vitejs/test-dep-node-env",
   "private": true,
   "version": "1.0.0",
   "type": "module"

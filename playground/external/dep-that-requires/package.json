@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-dep-that-requires",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "slash3": "npm:slash@^3.0.0",
+    "slash5": "npm:slash@^5.0.0",
+    "vue": "^3.2.47"
+  }
+}

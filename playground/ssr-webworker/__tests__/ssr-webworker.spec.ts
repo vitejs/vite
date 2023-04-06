@@ -12,6 +12,6 @@ test('/', async () => {
 })
 
 test.runIf(isBuild)('inlineDynamicImports', () => {
-  const dynamicJsContent = findAssetFile(/dynamic\.\w+\.js/, 'worker')
+  const dynamicJsContent = findAssetFile(/dynamic-\w+\.js/, 'worker')
   expect(dynamicJsContent).toBe('')
 })

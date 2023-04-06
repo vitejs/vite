@@ -14,10 +14,20 @@ import {
   isInternalRequest,
   isParentDirectory,
   isWindows,
-  slash
+  removeLeadingSlash,
+  shouldServeFile,
+  slash,
 } from '../../utils'
 
-const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
+const knownJavascriptExtensionRE = /\.[tj]sx?$/
+
+const sirvOptions = ({
+  headers,
+  shouldServe,
+}: {
+  headers?: OutgoingHttpHeaders
+  shouldServe?: (p: string) => void
+}): Options => {
   return {
     dev: true,
     etag: true,
@@ -28,7 +38,7 @@ const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
       // for the MIME type video/mp2t. In almost all cases, we can expect
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
-      if (/\.[tj]sx?$/.test(pathname)) {
+      if (knownJavascriptExtensionRE.test(pathname)) {
         res.setHeader('Content-Type', 'application/javascript')
       }
       if (headers) {
@@ -36,15 +46,22 @@ const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
           res.setHeader(name, headers[name]!)
         }
       }
-    }
+    },
+    shouldServe,
   }
 }
 
 export function servePublicMiddleware(
   dir: string,
-  headers?: OutgoingHttpHeaders
+  headers?: OutgoingHttpHeaders,
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions(headers))
+  const serve = sirv(
+    dir,
+    sirvOptions({
+      headers,
+      shouldServe: (filePath) => shouldServeFile(filePath, dir),
+    }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
@@ -58,9 +75,14 @@ export function servePublicMiddleware(
 
 export function serveStaticMiddleware(
   dir: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions(server.config.server.headers))
+  const serve = sirv(
+    dir,
+    sirvOptions({
+      headers: server.config.server.headers,
+    }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
@@ -70,7 +92,7 @@ export function serveStaticMiddleware(
     // also skip internal requests `/@fs/ /@vite-client` etc...
     const cleanedUrl = cleanUrl(req.url!)
     if (
-      cleanedUrl.endsWith('/') ||
+      cleanedUrl[cleanedUrl.length - 1] === '/' ||
       path.extname(cleanedUrl) === '.html' ||
       isInternalRequest(req.url!)
     ) {
@@ -100,8 +122,11 @@ export function serveStaticMiddleware(
     }
 
     const resolvedPathname = redirectedPathname || pathname
-    let fileUrl = path.resolve(dir, resolvedPathname.replace(/^\//, ''))
-    if (resolvedPathname.endsWith('/') && !fileUrl.endsWith('/')) {
+    let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
+    if (
+      resolvedPathname[resolvedPathname.length - 1] === '/' &&
+      fileUrl[fileUrl.length - 1] !== '/'
+    ) {
       fileUrl = fileUrl + '/'
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {
@@ -118,9 +143,12 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serveFromRoot = sirv('/', sirvOptions(server.config.server.headers))
+  const serveFromRoot = sirv(
+    '/',
+    sirvOptions({ headers: server.config.server.headers }),
+  )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
@@ -137,7 +165,7 @@ export function serveRawFsMiddleware(
           slash(path.resolve(fsPathFromId(pathname))),
           server,
           res,
-          next
+          next,
         )
       ) {
         return
@@ -157,7 +185,7 @@ export function serveRawFsMiddleware(
 
 export function isFileServingAllowed(
   url: string,
-  server: ViteDevServer
+  server: ViteDevServer,
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
@@ -177,7 +205,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction
+  next: Connect.NextFunction,
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true

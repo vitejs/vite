@@ -1,5 +1,10 @@
 import type { ErrorPayload } from 'types/hmrPayload'
 
+// injected by the hmr plugin when served
+declare const __BASE__: string
+
+const base = __BASE__ || '/'
+
 // set :host styles to make playwright detect the element as visible
 const template = /*html*/ `
 <style>
@@ -9,7 +14,7 @@ const template = /*html*/ `
   left: 0;
   width: 100%;
   height: 100%;
-
+  z-index: 99999;
   --monospace: 'SFMono-Regular', Consolas,
   'Liberation Mono', Menlo, Courier, monospace;
   --red: #ff5555;
@@ -114,14 +119,14 @@ code {
 </style>
 <div class="backdrop" part="backdrop">
   <div class="window" part="window">
-    <pre class="message" part="message"><span class="plugin"></span><span class="message-body"></span></pre>
+    <pre class="message" part="message"><span class="plugin" part="plugin"></span><span class="message-body" part="message-body"></span></pre>
     <pre class="file" part="file"></pre>
     <pre class="frame" part="frame"></pre>
     <pre class="stack" part="stack"></pre>
     <div class="tip" part="tip">
       Click outside or fix the code to dismiss.<br>
       You can also disable this overlay by setting
-      <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.js.</code>
     </div>
   </div>
 </div>
@@ -178,6 +183,7 @@ export class ErrorOverlay extends HTMLElement {
     } else {
       let curIndex = 0
       let match: RegExpExecArray | null
+      fileRE.lastIndex = 0
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
         if (index != null) {
@@ -187,7 +193,7 @@ export class ErrorOverlay extends HTMLElement {
           link.textContent = file
           link.className = 'file-link'
           link.onclick = () => {
-            fetch('/__open-in-editor?file=' + encodeURIComponent(file))
+            fetch(`${base}__open-in-editor?file=` + encodeURIComponent(file))
           }
           el.appendChild(link)
           curIndex += frag.length + file.length

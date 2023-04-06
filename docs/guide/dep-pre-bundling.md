@@ -1,13 +1,6 @@
 # Dependency Pre-Bundling
 
-When you run `vite` for the first time, you may notice this message:
-
-```
-Pre-bundling dependencies:
-  react
-  react-dom
-(this will be run only when your dependencies or config have changed)
-```
+When you run `vite` for the first time, Vite prebundles your project dependencies before loading your site locally. It is done automatically and transparently by default.
 
 ## The Why
 
@@ -36,7 +29,7 @@ Dependency pre-bundling only applies in development mode, and uses `esbuild` to 
 
 If an existing cache is not found, Vite will crawl your source code and automatically discover dependency imports (i.e. "bare imports" that expect to be resolved from `node_modules`) and use these found imports as entry points for the pre-bundle. The pre-bundling is performed with `esbuild` so it's typically very fast.
 
-After the server has already started, if a new dependency import is encountered that isn't already in the cache, Vite will re-run the dep bundling process and reload the page.
+After the server has already started, if a new dependency import is encountered that isn't already in the cache, Vite will re-run the dep bundling process and reload the page if needed.
 
 ## Monorepos and Linked Dependencies
 
@@ -47,13 +40,13 @@ However, this requires the linked dep to be exported as ESM. If not, you can add
 ```js
 export default defineConfig({
   optimizeDeps: {
-    include: ['linked-dep']
+    include: ['linked-dep'],
   },
   build: {
     commonjsOptions: {
-      include: [/linked-dep/, /node_modules/]
-    }
-  }
+      include: [/linked-dep/, /node_modules/],
+    },
+  },
 })
 ```
 
@@ -71,15 +64,18 @@ A typical use case for `optimizeDeps.include` or `optimizeDeps.exclude` is when 
 
 Both `include` and `exclude` can be used to deal with this. If the dependency is large (with many internal modules) or is CommonJS, then you should include it; If the dependency is small and is already valid ESM, you can exclude it and let the browser load it directly.
 
+You can further customize esbuild too with the [`optimizeDeps.esbuildOptions` option](/config/dep-optimization-options.md#optimizedeps-esbuildoptions). For example, adding an esbuild plugin to handle special files in dependencies.
+
 ## Caching
 
 ### File System Cache
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- The `dependencies` list in your `package.json`.
-- Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lockb`.
+- Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
+- `NODE_ENV` value.
 
 The pre-bundling step will only need to be re-run when one of the above has changed.
 

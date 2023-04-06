@@ -1,7 +1,7 @@
-const { resolve } = require('node:path')
-const fs = require('node:fs')
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-module.exports = {
+export default defineConfig({
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -33,8 +33,8 @@ module.exports = {
         a22: resolve(__dirname, 'entrypoints/a22.js'),
         a23: resolve(__dirname, 'entrypoints/a23.js'),
         a24: resolve(__dirname, 'entrypoints/a24.js'),
-        index: resolve(__dirname, './index.html')
-      }
-    }
-  }
-}
+        index: resolve(__dirname, './index.html'),
+      },
+    },
+  },
+})

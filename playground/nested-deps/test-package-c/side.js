@@ -1,1 +1,1 @@
-export { default as C } from 'test-package-c'
+export { default as C } from '@vitejs/test-package-c'

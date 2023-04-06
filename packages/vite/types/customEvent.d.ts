@@ -2,11 +2,12 @@ import type {
   ErrorPayload,
   FullReloadPayload,
   PrunePayload,
-  UpdatePayload
+  UpdatePayload,
 } from './hmrPayload'
 
 export interface CustomEventMap {
   'vite:beforeUpdate': UpdatePayload
+  'vite:afterUpdate': UpdatePayload
   'vite:beforePrune': PrunePayload
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
@@ -15,6 +16,7 @@ export interface CustomEventMap {
 
 export interface InvalidatePayload {
   path: string
+  message: string | undefined
 }
 
 export type InferCustomEventPayload<T extends string> =
