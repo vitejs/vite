@@ -75,6 +75,12 @@ test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
 })
 
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
+})
+
 test('exact extension vs. duplicated (.js.js)', async () => {
   expect(await page.textContent('.exact-extension')).toMatch('[success]')
 })
@@ -155,6 +161,32 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success]',
+    '[success] true #',
   )
+})
+
+test('Resolving top level with imports field', async () => {
+  expect(await page.textContent('.imports-top-level')).toMatch('[success]')
+})
+
+test('Resolving same level with imports field', async () => {
+  expect(await page.textContent('.imports-same-level')).toMatch(
+    await page.textContent('.imports-top-level'),
+  )
+})
+
+test('Resolving nested path with imports field', async () => {
+  expect(await page.textContent('.imports-nested')).toMatch('[success]')
+})
+
+test('Resolving star with imports filed', async () => {
+  expect(await page.textContent('.imports-star')).toMatch('[success]')
+})
+
+test('Resolving slash with imports filed', async () => {
+  expect(await page.textContent('.imports-slash')).toMatch('[success]')
+})
+
+test('Resolving from other package with imports field', async () => {
+  expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })

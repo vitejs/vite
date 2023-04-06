@@ -12,6 +12,16 @@ export default defineConfig({
         passes: 3,
       },
     },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('chunk.js')) {
+            return 'chunk'
+          }
+        },
+      },
+    },
     modulePreload: false,
   },
+  cacheDir: 'node_modules/.vite-preload-disabled',
 })

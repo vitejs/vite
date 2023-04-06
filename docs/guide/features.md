@@ -30,7 +30,17 @@ Note you don't need to manually set these up - when you [create an app via `crea
 
 Vite supports importing `.ts` files out of the box.
 
-Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script or install `vue-tsc` and run `vue-tsc --noEmit` to also type check your `*.vue` files).
+### Transpile Only
+
+Note that Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process.
+
+The reason Vite does not perform type checking as part of the transform process is because the two jobs work fundamentally differently. Transpilation can work on a per-file basis and aligns perfectly with Vite's on-demand compile model. In comparison, type checking requires knowledge of the entire module graph. Shoe-horning type checking into Vite's transform pipeline will inevitably compromise Vite's speed benefits.
+
+Vite's job is to get your source modules into a form that can run in the browser as fast as possible. To that end, we recommend separating static analysis checks from Vite's transform pipeline. This principle applies to other static analysis checks such as ESLint.
+
+- For production builds, you can run `tsc --noEmit` in addition to Vite's build command.
+
+- During development, if you need more than IDE hints, we recommend running `tsc --noEmit --watch` in a separate process, or use [vite-plugin-checker](https://github.com/fi3ework/vite-plugin-checker) if you prefer having type errors directly reported in the browser.
 
 Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
@@ -86,7 +96,7 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 /// <reference types="vite/client" />
 ```
 
-Also, you can add `vite/client` to `compilerOptions.types` of your `tsconfig`:
+Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json
 {
@@ -103,16 +113,22 @@ This will provide the following type shims:
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
-To override the default typing, declare it before the triple-slash reference. For example, to make the default import of `*.svg` a React component:
+To override the default typing, add a type definition file that contains your typings. Then, add the type reference before `vite/client`.
 
-```ts
-declare module '*.svg' {
-  const content: React.FC<React.SVGProps<SVGElement>>
-  export default content
-}
+For example, to make the default import of `*.svg` a React component:
 
-/// <reference types="vite/client" />
-```
+- `vite-env-override.d.ts` (the file that contains your typings):
+  ```ts
+  declare module '*.svg' {
+    const content: React.FC<React.SVGProps<SVGElement>>
+    export default content
+  }
+  ```
+- The file containing the reference to `vite/client`:
+  ```ts
+  /// <reference types="./vite-env-override.d.ts" />
+  /// <reference types="vite/client" />
+  ```
 
 :::
 
@@ -232,9 +248,13 @@ You can also use CSS modules combined with pre-processors by prepending `.module
 The automatic injection of CSS contents can be turned off via the `?inline` query parameter. In this case, the processed CSS string is returned as the module's default export as usual, but the styles aren't injected to the page.
 
 ```js
-import styles from './foo.css' // will be injected into the page
-import otherStyles from './bar.css?inline' // will not be injected into the page
+import './foo.css' // will be injected into the page
+import otherStyles from './bar.css?inline' // will not be injected
 ```
+
+::: tip NOTE
+Default and named imports from CSS files (e.g `import style from './foo.css'`) are deprecated since Vite 4. Use the `?inline` query instead.
+:::
 
 ## Static Assets
 
@@ -388,7 +408,10 @@ const modules = {
 When combined with `eager` it's even possible to have tree-shaking enabled for those modules.
 
 ```ts
-const modules = import.meta.glob('./dir/*.js', { import: 'setup', eager: true })
+const modules = import.meta.glob('./dir/*.js', {
+  import: 'setup',
+  eager: true,
+})
 ```
 
 ```ts
@@ -433,10 +456,8 @@ const modules = import.meta.glob('./dir/*.js', {
 ```ts
 // code produced by vite:
 const modules = {
-  './dir/foo.js': () =>
-    import('./dir/foo.js?foo=bar&bar=true').then((m) => m.setup),
-  './dir/bar.js': () =>
-    import('./dir/bar.js?foo=bar&bar=true').then((m) => m.setup),
+  './dir/foo.js': () => import('./dir/foo.js?foo=bar&bar=true'),
+  './dir/bar.js': () => import('./dir/bar.js?foo=bar&bar=true'),
 }
 ```
 

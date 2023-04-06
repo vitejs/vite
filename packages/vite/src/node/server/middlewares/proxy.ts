@@ -47,6 +47,10 @@ export function proxyMiddleware(
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
+    if (opts.configure) {
+      opts.configure(proxy, opts)
+    }
+
     proxy.on('error', (err, req, originalRes) => {
       // When it is ws proxy, res is net.Socket
       const res = originalRes as http.ServerResponse | net.Socket
@@ -75,10 +79,6 @@ export function proxyMiddleware(
         res.end()
       }
     })
-
-    if (opts.configure) {
-      opts.configure(proxy, opts)
-    }
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
   })
@@ -98,7 +98,7 @@ export function proxyMiddleware(
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
-            debug(`${req.url} -> ws ${opts.target}`)
+            debug?.(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
             return
           }
@@ -119,15 +119,15 @@ export function proxyMiddleware(
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
-            debug(`bypass: ${req.url} -> ${bypassResult}`)
+            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
             return next()
           } else if (bypassResult === false) {
-            debug(`bypass: ${req.url} -> 404`)
+            debug?.(`bypass: ${req.url} -> 404`)
             return res.end(404)
           }
         }
 
-        debug(`${req.url} -> ${opts.target || opts.forward}`)
+        debug?.(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
@@ -141,7 +141,7 @@ export function proxyMiddleware(
 
 function doesProxyContextMatchUrl(context: string, url: string): boolean {
   return (
-    (context.startsWith('^') && new RegExp(context).test(url)) ||
+    (context[0] === '^' && new RegExp(context).test(url)) ||
     url.startsWith(context)
   )
 }

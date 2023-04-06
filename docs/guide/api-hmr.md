@@ -51,6 +51,14 @@ if (import.meta.hot) {
 }
 ```
 
+## IntelliSense for TypeScript
+
+Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can create an `env.d.ts` in the `src` directory so TypeScript picks up the type definitions:
+
+```ts
+/// <reference types="vite/client" />
+```
+
 ## `hot.accept(cb)`
 
 For a module to self-accept, use `import.meta.hot.accept` with a callback which receives the updated module:
@@ -70,9 +78,9 @@ if (import.meta.hot) {
 
 A module that "accepts" hot updates is considered an **HMR boundary**.
 
-Note that Vite's HMR does not actually swap the originally imported module: if an HMR boundary module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the boundary module will not be notified of the change.
+Vite's HMR does not actually swap the originally imported module: if an HMR boundary module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the boundary module will not be notified of the change. This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 
-This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
+Vite requires that the call to this function appears as `import.meta.hot.accept(` (whitespace-sensitive) in the source code in order for the module to accept update. This is a requirement of the static analysis that Vite does to enable HMR support for a module.
 
 ## `hot.accept(deps, cb)`
 
@@ -93,8 +101,9 @@ if (import.meta.hot) {
   import.meta.hot.accept(
     ['./foo.js', './bar.js'],
     ([newFooModule, newBarModule]) => {
-      // The callback receives an array where only the updated module is non null
-      // If the update was not successful (syntax error for ex.), the array is empty
+      // The callback receives an array where only the updated module is
+      // non null. If the update was not successful (syntax error for ex.),
+      // the array is empty
     },
   )
 }

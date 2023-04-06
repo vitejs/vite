@@ -83,7 +83,7 @@ Configure custom proxy rules for the dev server. Expects an object of `{ key: op
 
 Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
 
-Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). Additional options are [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts#L13).
 
 In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
 
@@ -129,7 +129,7 @@ export default defineConfig({
 
 - **Type:** `boolean | CorsOptions`
 
-Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
+Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `false` to disable.
 
 ## server.headers
 
@@ -301,7 +301,7 @@ export default defineConfig({
 ## server.fs.deny
 
 - **Type:** `string[]`
-- **Default:** `['.env', '.env.*', '*.{pem,crt}']`
+- **Default:** `['.env', '.env.*', '*.{crt,pem}']`
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
@@ -318,3 +318,30 @@ export default defineConfig({
   },
 })
 ```
+
+## server.sourcemapIgnoreList
+
+- **Type:** `false | (sourcePath: string, sourcemapPath: string) => boolean`
+- **Default:** `(sourcePath) => sourcePath.includes('node_modules')`
+
+Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/articles/x-google-ignore-list/).
+
+`server.sourcemapIgnoreList` is the equivalent of [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
+
+By default, it excludes all paths containing `node_modules`. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
+
+```js
+export default defineConfig({
+  server: {
+    // This is the default value, and will add all files with node_modules
+    // in their paths to the ignore list.
+    sourcemapIgnoreList(sourcePath, sourcemapPath) {
+      return sourcePath.includes('node_modules')
+    }
+  }
+};
+```
+
+::: tip Note
+[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined rollup options.
+:::

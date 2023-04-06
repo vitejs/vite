@@ -42,9 +42,11 @@ import type {
   LoadResult,
   MinimalPluginContext,
   ModuleInfo,
+  ModuleOptions,
   NormalizedInputOptions,
   OutputOptions,
   ParallelPluginHooks,
+  PartialNull,
   PartialResolvedId,
   ResolvedId,
   RollupError,
@@ -126,8 +128,6 @@ export interface PluginContainer {
 
 type PluginContext = Omit<
   RollupPluginContext,
-  // not supported
-  | 'load'
   // not documented
   | 'cache'
   // deprecated
@@ -141,7 +141,6 @@ export async function createPluginContainer(
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
-  const isDebug = process.env.DEBUG
   const {
     plugins,
     logger,
@@ -159,10 +158,6 @@ export async function createPluginContainer(
   const debugPluginTransform = createDebugger('vite:plugin-transform', {
     onlyWhenFocused: 'vite:plugin',
   })
-  const debugSourcemapCombineFlag = 'vite:sourcemap-combine'
-  const isDebugSourcemapCombineFocused = process.env.DEBUG?.includes(
-    debugSourcemapCombineFlag,
-  )
   const debugSourcemapCombineFilter =
     process.env.DEBUG_VITE_SOURCEMAP_COMBINE_FILTER
   const debugSourcemapCombine = createDebugger('vite:sourcemap-combine', {
@@ -201,7 +196,8 @@ export async function createPluginContainer(
     for (const plugin of getSortedPlugins(hookName)) {
       const hook = plugin[hookName]
       if (!hook) continue
-      // @ts-expect-error hook is not a primitive
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore hook is not a primitive
       const handler: Function = 'handler' in hook ? hook.handler : hook
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
@@ -220,6 +216,10 @@ export async function createPluginContainer(
     get(info: any, key: string) {
       if (key in info) {
         return info[key]
+      }
+      // Don't throw an error when returning from an async function
+      if (key === 'then') {
+        return undefined
       }
       throw Error(
         `[vite] The "${key}" property of ModuleInfo is not supported.`,
@@ -306,6 +306,28 @@ export async function createPluginContainer(
       return out as ResolvedId | null
     }
 
+    async load(
+      options: {
+        id: string
+        resolveDependencies?: boolean
+      } & Partial<PartialNull<ModuleOptions>>,
+    ): Promise<ModuleInfo> {
+      // We may not have added this to our module graph yet, so ensure it exists
+      await moduleGraph?.ensureEntryFromUrl(options.id)
+      // Not all options passed to this function make sense in the context of loading individual files,
+      // but we can at least update the module info properties we support
+      updateModuleInfo(options.id, options)
+
+      await container.load(options.id, { ssr: this.ssr })
+      const moduleInfo = this.getModuleInfo(options.id)
+      // This shouldn't happen due to calling ensureEntryFromUrl, but 1) our types can't ensure that
+      // and 2) moduleGraph may not have been provided (though in the situations where that happens,
+      // we should never have plugins calling this.load)
+      if (!moduleInfo)
+        throw Error(`Failed to load module with id ${options.id}`)
+      return moduleInfo
+    }
+
     getModuleInfo(id: string) {
       return getModuleInfo(id)
     }
@@ -385,13 +407,8 @@ export async function createPluginContainer(
     if (ctx._activeCode) {
       err.pluginCode = ctx._activeCode
 
-      const pos =
-        position != null
-          ? position
-          : err.pos != null
-          ? err.pos
-          : // some rollup plugins, e.g. json, sets position instead of pos
-            (err as any).position
+      // some rollup plugins, e.g. json, sets err.position instead of err.pos
+      const pos = position ?? err.pos ?? (err as any).position
 
       if (pos != null) {
         let errLocation
@@ -433,7 +450,11 @@ export async function createPluginContainer(
         err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
       }
 
-      if (err.loc && ctx instanceof TransformContext) {
+      if (
+        ctx instanceof TransformContext &&
+        typeof err.loc?.line === 'number' &&
+        typeof err.loc?.column === 'number'
+      ) {
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
@@ -462,6 +483,15 @@ export async function createPluginContainer(
         }
       }
     }
+
+    if (
+      typeof err.loc?.column !== 'number' &&
+      typeof err.loc?.line !== 'number' &&
+      !err.loc?.file
+    ) {
+      delete err.loc
+    }
+
     return err
   }
 
@@ -477,7 +507,7 @@ export async function createPluginContainer(
       this.filename = filename
       this.originalCode = code
       if (inMap) {
-        if (isDebugSourcemapCombineFocused) {
+        if (debugSourcemapCombine) {
           // @ts-expect-error inject name for debug purpose
           inMap.name = '$inMap'
         }
@@ -487,6 +517,7 @@ export async function createPluginContainer(
 
     _getCombinedSourcemap(createIfNull = false) {
       if (
+        debugSourcemapCombine &&
         debugSourcemapCombineFilter &&
         this.filename.includes(debugSourcemapCombineFilter)
       ) {
@@ -576,7 +607,7 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
-      const resolveStart = isDebug ? performance.now() : 0
+      const resolveStart = debugResolve ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
@@ -586,7 +617,7 @@ export async function createPluginContainer(
 
         ctx._activePlugin = plugin
 
-        const pluginResolveStart = isDebug ? performance.now() : 0
+        const pluginResolveStart = debugPluginResolve ? performance.now() : 0
         const handler =
           'handler' in plugin.resolveId
             ? plugin.resolveId.handler
@@ -607,18 +638,17 @@ export async function createPluginContainer(
           Object.assign(partial, result)
         }
 
-        isDebug &&
-          debugPluginResolve(
-            timeFrom(pluginResolveStart),
-            plugin.name,
-            prettifyUrl(id, root),
-          )
+        debugPluginResolve?.(
+          timeFrom(pluginResolveStart),
+          plugin.name,
+          prettifyUrl(id, root),
+        )
 
         // resolveId() is hookFirst - first non-null result is returned.
         break
       }
 
-      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
+      if (debugResolve && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
@@ -669,7 +699,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = isDebug ? performance.now() : 0
+        const start = debugPluginTransform ? performance.now() : 0
         let result: TransformResult | string | undefined
         const handler =
           'handler' in plugin.transform
@@ -681,17 +711,16 @@ export async function createPluginContainer(
           ctx.error(e)
         }
         if (!result) continue
-        isDebug &&
-          debugPluginTransform(
-            timeFrom(start),
-            plugin.name,
-            prettifyUrl(id, root),
-          )
+        debugPluginTransform?.(
+          timeFrom(start),
+          plugin.name,
+          prettifyUrl(id, root),
+        )
         if (isObject(result)) {
           if (result.code !== undefined) {
             code = result.code
             if (result.map) {
-              if (isDebugSourcemapCombineFocused) {
+              if (debugSourcemapCombine) {
                 // @ts-expect-error inject plugin name for debug purpose
                 result.map.name = plugin.name
               }

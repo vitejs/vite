@@ -6,11 +6,11 @@
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta) support.
+Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta) support. Vite will replace `'modules'` to `['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14']`
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
-- If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2021'`.
+- If the [`build.minify`](#build-minify) option is `'terser'` and the installed Terser version is below 5.16.0, `'esnext'` will be forced down to `'es2021'`.
 - In other cases, it will perform no transpilation at all.
 
 The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be an ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
@@ -20,7 +20,7 @@ Note the build will fail if the code contains features that cannot be safely tra
 ## build.modulePreload
 
 - **Type:** `boolean | { polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
-- **Default:** `true`
+- **Default:** `{ polyfill: true }`
 
 By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-HTML custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
@@ -78,7 +78,7 @@ Specify the output directory (relative to [project root](/guide/#index-html-and-
 - **Type:** `string`
 - **Default:** `assets`
 
-Specify the directory to nest generated assets under (relative to `build.outDir`).
+Specify the directory to nest generated assets under (relative to `build.outDir`. This is not used in [Library Mode](/guide/build#library-mode)).
 
 ## build.assetsInlineLimit
 
@@ -117,6 +117,13 @@ It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
 In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
 
+## build.cssMinify
+
+- **Type:** `boolean`
+- **Default:** the same as [`build.minify`](#build-minify)
+
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` to minify CSS.
+
 ## build.sourcemap
 
 - **Type:** `boolean | 'inline' | 'hidden'`
@@ -126,9 +133,9 @@ Generate production source maps. If `true`, a separate sourcemap file will be cr
 
 ## build.rollupOptions
 
-- **Type:** [`RollupOptions`](https://rollupjs.org/guide/en/#big-list-of-options)
+- **Type:** [`RollupOptions`](https://rollupjs.org/configuration-options/)
 
-Directly customize the underlying Rollup bundle. This is the same as options that can be exported from a Rollup config file and will be merged with Vite's internal Rollup options. See [Rollup options docs](https://rollupjs.org/guide/en/#big-list-of-options) for more details.
+Directly customize the underlying Rollup bundle. This is the same as options that can be exported from a Rollup config file and will be merged with Vite's internal Rollup options. See [Rollup options docs](https://rollupjs.org/configuration-options/) for more details.
 
 ## build.commonjsOptions
 
@@ -169,7 +176,7 @@ When set to `true`, the build will also generate an SSR manifest for determining
 ## build.ssr
 
 - **Type:** `boolean | string`
-- **Default:** `undefined`
+- **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
 Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
@@ -229,11 +236,11 @@ Enable/disable gzip-compressed size reporting. Compressing large output files ca
 - **Type:** `number`
 - **Default:** `500`
 
-Limit for chunk size warnings (in kbs).
+Limit for chunk size warnings (in kbs). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
 
 ## build.watch
 
-- **Type:** [`WatcherOptions`](https://rollupjs.org/guide/en/#watch-options)`| null`
+- **Type:** [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch)`| null`
 - **Default:** `null`
 
 Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
