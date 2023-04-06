@@ -64,11 +64,17 @@ export class ModuleGraph {
   /**
    * @internal
    */
-  _unresolvedUrlToModuleMap = new Map<string, ModuleNode>()
+  _unresolvedUrlToModuleMap = new Map<
+    string,
+    Promise<ModuleNode> | ModuleNode
+  >()
   /**
    * @internal
    */
-  _ssrUnresolvedUrlToModuleMap = new Map<string, ModuleNode>()
+  _ssrUnresolvedUrlToModuleMap = new Map<
+    string,
+    Promise<ModuleNode> | ModuleNode
+  >()
 
   constructor(
     private resolveId: (
@@ -255,37 +261,40 @@ export class ModuleGraph {
     if (mod) {
       return mod
     }
-    const [url, resolvedId, meta] = await this._resolveUrl(
-      rawUrl,
-      ssr,
-      resolved,
-    )
-    mod = this.idToModuleMap.get(resolvedId)
-    if (!mod) {
-      mod = new ModuleNode(url, setIsSelfAccepting)
-      if (meta) mod.meta = meta
-      this.urlToModuleMap.set(url, mod)
-      mod.id = resolvedId
-      this.idToModuleMap.set(resolvedId, mod)
-      const file = (mod.file = cleanUrl(resolvedId))
-      let fileMappedModules = this.fileToModulesMap.get(file)
-      if (!fileMappedModules) {
-        fileMappedModules = new Set()
-        this.fileToModulesMap.set(file, fileMappedModules)
+    const modPromise = (async () => {
+      const [url, resolvedId, meta] = await this._resolveUrl(
+        rawUrl,
+        ssr,
+        resolved,
+      )
+      mod = this.idToModuleMap.get(resolvedId)
+      if (!mod) {
+        mod = new ModuleNode(url, setIsSelfAccepting)
+        if (meta) mod.meta = meta
+        this.urlToModuleMap.set(url, mod)
+        mod.id = resolvedId
+        this.idToModuleMap.set(resolvedId, mod)
+        const file = (mod.file = cleanUrl(resolvedId))
+        let fileMappedModules = this.fileToModulesMap.get(file)
+        if (!fileMappedModules) {
+          fileMappedModules = new Set()
+          this.fileToModulesMap.set(file, fileMappedModules)
+        }
+        fileMappedModules.add(mod)
       }
-      fileMappedModules.add(mod)
-    }
-    // multiple urls can map to the same module and id, make sure we register
-    // the url to the existing module in that case
-    else if (!this.urlToModuleMap.has(url)) {
-      this.urlToModuleMap.set(url, mod)
-    }
+      // multiple urls can map to the same module and id, make sure we register
+      // the url to the existing module in that case
+      else if (!this.urlToModuleMap.has(url)) {
+        this.urlToModuleMap.set(url, mod)
+      }
+      this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
+      return mod
+    })()
 
     // Also register the clean url to the module, so that we can short-circuit
     // resolving the same url twice
-    this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
-
-    return mod
+    this._setUnresolvedUrlToModule(rawUrl, modPromise, ssr)
+    return modPromise
   }
 
   // some deps, like a css file referenced via @import, don't have its own
@@ -319,7 +328,7 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const mod = this._getUnresolvedUrlToModule(url, ssr)
+    const mod = await this._getUnresolvedUrlToModule(url, ssr)
     if (mod?.id) {
       return [mod.url, mod.id, mod.meta]
     }
@@ -332,7 +341,7 @@ export class ModuleGraph {
   _getUnresolvedUrlToModule(
     url: string,
     ssr?: boolean,
-  ): ModuleNode | undefined {
+  ): Promise<ModuleNode> | ModuleNode | undefined {
     return (
       ssr ? this._ssrUnresolvedUrlToModuleMap : this._unresolvedUrlToModuleMap
     ).get(url)
@@ -340,7 +349,11 @@ export class ModuleGraph {
   /**
    * @internal
    */
-  _setUnresolvedUrlToModule(url: string, mod: ModuleNode, ssr?: boolean): void {
+  _setUnresolvedUrlToModule(
+    url: string,
+    mod: Promise<ModuleNode> | ModuleNode,
+    ssr?: boolean,
+  ): void {
     ;(ssr
       ? this._ssrUnresolvedUrlToModuleMap
       : this._unresolvedUrlToModuleMap
