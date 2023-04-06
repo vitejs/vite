@@ -206,12 +206,12 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
-        const fsPath = fsPathFromId(id)
-        res = tryFsResolve(fsPath, options)
-        debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        res = fsPathFromId(id)
+        // We don't need to resolve these paths since they are already resolved
         // always return here even if res doesn't exist since /@fs/ is explicit
-        // if the file doesn't exist it should be a 404
-        return ensureVersionQuery(res || fsPath, id, options, depsOptimizer)
+        // if the file doesn't exist it should be a 404.
+        debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // URL
