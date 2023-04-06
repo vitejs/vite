@@ -45,7 +45,6 @@ import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { invalidatePackageData } from '../packages'
 import { resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
@@ -526,15 +525,6 @@ export async function _createServer(
     }
   }
 
-  const { packageCache } = config
-  const setPackageData = packageCache.set.bind(packageCache)
-  packageCache.set = (id, pkg) => {
-    if (id.endsWith('.json')) {
-      watcher.add(id)
-    }
-    return setPackageData(id, pkg)
-  }
-
   const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
@@ -556,9 +546,6 @@ export async function _createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
-    if (file.endsWith('/package.json')) {
-      return invalidatePackageData(packageCache, file)
-    }
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
 

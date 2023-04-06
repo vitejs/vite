@@ -1,8 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createFilter, safeRealpathSync } from './utils'
-import type { ResolvedConfig } from './config'
+import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
 import type { Plugin } from './plugin'
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -37,11 +36,10 @@ export interface PackageData {
   }
 }
 
-export function invalidatePackageData(
+function invalidatePackageData(
   packageCache: PackageCache,
   pkgPath: string,
 ): void {
-  packageCache.delete(pkgPath)
   const pkgDir = path.dirname(pkgPath)
   packageCache.forEach((pkg, cacheKey) => {
     if (pkg.dir === pkgDir) {
@@ -217,17 +215,21 @@ export function loadPackageData(pkgPath: string): PackageData {
   return pkg
 }
 
-export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
+export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
+  // a list of files to watch before the plugin is ready
   const watchQueue = new Set<string>()
-  let watchFile = (id: string) => {
+  const watchedDirs = new Set<string>()
+
+  const watchFileStub = (id: string) => {
     watchQueue.add(id)
   }
+  let watchFile = watchFileStub
 
-  const { packageCache } = config
   const setPackageData = packageCache.set.bind(packageCache)
   packageCache.set = (id, pkg) => {
-    if (id.endsWith('.json')) {
-      watchFile(id)
+    if (!isInNodeModules(pkg.dir) && !watchedDirs.has(pkg.dir)) {
+      watchedDirs.add(pkg.dir)
+      watchFile(path.join(pkg.dir, 'package.json'))
     }
     return setPackageData(id, pkg)
   }
@@ -235,16 +237,21 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:watch-package-data',
     buildStart() {
-      watchFile = this.addWatchFile
+      watchFile = this.addWatchFile.bind(this)
       watchQueue.forEach(watchFile)
       watchQueue.clear()
     },
     buildEnd() {
-      watchFile = (id) => watchQueue.add(id)
+      watchFile = watchFileStub
     },
     watchChange(id) {
       if (id.endsWith('/package.json')) {
-        invalidatePackageData(packageCache, id)
+        invalidatePackageData(packageCache, path.normalize(id))
+      }
+    },
+    handleHotUpdate({ file }) {
+      if (file.endsWith('/package.json')) {
+        invalidatePackageData(packageCache, path.normalize(file))
       }
     },
   }

@@ -51,7 +51,7 @@ import {
   initDepsOptimizer,
 } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
-import { findNearestPackageData, watchPackageDataPlugin } from './packages'
+import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
@@ -436,7 +436,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     pre: [
       completeSystemWrapPlugin(),
       ...(options.watch ? [ensureWatchPlugin()] : []),
-      watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       ...((
