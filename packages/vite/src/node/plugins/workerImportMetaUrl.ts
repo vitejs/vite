@@ -126,7 +126,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const rawUrl = code.slice(urlStart, urlEnd)
 
           // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
               urlIndex,
@@ -141,7 +141,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           )
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
-          if (url.startsWith('.')) {
+          if (url[0] === '.') {
             file = path.resolve(path.dirname(id), url)
           } else {
             workerResolver ??= config.createResolver({
@@ -150,9 +150,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               preferRelative: true,
             })
             file = await workerResolver(url, id)
-            file ??= url.startsWith('/')
-              ? slash(path.join(config.publicDir, url))
-              : slash(path.resolve(path.dirname(id), url))
+            file ??=
+              url[0] === '/'
+                ? slash(path.join(config.publicDir, url))
+                : slash(path.resolve(path.dirname(id), url))
           }
 
           let builtUrl: string

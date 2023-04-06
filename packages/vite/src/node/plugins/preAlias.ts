@@ -11,6 +11,7 @@ import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import {
   bareImportRE,
   cleanUrl,
+  isInNodeModules,
   isOptimizable,
   moduleListContains,
 } from '../utils'
@@ -42,6 +43,8 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
             depsOptimizer,
             id,
             importer,
+            config.resolve.preserveSymlinks,
+            config.packageCache,
           )
           if (optimizedId) {
             return optimizedId // aliased dep already optimized
@@ -60,7 +63,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
               fs.existsSync(resolvedId) &&
               !moduleListContains(optimizeDeps.exclude, id) &&
               path.isAbsolute(resolvedId) &&
-              (resolvedId.includes('node_modules') ||
+              (isInNodeModules(resolvedId) ||
                 optimizeDeps.include?.includes(id)) &&
               isOptimizable(resolvedId, optimizeDeps) &&
               !(isBuild && ssr && isConfiguredAsExternal(id)) &&

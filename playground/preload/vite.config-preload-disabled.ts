@@ -23,4 +23,5 @@ export default defineConfig({
     },
     modulePreload: false,
   },
+  cacheDir: 'node_modules/.vite-preload-disabled',
 })

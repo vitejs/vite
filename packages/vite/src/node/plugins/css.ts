@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import glob from 'fast-glob'
@@ -166,10 +167,10 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
-const postcssConfigCache: Record<
-  string,
-  WeakMap<ResolvedConfig, PostCSSConfigResult | null>
-> = {}
+const postcssConfigCache = new WeakMap<
+  ResolvedConfig,
+  PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
+>()
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
@@ -187,6 +188,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: [],
   })
+
+  // warm up cache for resolved postcss config
+  resolvePostcssConfig(config)
 
   return {
     name: 'vite:css',
@@ -312,6 +316,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
+  // list of css emit tasks to guarantee the files are emitted in a deterministic order
+  let emitTasks: Promise<void>[] = []
   let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -349,6 +355,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
+      emitTasks = []
     },
 
     async transform(css, id, options) {
@@ -502,9 +509,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const toRelative = (filename: string, importer: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
-          return relativePath.startsWith('.')
-            ? relativePath
-            : './' + relativePath
+          return relativePath[0] === '.' ? relativePath : './' + relativePath
         }
 
         // replace asset url references with resolved url.
@@ -561,7 +566,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
+
+          const previousTask = emitTasks[emitTasks.length - 1]
+          // finalizeCss is async which makes `emitFile` non-deterministic, so
+          // we use a `.then` to wait for previous tasks before finishing this
+          const thisTask = finalizeCss(chunkCSS, true, config).then((css) => {
+            chunkCSS = css
+            // make sure the previous task is also finished, this works recursively
+            return previousTask
+          })
+
+          // push this task so the next task can wait for this one
+          emitTasks.push(thisTask)
+          const emitTasksLength = emitTasks.length
+
+          // wait for this and previous tasks to finish
+          await thisTask
 
           // emit corresponding css file
           const referenceId = this.emitFile({
@@ -575,6 +595,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .get(config)!
             .set(referenceId, { originalName, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+
+          if (emitTasksLength === emitTasks.length) {
+            // this is the last task, clear `emitTasks` to free up memory
+            emitTasks = []
+          }
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
@@ -803,7 +828,7 @@ async function compileCSS(
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
-  const postcssConfig = await resolvePostcssConfig(config, getCssDialect(lang))
+  const postcssConfig = await resolvePostcssConfig(config)
 
   // 1. plain css that needs no processing
   if (
@@ -884,20 +909,12 @@ async function compileCSS(
   // 3. postcss
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
 
-  // for sugarss change parser
-  if (lang === 'sss') {
-    postcssOptions.parser = loadPreprocessor(
-      PostCssDialectLang.sss,
-      config.root,
-    )
-  }
-
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
   if (needInlineImport) {
     postcssPlugins.unshift(
-      (await import('postcss-import')).default({
+      (await importPostcssImport()).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
@@ -932,7 +949,7 @@ async function compileCSS(
 
   if (isModule) {
     postcssPlugins.unshift(
-      (await import('postcss-modules')).default({
+      (await importPostcssModules()).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
@@ -969,27 +986,30 @@ async function compileCSS(
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
+    const postcss = await importPostcss()
     // postcss is an unbundled dep and should be lazy imported
-    postcssResult = await (await import('postcss'))
-      .default(postcssPlugins)
-      .process(code, {
-        ...postcssOptions,
-        to: source,
-        from: source,
-        ...(devSourcemap
-          ? {
-              map: {
-                inline: false,
-                annotation: false,
-                // postcss may return virtual files
-                // we cannot obtain content of them, so this needs to be enabled
-                sourcesContent: true,
-                // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-                // prev: preprocessorMap,
-              },
-            }
-          : {}),
-      })
+    postcssResult = await postcss.default(postcssPlugins).process(code, {
+      ...postcssOptions,
+      parser:
+        lang === 'sss'
+          ? loadPreprocessor(PostCssDialectLang.sss, config.root)
+          : postcssOptions.parser,
+      to: source,
+      from: source,
+      ...(devSourcemap
+        ? {
+            map: {
+              inline: false,
+              annotation: false,
+              // postcss may return virtual files
+              // we cannot obtain content of them, so this needs to be enabled
+              sourcesContent: true,
+              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+              // prev: preprocessorMap,
+            },
+          }
+        : {}),
+    })
 
     // record CSS dependencies from @imports
     for (const message of postcssResult.messages) {
@@ -1057,6 +1077,22 @@ async function compileCSS(
   }
 }
 
+function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
+  let cached: T | Promise<T>
+  return () => {
+    if (!cached) {
+      cached = imp().then((module) => {
+        cached = module
+        return module
+      })
+    }
+    return cached
+  }
+}
+const importPostcssImport = createCachedImport(() => import('postcss-import'))
+const importPostcssModules = createCachedImport(() => import('postcss-modules'))
+const importPostcss = createCachedImport(() => import('postcss'))
+
 export interface PreprocessCSSResult {
   code: string
   map?: SourceMapInput
@@ -1075,6 +1111,8 @@ export async function preprocessCSS(
   return await compileCSS(filename, code, config)
 }
 
+const postcssReturnsVirtualFilesRE = /^<.+>$/
+
 export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string,
@@ -1084,8 +1122,7 @@ export async function formatPostcssSourceMap(
   const sources = rawMap.sources.map((source) => {
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
-    // postcss returns virtual files
-    if (/^<.+>$/.test(cleanSource)) {
+    if (postcssReturnsVirtualFilesRE.test(cleanSource)) {
       return `\0${cleanSource}`
     }
 
@@ -1139,16 +1176,10 @@ interface PostCSSConfigResult {
 
 async function resolvePostcssConfig(
   config: ResolvedConfig,
-  dialect = 'css',
 ): Promise<PostCSSConfigResult | null> {
-  postcssConfigCache[dialect] ??= new WeakMap<
-    ResolvedConfig,
-    PostCSSConfigResult | null
-  >()
-
-  let result = postcssConfigCache[dialect].get(config)
+  let result = postcssConfigCache.get(config)
   if (result !== undefined) {
-    return result
+    return await result
   }
 
   // inline postcss config via vite config
@@ -1164,9 +1195,7 @@ async function resolvePostcssConfig(
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    try {
-      result = await postcssrc({}, searchPath)
-    } catch (e) {
+    result = postcssrc({}, searchPath).catch((e) => {
       if (!/No PostCSS Config found/.test(e.message)) {
         if (e instanceof Error) {
           const { name, message, stack } = e
@@ -1178,11 +1207,15 @@ async function resolvePostcssConfig(
           throw new Error(`Failed to load PostCSS config: ${e}`)
         }
       }
-      result = null
-    }
+      return null
+    })
+    // replace cached promise to result object when finished
+    result.then((resolved) => {
+      postcssConfigCache.set(config, resolved)
+    })
   }
 
-  postcssConfigCache[dialect].set(config, result)
+  postcssConfigCache.set(config, result)
   return result
 }
 
@@ -1318,7 +1351,7 @@ async function doUrlReplace(
   if (
     isExternalUrl(rawUrl) ||
     isDataUrl(rawUrl) ||
-    rawUrl.startsWith('#') ||
+    rawUrl[0] === '#' ||
     varRE.test(rawUrl)
   ) {
     return matched
@@ -1343,7 +1376,7 @@ async function doImportCSSReplace(
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl[0] === '#') {
     return matched
   }
 
@@ -1355,6 +1388,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      charset: 'utf8',
       ...resolveEsbuildMinifyOptions(config.esbuild || {}),
     })
     if (warnings.length) {
@@ -1543,7 +1577,7 @@ function cleanScssBugUrl(url: string) {
   if (
     // check bug via `window` and `location` global
     typeof window !== 'undefined' &&
-    typeof location !== 'undefined'
+    typeof location?.href === 'string'
   ) {
     const prefix = location.href.replace(/\/$/, '')
     return url.replace(prefix, '')
@@ -1680,7 +1714,7 @@ async function rebaseUrls(
     return { file }
   }
 
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   // no url()
   const hasUrls = cssUrlRE.test(content)
   // data-uri() calls
@@ -1694,7 +1728,7 @@ async function rebaseUrls(
 
   let rebased
   const rebaseFn = (url: string) => {
-    if (url.startsWith('/')) return url
+    if (url[0] === '/') return url
     // ignore url's starting with variable
     if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite
@@ -1839,7 +1873,7 @@ function createViteLessPlugin(
           if (result && 'contents' in result) {
             contents = result.contents
           } else {
-            contents = fs.readFileSync(resolved, 'utf-8')
+            contents = await fsp.readFile(resolved, 'utf-8')
           }
           return {
             filename: path.resolve(resolved),
@@ -1976,8 +2010,4 @@ const preProcessors = Object.freeze({
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
-}
-
-function getCssDialect(lang: CssLang | undefined): string {
-  return lang === 'sss' ? 'sss' : 'css'
 }
