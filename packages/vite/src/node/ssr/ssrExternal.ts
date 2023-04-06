@@ -9,11 +9,12 @@ import {
   createFilter,
   isBuiltin,
   isDefined,
+  isInNodeModules,
   lookupFile,
   normalizePath,
-  resolveFrom,
 } from '../utils'
 import type { Logger, ResolvedConfig } from '..'
+import { resolvePackageData } from '../packages'
 
 const debug = createDebugger('vite:ssr-external')
 
@@ -145,7 +146,7 @@ export function createIsConfiguredAsSsrExternal(
         !!configuredAsExternal,
       )?.external
     } catch (e) {
-      debug(
+      debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
       )
       // may be an invalid import that's resolved by a plugin
@@ -199,7 +200,7 @@ function createIsSsrExternal(
       return processedIds.get(id)
     }
     let external = false
-    if (!id.startsWith('.') && !path.isAbsolute(id)) {
+    if (id[0] !== '.' && !path.isAbsolute(id)) {
       external = isBuiltin(id) || isConfiguredAsExternal(id)
     }
     processedIds.set(id, external)
@@ -216,7 +217,11 @@ function cjsSsrCollectExternals(
   seen: Set<string>,
   logger: Logger,
 ) {
-  const rootPkgContent = lookupFile(root, ['package.json'])
+  const rootPkgPath = lookupFile(root, ['package.json'])
+  if (!rootPkgPath) {
+    return
+  }
+  const rootPkgContent = fs.readFileSync(rootPkgPath, 'utf-8')
   if (!rootPkgContent) {
     return
   }
@@ -256,19 +261,19 @@ function cjsSsrCollectExternals(
       // which returns with '/', require.resolve returns with '\\'
       requireEntry = normalizePath(_require.resolve(id, { paths: [root] }))
     } catch (e) {
-      try {
-        // no main entry, but deep imports may be allowed
-        const pkgPath = resolveFrom(`${id}/package.json`, root)
-        if (pkgPath.includes('node_modules')) {
+      // no main entry, but deep imports may be allowed
+      const pkgDir = resolvePackageData(id, root)?.dir
+      if (pkgDir) {
+        if (isInNodeModules(pkgDir)) {
           ssrExternals.add(id)
         } else {
-          depsToTrace.add(path.dirname(pkgPath))
+          depsToTrace.add(path.dirname(pkgDir))
         }
         continue
-      } catch {}
+      }
 
       // resolve failed, assume include
-      debug(`Failed to resolve entries for package "${id}"\n`, e)
+      debug?.(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
     // no esm entry but has require entry
@@ -276,9 +281,11 @@ function cjsSsrCollectExternals(
       ssrExternals.add(id)
     }
     // trace the dependencies of linked packages
-    else if (!esmEntry.includes('node_modules')) {
-      const pkgPath = resolveFrom(`${id}/package.json`, root)
-      depsToTrace.add(path.dirname(pkgPath))
+    else if (!isInNodeModules(esmEntry)) {
+      const pkgDir = resolvePackageData(id, root)?.dir
+      if (pkgDir) {
+        depsToTrace.add(pkgDir)
+      }
     }
     // has separate esm/require entry, assume require entry is cjs
     else if (esmEntry !== requireEntry) {
@@ -288,13 +295,10 @@ function cjsSsrCollectExternals(
     // or are there others like SystemJS / AMD that we'd need to handle?
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
-      const pkgPath = resolveFrom(`${id}/package.json`, root)
-      const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
-
-      if (!pkgContent) {
+      const pkg = resolvePackageData(id, root)?.data
+      if (!pkg) {
         continue
       }
-      const pkg = JSON.parse(pkgContent)
 
       if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)
@@ -340,7 +344,7 @@ export function cjsShouldExternalizeForSSR(
 
 function getNpmPackageName(importPath: string): string | null {
   const parts = importPath.split('/')
-  if (parts[0].startsWith('@')) {
+  if (parts[0][0] === '@') {
     if (!parts[1]) return null
     return `${parts[0]}/${parts[1]}`
   } else {

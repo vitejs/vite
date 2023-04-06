@@ -57,4 +57,5 @@ export default defineConfig({
       }
     },
   },
+  cacheDir: 'node_modules/.vite-runtime-base',
 })

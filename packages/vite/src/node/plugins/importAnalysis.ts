@@ -32,6 +32,7 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   isJSRequest,
   joinUrlSegments,
   moduleListContains,
@@ -52,12 +53,7 @@ import {
   cjsShouldExternalizeForSSR,
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
-import { transformRequest } from '../server/transformRequest'
-import {
-  getDepsCacheDirPrefix,
-  getDepsOptimizer,
-  optimizedDepNeedsInterop,
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { checkPublicFile } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
@@ -66,7 +62,6 @@ import {
 import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
-const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
@@ -77,6 +72,13 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
+
+const hasImportInQueryParamsRE = /[?&]import=?\b/
+
+const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+
+const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
+const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
 export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
@@ -204,7 +206,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -256,12 +258,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
-        isDebug &&
-          debug(
-            `${timeFrom(start)} ${colors.dim(
-              `[no imports] ${prettyImporter}`,
-            )}`,
-          )
+        debug?.(
+          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+        )
         return source
       }
 
@@ -272,7 +271,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
-      const staticImportedUrls = new Set<{ url: string; id: string }>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -331,7 +329,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        const isRelative = url.startsWith('.')
+        const isRelative = url[0] === '.'
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
@@ -340,7 +338,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
-          resolved.id.startsWith(getDepsCacheDirPrefix(config)) ||
+          depsOptimizer?.isOptimizedDepFile(resolved.id) ||
           fs.existsSync(cleanUrl(resolved.id))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
@@ -357,7 +355,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // if the resolved id is not a valid browser import specifier,
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
-        if (!url.startsWith('.') && !url.startsWith('/')) {
+        if (url[0] !== '.' && url[0] !== '/') {
           url = wrapId(resolved.id)
         }
 
@@ -373,7 +371,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // query can break 3rd party plugin's extension checks.
           if (
             (isRelative || isSelfImport) &&
-            !/[?&]import=?\b/.test(url) &&
+            !hasImportInQueryParamsRE.test(url) &&
             !url.match(DEP_VERSION_RE)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
@@ -387,10 +385,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // up-to-date version of this module.
           try {
             // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            const depModule = await moduleGraph.ensureEntryFromUrl(
+            // We use an internal function to avoid resolving the url again
+            const depModule = await moduleGraph._ensureEntryFromUrl(
               unwrapId(url),
               ssr,
               canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+              resolved,
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
@@ -489,7 +489,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // warn imports to non-asset /public files
           if (
-            specifier.startsWith('/') &&
+            specifier[0] === '/' &&
             !config.assetsInclude(cleanUrl(specifier)) &&
             !specifier.endsWith('.json') &&
             checkPublicFile(specifier, config)
@@ -568,7 +568,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   )
                 }
               } else if (needsInterop) {
-                debug(`${url} needs interop`)
+                debug?.(`${url} needs interop`)
                 interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
@@ -584,9 +584,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               rewriteDone = true
             }
             if (!rewriteDone) {
-              let rewrittenUrl = JSON.stringify(url)
-              if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
-              str().overwrite(start, end, rewrittenUrl, {
+              const rewrittenUrl = JSON.stringify(url)
+              const s = isDynamicImport ? start : start - 1
+              const e = isDynamicImport ? end : end + 1
+              str().overwrite(s, e, rewrittenUrl, {
                 contentOnly: true,
               })
             }
@@ -595,7 +596,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // record for HMR import chain analysis
           // make sure to unwrap and normalize away base
           const hmrUrl = unwrapId(stripBase(url, base))
-          importedUrls.add(hmrUrl)
+          const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
+          if (isLocalImport) {
+            importedUrls.add(hmrUrl)
+          }
 
           if (enablePartialAccept && importedBindings) {
             extractImportedBindings(
@@ -606,14 +610,28 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
-          if (!isDynamicImport) {
-            // for pre-transforming
-            staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
+          if (
+            !isDynamicImport &&
+            isLocalImport &&
+            config.server.preTransformRequests
+          ) {
+            // pre-transform known direct imports
+            // These requests will also be registered in transformRequest to be awaited
+            // by the deps optimizer
+            const url = removeImportQuery(hmrUrl)
+            server.transformRequest(url, { ssr }).catch((e) => {
+              if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+                // This are expected errors
+                return
+              }
+              // Unexpected error, log the issue but avoid an unhandled exception
+              config.logger.error(e.message)
+            })
           }
         } else if (!importer.startsWith(clientDir)) {
-          if (!importer.includes('node_modules')) {
+          if (!isInNodeModules(importer)) {
             // check @vite-ignore which suppresses dynamic import warning
-            const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
+            const hasViteIgnore = hasViteIgnoreRE.test(
               // complete expression inside parens
               source.slice(dynamicIndex + 1, end),
             )
@@ -637,11 +655,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (!ssr) {
-            const url = rawUrl
-              .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-              .trim()
+            const url = rawUrl.replace(cleanUpRawUrlRE, '').trim()
             if (
-              !/^(?:'.*'|".*"|`.*`)$/.test(url) ||
+              !urlIsStringRE.test(url) ||
               isExplicitImportRequired(url.slice(1, -1))
             ) {
               needQueryInjectHelper = true
@@ -662,7 +678,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (hasHMR && !ssr) {
-        debugHmr(
+        debugHmr?.(
           `${
             isSelfAccepting
               ? `[self-accepts]`
@@ -692,7 +708,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(markExplicitImport(url)),
+          toAbsoluteUrl(url),
           ssr,
         )
         normalizedAcceptedUrls.add(normalized)
@@ -746,29 +762,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      isDebug &&
-        debug(
-          `${timeFrom(start)} ${colors.dim(
-            `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
-          )}`,
-        )
-
-      // pre-transform known direct imports
-      // These requests will also be registered in transformRequest to be awaited
-      // by the deps optimizer
-      if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach(({ url }) => {
-          url = removeImportQuery(url)
-          transformRequest(url, server, { ssr }).catch((e) => {
-            if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
-              // This are expected errors
-              return
-            }
-            // Unexpected error, log the issue but avoid an unhandled exception
-            config.logger.error(e.message)
-          })
-        })
-      }
+      debug?.(
+        `${timeFrom(start)} ${colors.dim(
+          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+        )}`,
+      )
 
       if (s) {
         return transformStableResult(s, importer, config)
