@@ -120,7 +120,11 @@ export const core = [
     name: 'Dominik G.',
     title: 'Resident CI Expert',
     desc: 'Team Member of Vite and Svelte',
-    links: [{ icon: 'github', link: 'https://github.com/dominikg' }],
+    links: [
+      { icon: 'github', link: 'https://github.com/dominikg' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
+    ],
+    sponsor: 'https://github.com/sponsors/dominikg',
   },
 ]
 
