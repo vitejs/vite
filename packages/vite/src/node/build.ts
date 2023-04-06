@@ -871,40 +871,50 @@ export function onRollupWarning(
   warn: WarningHandler,
   config: ResolvedConfig,
 ): void {
-  if (warning.code === 'UNRESOLVED_IMPORT') {
-    const id = warning.id
-    const exporter = warning.exporter
-    // throw unless it's commonjs external...
-    if (!id || !/\?commonjs-external$/.test(id)) {
-      throw new Error(
-        `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
-          `This is most likely unintended because it can break your application at runtime.\n` +
-          `If you do want to externalize this module explicitly add it to\n` +
-          `\`build.rollupOptions.external\``,
-      )
+  function viteWarn(warning: RollupWarning) {
+    if (warning.code === 'UNRESOLVED_IMPORT') {
+      const id = warning.id
+      const exporter = warning.exporter
+      // throw unless it's commonjs external...
+      if (!id || !/\?commonjs-external$/.test(id)) {
+        throw new Error(
+          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+            `This is most likely unintended because it can break your application at runtime.\n` +
+            `If you do want to externalize this module explicitly add it to\n` +
+            `\`build.rollupOptions.external\``,
+        )
+      }
     }
-  }
 
-  if (
-    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
-  ) {
-    return
-  }
+    if (
+      warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+      dynamicImportWarningIgnoreList.some((msg) =>
+        warning.message.includes(msg),
+      )
+    ) {
+      return
+    }
 
-  if (!warningIgnoreList.includes(warning.code!)) {
-    const userOnWarn = config.build.rollupOptions?.onwarn
-    if (userOnWarn) {
-      userOnWarn(warning, warn)
-    } else if (warning.code === 'PLUGIN_WARNING') {
+    if (!warningIgnoreList.includes(warning.code!)) {
+      return
+    }
+
+    if (warning.code === 'PLUGIN_WARNING') {
       config.logger.warn(
         `${colors.bold(
           colors.yellow(`[plugin:${warning.plugin}]`),
         )} ${colors.yellow(warning.message)}`,
       )
-    } else {
-      warn(warning)
     }
+
+    warn(warning)
+  }
+
+  const userOnWarn = config.build.rollupOptions?.onwarn
+  if (userOnWarn) {
+    userOnWarn(warning, viteWarn)
+  } else {
+    viteWarn(warning)
   }
 }
 
