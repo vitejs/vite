@@ -187,9 +187,9 @@ export function createDebugger(
   }
 
   if (enabled) {
-    return (msg: string, ...args: any[]) => {
-      if (!filter || msg.includes(filter)) {
-        log(msg, ...args)
+    return (...args: [string, ...any[]]) => {
+      if (!filter || args.some((a) => a?.includes(filter))) {
+        log(...args)
       }
     }
   }
