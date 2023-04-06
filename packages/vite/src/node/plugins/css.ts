@@ -185,7 +185,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   let moduleCache: Map<string, Record<string, string>>
   let rootVarsCache: Map<string, string>
-  let rootVarsEmitted: boolean
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -210,7 +209,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       rootVarsCache = new Map<string, string>()
       rootCssVariableCache.set(config, rootVarsCache)
-      rootVarsEmitted = false
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
     },
@@ -224,7 +222,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return
       }
       const ssr = options?.ssr === true
-      const isBuild = config.command === 'build'
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
@@ -238,7 +235,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
-        if (isBuild) {
+        if (config.command === 'build') {
           // #9800 If we cannot resolve the css url, leave a warning.
           config.logger.warnOnce(
             `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
@@ -252,17 +249,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map,
-      } = await compileCSS(id, raw, config, {
-        urlReplacer,
-        rootVarsCache,
-        isBuild,
-      })
+      } = await compileCSS(id, raw, config, { urlReplacer, rootVarsCache })
       if (modules) {
         moduleCache.set(id, modules)
       }
 
       // track deps for build watch mode
-      if (isBuild && config.build.watch && deps) {
+      if (config.command === 'build' && config.build.watch && deps) {
         for (const file of deps) {
           this.addWatchFile(file)
         }
@@ -319,25 +312,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         code: css,
         map,
       }
-    },
-
-    async renderChunk(_, chunk) {
-      if (!rootVarsEmitted && rootVarsCache.size) {
-        const rootVarsCss = joinRootVars(rootVarsCache)
-        chunk.viteMetadata!.importedCss.add(
-          this.getFileName(
-            this.emitFile({
-              name: 'root-css-variable.css',
-              type: 'asset',
-              source: config.build.cssMinify
-                ? await minifyCSS(rootVarsCss, config)
-                : rootVarsCss,
-            }),
-          ),
-        )
-        rootVarsEmitted = true
-      }
-      return null
     },
   }
 }
@@ -844,7 +818,6 @@ async function compileCSS(
   options?: {
     urlReplacer?: CssUrlReplacer
     rootVarsCache: Map<string, string>
-    isBuild: boolean
   },
 ): Promise<{
   code: string
@@ -980,7 +953,6 @@ async function compileCSS(
         replacer: options.urlReplacer,
         logger: config.logger,
         rootVars: options.rootVarsCache,
-        isBuild: options.isBuild,
       }),
     )
   }
@@ -1275,7 +1247,6 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
   logger: Logger
   rootVars: Map<string, string>
-  isBuild: boolean
 }> = (opts) => {
   if (!opts) {
     throw new Error('base or replace is required')
@@ -1331,26 +1302,22 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
       })
       if (promises.length) {
         return Promise.all(promises).then(() => {
-          // only inject in dev mode
-          !opts.isBuild &&
-            isCssFile &&
-            root.prepend(joinRootVars(opts.rootVars))
+          isCssFile &&
+            root.prepend(
+              `:root{${Array.from(opts.rootVars.entries()).reduce(
+                (cssVars, [url, cssVar]) => {
+                  cssVars += `\n${cssVar}: ${url};`
+                  return cssVars
+                },
+                '',
+              )}}`,
+            )
         }) as any
       }
     },
   }
 }
 UrlRewritePostcssPlugin.postcss = true
-
-function joinRootVars(rootVars: Map<string, string>) {
-  return `:root{${Array.from(rootVars.entries()).reduce(
-    (cssVars, [url, cssVar]) => {
-      cssVars += `\n${cssVar}: ${url};`
-      return cssVars
-    },
-    '',
-  )}}`
-}
 
 function rewriteCssUrls(
   css: string,
