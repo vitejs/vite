@@ -172,6 +172,8 @@ const postcssConfigCache = new WeakMap<
   PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
 >()
 
+const rootCssVariableCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
 }
@@ -182,6 +184,7 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   let moduleCache: Map<string, Record<string, string>>
+  let rootVarsCache: Map<string, string>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -203,6 +206,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
       moduleCache = new Map<string, Record<string, string>>()
       cssModulesCache.set(config, moduleCache)
+
+      rootVarsCache = new Map<string, string>()
+      rootCssVariableCache.set(config, rootVarsCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
     },
@@ -243,7 +249,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map,
-      } = await compileCSS(id, raw, config, urlReplacer)
+      } = await compileCSS(id, raw, config, { urlReplacer, rootVarsCache })
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -809,7 +815,10 @@ async function compileCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
-  urlReplacer?: CssUrlReplacer,
+  options?: {
+    urlReplacer?: CssUrlReplacer
+    rootVarsCache: Map<string, string>
+  },
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -938,11 +947,12 @@ async function compileCSS(
     )
   }
 
-  if (urlReplacer) {
+  if (options?.urlReplacer) {
     postcssPlugins.push(
       UrlRewritePostcssPlugin({
-        replacer: urlReplacer,
+        replacer: options.urlReplacer,
         logger: config.logger,
+        rootVars: options.rootVarsCache,
       }),
     )
   }
@@ -1236,6 +1246,7 @@ const cssImageSetRE = /(?<=image-set\()((?:[\w\-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
   logger: Logger
+  rootVars: Map<string, string>
 }> = (opts) => {
   if (!opts) {
     throw new Error('base or replace is required')
@@ -1245,7 +1256,6 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
     postcssPlugin: 'vite-url-rewrite',
     Once(root) {
       const promises: Promise<void>[] = []
-      const rootVars = {} as Record<string, string>
       const isCssFile = !root.source?.input.file?.includes('.html')
       root.walkDecls((declaration) => {
         const importer = declaration.source?.input.file
@@ -1277,12 +1287,11 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
                 ) {
                   const [base64] = match
 
-                  rootVars[base64] = `--base64-${getHash(base64)}`
+                  const cssVar =
+                    opts.rootVars.get(base64) || `--base64-${getHash(base64)}`
+                  opts.rootVars.set(base64, cssVar)
 
-                  declaration.value = url.replace(
-                    base64,
-                    `var(${rootVars[base64]})`,
-                  )
+                  declaration.value = url.replace(base64, `var(${cssVar})`)
                 } else {
                   declaration.value = url
                 }
@@ -1295,7 +1304,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         return Promise.all(promises).then(() => {
           isCssFile &&
             root.prepend(
-              `:root{${Object.entries(rootVars).reduce(
+              `:root{${Array.from(opts.rootVars.entries()).reduce(
                 (cssVars, [url, cssVar]) => {
                   cssVars += `\n${cssVar}: ${url};`
                   return cssVars
