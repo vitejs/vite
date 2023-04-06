@@ -363,6 +363,13 @@ function waitForWindowShow() {
 }
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
+
+// collect existing style elements that may have been inserted during SSR
+// to avoid FOUC or duplicate styles
+document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
+  sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
+})
+
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined

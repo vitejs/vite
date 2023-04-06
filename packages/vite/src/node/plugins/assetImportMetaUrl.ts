@@ -10,6 +10,7 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
+import { CLIENT_ENTRY } from '../constants'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 
@@ -33,6 +34,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       if (
         !options?.ssr &&
         id !== preloadHelperId &&
+        id !== CLIENT_ENTRY &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {

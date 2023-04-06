@@ -1,1 +1,2 @@
-module.exports = require('../../vite.config-no-css-minify')
+import config from '../../vite.config-no-css-minify'
+export default config
