@@ -497,6 +497,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      // remove duplicate base64 css variables
+      const base64VarRE = /(--base64-[^:]+):.+?\);/g
+      const cssVarCache = new Map<string, boolean>()
+      chunkCSS = chunkCSS.replace(base64VarRE, (s, cssVar) => {
+        if (cssVarCache.has(cssVar)) {
+          return ''
+        }
+
+        cssVarCache.set(cssVar, true)
+        return s
+      })
+
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
