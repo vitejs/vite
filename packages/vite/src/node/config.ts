@@ -48,6 +48,7 @@ import {
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
+  FS_PREFIX,
 } from './constants'
 import type {
   InternalResolveOptions,
@@ -475,8 +476,14 @@ export async function resolveConfig(
   )
 
   const clientAlias = [
-    { find: /^\/?@vite\/env/, replacement: ENV_ENTRY },
-    { find: /^\/?@vite\/client/, replacement: CLIENT_ENTRY },
+    {
+      find: /^\/?@vite\/env/,
+      replacement: path.posix.join(FS_PREFIX, normalizePath(ENV_ENTRY)),
+    },
+    {
+      find: /^\/?@vite\/client/,
+      replacement: path.posix.join(FS_PREFIX, normalizePath(CLIENT_ENTRY)),
+    },
   ]
 
   // resolve alias with internal client alias
