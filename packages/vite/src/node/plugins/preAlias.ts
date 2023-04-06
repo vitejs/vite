@@ -43,6 +43,8 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
             depsOptimizer,
             id,
             importer,
+            config.resolve.preserveSymlinks,
+            config.packageCache,
           )
           if (optimizedId) {
             return optimizedId // aliased dep already optimized

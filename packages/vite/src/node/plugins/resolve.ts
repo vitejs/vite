@@ -32,7 +32,6 @@ import {
   isTsRequest,
   isWindows,
   normalizePath,
-  resolveFrom,
   safeRealpathSync,
   slash,
   tryStatSync,
@@ -318,7 +317,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           asSrc &&
           depsOptimizer &&
           !options.scan &&
-          (res = await tryOptimizedResolve(depsOptimizer, id, importer))
+          (res = await tryOptimizedResolve(
+            depsOptimizer,
+            id,
+            importer,
+            options.preserveSymlinks,
+            options.packageCache,
+          ))
         ) {
           return res
         }
@@ -854,6 +859,8 @@ export async function tryOptimizedResolve(
   depsOptimizer: DepsOptimizer,
   id: string,
   importer?: string,
+  preserveSymlinks?: boolean,
+  packageCache?: PackageCache,
 ): Promise<string | undefined> {
   // TODO: we need to wait until scanning is done here as this function
   // is used in the preAliasPlugin to decide if an aliased dep is optimized,
@@ -871,31 +878,31 @@ export async function tryOptimizedResolve(
   if (!importer) return
 
   // further check if id is imported by nested dependency
-  let resolvedSrc: string | undefined
+  let idPkgDir: string | undefined
+  const nestedIdMatch = `> ${id}`
 
   for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
-    const pkgPath = optimizedData.id
-    // check for scenarios, e.g.
-    //   pkgPath  => "my-lib > foo"
-    //   id       => "foo"
-    // this narrows the need to do a full resolve
-    if (!pkgPath.endsWith(id)) continue
+    // check where "foo" is nested in "my-lib > foo"
+    if (!optimizedData.id.endsWith(nestedIdMatch)) continue
 
-    // lazily initialize resolvedSrc
-    if (resolvedSrc == null) {
-      try {
-        // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-      } catch {
-        // this is best-effort only so swallow errors
-        break
-      }
+    // lazily initialize idPkgDir
+    if (idPkgDir == null) {
+      idPkgDir = resolvePackageData(
+        id,
+        importer,
+        preserveSymlinks,
+        packageCache,
+      )?.dir
+      // if still null, it likely means that this id isn't a dep for importer.
+      // break to bail early
+      if (idPkgDir == null) break
+      idPkgDir = normalizePath(idPkgDir)
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src === resolvedSrc) {
+    if (optimizedData.src.startsWith(idPkgDir)) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }

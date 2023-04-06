@@ -8,7 +8,6 @@ import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
-import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -22,7 +21,6 @@ import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
-  DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
   NULL_BYTE_PLACEHOLDER,
@@ -144,23 +142,6 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
 const _require = createRequire(import.meta.url)
-
-const ssrExtensions = ['.js', '.cjs', '.json', '.node']
-
-export function resolveFrom(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-  ssr = false,
-): string {
-  return resolve.sync(id, {
-    basedir,
-    paths: [],
-    extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
-    // necessary to work with pnpm
-    preserveSymlinks: preserveSymlinks || !!process.versions.pnp || false,
-  })
-}
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER

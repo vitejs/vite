@@ -211,7 +211,6 @@ importers:
       postcss-import: ^15.1.0
       postcss-load-config: ^4.0.1
       postcss-modules: ^6.0.0
-      resolve: ^1.22.1
       resolve.exports: ^2.0.1
       rollup: ^3.20.2
       rollup-plugin-license: ^3.0.1
@@ -228,7 +227,6 @@ importers:
     dependencies:
       esbuild: 0.17.5
       postcss: 8.4.21
-      resolve: 1.22.1
       rollup: 3.20.2
     optionalDependencies:
       fsevents: 2.3.2
