@@ -260,19 +260,24 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          const resPkg = findNearestPackageData(
-            path.dirname(res),
-            options.packageCache,
-          )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
-          return resPkg
-            ? {
+          // If this isn't a script imported from a .html file, include side effects
+          // hints so the non-used code is properly tree-shaken during build time.
+          if (!importer?.endsWith('.html')) {
+            const resPkg = findNearestPackageData(
+              path.dirname(res),
+              options.packageCache,
+            )
+            if (resPkg) {
+              return {
                 id: res,
                 moduleSideEffects: resPkg.hasSideEffects(res),
               }
-            : res
+            }
+          }
+          return res
         }
       }
 
@@ -381,6 +386,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               debug?.(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
+              )
+            } else if (isProduction) {
+              this.warn(
+                `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
+                  `See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
               )
             }
             return isProduction
