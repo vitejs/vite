@@ -509,6 +509,9 @@ importers:
   playground/html:
     specifiers: {}
 
+  playground/html/side-effects:
+    specifiers: {}
+
   playground/import-assertion:
     specifiers:
       '@vitejs/test-import-assertion-dep': file:./import-assertion-dep
