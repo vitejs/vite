@@ -293,3 +293,13 @@ describe('importmap', () => {
     )
   })
 })
+
+describe('side-effects', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/side-effects/')
+  })
+
+  test('console.log is not tree-shaken', async () => {
+    expect(browserLogs).toContain('message from sideEffects script')
+  })
+})
