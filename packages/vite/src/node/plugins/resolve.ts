@@ -382,6 +382,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
               )
+            } else if (isProduction) {
+              this.warn(
+                `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
+                  `See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
+              )
             }
             return isProduction
               ? browserExternalId
