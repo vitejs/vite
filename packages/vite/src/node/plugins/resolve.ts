@@ -274,6 +274,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           // hints so the non-used code is properly tree-shaken during build time.
           if (
             !options.idOnly &&
+            !options.scan &&
             options.isBuild &&
             !importer?.endsWith('.html')
           ) {
@@ -788,7 +789,10 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  if (!options.idOnly && ((isBuild && !depsOptimizer) || externalize)) {
+  if (
+    !options.idOnly &&
+    ((!options.scan && isBuild && !depsOptimizer) || externalize)
+  ) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
@@ -868,7 +872,7 @@ export function tryNodeResolve(
     resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
-  if (!options.idOnly && isBuild) {
+  if (!options.idOnly && !options.scan && isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
@@ -1229,7 +1233,7 @@ function tryResolveBrowserMapping(
         if (options.idOnly) {
           return result
         }
-        if (options.isBuild) {
+        if (!options.scan && options.isBuild) {
           const resPkg = findNearestPackageData(
             path.dirname(res),
             options.packageCache,
