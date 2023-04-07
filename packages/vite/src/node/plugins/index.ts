@@ -4,6 +4,7 @@ import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
@@ -41,6 +42,7 @@ export async function resolvePlugins(
   return [
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
+    watchPackageDataPlugin(config.packageCache),
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
