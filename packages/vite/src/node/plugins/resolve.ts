@@ -102,6 +102,10 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
+  /**
+   * the `resolve.extensions` from user config to handle node_modules extensions
+   */
+  configExtensions?: string[]
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
@@ -134,6 +138,20 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   // avoid these checks. Absolute paths inside root are common in user code as many
   // paths are resolved by the user. For example for an alias.
   const rootInRoot = tryStatSync(path.join(root, root))?.isDirectory() ?? false
+
+  // If this resolver plugin uses the same extensions in the user config, and it's not
+  // the DEFAULT_EXTENSIONS, make sure the extensions for node_modules extend from it.
+  // This enables users to set `resolve.extensions = [".js"]`, while preserving
+  // DEFAULT_EXTENSIONS resolution in node_modules.
+  let nodeModulesExtensions = resolveOptions.extensions
+  if (
+    resolveOptions.extensions === resolveOptions.configExtensions &&
+    resolveOptions.extensions !== DEFAULT_EXTENSIONS
+  ) {
+    nodeModulesExtensions = [
+      ...new Set(DEFAULT_EXTENSIONS.concat(resolveOptions.extensions)),
+    ]
+  }
 
   return {
     name: 'vite:resolve',
@@ -202,6 +220,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           ? fsPathFromId(id)
           : normalizePath(path.resolve(root, id.slice(1)))
         return optimizedPath
+      }
+
+      // if we're resolving inside node_modules, make sure to use `nodeModulesExtensions`
+      if (isInNodeModules(id)) {
+        options.extensions = nodeModulesExtensions
       }
 
       // explicit fs paths that starts with /@fs/*
