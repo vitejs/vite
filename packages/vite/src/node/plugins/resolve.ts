@@ -265,7 +265,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
           // If this isn't a script imported from a .html file, include side effects
           // hints so the non-used code is properly tree-shaken during build time.
-          if (!importer?.endsWith('.html')) {
+          if (
+            !options.scan &&
+            options.isBuild &&
+            !importer?.endsWith('.html')
+          ) {
             const resPkg = findNearestPackageData(
               path.dirname(res),
               options.packageCache,
@@ -773,7 +777,7 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  if ((isBuild && !depsOptimizer) || externalize) {
+  if ((!options.scan && isBuild && !depsOptimizer) || externalize) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
@@ -853,7 +857,7 @@ export function tryNodeResolve(
     resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
-  if (isBuild) {
+  if (!options.scan && isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
@@ -1210,16 +1214,19 @@ function tryResolveBrowserMapping(
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        const resPkg = findNearestPackageData(
-          path.dirname(res),
-          options.packageCache,
-        )
-        const result = resPkg
-          ? {
+        let result: PartialResolvedId = { id: res }
+        if (!options.scan && options.isBuild) {
+          const resPkg = findNearestPackageData(
+            path.dirname(res),
+            options.packageCache,
+          )
+          if (resPkg) {
+            result = {
               id: res,
               moduleSideEffects: resPkg.hasSideEffects(res),
             }
-          : { id: res }
+          }
+        }
         return externalize ? { ...result, external: true } : result
       }
     } else if (browserMappedPath === false) {
