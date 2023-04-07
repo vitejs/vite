@@ -1,10 +1,10 @@
-import { useSignal } from 'solid-js'
+import { createSignal } from 'solid-js'
 import solidLogo from './assets/solid.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useSignal(0)
+  const [count, setCount] = createSignal(0)
 
   return (
     <div class="App">
