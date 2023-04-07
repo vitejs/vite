@@ -594,6 +594,7 @@ export async function resolveConfig(
                 preferRelative: false,
                 tryIndex: true,
                 ...options,
+                idOnly: true,
               }),
             ],
           }))
