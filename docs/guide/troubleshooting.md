@@ -121,6 +121,12 @@ See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/e
 
 You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
+## Optimized Dependencies
+
+### Outdated pre-bundled deps when linking to a local package
+
+The hash key used to invalidate optimized dependencies depend on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects bundling of node modules. This means that Vite will detect when a dependency is overriden using a feature as [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [yarn link](https://classic.yarnpkg.com/lang/en/docs/cli/link/). In case you link a dependency, you'll need to force re-optimization on the next server start by using `vite --force`.
+
 ## Others
 
 ### Module externalized for browser compatibility
