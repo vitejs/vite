@@ -13,7 +13,10 @@ import {
 } from '~utils'
 
 export const port = ports.cli
-export const streams = {}
+export const streams = {} as {
+  build: { out: string[]; err: string[] }
+  server: { out: string[]; err: string[] }
+}
 export async function serve() {
   // collect stdout and stderr streams from child processes here to avoid interfering with regular vitest output
   Object.assign(streams, {
