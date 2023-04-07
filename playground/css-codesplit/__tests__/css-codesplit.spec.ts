@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import { findAssetFile, getColor, isBuild, page, readManifest } from '~utils'
+import {
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  readManifest,
+  untilUpdated,
+} from '~utils'
 
 test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
@@ -25,7 +32,7 @@ test('should load dynamic import with module', async () => {
 test('style order should be consistent when style tag is inserted by JS', async () => {
   expect(await getColor('.order-bulk')).toBe('orange')
   await page.click('.order-bulk-update')
-  expect(await getColor('.order-bulk')).toBe('green')
+  await untilUpdated(() => getColor('.order-bulk'), 'green')
 })
 
 describe.runIf(isBuild)('build', () => {

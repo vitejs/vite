@@ -45,7 +45,6 @@ import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { invalidatePackageData } from '../packages'
 import { resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
@@ -339,6 +338,13 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
+  return _createServer(inlineConfig, { ws: true })
+}
+
+export async function _createServer(
+  inlineConfig: InlineConfig = {},
+  options: { ws: boolean },
+): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
   if (isDepsOptimizerEnabled(config, false)) {
@@ -519,15 +525,6 @@ export async function createServer(
     }
   }
 
-  const { packageCache } = config
-  const setPackageData = packageCache.set.bind(packageCache)
-  packageCache.set = (id, pkg) => {
-    if (id.endsWith('.json')) {
-      watcher.add(id)
-    }
-    return setPackageData(id, pkg)
-  }
-
   const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
@@ -549,9 +546,6 @@ export async function createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
-    if (file.endsWith('/package.json')) {
-      return invalidatePackageData(packageCache, file)
-    }
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
 
@@ -669,12 +663,29 @@ export async function createServer(
     depsOptimizer.server = server
   }
 
+  // httpServer.listen can be called multiple times
+  // when port when using next port number
+  // this code is to avoid calling buildStart multiple times
+  let initingServer: Promise<void> | undefined
+  let serverInited = false
+  const initServer = async () => {
+    if (serverInited) return
+    if (initingServer) return initingServer
+
+    initingServer = (async function () {
+      await container.buildStart({})
+      initingServer = undefined
+      serverInited = true
+    })()
+    return initingServer
+  }
+
   if (!middlewareMode && httpServer) {
     // overwrite listen to init optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        await container.buildStart({})
+        await initServer()
       } catch (e) {
         httpServer.emit('error', e)
         return
@@ -682,7 +693,10 @@ export async function createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    await container.buildStart({})
+    if (options.ws) {
+      ws.listen()
+    }
+    await initServer()
   }
 
   return server
@@ -815,7 +829,8 @@ async function restartServer(server: ViteDevServer) {
 
   let newServer = null
   try {
-    newServer = await createServer(inlineConfig)
+    // delay ws server listen
+    newServer = await _createServer(inlineConfig, { ws: false })
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true,
@@ -847,6 +862,7 @@ async function restartServer(server: ViteDevServer) {
       server.printUrls()
     }
   } else {
+    server.ws.listen()
     logger.info('server restarted.', { timestamp: true })
   }
 

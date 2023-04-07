@@ -3,12 +3,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { URL, URLSearchParams } from 'node:url'
+import { URL, URLSearchParams, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
-import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -22,7 +21,6 @@ import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
-  DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
   NULL_BYTE_PLACEHOLDER,
@@ -34,6 +32,7 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
+import { resolvePackageData } from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -144,23 +143,6 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
-const ssrExtensions = ['.js', '.cjs', '.json', '.node']
-
-export function resolveFrom(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-  ssr = false,
-): string {
-  return resolve.sync(id, {
-    basedir,
-    paths: [],
-    extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
-    // necessary to work with pnpm
-    preserveSymlinks: preserveSymlinks || !!process.versions.pnp || false,
-  })
-}
-
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
@@ -175,19 +157,22 @@ export type ViteDebugScope = `vite:${string}`
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
-): debug.Debugger['log'] {
+): debug.Debugger['log'] | undefined {
   const log = debug(namespace)
   const { onlyWhenFocused } = options
-  const focus =
-    typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
-  return (msg: string, ...args: any[]) => {
-    if (filter && !msg.includes(filter)) {
-      return
+
+  let enabled = log.enabled
+  if (enabled && onlyWhenFocused) {
+    const ns = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
+    enabled = !!DEBUG?.includes(ns)
+  }
+
+  if (enabled) {
+    return (...args: [string, ...any[]]) => {
+      if (!filter || args.some((a) => a?.includes(filter))) {
+        log(...args)
+      }
     }
-    if (onlyWhenFocused && !DEBUG?.includes(focus)) {
-      return
-    }
-    log(msg, ...args)
   }
 }
 
@@ -253,10 +238,6 @@ export function isParentDirectory(dir: string, file: string): boolean {
     file.startsWith(dir) ||
     (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
   )
-}
-
-export function ensureVolumeInPath(file: string): string {
-  return isWindows ? path.resolve(file) : file
 }
 
 export const queryRE = /\?.*$/s
@@ -501,7 +482,14 @@ export function generateCodeFrame(
 
 export function isFileReadable(filename: string): boolean {
   try {
+    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
+    if (!fs.statSync(filename, { throwIfNoEntry: false })) {
+      return false
+    }
+
+    // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
+
     return true
   } catch {
     return false
@@ -960,21 +948,25 @@ export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
+const _dirname = path.dirname(fileURLToPath(import.meta.url))
+
 export const requireResolveFromRootWithFallback = (
   root: string,
   id: string,
 ): string => {
-  const paths = _require.resolve.paths?.(id) || []
-  // Search in the root directory first, and fallback to the default require paths.
-  paths.unshift(root)
-
-  // Use `resolve` package to check existence first, so if the package is not found,
+  // check existence first, so if the package is not found,
   // it won't be cached by nodejs, since there isn't a way to invalidate them:
   // https://github.com/nodejs/node/issues/44663
-  resolve.sync(id, { basedir: root, paths })
+  const found = resolvePackageData(id, root) || resolvePackageData(id, _dirname)
+  if (!found) {
+    const error = new Error(`${JSON.stringify(id)} not found.`)
+    ;(error as any).code = 'MODULE_NOT_FOUND'
+    throw error
+  }
 
-  // Use `require.resolve` again as the `resolve` package doesn't support the `exports` field
-  return _require.resolve(id, { paths })
+  // actually resolve
+  // Search in the root directory first, and fallback to the default require paths.
+  return _require.resolve(id, { paths: [root, _dirname] })
 }
 
 export function emptyCssComments(raw: string): string {

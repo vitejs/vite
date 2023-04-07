@@ -48,6 +48,7 @@ import {
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
+  FS_PREFIX,
 } from './constants'
 import type {
   InternalResolveOptions,
@@ -475,8 +476,14 @@ export async function resolveConfig(
   )
 
   const clientAlias = [
-    { find: /^\/?@vite\/env/, replacement: ENV_ENTRY },
-    { find: /^\/?@vite\/client/, replacement: CLIENT_ENTRY },
+    {
+      find: /^\/?@vite\/env/,
+      replacement: path.posix.join(FS_PREFIX, normalizePath(ENV_ENTRY)),
+    },
+    {
+      find: /^\/?@vite\/client/,
+      replacement: path.posix.join(FS_PREFIX, normalizePath(CLIENT_ENTRY)),
+    },
   ]
 
   // resolve alias with internal client alias
@@ -775,16 +782,14 @@ export async function resolveConfig(
     )
   }
 
-  if (process.env.DEBUG) {
-    debug(`using resolved config: %O`, {
-      ...resolved,
-      plugins: resolved.plugins.map((p) => p.name),
-      worker: {
-        ...resolved.worker,
-        plugins: resolved.worker.plugins.map((p) => p.name),
-      },
-    })
-  }
+  debug?.(`using resolved config: %O`, {
+    ...resolved,
+    plugins: resolved.plugins.map((p) => p.name),
+    worker: {
+      ...resolved.worker,
+      plugins: resolved.worker.plugins.map((p) => p.name),
+    },
+  })
 
   if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
@@ -915,7 +920,7 @@ export async function loadConfigFromFile(
   }
 
   if (!resolvedPath) {
-    debug('no config file found.')
+    debug?.('no config file found.')
     return null
   }
 
@@ -940,7 +945,7 @@ export async function loadConfigFromFile(
       bundled.code,
       isESM,
     )
-    debug(`bundled config file loaded in ${getTime()}`)
+    debug?.(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
@@ -1003,6 +1008,7 @@ async function bundleConfigFile(
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
             preserveSymlinks: false,
+            packageCache: new Map(),
           }
 
           // externalize bare imports

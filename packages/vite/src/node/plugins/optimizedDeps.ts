@@ -1,19 +1,15 @@
+import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import {
-  getDepsOptimizer,
-  loadOptimizedDep,
-  optimizedDepInfoFromFile,
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 
-const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
 export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
@@ -65,12 +61,12 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
             }
           }
         }
-        isDebug && debug(`load ${colors.cyan(file)}`)
+        debug?.(`load ${colors.cyan(file)}`)
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
         try {
-          return loadOptimizedDep(file, depsOptimizer)
+          return await fsp.readFile(file, 'utf-8')
         } catch (e) {
           // Outdated non-entry points (CHUNK), loaded after a rerun
           throwOutdatedRequest(id)
@@ -120,7 +116,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       const info = optimizedDepInfoFromFile(depsOptimizer.metadata, file)
       if (info) {
         await info.processing
-        isDebug && debug(`load ${colors.cyan(file)}`)
+        debug?.(`load ${colors.cyan(file)}`)
       } else {
         throw new Error(
           `Something unexpected happened while optimizing "${id}".`,
@@ -130,8 +126,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       // Load the file from the cache instead of waiting for other plugin
       // load hooks to avoid race conditions, once processing is resolved,
       // we are sure that the file has been properly save to disk
-
-      return loadOptimizedDep(file, depsOptimizer)
+      return fsp.readFile(file, 'utf-8')
     },
   }
 }

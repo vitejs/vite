@@ -20,7 +20,6 @@ import {
   cleanUrl,
   createDebugger,
   deepImportRE,
-  ensureVolumeInPath,
   fsPathFromId,
   injectQuery,
   isBuiltin,
@@ -33,7 +32,6 @@ import {
   isTsRequest,
   isWindows,
   normalizePath,
-  resolveFrom,
   safeRealpathSync,
   slash,
   tryStatSync,
@@ -62,7 +60,6 @@ const subpathImportsPrefix = '#'
 
 const startsWithWordCharRE = /^\w/
 
-const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
@@ -142,6 +139,15 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
     name: 'vite:resolve',
 
     async resolveId(id, importer, resolveOpts) {
+      if (
+        id[0] === '\0' ||
+        id.startsWith('virtual:') ||
+        // When injected directly in html/client code
+        id.startsWith('/virtual:')
+      ) {
+        return
+      }
+
       const ssr = resolveOpts?.ssr === true
 
       // We need to delay depsOptimizer until here instead of passing it as an option
@@ -194,18 +200,18 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && depsOptimizer?.isOptimizedDepUrl(id)) {
         const optimizedPath = id.startsWith(FS_PREFIX)
           ? fsPathFromId(id)
-          : normalizePath(ensureVolumeInPath(path.resolve(root, id.slice(1))))
+          : normalizePath(path.resolve(root, id.slice(1)))
         return optimizedPath
       }
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
-        const fsPath = fsPathFromId(id)
-        res = tryFsResolve(fsPath, options)
-        isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        res = fsPathFromId(id)
+        // We don't need to resolve these paths since they are already resolved
         // always return here even if res doesn't exist since /@fs/ is explicit
-        // if the file doesn't exist it should be a 404
-        return ensureVersionQuery(res || fsPath, id, options, depsOptimizer)
+        // if the file doesn't exist it should be a 404.
+        debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // URL
@@ -213,7 +219,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -254,19 +260,19 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
+          const resPkg = findNearestPackageData(
+            path.dirname(res),
+            options.packageCache,
+          )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
-          isDebug &&
-            debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          const pkg =
-            importer &&
-            findNearestPackageData(path.dirname(importer), options.packageCache)
-          if (pkg) {
-            return {
-              id: res,
-              moduleSideEffects: pkg.hasSideEffects(res),
-            }
-          }
-          return res
+          debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+
+          return resPkg
+            ? {
+                id: res,
+                moduleSideEffects: resPkg.hasSideEffects(res),
+              }
+            : res
         }
       }
 
@@ -275,8 +281,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug &&
-            debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
@@ -286,7 +291,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isNonDriveRelativeAbsolutePath(id) &&
         (res = tryFsResolve(id, options))
       ) {
-        isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
@@ -312,7 +317,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           asSrc &&
           depsOptimizer &&
           !options.scan &&
-          (res = await tryOptimizedResolve(depsOptimizer, id, importer))
+          (res = await tryOptimizedResolve(
+            depsOptimizer,
+            id,
+            importer,
+            options.preserveSymlinks,
+            options.packageCache,
+          ))
         ) {
           return res
         }
@@ -367,7 +378,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             }
           } else {
             if (!asSrc) {
-              debug(
+              debug?.(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
               )
@@ -384,7 +395,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
       }
 
-      isDebug && debug(`[fallthrough] ${colors.dim(id)}`)
+      debug?.(`[fallthrough] ${colors.dim(id)}`)
     },
 
     load(id) {
@@ -752,8 +763,7 @@ export function tryNodeResolve(
     let resolvedId = id
     if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
       resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-      isDebug &&
-        debug(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
+      debug?.(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
     }
     return { ...resolved, id: resolvedId, external: true }
   }
@@ -854,6 +864,8 @@ export async function tryOptimizedResolve(
   depsOptimizer: DepsOptimizer,
   id: string,
   importer?: string,
+  preserveSymlinks?: boolean,
+  packageCache?: PackageCache,
 ): Promise<string | undefined> {
   // TODO: we need to wait until scanning is done here as this function
   // is used in the preAliasPlugin to decide if an aliased dep is optimized,
@@ -871,31 +883,31 @@ export async function tryOptimizedResolve(
   if (!importer) return
 
   // further check if id is imported by nested dependency
-  let resolvedSrc: string | undefined
+  let idPkgDir: string | undefined
+  const nestedIdMatch = `> ${id}`
 
   for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
-    const pkgPath = optimizedData.id
-    // check for scenarios, e.g.
-    //   pkgPath  => "my-lib > foo"
-    //   id       => "foo"
-    // this narrows the need to do a full resolve
-    if (!pkgPath.endsWith(id)) continue
+    // check where "foo" is nested in "my-lib > foo"
+    if (!optimizedData.id.endsWith(nestedIdMatch)) continue
 
-    // lazily initialize resolvedSrc
-    if (resolvedSrc == null) {
-      try {
-        // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-      } catch {
-        // this is best-effort only so swallow errors
-        break
-      }
+    // lazily initialize idPkgDir
+    if (idPkgDir == null) {
+      idPkgDir = resolvePackageData(
+        id,
+        importer,
+        preserveSymlinks,
+        packageCache,
+      )?.dir
+      // if still null, it likely means that this id isn't a dep for importer.
+      // break to bail early
+      if (idPkgDir == null) break
+      idPkgDir = normalizePath(idPkgDir)
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src === resolvedSrc) {
+    if (optimizedData.src.startsWith(idPkgDir)) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }
@@ -1022,12 +1034,11 @@ export function resolvePackageEntry(
         skipPackageJson,
       )
       if (resolvedEntryPoint) {
-        isDebug &&
-          debug(
-            `[package entry] ${colors.cyan(id)} -> ${colors.dim(
-              resolvedEntryPoint,
-            )}`,
-          )
+        debug?.(
+          `[package entry] ${colors.cyan(id)} -> ${colors.dim(
+            resolvedEntryPoint,
+          )}`,
+        )
         setResolvedCache('.', resolvedEntryPoint, targetWeb)
         return resolvedEntryPoint
       }
@@ -1164,10 +1175,9 @@ function resolveDeepImport(
       targetWeb,
     )
     if (resolved) {
-      isDebug &&
-        debug(
-          `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
-        )
+      debug?.(
+        `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
+      )
       setResolvedCache(id, resolved, targetWeb)
       return resolved
     }
@@ -1194,12 +1204,17 @@ function tryResolveBrowserMapping(
           ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
-        isDebug &&
-          debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        const result = {
-          id: res,
-          moduleSideEffects: pkg.hasSideEffects(res),
-        }
+        debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        const resPkg = findNearestPackageData(
+          path.dirname(res),
+          options.packageCache,
+        )
+        const result = resPkg
+          ? {
+              id: res,
+              moduleSideEffects: resPkg.hasSideEffects(res),
+            }
+          : { id: res }
         return externalize ? { ...result, external: true } : result
       }
     } else if (browserMappedPath === false) {
@@ -1239,7 +1254,6 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
 }
 
 function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
-  resolved = ensureVolumeInPath(resolved)
   if (!preserveSymlinks && browserExternalId !== resolved) {
     resolved = safeRealpathSync(resolved)
   }

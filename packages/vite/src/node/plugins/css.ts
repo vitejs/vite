@@ -316,6 +316,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
+  // list of css emit tasks to guarantee the files are emitted in a deterministic order
+  let emitTasks: Promise<void>[] = []
   let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -353,6 +355,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
+      emitTasks = []
     },
 
     async transform(css, id, options) {
@@ -563,7 +566,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
+
+          const previousTask = emitTasks[emitTasks.length - 1]
+          // finalizeCss is async which makes `emitFile` non-deterministic, so
+          // we use a `.then` to wait for previous tasks before finishing this
+          const thisTask = finalizeCss(chunkCSS, true, config).then((css) => {
+            chunkCSS = css
+            // make sure the previous task is also finished, this works recursively
+            return previousTask
+          })
+
+          // push this task so the next task can wait for this one
+          emitTasks.push(thisTask)
+          const emitTasksLength = emitTasks.length
+
+          // wait for this and previous tasks to finish
+          await thisTask
 
           // emit corresponding css file
           const referenceId = this.emitFile({
@@ -577,6 +595,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .get(config)!
             .set(referenceId, { originalName, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+
+          if (emitTasksLength === emitTasks.length) {
+            // this is the last task, clear `emitTasks` to free up memory
+            emitTasks = []
+          }
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
@@ -891,7 +914,7 @@ async function compileCSS(
 
   if (needInlineImport) {
     postcssPlugins.unshift(
-      (await import('postcss-import')).default({
+      (await importPostcssImport()).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
@@ -926,7 +949,7 @@ async function compileCSS(
 
   if (isModule) {
     postcssPlugins.unshift(
-      (await import('postcss-modules')).default({
+      (await importPostcssModules()).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
@@ -963,31 +986,30 @@ async function compileCSS(
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
+    const postcss = await importPostcss()
     // postcss is an unbundled dep and should be lazy imported
-    postcssResult = await (await import('postcss'))
-      .default(postcssPlugins)
-      .process(code, {
-        ...postcssOptions,
-        parser:
-          lang === 'sss'
-            ? loadPreprocessor(PostCssDialectLang.sss, config.root)
-            : postcssOptions.parser,
-        to: source,
-        from: source,
-        ...(devSourcemap
-          ? {
-              map: {
-                inline: false,
-                annotation: false,
-                // postcss may return virtual files
-                // we cannot obtain content of them, so this needs to be enabled
-                sourcesContent: true,
-                // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-                // prev: preprocessorMap,
-              },
-            }
-          : {}),
-      })
+    postcssResult = await postcss.default(postcssPlugins).process(code, {
+      ...postcssOptions,
+      parser:
+        lang === 'sss'
+          ? loadPreprocessor(PostCssDialectLang.sss, config.root)
+          : postcssOptions.parser,
+      to: source,
+      from: source,
+      ...(devSourcemap
+        ? {
+            map: {
+              inline: false,
+              annotation: false,
+              // postcss may return virtual files
+              // we cannot obtain content of them, so this needs to be enabled
+              sourcesContent: true,
+              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+              // prev: preprocessorMap,
+            },
+          }
+        : {}),
+    })
 
     // record CSS dependencies from @imports
     for (const message of postcssResult.messages) {
@@ -1054,6 +1076,22 @@ async function compileCSS(
     deps,
   }
 }
+
+function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
+  let cached: T | Promise<T>
+  return () => {
+    if (!cached) {
+      cached = imp().then((module) => {
+        cached = module
+        return module
+      })
+    }
+    return cached
+  }
+}
+const importPostcssImport = createCachedImport(() => import('postcss-import'))
+const importPostcssModules = createCachedImport(() => import('postcss-modules'))
+const importPostcss = createCachedImport(() => import('postcss'))
 
 export interface PreprocessCSSResult {
   code: string

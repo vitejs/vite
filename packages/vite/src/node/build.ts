@@ -51,13 +51,14 @@ import {
   initDepsOptimizer,
 } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
-import { findNearestPackageData, watchPackageDataPlugin } from './packages'
+import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
+import { webWorkerPostPlugin } from './plugins/worker'
 
 export interface BuildOptions {
   /**
@@ -435,7 +436,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     pre: [
       completeSystemWrapPlugin(),
       ...(options.watch ? [ensureWatchPlugin()] : []),
-      watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       ...((
@@ -445,14 +445,19 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             : [rollupOptionsPlugins],
         )
       ).filter(Boolean) as Plugin[]),
+      ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),
-      ...(options.manifest ? [manifestPlugin(config)] : []),
-      ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-      ...(!config.isWorker ? [buildReporterPlugin(config)] : []),
+      ...(!config.isWorker
+        ? [
+            ...(options.manifest ? [manifestPlugin(config)] : []),
+            ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
+            buildReporterPlugin(config),
+          ]
+        : []),
       loadFallbackPlugin(),
     ],
   }
@@ -865,40 +870,50 @@ export function onRollupWarning(
   warn: WarningHandler,
   config: ResolvedConfig,
 ): void {
-  if (warning.code === 'UNRESOLVED_IMPORT') {
-    const id = warning.id
-    const exporter = warning.exporter
-    // throw unless it's commonjs external...
-    if (!id || !/\?commonjs-external$/.test(id)) {
-      throw new Error(
-        `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
-          `This is most likely unintended because it can break your application at runtime.\n` +
-          `If you do want to externalize this module explicitly add it to\n` +
-          `\`build.rollupOptions.external\``,
-      )
+  function viteWarn(warning: RollupWarning) {
+    if (warning.code === 'UNRESOLVED_IMPORT') {
+      const id = warning.id
+      const exporter = warning.exporter
+      // throw unless it's commonjs external...
+      if (!id || !/\?commonjs-external$/.test(id)) {
+        throw new Error(
+          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+            `This is most likely unintended because it can break your application at runtime.\n` +
+            `If you do want to externalize this module explicitly add it to\n` +
+            `\`build.rollupOptions.external\``,
+        )
+      }
     }
-  }
 
-  if (
-    warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-    dynamicImportWarningIgnoreList.some((msg) => warning.message.includes(msg))
-  ) {
-    return
-  }
+    if (
+      warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+      dynamicImportWarningIgnoreList.some((msg) =>
+        warning.message.includes(msg),
+      )
+    ) {
+      return
+    }
 
-  if (!warningIgnoreList.includes(warning.code!)) {
-    const userOnWarn = config.build.rollupOptions?.onwarn
-    if (userOnWarn) {
-      userOnWarn(warning, warn)
-    } else if (warning.code === 'PLUGIN_WARNING') {
+    if (!warningIgnoreList.includes(warning.code!)) {
+      return
+    }
+
+    if (warning.code === 'PLUGIN_WARNING') {
       config.logger.warn(
         `${colors.bold(
           colors.yellow(`[plugin:${warning.plugin}]`),
         )} ${colors.yellow(warning.message)}`,
       )
-    } else {
-      warn(warning)
     }
+
+    warn(warning)
+  }
+
+  const userOnWarn = config.build.rollupOptions?.onwarn
+  if (userOnWarn) {
+    userOnWarn(warning, viteWarn)
+  } else {
+    viteWarn(warning)
   }
 }
 
@@ -1029,7 +1044,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/c5269747cd3dd14c4b306e8cea36f248d9c1aa01/src/ast/nodes/MetaProperty.ts#L189-L232
+  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
@@ -1038,14 +1053,29 @@ function injectSsrFlag<T extends Record<string, any>>(
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
+const needsEscapeRegEx = /[\n\r'\\\u2028\u2029]/
+const quoteNewlineRegEx = /([\n\r'\u2028\u2029])/g
+const backSlashRegEx = /\\/g
+
+function escapeId(id: string): string {
+  if (!needsEscapeRegEx.test(id)) return id
+  return id.replace(backSlashRegEx, '\\\\').replace(quoteNewlineRegEx, '\\$1')
+}
+
 const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${relativePath}', ${
+    `'${escapeId(relativePath)}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
+
+const getFileUrlFromFullPath = (path: string) =>
+  `require('u' + 'rl').pathToFileURL(${path}).href`
+
+const getFileUrlFromRelativePath = (path: string) =>
+  getFileUrlFromFullPath(`__dirname + '/${path}'`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1056,18 +1086,16 @@ const relativeUrlMechanisms: Record<
     return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
   },
   cjs: (relativePath) =>
-    `(typeof document === 'undefined' ? ${getResolveUrl(
-      `'file:' + __dirname + '/${relativePath}'`,
-      `(require('u' + 'rl').URL)`,
+    `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
+      relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
   es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
   system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
   umd: (relativePath) =>
-    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(
-      `'file:' + __dirname + '/${relativePath}'`,
-      `(require('u' + 'rl').URL)`,
+    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
+      relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath, true)})`,
 }
 /* end of copy */
