@@ -369,6 +369,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (code.match(workerAssetUrlRE)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
+          config.isWorker,
         )
 
         let match: RegExpExecArray | null
