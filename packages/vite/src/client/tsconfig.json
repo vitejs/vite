@@ -1,10 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../../types"],
+  "include": ["./", "../types"],
   "compilerOptions": {
-    "outDir": "../../dist/client",
-    "module": "esnext",
     "types": [],
+    "target": "ES2019",
     "lib": ["ESNext", "DOM"],
     "declaration": false
   }

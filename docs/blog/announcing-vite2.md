@@ -4,6 +4,8 @@ sidebar: false
 
 # Announcing Vite 2.0
 
+_February 16, 2021_ - Check out the [Vite 3.0 announcement](./announcing-vite3.md)
+
 <p style="text-align:center">
   <img src="/logo.svg" style="height:200px">
 </p>
@@ -34,7 +36,7 @@ The [programmatic API](https://vitejs.dev/guide/api-javascript.html) has also be
 
 ### esbuild Powered Dep Pre-Bundling
 
-Since Vite is a native ESM dev server, it pre-bundles dependencies to reduce the number browser requests and handle CommonJS to ESM conversion. Previously Vite did this using Rollup, and in 2.0 it now uses `esbuild` which results in 10-100x faster dependency pre-bundling. As a reference, cold-booting a test app with heavy dependencies like React Material UI previously took 28 seconds on an M1-powered Macbook Pro and now takes ~1.5 seconds. Expect similar improvements if you are switching from a traditional bundler based setup.
+Since Vite is a native ESM dev server, it pre-bundles dependencies to reduce the number browser requests and handle CommonJS to ESM conversion. Previously Vite did this using Rollup, and in 2.0 it now uses `esbuild` which results in 10-100x faster dependency pre-bundling. As a reference, cold-booting a test app with heavy dependencies like React Material UI previously took 28 seconds on an M1-powered MacBook Pro and now takes ~1.5 seconds. Expect similar improvements if you are switching from a traditional bundler based setup.
 
 ### First-class CSS Support
 

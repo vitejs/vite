@@ -3,12 +3,12 @@
 ## Scaffolding Your First Vite Project
 
 > **Compatibility Note:**
-> Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
+> Vite requires [Node.js](https://nodejs.org/en/) version 14.18+, 16+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 
 With NPM:
 
 ```bash
-$ npm init vite@latest
+$ npm create vite@latest
 ```
 
 With Yarn:
@@ -29,16 +29,16 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 6.x
-npm init vite@latest my-vue-app --template vue
+npm create vite@latest my-vue-app --template vue
 
 # npm 7+, extra double-dash is needed:
-npm init vite@latest my-vue-app -- --template vue
+npm create vite@latest my-vue-app -- --template vue
 
 # yarn
 yarn create vite my-vue-app --template vue
 
 # pnpm
-pnpm create vite my-vue-app -- --template vue
+pnpm create vite my-vue-app --template vue
 ```
 
 Currently supported template presets include:
@@ -49,12 +49,16 @@ Currently supported template presets include:
 - `vue-ts`
 - `react`
 - `react-ts`
+- `react-swc`
+- `react-swc-ts`
 - `preact`
 - `preact-ts`
 - `lit`
 - `lit-ts`
 - `svelte`
 - `svelte-ts`
+
+You can use `.` for the project name to scaffold in the current directory.
 
 ## Community Templates
 

@@ -1,0 +1,17 @@
+{
+  "name": "@vitejs/test-ssr-html",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "serve": "NODE_ENV=production node server",
+    "debug": "node --inspect-brk server",
+    "test-stacktrace:off": "node test-stacktrace false",
+    "test-stacktrace:on": "node test-stacktrace true"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "express": "^4.18.2"
+  }
+}

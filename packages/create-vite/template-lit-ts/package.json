@@ -1,24 +1,18 @@
 {
   "name": "vite-lit-ts-starter",
+  "private": true,
   "version": "0.0.0",
-  "main": "dist/my-element.es.js",
-  "exports": {
-    ".": "./dist/my-element.es.js"
-  },
-  "types": "types/my-element.d.ts",
-  "files": [
-    "dist",
-    "types"
-  ],
+  "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "lit": "^2.0.2"
+    "lit": "^2.6.1"
   },
   "devDependencies": {
-    "vite": "^2.6.13",
-    "typescript": "^4.4.4"
+    "typescript": "^5.0.2",
+    "vite": "^4.3.0-beta.2"
   }
 }

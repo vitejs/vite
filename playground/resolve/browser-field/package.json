@@ -1,0 +1,23 @@
+{
+  "name": "@vitejs/test-resolve-browser-field",
+  "private": true,
+  "version": "1.0.0",
+  "//": "real world example: https://github.com/axios/axios/blob/3f2ef030e001547eb06060499f8a2e3f002b5a14/package.json#L71-L73",
+  "main": "out/cjs.node.js",
+  "browser": {
+    "./out/cjs.node.js": "./out/esm.browser.js",
+    "./no-ext": "./out/esm.browser.js",
+    "./ext.js": "./out/esm.browser.js",
+    "./ext-index/index.js": "./out/esm.browser.js",
+    "./no-ext-index": "./out/esm.browser.js",
+    "./bare-import": "./bare-import.js",
+    "./not-browser.js": false,
+    "./multiple.dot.path.js": false,
+    "jsdom": false,
+    "@vitejs/test-resolve-browser-field-bare-import-fail": "@vitejs/test-resolve-browser-field-bare-import-success"
+  },
+  "dependencies": {
+    "@vitejs/test-resolve-browser-field-bare-import-fail": "link:../browser-field-bare-import-fail",
+    "@vitejs/test-resolve-browser-field-bare-import-success": "link:../browser-field-bare-import-success"
+  }
+}

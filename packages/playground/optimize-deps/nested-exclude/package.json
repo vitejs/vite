@@ -1,8 +1,0 @@
-{
-  "name": "nested-exclude",
-  "version": "1.0.0",
-  "main": "index.js",
-  "dependencies": {
-    "nested-include": "link:./nested-include"
-  }
-}

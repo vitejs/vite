@@ -1,0 +1,192 @@
+<link rel="stylesheet" href="./linked.css" />
+
+<div class="wrapper">
+  <h1>CSS</h1>
+
+  <p class="linked">&lt;link&gt;: This should be blue</p>
+  <p class="linked-at-import">@import in &lt;link&gt;: This should be red</p>
+
+  <p class="imported">import from js: This should be green</p>
+  <p class="imported-at-import">
+    @import in import from js: This should be purple
+  </p>
+  <p class="import-with-space">
+    @import from file with space: This should be green and have a background
+    image
+  </p>
+  <p>Imported css string:</p>
+  <pre class="imported-css"></pre>
+  <pre class="imported-css-glob"></pre>
+  <pre class="imported-css-globEager"></pre>
+
+  <p class="postcss">
+    <span class="nesting">PostCSS nesting plugin: this should be pink</span>
+  </p>
+
+  <p class="sass">SASS: This should be orange</p>
+  <p class="sass-at-import">
+    @import from SASS _index: This should be olive and have bg image
+  </p>
+  <p class="sass-at-import-alias">
+    @import from SASS _index: This should be olive and have bg image which url
+    contains alias
+  </p>
+  <p class="sass-partial">@import from SASS _partial: This should be orchid</p>
+  <p class="sass-url-starts-with-variable">url starts with variable</p>
+  <p>Imported SASS string:</p>
+  <pre class="imported-sass"></pre>
+  <p class="sass-dep">
+    @import dependency w/ no scss entrypoint: this should be lavender
+  </p>
+
+  <p class="less">Less: This should be blue</p>
+  <p class="less-at-import">
+    @import from Less: This should be darkslateblue and have bg image
+  </p>
+  <p class="less-at-import-alias">
+    @import from Less: This should be darkslateblue and have bg image which url
+    contains alias
+  </p>
+  <p class="less-url-starts-with-variable">url starts with variable</p>
+  <p>Imported Less string:</p>
+  <pre class="imported-less"></pre>
+
+  <div class="form-box-data-uri">
+    tests Less's `data-uri()` function with relative image paths
+  </div>
+
+  <p class="stylus">Stylus: This should be blue</p>
+  <p class="stylus-additional-data">
+    Stylus additionalData: This should be orange
+  </p>
+  <p class="stylus-import">@import from Stylus: This should be darkslateblue</p>
+  <p class="stylus-import-alias">
+    @import from Stylus: This should be darkslateblue and have bg image which
+    url contains alias
+  </p>
+  <p class="stylus-options-relative-import">
+    Stylus import (relative path) via vite config preprocessor options: This
+    should be green
+  </p>
+  <p class="stylus-options-absolute-import">
+    Stylus import (absolute path) via vite config preprocessor options: This
+    should be red
+  </p>
+  <p class="stylus-options-define-var">
+    Stylus define variable via vite config preprocessor options: This should be
+    rgb(51, 197, 255)
+  </p>
+  <p class="stylus-options-define-func">
+    Stylus define function via vite config preprocessor options: This should be
+    rgb(255, 0, 98)
+  </p>
+  <p>Imported Stylus string:</p>
+  <pre class="imported-stylus"></pre>
+
+  <p class="sugarss">SugarSS: This should be blue</p>
+  <p class="sugarss-at-import">
+    @import from SugarSS: This should be darkslateblue and have bg image
+  </p>
+  <p class="sugarss-at-import-alias">
+    @import from SugarSS: This should be darkslateblue and have bg image which
+    url contains alias
+  </p>
+  <p>Imported SugarSS string:</p>
+  <pre class="imported-sugarss"></pre>
+
+  <p class="modules">CSS modules: this should be turquoise</p>
+  <p>Imported CSS module:</p>
+  <pre class="modules-code"></pre>
+
+  <p class="modules-sass">CSS modules w/ SASS: this should be orangered</p>
+  <p>Imported SASS module:</p>
+  <pre class="modules-sass-code"></pre>
+
+  <p>Imported compose/from CSS/SASS module:</p>
+  <p class="path-resolved-modules-css">
+    CSS modules composes path resolving: this should be turquoise
+  </p>
+  <p class="path-resolved-modules-sass">
+    CSS modules composes path resolving: this should be orangered
+  </p>
+  <p class="path-resolved-modules-less">
+    CSS modules composes path resolving: this should be blue
+  </p>
+  <pre class="path-resolved-modules-code"></pre>
+
+  <p>Inline CSS module:</p>
+  <pre class="modules-inline"></pre>
+
+  <p>CSS with @charset:</p>
+  <pre class="charset-css"></pre>
+
+  <p>
+    @import with layers:
+    <span class="layers-blue">blue</span>
+    <span class="layers-green">green</span>
+  </p>
+
+  <p class="css-dep">
+    @import dependency w/ style entrypoints: this should be purple
+  </p>
+  <p class="css-dep-sass">
+    @import dependency w/ sass entrypoints: this should be orange
+  </p>
+
+  <p class="css-dep-exports">
+    @import dependency w/ style export mapping: this should be purple
+  </p>
+  <p class="css-dep-exports-sass">
+    @import dependency w/ sass export mapping: this should be orange
+  </p>
+
+  <p class="dir-dep">PostCSS dir-dependency: this should be grey</p>
+  <p class="dir-dep-2">
+    PostCSS dir-dependency (file 2): this should be grey too
+  </p>
+  <p class="dir-dep-3">
+    PostCSS dir-dependency (file 3): this should be grey too
+  </p>
+
+  <p class="css-js-dep">
+    import dependency includes 'import "./foo.css"': this should be green
+  </p>
+  <p class="css-js-dep-module">
+    import dependency includes 'import "./bar.module.css"': this should be green
+  </p>
+
+  <p class="url-separated">
+    URL separation preservation: should have valid background-image
+  </p>
+
+  <p class="inlined">Inlined import - this should NOT be red.</p>
+
+  <div class="css-in-less">
+    test import css in less, this color will be yellow
+  </div>
+  <div class="css-in-less-2">
+    test for import less in less, this color will be blue
+  </div>
+
+  <div class="css-in-scss">
+    test import css in scss, this color will be orange
+  </div>
+
+  <pre class="inlined-code"></pre>
+
+  <p>Raw Support</p>
+  <pre class="raw-imported-css"></pre>
+
+  <p>PostCSS source.input.from. Should include query</p>
+  <pre class="postcss-source-input"></pre>
+
+  <p>Import from jsfile.css.js without the extension</p>
+  <pre class="jsfile-css-js"></pre>
+
+  <p>Aliased</p>
+  <p class="aliased">import '#alias': this should be blue</p>
+  <pre class="aliased-content"></pre>
+  <p class="aliased-module">import '#alias-module': this should be blue</p>
+</div>
+
+<script type="module" src="./main.js"></script>

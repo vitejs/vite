@@ -1,133 +1,73 @@
-# Migration from v1
+# Migration from v3
 
-## Config Options Change
+## Rollup 3
 
-- The following options have been removed and should be implemented via [plugins](./api-plugin):
+Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases/tag/v3.0.0).
 
-  - `resolvers`
-  - `transforms`
-  - `indexHtmlTransforms`
+Rollup 3 is mostly compatible with Rollup 2. If you are using custom [`rollupOptions`](../config/build-options.md#rollup-options) in your project and encounter issues, refer to the [Rollup migration guide](https://rollupjs.org/migration/) to upgrade your config.
 
-- `jsx` and `enableEsbuild` have been removed; Use the new [`esbuild`](/config/#esbuild) option instead.
+## Modern Browser Baseline change
 
-- [CSS related options](/config/#css-modules) are now nested under `css`.
+The modern browser build now targets `safari14` by default for wider ES2020 compatibility (bumped from `safari13`). This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
 
-- All [build-specific options](/config/#build-options) are now nested under `build`.
+## General Changes
 
-  - `rollupInputOptions` and `rollupOutputOptions` are replaced by [`build.rollupOptions`](/config/#build-rollupoptions).
-  - `esbuildTarget` is now [`build.target`](/config/#build-target).
-  - `emitManifest` is now [`build.manifest`](/config/#build-manifest).
-  - The following build options have been removed since they can be achieved via plugin hooks or other options:
-    - `entry`
-    - `rollupDedupe`
-    - `emitAssets`
-    - `emitIndex`
-    - `shouldPreload`
-    - `configureBuild`
+### Encoding
 
-- All [server-specific options](/config/#server-options) are now nested under
-  `server`.
+The build default charset is now utf8 (see [#10753](https://github.com/vitejs/vite/issues/10753) for details).
 
-  - `hostname` is now [`server.host`](/config/#server-host).
-  - `httpsOptions` has been removed. [`server.https`](/config/#server-https) can directly accept the options object.
-  - `chokidarWatchOptions` is now [`server.watch`](/config/#server-watch).
+### Importing CSS as a String
 
-- [`assetsInclude`](/config/#assetsinclude) now expects `string | RegExp | (string | RegExp)[]` instead of a function.
-
-- All Vue specific options are removed; Pass options to the Vue plugin instead.
-
-## Alias Behavior Change
-
-[`alias`](/config/#resolve-alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory alias key should remove the ending slash:
-
-```diff
-- alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
-+ alias: { '/@foo': path.resolve(__dirname, 'some-special-dir') }
-```
-
-Alternatively, you can use the `[{ find: RegExp, replacement: string }]` option format for more precise control.
-
-## Vue Support
-
-Vite 2.0 core is now framework agnostic. Vue support is now provided via [`@vitejs/plugin-vue`](https://github.com/vitejs/vite/tree/main/packages/plugin-vue). Simply install it and add it in the Vite config:
-
-```js
-import vue from '@vitejs/plugin-vue'
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  plugins: [vue()]
-})
-```
-
-### Custom Blocks Transforms
-
-A custom plugin can be used to transform Vue custom blocks like the one below:
+In Vite 3, importing the default export of a `.css` file could introduce a double loading of CSS.
 
 ```ts
-// vite.config.js
-import vue from '@vitejs/plugin-vue'
-import { defineConfig } from 'vite'
-
-const vueI18nPlugin = {
-  name: 'vue-i18n',
-  transform(code, id) {
-    if (!/vue&type=i18n/.test(id)) {
-      return
-    }
-    if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
-    }
-    return `export default Comp => {
-      Comp.i18n = ${code}
-    }`
-  }
-}
-
-export default defineConfig({
-  plugins: [vue(), vueI18nPlugin]
-})
+import cssString from './global.css'
 ```
 
-## React Support
+This double loading could occur since a `.css` file will be emitted and it's likely that the CSS string will also be used by the application code — for example, injected by the framework runtime. From Vite 4, the `.css` default export [has been deprecated](https://github.com/vitejs/vite/issues/11094). The `?inline` query suffix modifier needs to be used in this case, as that doesn't emit the imported `.css` styles.
 
-React Fast Refresh support is now provided via [`@vitejs/plugin-react-refresh`](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh).
-
-## HMR API Change
-
-`import.meta.hot.acceptDeps()` have been deprecated. [`import.meta.hot.accept()`](./api-hmr#hot-accept-deps-cb) can now accept single or multiple deps.
-
-## Manifest Format Change
-
-The build manifest now uses the following format:
-
-```json
-{
-  "index.js": {
-    "file": "assets/index.acaf2b48.js",
-    "imports": [...]
-  },
-  "index.css": {
-    "file": "assets/index.7b7dbd85.css"
-  }
-  "asset.png": {
-    "file": "assets/asset.0ab0f9cd.png"
-  }
-}
+```ts
+import stuff from './global.css?inline'
 ```
 
-For entry JS chunks, it also lists its imported chunks which can be used to render preload directives.
+### Production Builds by Default
 
-## For Plugin Authors
+`vite build` will now always build for production regardless of the `--mode` passed. Previously, changing `mode` to other than `production` would result in a development build. If you wish to still build for development, you can set `NODE_ENV=development` in the `.env.{mode}` file.
 
-Vite 2 uses a completely redesigned plugin interface which extends Rollup plugins. Please read the new [Plugin Development Guide](./api-plugin).
+In part of this change, `vite dev` and `vite build` will not override `process.env.NODE_ENV` anymore if it is already defined. So if you've set `process.env.NODE_ENV = 'development'` before building, it will also build for development. This gives more control when running multiple builds or dev servers in parallel.
 
-Some general pointers on migrating a v1 plugin to v2:
+See the updated [`mode` documentation](https://vitejs.dev/guide/env-and-mode.html#modes) for more details.
 
-- `resolvers` -> use the [`resolveId`](https://rollupjs.org/guide/en/#resolveid) hook
-- `transforms` -> use the [`transform`](https://rollupjs.org/guide/en/#transform) hook
-- `indexHtmlTransforms` -> use the [`transformIndexHtml`](./api-plugin#transformindexhtml) hook
-- Serving virtual files -> use [`resolveId`](https://rollupjs.org/guide/en/#resolveid) + [`load`](https://rollupjs.org/guide/en/#load) hooks
-- Adding `alias`, `define` or other config options -> use the [`config`](./api-plugin#config) hook
+### Environment Variables
 
-Since most of the logic should be done via plugin hooks instead of middlewares, the need for middlewares is greatly reduced. The internal server app is now a good old [connect](https://github.com/senchalabs/connect) instance instead of Koa.
+Vite now uses `dotenv` 16 and `dotenv-expand` 9 (previously `dotenv` 14 and `dotenv-expand` 5). If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
+
+```diff
+-VITE_APP=ab#cd`ef
++VITE_APP="ab#cd`ef"
+```
+
+For more details, see the [`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md) and [`dotenv-expand` changelog](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md).
+
+## Advanced
+
+There are some changes which only affect plugin/tool creators.
+
+- [[#11036] feat(client)!: remove never implemented hot.decline](https://github.com/vitejs/vite/issues/11036)
+  - use `hot.invalidate` instead
+- [[#9669] feat: align object interface for `transformIndexHtml` hook](https://github.com/vitejs/vite/issues/9669)
+  - use `order` instead of `enforce`
+
+Also there are other breaking changes which only affect few users.
+
+- [[#11101] feat(ssr)!: remove dedupe and mode support for CJS](https://github.com/vitejs/vite/pull/11101)
+  - You should migrate to the default ESM mode for SSR, CJS SSR support may be removed in the next Vite major.
+- [[#10475] feat: handle static assets in case-sensitive manner](https://github.com/vitejs/vite/pull/10475)
+  - Your project shouldn't rely on an OS ignoring file names casing.
+- [[#10996] fix!: make `NODE_ENV` more predictable](https://github.com/vitejs/vite/pull/10996)
+  - Refer to the PR for an explanation about this change.
+- [[#10903] refactor(types)!: remove facade type files](https://github.com/vitejs/vite/pull/10903)
+
+## Migration from v2
+
+Check the [Migration from v2 Guide](https://v3.vitejs.dev/guide/migration.html) in the Vite v3 docs first to see the needed changes to port your app to Vite v3, and then proceed with the changes on this page.

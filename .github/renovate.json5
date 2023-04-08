@@ -1,37 +1,25 @@
 {
   "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
   "labels": ["dependencies"],
-  "ignorePaths": [
-    "packages/playground/**",
-    "packages/create-vite/template-*/**",
-    "**/__tests__/**"
-  ],
+  "ignorePaths": ["**/__tests__/**"],
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
   "packageRules": [
     {
       "depTypeList": ["peerDependencies"],
-      "enabled": false
-    }
+      "enabled": false,
+    },
   ],
   "ignoreDeps": [
     // manually bumping
     "esbuild",
     "rollup",
     "node",
-    "ts-node",
     "typescript",
 
     // breaking changes
-    "source-map",
-    "react-refresh",
-
-    // breaks since "3.0.1", needs futher investigate
-    "postcss-load-config",
-
-    // ESM Only
-    "strip-ansi",
-    "periscopic"
-  ]
+    "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
+    "miniflare", // `miniflare:v2.0.0+` only supports node 16.7
+  ],
 }

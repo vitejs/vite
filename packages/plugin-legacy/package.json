@@ -1,20 +1,35 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "1.6.2",
+  "version": "4.0.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "dist"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "keywords": [
+    "frontend",
+    "vite",
+    "vite-plugin",
+    "@vitejs/plugin-legacy"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-legacy",
-    "release": "node ../../scripts/release.js --skipBuild"
+    "dev": "unbuild --stub",
+    "build": "unbuild && pnpm run patch-cjs",
+    "patch-cjs": "tsx ../../scripts/patchCJS.ts",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": "^14.18.0 || >=16.0.0"
   },
   "repository": {
     "type": "git",
@@ -26,13 +41,21 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "dependencies": {
-    "@babel/standalone": "^7.15.8",
-    "core-js": "^3.19.0",
-    "magic-string": "^0.25.7",
-    "regenerator-runtime": "^0.13.9",
-    "systemjs": "^6.11.0"
+    "@babel/core": "^7.21.3",
+    "@babel/preset-env": "^7.20.2",
+    "browserslist": "^4.21.5",
+    "core-js": "^3.29.1",
+    "magic-string": "^0.30.0",
+    "regenerator-runtime": "^0.13.11",
+    "systemjs": "^6.14.0"
   },
   "peerDependencies": {
-    "vite": "^2.0.0"
+    "terser": "^5.4.0",
+    "vite": "^4.0.0"
+  },
+  "devDependencies": {
+    "acorn": "^8.8.2",
+    "picocolors": "^1.0.0",
+    "vite": "workspace:*"
   }
 }

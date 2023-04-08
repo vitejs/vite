@@ -1,12 +1,9 @@
 /* eslint no-console: 0 */
 
-import chalk from 'chalk'
-import { AddressInfo, Server } from 'net'
-import os from 'os'
-import readline from 'readline'
-import { RollupError } from 'rollup'
-import { ResolvedConfig } from '.'
-import { Hostname, resolveHostname } from './utils'
+import readline from 'node:readline'
+import colors from 'picocolors'
+import type { RollupError } from 'rollup'
+import type { ResolvedServerUrls } from './server'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -33,7 +30,7 @@ export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
-  info: 3
+  info: 3,
 }
 
 let lastType: LogType | undefined
@@ -56,7 +53,7 @@ export interface LoggerOptions {
 
 export function createLogger(
   level: LogLevel = 'info',
-  options: LoggerOptions = {}
+  options: LoggerOptions = {},
 ): Logger {
   if (options.customLogger) {
     return options.customLogger
@@ -65,10 +62,9 @@ export function createLogger(
   const loggedErrors = new WeakSet<Error | RollupError>()
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
-  const clear =
+  const canClearScreen =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
-      ? clearScreen
-      : () => {}
+  const clear = canClearScreen ? clearScreen : () => {}
 
   function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
@@ -77,11 +73,11 @@ export function createLogger(
         if (options.timestamp) {
           const tag =
             type === 'info'
-              ? chalk.cyan.bold(prefix)
+              ? colors.cyan(colors.bold(prefix))
               : type === 'warn'
-              ? chalk.yellow.bold(prefix)
-              : chalk.red.bold(prefix)
-          return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
+              ? colors.yellow(colors.bold(prefix))
+              : colors.red(colors.bold(prefix))
+          return `${colors.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
         } else {
           return msg
         }
@@ -89,17 +85,21 @@ export function createLogger(
       if (options.error) {
         loggedErrors.add(options.error)
       }
-      if (type === lastType && msg === lastMsg) {
-        sameCount++
-        clear()
-        console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
-      } else {
-        sameCount = 0
-        lastMsg = msg
-        lastType = type
-        if (options.clear) {
+      if (canClearScreen) {
+        if (type === lastType && msg === lastMsg) {
+          sameCount++
           clear()
+          console[method](format(), colors.yellow(`(x${sameCount + 1})`))
+        } else {
+          sameCount = 0
+          lastMsg = msg
+          lastType = type
+          if (options.clear) {
+            clear()
+          }
+          console[method](format())
         }
+      } else {
         console[method](format())
       }
     }
@@ -133,56 +133,30 @@ export function createLogger(
     },
     hasErrorLogged(error) {
       return loggedErrors.has(error)
-    }
+    },
   }
 
   return logger
 }
 
-export function printHttpServerUrls(
-  server: Server,
-  config: ResolvedConfig
+export function printServerUrls(
+  urls: ResolvedServerUrls,
+  optionsHost: string | boolean | undefined,
+  info: Logger['info'],
 ): void {
-  const address = server.address()
-  const isAddressInfo = (x: any): x is AddressInfo => x?.address
-  if (isAddressInfo(address)) {
-    const hostname = resolveHostname(config.server.host)
-    const protocol = config.server.https ? 'https' : 'http'
-    printServerUrls(
-      hostname,
-      protocol,
-      address.port,
-      config.base,
-      config.logger.info
-    )
+  const colorUrl = (url: string) =>
+    colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
+  for (const url of urls.local) {
+    info(`  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colorUrl(url)}`)
   }
-}
-
-function printServerUrls(
-  hostname: Hostname,
-  protocol: string,
-  port: number,
-  base: string,
-  info: Logger['info']
-): void {
-  if (hostname.host === '127.0.0.1') {
-    const url = `${protocol}://${hostname.name}:${chalk.bold(port)}${base}`
-    info(`  > Local: ${chalk.cyan(url)}`)
-    if (hostname.name !== '127.0.0.1') {
-      info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
-    }
-  } else {
-    Object.values(os.networkInterfaces())
-      .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail && detail.address && detail.family === 'IPv4')
-      .map((detail) => {
-        const type = detail.address.includes('127.0.0.1')
-          ? 'Local:   '
-          : 'Network: '
-        const host = detail.address.replace('127.0.0.1', hostname.name)
-        const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-        return `  > ${type} ${chalk.cyan(url)}`
-      })
-      .forEach((msg) => info(msg))
+  for (const url of urls.network) {
+    info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
+  }
+  if (urls.network.length === 0 && optionsHost === undefined) {
+    info(
+      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +
+        colors.bold('--host') +
+        colors.dim(' to expose'),
+    )
   }
 }

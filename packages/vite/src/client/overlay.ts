@@ -1,8 +1,33 @@
-import { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
 
+// injected by the hmr plugin when served
+declare const __BASE__: string
+
+const base = __BASE__ || '/'
+
+// set :host styles to make playwright detect the element as visible
 const template = /*html*/ `
 <style>
 :host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  --monospace: 'SFMono-Regular', Consolas,
+  'Liberation Mono', Menlo, Courier, monospace;
+  --red: #ff5555;
+  --yellow: #e2aa53;
+  --purple: #cfa4ff;
+  --cyan: #2dd9da;
+  --dim: #c9c9c9;
+
+  --window-background: #181818;
+  --window-color: #d8d8d8;
+}
+
+.backdrop {
   position: fixed;
   z-index: 99999;
   top: 0;
@@ -12,24 +37,17 @@ const template = /*html*/ `
   overflow-y: scroll;
   margin: 0;
   background: rgba(0, 0, 0, 0.66);
-  --monospace: 'SFMono-Regular', Consolas,
-              'Liberation Mono', Menlo, Courier, monospace;
-  --red: #ff5555;
-  --yellow: #e2aa53;
-  --purple: #cfa4ff;
-  --cyan: #2dd9da;
-  --dim: #c9c9c9;
 }
 
 .window {
   font-family: var(--monospace);
   line-height: 1.5;
   width: 800px;
-  color: #d8d8d8;
+  color: var(--window-color);
   margin: 30px auto;
   padding: 25px 40px;
   position: relative;
-  background: #181818;
+  background: var(--window-background);
   border-radius: 6px 6px 8px 8px;
   box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
   overflow: hidden;
@@ -99,15 +117,17 @@ code {
   cursor: pointer;
 }
 </style>
-<div class="window">
-  <pre class="message"><span class="plugin"></span><span class="message-body"></span></pre>
-  <pre class="file"></pre>
-  <pre class="frame"></pre>
-  <pre class="stack"></pre>
-  <div class="tip">
-    Click outside or fix the code to dismiss.<br>
-    You can also disable this overlay by setting
-    <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+<div class="backdrop" part="backdrop">
+  <div class="window" part="window">
+    <pre class="message" part="message"><span class="plugin" part="plugin"></span><span class="message-body" part="message-body"></span></pre>
+    <pre class="file" part="file"></pre>
+    <pre class="frame" part="frame"></pre>
+    <pre class="stack" part="stack"></pre>
+    <div class="tip" part="tip">
+      Click outside or fix the code to dismiss.<br>
+      You can also disable this overlay by setting
+      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.js.</code>
+    </div>
   </div>
 </div>
 `
@@ -115,10 +135,13 @@ code {
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
+// Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
+// `HTMLElement` was not originally defined.
+const { HTMLElement = class {} as typeof globalThis.HTMLElement } = globalThis
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
 
-  constructor(err: ErrorPayload['err']) {
+  constructor(err: ErrorPayload['err'], links = true) {
     super()
     this.root = this.attachShadow({ mode: 'open' })
     this.root.innerHTML = template
@@ -135,7 +158,7 @@ export class ErrorOverlay extends HTMLElement {
 
     const [file] = (err.loc?.file || err.id || 'unknown file').split(`?`)
     if (err.loc) {
-      this.text('.file', `${file}:${err.loc.line}:${err.loc.column}`, true)
+      this.text('.file', `${file}:${err.loc.line}:${err.loc.column}`, links)
     } else if (err.id) {
       this.text('.file', file)
     }
@@ -143,7 +166,7 @@ export class ErrorOverlay extends HTMLElement {
     if (hasFrame) {
       this.text('.frame', err.frame!.trim())
     }
-    this.text('.stack', err.stack, true)
+    this.text('.stack', err.stack, links)
 
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()
@@ -160,6 +183,7 @@ export class ErrorOverlay extends HTMLElement {
     } else {
       let curIndex = 0
       let match: RegExpExecArray | null
+      fileRE.lastIndex = 0
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
         if (index != null) {
@@ -169,7 +193,7 @@ export class ErrorOverlay extends HTMLElement {
           link.textContent = file
           link.className = 'file-link'
           link.onclick = () => {
-            fetch('/__open-in-editor?file=' + encodeURIComponent(file))
+            fetch(`${base}__open-in-editor?file=` + encodeURIComponent(file))
           }
           el.appendChild(link)
           curIndex += frag.length + file.length
@@ -184,6 +208,7 @@ export class ErrorOverlay extends HTMLElement {
 }
 
 export const overlayId = 'vite-error-overlay'
+const { customElements } = globalThis // Ensure `customElements` is defined before the next line.
 if (customElements && !customElements.get(overlayId)) {
   customElements.define(overlayId, ErrorOverlay)
 }

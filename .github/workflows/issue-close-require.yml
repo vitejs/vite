@@ -6,10 +6,11 @@ on:
 
 jobs:
   close-issues:
+    if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
       - name: need reproduction
-        uses: actions-cool/issues-helper@v2
+        uses: actions-cool/issues-helper@v3
         with:
           actions: "close-issues"
           token: ${{ secrets.GITHUB_TOKEN }}

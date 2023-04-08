@@ -1,0 +1,149 @@
+<h2 class="format-iife">format iife:</h2>
+<div>Expected values: <span class="mode-true"></span></div>
+
+<p>worker template error match:</p>
+<code>
+  const worker = new Worker(new URL('./worker.js', import.meta.url))
+</code>
+
+<p>
+  import myWorker from '../my-worker?worker'
+  <span class="classname">.pong</span>
+  <span class="classname">.mode</span>
+  <span class="classname">.bundle-with-plugin</span>
+  <span class="classname">.asset-url</span>
+</p>
+<div>
+  <div>Response from worker: <span class="pong"></span></div>
+  <div>mode: <span class="mode"></span></div>
+  <div>bundle-with-plugin: <span class="bundle-with-plugin"></span></div>
+  <div>asset-url: <span class="asset-url"></span></div>
+</div>
+
+<p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span class="classname">.pong-inline</span>
+</p>
+<code class="pong-inline"></code>
+
+<p>
+  import TSOutputWorker from '../possible-ts-output-worker?worker'
+  <span class="classname">.pong-ts-output</span>
+</p>
+<code class="pong-ts-output"></code>
+
+<p>
+  import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
+  <span class="classname">.tick-count</span>
+</p>
+<code class="tick-count"></code>
+
+<p>
+  import InlineSharedWorker from '../my-shared-worker?sharedworker&inline'
+  <span class="classname">.pong-shared-inline</span>
+</p>
+<code class="pong-shared-inline"></code>
+
+<p>
+  new Worker(new URL('./url-worker.js', import.meta.url), { type: 'module' })
+  <span class="classname">.worker-import-meta-url</span>
+</p>
+<code class="worker-import-meta-url"></code>
+
+<p>
+  new Worker(new URL('@/url-worker', import.meta.url), { type: 'module' })
+  <span class="classname">.worker-import-meta-url-resolve</span>
+</p>
+<code class="worker-import-meta-url-resolve"></code>
+
+<p>
+  new SharedWorker(new URL('./url-shared-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.shared-worker-import-meta-url</span>
+</p>
+<code class="shared-worker-import-meta-url"></code>
+
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - import.meta.url
+  <span class="classname">.nested-worker</span>
+</p>
+<code class="nested-worker"></code>
+
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested module
+  worker
+  <span class="classname">.nested-worker-module</span>
+</p>
+<code class="nested-worker-module"></code>
+
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested worker
+  constructor
+  <span class="classname">.nested-worker-constructor</span>
+</p>
+<code class="nested-worker-constructor"></code>
+
+<p>
+  new Worker(new URL('./classic-worker.js', import.meta.url))
+  <span class="classname">.classic-worker</span>
+</p>
+<code class="classic-worker"></code>
+
+<p>
+  new SharedWorker(new URL('./classic-shared-worker.js', import.meta.url), {
+  type: 'classic' })
+  <span class="classname">.classic-shared-worker</span>
+</p>
+<code class="classic-shared-worker"></code>
+
+<p>
+  new Worker(new URL('../simple-worker.js', import.meta.url).href)
+  <span class="classname">.simple-worker-url</span>
+</p>
+<code class="simple-worker-url"></code>
+
+<p>
+  use import.meta.glob with eager in iife worker
+  <span class="classname">.importMetaGlobEager-worker</span>
+</p>
+<code class="importMetaGlobEager-worker"></code>
+
+<hr />
+
+<h2 class="format-es"></h2>
+
+<p>
+  use import.meta.glob in es worker
+  <span class="classname">.importMetaGlob-worker</span>
+</p>
+<code class="importMetaGlob-worker"></code>
+
+<p>
+  worker emit chunk <br />
+  module and worker:worker in worker file <br />
+  module and worker:module in worker file <br />
+  <span class="classname">.emit-chunk-worker</span>
+</p>
+<code class="emit-chunk-worker"></code>
+
+<p>
+  worker dynamic import to emit chunk
+  <span class="classname">.emit-chunk-dynamic-import-worker</span>
+</p>
+<code class="emit-chunk-dynamic-import-worker"></code>
+
+<p>
+  module and worker:worker in simple file
+  <span class="classname">.module-and-worker-worker</span>
+</p>
+<code class="module-and-worker-worker"></code>
+
+<style>
+  p {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .classname {
+    color: green;
+  }
+</style>
+<script type="module" src="./worker/main.js"></script>

@@ -1,39 +1,52 @@
-import fs from 'fs'
-import path from 'path'
-import { pathToFileURL } from 'url'
-import { ViteDevServer } from '..'
+import path from 'node:path'
+import { pathToFileURL } from 'node:url'
+import colors from 'picocolors'
+import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
-  cleanUrl,
   isBuiltin,
-  resolveFrom,
   unwrapId,
-  usingDynamicImport
+  usingDynamicImport,
 } from '../utils'
-import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
+import { transformRequest } from '../server/transformRequest'
+import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
+import { genSourceMapUrl } from '../server/sourcemap'
 import {
+  ssrDynamicImportKey,
   ssrExportAllKey,
-  ssrModuleExportsKey,
   ssrImportKey,
   ssrImportMetaKey,
-  ssrDynamicImportKey
+  ssrModuleExportsKey,
 } from './ssrTransform'
-import { transformRequest } from '../server/transformRequest'
+import { ssrFixStacktrace } from './ssrStacktrace'
 
 interface SSRContext {
-  global: NodeJS.Global
+  global: typeof globalThis
 }
 
 type SSRModule = Record<string, any>
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const AsyncFunction = async function () {}.constructor as typeof Function
+let fnDeclarationLineCount = 0
+{
+  const body = '/*code*/'
+  const source = new AsyncFunction('a', 'b', body).toString()
+  fnDeclarationLineCount =
+    source.slice(0, source.indexOf(body)).split('\n').length - 1
+}
+
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
+const importErrors = new WeakMap<Error, { importee: string }>()
 
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = []
+  urlStack: string[] = [],
+  fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   url = unwrapId(url)
 
@@ -46,7 +59,13 @@ export async function ssrLoadModule(
     return pending
   }
 
-  const modulePromise = instantiateModule(url, server, context, urlStack)
+  const modulePromise = instantiateModule(
+    url,
+    server,
+    context,
+    urlStack,
+    fixStacktrace,
+  )
   pendingModules.set(url, modulePromise)
   modulePromise
     .catch(() => {
@@ -62,15 +81,19 @@ async function instantiateModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = []
+  urlStack: string[] = [],
+  fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const { moduleGraph } = server
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, true)
+
+  if (mod.ssrError) {
+    throw mod.ssrError
+  }
 
   if (mod.ssrModule) {
     return mod.ssrModule
   }
-
   const result =
     mod.ssrTransformResult ||
     (await transformRequest(url, server, { ssr: true }))
@@ -80,7 +103,7 @@ async function instantiateModule(
   }
 
   const ssrModule = {
-    [Symbol.toStringTag]: 'Module'
+    [Symbol.toStringTag]: 'Module',
   }
   Object.defineProperty(ssrModule, '__esModule', { value: true })
 
@@ -90,36 +113,69 @@ async function instantiateModule(
 
   const ssrImportMeta = {
     // The filesystem URL, matching native Node.js modules
-    url: pathToFileURL(mod.file!).toString()
+    url: pathToFileURL(mod.file!).toString(),
   }
 
   urlStack = urlStack.concat(url)
   const isCircular = (url: string) => urlStack.includes(url)
+
+  const {
+    isProduction,
+    resolve: { dedupe, preserveSymlinks },
+    root,
+  } = server.config
+
+  const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
+    mainFields: ['main'],
+    browserField: true,
+    conditions: [],
+    overrideConditions: ['production', 'development'],
+    extensions: ['.js', '.cjs', '.json'],
+    dedupe,
+    preserveSymlinks,
+    isBuild: false,
+    isProduction,
+    root,
+  }
 
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
   const ssrImport = async (dep: string) => {
-    if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod.file, server.config)
-    }
-    dep = unwrapId(dep)
-    if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
-      pendingDeps.push(dep)
-      if (pendingDeps.length === 1) {
-        pendingImports.set(url, pendingDeps)
+    try {
+      if (dep[0] !== '.' && dep[0] !== '/') {
+        return await nodeImport(dep, mod.file!, resolveOptions)
       }
-      const mod = await ssrLoadModule(dep, server, context, urlStack)
-      if (pendingDeps.length === 1) {
-        pendingImports.delete(url)
-      } else {
-        pendingDeps.splice(pendingDeps.indexOf(dep), 1)
+      // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
+      dep = unwrapId(dep)
+      if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
+        pendingDeps.push(dep)
+        if (pendingDeps.length === 1) {
+          pendingImports.set(url, pendingDeps)
+        }
+        const mod = await ssrLoadModule(
+          dep,
+          server,
+          context,
+          urlStack,
+          fixStacktrace,
+        )
+        if (pendingDeps.length === 1) {
+          pendingImports.delete(url)
+        } else {
+          pendingDeps.splice(pendingDeps.indexOf(dep), 1)
+        }
+        // return local module to avoid race condition #5470
+        return mod
       }
-      // return local module to avoid race condition #5470
-      return mod
+      return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+    } catch (err) {
+      // tell external error handler which mod was imported with error
+      importErrors.set(err, { importee: dep })
+
+      throw err
     }
-    return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
 
   const ssrDynamicImport = (dep: string) => {
@@ -139,15 +195,24 @@ async function instantiateModule(
           configurable: true,
           get() {
             return sourceModule[key]
-          }
+          },
         })
       }
     }
   }
 
+  let sourceMapSuffix = ''
+  if (result.map) {
+    const moduleSourceMap = Object.assign({}, result.map, {
+      // currently we need to offset the line
+      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
+      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
+    })
+    sourceMapSuffix =
+      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
+  }
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const AsyncFunction = async function () {}.constructor as typeof Function
     const initModule = new AsyncFunction(
       `global`,
       ssrModuleExportsKey,
@@ -155,7 +220,9 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      result.code + `\n//# sourceURL=${mod.url}`
+      '"use strict";' +
+        result.code +
+        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
@@ -163,19 +230,31 @@ async function instantiateModule(
       ssrImportMeta,
       ssrImport,
       ssrDynamicImport,
-      ssrExportAll
+      ssrExportAll,
     )
   } catch (e) {
-    const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-    rebindErrorStacktrace(e, stacktrace)
+    mod.ssrError = e
+    const errorData = importErrors.get(e)
+
+    if (e.stack && fixStacktrace) {
+      ssrFixStacktrace(e, moduleGraph)
+    }
+
     server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+      colors.red(
+        `Error when evaluating SSR module ${url}:` +
+          (errorData?.importee
+            ? ` failed to import "${errorData.importee}"`
+            : '') +
+          `\n|- ${e.stack}\n`,
+      ),
       {
         timestamp: true,
         clear: server.config.clearScreen,
-        error: e
-      }
+        error: e,
+      },
     )
+
     throw e
   }
 
@@ -185,56 +264,63 @@ async function instantiateModule(
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
-  importer: string | null,
-  config: ViteDevServer['config']
+  importer: string,
+  resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
-  // `resolve` doesn't handle `node:` builtins, so handle them directly
-  if (id.startsWith('node:') || isBuiltin(id)) {
+  if (id.startsWith('node:') || id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
-    url = resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
+    const resolved = tryNodeResolve(
+      id,
+      importer,
+      // Non-external modules can import ESM-only modules, but only outside
+      // of test runs, because we use Node `require` in Jest to avoid segfault.
+      // @ts-expect-error jest only exists when running Jest
+      typeof jest === 'undefined'
+        ? { ...resolveOptions, tryEsmOnly: true }
+        : resolveOptions,
+      false,
+    )
+    if (!resolved) {
+      const err: any = new Error(
+        `Cannot find module '${id}' imported from '${importer}'`,
+      )
+      err.code = 'ERR_MODULE_NOT_FOUND'
+      throw err
+    }
+    url = resolved.id
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
   }
+
   const mod = await dynamicImport(url)
-  return proxyESM(id, mod)
+  return proxyESM(mod)
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  // This is the only sensible option when the exports object is a primitive
+  if (isPrimitive(mod)) return { default: mod }
+
+  let defaultExport = 'default' in mod ? mod.default : mod
+
+  if (!isPrimitive(defaultExport) && '__esModule' in defaultExport) {
+    mod = defaultExport
+    if ('default' in defaultExport) {
+      defaultExport = defaultExport.default
+    }
+  }
+
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
-      return mod[prop]
-    }
+      return mod[prop] ?? defaultExport?.[prop]
+    },
   })
 }
 
-const resolveCache = new Map<string, string>()
-
-function resolve(
-  id: string,
-  importer: string | null,
-  root: string,
-  preserveSymlinks: boolean
-) {
-  const key = id + importer + root
-  const cached = resolveCache.get(key)
-  if (cached) {
-    return cached
-  }
-  const resolveDir =
-    importer && fs.existsSync(cleanUrl(importer))
-      ? path.dirname(importer)
-      : root
-  const resolved = resolveFrom(id, resolveDir, preserveSymlinks, true)
-  resolveCache.set(key, resolved)
-  return resolved
+function isPrimitive(value: any) {
+  return !value || (typeof value !== 'object' && typeof value !== 'function')
 }
