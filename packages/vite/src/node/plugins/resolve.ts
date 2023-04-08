@@ -314,12 +314,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // external
       if (isExternalUrl(id)) {
-        return options.idOnly
-          ? id
-          : {
-              id,
-              external: true,
-            }
+        return options.idOnly ? id : { id, external: true }
       }
 
       // data uri: pass through (this only happens during build and will be
@@ -391,12 +386,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               this.error(message)
             }
 
-            return options.idOnly
-              ? id
-              : {
-                  id,
-                  external: true,
-                }
+            return options.idOnly ? id : { id, external: true }
           } else {
             if (!asSrc) {
               debug?.(
