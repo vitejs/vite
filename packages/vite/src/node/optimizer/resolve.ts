@@ -2,12 +2,7 @@ import path from 'node:path'
 import glob from 'fast-glob'
 import micromatch from 'micromatch'
 import type { ResolvedConfig } from '../config'
-import {
-  escapeRegex,
-  getNpmPackageName,
-  nestedResolveFrom,
-  slash,
-} from '../utils'
+import { escapeRegex, getNpmPackageName, slash } from '../utils'
 import { resolvePackageData } from '../packages'
 
 export function createOptimizeDepsIncludeResolver(
@@ -19,6 +14,7 @@ export function createOptimizeDepsIncludeResolver(
     scan: true,
     ssrOptimizeCheck: ssr,
     ssrConfig: config.ssr,
+    packageCache: new Map(),
   })
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
@@ -29,11 +25,10 @@ export function createOptimizeDepsIncludeResolver(
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolveFrom(
+    const basedir = nestedResolveBasedir(
       nestedRoot,
       config.root,
       config.resolve.preserveSymlinks,
-      ssr,
     )
     return await resolve(nestedPath, basedir, undefined, ssr)
   }
@@ -155,4 +150,19 @@ function getFirstExportStringValue(
       return getFirstExportStringValue(obj[key])
     }
   }
+}
+
+/**
+ * Continuously resolve the basedir of packages separated by '>'
+ */
+function nestedResolveBasedir(
+  id: string,
+  basedir: string,
+  preserveSymlinks = false,
+) {
+  const pkgs = id.split('>').map((pkg) => pkg.trim())
+  for (const pkg of pkgs) {
+    basedir = resolvePackageData(pkg, basedir, preserveSymlinks)?.dir || basedir
+  }
+  return basedir
 }

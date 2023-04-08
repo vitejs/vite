@@ -27,7 +27,6 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import { resolvePackageData } from '../packages'
 import type { ViteDevServer } from '../server'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
