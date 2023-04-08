@@ -24,6 +24,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  isInNodeModules,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -35,7 +36,6 @@ import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import {
-  cleanupDepsCacheStaleDirs,
   getDepsOptimizer,
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -45,7 +45,6 @@ import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { invalidatePackageData } from '../packages'
 import { resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
@@ -339,7 +338,20 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
+  return _createServer(inlineConfig, { ws: true })
+}
+
+export async function _createServer(
+  inlineConfig: InlineConfig = {},
+  options: { ws: boolean },
+): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
+
+  if (isDepsOptimizerEnabled(config, false)) {
+    // start optimizer in the background, we still need to await the setup
+    await initDepsOptimizer(config)
+  }
+
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -361,7 +373,7 @@ export async function createServer(
 
   const watcher = chokidar.watch(
     // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, config.envDir],
+    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -513,15 +525,6 @@ export async function createServer(
     }
   }
 
-  const { packageCache } = config
-  const setPackageData = packageCache.set.bind(packageCache)
-  packageCache.set = (id, pkg) => {
-    if (id.endsWith('.json')) {
-      watcher.add(id)
-    }
-    return setPackageData(id, pkg)
-  }
-
   const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
@@ -543,9 +546,6 @@ export async function createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
-    if (file.endsWith('/package.json')) {
-      return invalidatePackageData(packageCache, file)
-    }
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
 
@@ -656,21 +656,24 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
+  // when the optimizer is ready, hook server so that it can reload the page
+  // or invalidate the module graph when needed
+  const depsOptimizer = getDepsOptimizer(config)
+  if (depsOptimizer) {
+    depsOptimizer.server = server
+  }
+
+  // httpServer.listen can be called multiple times
+  // when port when using next port number
+  // this code is to avoid calling buildStart multiple times
   let initingServer: Promise<void> | undefined
   let serverInited = false
   const initServer = async () => {
-    if (serverInited) {
-      return
-    }
-    if (initingServer) {
-      return initingServer
-    }
+    if (serverInited) return
+    if (initingServer) return initingServer
+
     initingServer = (async function () {
       await container.buildStart({})
-      if (isDepsOptimizerEnabled(config, false)) {
-        // non-ssr
-        await initDepsOptimizer(config, server)
-      }
       initingServer = undefined
       serverInited = true
     })()
@@ -690,12 +693,11 @@ export async function createServer(
       return listen(port, ...args)
     }) as any
   } else {
+    if (options.ws) {
+      ws.listen()
+    }
     await initServer()
   }
-
-  // Fire a clean up of stale cache dirs, in case old processes didn't
-  // terminate correctly. Don't await this promise
-  cleanupDepsCacheStaleDirs(config)
 
   return server
 }
@@ -772,8 +774,7 @@ export function resolveServerOptions(
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
         ? () => false
-        : raw?.sourcemapIgnoreList ||
-          ((sourcePath) => sourcePath.includes('node_modules')),
+        : raw?.sourcemapIgnoreList || isInNodeModules,
     middlewareMode: !!raw?.middlewareMode,
   }
   let allowDirs = server.fs?.allow
@@ -816,7 +817,6 @@ async function restartServer(server: ViteDevServer) {
   const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
-  await server.close()
 
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
@@ -829,13 +829,17 @@ async function restartServer(server: ViteDevServer) {
 
   let newServer = null
   try {
-    newServer = await createServer(inlineConfig)
+    // delay ws server listen
+    newServer = await _createServer(inlineConfig, { ws: false })
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true,
     })
+    server.config.logger.error('server restart failed', { timestamp: true })
     return
   }
+
+  await server.close()
 
   // prevent new server `restart` function from calling
   newServer._restartPromise = server._restartPromise
@@ -858,6 +862,7 @@ async function restartServer(server: ViteDevServer) {
       server.printUrls()
     }
   } else {
+    server.ws.listen()
     logger.info('server restarted.', { timestamp: true })
   }
 

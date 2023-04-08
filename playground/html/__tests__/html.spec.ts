@@ -273,6 +273,11 @@ describe('env', () => {
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
     expect(await page.textContent('.env-dev')).toBe(isServe + '')
+
+    const iconLink = await page.$('link[rel=icon]')
+    expect(await iconLink.getAttribute('href')).toBe(
+      `${isBuild ? './' : '/'}sprite.svg`,
+    )
   })
 })
 
@@ -286,5 +291,15 @@ describe('importmap', () => {
     expect(browserLogs).not.toContain(
       'An import map is added after module script load was triggered.',
     )
+  })
+})
+
+describe('side-effects', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/side-effects/')
+  })
+
+  test('console.log is not tree-shaken', async () => {
+    expect(browserLogs).toContain('message from sideEffects script')
   })
 })

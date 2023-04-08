@@ -7,6 +7,7 @@ import {
   isServe,
   page,
   readDepOptimizationMetadata,
+  viteTestUrl,
 } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
@@ -200,6 +201,19 @@ test.runIf(isServe)('error on builtin modules usage', () => {
       ),
     ]),
   )
+})
+
+test('pre bundle css require', async () => {
+  if (isServe) {
+    const response = page.waitForResponse(/@vitejs_test-dep-css-require\.js/)
+    await page.goto(viteTestUrl)
+    const content = await (await response).text()
+    expect(content).toMatch(
+      /import\s"\/@fs.+@vitejs\/test-dep-css-require\/style\.css"/,
+    )
+  }
+
+  expect(await getColor('.css-require')).toBe('red')
 })
 
 describe.runIf(isServe)('optimizeDeps config', () => {
