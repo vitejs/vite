@@ -327,25 +327,13 @@ export async function killProcess(
 }
 
 export const toContain = (actuals: any[], matcher: string) => {
-  let err = new Error(`expect ${actuals} to include '${matcher}'`)
-  for (const actual of actuals) {
-    try {
-      expect(actual).toMatch(matcher)
-      err = null
-    } catch {}
-  }
-
-  if (err) {
-    throw err
-  }
+  expect(actuals).toEqual(
+    expect.arrayContaining([expect.stringMatching(matcher)]),
+  )
 }
 
 export const notContain = (actuals: any[], matcher: string) => {
-  for (const actual of actuals) {
-    try {
-      expect(actual).not.toMatch(matcher)
-    } catch (_) {
-      throw new Error(`expect ${actuals} not to include '${matcher}'`)
-    }
-  }
+  expect(actuals).not.toEqual(
+    expect.arrayContaining([expect.stringMatching(matcher)]),
+  )
 }
