@@ -91,6 +91,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       startTime = Date.now()
     },
 
+    buildStart() {
+      transformedCount = 0
+    },
+
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
