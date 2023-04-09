@@ -28,10 +28,7 @@ type SSRModule = Record<string, any>
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
-const errorStacks = new WeakMap<
-  Error,
-  WeakMap<string[], { importee: string }>
->()
+const errorStacks = new WeakMap<string[], { importee: string; error: Error }>()
 
 export async function ssrLoadModule(
   url: string,
@@ -164,12 +161,7 @@ async function instantiateModule(
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
       // tell external error handler which mod was imported with error
-      const stack = errorStacks.get(err)
-      if (stack) {
-        stack.set(urlStack, { importee: dep })
-      } else {
-        errorStacks.set(err, new WeakMap([[urlStack, { importee: dep }]]))
-      }
+      errorStacks.set(urlStack, { importee: dep, error: err })
 
       throw err
     }
@@ -220,20 +212,23 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
-    const stack = errorStacks.get(e)
 
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
     }
 
-    const errorDepsStack = getErrorDepsStack(urlStack, stack)
+    const originError = errorStacks.get(urlStack)
 
-    // only log the top url's error
+    const errorDepsStack = originError
+      ? urlStack.concat(originError.importee)
+      : urlStack
+
+    // only log the root url's error
     if (errorDepsStack[0] === url) {
       server.config.logger.error(
         colors.red(
           `Error when evaluating SSR module ${url}:` +
-            (stack
+            (originError?.error === e
               ? `\n|- Failed to import ${errorDepsStack
                   .reverse()
                   .join('\n    at ')}`
@@ -316,16 +311,4 @@ function proxyESM(mod: any) {
 
 function isPrimitive(value: any) {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
-}
-
-function getErrorDepsStack(
-  urlStack: string[],
-  errorStack: WeakMap<string[], { importee: string }> | undefined,
-) {
-  if (errorStack) {
-    const { importee } = errorStack.get(urlStack)!
-    urlStack = urlStack.concat(importee)
-  }
-
-  return urlStack.filter((dep) => !dep.startsWith('virtual:'))
 }
