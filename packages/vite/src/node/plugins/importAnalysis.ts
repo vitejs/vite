@@ -585,7 +585,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   }
                 } else if (needsInterop) {
                   debug?.(`${url} needs interop`)
-                  interopNamedImports(str(), importSpecifier, url, index)
+                  interopNamedImports(str(), importSpecifier, url, index, {
+                    config,
+                    exportAll: false,
+                  })
                   rewriteDone = true
                 }
               }
@@ -596,7 +599,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 url.includes(browserExternalId) &&
                 source.slice(expStart, start).includes('{')
               ) {
-                interopNamedImports(str(), importSpecifier, url, index)
+                interopNamedImports(str(), importSpecifier, url, index, {
+                  config,
+                  exportAll: false,
+                })
                 rewriteDone = true
               }
               if (!rewriteDone) {
@@ -811,6 +817,10 @@ export function interopNamedImports(
   importSpecifier: ImportSpecifier,
   rewrittenUrl: string,
   importIndex: number,
+  options: {
+    config: ResolvedConfig
+    exportAll: boolean
+  },
 ): void {
   const source = str.original
   const {
@@ -831,7 +841,13 @@ export function interopNamedImports(
   } else {
     const exp = source.slice(expStart, expEnd)
     const rawUrl = source.slice(start, end)
-    const rewritten = transformCjsImport(exp, rewrittenUrl, rawUrl, importIndex)
+    const rewritten = transformCjsImport(
+      exp,
+      rewrittenUrl,
+      rawUrl,
+      importIndex,
+      options,
+    )
     if (rewritten) {
       str.overwrite(expStart, expEnd, rewritten, { contentOnly: true })
     } else {
@@ -861,6 +877,10 @@ export function transformCjsImport(
   url: string,
   rawUrl: string,
   importIndex: number,
+  options: {
+    config: ResolvedConfig
+    exportAll: boolean
+  },
 ): string | undefined {
   const node = (
     parseJS(importExp, {
@@ -869,7 +889,18 @@ export function transformCjsImport(
     }) as any
   ).body[0] as Node
 
+  // `export * from '...'` may cause unexpected problem, so give it a warning
   if (
+    !options.exportAll &&
+    node.type === 'ExportAllDeclaration' &&
+    !node.exported
+  ) {
+    options.config.logger.warn(
+      colors.yellow(
+        `\n\`${importExp}\` may lose module exports after pre-bundling origin cjs module "${rawUrl}", please use named exports(e.g \`export {A,B} from "${rawUrl}"\`) instead.`,
+      ),
+    )
+  } else if (
     node.type === 'ImportDeclaration' ||
     node.type === 'ExportNamedDeclaration'
   ) {
