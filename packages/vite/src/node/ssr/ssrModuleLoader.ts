@@ -224,7 +224,9 @@ async function instantiateModule(
       : urlStack
 
     // only log the root url's error
-    if (errorDepsStack[0] === url) {
+    if (
+      errorDepsStack.filter((dep) => !dep.startsWith('virtual:'))[0] === url
+    ) {
       server.config.logger.error(
         colors.red(
           `Error when evaluating SSR module ${url}:` +
