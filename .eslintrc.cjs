@@ -10,6 +10,7 @@ module.exports = defineConfig({
     'plugin:@typescript-eslint/recommended',
     'plugin:regexp/recommended',
   ],
+  ignorePatterns: ['packages/create-vite/template-**'],
   plugins: ['import', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
