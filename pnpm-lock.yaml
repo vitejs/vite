@@ -6,15 +6,15 @@ overrides:
 packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
 patchedDependencies:
-  chokidar@3.5.3:
-    hash: dzxbf3kgof5pdmbsyih2x43sq4
-    path: patches/chokidar@3.5.3.patch
-  dotenv-expand@9.0.0:
-    hash: dccccn23nvejzy75sgiosdt2au
-    path: patches/dotenv-expand@9.0.0.patch
   sirv@2.0.2:
     hash: hmoqtj4vy3i7wnpchga2a2mu3y
     path: patches/sirv@2.0.2.patch
+  dotenv-expand@9.0.0:
+    hash: dccccn23nvejzy75sgiosdt2au
+    path: patches/dotenv-expand@9.0.0.patch
+  chokidar@3.5.3:
+    hash: dzxbf3kgof5pdmbsyih2x43sq4
+    path: patches/chokidar@3.5.3.patch
 
 importers:
 
@@ -579,12 +579,14 @@ importers:
       '@vitejs/test-package-c': link:./test-package-c
       '@vitejs/test-package-d': link:./test-package-d
       '@vitejs/test-package-e': link:./test-package-e
+      '@vitejs/test-package-f': link:./test-package-f
     dependencies:
       '@vitejs/test-package-a': link:test-package-a
       '@vitejs/test-package-b': link:test-package-b
       '@vitejs/test-package-c': link:test-package-c
       '@vitejs/test-package-d': link:test-package-d
       '@vitejs/test-package-e': link:test-package-e
+      '@vitejs/test-package-f': link:test-package-f
 
   playground/nested-deps/test-package-a:
     specifiers: {}
@@ -620,6 +622,9 @@ importers:
       test-package-e-excluded: link:../test-package-e-excluded
     dependencies:
       test-package-e-excluded: link:../test-package-e-excluded
+
+  playground/nested-deps/test-package-f:
+    specifiers: {}
 
   playground/object-hooks:
     specifiers:
