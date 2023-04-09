@@ -6,7 +6,7 @@ import { isFileReadable } from '../utils'
 const ROOT_FILES = [
   // '.git',
 
-  // https://pnpm.js.org/workspaces/
+  // https://pnpm.io/workspaces/
   'pnpm-workspace.yaml',
 
   // https://rushjs.io/pages/advanced/config_files/
