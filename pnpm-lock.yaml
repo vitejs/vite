@@ -369,6 +369,7 @@ importers:
       '@vitejs/test-css-dep': link:./css-dep
       '@vitejs/test-css-dep-exports': link:./css-dep-exports
       '@vitejs/test-css-js-dep': file:./css-js-dep
+      '@vitejs/test-css-proxy-dep': file:./css-proxy-dep
       fast-glob: ^3.2.12
       less: ^4.1.3
       postcss-nested: ^6.0.1
@@ -379,6 +380,7 @@ importers:
       '@vitejs/test-css-dep': link:css-dep
       '@vitejs/test-css-dep-exports': link:css-dep-exports
       '@vitejs/test-css-js-dep': file:playground/css/css-js-dep
+      '@vitejs/test-css-proxy-dep': file:playground/css/css-proxy-dep
       fast-glob: 3.2.12
       less: 4.1.3
       postcss-nested: 6.0.1
@@ -416,6 +418,15 @@ importers:
     specifiers: {}
 
   playground/css/css-js-dep:
+    specifiers: {}
+
+  playground/css/css-proxy-dep:
+    specifiers:
+      '@vitejs/test-css-proxy-dep-nested': file:../css-proxy-dep-nested
+    dependencies:
+      '@vitejs/test-css-proxy-dep-nested': file:playground/css/css-proxy-dep-nested
+
+  playground/css/css-proxy-dep-nested:
     specifiers: {}
 
   playground/css/pkg-dep:
@@ -10094,6 +10105,19 @@ packages:
     name: '@vitejs/test-css-js-dep'
     version: 1.0.0
     dev: true
+
+  file:playground/css/css-proxy-dep:
+    resolution: {directory: playground/css/css-proxy-dep, type: directory}
+    name: '@vitejs/test-css-proxy-dep'
+    version: 1.0.0
+    dependencies:
+      '@vitejs/test-css-proxy-dep-nested': file:playground/css/css-proxy-dep-nested
+    dev: true
+
+  file:playground/css/css-proxy-dep-nested:
+    resolution: {directory: playground/css/css-proxy-dep-nested, type: directory}
+    name: '@vitejs/test-css-proxy-dep-nested'
+    version: 1.0.0
 
   file:playground/define/commonjs-dep:
     resolution: {directory: playground/define/commonjs-dep, type: directory}
