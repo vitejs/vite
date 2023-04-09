@@ -22,6 +22,8 @@
 <h2>exclude dependency of pre-bundled dependency</h2>
 <div>nested module instance count: <span class="nested-e"></span></div>
 
+<h2>absolute dependency path: <span class="absolute-f"></span></h2>
+
 <script type="module">
   import A from '@vitejs/test-package-a'
   import B, { A as nestedA } from '@vitejs/test-package-b'
@@ -29,6 +31,7 @@
   import { C as sideC } from '@vitejs/test-package-c/side'
   import D, { nestedD } from '@vitejs/test-package-d'
   // import { testExcluded } from '@vitejs/test-package-e'
+  import F from '__F_ABSOLUTE_PACKAGE_PATH__'
 
   text('.a', A)
   text('.b', B)
@@ -41,6 +44,8 @@
   text('.nested-d', nestedD)
 
   // text('.nested-e', testExcluded())
+
+  text('.absolute-f', F)
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text

@@ -13,6 +13,7 @@
     "@vitejs/test-package-b": "link:./test-package-b",
     "@vitejs/test-package-c": "link:./test-package-c",
     "@vitejs/test-package-d": "link:./test-package-d",
-    "@vitejs/test-package-e": "link:./test-package-e"
+    "@vitejs/test-package-e": "link:./test-package-e",
+    "@vitejs/test-package-f": "link:./test-package-f"
   }
 }
