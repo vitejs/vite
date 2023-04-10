@@ -137,11 +137,7 @@ export async function resolveHttpsConfig(
 
 async function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
-    try {
-      return fsp.readFile(path.resolve(value))
-    } catch (e) {
-      return value
-    }
+    return fsp.readFile(path.resolve(value)).catch(() => value)
   }
   return value
 }
