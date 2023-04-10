@@ -176,6 +176,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         ...resolveOptions,
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
+      if (!options.preserveSymlinks && resolveOpts?.custom?.depScan) {
+        // For user code, we can force preserving symlinks so we don't need to do a
+        // expensive realPathSync call.
+        if (!isInNodeModules(id) && !bareImportRE.test(id)) {
+          options.preserveSymlinks = true
+        }
+      }
 
       const resolvedImports = resolveSubpathImports(
         id,
@@ -551,7 +558,7 @@ function tryCleanFsResolve(
   const fileStat = tryStatSync(file)
 
   // Try direct match first
-  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
+  if (fileStat?.isFile()) return getRealPath(file, preserveSymlinks)
 
   let res: string | undefined
 
@@ -614,7 +621,7 @@ function tryCleanFsResolve(
       let pkgPath = `${dirPath}/package.json`
       try {
         if (fs.existsSync(pkgPath)) {
-          if (!options.preserveSymlinks) {
+          if (!preserveSymlinks) {
             pkgPath = safeRealpathSync(pkgPath)
           }
           // path points to a node package
