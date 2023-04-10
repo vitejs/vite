@@ -695,11 +695,13 @@ export function tryNodeResolve(
   let basedir: string
   if (dedupe?.includes(pkgId)) {
     basedir = root
-  } else if (importer && path.isAbsolute(importer)) {
+  } else if (
+    importer &&
+    path.isAbsolute(importer) &&
+    // css processing appends `*` for importer
+    (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
+  ) {
     basedir = path.dirname(importer)
-    if (!fs.existsSync(basedir)) {
-      basedir = root
-    }
   } else {
     basedir = root
   }
