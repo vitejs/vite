@@ -156,7 +156,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let builtUrl: string
           if (isBuild) {
-            getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
+            getDepsOptimizer(config, ssr)?.registerWorkersSource(id) // TODO: Is this needed at all after this PR?
             builtUrl = await workerIdToToken(config, id)
           } else {
             builtUrl = await fileToUrl(cleanUrl(file), config, this)

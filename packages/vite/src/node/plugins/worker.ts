@@ -30,7 +30,7 @@ interface WorkerData {
   bundle: RollupBuild
   entryMap: Map<
     NormalizedOutputOptions,
-    { promise: Promise<WorkerOutputResult> } | { result: WorkerOutputResult }
+    { promise: Promise<WorkerOutputResult>; result?: WorkerOutputResult }
   >
   hash: string
 }
@@ -39,9 +39,6 @@ interface WorkerCache {
   // save the bundle and the hash that are created per each worker
   // <workerId, data>
   workersData: Map<string, WorkerData>
-
-  // assets created by the workers (including the worker themself)
-  workersAssets: Map<string, { referencedId: string; asset: EmittedAsset }>
 
   // <hash, id>
   idHash: Map<string, string>
@@ -56,51 +53,19 @@ const getWorkerCache = (config: ResolvedConfig) =>
 
 function getReferencedId(
   context: PluginContext,
-  workerCache: WorkerCache,
   result: WorkerOutputResult,
 ): string {
   if (result.referencedId) {
-    // If this processs already was done for this worker
+    // if this processs already was done for this worker
     return result.referencedId
   }
 
-  const { output } = result
-
-  // emit assets
-  for (let i = 0; i < output.length; ++i) {
-    const file = output[i]
-    const description: EmittedAsset =
-      file.type === 'asset'
-        ? file
-        : {
-            fileName: file.fileName,
-            source: file.code,
-            type: 'asset',
-          }
-
-    const existingAsset = workerCache.workersAssets.get(description.fileName!)
-
-    let referencedId: string
-
-    if (existingAsset === undefined) {
-      referencedId = context.emitFile(description)
-    } else {
-      if (existingAsset.asset.source !== description.source) {
-        // Should never be triggered because of proper hashing
-        throw `vite: worker error! asset filename ${JSON.stringify(
-          description.fileName!,
-        )} for some worker was already emitted by a different worker but with a different name.`
-      }
-
-      referencedId = existingAsset.referencedId
-    }
-
-    if (i === 0) {
-      result.referencedId = referencedId
-    }
-  }
-
-  return result.referencedId!
+  const { fileName, code: source } = result.output[0]
+  return (result.referencedId = context.emitFile({
+    fileName,
+    source,
+    type: 'asset',
+  }))
 }
 
 export async function bundleWorker(
@@ -131,7 +96,8 @@ async function generateWorker(
 
   const workerOutputConfig = config.worker.rollupOptions.output
   const workerConfig = workerOutputConfig
-    ? typeof workerOutputConfig === 'function'
+    ? // TODO: We don't need to have this function hack at all, maybe just differ by the parent configuration plugin?
+      typeof workerOutputConfig === 'function'
       ? // @ts-expect-error this is an internal(currently) option to have output config as a function
         workerOutputConfig(callerOutputOptions)
       : Array.isArray(workerOutputConfig)
@@ -145,12 +111,13 @@ async function generateWorker(
       config.build.assetsDir,
       '[name]-[hash].[ext]',
     ),
+    // Even though this isn't going to output files by this bundle directly, this is needed for correct sourcemapping
+    dir: config.build.outDir,
     ...workerConfig,
     format,
-    sourcemap: config.build.sourcemap && 'hidden',
+    sourcemap: config.build.sourcemap,
   })
-  const output: WorkerOutput = rollupOutput.output
-  return { output }
+  return rollupOutput
 }
 
 export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
@@ -213,7 +180,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
       workerCache.set(config, {
         workersData: new Map(),
-        workersAssets: new Map(),
         idHash: new Map(),
       })
     },
@@ -347,21 +313,51 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async generateBundle(outputOptions) {
+    async generateBundle(outputOptions, bundle) {
       if (isWorker) {
         return
       }
       const { workersData } = getWorkerCache(config)
 
       await Promise.all(
-        [...workersData.values()]
-          .map(async ({ entryMap }) => {
-            const resultOrPromise = entryMap.get(outputOptions)!
-            return 'promise' in resultOrPromise
-              ? await resultOrPromise.promise
-              : undefined
-          })
-          .filter(Boolean),
+        [...workersData.values()].map(async ({ entryMap }) => {
+          const resultOrPromise = entryMap.get(outputOptions)!
+          if (resultOrPromise.result == undefined) {
+            resultOrPromise.result = await resultOrPromise.promise
+          }
+          const { output, referencedId } = resultOrPromise.result
+          if (referencedId === undefined) {
+            // don't need to write the additional asset files, since the worker file wasn't added to the bundle
+            return
+          }
+
+          // emit additional assets (i.e. not including the worker entrypoint itself)
+          for (let i = 1; i < output.length; ++i) {
+            const file = output[i]
+            const description: EmittedAsset =
+              file.type === 'asset'
+                ? file
+                : {
+                    fileName: file.fileName,
+                    source: file.code,
+                    type: 'asset',
+                  }
+
+            if (!(description.fileName! in bundle)) {
+              this.emitFile(description)
+            } else {
+              const existFile = bundle[description.fileName!]
+              const existContent =
+                existFile.type === 'asset' ? existFile.source : existFile.code
+              // should never be triggered, thanks to proper hashing
+              if (existContent !== description.source) {
+                throw `vite: worker error! asset filename ${JSON.stringify(
+                  description.fileName!,
+                )} was already emitted by in the bundle, but with different content!`
+              }
+            }
+          }
+        }),
       )
     },
 
@@ -427,11 +423,10 @@ export function webWorkerPostBuildPlugin(config: ResolvedConfig): Plugin {
           const resultOrPromise = workers_data
             .get(id)!
             .entryMap.get(outputOptions)!
-          const result =
-            'promise' in resultOrPromise
-              ? await resultOrPromise.promise
-              : resultOrPromise.result
-          const referencedId = getReferencedId(this, workerMap, result)
+          if (resultOrPromise.result == undefined) {
+            resultOrPromise.result = await resultOrPromise.promise
+          }
+          const referencedId = getReferencedId(this, resultOrPromise.result)
           const filename = this.getFileName(referencedId)
           const replacement = toOutputFilePathInJS(
             filename,
@@ -454,15 +449,15 @@ export function webWorkerPostBuildPlugin(config: ResolvedConfig): Plugin {
           const resultOrPromise = workers_data
             .get(id)!
             .entryMap.get(outputOptions)!
-          const result =
-            'promise' in resultOrPromise
-              ? await resultOrPromise.promise
-              : resultOrPromise.result
-          const replacement = Buffer.from(result.output[0].code).toString(
-            'base64',
-          )
+          if (resultOrPromise.result == undefined) {
+            resultOrPromise.result = await resultOrPromise.promise
+          }
+          const replacement = Buffer.from(
+            resultOrPromise.result.output[0].code,
+          ).toString('base64')
           const replacementString = JSON.stringify(replacement)
           s.update(match.index, match.index + full.length, replacementString)
+          // TODO: Still need to emit the assets that the worker uses! (and what about source map?)
         }
       }
       return result()
