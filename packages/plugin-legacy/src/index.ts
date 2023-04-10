@@ -186,9 +186,8 @@ function viteLegacyPlugin<T extends Options>(options: T = {} as T): Plugin[] {
     }
   }
 
-  // TODO: Since this is a Rollup output plugin, it's running only after Vite minification post plugins (happens in `renderChunk`),
-  //  so make sure the output code is minified.
-  //  Thankfully, this wouldn't be a problem since we're planning on outputing eventually a simple prefix `importScript(POLYFILL_PATH);` to the output.
+  // TODO: Run manually the terser minification on these worker files after finish rendering here,
+  //  and prevent this minification before by Vite - probably by setting rollupOptions in the plugin?
   const legacyWorkerRollupOutputPlugin: OutputPlugin = {
     name: 'vite:legacy-worker-rollup-output-plugin',
 
