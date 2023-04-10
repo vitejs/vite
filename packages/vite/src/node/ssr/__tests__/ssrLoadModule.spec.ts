@@ -1,11 +1,20 @@
 import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 import { expect, test } from 'vitest'
 import { createServer } from '../../server'
+import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
 
 async function createDevServer() {
-  const server = await createServer({ configFile: false, root })
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      disabled: true,
+    },
+  })
   server.pluginContainer.buildStart({})
   return server
 }
@@ -13,11 +22,13 @@ async function createDevServer() {
 test('ssrLoad', async () => {
   expect.assertions(1)
   const server = await createDevServer()
+  const moduleRelativePath = '/fixtures/modules/has-invalid-import.js'
+  const moduleAbsolutePath = normalizePath(path.join(root, moduleRelativePath))
   try {
-    await server.ssrLoadModule('/fixtures/modules/has-invalid-import.js')
+    await server.ssrLoadModule(moduleRelativePath)
   } catch (e) {
     expect(e.message).toBe(
-      'Failed to load url ./non-existent.js (resolved id: ./non-existent.js). Does the file exist?',
+      `Failed to load url ./non-existent.js (resolved id: ./non-existent.js) in ${moduleAbsolutePath}. Does the file exist?`,
     )
   }
 })

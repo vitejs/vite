@@ -1,6 +1,6 @@
 # Troubleshooting
 
-See [Rollup's troubleshooting guide](https://rollupjs.org/guide/en/#troubleshooting) for more information too.
+See [Rollup's troubleshooting guide](https://rollupjs.org/troubleshooting/) for more information too.
 
 If the suggestions here don't work, please try posting questions on [GitHub Discussions](https://github.com/vitejs/vite/discussions) or in the `#help` channel of [Vite Land Discord](https://chat.vitejs.dev).
 
@@ -48,6 +48,8 @@ If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as 
 
 - /etc/systemd/system.conf
 - /etc/systemd/user.conf
+
+For Ubuntu Linux, you may need to add the line `* - nofile 65536` to the file `/etc/security/limits.conf` instead of updating systemd config files.
 
 Note that these settings persist but a **restart is required**.
 
@@ -119,7 +121,23 @@ See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/e
 
 You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
+## Optimized Dependencies
+
+### Outdated pre-bundled deps when linking to a local package
+
+The hash key used to invalidate optimized dependencies depend on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
+
 ## Others
+
+### Module externalized for browser compatibility
+
+When you use a Node.js module in the browser, Vite will output the following warning.
+
+> Module "fs" has been externalized for browser compatibility. Cannot access "fs.readFile" in client code.
+
+This is because Vite does not automatically polyfill Node.js modules.
+
+We recommend avoiding Node.js modules for browser code to reduce the bundle size, although you can add polyfills manually. If the module is imported from a third-party library (that's meant to be used in the browser), it's advised to report the issue to the respective library.
 
 ### Syntax Error / Type Error happens
 
@@ -132,3 +150,7 @@ For example, you might see these errors.
 > TypeError: Cannot create property 'foo' on boolean 'false'
 
 If these code are used inside dependencies, you could use [`patch-package`](https://github.com/ds300/patch-package) (or [`yarn patch`](https://yarnpkg.com/cli/patch) or [`pnpm patch`](https://pnpm.io/cli/patch)) for an escape hatch.
+
+### Browser extensions
+
+Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.

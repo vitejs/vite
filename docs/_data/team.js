@@ -66,7 +66,7 @@ export const core = [
     title: 'Developer',
     org: 'Vue.js',
     orgLink: 'https://vuejs.org/',
-    desc: 'Vite/Vite core team member. Full-time open sourcerer.',
+    desc: 'Vue/Vite core team member. Full-time open sourcerer.',
     links: [
       { icon: 'github', link: 'https://github.com/sodatea' },
       { icon: 'twitter', link: 'https://twitter.com/haoqunjiang' },
@@ -120,7 +120,11 @@ export const core = [
     name: 'Dominik G.',
     title: 'Resident CI Expert',
     desc: 'Team Member of Vite and Svelte',
-    links: [{ icon: 'github', link: 'https://github.com/dominikg' }],
+    links: [
+      { icon: 'github', link: 'https://github.com/dominikg' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
+    ],
+    sponsor: 'https://github.com/sponsors/dominikg',
   },
 ]
 

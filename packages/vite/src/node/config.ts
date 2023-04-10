@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
@@ -47,6 +48,7 @@ import {
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
+  FS_PREFIX,
 } from './constants'
 import type {
   InternalResolveOptions,
@@ -61,6 +63,7 @@ import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
+import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
@@ -219,7 +222,7 @@ export interface UserConfig {
   legacy?: LegacyOptions
   /**
    * Log level.
-   * Default: 'info'
+   * @default 'info'
    */
   logLevel?: LogLevel
   /**
@@ -227,12 +230,12 @@ export interface UserConfig {
    */
   customLogger?: Logger
   /**
-   * Default: true
+   * @default true
    */
   clearScreen?: boolean
   /**
    * Environment files directory. Can be an absolute path, or a path relative from
-   * the location of the config file itself.
+   * root.
    * @default root
    */
   envDir?: string
@@ -292,6 +295,14 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
+  /**
+   * Skips SSR transform to make it easier to use Vite with Node ESM loaders.
+   * @warning Enabling this will break normal operation of Vite's SSR in development mode.
+   *
+   * @experimental
+   * @default false
+   */
+  skipSsrTransform?: boolean
 }
 
 export interface LegacyOptions {
@@ -334,11 +345,13 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
+    envDir: string
     env: Record<string, any>
     resolve: Required<ResolveOptions> & {
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
@@ -379,6 +392,7 @@ export async function resolveConfig(
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
   const isNodeEnvSet = !!process.env.NODE_ENV
+  const packageCache: PackageCache = new Map()
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting
   // production-specific behavior, so set it early on
@@ -462,8 +476,14 @@ export async function resolveConfig(
   )
 
   const clientAlias = [
-    { find: /^\/?@vite\/env/, replacement: ENV_ENTRY },
-    { find: /^\/?@vite\/client/, replacement: CLIENT_ENTRY },
+    {
+      find: /^\/?@vite\/env/,
+      replacement: path.posix.join(FS_PREFIX, normalizePath(ENV_ENTRY)),
+    },
+    {
+      find: /^\/?@vite\/client/,
+      replacement: path.posix.join(FS_PREFIX, normalizePath(CLIENT_ENTRY)),
+    },
   ]
 
   // resolve alias with internal client alias
@@ -521,15 +541,19 @@ export async function resolveConfig(
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
-  const resolvedBuildOptions = resolveBuildOptions(config.build, logger)
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    logger,
+    resolvedRoot,
+  )
 
   // resolve cache directory
-  const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
+  const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
   const cacheDir = normalizePath(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgPath
-      ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
+      : pkgDir
+      ? path.join(pkgDir, `node_modules/.vite`)
       : path.join(resolvedRoot, `.vite`),
   )
 
@@ -570,6 +594,7 @@ export async function resolveConfig(
                 preferRelative: false,
                 tryIndex: true,
                 ...options,
+                idOnly: true,
               }),
             ],
           }))
@@ -644,9 +669,17 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
+    esbuild:
+      config.esbuild === false
+        ? false
+        : {
+            jsxDev: !isProduction,
+            ...config.esbuild,
+          },
     server,
     build: resolvedBuildOptions,
     preview: resolvePreviewOptions(config.preview, server),
+    envDir,
     env: {
       ...userEnv,
       BASE_URL,
@@ -658,7 +691,7 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
-    packageCache: new Map(),
+    packageCache,
     createResolver,
     optimizeDeps: {
       disabled: 'build',
@@ -750,16 +783,14 @@ export async function resolveConfig(
     )
   }
 
-  if (process.env.DEBUG) {
-    debug(`using resolved config: %O`, {
-      ...resolved,
-      plugins: resolved.plugins.map((p) => p.name),
-      worker: {
-        ...resolved.worker,
-        plugins: resolved.worker.plugins.map((p) => p.name),
-      },
-    })
-  }
+  debug?.(`using resolved config: %O`, {
+    ...resolved,
+    plugins: resolved.plugins.map((p) => p.name),
+    worker: {
+      ...resolved.worker,
+      plugins: resolved.worker.plugins.map((p) => p.name),
+    },
+  })
 
   if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
@@ -806,7 +837,7 @@ export function resolveBaseUrl(
   isBuild: boolean,
   logger: Logger,
 ): string {
-  if (base.startsWith('.')) {
+  if (base[0] === '.') {
     logger.warn(
       colors.yellow(
         colors.bold(
@@ -821,7 +852,7 @@ export function resolveBaseUrl(
   // external URL flag
   const isExternal = isExternalUrl(base)
   // no leading slash warn
-  if (!isExternal && !base.startsWith('/')) {
+  if (!isExternal && base[0] !== '/') {
     logger.warn(
       colors.yellow(
         colors.bold(`(!) "base" option should start with a slash.`),
@@ -833,7 +864,7 @@ export function resolveBaseUrl(
   if (!isBuild || !isExternal) {
     base = new URL(base, 'http://vitejs.dev').pathname
     // ensure leading slash
-    if (!base.startsWith('/')) {
+    if (base[0] !== '/') {
       base = '/' + base
     }
   }
@@ -890,7 +921,7 @@ export async function loadConfigFromFile(
   }
 
   if (!resolvedPath) {
-    debug('no config file found.')
+    debug?.('no config file found.')
     return null
   }
 
@@ -903,7 +934,8 @@ export async function loadConfigFromFile(
     // check package.json for type: "module" and set `isESM` to true
     try {
       const pkg = lookupFile(configRoot, ['package.json'])
-      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+      isESM =
+        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
     } catch (e) {}
   }
 
@@ -914,7 +946,7 @@ export async function loadConfigFromFile(
       bundled.code,
       isESM,
     )
-    debug(`bundled config file loaded in ${getTime()}`)
+    debug?.(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
@@ -977,6 +1009,7 @@ async function bundleConfigFile(
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
             preserveSymlinks: false,
+            packageCache: new Map(),
           }
 
           // externalize bare imports
@@ -1058,24 +1091,22 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}`
+    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)})}`
     const fileNameTmp = `${fileBase}.mjs`
     const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    fs.writeFileSync(fileNameTmp, bundledCode)
+    await fsp.writeFile(fileNameTmp, bundledCode)
     try {
       return (await dynamicImport(fileUrl)).default
     } finally {
-      try {
-        fs.unlinkSync(fileNameTmp)
-      } catch {
-        // already removed if this function is called twice simultaneously
-      }
+      fs.unlink(fileNameTmp, () => {}) // Ignore errors
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
   else {
     const extension = path.extname(fileName)
-    const realFileName = fs.realpathSync(fileName)
+    const realFileName = await fsp.realpath(fileName)
     const loaderExt = extension in _require.extensions ? extension : '.js'
     const defaultLoader = _require.extensions[loaderExt]!
     _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {

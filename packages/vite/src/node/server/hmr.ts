@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
@@ -13,6 +13,8 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
+
+const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
@@ -42,6 +44,7 @@ export function getShortName(file: string, root: string): string {
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
+  configOnly: boolean,
 ): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
@@ -56,7 +59,7 @@ export async function handleHMRUpdate(
     (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
-    debugHmr(`[config change] ${colors.dim(shortFile)}`)
+    debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
         `${path.relative(process.cwd(), file)} changed, restarting server...`,
@@ -71,7 +74,11 @@ export async function handleHMRUpdate(
     return
   }
 
-  debugHmr(`[file change] ${colors.dim(shortFile)}`)
+  if (configOnly) {
+    return
+  }
+
+  debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(normalizedClientDir)) {
@@ -116,7 +123,7 @@ export async function handleHMRUpdate(
       })
     } else {
       // loaded but not in the module graph, probably not js
-      debugHmr(`[no modules matched] ${colors.dim(shortFile)}`)
+      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
     }
     return
   }
@@ -133,6 +140,7 @@ export function updateModules(
 ): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
+  const traversedModules = new Set<ModuleNode>()
   let needFullReload = false
 
   for (const mod of modules) {
@@ -141,18 +149,15 @@ export function updateModules(
       continue
     }
 
-    const boundaries = new Set<{
-      boundary: ModuleNode
-      acceptedVia: ModuleNode
-    }>()
-    const hasDeadEnd = propagateUpdate(mod, boundaries)
+    const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
+    const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
     if (hasDeadEnd) {
       needFullReload = true
       continue
     }
 
     updates.push(
-      ...[...boundaries].map(({ boundary, acceptedVia }) => ({
+      ...boundaries.map(({ boundary, acceptedVia }) => ({
         type: `${boundary.type}-update` as const,
         timestamp,
         path: normalizeHmrUrl(boundary.url),
@@ -177,7 +182,7 @@ export function updateModules(
   }
 
   if (updates.length === 0) {
-    debugHmr(colors.yellow(`no update happened `) + colors.dim(file))
+    debugHmr?.(colors.yellow(`no update happened `) + colors.dim(file))
     return
   }
 
@@ -224,17 +229,20 @@ function areAllImportsAccepted(
 
 function propagateUpdate(
   node: ModuleNode,
-  boundaries: Set<{
-    boundary: ModuleNode
-    acceptedVia: ModuleNode
-  }>,
+  traversedModules: Set<ModuleNode>,
+  boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[],
   currentChain: ModuleNode[] = [node],
 ): boolean /* hasDeadEnd */ {
+  if (traversedModules.has(node)) {
+    return false
+  }
+  traversedModules.add(node)
+
   // #7561
   // if the imports of `node` have not been analyzed, then `node` has not
   // been loaded in the browser and we should stop propagation.
   if (node.id && node.isSelfAccepting === undefined) {
-    debugHmr(
+    debugHmr?.(
       `[propagate update] stop propagation because not analyzed: ${colors.dim(
         node.id,
       )}`,
@@ -243,16 +251,18 @@ function propagateUpdate(
   }
 
   if (node.isSelfAccepting) {
-    boundaries.add({
-      boundary: node,
-      acceptedVia: node,
-    })
+    boundaries.push({ boundary: node, acceptedVia: node })
 
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
     for (const importer of node.importers) {
       if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
-        propagateUpdate(importer, boundaries, currentChain.concat(importer))
+        propagateUpdate(
+          importer,
+          traversedModules,
+          boundaries,
+          currentChain.concat(importer),
+        )
       }
     }
 
@@ -265,10 +275,7 @@ function propagateUpdate(
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
   if (node.acceptedHmrExports) {
-    boundaries.add({
-      boundary: node,
-      acceptedVia: node,
-    })
+    boundaries.push({ boundary: node, acceptedVia: node })
   } else {
     if (!node.importers.size) {
       return true
@@ -288,10 +295,7 @@ function propagateUpdate(
   for (const importer of node.importers) {
     const subChain = currentChain.concat(importer)
     if (importer.acceptedHmrDeps.has(node)) {
-      boundaries.add({
-        boundary: importer,
-        acceptedVia: node,
-      })
+      boundaries.push({ boundary: importer, acceptedVia: node })
       continue
     }
 
@@ -310,7 +314,7 @@ function propagateUpdate(
       return true
     }
 
-    if (propagateUpdate(importer, boundaries, subChain)) {
+    if (propagateUpdate(importer, traversedModules, boundaries, subChain)) {
       return true
     }
   }
@@ -327,7 +331,7 @@ export function handlePrunedModules(
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
-    debugHmr(`[dispose] ${colors.dim(mod.file)}`)
+    debugHmr?.(`[dispose] ${colors.dim(mod.file)}`)
   })
   ws.send({
     type: 'prune',
@@ -383,7 +387,7 @@ export function lexAcceptedHmrDeps(
         } else if (char === '`') {
           prevState = state
           state = LexerState.inTemplateString
-        } else if (/\s/.test(char)) {
+        } else if (whitespaceRE.test(char)) {
           continue
         } else {
           if (state === LexerState.inCall) {
@@ -468,7 +472,7 @@ export function lexAcceptedHmrExports(
 }
 
 export function normalizeHmrUrl(url: string): string {
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     url = wrapId(url)
   }
   return url
@@ -487,14 +491,14 @@ function error(pos: number) {
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = fs.readFileSync(file, 'utf-8')
+  const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
-    const mtime = fs.statSync(file).mtimeMs
+    const mtime = (await fsp.stat(file)).mtimeMs
     await new Promise((r) => {
       let n = 0
       const poll = async () => {
         n++
-        const newMtime = fs.statSync(file).mtimeMs
+        const newMtime = (await fsp.stat(file)).mtimeMs
         if (newMtime !== mtime || n > 10) {
           r(0)
         } else {
@@ -503,7 +507,7 @@ async function readModifiedFile(file: string): Promise<string> {
       }
       setTimeout(poll, 10)
     })
-    return fs.readFileSync(file, 'utf-8')
+    return await fsp.readFile(file, 'utf-8')
   } else {
     return content
   }

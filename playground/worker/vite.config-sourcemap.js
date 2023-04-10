@@ -1,15 +1,22 @@
-const vite = require('vite')
-const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
+import vite from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig((sourcemap) => {
-  sourcemap = process.env.WORKER_MODE || sourcemap
+/** @param {boolean | 'inline' | 'hidden' | 'sourcemap'} sourcemap */
+export default (sourcemap) => {
+  sourcemap =
+    /** @type {'inline' | 'hidden' | 'sourcemap'} */ (
+      process.env.WORKER_MODE
+    ) || sourcemap
+
   if (sourcemap === 'sourcemap') {
     sourcemap = true
   }
-  return {
-    base: `/iife-${
-      typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-    }/`,
+
+  const typeName =
+    typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
+
+  return vite.defineConfig({
+    base: `/iife-${typeName}/`,
     resolve: {
       alias: {
         '@': __dirname,
@@ -27,9 +34,7 @@ module.exports = vite.defineConfig((sourcemap) => {
       },
     },
     build: {
-      outDir: `dist/iife-${
-        typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-      }/`,
+      outDir: `dist/iife-${typeName}/`,
       sourcemap: sourcemap,
       rollupOptions: {
         output: {
@@ -40,5 +45,6 @@ module.exports = vite.defineConfig((sourcemap) => {
       },
     },
     plugins: [workerPluginTestPlugin()],
-  }
-})
+    cacheDir: `node_modules/.vite-sourcemap-${typeName}`,
+  })
+}

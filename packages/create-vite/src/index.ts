@@ -45,14 +45,14 @@ const FRAMEWORKS: Framework[] = [
     color: yellow,
     variants: [
       {
-        name: 'vanilla',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'vanilla-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'vanilla',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -62,14 +62,14 @@ const FRAMEWORKS: Framework[] = [
     color: green,
     variants: [
       {
-        name: 'vue',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'vue-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'vue',
+        display: 'JavaScript',
+        color: yellow,
       },
       {
         name: 'custom-create-vue',
@@ -91,24 +91,24 @@ const FRAMEWORKS: Framework[] = [
     color: cyan,
     variants: [
       {
-        name: 'react',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'react-ts',
         display: 'TypeScript',
         color: blue,
       },
       {
-        name: 'react-swc',
-        display: 'JavaScript + SWC',
-        color: yellow,
-      },
-      {
         name: 'react-swc-ts',
         display: 'TypeScript + SWC',
         color: blue,
+      },
+      {
+        name: 'react',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'react-swc',
+        display: 'JavaScript + SWC',
+        color: yellow,
       },
     ],
   },
@@ -118,14 +118,14 @@ const FRAMEWORKS: Framework[] = [
     color: magenta,
     variants: [
       {
-        name: 'preact',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'preact-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'preact',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -135,14 +135,14 @@ const FRAMEWORKS: Framework[] = [
     color: lightRed,
     variants: [
       {
-        name: 'lit',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'lit-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'lit',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -152,14 +152,14 @@ const FRAMEWORKS: Framework[] = [
     color: red,
     variants: [
       {
-        name: 'svelte',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'svelte-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'svelte',
+        display: 'JavaScript',
+        color: yellow,
       },
       {
         name: 'custom-svelte-kit',
@@ -179,6 +179,12 @@ const FRAMEWORKS: Framework[] = [
         display: 'create-vite-extra ↗',
         color: reset,
         customCommand: 'npm create vite-extra@latest TARGET_DIR',
+      },
+      {
+        name: 'create-electron-vite',
+        display: 'create-electron-vite ↗',
+        color: reset,
+        customCommand: 'npm create electron-vite@latest TARGET_DIR',
       },
     ],
   },
@@ -318,7 +324,6 @@ async function init() {
 
   if (customCommand) {
     const fullCustomCommand = customCommand
-      .replace('TARGET_DIR', targetDir)
       .replace(/^npm create/, `${pkgManager} create`)
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
@@ -336,7 +341,9 @@ async function init() {
       })
 
     const [command, ...args] = fullCustomCommand.split(' ')
-    const { status } = spawn.sync(command, args, {
+    // we replace TARGET_DIR here because targetDir may include a space
+    const replacedArgs = args.map((arg) => arg.replace('TARGET_DIR', targetDir))
+    const { status } = spawn.sync(command, replacedArgs, {
       stdio: 'inherit',
     })
     process.exit(status ?? 0)
@@ -370,15 +377,20 @@ async function init() {
 
   pkg.name = packageName || getProjectName()
 
-  write('package.json', JSON.stringify(pkg, null, 2))
+  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
   if (isReactSwc) {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
+  const cdProjectName = path.relative(cwd, root)
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
-    console.log(`  cd ${path.relative(cwd, root)}`)
+    console.log(
+      `  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`,
+    )
   }
   switch (pkgManager) {
     case 'yarn':

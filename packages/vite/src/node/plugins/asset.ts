@@ -16,7 +16,13 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
+import {
+  cleanUrl,
+  getHash,
+  joinUrlSegments,
+  normalizePath,
+  removeLeadingSlash,
+} from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
@@ -24,6 +30,7 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 const jsSourceMapRE = /\.[cm]?js\.map$/
+const unnededFinalQueryCharRE = /[?&]$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -47,6 +54,8 @@ export function registerCustomMime(): void {
   mrmime.mimes['flac'] = 'audio/flac'
   // mrmime and mime-db is not released yet: https://github.com/jshttp/mime-db/commit/c9242a9b7d4bb25d7a0c9244adec74aeef08d8a1
   mrmime.mimes['aac'] = 'audio/aac'
+  // https://wiki.xiph.org/MIME_Types_and_File_Extensions#.opus_-_audio/ogg
+  mrmime.mimes['opus'] = 'audio/ogg'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
 }
@@ -60,6 +69,7 @@ export function renderAssetUrlInJS(
 ): MagicString | undefined {
   const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
     opts.format,
+    config.isWorker,
   )
 
   let match: RegExpExecArray | null
@@ -78,7 +88,7 @@ export function renderAssetUrlInJS(
     s ||= new MagicString(code)
     const [full, referenceId, postfix = ''] = match
     const file = ctx.getFileName(referenceId)
-    chunk.viteMetadata.importedAssets.add(cleanUrl(file))
+    chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
       filename,
@@ -148,7 +158,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      if (id.startsWith('\0')) {
+      if (id[0] === '\0') {
         // Rollup convention, this id should be handled by the
         // plugin that marked it with \0
         return
@@ -167,7 +177,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
+      id = id.replace(urlRE, '$1').replace(unnededFinalQueryCharRE, '')
       const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
@@ -187,7 +197,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
-      if (config.command === 'build' && config.build.ssr) {
+      if (
+        config.command === 'build' &&
+        config.build.ssr &&
+        !config.build.ssrEmitAssets
+      ) {
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&
@@ -208,7 +222,7 @@ export function checkPublicFile(
 ): string | undefined {
   // note if the file is in /public, the resolver would have returned it
   // as-is so it's not going to be a fully resolved path.
-  if (!publicDir || !url.startsWith('/')) {
+  if (!publicDir || url[0] !== '/') {
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
@@ -249,7 +263,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     rtn = path.posix.join(FS_PREFIX, id)
   }
   const base = joinUrlSegments(config.server?.origin ?? '', config.base)
-  return joinUrlSegments(base, rtn.replace(/^\//, ''))
+  return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
 export function getPublicAssetFilename(
@@ -365,9 +379,10 @@ export async function urlToBuiltUrl(
   if (checkPublicFile(url, config)) {
     return publicFileToBuiltUrl(url, config)
   }
-  const file = url.startsWith('/')
-    ? path.join(config.root, url)
-    : path.join(path.dirname(importer), url)
+  const file =
+    url[0] === '/'
+      ? path.join(config.root, url)
+      : path.join(path.dirname(importer), url)
   return fileToBuiltUrl(
     file,
     config,
