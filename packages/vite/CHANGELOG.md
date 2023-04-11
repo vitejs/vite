@@ -1,3 +1,12 @@
+## 4.3.0-beta.5 (2023-04-11)
+
+* fix: handle try-catch for fs promise when resolve https config (#12808) ([0bba402](https://github.com/vitejs/vite/commit/0bba402)), closes [#12808](https://github.com/vitejs/vite/issues/12808)
+* fix(build): correctly handle warning ignore list (#12831) ([8830532](https://github.com/vitejs/vite/commit/8830532)), closes [#12831](https://github.com/vitejs/vite/issues/12831)
+* fix(resolve): use different importer check for css imports (#12815) ([d037327](https://github.com/vitejs/vite/commit/d037327)), closes [#12815](https://github.com/vitejs/vite/issues/12815)
+* docs: fix pnpm link (#12803) ([ad358da](https://github.com/vitejs/vite/commit/ad358da)), closes [#12803](https://github.com/vitejs/vite/issues/12803)
+
+
+
 ## 4.3.0-beta.4 (2023-04-09)
 
 * fix: ignore sideEffects for scripts imported from html (#12786) ([f09551f](https://github.com/vitejs/vite/commit/f09551f)), closes [#12786](https://github.com/vitejs/vite/issues/12786)
