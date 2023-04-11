@@ -886,6 +886,9 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
         ...Object.keys(depsOptimizer.metadata.discovered),
       ]
     }
-    server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)
+    server._ssrExternals = await cjsSsrResolveExternals(
+      server.config,
+      knownImports,
+    )
   }
 }

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
+import { createFilter, isInNodeModules, safeRealpath } from './utils'
 import type { Plugin } from './plugin'
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -48,12 +48,12 @@ function invalidatePackageData(
   })
 }
 
-export function resolvePackageData(
+export async function resolvePackageData(
   pkgName: string,
   basedir: string,
   preserveSymlinks = false,
   packageCache?: PackageCache,
-): PackageData | null {
+): Promise<PackageData | null> {
   if (pnp) {
     const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
     if (packageCache?.has(cacheKey)) return packageCache.get(cacheKey)!
@@ -88,7 +88,7 @@ export function resolvePackageData(
     const pkg = path.join(basedir, 'node_modules', pkgName, 'package.json')
     try {
       if (fs.existsSync(pkg)) {
-        const pkgPath = preserveSymlinks ? pkg : safeRealpathSync(pkg)
+        const pkgPath = preserveSymlinks ? pkg : await safeRealpath(pkg)
         const pkgData = loadPackageData(pkgPath)
 
         if (packageCache) {

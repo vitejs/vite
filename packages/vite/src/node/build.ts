@@ -565,7 +565,9 @@ export async function build(
 
   let bundle: RollupBuild | undefined
   try {
-    const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+    const buildOutputOptions = async (
+      output: OutputOptions = {},
+    ): Promise<OutputOptions> => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
       if (output.output) {
         config.logger.warn(
@@ -637,10 +639,10 @@ export async function build(
 
     if (Array.isArray(outputs)) {
       for (const resolvedOutput of outputs) {
-        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
+        normalizedOutputs.push(await buildOutputOptions(resolvedOutput))
       }
     } else {
-      normalizedOutputs.push(buildOutputOptions(outputs))
+      normalizedOutputs.push(await buildOutputOptions(outputs))
     }
 
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
@@ -934,7 +936,7 @@ async function cjsSsrResolveExternal(
     // no dev deps optimization data, do a fresh scan
     knownImports = await findKnownImports(config, false) // needs to use non-ssr
   }
-  const ssrExternals = cjsSsrResolveExternals(config, knownImports)
+  const ssrExternals = await cjsSsrResolveExternals(config, knownImports)
 
   return (id, parentId, isResolved) => {
     const isExternal = cjsShouldExternalizeForSSR(id, ssrExternals)

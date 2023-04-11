@@ -32,10 +32,10 @@ export function stripNesting(packages: string[]): string[] {
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
  */
-export function cjsSsrResolveExternals(
+export async function cjsSsrResolveExternals(
   config: ResolvedConfig,
   knownImports: string[],
-): string[] {
+): Promise<string[]> {
   // strip nesting since knownImports may be passed in from optimizeDeps which
   // supports a "parent > child" syntax
   knownImports = stripNesting(knownImports)
@@ -52,7 +52,7 @@ export function cjsSsrResolveExternals(
     seen.add(id)
   })
 
-  cjsSsrCollectExternals(
+  await cjsSsrCollectExternals(
     config.root,
     config.resolve,
     ssrExternals,
@@ -89,15 +89,16 @@ const CJS_CONTENT_RE =
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
+type ShouldExternalizeFunction = (id: string) => Promise<boolean | undefined>
 const isSsrExternalCache = new WeakMap<
   ResolvedConfig,
-  (id: string) => boolean | undefined
+  ShouldExternalizeFunction
 >()
 
 export function shouldExternalizeForSSR(
   id: string,
   config: ResolvedConfig,
-): boolean | undefined {
+): Promise<boolean | undefined> {
   let isSsrExternal = isSsrExternalCache.get(config)
   if (!isSsrExternal) {
     isSsrExternal = createIsSsrExternal(config)
@@ -108,7 +109,7 @@ export function shouldExternalizeForSSR(
 
 export function createIsConfiguredAsSsrExternal(
   config: ResolvedConfig,
-): (id: string) => boolean {
+): (id: string) => Promise<boolean> {
   const { ssr, root } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
@@ -123,27 +124,29 @@ export function createIsConfiguredAsSsrExternal(
     isBuild: true,
   }
 
-  const isExternalizable = (
+  const isExternalizable = async (
     id: string,
     configuredAsExternal?: boolean,
-  ): boolean => {
+  ): Promise<boolean> => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
     try {
-      return !!tryNodeResolve(
-        id,
-        undefined,
-        resolveOptions,
-        ssr?.target === 'webworker',
-        undefined,
-        true,
-        // try to externalize, will return undefined or an object without
-        // a external flag if it isn't externalizable
-        true,
-        // Allow linked packages to be externalized if they are explicitly
-        // configured as external
-        !!configuredAsExternal,
+      return !!(
+        await tryNodeResolve(
+          id,
+          undefined,
+          resolveOptions,
+          ssr?.target === 'webworker',
+          undefined,
+          true,
+          // try to externalize, will return undefined or an object without
+          // a external flag if it isn't externalizable
+          true,
+          // Allow linked packages to be externalized if they are explicitly
+          // configured as external
+          !!configuredAsExternal,
+        )
       )?.external
     } catch (e) {
       debug?.(
@@ -156,7 +159,7 @@ export function createIsConfiguredAsSsrExternal(
 
   // Returns true if it is configured as external, false if it is filtered
   // by noExternal and undefined if it isn't affected by the explicit config
-  return (id: string) => {
+  return async (id: string) => {
     const { ssr } = config
     if (ssr) {
       if (
@@ -190,18 +193,18 @@ export function createIsConfiguredAsSsrExternal(
 
 function createIsSsrExternal(
   config: ResolvedConfig,
-): (id: string) => boolean | undefined {
+): ShouldExternalizeFunction {
   const processedIds = new Map<string, boolean | undefined>()
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
-  return (id: string) => {
+  return async (id: string) => {
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
     let external = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
-      external = isBuiltin(id) || isConfiguredAsExternal(id)
+      external = isBuiltin(id) || (await isConfiguredAsExternal(id))
     }
     processedIds.set(id, external)
     return external
@@ -210,7 +213,7 @@ function createIsSsrExternal(
 
 // When config.experimental.buildSsrCjsExternalHeuristics is enabled, this function
 // is used reverting to the Vite 2.9 SSR externalization heuristics
-function cjsSsrCollectExternals(
+async function cjsSsrCollectExternals(
   root: string,
   resolveOptions: Required<ResolveOptions>,
   ssrExternals: Set<string>,
@@ -249,20 +252,22 @@ function cjsSsrCollectExternals(
     let requireEntry: string
 
     try {
-      esmEntry = tryNodeResolve(
-        id,
-        undefined,
-        internalResolveOptions,
-        true, // we set `targetWeb` to `true` to get the ESM entry
-        undefined,
-        true,
+      esmEntry = (
+        await tryNodeResolve(
+          id,
+          undefined,
+          internalResolveOptions,
+          true, // we set `targetWeb` to `true` to get the ESM entry
+          undefined,
+          true,
+        )
       )?.id
       // normalizePath required for windows. tryNodeResolve uses normalizePath
       // which returns with '/', require.resolve returns with '\\'
       requireEntry = normalizePath(_require.resolve(id, { paths: [root] }))
     } catch (e) {
       // no main entry, but deep imports may be allowed
-      const pkgDir = resolvePackageData(id, root)?.dir
+      const pkgDir = (await resolvePackageData(id, root))?.dir
       if (pkgDir) {
         if (isInNodeModules(pkgDir)) {
           ssrExternals.add(id)
@@ -282,7 +287,7 @@ function cjsSsrCollectExternals(
     }
     // trace the dependencies of linked packages
     else if (!isInNodeModules(esmEntry)) {
-      const pkgDir = resolvePackageData(id, root)?.dir
+      const pkgDir = (await resolvePackageData(id, root))?.dir
       if (pkgDir) {
         depsToTrace.add(pkgDir)
       }
@@ -295,7 +300,7 @@ function cjsSsrCollectExternals(
     // or are there others like SystemJS / AMD that we'd need to handle?
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
-      const pkg = resolvePackageData(id, root)?.data
+      const pkg = (await resolvePackageData(id, root))?.data
       if (!pkg) {
         continue
       }
@@ -318,7 +323,13 @@ function cjsSsrCollectExternals(
   }
 
   for (const depRoot of depsToTrace) {
-    cjsSsrCollectExternals(depRoot, resolveOptions, ssrExternals, seen, logger)
+    await cjsSsrCollectExternals(
+      depRoot,
+      resolveOptions,
+      ssrExternals,
+      seen,
+      logger,
+    )
   }
 }
 

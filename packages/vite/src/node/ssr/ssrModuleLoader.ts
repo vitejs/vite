@@ -271,7 +271,7 @@ async function nodeImport(
   if (id.startsWith('node:') || id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
-    const resolved = tryNodeResolve(
+    const resolved = await tryNodeResolve(
       id,
       importer,
       // Non-external modules can import ESM-only modules, but only outside

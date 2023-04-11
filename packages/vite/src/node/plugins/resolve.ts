@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
@@ -32,7 +33,7 @@ import {
   isTsRequest,
   isWindows,
   normalizePath,
-  safeRealpathSync,
+  safeRealpath,
   slash,
   tryStatSync,
 } from '../utils'
@@ -114,7 +115,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
-  shouldExternalize?: (id: string) => boolean | undefined
+  shouldExternalize?: (id: string) => Promise<boolean | undefined>
 
   /**
    * Set by createResolver, we only care about the resolved id. moduleSideEffects
@@ -177,7 +178,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const resolvedImports = resolveSubpathImports(
+      const resolvedImports = await resolveSubpathImports(
         id,
         importer,
         options,
@@ -225,7 +226,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // /foo -> /fs-root/foo
       if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
-        if ((res = tryFsResolve(fsPath, options))) {
+        if ((res = await tryFsResolve(fsPath, options))) {
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -261,12 +262,17 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (
           targetWeb &&
           options.browserField &&
-          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+          (res = await tryResolveBrowserMapping(
+            fsPath,
+            importer,
+            options,
+            true,
+          ))
         ) {
           return res
         }
 
-        if ((res = tryFsResolve(fsPath, options))) {
+        if ((res = await tryFsResolve(fsPath, options))) {
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
@@ -297,7 +303,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (isWindows && id[0] === '/') {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
-        if ((res = tryFsResolve(fsPath, options))) {
+        if ((res = await tryFsResolve(fsPath, options))) {
           debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -306,7 +312,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // absolute fs paths
       if (
         isNonDriveRelativeAbsolutePath(id) &&
-        (res = tryFsResolve(id, options))
+        (res = await tryFsResolve(id, options))
       ) {
         debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
@@ -325,7 +331,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        const external = options.shouldExternalize?.(id)
+        const external = await options.shouldExternalize?.(id)
         if (
           !external &&
           asSrc &&
@@ -345,7 +351,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (
           targetWeb &&
           options.browserField &&
-          (res = tryResolveBrowserMapping(
+          (res = await tryResolveBrowserMapping(
             id,
             importer,
             options,
@@ -357,7 +363,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if (
-          (res = tryNodeResolve(
+          (res = await tryNodeResolve(
             id,
             importer,
             options,
@@ -435,7 +441,7 @@ export default new Proxy({}, {
   }
 }
 
-function resolveSubpathImports(
+async function resolveSubpathImports(
   id: string,
   importer: string | undefined,
   options: InternalResolveOptions,
@@ -498,13 +504,13 @@ function splitFileAndPostfix(path: string) {
   return { file, postfix: path.slice(file.length) }
 }
 
-function tryFsResolve(
+async function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true,
   skipPackageJson = false,
-): string | undefined {
+): Promise<string | undefined> {
   // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
   // source code so we only need to perform the check for dependencies.
   // We don't support `?` in node_modules paths, so we only need to check in this branch.
@@ -514,7 +520,7 @@ function tryFsResolve(
     // We only need to check foo#bar?baz and foo#bar, ignore foo?bar#baz
     if (queryIndex < 0 || queryIndex > hashIndex) {
       const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
-      const res = tryCleanFsResolve(
+      const res = await tryCleanFsResolve(
         file,
         options,
         tryIndex,
@@ -526,7 +532,7 @@ function tryFsResolve(
   }
 
   const { file, postfix } = splitFileAndPostfix(fsPath)
-  const res = tryCleanFsResolve(
+  const res = await tryCleanFsResolve(
     file,
     options,
     tryIndex,
@@ -539,13 +545,13 @@ function tryFsResolve(
 const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
 const isPossibleTsOutput = (url: string): boolean => knownTsOutputRE.test(url)
 
-function tryCleanFsResolve(
+async function tryCleanFsResolve(
   file: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true,
   skipPackageJson = false,
-): string | undefined {
+): Promise<string | undefined> {
   const { tryPrefix, extensions, preserveSymlinks } = options
 
   const fileStat = tryStatSync(file)
@@ -566,7 +572,7 @@ function tryCleanFsResolve(
         const fileExt = path.extname(file)
         const fileName = file.slice(0, -fileExt.length)
         if (
-          (res = tryResolveRealFile(
+          (res = await tryResolveRealFile(
             fileName + fileExt.replace('js', 'ts'),
             preserveSymlinks,
           ))
@@ -575,13 +581,13 @@ function tryCleanFsResolve(
         // for .js, also try .tsx
         if (
           fileExt === '.js' &&
-          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
+          (res = await tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
         )
           return res
       }
 
       if (
-        (res = tryResolveRealFileWithExtensions(
+        (res = await tryResolveRealFileWithExtensions(
           file,
           extensions,
           preserveSymlinks,
@@ -592,10 +598,11 @@ function tryCleanFsResolve(
       if (tryPrefix) {
         const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
 
-        if ((res = tryResolveRealFile(prefixed, preserveSymlinks))) return res
+        if ((res = await tryResolveRealFile(prefixed, preserveSymlinks)))
+          return res
 
         if (
-          (res = tryResolveRealFileWithExtensions(
+          (res = await tryResolveRealFileWithExtensions(
             prefixed,
             extensions,
             preserveSymlinks,
@@ -615,7 +622,7 @@ function tryCleanFsResolve(
       try {
         if (fs.existsSync(pkgPath)) {
           if (!options.preserveSymlinks) {
-            pkgPath = safeRealpathSync(pkgPath)
+            pkgPath = await safeRealpath(pkgPath)
           }
           // path points to a node package
           const pkg = loadPackageData(pkgPath)
@@ -627,7 +634,7 @@ function tryCleanFsResolve(
     }
 
     if (
-      (res = tryResolveRealFileWithExtensions(
+      (res = await tryResolveRealFileWithExtensions(
         `${dirPath}/index`,
         extensions,
         preserveSymlinks,
@@ -637,7 +644,7 @@ function tryCleanFsResolve(
 
     if (tryPrefix) {
       if (
-        (res = tryResolveRealFileWithExtensions(
+        (res = await tryResolveRealFileWithExtensions(
           `${dirPath}/${options.tryPrefix}index`,
           extensions,
           preserveSymlinks,
@@ -648,21 +655,21 @@ function tryCleanFsResolve(
   }
 }
 
-function tryResolveRealFile(
+async function tryResolveRealFile(
   file: string,
   preserveSymlinks: boolean,
-): string | undefined {
-  const stat = tryStatSync(file)
+): Promise<string | undefined> {
+  const stat = await tryStatSync(file)
   if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
 }
 
-function tryResolveRealFileWithExtensions(
+async function tryResolveRealFileWithExtensions(
   filePath: string,
   extensions: string[],
   preserveSymlinks: boolean,
-): string | undefined {
+): Promise<string | undefined> {
   for (const ext of extensions) {
-    const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
+    const res = await tryResolveRealFile(filePath + ext, preserveSymlinks)
     if (res) return res
   }
 }
@@ -676,7 +683,7 @@ export type InternalResolveOptionsWithOverrideConditions =
     overrideConditions?: string[]
   }
 
-export function tryNodeResolve(
+export async function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
   options: InternalResolveOptionsWithOverrideConditions,
@@ -685,7 +692,7 @@ export function tryNodeResolve(
   ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
-): PartialResolvedId | undefined {
+): Promise<PartialResolvedId | undefined> {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
   // check for deep import, e.g. "my-lib/foo"
@@ -706,7 +713,12 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+  const pkg = await resolvePackageData(
+    pkgId,
+    basedir,
+    preserveSymlinks,
+    packageCache,
+  )
   if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
@@ -736,14 +748,14 @@ export function tryNodeResolve(
 
   let resolved: string | undefined
   try {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
+    resolved = await resolveId(unresolvedId, pkg, targetWeb, options)
   } catch (err) {
     if (!options.tryEsmOnly) {
       throw err
     }
   }
   if (!resolved && options.tryEsmOnly) {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, {
+    resolved = await resolveId(unresolvedId, pkg, targetWeb, {
       ...options,
       isRequire: false,
       mainFields: DEFAULT_MAIN_FIELDS,
@@ -909,11 +921,8 @@ export async function tryOptimizedResolve(
 
     // lazily initialize idPkgDir
     if (idPkgDir == null) {
-      idPkgDir = resolvePackageData(
-        id,
-        importer,
-        preserveSymlinks,
-        packageCache,
+      idPkgDir = (
+        await resolvePackageData(id, importer, preserveSymlinks, packageCache)
       )?.dir
       // if still null, it likely means that this id isn't a dep for importer.
       // break to bail early
@@ -928,12 +937,12 @@ export async function tryOptimizedResolve(
   }
 }
 
-export function resolvePackageEntry(
+export async function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
-): string | undefined {
+): Promise<string | undefined> {
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
     return cached
@@ -984,12 +993,12 @@ export function resolvePackageEntry(
           // the heuristics here is to actually read the browser entry when
           // possible and check for hints of ESM. If it is not ESM, prefer "module"
           // instead; Otherwise, assume it's ESM and use it.
-          const resolvedBrowserEntry = tryFsResolve(
+          const resolvedBrowserEntry = await tryFsResolve(
             path.join(dir, browserEntry),
             options,
           )
           if (resolvedBrowserEntry) {
-            const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
+            const content = await fsp.readFile(resolvedBrowserEntry, 'utf-8')
             if (hasESMSyntax(content)) {
               // likely ESM, prefer browser
               entryPoint = browserEntry
@@ -1041,7 +1050,7 @@ export function resolvePackageEntry(
       }
 
       const entryPointPath = path.join(dir, entry)
-      const resolvedEntryPoint = tryFsResolve(
+      const resolvedEntryPoint = await tryFsResolve(
         entryPointPath,
         options,
         true,
@@ -1124,7 +1133,7 @@ function resolveExportsOrImports(
   return result ? result[0] : undefined
 }
 
-function resolveDeepImport(
+async function resolveDeepImport(
   id: string,
   {
     webResolvedImports,
@@ -1135,7 +1144,7 @@ function resolveDeepImport(
   }: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
-): string | undefined {
+): Promise<string | undefined> {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
@@ -1183,7 +1192,7 @@ function resolveDeepImport(
   }
 
   if (relativeId) {
-    const resolved = tryFsResolve(
+    const resolved = await tryFsResolve(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
@@ -1199,7 +1208,7 @@ function resolveDeepImport(
   }
 }
 
-function tryResolveBrowserMapping(
+async function tryResolveBrowserMapping(
   id: string,
   importer: string | undefined,
   options: InternalResolveOptions,
@@ -1216,8 +1225,9 @@ function tryResolveBrowserMapping(
     if (browserMappedPath) {
       if (
         (res = bareImportRE.test(browserMappedPath)
-          ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
-          : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
+          ? (await tryNodeResolve(browserMappedPath, importer, options, true))
+              ?.id
+          : await tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         let result: PartialResolvedId = { id: res }
@@ -1274,9 +1284,12 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
   return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
 }
 
-function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
+async function getRealPath(
+  resolved: string,
+  preserveSymlinks?: boolean,
+): Promise<string> {
   if (!preserveSymlinks && browserExternalId !== resolved) {
-    resolved = safeRealpathSync(resolved)
+    resolved = await safeRealpath(resolved)
   }
   return normalizePath(resolved)
 }

@@ -876,7 +876,7 @@ function createOptimizeDepsIncludeResolver(
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolveBasedir(
+    const basedir = await nestedResolveBasedir(
       nestedRoot,
       config.root,
       config.resolve.preserveSymlinks,
@@ -888,14 +888,15 @@ function createOptimizeDepsIncludeResolver(
 /**
  * Continously resolve the basedir of packages separated by '>'
  */
-function nestedResolveBasedir(
+async function nestedResolveBasedir(
   id: string,
   basedir: string,
   preserveSymlinks = false,
 ) {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
   for (const pkg of pkgs) {
-    basedir = resolvePackageData(pkg, basedir, preserveSymlinks)?.dir || basedir
+    basedir =
+      (await resolvePackageData(pkg, basedir, preserveSymlinks))?.dir || basedir
   }
   return basedir
 }

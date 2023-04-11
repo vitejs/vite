@@ -1030,11 +1030,13 @@ async function bundleConfigFile(
               }
 
               const isIdESM = isESM || kind === 'dynamic-import'
-              let idFsPath = tryNodeResolve(
-                id,
-                importer,
-                { ...options, isRequire: !isIdESM },
-                false,
+              let idFsPath = (
+                await tryNodeResolve(
+                  id,
+                  importer,
+                  { ...options, isRequire: !isIdESM },
+                  false,
+                )
               )?.id
               if (idFsPath && isIdESM) {
                 idFsPath = pathToFileURL(idFsPath).href
