@@ -283,7 +283,7 @@ async function loadAndTransform(
       logger,
     )
 
-    if (path.isAbsolute(mod.file)) {
+    if (config.server.sourcemapRelativeSources && path.isAbsolute(mod.file)) {
       for (
         let sourcesIndex = 0;
         sourcesIndex < map.sources.length;

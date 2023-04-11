@@ -128,6 +128,14 @@ export interface ServerOptions extends CommonServerOptions {
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
   /**
+   * By default Vite uses relative paths against the sourcemap file in sourcemap sources as
+   * browser devtools expect this. In node, tools like Vitest aren't ready for this yet, so
+   * they can set this option to keep absolute paths as Vite had before 4.2. This option is
+   * marked as experimental, it may be removed in a future version once the ecosystem is ready.
+   * @experimental
+   */
+  sourcemapRelativeSources?: boolean
+  /**
    * Force dep pre-optimization regardless of whether deps have changed.
    *
    * @deprecated Use optimizeDeps.force instead, this option may be removed
@@ -770,6 +778,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
+    sourcemapRelativeSources: true,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
