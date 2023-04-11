@@ -894,7 +894,7 @@ export function onRollupWarning(
       return
     }
 
-    if (!warningIgnoreList.includes(warning.code!)) {
+    if (warningIgnoreList.includes(warning.code!)) {
       return
     }
 
