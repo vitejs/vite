@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
@@ -558,15 +559,15 @@ export function copyDir(srcDir: string, destDir: string): void {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
+export let safeRealpath = isWindows ? windowsSafeRealpath : fsp.realpath // acts as fs.realpath.native
 export let safeRealpathSync = isWindows
-  ? windowsSafeRealPathSync
+  ? windowsSafeRealpathSync
   : fs.realpathSync.native
 
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
-function windowsMappedRealpathSync(path: string) {
-  const realPath = fs.realpathSync.native(path)
+function mappedRealPath(realPath: string) {
   if (realPath.startsWith('\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
       if (realPath.startsWith(network)) return realPath.replace(network, volume)
@@ -574,18 +575,28 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
-let firstSafeRealPathSyncRun = false
-
-function windowsSafeRealPathSync(path: string): string {
-  if (!firstSafeRealPathSyncRun) {
-    optimizeSafeRealPathSync()
-    firstSafeRealPathSyncRun = true
-  }
-  return fs.realpathSync(path)
+async function windowsMappedRealpath(path: fs.PathLike): Promise<string> {
+  return mappedRealPath(await fsp.realpath(path))
+}
+function windowsMappedRealpathSync(path: fs.PathLike): string {
+  return mappedRealPath(fs.realpathSync.native(path))
 }
 
-function optimizeSafeRealPathSync() {
+const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
+let firstSafeRealPathRun = false
+
+async function windowsSafeRealpath(path: fs.PathLike): Promise<string> {
+  return windowsSafeRealpathSync(path)
+}
+function windowsSafeRealpathSync(path: fs.PathLike): string {
+  if (!firstSafeRealPathRun) {
+    optimizeSafeRealPath()
+    firstSafeRealPathRun = true
+  }
+  return fs.realpathSync(path) // use non-native version until optimized
+}
+
+function optimizeSafeRealPath() {
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
@@ -596,8 +607,10 @@ function optimizeSafeRealPathSync() {
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
     if (windowsNetworkMap.size === 0) {
+      safeRealpath = fsp.realpath
       safeRealpathSync = fs.realpathSync.native
     } else {
+      safeRealpath = windowsMappedRealpath
       safeRealpathSync = windowsMappedRealpathSync
     }
   })

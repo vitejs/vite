@@ -32,6 +32,7 @@ import {
   isTsRequest,
   isWindows,
   normalizePath,
+  safeRealpath,
   safeRealpathSync,
   slash,
   tryStatSync,
@@ -226,6 +227,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
+          res = await getRealPath(res, options.preserveSymlinks)
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -267,6 +269,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
+          res = await getRealPath(res, options.preserveSymlinks)
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
@@ -298,6 +301,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
+          res = await getRealPath(res, options.preserveSymlinks)
           debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -308,6 +312,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isNonDriveRelativeAbsolutePath(id) &&
         (res = tryFsResolve(id, options))
       ) {
+        res = await getRealPath(res, options.preserveSymlinks)
         debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
@@ -498,6 +503,23 @@ function splitFileAndPostfix(path: string) {
   return { file, postfix: path.slice(file.length) }
 }
 
+function tryRealFsResolve(
+  fsPath: string,
+  options: InternalResolveOptions,
+  tryIndex?: boolean,
+  targetWeb?: boolean,
+  skipPackageJson?: boolean,
+): string | undefined {
+  const res = tryFsResolve(
+    fsPath,
+    options,
+    tryIndex,
+    targetWeb,
+    skipPackageJson,
+  )
+  if (res) return getRealPathSync(res, options.preserveSymlinks)
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
@@ -546,12 +568,12 @@ function tryCleanFsResolve(
   targetWeb = true,
   skipPackageJson = false,
 ): string | undefined {
-  const { tryPrefix, extensions, preserveSymlinks } = options
+  const { tryPrefix, extensions } = options
 
   const fileStat = tryStatSync(file)
 
   // Try direct match first
-  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
+  if (fileStat?.isFile()) return file
 
   let res: string | undefined
 
@@ -565,42 +587,21 @@ function tryCleanFsResolve(
         // try resolve .js, .mjs, .cjs or .jsx import to typescript file
         const fileExt = path.extname(file)
         const fileName = file.slice(0, -fileExt.length)
-        if (
-          (res = tryResolveRealFile(
-            fileName + fileExt.replace('js', 'ts'),
-            preserveSymlinks,
-          ))
-        )
+        if ((res = resolveIfFile(fileName + fileExt.replace('js', 'ts'))))
           return res
         // for .js, also try .tsx
-        if (
-          fileExt === '.js' &&
-          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
-        )
+        if (fileExt === '.js' && (res = resolveIfFile(fileName + '.tsx')))
           return res
       }
 
-      if (
-        (res = tryResolveRealFileWithExtensions(
-          file,
-          extensions,
-          preserveSymlinks,
-        ))
-      )
-        return res
+      if ((res = resolveIfFileWithExtensions(file, extensions))) return res
 
       if (tryPrefix) {
         const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
 
-        if ((res = tryResolveRealFile(prefixed, preserveSymlinks))) return res
+        if ((res = resolveIfFile(prefixed))) return res
 
-        if (
-          (res = tryResolveRealFileWithExtensions(
-            prefixed,
-            extensions,
-            preserveSymlinks,
-          ))
-        )
+        if ((res = resolveIfFileWithExtensions(prefixed, extensions)))
           return res
       }
     }
@@ -626,21 +627,14 @@ function tryCleanFsResolve(
       }
     }
 
-    if (
-      (res = tryResolveRealFileWithExtensions(
-        `${dirPath}/index`,
-        extensions,
-        preserveSymlinks,
-      ))
-    )
+    if ((res = resolveIfFileWithExtensions(`${dirPath}/index`, extensions)))
       return res
 
     if (tryPrefix) {
       if (
-        (res = tryResolveRealFileWithExtensions(
+        (res = resolveIfFileWithExtensions(
           `${dirPath}/${options.tryPrefix}index`,
           extensions,
-          preserveSymlinks,
         ))
       )
         return res
@@ -648,21 +642,17 @@ function tryCleanFsResolve(
   }
 }
 
-function tryResolveRealFile(
-  file: string,
-  preserveSymlinks: boolean,
-): string | undefined {
+function resolveIfFile(file: string): string | undefined {
   const stat = tryStatSync(file)
-  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
+  if (stat?.isFile()) return file
 }
 
-function tryResolveRealFileWithExtensions(
+function resolveIfFileWithExtensions(
   filePath: string,
   extensions: string[],
-  preserveSymlinks: boolean,
 ): string | undefined {
   for (const ext of extensions) {
-    const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
+    const res = resolveIfFile(filePath + ext)
     if (res) return res
   }
 }
@@ -1041,7 +1031,7 @@ export function resolvePackageEntry(
       }
 
       const entryPointPath = path.join(dir, entry)
-      const resolvedEntryPoint = tryFsResolve(
+      const resolvedEntryPoint = tryRealFsResolve(
         entryPointPath,
         options,
         true,
@@ -1183,7 +1173,7 @@ function resolveDeepImport(
   }
 
   if (relativeId) {
-    const resolved = tryFsResolve(
+    const resolved = tryRealFsResolve(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
@@ -1217,7 +1207,7 @@ function tryResolveBrowserMapping(
       if (
         (res = bareImportRE.test(browserMappedPath)
           ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
-          : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
+          : tryRealFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         let result: PartialResolvedId = { id: res }
@@ -1274,9 +1264,19 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
   return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
 }
 
-function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
+function getRealPathSync(resolved: string, preserveSymlinks?: boolean): string {
   if (!preserveSymlinks && browserExternalId !== resolved) {
     resolved = safeRealpathSync(resolved)
+  }
+  return normalizePath(resolved)
+}
+
+async function getRealPath(
+  resolved: string,
+  preserveSymlinks?: boolean,
+): Promise<string> {
+  if (!preserveSymlinks && browserExternalId !== resolved) {
+    resolved = await safeRealpath(resolved)
   }
   return normalizePath(resolved)
 }
