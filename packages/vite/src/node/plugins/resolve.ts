@@ -659,18 +659,29 @@ async function tryResolveRealFile(
   file: string,
   preserveSymlinks: boolean,
 ): Promise<string | undefined> {
-  const stat = await tryStatSync(file)
+  const stat = tryStatSync(file)
   if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
 }
 
+function tryFindRealFileWithExtensions(
+  filePath: string,
+  extensions: string[],
+): string | undefined {
+  for (const ext of extensions) {
+    const file = filePath + ext
+    if (tryStatSync(file)?.isFile()) {
+      return file
+    }
+  }
+}
 async function tryResolveRealFileWithExtensions(
   filePath: string,
   extensions: string[],
   preserveSymlinks: boolean,
 ): Promise<string | undefined> {
-  for (const ext of extensions) {
-    const res = await tryResolveRealFile(filePath + ext, preserveSymlinks)
-    if (res) return res
+  const file = tryFindRealFileWithExtensions(filePath, extensions)
+  if (file) {
+    return getRealPath(file, preserveSymlinks)
   }
 }
 
