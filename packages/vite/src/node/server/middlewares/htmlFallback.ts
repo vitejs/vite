@@ -30,10 +30,13 @@ export function htmlFallbackMiddleware(
   })
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return perf.collectMiddleware(
-    'htmlFallback',
-    function viteHtmlFallbackMiddleware(req, res, next) {
-      return historyHtmlFallbackMiddleware(req, res, next)
-    },
-  )
+  const viteHtmlFallbackMiddleware: Connect.NextHandleFunction = (
+    req,
+    res,
+    next,
+  ) => {
+    return historyHtmlFallbackMiddleware(req, res, next)
+  }
+
+  return perf.collectMiddleware('htmlFallback', viteHtmlFallbackMiddleware)
 }

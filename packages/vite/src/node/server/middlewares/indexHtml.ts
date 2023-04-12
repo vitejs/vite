@@ -294,35 +294,34 @@ export function indexHtmlMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return perf.collectMiddleware(
-    'indexHtml',
-    async function viteIndexHtmlMiddleware(req, res, next) {
-      if (res.writableEnded) {
-        return next()
-      }
+  const viteIndexHtmlMiddleware: Connect.NextHandleFunction = async (
+    req,
+    res,
+    next,
+  ) => {
+    if (res.writableEnded) {
+      return next()
+    }
 
-      const url = req.url && cleanUrl(req.url)
-      // htmlFallbackMiddleware appends '.html' to URLs
-      if (
-        url?.endsWith('.html') &&
-        req.headers['sec-fetch-dest'] !== 'script'
-      ) {
-        const filename = getHtmlFilename(url, server)
-        if (fs.existsSync(filename)) {
-          try {
-            let html = await fsp.readFile(filename, 'utf-8')
-            html = await server.transformIndexHtml(url, html, req.originalUrl)
-            return send(req, res, html, 'html', {
-              headers: server.config.server.headers,
-            })
-          } catch (e) {
-            return next(e)
-          }
+    const url = req.url && cleanUrl(req.url)
+    // htmlFallbackMiddleware appends '.html' to URLs
+    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+      const filename = getHtmlFilename(url, server)
+      if (fs.existsSync(filename)) {
+        try {
+          let html = await fsp.readFile(filename, 'utf-8')
+          html = await server.transformIndexHtml(url, html, req.originalUrl)
+          return send(req, res, html, 'html', {
+            headers: server.config.server.headers,
+          })
+        } catch (e) {
+          return next(e)
         }
       }
-      next()
-    },
-  )
+    }
+    next()
+  }
+  return perf.collectMiddleware('indexHtml', viteIndexHtmlMiddleware)
 }
 
 function preTransformRequest(server: ViteDevServer, url: string, base: string) {
