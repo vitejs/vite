@@ -115,6 +115,13 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
+
+  /**
+   * Set by createResolver, we only care about the resolved id. moduleSideEffects
+   * and other fields are discarded so we can avoid computing them.
+   * @internal
+   */
+  idOnly?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -260,19 +267,29 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          const resPkg = findNearestPackageData(
-            path.dirname(res),
-            options.packageCache,
-          )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
-          return resPkg
-            ? {
+          // If this isn't a script imported from a .html file, include side effects
+          // hints so the non-used code is properly tree-shaken during build time.
+          if (
+            !options.idOnly &&
+            !options.scan &&
+            options.isBuild &&
+            !importer?.endsWith('.html')
+          ) {
+            const resPkg = findNearestPackageData(
+              path.dirname(res),
+              options.packageCache,
+            )
+            if (resPkg) {
+              return {
                 id: res,
                 moduleSideEffects: resPkg.hasSideEffects(res),
               }
-            : res
+            }
+          }
+          return res
         }
       }
 
@@ -297,10 +314,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // external
       if (isExternalUrl(id)) {
-        return {
-          id,
-          external: true,
-        }
+        return options.idOnly ? id : { id, external: true }
       }
 
       // data uri: pass through (this only happens during build and will be
@@ -372,15 +386,17 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               this.error(message)
             }
 
-            return {
-              id,
-              external: true,
-            }
+            return options.idOnly ? id : { id, external: true }
           } else {
             if (!asSrc) {
               debug?.(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
+              )
+            } else if (isProduction) {
+              this.warn(
+                `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
+                  `See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
               )
             }
             return isProduction
@@ -682,7 +698,8 @@ export function tryNodeResolve(
   } else if (
     importer &&
     path.isAbsolute(importer) &&
-    fs.existsSync(cleanUrl(importer))
+    // css processing appends `*` for importer
+    (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
   ) {
     basedir = path.dirname(importer)
   } else {
@@ -763,7 +780,10 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  if ((isBuild && !depsOptimizer) || externalize) {
+  if (
+    !options.idOnly &&
+    ((!options.scan && isBuild && !depsOptimizer) || externalize)
+  ) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
@@ -843,7 +863,7 @@ export function tryNodeResolve(
     resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
-  if (isBuild) {
+  if (!options.idOnly && !options.scan && isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
@@ -1200,16 +1220,22 @@ function tryResolveBrowserMapping(
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        const resPkg = findNearestPackageData(
-          path.dirname(res),
-          options.packageCache,
-        )
-        const result = resPkg
-          ? {
+        let result: PartialResolvedId = { id: res }
+        if (options.idOnly) {
+          return result
+        }
+        if (!options.scan && options.isBuild) {
+          const resPkg = findNearestPackageData(
+            path.dirname(res),
+            options.packageCache,
+          )
+          if (resPkg) {
+            result = {
               id: res,
               moduleSideEffects: resPkg.hasSideEffects(res),
             }
-          : { id: res }
+          }
+        }
         return externalize ? { ...result, external: true } : result
       }
     } else if (browserMappedPath === false) {

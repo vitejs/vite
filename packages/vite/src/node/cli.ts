@@ -278,6 +278,7 @@ cli
             base: options.base,
             configFile: options.config,
             logLevel: options.logLevel,
+            mode: options.mode,
           },
           'serve',
         )

@@ -120,7 +120,6 @@ async function createDepsOptimizer(
     ensureFirstRun,
     close,
     options: getDepOptimizationConfig(config, ssr),
-    server,
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
@@ -471,13 +470,13 @@ async function createDepsOptimizer(
   }
 
   function fullReload() {
-    if (depsOptimizer.server) {
+    if (server) {
       // Cached transform results have stale imports (resolved to
       // old locations) so they need to be invalidated before the page is
       // reloaded.
-      depsOptimizer.server.moduleGraph.invalidateAll()
+      server.moduleGraph.invalidateAll()
 
-      depsOptimizer.server.ws.send({
+      server.ws.send({
         type: 'full-reload',
         path: '*',
       })

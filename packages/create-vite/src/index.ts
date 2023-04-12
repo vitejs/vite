@@ -45,14 +45,14 @@ const FRAMEWORKS: Framework[] = [
     color: yellow,
     variants: [
       {
-        name: 'vanilla',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'vanilla-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'vanilla',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -62,14 +62,14 @@ const FRAMEWORKS: Framework[] = [
     color: green,
     variants: [
       {
-        name: 'vue',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'vue-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'vue',
+        display: 'JavaScript',
+        color: yellow,
       },
       {
         name: 'custom-create-vue',
@@ -91,24 +91,24 @@ const FRAMEWORKS: Framework[] = [
     color: cyan,
     variants: [
       {
-        name: 'react',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'react-ts',
         display: 'TypeScript',
         color: blue,
       },
       {
-        name: 'react-swc',
-        display: 'JavaScript + SWC',
-        color: yellow,
-      },
-      {
         name: 'react-swc-ts',
         display: 'TypeScript + SWC',
         color: blue,
+      },
+      {
+        name: 'react',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'react-swc',
+        display: 'JavaScript + SWC',
+        color: yellow,
       },
     ],
   },
@@ -118,14 +118,14 @@ const FRAMEWORKS: Framework[] = [
     color: magenta,
     variants: [
       {
-        name: 'preact',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'preact-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'preact',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -135,14 +135,14 @@ const FRAMEWORKS: Framework[] = [
     color: lightRed,
     variants: [
       {
-        name: 'lit',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'lit-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'lit',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -152,14 +152,14 @@ const FRAMEWORKS: Framework[] = [
     color: red,
     variants: [
       {
-        name: 'svelte',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'svelte-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'svelte',
+        display: 'JavaScript',
+        color: yellow,
       },
       {
         name: 'custom-svelte-kit',

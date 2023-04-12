@@ -240,11 +240,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
+    // @ts-expect-error return void to fallback to other plugins, even though
+    // the types doesn't allow it. https://github.com/rollup/rollup/pull/4932
     shouldTransformCachedModule({ id }) {
       if (isBuild && isWorkerQueryId(id) && config.build.watch) {
         return true
       }
-      return false
     },
 
     async transform(raw, id, options) {
@@ -369,6 +370,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (code.match(workerAssetUrlRE)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
+          config.isWorker,
         )
 
         let match: RegExpExecArray | null
