@@ -67,8 +67,14 @@ jobs:
             packages/create-vite/template**
             **.md
 
+      - name: Install pnpm (node 14, pnpm 7)
+        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version == 14
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: 7
+
       - name: Install pnpm
-        if: steps.changed-files.outputs.only_changed != 'true'
+        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version != 14
         uses: pnpm/action-setup@v2.2.4
 
       - name: Set node version to ${{ matrix.node_version }}
