@@ -31,6 +31,7 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+import perf from '../perf'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
@@ -140,6 +141,7 @@ export function scanImports(config: ResolvedConfig): {
       throw e
     })
     .finally(() => {
+      perf.collect('scan', start)
       if (debug) {
         const duration = (performance.now() - start).toFixed(2)
         const depsStr =

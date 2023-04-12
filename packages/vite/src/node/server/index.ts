@@ -46,6 +46,8 @@ import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { resolveChokidarOptions } from '../watch'
+import perf from '../perf'
+import type { VitePerf } from '../perf'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -180,6 +182,10 @@ export type ServerHook = (
 ) => (() => void) | void | Promise<(() => void) | void>
 
 export interface ViteDevServer {
+  /**
+   * performance collector
+   */
+  perf: VitePerf
   /**
    * The resolved vite config object
    */
@@ -388,6 +394,7 @@ export async function _createServer(
 
   const server: ViteDevServer = {
     config,
+    perf,
     middlewares,
     httpServer,
     watcher,

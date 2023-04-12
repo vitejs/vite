@@ -7,6 +7,7 @@ import colors from 'picocolors'
 import { HMR_HEADER } from '../ws'
 import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
+import perf from '../../perf'
 
 const debug = createDebugger('vite:proxy')
 
@@ -108,35 +109,38 @@ export function proxyMiddleware(
   }
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteProxyMiddleware(req, res, next) {
-    const url = req.url!
-    for (const context in proxies) {
-      if (doesProxyContextMatchUrl(context, url)) {
-        const [proxy, opts] = proxies[context]
-        const options: HttpProxy.ServerOptions = {}
+  return perf.collectMiddleware(
+    'proxy',
+    function viteProxyMiddleware(req, res, next) {
+      const url = req.url!
+      for (const context in proxies) {
+        if (doesProxyContextMatchUrl(context, url)) {
+          const [proxy, opts] = proxies[context]
+          const options: HttpProxy.ServerOptions = {}
 
-        if (opts.bypass) {
-          const bypassResult = opts.bypass(req, res, opts)
-          if (typeof bypassResult === 'string') {
-            req.url = bypassResult
-            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
-            return next()
-          } else if (bypassResult === false) {
-            debug?.(`bypass: ${req.url} -> 404`)
-            return res.end(404)
+          if (opts.bypass) {
+            const bypassResult = opts.bypass(req, res, opts)
+            if (typeof bypassResult === 'string') {
+              req.url = bypassResult
+              debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+              return next()
+            } else if (bypassResult === false) {
+              debug?.(`bypass: ${req.url} -> 404`)
+              return res.end(404)
+            }
           }
-        }
 
-        debug?.(`${req.url} -> ${opts.target || opts.forward}`)
-        if (opts.rewrite) {
-          req.url = opts.rewrite(req.url!)
+          debug?.(`${req.url} -> ${opts.target || opts.forward}`)
+          if (opts.rewrite) {
+            req.url = opts.rewrite(req.url!)
+          }
+          proxy.web(req, res, options)
+          return
         }
-        proxy.web(req, res, options)
-        return
       }
-    }
-    next()
-  }
+      next()
+    },
+  )
 }
 
 function doesProxyContextMatchUrl(context: string, url: string): boolean {

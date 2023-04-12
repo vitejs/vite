@@ -67,6 +67,7 @@ import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
+import perf from './perf'
 
 const debug = createDebugger('vite:config')
 
@@ -945,6 +946,7 @@ export async function loadConfigFromFile(
       bundled.code,
       isESM,
     )
+    perf.collect('loadConfig', start)
     debug?.(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'

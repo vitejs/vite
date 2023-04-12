@@ -36,6 +36,7 @@ import {
   wrapId,
 } from '../../utils'
 import { checkPublicFile } from '../../plugins/asset'
+import perf from '../../perf'
 
 interface AssetNode {
   start: number
@@ -293,29 +294,35 @@ export function indexHtmlMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return async function viteIndexHtmlMiddleware(req, res, next) {
-    if (res.writableEnded) {
-      return next()
-    }
+  return perf.collectMiddleware(
+    'indexHtml',
+    async function viteIndexHtmlMiddleware(req, res, next) {
+      if (res.writableEnded) {
+        return next()
+      }
 
-    const url = req.url && cleanUrl(req.url)
-    // htmlFallbackMiddleware appends '.html' to URLs
-    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
-      const filename = getHtmlFilename(url, server)
-      if (fs.existsSync(filename)) {
-        try {
-          let html = await fsp.readFile(filename, 'utf-8')
-          html = await server.transformIndexHtml(url, html, req.originalUrl)
-          return send(req, res, html, 'html', {
-            headers: server.config.server.headers,
-          })
-        } catch (e) {
-          return next(e)
+      const url = req.url && cleanUrl(req.url)
+      // htmlFallbackMiddleware appends '.html' to URLs
+      if (
+        url?.endsWith('.html') &&
+        req.headers['sec-fetch-dest'] !== 'script'
+      ) {
+        const filename = getHtmlFilename(url, server)
+        if (fs.existsSync(filename)) {
+          try {
+            let html = await fsp.readFile(filename, 'utf-8')
+            html = await server.transformIndexHtml(url, html, req.originalUrl)
+            return send(req, res, html, 'html', {
+              headers: server.config.server.headers,
+            })
+          } catch (e) {
+            return next(e)
+          }
         }
       }
-    }
-    next()
-  }
+      next()
+    },
+  )
 }
 
 function preTransformRequest(server: ViteDevServer, url: string, base: string) {

@@ -3,6 +3,7 @@ import path from 'node:path'
 import history from 'connect-history-api-fallback'
 import type { Connect } from 'dep-types/connect'
 import { createDebugger } from '../../utils'
+import perf from '../../perf'
 
 export function htmlFallbackMiddleware(
   root: string,
@@ -29,7 +30,10 @@ export function htmlFallbackMiddleware(
   })
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteHtmlFallbackMiddleware(req, res, next) {
-    return historyHtmlFallbackMiddleware(req, res, next)
-  }
+  return perf.collectMiddleware(
+    'htmlFallback',
+    function viteHtmlFallbackMiddleware(req, res, next) {
+      return historyHtmlFallbackMiddleware(req, res, next)
+    },
+  )
 }

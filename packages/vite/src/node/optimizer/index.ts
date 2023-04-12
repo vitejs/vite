@@ -28,6 +28,7 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { resolvePackageData } from '../packages'
 import type { ViteDevServer } from '../server'
+import perf from '../perf'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -641,7 +642,7 @@ export function runOptimizeDeps(
             }
           }
         }
-
+        perf.collect('prebundle', start)
         debug?.(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )

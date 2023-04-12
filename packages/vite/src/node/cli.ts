@@ -1,6 +1,5 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
@@ -9,6 +8,7 @@ import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
 import { bindShortcuts } from './shortcuts'
+import perf from './perf'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -29,6 +29,7 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+  perf?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -139,6 +140,7 @@ cli
 
       const info = server.config.logger.info
 
+      perf.collect('startUp')
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
         ? colors.dim(

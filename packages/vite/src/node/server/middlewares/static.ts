@@ -18,6 +18,7 @@ import {
   shouldServeFile,
   slash,
 } from '../../utils'
+import perf from '../../perf'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
 
@@ -64,13 +65,16 @@ export function servePublicMiddleware(
   )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteServePublicMiddleware(req, res, next) {
-    // skip import request and internal requests `/@fs/ /@vite-client` etc...
-    if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
-      return next()
-    }
-    serve(req, res, next)
-  }
+  return perf.collectMiddleware(
+    'servePublic',
+    function viteServePublicMiddleware(req, res, next) {
+      // skip import request and internal requests `/@fs/ /@vite-client` etc...
+      if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
+        return next()
+      }
+      serve(req, res, next)
+    },
+  )
 }
 
 export function serveStaticMiddleware(
@@ -85,61 +89,64 @@ export function serveStaticMiddleware(
   )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteServeStaticMiddleware(req, res, next) {
-    // only serve the file if it's not an html request or ends with `/`
-    // so that html requests can fallthrough to our html middleware for
-    // special processing
-    // also skip internal requests `/@fs/ /@vite-client` etc...
-    const cleanedUrl = cleanUrl(req.url!)
-    if (
-      cleanedUrl[cleanedUrl.length - 1] === '/' ||
-      path.extname(cleanedUrl) === '.html' ||
-      isInternalRequest(req.url!)
-    ) {
-      return next()
-    }
-
-    const url = new URL(req.url!, 'http://example.com')
-    const pathname = decodeURIComponent(url.pathname)
-
-    // apply aliases to static requests as well
-    let redirectedPathname: string | undefined
-    for (const { find, replacement } of server.config.resolve.alias) {
-      const matches =
-        typeof find === 'string'
-          ? pathname.startsWith(find)
-          : find.test(pathname)
-      if (matches) {
-        redirectedPathname = pathname.replace(find, replacement)
-        break
+  return perf.collectMiddleware(
+    'serveStatic',
+    function viteServeStaticMiddleware(req, res, next) {
+      // only serve the file if it's not an html request or ends with `/`
+      // so that html requests can fallthrough to our html middleware for
+      // special processing
+      // also skip internal requests `/@fs/ /@vite-client` etc...
+      const cleanedUrl = cleanUrl(req.url!)
+      if (
+        cleanedUrl[cleanedUrl.length - 1] === '/' ||
+        path.extname(cleanedUrl) === '.html' ||
+        isInternalRequest(req.url!)
+      ) {
+        return next()
       }
-    }
-    if (redirectedPathname) {
-      // dir is pre-normalized to posix style
-      if (redirectedPathname.startsWith(dir)) {
-        redirectedPathname = redirectedPathname.slice(dir.length)
+
+      const url = new URL(req.url!, 'http://example.com')
+      const pathname = decodeURIComponent(url.pathname)
+
+      // apply aliases to static requests as well
+      let redirectedPathname: string | undefined
+      for (const { find, replacement } of server.config.resolve.alias) {
+        const matches =
+          typeof find === 'string'
+            ? pathname.startsWith(find)
+            : find.test(pathname)
+        if (matches) {
+          redirectedPathname = pathname.replace(find, replacement)
+          break
+        }
       }
-    }
+      if (redirectedPathname) {
+        // dir is pre-normalized to posix style
+        if (redirectedPathname.startsWith(dir)) {
+          redirectedPathname = redirectedPathname.slice(dir.length)
+        }
+      }
 
-    const resolvedPathname = redirectedPathname || pathname
-    let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
-    if (
-      resolvedPathname[resolvedPathname.length - 1] === '/' &&
-      fileUrl[fileUrl.length - 1] !== '/'
-    ) {
-      fileUrl = fileUrl + '/'
-    }
-    if (!ensureServingAccess(fileUrl, server, res, next)) {
-      return
-    }
+      const resolvedPathname = redirectedPathname || pathname
+      let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
+      if (
+        resolvedPathname[resolvedPathname.length - 1] === '/' &&
+        fileUrl[fileUrl.length - 1] !== '/'
+      ) {
+        fileUrl = fileUrl + '/'
+      }
+      if (!ensureServingAccess(fileUrl, server, res, next)) {
+        return
+      }
 
-    if (redirectedPathname) {
-      url.pathname = encodeURIComponent(redirectedPathname)
-      req.url = url.href.slice(url.origin.length)
-    }
+      if (redirectedPathname) {
+        url.pathname = encodeURIComponent(redirectedPathname)
+        req.url = url.href.slice(url.origin.length)
+      }
 
-    serve(req, res, next)
-  }
+      serve(req, res, next)
+    },
+  )
 }
 
 export function serveRawFsMiddleware(
@@ -151,36 +158,39 @@ export function serveRawFsMiddleware(
   )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!, 'http://example.com')
-    // In some cases (e.g. linked monorepos) files outside of root will
-    // reference assets that are also out of served root. In such cases
-    // the paths are rewritten to `/@fs/` prefixed paths and must be served by
-    // searching based from fs root.
-    if (url.pathname.startsWith(FS_PREFIX)) {
-      const pathname = decodeURIComponent(url.pathname)
-      // restrict files outside of `fs.allow`
-      if (
-        !ensureServingAccess(
-          slash(path.resolve(fsPathFromId(pathname))),
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
+  return perf.collectMiddleware(
+    'serveRawFs',
+    function viteServeRawFsMiddleware(req, res, next) {
+      const url = new URL(req.url!, 'http://example.com')
+      // In some cases (e.g. linked monorepos) files outside of root will
+      // reference assets that are also out of served root. In such cases
+      // the paths are rewritten to `/@fs/` prefixed paths and must be served by
+      // searching based from fs root.
+      if (url.pathname.startsWith(FS_PREFIX)) {
+        const pathname = decodeURIComponent(url.pathname)
+        // restrict files outside of `fs.allow`
+        if (
+          !ensureServingAccess(
+            slash(path.resolve(fsPathFromId(pathname))),
+            server,
+            res,
+            next,
+          )
+        ) {
+          return
+        }
+
+        let newPathname = pathname.slice(FS_PREFIX.length)
+        if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
+
+        url.pathname = encodeURIComponent(newPathname)
+        req.url = url.href.slice(url.origin.length)
+        serveFromRoot(req, res, next)
+      } else {
+        next()
       }
-
-      let newPathname = pathname.slice(FS_PREFIX.length)
-      if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
-
-      url.pathname = encodeURIComponent(newPathname)
-      req.url = url.href.slice(url.origin.length)
-      serveFromRoot(req, res, next)
-    } else {
-      next()
-    }
-  }
+    },
+  )
 }
 
 export function isFileServingAllowed(

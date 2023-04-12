@@ -23,6 +23,7 @@ import {
 import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
+import perf from '../perf'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -454,7 +455,7 @@ function initTSConfck(root: string, force = false) {
 }
 
 async function initTSConfckParseOptions(workspaceRoot: string) {
-  const start = debug ? performance.now() : 0
+  const start = performance.now()
 
   const options: TSConfckParseOptions = {
     cache: new Map(),
@@ -466,6 +467,8 @@ async function initTSConfckParseOptions(workspaceRoot: string) {
     ),
     resolveWithEmptyIfConfigNotFound: true,
   }
+
+  perf.collect('initTsconfck', start)
 
   debug?.(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
 
