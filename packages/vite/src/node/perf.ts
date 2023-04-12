@@ -15,7 +15,7 @@ interface Metric {
 export class VitePerf {
   mode: 'server' | 'build' = 'server'
   metric: Metric = {}
-  enabled: boolean = true
+  enabled: boolean = false
   middlewares: string[] = []
 
   collect(
