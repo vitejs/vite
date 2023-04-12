@@ -4,7 +4,6 @@ import { removeTimestampQuery } from './utils'
 
 interface Metric {
   startUp?: number
-  built?: number
   scan?: number
   prebundle?: number
   loadConfig?: number
@@ -13,10 +12,8 @@ interface Metric {
 }
 
 export class VitePerf {
-  mode: 'server' | 'build' = 'server'
   metric: Metric = {}
   enabled: boolean = false
-  middlewares: string[] = []
 
   collect(
     metric: keyof Metric | string,
@@ -52,7 +49,6 @@ export class VitePerf {
     if (!this.enabled) {
       return middleware
     }
-    this.middlewares.push(name)
     return (req, res, next) => {
       const start = performance.now()
       const end = res.end

@@ -115,7 +115,9 @@ cli
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
+  .option('--perf', `[boolean] collect server performance metrics`)
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
+    perf.enabled = !!options.perf
     filterDuplicateOptions(options)
     // output structure is preserved even after bundling so require()
     // is ok here
