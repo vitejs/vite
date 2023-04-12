@@ -226,8 +226,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // /foo -> /fs-root/foo
       if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
-        if ((res = tryFsResolve(fsPath, options))) {
-          res = await getRealPath(res, options.preserveSymlinks)
+        if ((res = await tryFsResolve(fsPath, options))) {
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -268,8 +267,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return res
         }
 
-        if ((res = tryFsResolve(fsPath, options))) {
-          res = await getRealPath(res, options.preserveSymlinks)
+        if ((res = await tryFsResolve(fsPath, options))) {
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
@@ -300,8 +298,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (isWindows && id[0] === '/') {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
-        if ((res = tryFsResolve(fsPath, options))) {
-          res = await getRealPath(res, options.preserveSymlinks)
+        if ((res = await tryFsResolve(fsPath, options))) {
           debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, depsOptimizer)
         }
@@ -310,9 +307,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // absolute fs paths
       if (
         isNonDriveRelativeAbsolutePath(id) &&
-        (res = tryFsResolve(id, options))
+        (res = await tryFsResolve(id, options))
       ) {
-        res = await getRealPath(res, options.preserveSymlinks)
         debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return ensureVersionQuery(res, id, options, depsOptimizer)
       }
@@ -503,30 +499,51 @@ function splitFileAndPostfix(path: string) {
   return { file, postfix: path.slice(file.length) }
 }
 
-function tryRealFsResolve(
+function tryFsResolveSync(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex?: boolean,
   targetWeb?: boolean,
   skipPackageJson?: boolean,
 ): string | undefined {
-  const res = tryFsResolve(
+  const res = tryFsResolveImp(
     fsPath,
     options,
     tryIndex,
     targetWeb,
     skipPackageJson,
   )
-  if (res) return getRealPathSync(res, options.preserveSymlinks)
+  if (res) {
+    return getRealPathSync(res.path, options.preserveSymlinks) + res.postfix
+  }
 }
 
-function tryFsResolve(
+async function tryFsResolve(
+  fsPath: string,
+  options: InternalResolveOptions,
+  tryIndex?: boolean,
+  targetWeb?: boolean,
+  skipPackageJson?: boolean,
+): Promise<string | undefined> {
+  const res = tryFsResolveImp(
+    fsPath,
+    options,
+    tryIndex,
+    targetWeb,
+    skipPackageJson,
+  )
+  if (res) {
+    return (await getRealPath(res.path, options.preserveSymlinks)) + res.postfix
+  }
+}
+
+function tryFsResolveImp(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true,
   skipPackageJson = false,
-): string | undefined {
+): { path: string; postfix: string } | undefined {
   // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
   // source code so we only need to perform the check for dependencies.
   // We don't support `?` in node_modules paths, so we only need to check in this branch.
@@ -536,26 +553,26 @@ function tryFsResolve(
     // We only need to check foo#bar?baz and foo#bar, ignore foo?bar#baz
     if (queryIndex < 0 || queryIndex > hashIndex) {
       const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
-      const res = tryCleanFsResolve(
+      const path = tryCleanFsResolve(
         file,
         options,
         tryIndex,
         targetWeb,
         skipPackageJson,
       )
-      if (res) return res + fsPath.slice(file.length)
+      if (path) return { path, postfix: fsPath.slice(file.length) }
     }
   }
 
   const { file, postfix } = splitFileAndPostfix(fsPath)
-  const res = tryCleanFsResolve(
+  const path = tryCleanFsResolve(
     file,
     options,
     tryIndex,
     targetWeb,
     skipPackageJson,
   )
-  if (res) return res + postfix
+  if (path) return { path, postfix }
 }
 
 const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
@@ -974,7 +991,7 @@ export function resolvePackageEntry(
           // the heuristics here is to actually read the browser entry when
           // possible and check for hints of ESM. If it is not ESM, prefer "module"
           // instead; Otherwise, assume it's ESM and use it.
-          const resolvedBrowserEntry = tryFsResolve(
+          const resolvedBrowserEntry = tryFsResolveSync(
             path.join(dir, browserEntry),
             options,
           )
@@ -1031,7 +1048,7 @@ export function resolvePackageEntry(
       }
 
       const entryPointPath = path.join(dir, entry)
-      const resolvedEntryPoint = tryRealFsResolve(
+      const resolvedEntryPoint = tryFsResolveSync(
         entryPointPath,
         options,
         true,
@@ -1173,7 +1190,7 @@ function resolveDeepImport(
   }
 
   if (relativeId) {
-    const resolved = tryRealFsResolve(
+    const resolved = tryFsResolveSync(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
@@ -1207,7 +1224,7 @@ function tryResolveBrowserMapping(
       if (
         (res = bareImportRE.test(browserMappedPath)
           ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
-          : tryRealFsResolve(path.join(pkg.dir, browserMappedPath), options))
+          : tryFsResolveSync(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         let result: PartialResolvedId = { id: res }
