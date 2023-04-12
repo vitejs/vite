@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks'
 import type { Connect } from 'dep-types/connect'
 import { removeTimestampQuery } from './utils'
 
-interface Metric {
+export interface VitePerfMetric {
   startUp?: number
   scan?: number
   prebundle?: number
@@ -12,11 +12,11 @@ interface Metric {
 }
 
 export class VitePerf {
-  metric: Metric = {}
+  metric: VitePerfMetric = {}
   enabled: boolean = false
 
   collect(
-    metric: keyof Metric | string,
+    metric: keyof VitePerfMetric | string,
     start = global.__vite_start_time,
     end?: number,
   ): void {
@@ -38,7 +38,7 @@ export class VitePerf {
         return obj[m]
       }, this.metric)
     } else {
-      ;(this.metric[metric as keyof Metric] as number) = duration
+      ;(this.metric[metric as keyof VitePerfMetric] as number) = duration
     }
   }
 

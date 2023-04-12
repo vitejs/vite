@@ -14,6 +14,7 @@ export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'
 
 // additional types
+export type { VitePerf, VitePerfMetric } from './perf'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
