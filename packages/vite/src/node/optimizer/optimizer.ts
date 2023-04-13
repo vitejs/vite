@@ -297,6 +297,10 @@ async function createDepsOptimizer(
       return
     }
 
+    if (currentlyProcessing) {
+      return
+    }
+
     currentlyProcessing = true
 
     try {
