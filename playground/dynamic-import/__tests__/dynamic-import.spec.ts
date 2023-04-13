@@ -129,3 +129,14 @@ test('should work with load ../ and contain itself directory', async () => {
     true,
   )
 })
+
+test.runIf(isBuild)(
+  'should rollup warn when static and dynamic import a module in same chunk',
+  async () => {
+    await untilUpdated(
+      () => serverLogs.join('\n'),
+      'dynamic import will not move module into another chunk',
+      true,
+    )
+  },
+)

@@ -111,7 +111,24 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       compressedCount = 0
     },
 
-    renderChunk() {
+    renderChunk(code, chunk) {
+      for (const id of chunk.moduleIds) {
+        const module = this.getModuleInfo(id)
+        if (!module) continue
+        if (module.importers.length && module.dynamicImporters.length) {
+          this.warn(
+            `\n(!) ${
+              module.id
+            } is dynamically imported by ${module.dynamicImporters
+              .map((m) => m)
+              .join(', ')} but also statically imported by ${module.importers
+              .map((m) => m)
+              .join(
+                ', ',
+              )}, dynamic import will not move module into another chunk.\n`,
+          )
+        }
+      }
       chunkCount++
       if (shouldLogInfo) {
         if (!tty) {
