@@ -338,7 +338,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else if (needsInterop) {
                 // config.logger.info(`${url} needs interop`)
-                interopNamedImports(str(), imports[index], url, index)
+                interopNamedImports(
+                  str(),
+                  imports[index],
+                  url,
+                  index,
+                  importer,
+                  config,
+                )
                 rewriteDone = true
               }
               if (!rewriteDone) {

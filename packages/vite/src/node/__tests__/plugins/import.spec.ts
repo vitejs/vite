@@ -1,9 +1,19 @@
-import { describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { transformCjsImport } from '../../plugins/importAnalysis'
 
 describe('transformCjsImport', () => {
   const url = './node_modules/.vite/deps/react.js'
   const rawUrl = 'react'
+  const config: any = {
+    command: 'serve',
+    logger: {
+      warn: vi.fn(),
+    },
+  }
+
+  beforeEach(() => {
+    config.logger.warn.mockClear()
+  })
 
   test('import specifier', () => {
     expect(
@@ -12,6 +22,8 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
+        config,
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -22,7 +34,14 @@ describe('transformCjsImport', () => {
 
   test('import default specifier', () => {
     expect(
-      transformCjsImport('import React from "react"', url, rawUrl, 0),
+      transformCjsImport(
+        'import React from "react"',
+        url,
+        rawUrl,
+        0,
+        '',
+        config,
+      ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
@@ -34,6 +53,8 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
+        config,
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -43,7 +64,14 @@ describe('transformCjsImport', () => {
 
   test('import all specifier', () => {
     expect(
-      transformCjsImport('import * as react from "react"', url, rawUrl, 0),
+      transformCjsImport(
+        'import * as react from "react"',
+        url,
+        rawUrl,
+        0,
+        '',
+        config,
+      ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const react = __vite__cjsImport0_react',
@@ -51,13 +79,33 @@ describe('transformCjsImport', () => {
   })
 
   test('export all specifier', () => {
-    expect(transformCjsImport('export * from "react"', url, rawUrl, 0)).toBe(
-      undefined,
+    expect(
+      transformCjsImport(
+        'export * from "react"',
+        url,
+        rawUrl,
+        0,
+        'modA',
+        config,
+      ),
+    ).toBe(undefined)
+
+    expect(config.logger.warn).toBeCalledWith(
+      expect.stringContaining(`export * from "react"\` in modA`),
     )
 
     expect(
-      transformCjsImport('export * as react from "react"', url, rawUrl, 0),
+      transformCjsImport(
+        'export * as react from "react"',
+        url,
+        rawUrl,
+        0,
+        '',
+        config,
+      ),
     ).toBe(undefined)
+
+    expect(config.logger.warn).toBeCalledTimes(1)
   })
 
   test('export name specifier', () => {
@@ -67,6 +115,8 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
+        config,
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -81,6 +131,8 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
+        config,
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -92,7 +144,14 @@ describe('transformCjsImport', () => {
 
   test('export default specifier', () => {
     expect(
-      transformCjsImport('export { default } from "react"', url, rawUrl, 0),
+      transformCjsImport(
+        'export { default } from "react"',
+        url,
+        rawUrl,
+        0,
+        '',
+        config,
+      ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
@@ -105,6 +164,8 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
+        config,
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -118,6 +179,8 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
+        config,
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
