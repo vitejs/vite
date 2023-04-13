@@ -13,7 +13,6 @@ import type { ResolvedConfig } from '../config'
 import {
   arraify,
   createDebugger,
-  emptyDir,
   flattenId,
   getHash,
   isOptimizable,
