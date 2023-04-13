@@ -771,15 +771,17 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): {
       let resolve: () => void
       const waitUntilDone = new Promise<void>((_resolve) => {
         resolve = _resolve
-        registeredId.done().finally(() => resolve())
+        registeredId
+          .done()
+          .catch(() => {
+            // Ignore errors
+          })
+          .finally(() => resolve())
       })
       waitingOn.set(registeredId.id, () => resolve())
 
-      try {
-        await waitUntilDone
-      } finally {
-        waitingOn.delete(registeredId.id)
-      }
+      await waitUntilDone
+      waitingOn.delete(registeredId.id)
     })
 
     const afterLoad = () => {
