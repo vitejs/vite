@@ -892,7 +892,7 @@ export function transformCjsImport(
   ) {
     config.logger.warn(
       colors.yellow(
-        `\n\`${importExp}\` may lose module exports after pre-bundling origin cjs module "${rawUrl}", please use named exports(e.g \`export {A,B} from "${rawUrl}"\`) instead.`,
+        `\nUnable to interop \`${importExp}\` and may lose module exports. Please export "${rawUrl}" as ESM or use named exports instead, e.g. \`export { A, B } from "${rawUrl}"\``,
       ),
     )
   } else if (
