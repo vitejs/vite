@@ -174,6 +174,7 @@ async function createDepsOptimizer(
 
   async function close() {
     closed = true
+    crawlEndFinder.cancel()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
@@ -582,13 +583,21 @@ async function createDepsOptimizer(
     }, timeout)
   }
 
+  // During dev, onCrawlEnd is called once when the server starts and all static
+  // imports after the first request have been crawled (dynamic imports may also
+  // be crawled if the browser requests them right away).
+  // During build, onCrawlEnd will be called once after each buildStart (so in
+  // watch mode it will be called after each rebuild has processed every module).
+  // All modules are transformed first in this case (both static and dynamic).
+  let crawlEndCalled = false
   async function onCrawlEnd() {
+    const wasCalledBefore = crawlEndCalled
+    crawlEndCalled = true
+
     debug?.(colors.green(`✨ static imports crawl ended`))
-    if (firstRunCalled) {
+    if (closed || firstRunCalled || wasCalledBefore) {
       return
     }
-
-    currentlyProcessing = false
 
     const crawlDeps = Object.keys(metadata.discovered)
 
@@ -599,6 +608,7 @@ async function createDepsOptimizer(
     if (!isBuild && optimizationResult) {
       const result = await optimizationResult.result
       optimizationResult = undefined
+      currentlyProcessing = false
 
       const scanDeps = Object.keys(result.metadata.optimized)
 
@@ -650,6 +660,8 @@ async function createDepsOptimizer(
         runOptimizer(result)
       }
     } else {
+      currentlyProcessing = false
+
       if (crawlDeps.length === 0) {
         debug?.(
           colors.green(
@@ -664,30 +676,65 @@ async function createDepsOptimizer(
     }
   }
 
-  const runOptimizerIfIdleAfterMs = 50
+  let crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
 
-  let registeredIds: { id: string; done: () => Promise<any> }[] = []
-  let seenIds = new Set<string>()
-  let workersSources = new Set<string>()
-  const waitingOn = new Set<string>()
-  let firstRunEnsured = false
-
+  // Called during buildStart at build time, when build --watch is used.
+  // On dev, onCrawlEnd is called once. On build, we call it when all the
+  // user modules are processed for every rebuild.
   function resetRegisteredIds() {
-    registeredIds = []
-    seenIds = new Set<string>()
-    workersSources = new Set<string>()
-    waitingOn.clear()
-    firstRunEnsured = false
+    crawlEndCalled = false
+    crawlEndFinder.cancel()
+    crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
+  }
+
+  function registerWorkersSource(id: string) {
+    crawlEndFinder.registerWorkersSource(id)
+  }
+  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
+    if (!crawlEndCalled && !depsOptimizer.isOptimizedDepFile(id)) {
+      crawlEndFinder.delayDepsOptimizerUntil(id, done)
+    }
+  }
+  function ensureFirstRun() {
+    if (!firstRunCalled) crawlEndFinder.ensureFirstRun()
+  }
+}
+
+const runOptimizerIfIdleAfterMs = 50
+
+function setupOnCrawlEnd(onCrawlEnd: () => void): {
+  ensureFirstRun: () => void
+  registerWorkersSource: (id: string) => void
+  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
+  cancel: () => void
+} {
+  let registeredIds: { id: string; done: () => Promise<any> }[] = []
+  const seenIds = new Set<string>()
+  const workersSources = new Set<string>()
+  const waitingOn = new Map<string, () => void>()
+  let firstRunEnsured = false
+  let crawlEndCalled = false
+
+  let cancelled = false
+  function cancel() {
+    cancelled = true
+  }
+
+  function callOnCrawlEnd() {
+    if (!cancelled && !crawlEndCalled) {
+      crawlEndCalled = true
+      onCrawlEnd()
+    }
   }
 
   // If all the inputs are dependencies, we aren't going to get any
   // delayDepsOptimizerUntil(id) calls. We need to guard against this
   // by forcing a rerun if no deps have been registered
   function ensureFirstRun() {
-    if (!firstRunEnsured && !firstRunCalled && registeredIds.length === 0) {
+    if (!firstRunEnsured && seenIds.size === 0) {
       setTimeout(() => {
-        if (!closed && registeredIds.length === 0) {
-          onCrawlEnd()
+        if (seenIds.size === 0) {
+          callOnCrawlEnd()
         }
       }, runOptimizerIfIdleAfterMs)
     }
@@ -699,37 +746,44 @@ async function createDepsOptimizer(
     // Avoid waiting for this id, as it may be blocked by the rollup
     // bundling process of the worker that also depends on the optimizer
     registeredIds = registeredIds.filter((registered) => registered.id !== id)
-    if (waitingOn.has(id)) {
-      waitingOn.delete(id)
-      runOptimizerWhenIdle()
-    }
+
+    const resolve = waitingOn.get(id)
+    // Forced resolve to avoid waiting for the bundling of the worker to finish
+    resolve?.()
   }
 
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
-    if (!depsOptimizer.isOptimizedDepFile(id) && !seenIds.has(id)) {
+    if (!seenIds.has(id)) {
       seenIds.add(id)
       registeredIds.push({ id, done })
-      runOptimizerWhenIdle()
+      callOnCrawlEndWhenIdle()
     }
   }
 
-  async function runOptimizerWhenIdle() {
-    if (waitingOn.size > 0) return
+  async function callOnCrawlEndWhenIdle() {
+    if (cancelled || waitingOn.size > 0) return
 
     const processingRegisteredIds = registeredIds
     registeredIds = []
 
     const donePromises = processingRegisteredIds.map(async (registeredId) => {
-      waitingOn.add(registeredId.id)
+      // During build, we need to cancel workers
+      let resolve: () => void
+      const waitUntilDone = new Promise<void>((_resolve) => {
+        resolve = _resolve
+        registeredId.done().finally(() => resolve())
+      })
+      waitingOn.set(registeredId.id, () => resolve())
+
       try {
-        await registeredId.done()
+        await waitUntilDone
       } finally {
         waitingOn.delete(registeredId.id)
       }
     })
 
     const afterLoad = () => {
-      if (closed) return
+      if (cancelled) return
       if (
         registeredIds.length > 0 &&
         registeredIds.every((registeredId) =>
@@ -740,9 +794,9 @@ async function createDepsOptimizer(
       }
 
       if (registeredIds.length > 0) {
-        runOptimizerWhenIdle()
+        callOnCrawlEndWhenIdle()
       } else {
-        onCrawlEnd()
+        callOnCrawlEnd()
       }
     }
 
@@ -755,6 +809,13 @@ async function createDepsOptimizer(
     } else {
       setTimeout(afterLoad, runOptimizerIfIdleAfterMs)
     }
+  }
+
+  return {
+    ensureFirstRun,
+    registerWorkersSource,
+    delayDepsOptimizerUntil,
+    cancel,
   }
 }
 
