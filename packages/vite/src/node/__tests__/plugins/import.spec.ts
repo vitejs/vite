@@ -22,6 +22,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -33,7 +34,14 @@ describe('transformCjsImport', () => {
 
   test('import default specifier', () => {
     expect(
-      transformCjsImport('import React from "react"', url, rawUrl, 0, config),
+      transformCjsImport(
+        'import React from "react"',
+        url,
+        rawUrl,
+        0,
+        '',
+        config,
+      ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
@@ -45,6 +53,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -60,6 +69,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -70,11 +80,18 @@ describe('transformCjsImport', () => {
 
   test('export all specifier', () => {
     expect(
-      transformCjsImport('export * from "react"', url, rawUrl, 0, config),
+      transformCjsImport(
+        'export * from "react"',
+        url,
+        rawUrl,
+        0,
+        'modA',
+        config,
+      ),
     ).toBe(undefined)
 
     expect(config.logger.warn).toBeCalledWith(
-      expect.stringContaining(`export * from "react"`),
+      expect.stringContaining(`export * from "react"\` in modA`),
     )
 
     expect(
@@ -83,6 +100,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(undefined)
@@ -97,6 +115,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -112,6 +131,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -129,6 +149,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -143,6 +164,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(
@@ -157,6 +179,7 @@ describe('transformCjsImport', () => {
         url,
         rawUrl,
         0,
+        '',
         config,
       ),
     ).toBe(

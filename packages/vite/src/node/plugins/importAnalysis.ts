@@ -590,6 +590,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     importSpecifier,
                     url,
                     index,
+                    importer,
                     config,
                   )
                   rewriteDone = true
@@ -602,7 +603,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 url.includes(browserExternalId) &&
                 source.slice(expStart, start).includes('{')
               ) {
-                interopNamedImports(str(), importSpecifier, url, index, config)
+                interopNamedImports(
+                  str(),
+                  importSpecifier,
+                  url,
+                  index,
+                  importer,
+                  config,
+                )
                 rewriteDone = true
               }
               if (!rewriteDone) {
@@ -817,7 +825,7 @@ export function interopNamedImports(
   importSpecifier: ImportSpecifier,
   rewrittenUrl: string,
   importIndex: number,
-
+  importer: string,
   config: ResolvedConfig,
 ): void {
   const source = str.original
@@ -844,6 +852,7 @@ export function interopNamedImports(
       rewrittenUrl,
       rawUrl,
       importIndex,
+      importer,
       config,
     )
     if (rewritten) {
@@ -875,6 +884,7 @@ export function transformCjsImport(
   url: string,
   rawUrl: string,
   importIndex: number,
+  importer: string,
   config: ResolvedConfig,
 ): string | undefined {
   const node = (
@@ -892,7 +902,7 @@ export function transformCjsImport(
   ) {
     config.logger.warn(
       colors.yellow(
-        `\nUnable to interop \`${importExp}\` and may lose module exports. Please export "${rawUrl}" as ESM or use named exports instead, e.g. \`export { A, B } from "${rawUrl}"\``,
+        `\nUnable to interop \`${importExp}\` in ${importer}, this may lose module exports. Please export "${rawUrl}" as ESM or use named exports instead, e.g. \`export { A, B } from "${rawUrl}"\``,
       ),
     )
   } else if (
