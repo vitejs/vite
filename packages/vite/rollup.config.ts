@@ -125,7 +125,7 @@ function createNodePlugins(
         // bundling the `resolve` dep.
         'postcss-import/index.js': {
           src: 'const resolveId = require("./lib/resolve-id")',
-          replacement: 'const resolveId = undefined',
+          replacement: 'const resolveId = (id) => id',
         },
       }),
 

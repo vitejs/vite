@@ -585,7 +585,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   }
                 } else if (needsInterop) {
                   debug?.(`${url} needs interop`)
-                  interopNamedImports(str(), importSpecifier, url, index)
+                  interopNamedImports(
+                    str(),
+                    importSpecifier,
+                    url,
+                    index,
+                    importer,
+                    config,
+                  )
                   rewriteDone = true
                 }
               }
@@ -596,7 +603,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 url.includes(browserExternalId) &&
                 source.slice(expStart, start).includes('{')
               ) {
-                interopNamedImports(str(), importSpecifier, url, index)
+                interopNamedImports(
+                  str(),
+                  importSpecifier,
+                  url,
+                  index,
+                  importer,
+                  config,
+                )
                 rewriteDone = true
               }
               if (!rewriteDone) {
@@ -811,6 +825,8 @@ export function interopNamedImports(
   importSpecifier: ImportSpecifier,
   rewrittenUrl: string,
   importIndex: number,
+  importer: string,
+  config: ResolvedConfig,
 ): void {
   const source = str.original
   const {
@@ -831,7 +847,14 @@ export function interopNamedImports(
   } else {
     const exp = source.slice(expStart, expEnd)
     const rawUrl = source.slice(start, end)
-    const rewritten = transformCjsImport(exp, rewrittenUrl, rawUrl, importIndex)
+    const rewritten = transformCjsImport(
+      exp,
+      rewrittenUrl,
+      rawUrl,
+      importIndex,
+      importer,
+      config,
+    )
     if (rewritten) {
       str.overwrite(expStart, expEnd, rewritten, { contentOnly: true })
     } else {
@@ -861,6 +884,8 @@ export function transformCjsImport(
   url: string,
   rawUrl: string,
   importIndex: number,
+  importer: string,
+  config: ResolvedConfig,
 ): string | undefined {
   const node = (
     parseJS(importExp, {
@@ -869,7 +894,18 @@ export function transformCjsImport(
     }) as any
   ).body[0] as Node
 
+  // `export * from '...'` may cause unexpected problem, so give it a warning
   if (
+    config.command === 'serve' &&
+    node.type === 'ExportAllDeclaration' &&
+    !node.exported
+  ) {
+    config.logger.warn(
+      colors.yellow(
+        `\nUnable to interop \`${importExp}\` in ${importer}, this may lose module exports. Please export "${rawUrl}" as ESM or use named exports instead, e.g. \`export { A, B } from "${rawUrl}"\``,
+      ),
+    )
+  } else if (
     node.type === 'ImportDeclaration' ||
     node.type === 'ExportNamedDeclaration'
   ) {

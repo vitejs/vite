@@ -929,6 +929,18 @@ async function compileCSS(
           if (resolved) {
             return path.resolve(resolved)
           }
+
+          // postcss-import falls back to `resolve` dep if this is unresolved,
+          // but we've shimmed to remove the `resolve` dep to cut on bundle size.
+          // warn here to provide a better error message.
+          if (!path.isAbsolute(id)) {
+            config.logger.error(
+              colors.red(
+                `Unable to resolve \`@import "${id}"\` from ${basedir}`,
+              ),
+            )
+          }
+
           return id
         },
         nameLayer(index) {
