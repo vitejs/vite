@@ -16,12 +16,6 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
 
-    buildStart() {
-      if (!config.isWorker) {
-        getDepsOptimizer(config)?.resetRegisteredIds()
-      }
-    },
-
     resolveId(id, source, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id
@@ -85,6 +79,12 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps-build',
+
+    buildStart() {
+      if (!config.isWorker) {
+        getDepsOptimizer(config)?.resetRegisteredIds()
+      }
+    },
 
     resolveId(id, importer, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
