@@ -802,11 +802,8 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): {
       }
     }
 
-    const results = await Promise.allSettled(donePromises)
-    if (
-      registeredIds.length > 0 ||
-      results.some((result) => result.status === 'rejected')
-    ) {
+    await Promise.allSettled(donePromises)
+    if (registeredIds.length > 0) {
       afterLoad()
     } else {
       setTimeout(afterLoad, runOptimizerIfIdleAfterMs)
