@@ -693,16 +693,9 @@ async function createDepsOptimizer(
   }
 
   // Called during buildStart at build time, when build --watch is used.
-  // Once during dev mode.
   function resetRegisteredIds() {
     crawlEndFinder?.cancel()
     crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
-
-    // Cancel on-fly queued reruns. This shouldn't currently happen but makes
-    // the API of the optimizer more robust in case resetRegisteredIds wouldn't
-    // be called before the first request in dev mode
-    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
-    enqueuedRerun = undefined
   }
 
   function registerWorkersSource(id: string) {
