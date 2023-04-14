@@ -158,14 +158,14 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   // During build, we wait for every module to be scanned before resolving
-  // optimized deps loading for rollup on each rebuild.
+  // optimized deps loading for rollup on each rebuild. It will be recreated
+  // after each buildStart.
   // During dev, if this is a cold run, we wait for static imports discovered
   // from the first request before resolving to minimize full page reloads.
   // On warm start or after the first optimization is run, we use a simpler
   // debounce strategy each time a new dep is discovered.
-  // Initialized by resetRegisteredIds, called at buildStart
   let crawlEndFinder: CrawlEndFinder | undefined
-  if (!isBuild && !cachedMetadata) {
+  if (isBuild || !cachedMetadata) {
     crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
   }
 
