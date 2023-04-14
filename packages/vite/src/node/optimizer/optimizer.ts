@@ -749,7 +749,9 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
       seenIds.add(id)
       if (!workersSources.has(id)) {
         registeredIds.add(id)
-        done().finally(() => markIdAsDone(id))
+        done()
+          .catch(() => {})
+          .finally(() => markIdAsDone(id))
       }
     }
   }
