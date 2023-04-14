@@ -711,23 +711,25 @@ async function prepareEsbuildOptimizerRun(
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
     optimizeDeps?.esbuildOptions ?? {}
 
-  for (const id in depsInfo) {
-    const src = depsInfo[id].src!
-    const exportsData = await (depsInfo[id].exportsData ??
-      extractExportsData(src, config, ssr))
-    if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader,
+  await Promise.all(
+    Object.keys(depsInfo).map(async (id) => {
+      const src = depsInfo[id].src!
+      const exportsData = await (depsInfo[id].exportsData ??
+        extractExportsData(src, config, ssr))
+      if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
+        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+        // This is useful for packages such as Gatsby.
+        esbuildOptions.loader = {
+          '.js': 'jsx',
+          ...esbuildOptions.loader,
+        }
       }
-    }
-    const flatId = flattenId(id)
-    flatIdDeps[flatId] = src
-    idToExports[id] = exportsData
-    flatIdToExports[flatId] = exportsData
-  }
+      const flatId = flattenId(id)
+      flatIdDeps[flatId] = src
+      idToExports[id] = exportsData
+      flatIdToExports[flatId] = exportsData
+    }),
+  )
 
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
