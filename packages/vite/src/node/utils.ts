@@ -252,7 +252,7 @@ export function isParentDirectory(dir: string, file: string): boolean {
 export function isSameFileUri(file1: string, file2: string): boolean {
   return (
     file1 == file2 ||
-    (isCaseInsensitiveFS && file1.toLowerCase() ==  file2.toLowerCase())
+    (isCaseInsensitiveFS && file1.toLowerCase() == file2.toLowerCase())
   )
 }
 
