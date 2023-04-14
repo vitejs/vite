@@ -99,7 +99,7 @@ async function createDepsOptimizer(
 
   const cachedMetadata = await loadCachedDepOptimizationMetadata(config, ssr)
 
-  let handle: NodeJS.Timeout | undefined
+  let debounceProcessingHandle: NodeJS.Timeout | undefined
 
   let closed = false
 
@@ -155,7 +155,15 @@ async function createDepsOptimizer(
   let enqueuedRerun: (() => void) | undefined
   let currentlyProcessing = false
 
-  // If there wasn't a cache or it is outdated, we need to prepare a first run
+  // During build, we wait for every module to be scanned before resolving
+  // optimized deps loading for rollup on each rebuild.
+  // During dev, if this is a cold run, we wait for static imports discovered
+  // from the first request before resolving to minimize full page reloads.
+  // On warm start or after the first optimization is run, we use a simpler
+  // debounce strategy each time a new dep is discovered.
+  // Initialized by resetRegisteredIds, called at buildStart
+  let crawlEndFinder: CrawlEndFinder | undefined
+
   let firstRunCalled = !!cachedMetadata
 
   let optimizationResult:
@@ -174,7 +182,7 @@ async function createDepsOptimizer(
 
   async function close() {
     closed = true
-    crawlEndFinder.cancel()
+    crawlEndFinder?.cancel()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
@@ -291,7 +299,7 @@ async function createDepsOptimizer(
     enqueuedRerun = undefined
 
     // Ensure that a rerun will not be issued for current discovered deps
-    if (handle) clearTimeout(handle)
+    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
 
     if (closed || Object.keys(metadata.discovered).length === 0) {
       currentlyProcessing = false
@@ -530,7 +538,12 @@ async function createDepsOptimizer(
     // we can get a list of every missing dependency before giving to the
     // browser a dependency that may be outdated, thus avoiding full page reloads
 
-    if (firstRunCalled) {
+    if (!crawlEndFinder) {
+      if (isBuild) {
+        logger.error(
+          'Vite Internal Error: Missing dependency found after crawling ended',
+        )
+      }
       // Debounced rerun, let other missing dependencies be discovered before
       // the running next optimizeDeps
       debouncedProcessing()
@@ -571,11 +584,11 @@ async function createDepsOptimizer(
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
     enqueuedRerun = undefined
-    if (handle) clearTimeout(handle)
+    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
     if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
     newDepsToLogHandle = undefined
-    handle = setTimeout(() => {
-      handle = undefined
+    debounceProcessingHandle = setTimeout(() => {
+      debounceProcessingHandle = undefined
       enqueuedRerun = rerun
       if (!currentlyProcessing) {
         enqueuedRerun()
@@ -589,13 +602,13 @@ async function createDepsOptimizer(
   // During build, onCrawlEnd will be called once after each buildStart (so in
   // watch mode it will be called after each rebuild has processed every module).
   // All modules are transformed first in this case (both static and dynamic).
-  let crawlEndCalled = false
   async function onCrawlEnd() {
-    const wasCalledBefore = crawlEndCalled
-    crawlEndCalled = true
+    // On build time, a missing dep appearing after onCrawlEnd is an internal error
+    // On dev, switch after this point to a simple debounce strategy
+    crawlEndFinder = undefined
 
     debug?.(colors.green(`✨ static imports crawl ended`))
-    if (closed || firstRunCalled || wasCalledBefore) {
+    if (closed) {
       return
     }
 
@@ -676,38 +689,42 @@ async function createDepsOptimizer(
     }
   }
 
-  let crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
-
   // Called during buildStart at build time, when build --watch is used.
-  // On dev, onCrawlEnd is called once. On build, we call it when all the
-  // user modules are processed for every rebuild.
+  // Once during dev mode.
   function resetRegisteredIds() {
-    crawlEndCalled = false
-    crawlEndFinder.cancel()
+    crawlEndFinder?.cancel()
     crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
+
+    // Cancel on-fly queued reruns. This shouldn't currently happen but makes
+    // the API of the optimizer more robust in case resetRegisteredIds wouldn't
+    // be called before the first request in dev mode
+    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
+    enqueuedRerun = undefined
   }
 
   function registerWorkersSource(id: string) {
-    crawlEndFinder.registerWorkersSource(id)
+    crawlEndFinder?.registerWorkersSource(id)
   }
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
-    if (!crawlEndCalled && !depsOptimizer.isOptimizedDepFile(id)) {
+    if (crawlEndFinder && !depsOptimizer.isOptimizedDepFile(id)) {
       crawlEndFinder.delayDepsOptimizerUntil(id, done)
     }
   }
   function ensureFirstRun() {
-    if (!firstRunCalled) crawlEndFinder.ensureFirstRun()
+    crawlEndFinder?.ensureFirstRun()
   }
 }
 
 const runOptimizerIfIdleAfterMs = 50
 
-function setupOnCrawlEnd(onCrawlEnd: () => void): {
+interface CrawlEndFinder {
   ensureFirstRun: () => void
   registerWorkersSource: (id: string) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   cancel: () => void
-} {
+}
+
+function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   let registeredIds: { id: string; done: () => Promise<any> }[] = []
   const seenIds = new Set<string>()
   const workersSources = new Set<string>()

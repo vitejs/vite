@@ -16,6 +16,12 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
 
+    buildStart() {
+      if (!config.isWorker) {
+        getDepsOptimizer(config)?.resetRegisteredIds()
+      }
+    },
+
     resolveId(id, source, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id
@@ -82,8 +88,6 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       if (!config.isWorker) {
-        // This will be run for the current active optimizer, during build
-        // it will be the SSR optimizer if config.build.ssr is defined
         getDepsOptimizer(config)?.resetRegisteredIds()
       }
     },
