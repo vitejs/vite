@@ -1,3 +1,12 @@
+## 4.3.0-beta.6 (2023-04-14)
+
+* fix: build time deps optimization, and ensure single crawl end call (#12851) ([fa30879](https://github.com/vitejs/vite/commit/fa30879)), closes [#12851](https://github.com/vitejs/vite/issues/12851)
+* fix: correct vite config temporary name (#12833) ([cdd9c23](https://github.com/vitejs/vite/commit/cdd9c23)), closes [#12833](https://github.com/vitejs/vite/issues/12833)
+* fix(importAnalysis): warning on ExportAllDeclaration (#12799) ([5136b9b](https://github.com/vitejs/vite/commit/5136b9b)), closes [#12799](https://github.com/vitejs/vite/issues/12799)
+* fix(optimizer): start optimizer after buildStart (#12832) ([cfe75ee](https://github.com/vitejs/vite/commit/cfe75ee)), closes [#12832](https://github.com/vitejs/vite/issues/12832)
+
+
+
 ## 4.3.0-beta.5 (2023-04-11)
 
 * fix: handle try-catch for fs promise when resolve https config (#12808) ([0bba402](https://github.com/vitejs/vite/commit/0bba402)), closes [#12808](https://github.com/vitejs/vite/issues/12808)
