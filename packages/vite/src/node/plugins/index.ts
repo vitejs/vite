@@ -40,6 +40,14 @@ export async function resolvePlugins(
   const { modulePreload } = config.build
 
   return [
+    ...(isDepsOptimizerEnabled(config, false) ||
+    isDepsOptimizerEnabled(config, true)
+      ? [
+          isBuild
+            ? optimizedDepsBuildPlugin(config)
+            : optimizedDepsPlugin(config),
+        ]
+      : []),
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
     watchPackageDataPlugin(config.packageCache),
@@ -50,14 +58,6 @@ export async function resolvePlugins(
     (typeof modulePreload === 'object' && modulePreload.polyfill)
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    ...(isDepsOptimizerEnabled(config, false) ||
-    isDepsOptimizerEnabled(config, true)
-      ? [
-          isBuild
-            ? optimizedDepsBuildPlugin(config)
-            : optimizedDepsPlugin(config),
-        ]
-      : []),
     resolvePlugin({
       ...config.resolve,
       root: config.root,
