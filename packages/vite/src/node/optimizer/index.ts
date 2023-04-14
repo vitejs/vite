@@ -504,6 +504,11 @@ export function runOptimizeDeps(
     metadata,
     cancel: cleanUp,
     commit: async () => {
+      if (cleaned) {
+        throw new Error(
+          'Can not commit a Deps Optimization run as it was cancelled',
+        )
+      }
       // Ignore clean up requests after this point so the temp folder isn't deleted before
       // we finish commiting the new deps cache files to the deps folder
       committed = true

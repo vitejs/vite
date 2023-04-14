@@ -77,33 +77,45 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
+  let buildStartCalled = false
+
   return {
     name: 'vite:optimized-deps-build',
 
     buildStart() {
-      if (!config.isWorker) {
-        // This will be run for the current active optimizer, during build
-        // it will be the SSR optimizer if config.build.ssr is defined
+      // Only reset the registered ids after a rebuild during build --watch
+      if (!config.isWorker && buildStartCalled) {
         getDepsOptimizer(config)?.resetRegisteredIds()
       }
+      buildStartCalled = true
     },
 
-    resolveId(id, importer, { ssr }) {
-      if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
+    async resolveId(id, importer, options) {
+      const depsOptimizer = getDepsOptimizer(config)
+      if (!depsOptimizer) return
+
+      if (depsOptimizer.isOptimizedDepFile(id)) {
         return id
+      } else {
+        if (options?.custom?.['vite:pre-alias']) {
+          // Skip registering the id if it is being resolved from the pre-alias plugin
+          // When a optimized dep is aliased, we need to avoid waiting for it before optimizing
+          return
+        }
+        const resolved = await this.resolve(id, importer, {
+          ...options,
+          skipSelf: true,
+        })
+        if (resolved) {
+          depsOptimizer.delayDepsOptimizerUntil(resolved.id, async () => {
+            await this.load(resolved)
+          })
+        }
       }
     },
 
-    transform(_code, id, options) {
-      const ssr = options?.ssr === true
-      getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, async () => {
-        await this.load({ id })
-      })
-    },
-
-    async load(id, options) {
-      const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+    async load(id) {
+      const depsOptimizer = getDepsOptimizer(config)
       if (!depsOptimizer?.isOptimizedDepFile(id)) {
         return
       }
