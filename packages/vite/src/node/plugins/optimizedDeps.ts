@@ -86,12 +86,6 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps-build',
 
-    buildStart() {
-      if (!config.isWorker) {
-        getDepsOptimizer(config)?.resetRegisteredIds()
-      }
-    },
-
     resolveId(id, importer, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id

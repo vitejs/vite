@@ -155,6 +155,8 @@ async function createDepsOptimizer(
   let enqueuedRerun: (() => void) | undefined
   let currentlyProcessing = false
 
+  let firstRunCalled = !!cachedMetadata
+
   // During build, we wait for every module to be scanned before resolving
   // optimized deps loading for rollup on each rebuild.
   // During dev, if this is a cold run, we wait for static imports discovered
@@ -163,8 +165,9 @@ async function createDepsOptimizer(
   // debounce strategy each time a new dep is discovered.
   // Initialized by resetRegisteredIds, called at buildStart
   let crawlEndFinder: CrawlEndFinder | undefined
-
-  let firstRunCalled = !!cachedMetadata
+  if (!isBuild && !cachedMetadata) {
+    crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
+  }
 
   let optimizationResult:
     | {
