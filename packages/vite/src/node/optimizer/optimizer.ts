@@ -117,7 +117,6 @@ async function createDepsOptimizer(
     registerWorkersSource,
     delayDepsOptimizerUntil,
     resetRegisteredIds,
-    ensureFirstRun,
     close,
     options: getDepOptimizationConfig(config, ssr),
   }
@@ -706,26 +705,21 @@ async function createDepsOptimizer(
       crawlEndFinder.delayDepsOptimizerUntil(id, done)
     }
   }
-  function ensureFirstRun() {
-    crawlEndFinder?.ensureFirstRun()
-  }
 }
 
-const runOptimizerIfIdleAfterMs = 50
+const callCrawlEndIfIdleAfterMs = 50
 
 interface CrawlEndFinder {
-  ensureFirstRun: () => void
   registerWorkersSource: (id: string) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   cancel: () => void
 }
 
 function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
-  let registeredIds: { id: string; done: () => Promise<any> }[] = []
+  const registeredIds = new Set<string>()
   const seenIds = new Set<string>()
   const workersSources = new Set<string>()
-  const waitingOn = new Map<string, () => void>()
-  let firstRunEnsured = false
+  let timeoutHandle: NodeJS.Timeout | undefined
   let crawlEndCalled = false
 
   let cancelled = false
@@ -740,91 +734,45 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     }
   }
 
-  // If all the inputs are dependencies, we aren't going to get any
-  // delayDepsOptimizerUntil(id) calls. We need to guard against this
-  // by forcing a rerun if no deps have been registered
-  function ensureFirstRun() {
-    if (!firstRunEnsured && seenIds.size === 0) {
-      setTimeout(() => {
-        if (seenIds.size === 0) {
-          callOnCrawlEnd()
-        }
-      }, runOptimizerIfIdleAfterMs)
-    }
-    firstRunEnsured = true
-  }
-
   function registerWorkersSource(id: string): void {
     workersSources.add(id)
+
     // Avoid waiting for this id, as it may be blocked by the rollup
     // bundling process of the worker that also depends on the optimizer
-    registeredIds = registeredIds.filter((registered) => registered.id !== id)
+    registeredIds.delete(id)
 
-    const resolve = waitingOn.get(id)
-    // Forced resolve to avoid waiting for the bundling of the worker to finish
-    resolve?.()
+    checkIfCrawlEndAfterTimeout()
   }
 
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
     if (!seenIds.has(id)) {
       seenIds.add(id)
-      registeredIds.push({ id, done })
-      callOnCrawlEndWhenIdle()
+      if (!workersSources.has(id)) {
+        registeredIds.add(id)
+        done().finally(() => markIdAsDone(id))
+      }
     }
   }
+  function markIdAsDone(id: string): void {
+    registeredIds.delete(id)
+    checkIfCrawlEndAfterTimeout()
+  }
 
+  function checkIfCrawlEndAfterTimeout() {
+    if (cancelled || registeredIds.size > 0) return
+
+    if (timeoutHandle) clearTimeout(timeoutHandle)
+    timeoutHandle = setTimeout(
+      callOnCrawlEndWhenIdle,
+      callCrawlEndIfIdleAfterMs,
+    )
+  }
   async function callOnCrawlEndWhenIdle() {
-    if (cancelled || waitingOn.size > 0) return
-
-    const processingRegisteredIds = registeredIds
-    registeredIds = []
-
-    const donePromises = processingRegisteredIds.map(async (registeredId) => {
-      // During build, we need to cancel workers
-      let resolve: () => void
-      const waitUntilDone = new Promise<void>((_resolve) => {
-        resolve = _resolve
-        registeredId
-          .done()
-          .catch(() => {
-            // Ignore errors
-          })
-          .finally(() => resolve())
-      })
-      waitingOn.set(registeredId.id, () => resolve())
-
-      await waitUntilDone
-      waitingOn.delete(registeredId.id)
-    })
-
-    const afterLoad = () => {
-      if (cancelled) return
-      if (
-        registeredIds.length > 0 &&
-        registeredIds.every((registeredId) =>
-          workersSources.has(registeredId.id),
-        )
-      ) {
-        return
-      }
-
-      if (registeredIds.length > 0) {
-        callOnCrawlEndWhenIdle()
-      } else {
-        callOnCrawlEnd()
-      }
-    }
-
-    await Promise.allSettled(donePromises)
-    if (registeredIds.length > 0) {
-      afterLoad()
-    } else {
-      setTimeout(afterLoad, runOptimizerIfIdleAfterMs)
-    }
+    if (cancelled || registeredIds.size > 0) return
+    callOnCrawlEnd()
   }
 
   return {
-    ensureFirstRun,
     registerWorkersSource,
     delayDepsOptimizerUntil,
     cancel,
@@ -854,7 +802,6 @@ async function createDevSsrDepsOptimizer(
     registerWorkersSource: (id: string) => {},
     delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
     resetRegisteredIds: () => {},
-    ensureFirstRun: () => {},
 
     close: async () => {},
     options: config.ssr.optimizeDeps,

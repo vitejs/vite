@@ -120,8 +120,6 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      depsOptimizer?.ensureFirstRun()
-
       const file = cleanUrl(id)
       // Search in both the currently optimized and newly discovered deps
       // If all the inputs are dependencies, we aren't going to get any
