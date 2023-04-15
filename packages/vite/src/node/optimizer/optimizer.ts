@@ -739,6 +739,21 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     }
   }
 
+  // If all the inputs are dependencies, we aren't going to get any
+  // delayDepsOptimizerUntil(id) calls. We need to guard against this
+  // by forcing a rerun if no deps have been registered
+  let firstRunEnsured = false
+  function ensureFirstRun() {
+    if (!firstRunEnsured && seenIds.size === 0) {
+      setTimeout(() => {
+        if (seenIds.size === 0) {
+          callOnCrawlEnd()
+        }
+      }, 200)
+    }
+    firstRunEnsured = true
+  }
+
   function registerWorkersSource(id: string): void {
     workersSources.add(id)
 
@@ -763,18 +778,6 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   function markIdAsDone(id: string): void {
     registeredIds.delete(id)
     checkIfCrawlEndAfterTimeout()
-  }
-
-  let firstRunEnsured = false
-  function ensureFirstRun() {
-    if (!firstRunEnsured && seenIds.size === 0) {
-      setTimeout(() => {
-        if (seenIds.size === 0) {
-          callOnCrawlEnd()
-        }
-      }, 200)
-    }
-    firstRunEnsured = true
   }
 
   function checkIfCrawlEndAfterTimeout() {
