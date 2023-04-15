@@ -714,9 +714,9 @@ async function createDepsOptimizer(
 const callCrawlEndIfIdleAfterMs = 50
 
 interface CrawlEndFinder {
+  ensureFirstRun: () => void
   registerWorkersSource: (id: string) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
-  ensureFirstRun: () => void
   cancel: () => void
 }
 
@@ -795,9 +795,9 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   }
 
   return {
+    ensureFirstRun,
     registerWorkersSource,
     delayDepsOptimizerUntil,
-    ensureFirstRun,
     cancel,
   }
 }
