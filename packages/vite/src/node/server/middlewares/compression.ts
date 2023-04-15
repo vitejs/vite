@@ -25,7 +25,7 @@ export default function compression() {
   // disable Brotli on Node<12.7 where it is unsupported:
   if (!zlib.createBrotliCompress) brotli = false
 
-  return (req, res, next = noop) => {
+  return function viteCompressionMiddleware(req, res, next = noop) {
     const accept = req.headers['accept-encoding'] + ''
     const encoding = ((brotli && accept.match(/\bbr\b/)) ||
       (gzip && accept.match(/\bgzip\b/)) ||
