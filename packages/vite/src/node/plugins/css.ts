@@ -26,7 +26,7 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
-import { toOutputFilePathInCss } from '../build'
+import { resolveUserExternal, toOutputFilePathInCss } from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -230,10 +230,21 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           return fileToUrl(resolved, config, this)
         }
         if (config.command === 'build') {
-          // #9800 If we cannot resolve the css url, leave a warning.
-          config.logger.warnOnce(
-            `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-          )
+          const isExternal = config.build.rollupOptions.external
+            ? resolveUserExternal(
+                config.build.rollupOptions.external,
+                url, // use URL as id since id could not be resolved
+                id,
+                false,
+              )
+            : false
+
+          if (!isExternal) {
+            // #9800 If we cannot resolve the css url, leave a warning.
+            config.logger.warnOnce(
+              `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
+            )
+          }
         }
         return url
       }
