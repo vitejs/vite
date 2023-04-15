@@ -701,8 +701,12 @@ async function createDepsOptimizer(
     crawlEndFinder?.registerWorkersSource(id)
   }
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
-    if (crawlEndFinder && !depsOptimizer.isOptimizedDepFile(id)) {
-      crawlEndFinder.delayDepsOptimizerUntil(id, done)
+    if (crawlEndFinder) {
+      if (depsOptimizer.isOptimizedDepFile(id)) {
+        crawlEndFinder.ensureFirstRun()
+      } else {
+        crawlEndFinder.delayDepsOptimizerUntil(id, done)
+      }
     }
   }
 }
@@ -712,6 +716,7 @@ const callCrawlEndIfIdleAfterMs = 50
 interface CrawlEndFinder {
   registerWorkersSource: (id: string) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
+  ensureFirstRun: () => void
   cancel: () => void
 }
 
@@ -720,13 +725,13 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   const seenIds = new Set<string>()
   const workersSources = new Set<string>()
   let timeoutHandle: NodeJS.Timeout | undefined
-  let crawlEndCalled = false
 
   let cancelled = false
   function cancel() {
     cancelled = true
   }
 
+  let crawlEndCalled = false
   function callOnCrawlEnd() {
     if (!cancelled && !crawlEndCalled) {
       crawlEndCalled = true
@@ -760,6 +765,18 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     checkIfCrawlEndAfterTimeout()
   }
 
+  let firstRunEnsured = false
+  function ensureFirstRun() {
+    if (!firstRunEnsured && seenIds.size === 0) {
+      setTimeout(() => {
+        if (seenIds.size === 0) {
+          callOnCrawlEnd()
+        }
+      }, 200)
+    }
+    firstRunEnsured = true
+  }
+
   function checkIfCrawlEndAfterTimeout() {
     if (cancelled || registeredIds.size > 0) return
 
@@ -777,6 +794,7 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   return {
     registerWorkersSource,
     delayDepsOptimizerUntil,
+    ensureFirstRun,
     cancel,
   }
 }

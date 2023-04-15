@@ -90,33 +90,23 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       buildStartCalled = true
     },
 
-    async resolveId(id, importer, options) {
+    async resolveId(id) {
       const depsOptimizer = getDepsOptimizer(config)
-      if (!depsOptimizer) return
-
-      if (depsOptimizer.isOptimizedDepFile(id)) {
+      if (depsOptimizer?.isOptimizedDepFile(id)) {
         return id
-      } else {
-        if (options?.custom?.['vite:pre-alias']) {
-          // Skip registering the id if it is being resolved from the pre-alias plugin
-          // When a optimized dep is aliased, we need to avoid waiting for it before optimizing
-          return
-        }
-        const resolved = await this.resolve(id, importer, {
-          ...options,
-          skipSelf: true,
-        })
-        if (resolved) {
-          depsOptimizer.delayDepsOptimizerUntil(resolved.id, async () => {
-            await this.load(resolved)
-          })
-        }
       }
     },
 
     async load(id) {
       const depsOptimizer = getDepsOptimizer(config)
-      if (!depsOptimizer?.isOptimizedDepFile(id)) {
+
+      if (!depsOptimizer) return
+
+      depsOptimizer.delayDepsOptimizerUntil(id, async () => {
+        await this.load({ id })
+      })
+
+      if (!depsOptimizer.isOptimizedDepFile(id)) {
         return
       }
 
