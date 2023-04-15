@@ -116,6 +116,7 @@ async function createDepsOptimizer(
       isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
     registerWorkersSource,
     delayDepsOptimizerUntil,
+    markIdAsDone,
     resetRegisteredIds,
     close,
     options: getDepOptimizationConfig(config, ssr),
@@ -700,14 +701,17 @@ async function createDepsOptimizer(
   function registerWorkersSource(id: string) {
     crawlEndFinder?.registerWorkersSource(id)
   }
-  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
+  function delayDepsOptimizerUntil(id: string) {
     if (crawlEndFinder) {
       if (depsOptimizer.isOptimizedDepFile(id)) {
         crawlEndFinder.ensureFirstRun()
       } else {
-        crawlEndFinder.delayDepsOptimizerUntil(id, done)
+        crawlEndFinder.delayDepsOptimizerUntil(id)
       }
     }
+  }
+  function markIdAsDone(id: string) {
+    crawlEndFinder?.markIdAsDone(id)
   }
 }
 
@@ -715,7 +719,8 @@ const callCrawlEndIfIdleAfterMs = 50
 
 interface CrawlEndFinder {
   registerWorkersSource: (id: string) => void
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
+  delayDepsOptimizerUntil: (id: string) => void
+  markIdAsDone: (id: string) => void
   ensureFirstRun: () => void
   cancel: () => void
 }
@@ -749,14 +754,11 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     checkIfCrawlEndAfterTimeout()
   }
 
-  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
+  function delayDepsOptimizerUntil(id: string): void {
     if (!seenIds.has(id)) {
       seenIds.add(id)
       if (!workersSources.has(id)) {
         registeredIds.add(id)
-        done()
-          .catch(() => {})
-          .finally(() => markIdAsDone(id))
       }
     }
   }
@@ -794,6 +796,7 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   return {
     registerWorkersSource,
     delayDepsOptimizerUntil,
+    markIdAsDone,
     ensureFirstRun,
     cancel,
   }
@@ -820,7 +823,8 @@ async function createDevSsrDepsOptimizer(
     // the optimizer blocks the server start
     run: () => {},
     registerWorkersSource: (id: string) => {},
-    delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
+    delayDepsOptimizerUntil: (id: string) => {},
+    markIdAsDone: (id: string) => {},
     resetRegisteredIds: () => {},
 
     close: async () => {},
