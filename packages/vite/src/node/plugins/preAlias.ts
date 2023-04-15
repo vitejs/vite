@@ -52,6 +52,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
 
           const resolved = await this.resolve(id, importer, {
             ...options,
+            custom: { ...options.custom, 'vite:pre-alias': true },
             skipSelf: true,
           })
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {

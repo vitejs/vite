@@ -102,7 +102,9 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
 
       if (!depsOptimizer) return
 
-      depsOptimizer.delayDepsOptimizerUntil(id)
+      depsOptimizer.delayDepsOptimizerUntil(id, async () => {
+        await this.load({ id })
+      })
 
       if (!depsOptimizer.isOptimizedDepFile(id)) {
         return
@@ -125,10 +127,6 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       // load hooks to avoid race conditions, once processing is resolved,
       // we are sure that the file has been properly save to disk
       return fsp.readFile(file, 'utf-8')
-    },
-
-    moduleParsed(info) {
-      getDepsOptimizer(config)?.markIdAsDone(info.id)
     },
   }
 }

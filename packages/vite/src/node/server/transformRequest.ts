@@ -147,14 +147,10 @@ async function doTransform(
     (await pluginContainer.resolveId(url, undefined, { ssr }))?.id ??
     url
 
-  const depsOptimizer = getDepsOptimizer(config, ssr)
-  depsOptimizer?.delayDepsOptimizerUntil(id)
-
   const result = loadAndTransform(id, url, server, options, timestamp)
 
-  if (depsOptimizer) {
-    result.catch(() => {}).finally(() => depsOptimizer.markIdAsDone(id))
-  }
+  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
+
   return result
 }
 
