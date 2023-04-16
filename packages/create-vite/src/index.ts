@@ -175,14 +175,14 @@ const FRAMEWORKS: Framework[] = [
     color: blue,
     variants: [
       {
-        name: 'solid',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
         name: 'solid-ts',
         display: 'TypeScript',
         color: blue,
+      },
+      {
+        name: 'solid',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
