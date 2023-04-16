@@ -256,11 +256,11 @@ async function init() {
             argTemplate && TEMPLATES.includes(argTemplate) ? null : 'select',
           name: 'framework',
           message:
-            typeof argTemplate === 'string' && TEMPLATES.includes(argTemplate)
-              ? reset('Select a framework:')
-              : reset(
+            typeof argTemplate === 'string' && !TEMPLATES.includes(argTemplate)
+              ? reset(
                   `"${argTemplate}" isn't a valid template. Please choose from below: `,
-                ),
+                )
+              : reset('Select a framework:'),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
