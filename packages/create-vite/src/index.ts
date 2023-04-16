@@ -191,7 +191,7 @@ const FRAMEWORKS: Framework[] = [
 ]
 
 const TEMPLATES = FRAMEWORKS.map(
-  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name],
+  (f) => f?.variants.map((v) => v.name) || [f.name],
 ).reduce((a, b) => a.concat(b), [])
 
 const renameFiles: Record<string, string | undefined> = {
@@ -225,7 +225,7 @@ async function init() {
           },
         },
         {
-          type: () =>
+          type:
             !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
           name: 'overwrite',
           message: () =>
@@ -244,10 +244,10 @@ async function init() {
           name: 'overwriteChecker',
         },
         {
-          type: () => (isValidPackageName(getProjectName()) ? null : 'text'),
+          type: isValidPackageName(getProjectName()) ? null : 'text',
           name: 'packageName',
           message: reset('Package name:'),
-          initial: () => toValidPackageName(getProjectName()),
+          initial: toValidPackageName(getProjectName()),
           validate: (dir) =>
             isValidPackageName(dir) || 'Invalid package.json name',
         },
@@ -256,11 +256,11 @@ async function init() {
             argTemplate && TEMPLATES.includes(argTemplate) ? null : 'select',
           name: 'framework',
           message:
-            typeof argTemplate === 'string' && !TEMPLATES.includes(argTemplate)
-              ? reset(
+            typeof argTemplate === 'string' && TEMPLATES.includes(argTemplate)
+              ? reset('Select a framework:')
+              : reset(
                   `"${argTemplate}" isn't a valid template. Please choose from below: `,
-                )
-              : reset('Select a framework:'),
+                ),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
@@ -272,7 +272,7 @@ async function init() {
         },
         {
           type: (framework: Framework) =>
-            framework && framework.variants ? 'select' : null,
+            framework?.variants ? 'select' : null,
           name: 'variant',
           message: reset('Select a variant:'),
           choices: (framework: Framework) =>
