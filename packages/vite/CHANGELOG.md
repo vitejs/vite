@@ -1,3 +1,13 @@
+## 4.3.0-beta.7 (2023-04-17)
+
+* fix: broken middleware name (#12871) ([32bef57](https://github.com/vitejs/vite/commit/32bef57)), closes [#12871](https://github.com/vitejs/vite/issues/12871)
+* fix: cleanUpStaleCacheDirs once per process (#12847) ([2c58b6e](https://github.com/vitejs/vite/commit/2c58b6e)), closes [#12847](https://github.com/vitejs/vite/issues/12847)
+* fix(build): do not warn when URL in CSS is externalized (#12873) ([1510996](https://github.com/vitejs/vite/commit/1510996)), closes [#12873](https://github.com/vitejs/vite/issues/12873)
+* refactor: simplify crawlEndFinder (#12868) ([31f8b51](https://github.com/vitejs/vite/commit/31f8b51)), closes [#12868](https://github.com/vitejs/vite/issues/12868)
+* perf: parallelize await exportsData from depsInfo (#12869) ([ab3a530](https://github.com/vitejs/vite/commit/ab3a530)), closes [#12869](https://github.com/vitejs/vite/issues/12869)
+
+
+
 ## 4.3.0-beta.6 (2023-04-14)
 
 * fix: build time deps optimization, and ensure single crawl end call (#12851) ([fa30879](https://github.com/vitejs/vite/commit/fa30879)), closes [#12851](https://github.com/vitejs/vite/issues/12851)
