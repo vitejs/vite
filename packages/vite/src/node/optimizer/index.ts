@@ -13,7 +13,6 @@ import type { ResolvedConfig } from '../config'
 import {
   arraify,
   createDebugger,
-  emptyDir,
   flattenId,
   getHash,
   isOptimizable,
@@ -328,6 +327,8 @@ export function addOptimizedDepInfo(
   return depInfo
 }
 
+let firstLoadCachedDepOptimizationMetadata = true
+
 /**
  * Creates the initial dep optimization metadata, loading it from the deps cache
  * if it exists and pre-bundling isn't forced
@@ -340,16 +341,11 @@ export async function loadCachedDepOptimizationMetadata(
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
-  setTimeout(() => {
-    // Before Vite 2.9, dependencies were cached in the root of the cacheDir
-    // For compat, we remove the cache if we find the old structure
-    if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
-      emptyDir(config.cacheDir)
-    }
-    // Fire a clean up of stale cache dirs, in case old processes didn't
-    // terminate correctly
-    cleanupDepsCacheStaleDirs(config)
-  }, 100)
+  if (firstLoadCachedDepOptimizationMetadata) {
+    firstLoadCachedDepOptimizationMetadata = false
+    // Fire up a clean up of stale processing deps dirs if older process exited early
+    setTimeout(() => cleanupDepsCacheStaleDirs(config), 0)
+  }
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
