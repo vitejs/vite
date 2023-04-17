@@ -69,6 +69,7 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
+        "sourceRoot": "/root/",
         "sources": [
           "be-imported.css",
           "linked-with-import.css",

@@ -293,6 +293,7 @@ async function loadAndTransform(
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
           if (path.isAbsolute(sourcePath)) {
+            map.sourceRoot = path.dirname(mod.file) + path.sep
             map.sources[sourcesIndex] = path.relative(
               path.dirname(mod.file),
               sourcePath,
@@ -301,6 +302,13 @@ async function loadAndTransform(
         }
       }
     }
+  }
+
+  // no sourcemap for raw js source file
+  if (!map && mod.file) {
+    map = {
+      sources: [mod.file],
+    } as SourceMap
   }
 
   const result =
