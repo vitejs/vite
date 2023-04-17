@@ -161,22 +161,24 @@ export async function preview(
 
   // static assets
   const headers = config.preview.headers
-  const assetServer = sirv(distDir, {
-    etag: true,
-    dev: true,
-    single: config.appType === 'spa',
-    setHeaders(res) {
-      if (headers) {
-        for (const name in headers) {
-          res.setHeader(name, headers[name]!)
+  const viteAssetMiddleware = (...args: readonly [any, any?, any?]) =>
+    sirv(distDir, {
+      etag: true,
+      dev: true,
+      single: config.appType === 'spa',
+      setHeaders(res) {
+        if (headers) {
+          for (const name in headers) {
+            res.setHeader(name, headers[name]!)
+          }
         }
-      }
-    },
-    shouldServe(filePath) {
-      return shouldServeFile(filePath, distDir)
-    },
-  })
-  app.use(previewBase, assetServer)
+      },
+      shouldServe(filePath) {
+        return shouldServeFile(filePath, distDir)
+      },
+    })(...args)
+
+  app.use(previewBase, viteAssetMiddleware)
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
