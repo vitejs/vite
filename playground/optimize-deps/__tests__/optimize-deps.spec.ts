@@ -6,6 +6,7 @@ import {
   isBuild,
   isServe,
   page,
+  serverLogs,
   viteTestUrl,
 } from '~utils'
 
@@ -213,4 +214,11 @@ test('pre bundle css require', async () => {
   }
 
   expect(await getColor('.css-require')).toBe('red')
+})
+
+test.runIf(isBuild)('no missing deps during build', async () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('Missing dependency found after crawling ended')
+  })
 })
