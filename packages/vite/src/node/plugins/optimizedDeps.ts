@@ -110,6 +110,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
           depsOptimizer.delayDepsOptimizerUntil(resolved.id, async () => {
             await this.load(resolved)
           })
+          return resolved
         }
       }
     },
