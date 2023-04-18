@@ -9,13 +9,12 @@ import type {
   TransformResult,
 } from 'rollup'
 export type { PluginContext } from 'rollup'
-import type { UserConfig } from './config'
+import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
 import type { HmrContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
-import type { ConfigEnv, ResolvedConfig } from './'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra

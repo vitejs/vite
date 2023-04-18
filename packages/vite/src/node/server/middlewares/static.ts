@@ -184,6 +184,9 @@ export function serveRawFsMiddleware(
   }
 }
 
+/**
+ * Check if the url is allowed to be served, via the `server.fs` config.
+ */
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
