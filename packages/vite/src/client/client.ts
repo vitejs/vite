@@ -2,7 +2,6 @@ import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-// eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
