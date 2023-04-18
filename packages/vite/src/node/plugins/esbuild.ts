@@ -20,9 +20,10 @@ import {
   generateCodeFrame,
   timeFrom,
 } from '../utils'
-import type { ResolvedConfig, ViteDevServer } from '..'
+import type { ViteDevServer } from '../server'
+import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { searchForWorkspaceRoot } from '..'
+import { searchForWorkspaceRoot } from '../server/searchRoot'
 
 const debug = createDebugger('vite:esbuild')
 
