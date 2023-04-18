@@ -2,7 +2,7 @@
 
 ## Lean Extendable Core
 
-Vite doesn't intend to cover every use case for every user. [Vite core]() must remain lean with a small API surface to keep the project maintainable long-term. This goal is possible thanks to [Vite's rollup-based plugin system](./api-plugin.md). Features that can be implemented as plugins will not be added to Vite core. [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) is a great example of what can be achieved out of Vite core, and there are a lot of [well maintained plugins](https://github.com/vitejs/awesome-vite#plugins) to cover your needs. Vite works closely with the Rollup project to ensure that plugins can be used in both plain-rollup and Vite projects as much as possible, trying to push needed extensions to the Plugin API upstream when possible.
+Vite doesn't intend to cover every use case for every user. [Vite core](https://github.com/vitejs/vite) must remain lean with a small API surface to keep the project maintainable long-term. This goal is possible thanks to [Vite's rollup-based plugin system](./api-plugin.md). Features that can be implemented as plugins will not be added to Vite core. [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) is a great example of what can be achieved out of Vite core, and there are a lot of [well maintained plugins](https://github.com/vitejs/awesome-vite#plugins) to cover your needs. Vite works closely with the Rollup project to ensure that plugins can be used in both plain-rollup and Vite projects as much as possible, trying to push needed extensions to the Plugin API upstream when possible.
 
 ## A Pragmatic Approach to Performance
 
@@ -14,7 +14,7 @@ Although Vite can be used by users directly, it shines as a tool to create frame
 
 ## Vite-powered Tooling
 
-The Vite Ecosystem works to ensure Vite projects can seamlessly integrate with the wide range of tools we use to develop modern apps. For example, Vite has first-class support in [Storybook](https://storybook.js.org/docs/react/builders/vite). Vite is also used to power new features in common tools. Vite powers Component Testing in both [Playwright](https://playwright.dev/docs/test-components) and [Cypress](https://docs.cypress.io/guides/component-testing/overview). The ecosystem tries to work with established projects when possible, but there are cases where Vite enables the creation of new projects as in the case of [Vitest], a fast test framework. A common theme in tools based on Vite is the collapsing of configuration for a project under a unified Vite pipeline. A single `vite.config.js` would be used to configure the build, dev, and test environments.
+The Vite Ecosystem works to ensure Vite projects can seamlessly integrate with the wide range of tools we use to develop modern apps. For example, Vite has first-class support in [Storybook](https://storybook.js.org/docs/react/builders/vite). Vite is also used to power new features in common tools. Vite powers Component Testing in both [Playwright](https://playwright.dev/docs/test-components) and [Cypress](https://docs.cypress.io/guides/component-testing/overview). The ecosystem tries to work with established projects when possible, but there are cases where Vite enables the creation of new projects as in the case of [Vitest](https://vitest.dev/), a fast test framework. A common theme in tools based on Vite is the collapsing of configuration for a project under a unified Vite pipeline. A single `vite.config.js` would be used to configure the build, dev, and test environments.
 
 ## An Active Ecosystem
 
