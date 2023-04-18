@@ -177,6 +177,7 @@ importers:
       '@rollup/plugin-node-resolve': 15.0.1
       '@rollup/plugin-typescript': ^11.0.0
       '@rollup/pluginutils': ^5.0.2
+      '@types/escape-html': ^1.0.0
       acorn: ^8.8.2
       acorn-walk: ^8.2.0
       cac: ^6.7.14
@@ -192,6 +193,7 @@ importers:
       dotenv-expand: ^9.0.0
       es-module-lexer: ^1.2.0
       esbuild: ^0.17.5
+      escape-html: ^1.0.3
       estree-walker: ^3.0.3
       etag: ^1.8.1
       fast-glob: ^3.2.12
@@ -246,6 +248,7 @@ importers:
       '@rollup/plugin-node-resolve': 15.0.1_rollup@3.18.0
       '@rollup/plugin-typescript': 11.0.0_rollup@3.18.0+tslib@2.5.0
       '@rollup/pluginutils': 5.0.2_rollup@3.18.0
+      '@types/escape-html': 1.0.2
       acorn: 8.8.2
       acorn-walk: 8.2.0_acorn@8.8.2
       cac: 6.7.14
@@ -260,6 +263,7 @@ importers:
       dotenv: 16.0.3
       dotenv-expand: 9.0.0_dccccn23nvejzy75sgiosdt2au
       es-module-lexer: 1.2.0
+      escape-html: 1.0.3
       estree-walker: 3.0.3
       etag: 1.8.1
       fast-glob: 3.2.12
@@ -3416,6 +3420,10 @@ packages:
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
     dependencies:
       '@types/ms': 0.7.31
+    dev: true
+
+  /@types/escape-html/1.0.2:
+    resolution: {integrity: sha512-gaBLT8pdcexFztLSPRtriHeXY/Kn4907uOCZ4Q3lncFBkheAWOuNt53ypsF8szgxbEJ513UeBzcf4utN0EzEwA==}
     dev: true
 
   /@types/estree/1.0.0:
