@@ -1,3 +1,9 @@
+## <small>4.2.2 (2023-04-18)</small>
+
+* fix: escape msg in render restricted error html, backport #12889 ([8758c5c](https://github.com/vitejs/vite/commit/8758c5c)), closes [#12889](https://github.com/vitejs/vite/issues/12889)
+
+
+
 ## <small>4.2.1 (2023-03-20)</small>
 
 * fix: add `virtual:` to virtual module source map ignore (#12444) ([c4aa28f](https://github.com/vitejs/vite/commit/c4aa28f)), closes [#12444](https://github.com/vitejs/vite/issues/12444)
