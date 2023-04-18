@@ -3,6 +3,7 @@ import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
+import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -236,7 +237,7 @@ function renderRestrictedErrorHTML(msg: string): string {
   return html`
     <body>
       <h1>403 Restricted</h1>
-      <p>${msg.replace(/\n/g, '<br/>')}</p>
+      <p>${escapeHtml(msg).replace(/\n/g, '<br/>')}</p>
       <style>
         body {
           padding: 1em 2em;

@@ -272,6 +272,9 @@ importers:
       '@rollup/pluginutils':
         specifier: ^5.0.2
         version: 5.0.2(rollup@3.20.2)
+      '@types/escape-html':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@types/pnpapi':
         specifier: ^0.0.2
         version: 0.0.2
@@ -317,6 +320,9 @@ importers:
       es-module-lexer:
         specifier: ^1.2.0
         version: 1.2.0
+      escape-html:
+        specifier: ^1.0.3
+        version: 1.0.3
       estree-walker:
         specifier: ^3.0.3
         version: 3.0.3
@@ -3582,6 +3588,10 @@ packages:
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
     dependencies:
       '@types/ms': 0.7.31
+    dev: true
+
+  /@types/escape-html@1.0.0:
+    resolution: {integrity: sha512-Ehe6irbxo5BSYwG03buglLJCmy3JqqtC69UvopsBWYf4hDa+ZODJ7BuZU6y+YE4U6MaoSruTxM2+uePfAHts9Q==}
     dev: true
 
   /@types/estree@1.0.0:
