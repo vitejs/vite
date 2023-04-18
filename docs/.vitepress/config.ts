@@ -234,6 +234,10 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
+              text: 'Philoshophy',
+              link: '/guide/philosophy',
+            },
+            {
               text: 'Migration from v3',
               link: '/guide/migration',
             },
