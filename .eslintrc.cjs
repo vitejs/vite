@@ -128,7 +128,7 @@ module.exports = defineConfig({
       },
     },
     {
-      files: ['packages/vite/src/n/**'],
+      files: ['packages/vite/src/node/**'],
       rules: {
         'no-console': ['error'],
       },
