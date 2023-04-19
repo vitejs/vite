@@ -605,7 +605,7 @@ export async function toAbsoluteGlob(
 
   const resolved = normalizePath(
     (await resolveId(glob, importer, {
-      custom: { 'glob-imports': isSubImportsPattern },
+      custom: { 'vite:import-glob': { isSubImportsPattern } },
     })) || glob,
   )
   if (isSubImportsPattern) {
