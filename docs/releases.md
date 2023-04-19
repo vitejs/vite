@@ -22,6 +22,26 @@ The latest minor in the previous Vite Major to the latest one will keep receivin
 
 The Vite team partners with the main projects in the Ecosystem to test new Vite versions before they are releases through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using by Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
 
+## Semantic Versioning Edge Cases
+
+### TypeScript Definitions​
+
+We may ship incompatible changes to TypeScript definitions between minor versions. This is because:
+
+Sometimes TypeScript itself ships incompatible changes between minor versions, and we may have to adjust types to support newer versions of TypeScript.
+
+Occasionally we may need to adopt features that are only available in a newer version of TypeScript, raising the minimum required version of TypeScript.
+
+If you are using TypeScript, you can use a semver range that locks the current minor and manually upgrade when a new minor version of Vue is released.
+
+### esbuild
+
+[esbuild](https://esbuild.github.io/) is pre-1.0.0 and sometimes it has a breaking change we may need to include to have access to newer features and performance improvements. We may bump the esbuild's version in a Vite Minor.
+
+### Node.js non-LTS versions
+
+Non-LTS Node.js versions (odd-numbered) support is dropped automatically in the next Vite Minor to their (EOL)[https://endoflife.date/nodejs].
+
 ## Pre Releases​
 
 Minor releases typically go through a non-fixed number of beta releases. Major releases will go through an alpha phase and a beta phase.
