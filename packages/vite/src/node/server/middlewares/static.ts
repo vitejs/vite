@@ -3,6 +3,7 @@ import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
+import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -14,9 +15,12 @@ import {
   isInternalRequest,
   isParentDirectory,
   isWindows,
+  removeLeadingSlash,
   shouldServeFile,
   slash,
 } from '../../utils'
+
+const knownJavascriptExtensionRE = /\.[tj]sx?$/
 
 const sirvOptions = ({
   headers,
@@ -35,7 +39,7 @@ const sirvOptions = ({
       // for the MIME type video/mp2t. In almost all cases, we can expect
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
-      if (/\.[tj]sx?$/.test(pathname)) {
+      if (knownJavascriptExtensionRE.test(pathname)) {
         res.setHeader('Content-Type', 'application/javascript')
       }
       if (headers) {
@@ -89,7 +93,7 @@ export function serveStaticMiddleware(
     // also skip internal requests `/@fs/ /@vite-client` etc...
     const cleanedUrl = cleanUrl(req.url!)
     if (
-      cleanedUrl.endsWith('/') ||
+      cleanedUrl[cleanedUrl.length - 1] === '/' ||
       path.extname(cleanedUrl) === '.html' ||
       isInternalRequest(req.url!)
     ) {
@@ -119,8 +123,11 @@ export function serveStaticMiddleware(
     }
 
     const resolvedPathname = redirectedPathname || pathname
-    let fileUrl = path.resolve(dir, resolvedPathname.replace(/^\//, ''))
-    if (resolvedPathname.endsWith('/') && !fileUrl.endsWith('/')) {
+    let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
+    if (
+      resolvedPathname[resolvedPathname.length - 1] === '/' &&
+      fileUrl[fileUrl.length - 1] !== '/'
+    ) {
       fileUrl = fileUrl + '/'
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {
@@ -177,6 +184,9 @@ export function serveRawFsMiddleware(
   }
 }
 
+/**
+ * Check if the url is allowed to be served, via the `server.fs` config.
+ */
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
@@ -230,7 +240,7 @@ function renderRestrictedErrorHTML(msg: string): string {
   return html`
     <body>
       <h1>403 Restricted</h1>
-      <p>${msg.replace(/\n/g, '<br/>')}</p>
+      <p>${escapeHtml(msg).replace(/\n/g, '<br/>')}</p>
       <style>
         body {
           padding: 1em 2em;

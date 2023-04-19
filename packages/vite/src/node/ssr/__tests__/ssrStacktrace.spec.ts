@@ -9,6 +9,9 @@ async function createDevServer() {
     configFile: false,
     root,
     logLevel: 'silent',
+    optimizeDeps: {
+      disabled: true,
+    },
   })
   server.pluginContainer.buildStart({})
   return server

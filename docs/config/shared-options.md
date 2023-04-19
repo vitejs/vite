@@ -111,7 +111,7 @@ When aliasing to file system paths, always use absolute paths. Relative alias va
 More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
 
 ::: warning Using with SSR
-If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.io/aliases/) support aliasing via the `npm:` prefix.
 :::
 
 ## resolve.dedupe
@@ -232,7 +232,7 @@ Specify options to pass to CSS pre-processors. The file extensions are used as k
 - `less` - [Options](https://lesscss.org/usage/#less-options).
 - `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
 
-All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content.
+All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
 
 Example:
 

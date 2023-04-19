@@ -6,7 +6,7 @@ module.exports = defineConfig({
   root: true,
   extends: [
     'eslint:recommended',
-    'plugin:node/recommended',
+    'plugin:n/recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:regexp/recommended',
   ],
@@ -29,14 +29,9 @@ module.exports = defineConfig({
       },
     ],
 
-    'node/no-missing-import': [
-      'error',
-      {
-        allowModules: ['types', 'estree', 'less', 'sass', 'stylus'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
-      },
-    ],
-    'node/no-missing-require': [
+    'n/no-process-exit': 'off',
+    'n/no-missing-import': 'off',
+    'n/no-missing-require': [
       'error',
       {
         // for try-catching yarn pnp
@@ -44,22 +39,22 @@ module.exports = defineConfig({
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
       },
     ],
-    'node/no-extraneous-import': [
+    'n/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass', 'vitest'],
+        allowModules: ['vite', 'less', 'sass', 'vitest', 'unbuild'],
       },
     ],
-    'node/no-extraneous-require': [
+    'n/no-extraneous-require': [
       'error',
       {
         allowModules: ['vite'],
       },
     ],
-    'node/no-deprecated-api': 'off',
-    'node/no-unpublished-import': 'off',
-    'node/no-unpublished-require': 'off',
-    'node/no-unsupported-features/es-syntax': 'off',
+    'n/no-deprecated-api': 'off',
+    'n/no-unpublished-import': 'off',
+    'n/no-unpublished-require': 'off',
+    'n/no-unsupported-features/es-syntax': 'off',
 
     '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
@@ -118,7 +113,7 @@ module.exports = defineConfig({
     {
       files: 'packages/vite/**/*.*',
       rules: {
-        'node/no-restricted-require': [
+        'n/no-restricted-require': [
           'error',
           Object.keys(
             require('./packages/vite/package.json').devDependencies,
@@ -141,32 +136,32 @@ module.exports = defineConfig({
     {
       files: ['packages/vite/src/types/**', '*.spec.ts'],
       rules: {
-        'node/no-extraneous-import': 'off',
+        'n/no-extraneous-import': 'off',
       },
     },
     {
       files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
       rules: {
         'no-undef': 'off',
-        'node/no-missing-import': 'off',
+        'n/no-missing-import': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
       },
     },
     {
       files: ['playground/**'],
       rules: {
-        'node/no-extraneous-import': 'off',
-        'node/no-extraneous-require': 'off',
-        'node/no-missing-import': 'off',
-        'node/no-missing-require': 'off',
+        'n/no-extraneous-import': 'off',
+        'n/no-extraneous-require': 'off',
+        'n/no-missing-import': 'off',
+        'n/no-missing-require': 'off',
         // engine field doesn't exist in playgrounds
-        'node/no-unsupported-features/es-builtins': [
+        'n/no-unsupported-features/es-builtins': [
           'error',
           {
             version: '^14.18.0 || >=16.0.0',
           },
         ],
-        'node/no-unsupported-features/node-builtins': [
+        'n/no-unsupported-features/node-builtins': [
           'error',
           {
             version: '^14.18.0 || >=16.0.0',

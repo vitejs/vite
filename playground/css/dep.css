@@ -1,2 +1,3 @@
 @import '@vitejs/test-css-dep';
 @import '@vitejs/test-css-dep-exports';
+@import '@vitejs/test-css-proxy-dep';

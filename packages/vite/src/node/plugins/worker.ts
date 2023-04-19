@@ -32,14 +32,6 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
-export function isWorkerRequest(id: string): boolean {
-  const query = parseRequest(id)
-  if (query && query[WORKER_FILE_ID] != null) {
-    return true
-  }
-  return false
-}
-
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
   asset: EmittedAsset,
@@ -193,6 +185,20 @@ export async function workerFileToUrl(
   return encodeWorkerAssetFileName(fileName, workerMap)
 }
 
+export function webWorkerPostPlugin(): Plugin {
+  return {
+    name: 'vite:worker-post',
+    resolveImportMeta(property, { chunkId, format }) {
+      // document is undefined in the worker, so we need to avoid it in iife
+      if (property === 'url' && format === 'iife') {
+        return 'self.location.href'
+      }
+
+      return null
+    },
+  }
+}
+
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let server: ViteDevServer
@@ -234,11 +240,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
+    // @ts-expect-error return void to fallback to other plugins, even though
+    // the types doesn't allow it. https://github.com/rollup/rollup/pull/4932
     shouldTransformCachedModule({ id }) {
       if (isBuild && isWorkerQueryId(id) && config.build.watch) {
         return true
       }
-      return false
     },
 
     async transform(raw, id, options) {
@@ -287,25 +294,40 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           : 'classic'
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
-          // inline as blob data url
-          return {
-            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
-              'base64',
-            )}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`,
+          const encodedJs = `const encodedJs = "${Buffer.from(
+            chunk.code,
+          ).toString('base64')}";`
 
+          const code =
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
+            workerConstructor === 'Worker'
+              ? `${encodedJs}
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper() {
+            let objURL;
+            try {
+              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              if (!objURL) throw ''
+              return new ${workerConstructor}(objURL)
+            } catch(e) {
+              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+            } finally {
+              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }
+          }`
+              : `${encodedJs}
+          export default function WorkerWrapper() {
+            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          }
+          `
+
+          return {
+            code,
             // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' },
           }
@@ -345,9 +367,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         )
       }
-      if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+      if (code.match(workerAssetUrlRE)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
+          config.isWorker,
         )
 
         let match: RegExpExecArray | null

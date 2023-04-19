@@ -2,8 +2,9 @@ import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
 import { CSS_LANGS_RE, KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
-import type { ResolvedConfig } from '..'
+import type { PackageCache, ResolvedConfig } from '..'
 import {
+  escapeRegex,
   flattenId,
   isBuiltin,
   isExternalUrl,
@@ -57,14 +58,24 @@ export function esbuildDepPlugin(
     ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
 
+  // use separate package cache for optimizer as it caches paths around node_modules
+  // and it's unlikely for the core Vite process to traverse into node_modules again
+  const esmPackageCache: PackageCache = new Map()
+  const cjsPackageCache: PackageCache = new Map()
+
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false, scan: true })
+  const _resolve = config.createResolver({
+    asSrc: false,
+    scan: true,
+    packageCache: esmPackageCache,
+  })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
     isRequire: true,
     scan: true,
+    packageCache: cjsPackageCache,
   })
 
   const resolve = (
@@ -116,6 +127,12 @@ export function esbuildDepPlugin(
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
+      // clear package cache when esbuild is finished
+      build.onEnd(() => {
+        esmPackageCache.clear()
+        cjsPackageCache.clear()
+      })
+
       // externalize assets and commonly known non-js file types
       // See #8459 for more details about this require-import conversion
       build.onResolve(
@@ -265,6 +282,8 @@ module.exports = Object.create(new Proxy({}, {
   }
 }
 
+const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
+
 // esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
 export function esbuildCjsExternalPlugin(
@@ -274,9 +293,7 @@ export function esbuildCjsExternalPlugin(
   return {
     name: 'cjs-external',
     setup(build) {
-      const escape = (text: string) =>
-        `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
-      const filter = new RegExp(externals.map(escape).join('|'))
+      const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
       build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
         return {

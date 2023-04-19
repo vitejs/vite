@@ -74,7 +74,7 @@ You can read more about the transition in the [TypeScript 3.7 release notes](htt
 
 If you are using a library that heavily relies on class fields, please be careful about the library's intended usage of it.
 
-Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties), [Vue Class Components 8.x](https://github.com/vuejs/vue-class-component/issues/465), etc.
+Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties).
 
 But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
 
@@ -96,7 +96,7 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 /// <reference types="vite/client" />
 ```
 
-Also, you can add `vite/client` to `compilerOptions.types` of your `tsconfig`:
+Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json
 {
