@@ -351,7 +351,7 @@ const modules = {
 `import.meta.glob` also supports importing files as strings (similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string)) with the [Import Reflection](https://github.com/tc39/proposal-import-reflection) syntax:
 
 ```js
-const modules = import.meta.glob('./dir/*.js', { as: 'raw' })
+const modules = import.meta.glob('./dir/*.js', { as: 'raw', eager: true })
 ```
 
 The above will be transformed into the following:
