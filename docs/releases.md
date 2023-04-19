@@ -20,7 +20,7 @@ Vite does not have a fixed release cycle.
 
 The latest minor in the previous Vite Major to the latest one will keep receiving important fixes and security patches. After that, it would only get updates if there are security concerns. We recommend updating Vite regularly. Check out the [Migration Guides](https://vitejs.dev/guide/migration.html) when you update to each Major.
 
-The Vite team partners with the main projects in the Ecosystem to test new Vite versions before they are releases through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using by Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
+The Vite team partners with the main projects in the ecosystem to test new Vite versions before they are released through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
 
 ## Semantic Versioning Edge Cases
 
