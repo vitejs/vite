@@ -32,7 +32,7 @@ Sometimes TypeScript itself ships incompatible changes between minor versions, a
 
 Occasionally we may need to adopt features that are only available in a newer version of TypeScript, raising the minimum required version of TypeScript.
 
-If you are using TypeScript, you can use a semver range that locks the current minor and manually upgrade when a new minor version of Vue is released.
+If you are using TypeScript, you can use a semver range that locks the current minor and manually upgrade when a new minor version of Vite is released.
 
 ### esbuild
 
