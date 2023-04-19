@@ -24,7 +24,7 @@ if (!isBuild) {
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
         "mappings": "AAAO,aAAM,MAAM;",
-        "sourceRoot": "/root/",
+        "sourceRoot": "/root",
         "sources": [
           "bar.ts",
         ],

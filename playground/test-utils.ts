@@ -309,7 +309,7 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
   if (m.sourceRoot) {
-    m.sourceRoot = m.sourceRoot.replace(root + path.sep, '/root/')
+    m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
   return m
 }
