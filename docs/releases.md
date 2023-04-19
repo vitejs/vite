@@ -50,7 +50,7 @@ Pre-releases allow early adopters and maintainers from the Ecosystem to do integ
 
 ## Deprecations​
 
-We periodically deprecate features that have been superseed by better alternatives in Minor releases. Deprecated features will continue to work with a type or logged warning. They will be removed in the next major release after entering deprecated status. The [Migration Guide](https://vitejs.dev/guide/migration.html) for each major will list these removals and document an upgrade path for them.
+We periodically deprecate features that have been superseded by better alternatives in Minor releases. Deprecated features will continue to work with a type or logged warning. They will be removed in the next major release after entering deprecated status. The [Migration Guide](https://vitejs.dev/guide/migration.html) for each major will list these removals and document an upgrade path for them.
 
 ## Experimental Features​
 
