@@ -904,6 +904,7 @@ export function onRollupWarning(
           colors.yellow(`[plugin:${warning.plugin}]`),
         )} ${colors.yellow(warning.message)}`,
       )
+      return
     }
 
     warn(warning)
