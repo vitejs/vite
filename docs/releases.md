@@ -58,6 +58,6 @@ Some features are marked as experimental when released in a stable version of Vi
 
 ## RFCs​
 
-Many changes, including features, bug fixes, and documentation improvements are discussed, implemented and reviewed via GitHub discussions, issues, and pull requests workflow. For substantial changes that would affect several downstream projects we offer a Request For Comments (RFC) process to help gather consensus among the Vite core team, the Ecosystem, and the community.
+Many changes, including features, bug fixes, and documentation improvements are discussed, implemented and reviewed via GitHub discussions, issues, and pull requests workflow. For substantial changes that would affect several downstream projects, we offer a Request For Comments (RFC) process to help gather consensus among the Vite core team, the Ecosystem, and the community.
 
 Continue reading about the RFC process in the [vitejs/rfcs](https://github.com/vitejs/rfcs) repo on GitHub.
