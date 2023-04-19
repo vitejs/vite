@@ -159,7 +159,9 @@ The following hooks are called on each incoming module request:
 - [`load`](https://rollupjs.org/plugin-development/#load)
 - [`transform`](https://rollupjs.org/plugin-development/#transform)
 
-They also have an extended `options` parameter with additional Vite-specific properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
+These hooks also have an extended `options` parameter with additional Vite-specific properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
+
+During dev, `resolveId` will be called with the imported `source` and the proper `importer` value when resolving during the import analysis phase. Each imported URL will be resolved while transforming a JS source and normalized to a URL the browser can handle (relative paths will be transformed to absolute paths starting from root, and out-of-root paths will be prefixed with a `/@fs/` marker). When the browser request these modules, the Vite dev server no longer have information about the original `importer`. When `resolveId` is called for these URLs, the `importer` will be an absolute path for a generic `index.html` at root.
 
 The following hooks are called when the server is closed:
 
