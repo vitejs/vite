@@ -40,7 +40,7 @@ If you are using TypeScript, you can use a semver range that locks the current m
 
 ### Node.js non-LTS versions
 
-Non-LTS Node.js versions (odd-numbered) support is dropped automatically in the next Vite Minor to their (EOL)[https://endoflife.date/nodejs].
+Non-LTS Node.js versions (odd-numbered) support is dropped automatically in the next Vite Minor to their [EOL](https://endoflife.date/nodejs).
 
 ## Pre Releases​
 
