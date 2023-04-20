@@ -64,17 +64,11 @@ export class ModuleGraph {
   /**
    * @internal
    */
-  _unresolvedUrlToModuleMap = new Map<
-    string,
-    Promise<ModuleNode> | ModuleNode
-  >()
+  _unresolvedUrlToModuleMap = new Map<string, Promise<ModuleNode>>()
   /**
    * @internal
    */
-  _ssrUnresolvedUrlToModuleMap = new Map<
-    string,
-    Promise<ModuleNode> | ModuleNode
-  >()
+  _ssrUnresolvedUrlToModuleMap = new Map<string, Promise<ModuleNode>>()
 
   constructor(
     private resolveId: (
@@ -257,7 +251,7 @@ export class ModuleGraph {
   ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    let mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
+    let mod: Promise<ModuleNode> | ModuleNode | undefined = this._getUnresolvedUrlToModule(rawUrl, ssr)
     if (mod) {
       return mod
     }
@@ -287,7 +281,6 @@ export class ModuleGraph {
       else if (!this.urlToModuleMap.has(url)) {
         this.urlToModuleMap.set(url, mod)
       }
-      this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
       return mod
     })()
 
@@ -341,7 +334,7 @@ export class ModuleGraph {
   _getUnresolvedUrlToModule(
     url: string,
     ssr?: boolean,
-  ): Promise<ModuleNode> | ModuleNode | undefined {
+  ): Promise<ModuleNode> | undefined {
     return (
       ssr ? this._ssrUnresolvedUrlToModuleMap : this._unresolvedUrlToModuleMap
     ).get(url)
@@ -351,7 +344,7 @@ export class ModuleGraph {
    */
   _setUnresolvedUrlToModule(
     url: string,
-    mod: Promise<ModuleNode> | ModuleNode,
+    mod: Promise<ModuleNode>,
     ssr?: boolean,
   ): void {
     ;(ssr
