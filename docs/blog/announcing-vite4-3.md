@@ -60,7 +60,7 @@ Using [sapphi-red/performance-compare](https://github.com/sapphi-red/performance
 
 ![Vite 4.3 vs 4.2 startup time comparison](/vite4-3-startup-time.png)
 
-![Vite 4.3 vs 4.2 HMR time comparison](/vite4-3-startup-time.png)
+![Vite 4.3 vs 4.2 HMR time comparison](/vite4-3-hmr-time.png)
 
 - CPU: Ryzen 9 5900X, Memory: DDR4-3600 32GB, SSD: WD Blue SN550 NVME SSD
 - Windows 10 Pro 21H2 19044.2846
