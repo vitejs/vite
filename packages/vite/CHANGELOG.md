@@ -1,3 +1,11 @@
+## <small>4.3.1 (2023-04-20)</small>
+
+* fix: revert ensure module in graph before transforming (#12774) (#12929) ([9cc93a5](https://github.com/vitejs/vite/commit/9cc93a5)), closes [#12774](https://github.com/vitejs/vite/issues/12774) [#12929](https://github.com/vitejs/vite/issues/12929)
+* docs: 4.3 announcement and release notes (#12925) ([f29c582](https://github.com/vitejs/vite/commit/f29c582)), closes [#12925](https://github.com/vitejs/vite/issues/12925)
+* chore: clean up 4.3 changelog ([55ec023](https://github.com/vitejs/vite/commit/55ec023))
+
+
+
 ## 4.3.0 (2023-04-20)
 
 Vite 4.3 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite4-3)
