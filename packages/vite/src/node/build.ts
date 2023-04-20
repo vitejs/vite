@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import readLine from 'node:readline'
 import colors from 'picocolors'
 import type {
   ExternalOption,
@@ -907,6 +908,8 @@ export function onRollupWarning(
       return
     }
 
+    readLine.clearLine(process.stdout, 0)
+    readLine.cursorTo(process.stdout, 0)
     warn(warning)
   }
 
