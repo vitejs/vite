@@ -38,7 +38,7 @@ Docs in other languages: [简体中文](https://cn.vitejs.dev/), [日本語](htt
 
 In this minor, we focused on improving the dev server performance. The resolve logic got streamlined, improving hot paths and implementing smarter caching for finding `package.json`, TS config files, and resolved URL in general.
 
-You can read a detailed walkthrough of the performance work done in this blog post by one of Vite Contributors: [How we made Vite 4.3 faaaaster](https://sun0day.github.io/blog/vite/why-vite4_3-is-faster.html).
+You can read a detailed walkthrough of the performance work done in this blog post by one of Vite Contributors: [How we made Vite 4.3 faaaaster 🚀](https://sun0day.github.io/blog/vite/why-vite4_3-is-faster.html).
 
 This sprint resulted in speed improvements across the board compared to Vite 4.2.
 
