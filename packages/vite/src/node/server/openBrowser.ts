@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
 import open from 'open'
+import type { Options as OpenOptions } from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
@@ -119,7 +120,7 @@ async function startBrowserProcess(
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options: open.Options = browser
+    const options: OpenOptions = browser
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
     open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
