@@ -1093,7 +1093,7 @@ async function loadConfigFromBundledFile(
   if (isESM) {
     const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
       .toString(16)
-      .slice(2)})}`
+      .slice(2)}`
     const fileNameTmp = `${fileBase}.mjs`
     const fileUrl = `${pathToFileURL(fileBase)}.mjs`
     await fsp.writeFile(fileNameTmp, bundledCode)

@@ -64,7 +64,7 @@
     "eslint": "^8.36.0",
     "eslint-define-config": "^1.17.0",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-regexp": "^1.13.0",
     "execa": "^7.1.1",
     "fast-glob": "^3.2.12",
@@ -104,7 +104,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.30.0",
+  "packageManager": "pnpm@8.2.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
