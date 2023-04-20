@@ -127,6 +127,12 @@ function createNodePlugins(
           src: 'const resolveId = require("./lib/resolve-id")',
           replacement: 'const resolveId = (id) => id',
         },
+        // open includes a declation of `__dirname` variable
+        // this conflicts with cjsPatchPlugin
+        'open/index.js': {
+          src: 'const __dirname = path.dirname(fileURLToPath(import.meta.url));',
+          replacement: '',
+        },
       }),
 
     commonjs({
