@@ -44,11 +44,15 @@ This sprint resulted in speed improvements across the board compared to Vite 4.2
 
 Using [sapphi-red/performance-compare](https://github.com/sapphi-red/performance-compare), which tests an app with 1000 React Components:
 
-- Vite 4.2: Vite 4.2.1 + plugin-react-swc 3.2.0
-- Vite 4.3: Vite 4.3.0 + plugin-react-swc 3.3.0
+| Vite (babel)   |  Vite 4.2 | Vite 4.3 |
+| :------------- | --------: | -------: |
+| dev cold start | 17249.0ms | 5132.4ms |
+| dev warm start |  6027.8ms | 4536.1ms |
+| Root HMR       |    46.8ms |   26.7ms |
+| Leaf HMR       |    27.0ms |   12.9ms |
 
-|                |  Vite 4.2 | Vite 4.3 |
-| -------------- | --------: | -------: |
+| Vite (swc)     |  Vite 4.2 | Vite 4.3 |
+| :------------- | --------: | -------: |
 | dev cold start | 13552.5ms | 3201.0ms |
 | dev warm start |  4625.5ms | 2834.4ms |
 | Root HMR       |    30.5ms |   24.0ms |
@@ -57,6 +61,15 @@ Using [sapphi-red/performance-compare](https://github.com/sapphi-red/performance
 ![Vite 4.3 vs 4.2 startup time comparison](/vite4-3-startup-time.png)
 
 ![Vite 4.3 vs 4.2 HMR time comparison](/vite4-3-startup-time.png)
+
+- CPU: Ryzen 9 5900X, Memory: DDR4-3600 32GB, SSD: WD Blue SN550 NVME SSD
+- Windows 10 Pro 21H2 19044.2846
+- Node.js 18.16.0
+- Vite and React Plugin versions
+  - Vite 4.2 (babel): Vite 4.2.1 + plugin-react 3.1.0
+  - Vite 4.3 (babel): Vite 4.3.0 + plugin-react 4.0.0-beta.1
+  - Vite 4.2 (swc): Vite 4.2.1 + plugin-react-swc 3.2.0
+  - Vite 4.3 (swc): Vite 4.3.0 + plugin-react-swc 3.3.0
 
 You can read more information about the benchmark here (https://gist.github.com/sapphi-red/25be97327ee64a3c1dce793444afdf6e). Early adopters have also reported seeing 1.5x-2x dev startup time improvement on real apps while testing the Vite 4.3 beta. We'd love to know the results for your apps.
 
