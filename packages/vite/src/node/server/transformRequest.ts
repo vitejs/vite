@@ -172,11 +172,6 @@ async function loadAndTransform(
   let code: string | null = null
   let map: SourceDescription['map'] = null
 
-  // Ensure that the module is in the graph before it is loaded and the file is checked.
-  // This prevents errors from occurring during the load process and interrupting the watching process at its inception.
-  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
-  ensureWatchedFile(watcher, mod.file, root)
-
   // load
   const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, { ssr })
@@ -247,6 +242,9 @@ async function loadAndTransform(
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
   }
+  // ensure module in graph after successful load
+  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
+  ensureWatchedFile(watcher, mod.file, root)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
