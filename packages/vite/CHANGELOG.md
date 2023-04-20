@@ -1,3 +1,9 @@
+## 4.3.0 (2023-04-20)
+
+* fix(build): do not repeatedly output warning message (#12910) ([251d0ab](https://github.com/vitejs/vite/commit/251d0ab)), closes [#12910](https://github.com/vitejs/vite/issues/12910)
+
+
+
 ## 4.3.0-beta.8 (2023-04-19)
 
 * fix: escape msg in render restricted error html (#12889) ([3aa2127](https://github.com/vitejs/vite/commit/3aa2127)), closes [#12889](https://github.com/vitejs/vite/issues/12889)
