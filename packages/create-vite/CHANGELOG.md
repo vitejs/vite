@@ -1,3 +1,15 @@
+## 4.3.0 (2023-04-20)
+
+* fix(create-vite): update template-lit-ts tsconfig (fix #12854) (#12855) ([c186815](https://github.com/vitejs/vite/commit/c186815)), closes [#12854](https://github.com/vitejs/vite/issues/12854) [#12855](https://github.com/vitejs/vite/issues/12855)
+* feat(create-vite): add eslint to React templates (#12801) ([d84460a](https://github.com/vitejs/vite/commit/d84460a)), closes [#12801](https://github.com/vitejs/vite/issues/12801)
+* feat(create-vite): move TypeScript ones up (#12057) ([313712d](https://github.com/vitejs/vite/commit/313712d)), closes [#12057](https://github.com/vitejs/vite/issues/12057)
+* chore(create-vite): remove unnecessary App class Reference (#12771) ([1607f4a](https://github.com/vitejs/vite/commit/1607f4a)), closes [#12771](https://github.com/vitejs/vite/issues/12771)
+* chore(create-vite): remove wrapper div for react template (#12867) ([3679bd7](https://github.com/vitejs/vite/commit/3679bd7)), closes [#12867](https://github.com/vitejs/vite/issues/12867)
+* chore(deps): update dependency @tsconfig/svelte to v4 (#12879) ([79619a9](https://github.com/vitejs/vite/commit/79619a9)), closes [#12879](https://github.com/vitejs/vite/issues/12879)
+* docs: update link to svelte-hmr (#12893) ([2ddeead](https://github.com/vitejs/vite/commit/2ddeead)), closes [#12893](https://github.com/vitejs/vite/issues/12893)
+
+
+
 ## 4.3.0-beta.0 (2023-04-06)
 
 * chore: use @vitejs/release-scripts (#12682) ([9c37cc1](https://github.com/vitejs/vite/commit/9c37cc1)), closes [#12682](https://github.com/vitejs/vite/issues/12682)
