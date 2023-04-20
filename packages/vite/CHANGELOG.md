@@ -1,6 +1,28 @@
 ## 4.3.0 (2023-04-20)
 
-Vite 4.3 is out!
+Vite 4.3 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite4-3)
+
+[![Vite 4.3, It's Fast]([../../docs/public/og-image-announcing-vite-4-3.png](https://vitejs.dev/og-image-announcing-vite4.png))](https://vitejs.dev/blog/announcing-vite4-3)
+
+In this minor we focused on improving the dev server performance. The resolve logic got stream-lined, improving hot paths and implementing smarter caching for finding `package.json`, TS config files, and resolved URL in general.
+
+You can read a detailed walktrough of the performance work done in this blog post by one of Vite Contributors: [How we made Vite 4.3 faaaaster](https://sun0day.github.io/blog/vite/why-vite4_3-is-faster.html).
+
+This sprint resulted in speed improvements accross the board compared to Vite 4.2.
+
+Using [sapphi-red/performance-compare](https://github.com/sapphi-red/performance-compare), which tests an app with 1000 React Components:
+
+- Vite 4.2: Vite 4.2.1 + plugin-react-swc 3.2.0
+- Vite 4.3: Vite 4.3.0 + plugin-react-swc 3.3.0
+
+|                |   Vite 4.2   |    Vite 4.3   |
+|----------------|-------------:|--------------:|
+| dev cold start |   13552.5ms  |     3201.0ms  |
+| dev warm start |    4625.5ms  |     2834.4ms  |
+| Root HMR       |      30.5ms  |       24.0ms  |
+| Leaf HMR       |      16.9ms  |       10.0ms  |
+
+You can read more information about the benchmark here (https://gist.github.com/sapphi-red/25be97327ee64a3c1dce793444afdf6e). Early adopters have also reported seeing 1.5x-2x dev startup time improvement on real apps while testing the Vite 4.3 beta. We'd love to know the results for your own apps.
 
 ### Features
 
