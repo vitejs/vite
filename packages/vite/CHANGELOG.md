@@ -6,7 +6,7 @@ Vite 4.3 is out! Read the [announcement blog post here](https://vitejs.dev/blog/
 
 In this minor we focused on improving the dev server performance. The resolve logic got stream-lined, improving hot paths and implementing smarter caching for finding `package.json`, TS config files, and resolved URL in general.
 
-You can read a detailed walktrough of the performance work done in this blog post by one of Vite Contributors: [How we made Vite 4.3 faaaaster](https://sun0day.github.io/blog/vite/why-vite4_3-is-faster.html).
+You can read a detailed walktrough of the performance work done in this blog post by one of Vite Contributors: [How we made Vite 4.3 faaaaster 🚀](https://sun0day.github.io/blog/vite/why-vite4_3-is-faster.html).
 
 This sprint resulted in speed improvements accross the board compared to Vite 4.2.
 
