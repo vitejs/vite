@@ -908,11 +908,11 @@ export function onRollupWarning(
       return
     }
 
-    readLine.clearLine(process.stdout, 0)
-    readLine.cursorTo(process.stdout, 0)
     warn(warning)
   }
 
+  readLine.clearLine(process.stdout, 0)
+  readLine.cursorTo(process.stdout, 0)
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
