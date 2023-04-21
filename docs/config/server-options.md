@@ -294,7 +294,7 @@ export default defineConfig({
         searchForWorkspaceRoot(process.cwd()),
         // your custom rules
         '/path/to/custom/allow_directory',
-        '/path/to/custom/allow_file.demo'
+        '/path/to/custom/allow_file.demo',
       ],
     },
   },

@@ -200,7 +200,11 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file)))
+  if (
+    server.config.server.fs.allow.some(
+      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
+    )
+  )
     return true
 
   return false
