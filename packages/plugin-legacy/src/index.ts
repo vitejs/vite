@@ -1,4 +1,4 @@
-/* eslint-disable node/no-extraneous-import */
+/* eslint-disable n/no-extraneous-import */
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
