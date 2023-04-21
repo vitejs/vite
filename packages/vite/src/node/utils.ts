@@ -247,7 +247,7 @@ export function isParentDirectory(dir: string, file: string): boolean {
  *
  * @param file1 - normalized absolute path
  * @param file2 - normalized absolute path
- * @returns true if dir is a parent of file
+ * @returns true if both files url are identical
  */
 export function isSameFileUri(file1: string, file2: string): boolean {
   return (
