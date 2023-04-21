@@ -15,7 +15,6 @@ describe('loadEnv', () => {
           "VITE_ENV1": "ENV1",
           "VITE_ENV2": "ENV2",
           "VITE_ENV3": "ENV3",
-          "VITE_USER_NODE_ENV": "production",
         }
       `)
   })
@@ -36,14 +35,21 @@ describe('loadEnv', () => {
         {
           "VITE_APP_BASE_ROUTE": "/app/",
           "VITE_APP_BASE_URL": "/app/",
-          "VITE_USER_NODE_ENV": "production",
         }
       `)
   })
 
   test('VITE_USER_NODE_ENV', () => {
     loadEnv('development', join(__dirname, './env'))
-    expect(process.env.VITE_USER_NODE_ENV).toEqual('production')
+    expect(process.env.VITE_USER_NODE_ENV).toEqual(undefined)
+  })
+
+  test('VITE_USER_NODE_ENV for dev behaviour in build', () => {
+    const _nodeEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    loadEnv('testing', join(__dirname, './env'))
+    expect(process.env.VITE_USER_NODE_ENV).toEqual('development')
+    process.env.NODE_ENV = _nodeEnv
   })
 
   test('Already exists VITE_USER_NODE_ENV', () => {

@@ -39,13 +39,13 @@ test('fetch', async () => {
 
 test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? 'data:application/json' : '/test.json'
+    isBuild ? 'data:application/json' : '/test.json',
   )
 })
 
 test('?raw', async () => {
   expect(await page.textContent('.raw')).toBe(
-    readFileSync(require.resolve('../test.json'), 'utf-8')
+    readFileSync(require.resolve('../test.json'), 'utf-8'),
   )
 })
 
@@ -53,10 +53,10 @@ test.runIf(isServe)('should full reload', async () => {
   expect(await page.textContent('.hmr')).toBe(hmrStringified)
 
   editFile('hmr.json', (code) =>
-    code.replace('"this is hmr json"', '"this is hmr update json"')
+    code.replace('"this is hmr json"', '"this is hmr update json"'),
   )
   await untilUpdated(
     () => page.textContent('.hmr'),
-    '"this is hmr update json"'
+    '"this is hmr update json"',
   )
 })

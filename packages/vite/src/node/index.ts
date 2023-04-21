@@ -1,3 +1,6 @@
+import type * as Rollup from 'rollup'
+
+export type { Rollup }
 export * from './config'
 export { createServer } from './server'
 export { preview } from './preview'
@@ -7,6 +10,7 @@ export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'
+export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'
 
 // additional types
@@ -18,20 +22,21 @@ export type {
   FileSystemServeOptions,
   ServerHook,
   ResolvedServerOptions,
-  ResolvedServerUrls
+  ResolvedServerUrls,
 } from './server'
 export type {
   BuildOptions,
   LibraryOptions,
   LibraryFormats,
   RenderBuiltAssetUrl,
-  ResolvedBuildOptions
+  ResolvedBuildOptions,
 } from './build'
 export type {
   PreviewOptions,
   PreviewServer,
+  PreviewServerForHook,
   PreviewServerHook,
-  ResolvedPreviewOptions
+  ResolvedPreviewOptions,
 } from './preview'
 export type {
   DepOptimizationMetadata,
@@ -41,14 +46,14 @@ export type {
   DepOptimizationProcessing,
   OptimizedDepInfo,
   DepsOptimizer,
-  ExportsData
+  ExportsData,
 } from './optimizer'
 export type {
   ResolvedSSROptions,
   SsrDepOptimizationOptions,
   SSROptions,
   SSRFormat,
-  SSRTarget
+  SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
 export type { PackageCache, PackageData } from './packages'
@@ -58,33 +63,31 @@ export type {
   LogErrorOptions,
   LogLevel,
   LogType,
-  LoggerOptions
+  LoggerOptions,
 } from './logger'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
   IndexHtmlTransformContext,
   IndexHtmlTransformResult,
-  HtmlTagDescriptor
+  HtmlTagDescriptor,
 } from './plugins/html'
 export type {
   CSSOptions,
   CSSModulesOptions,
-  PreprocessCSSResult
+  PreprocessCSSResult,
 } from './plugins/css'
-export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
-import type { ChunkMetadata } from './plugins/metadata'
 
 export type {
   WebSocketServer,
   WebSocketClient,
-  WebSocketCustomListener
+  WebSocketCustomListener,
 } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
@@ -92,7 +95,7 @@ export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
-  TransformResult
+  TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 
@@ -104,20 +107,21 @@ export type {
   FullReloadPayload,
   CustomPayload,
   PrunePayload,
-  ErrorPayload
+  ErrorPayload,
 } from 'types/hmrPayload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,
-  InvalidatePayload
+  InvalidatePayload,
 } from 'types/customEvent'
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
-  KnownAsTypeMap
+  KnownAsTypeMap,
 } from 'types/importGlob'
+export type { ChunkMetadata } from 'types/metadata'
 
 // dep types
 export type {
@@ -125,7 +129,7 @@ export type {
   MapToFunction,
   ResolverFunction,
   ResolverObject,
-  Alias
+  Alias,
 } from 'dep-types/alias'
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
@@ -133,15 +137,9 @@ export type { HttpProxy } from 'dep-types/http-proxy'
 export type {
   FSWatcher,
   WatchOptions,
-  AwaitWriteFinishOptions
+  AwaitWriteFinishOptions,
 } from 'dep-types/chokidar'
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-
-declare module 'rollup' {
-  export interface RenderedChunk {
-    viteMetadata: ChunkMetadata
-  }
-}

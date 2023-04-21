@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
-import { resolve as _resolveExports } from 'resolve.exports'
+import { exports, imports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
@@ -13,38 +13,39 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
-  SPECIAL_QUERY_RE
+  SPECIAL_QUERY_RE,
 } from '../constants'
 import {
   bareImportRE,
   cleanUrl,
   createDebugger,
-  ensureVolumeInPath,
+  deepImportRE,
   fsPathFromId,
-  getPotentialTsSrcPaths,
   injectQuery,
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isFileReadable,
+  isInNodeModules,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
-  isPossibleTsOutput,
   isTsRequest,
   isWindows,
-  lookupFile,
-  nestedResolveFrom,
   normalizePath,
-  resolveFrom,
-  slash
+  safeRealpathSync,
+  slash,
+  tryStatSync,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
-import { loadPackageData, resolvePackageData } from '../packages'
-import { isWorkerRequest } from './worker'
+import {
+  findNearestMainPackageData,
+  findNearestPackageData,
+  loadPackageData,
+  resolvePackageData,
+} from '../packages'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -55,14 +56,18 @@ export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
-const nodeModulesInPathRE = /(?:^|\/)node_modules\//
+const subpathImportsPrefix = '#'
 
-const isDebug = process.env.DEBUG
+const startsWithWordCharRE = /^\w/
+
 const debug = createDebugger('vite:resolve-details', {
-  onlyWhenFocused: true
+  onlyWhenFocused: true,
 })
 
 export interface ResolveOptions {
+  /**
+   * @default ['module', 'jsnext:main', 'jsnext']
+   */
   mainFields?: string[]
   /**
    * @deprecated In future, `mainFields` should be used instead.
@@ -70,8 +75,14 @@ export interface ResolveOptions {
    */
   browserField?: boolean
   conditions?: string[]
+  /**
+   * @default ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
+   */
   extensions?: string[]
   dedupe?: string[]
+  /**
+   * @default false
+   */
   preserveSymlinks?: boolean
 }
 
@@ -89,7 +100,6 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   asSrc?: boolean
   tryIndex?: boolean
   tryPrefix?: string
-  skipPackageJson?: boolean
   preferRelative?: boolean
   isRequire?: boolean
   // #3040
@@ -105,6 +115,13 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
+
+  /**
+   * Set by createResolver, we only care about the resolved id. moduleSideEffects
+   * and other fields are discarded so we can avoid computing them.
+   * @internal
+   */
+  idOnly?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -113,15 +130,31 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
     isProduction,
     asSrc,
     ssrConfig,
-    preferRelative = false
+    preferRelative = false,
   } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
+
+  // In unix systems, absolute paths inside root first needs to be checked as an
+  // absolute URL (/root/root/path-to-file) resulting in failed checks before falling
+  // back to checking the path as absolute. If /root/root isn't a valid path, we can
+  // avoid these checks. Absolute paths inside root are common in user code as many
+  // paths are resolved by the user. For example for an alias.
+  const rootInRoot = tryStatSync(path.join(root, root))?.isDirectory() ?? false
 
   return {
     name: 'vite:resolve',
 
     async resolveId(id, importer, resolveOpts) {
+      if (
+        id[0] === '\0' ||
+        id.startsWith('virtual:') ||
+        // When injected directly in html/client code
+        id.startsWith('/virtual:')
+      ) {
+        return
+      }
+
       const ssr = resolveOpts?.ssr === true
 
       // We need to delay depsOptimizer until here instead of passing it as an option
@@ -141,20 +174,27 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const options: InternalResolveOptions = {
         isRequire,
         ...resolveOptions,
-        scan: resolveOpts?.scan ?? resolveOptions.scan
+        scan: resolveOpts?.scan ?? resolveOptions.scan,
+      }
+
+      const resolvedImports = resolveSubpathImports(
+        id,
+        importer,
+        options,
+        targetWeb,
+      )
+      if (resolvedImports) {
+        id = resolvedImports
       }
 
       if (importer) {
-        const _importer = isWorkerRequest(importer)
-          ? splitFileAndPostfix(importer).file
-          : importer
         if (
-          isTsRequest(_importer) ||
+          isTsRequest(importer) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(_importer)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
@@ -167,61 +207,35 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (asSrc && depsOptimizer?.isOptimizedDepUrl(id)) {
         const optimizedPath = id.startsWith(FS_PREFIX)
           ? fsPathFromId(id)
-          : normalizePath(ensureVolumeInPath(path.resolve(root, id.slice(1))))
+          : normalizePath(path.resolve(root, id.slice(1)))
         return optimizedPath
-      }
-
-      const ensureVersionQuery = (resolved: string): string => {
-        if (
-          !options.isBuild &&
-          depsOptimizer &&
-          !(
-            resolved === normalizedClientEntry ||
-            resolved === normalizedEnvEntry
-          )
-        ) {
-          // Ensure that direct imports of node_modules have the same version query
-          // as if they would have been imported through a bare import
-          // Use the original id to do the check as the resolved id may be the real
-          // file path after symlinks resolution
-          const isNodeModule =
-            nodeModulesInPathRE.test(normalizePath(id)) ||
-            nodeModulesInPathRE.test(normalizePath(resolved))
-
-          if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
-            const versionHash = depsOptimizer.metadata.browserHash
-            if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
-              resolved = injectQuery(resolved, `v=${versionHash}`)
-            }
-          }
-        }
-        return resolved
       }
 
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
-        const fsPath = fsPathFromId(id)
-        res = tryFsResolve(fsPath, options)
-        isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        res = fsPathFromId(id)
+        // We don't need to resolve these paths since they are already resolved
         // always return here even if res doesn't exist since /@fs/ is explicit
-        // if the file doesn't exist it should be a 404
-        return ensureVersionQuery(res || fsPath)
+        // if the file doesn't exist it should be a 404.
+        debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id.startsWith('/')) {
+      if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res)
+          debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
 
       // relative
       if (
-        id.startsWith('.') ||
-        ((preferRelative || importer?.endsWith('.html')) && /^\w/.test(id))
+        id[0] === '.' ||
+        ((preferRelative || importer?.endsWith('.html')) &&
+          startsWithWordCharRE.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
@@ -235,7 +249,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
             const browserHash = optimizedDepInfoFromFile(
               depsOptimizer.metadata,
-              normalizedFsPath
+              normalizedFsPath,
             )?.browserHash
             if (browserHash) {
               return injectQuery(normalizedFsPath, `v=${browserHash}`)
@@ -253,15 +267,26 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          res = ensureVersionQuery(res)
-          isDebug &&
-            debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          const pkg = importer != null && idToPkgMap.get(importer)
-          if (pkg) {
-            idToPkgMap.set(res, pkg)
-            return {
-              id: res,
-              moduleSideEffects: pkg.hasSideEffects(res)
+          res = ensureVersionQuery(res, id, options, depsOptimizer)
+          debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+
+          // If this isn't a script imported from a .html file, include side effects
+          // hints so the non-used code is properly tree-shaken during build time.
+          if (
+            !options.idOnly &&
+            !options.scan &&
+            options.isBuild &&
+            !importer?.endsWith('.html')
+          ) {
+            const resPkg = findNearestPackageData(
+              path.dirname(res),
+              options.packageCache,
+            )
+            if (resPkg) {
+              return {
+                id: res,
+                moduleSideEffects: resPkg.hasSideEffects(res),
+              }
             }
           }
           return res
@@ -269,13 +294,12 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       // drive relative fs paths (only windows)
-      if (isWindows && id.startsWith('/')) {
+      if (isWindows && id[0] === '/') {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug &&
-            debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res)
+          debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
 
@@ -284,16 +308,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isNonDriveRelativeAbsolutePath(id) &&
         (res = tryFsResolve(id, options))
       ) {
-        isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        return ensureVersionQuery(res)
+        debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // external
       if (isExternalUrl(id)) {
-        return {
-          id,
-          external: true
-        }
+        return options.idOnly ? id : { id, external: true }
       }
 
       // data uri: pass through (this only happens during build and will be
@@ -310,7 +331,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           asSrc &&
           depsOptimizer &&
           !options.scan &&
-          (res = await tryOptimizedResolve(depsOptimizer, id, importer))
+          (res = await tryOptimizedResolve(
+            depsOptimizer,
+            id,
+            importer,
+            options.preserveSymlinks,
+            options.packageCache,
+          ))
         ) {
           return res
         }
@@ -323,7 +350,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             importer,
             options,
             false,
-            external
+            external,
           ))
         ) {
           return res
@@ -337,7 +364,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             targetWeb,
             depsOptimizer,
             ssr,
-            external
+            external,
           ))
         ) {
           return res
@@ -352,22 +379,24 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               if (importer) {
                 message += ` imported from "${path.relative(
                   process.cwd(),
-                  importer
+                  importer,
                 )}"`
               }
               message += `. Consider disabling ssr.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 
-            return {
-              id,
-              external: true
-            }
+            return options.idOnly ? id : { id, external: true }
           } else {
             if (!asSrc) {
-              debug(
+              debug?.(
                 `externalized node built-in "${id}" to empty module. ` +
-                  `(imported by: ${colors.white(colors.dim(importer))})`
+                  `(imported by: ${colors.white(colors.dim(importer))})`,
+              )
+            } else if (isProduction) {
+              this.warn(
+                `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
+                  `See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
               )
             }
             return isProduction
@@ -377,7 +406,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
       }
 
-      isDebug && debug(`[fallthrough] ${colors.dim(id)}`)
+      debug?.(`[fallthrough] ${colors.dim(id)}`)
     },
 
     load(id) {
@@ -389,7 +418,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return `\
 export default new Proxy({}, {
   get(_, key) {
-    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.\`)
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
   }
 })`
         }
@@ -402,178 +431,239 @@ export default new Proxy({}, {
           return `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
         }
       }
-    }
+    },
   }
 }
 
-function splitFileAndPostfix(path: string) {
-  let file = path
-  let postfix = ''
+function resolveSubpathImports(
+  id: string,
+  importer: string | undefined,
+  options: InternalResolveOptions,
+  targetWeb: boolean,
+) {
+  if (!importer || !id.startsWith(subpathImportsPrefix)) return
+  const basedir = path.dirname(importer)
+  const pkgData = findNearestPackageData(basedir, options.packageCache)
+  if (!pkgData) return
 
-  let postfixIndex = path.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = path.indexOf('#')
+  let importsPath = resolveExportsOrImports(
+    pkgData.data,
+    id,
+    options,
+    targetWeb,
+    'imports',
+  )
+
+  if (importsPath?.[0] === '.') {
+    importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
+
+    if (importsPath[0] !== '.') {
+      importsPath = `./${importsPath}`
+    }
   }
-  if (postfixIndex > 0) {
-    file = path.slice(0, postfixIndex)
-    postfix = path.slice(postfixIndex)
+
+  return importsPath
+}
+
+function ensureVersionQuery(
+  resolved: string,
+  id: string,
+  options: InternalResolveOptions,
+  depsOptimizer?: DepsOptimizer,
+): string {
+  if (
+    !options.isBuild &&
+    !options.scan &&
+    depsOptimizer &&
+    !(resolved === normalizedClientEntry || resolved === normalizedEnvEntry)
+  ) {
+    // Ensure that direct imports of node_modules have the same version query
+    // as if they would have been imported through a bare import
+    // Use the original id to do the check as the resolved id may be the real
+    // file path after symlinks resolution
+    const isNodeModule = isInNodeModules(id) || isInNodeModules(resolved)
+
+    if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
+      const versionHash = depsOptimizer.metadata.browserHash
+      if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
+        resolved = injectQuery(resolved, `v=${versionHash}`)
+      }
+    }
   }
-  return { file, postfix }
+  return resolved
+}
+
+function splitFileAndPostfix(path: string) {
+  const file = cleanUrl(path)
+  return { file, postfix: path.slice(file.length) }
 }
 
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
-  targetWeb = true
+  targetWeb = true,
+  skipPackageJson = false,
 ): string | undefined {
-  const { file, postfix } = splitFileAndPostfix(fsPath)
-
-  let res: string | undefined
-
-  // if there is a postfix, try resolving it as a complete path first (#4703)
-  if (
-    postfix &&
-    (res = tryResolveFile(
-      fsPath,
-      '',
-      options,
-      false,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      false,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-
-  for (const ext of options.extensions) {
-    if (
-      postfix &&
-      (res = tryResolveFile(
-        fsPath + ext,
-        '',
-        options,
-        false,
-        targetWeb,
-        options.tryPrefix,
-        options.skipPackageJson
-      ))
-    ) {
-      return res
-    }
-
-    if (
-      (res = tryResolveFile(
-        file + ext,
-        postfix,
-        options,
-        false,
-        targetWeb,
-        options.tryPrefix,
-        options.skipPackageJson
-      ))
-    ) {
-      return res
-    }
-  }
-
-  if (
-    postfix &&
-    (res = tryResolveFile(
-      fsPath,
-      '',
-      options,
-      tryIndex,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-
-  if (
-    (res = tryResolveFile(
-      file,
-      postfix,
-      options,
-      tryIndex,
-      targetWeb,
-      options.tryPrefix,
-      options.skipPackageJson
-    ))
-  ) {
-    return res
-  }
-}
-
-function tryResolveFile(
-  file: string,
-  postfix: string,
-  options: InternalResolveOptions,
-  tryIndex: boolean,
-  targetWeb: boolean,
-  tryPrefix?: string,
-  skipPackageJson?: boolean
-): string | undefined {
-  if (isFileReadable(file)) {
-    if (!fs.statSync(file).isDirectory()) {
-      return getRealPath(file, options.preserveSymlinks) + postfix
-    } else if (tryIndex) {
-      if (!skipPackageJson) {
-        const pkgPath = file + '/package.json'
-        try {
-          // path points to a node package
-          const pkg = loadPackageData(pkgPath, options.preserveSymlinks)
-          const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
-          return resolved
-        } catch (e) {
-          if (e.code !== 'ENOENT') {
-            throw e
-          }
-        }
-      }
-      const index = tryFsResolve(file + '/index', options)
-      if (index) return index + postfix
-    }
-  }
-
-  const tryTsExtension = options.isFromTsImporter && isPossibleTsOutput(file)
-  if (tryTsExtension) {
-    const tsSrcPaths = getPotentialTsSrcPaths(file)
-    for (const srcPath of tsSrcPaths) {
-      const res = tryResolveFile(
-        srcPath,
-        postfix,
+  // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
+  // source code so we only need to perform the check for dependencies.
+  // We don't support `?` in node_modules paths, so we only need to check in this branch.
+  const hashIndex = fsPath.indexOf('#')
+  if (hashIndex >= 0 && isInNodeModules(fsPath)) {
+    const queryIndex = fsPath.indexOf('?')
+    // We only need to check foo#bar?baz and foo#bar, ignore foo?bar#baz
+    if (queryIndex < 0 || queryIndex > hashIndex) {
+      const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
+      const res = tryCleanFsResolve(
+        file,
         options,
         tryIndex,
         targetWeb,
-        tryPrefix,
-        skipPackageJson
+        skipPackageJson,
       )
-      if (res) return res
+      if (res) return res + fsPath.slice(file.length)
     }
-    return
   }
 
-  if (tryPrefix) {
-    const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
-    return tryResolveFile(prefixed, postfix, options, tryIndex, targetWeb)
+  const { file, postfix } = splitFileAndPostfix(fsPath)
+  const res = tryCleanFsResolve(
+    file,
+    options,
+    tryIndex,
+    targetWeb,
+    skipPackageJson,
+  )
+  if (res) return res + postfix
+}
+
+const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
+const isPossibleTsOutput = (url: string): boolean => knownTsOutputRE.test(url)
+
+function tryCleanFsResolve(
+  file: string,
+  options: InternalResolveOptions,
+  tryIndex = true,
+  targetWeb = true,
+  skipPackageJson = false,
+): string | undefined {
+  const { tryPrefix, extensions, preserveSymlinks } = options
+
+  const fileStat = tryStatSync(file)
+
+  // Try direct match first
+  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
+
+  let res: string | undefined
+
+  // If path.dirname is a valid directory, try extensions and ts resolution logic
+  const possibleJsToTs = options.isFromTsImporter && isPossibleTsOutput(file)
+  if (possibleJsToTs || extensions.length || tryPrefix) {
+    const dirPath = path.dirname(file)
+    const dirStat = tryStatSync(dirPath)
+    if (dirStat?.isDirectory()) {
+      if (possibleJsToTs) {
+        // try resolve .js, .mjs, .cjs or .jsx import to typescript file
+        const fileExt = path.extname(file)
+        const fileName = file.slice(0, -fileExt.length)
+        if (
+          (res = tryResolveRealFile(
+            fileName + fileExt.replace('js', 'ts'),
+            preserveSymlinks,
+          ))
+        )
+          return res
+        // for .js, also try .tsx
+        if (
+          fileExt === '.js' &&
+          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
+        )
+          return res
+      }
+
+      if (
+        (res = tryResolveRealFileWithExtensions(
+          file,
+          extensions,
+          preserveSymlinks,
+        ))
+      )
+        return res
+
+      if (tryPrefix) {
+        const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
+
+        if ((res = tryResolveRealFile(prefixed, preserveSymlinks))) return res
+
+        if (
+          (res = tryResolveRealFileWithExtensions(
+            prefixed,
+            extensions,
+            preserveSymlinks,
+          ))
+        )
+          return res
+      }
+    }
+  }
+
+  if (tryIndex && fileStat) {
+    // Path points to a directory, check for package.json and entry and /index file
+    const dirPath = file
+
+    if (!skipPackageJson) {
+      let pkgPath = `${dirPath}/package.json`
+      try {
+        if (fs.existsSync(pkgPath)) {
+          if (!options.preserveSymlinks) {
+            pkgPath = safeRealpathSync(pkgPath)
+          }
+          // path points to a node package
+          const pkg = loadPackageData(pkgPath)
+          return resolvePackageEntry(dirPath, pkg, targetWeb, options)
+        }
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e
+      }
+    }
+
+    if (
+      (res = tryResolveRealFileWithExtensions(
+        `${dirPath}/index`,
+        extensions,
+        preserveSymlinks,
+      ))
+    )
+      return res
+
+    if (tryPrefix) {
+      if (
+        (res = tryResolveRealFileWithExtensions(
+          `${dirPath}/${options.tryPrefix}index`,
+          extensions,
+          preserveSymlinks,
+        ))
+      )
+        return res
+    }
+  }
+}
+
+function tryResolveRealFile(
+  file: string,
+  preserveSymlinks: boolean,
+): string | undefined {
+  const stat = tryStatSync(file)
+  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
+}
+
+function tryResolveRealFileWithExtensions(
+  filePath: string,
+  extensions: string[],
+  preserveSymlinks: boolean,
+): string | undefined {
+  for (const ext of extensions) {
+    const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
+    if (res) return res
   }
 }
 
@@ -585,104 +675,38 @@ export type InternalResolveOptionsWithOverrideConditions =
     overrideConditions?: string[]
   }
 
-export const idToPkgMap = new Map<string, PackageData>()
-
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
-  ssr?: boolean,
+  ssr: boolean = false,
   externalize?: boolean,
-  allowLinkedExternal: boolean = true
+  allowLinkedExternal: boolean = true,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
-  ssr ??= false
-
-  // split id by last '>' for nested selected packages, for example:
-  // 'foo > bar > baz' => 'foo > bar' & 'baz'
-  // 'foo'             => ''          & 'foo'
-  const lastArrowIndex = id.lastIndexOf('>')
-  const nestedRoot = id.substring(0, lastArrowIndex).trim()
-  const nestedPath = id.substring(lastArrowIndex + 1).trim()
-
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    let slashIndex = nestedPath.indexOf('/', prevSlashIndex + 1)
-    if (slashIndex < 0) {
-      slashIndex = nestedPath.length
-    }
-
-    const part = nestedPath.slice(
-      prevSlashIndex + 1,
-      (prevSlashIndex = slashIndex)
-    )
-    if (!part) {
-      break
-    }
-
-    // Assume path parts with an extension are not package roots, except for the
-    // first path part (since periods are sadly allowed in package names).
-    // At the same time, skip the first path part if it begins with "@"
-    // (since "@foo/bar" should be treated as the top-level path).
-    if (possiblePkgIds.length ? path.extname(part) : part[0] === '@') {
-      continue
-    }
-
-    const possiblePkgId = nestedPath.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
+  // check for deep import, e.g. "my-lib/foo"
+  const deepMatch = id.match(deepImportRE)
+  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
 
   let basedir: string
-  if (dedupe?.some((id) => possiblePkgIds.includes(id))) {
+  if (dedupe?.includes(pkgId)) {
     basedir = root
   } else if (
     importer &&
     path.isAbsolute(importer) &&
-    fs.existsSync(cleanUrl(importer))
+    // css processing appends `*` for importer
+    (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
   ) {
     basedir = path.dirname(importer)
   } else {
     basedir = root
   }
 
-  // nested node module, step-by-step resolve to the basedir of the nestedPath
-  if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
-  }
-
-  // nearest package.json
-  let nearestPkg: PackageData | undefined
-  // nearest package.json that may have the `exports` field
-  let pkg: PackageData | undefined
-
-  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    nearestPkg = resolvePackageData(
-      pkgId,
-      basedir,
-      preserveSymlinks,
-      packageCache
-    )!
-    return nearestPkg
-  })!
-
-  const rootPkgId = possiblePkgIds[0]
-  const rootPkg = resolvePackageData(
-    rootPkgId,
-    basedir,
-    preserveSymlinks,
-    packageCache
-  )!
-  if (rootPkg?.data?.exports) {
-    pkg = rootPkg
-    pkgId = rootPkgId
-  } else {
-    pkg = nearestPkg
-  }
-
-  if (!pkg || !nearestPkg) {
+  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+  if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
     if (
@@ -691,18 +715,14 @@ export function tryNodeResolve(
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
-      // find package.json with `name` as main
-      const mainPackageJson = lookupFile(basedir, ['package.json'], {
-        predicate: (content) => !!JSON.parse(content).name
-      })
-      if (mainPackageJson) {
-        const mainPkg = JSON.parse(mainPackageJson)
+      const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
+      if (mainPkg) {
         if (
           mainPkg.peerDependencies?.[id] &&
           mainPkg.peerDependenciesMeta?.[id]?.optional
         ) {
           return {
-            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`
+            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
           }
         }
       }
@@ -710,13 +730,8 @@ export function tryNodeResolve(
     return
   }
 
-  let resolveId = resolvePackageEntry
-  let unresolvedId = pkgId
-  const isDeepImport = unresolvedId !== nestedPath
-  if (isDeepImport) {
-    resolveId = resolveDeepImport
-    unresolvedId = '.' + nestedPath.slice(pkgId.length)
-  }
+  const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
+  const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : pkgId
 
   let resolved: string | undefined
   try {
@@ -731,7 +746,7 @@ export function tryNodeResolve(
       ...options,
       isRequire: false,
       mainFields: DEFAULT_MAIN_FIELDS,
-      extensions: DEFAULT_EXTENSIONS
+      extensions: DEFAULT_EXTENSIONS,
     })
   }
   if (!resolved) {
@@ -743,7 +758,7 @@ export function tryNodeResolve(
       return resolved
     }
     // don't external symlink packages
-    if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
+    if (!allowLinkedExternal && !isInNodeModules(resolved.id)) {
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
@@ -757,36 +772,30 @@ export function tryNodeResolve(
       return resolved
     }
     let resolvedId = id
-    if (isDeepImport) {
-      if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
-        resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-        isDebug &&
-          debug(
-            `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`
-          )
-      }
+    if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
+      resolvedId = resolved.id.slice(resolved.id.indexOf(id))
+      debug?.(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
     }
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  // link id to pkg for browser field mapping check
-  idToPkgMap.set(resolved, pkg)
-  if ((isBuild && !depsOptimizer) || externalize) {
+  if (
+    !options.idOnly &&
+    ((!options.scan && isBuild && !depsOptimizer) || externalize)
+  ) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
       id: resolved,
-      moduleSideEffects: pkg.hasSideEffects(resolved)
+      moduleSideEffects: pkg.hasSideEffects(resolved),
     })
   }
 
   const ext = path.extname(resolved)
-  const isCJS =
-    ext === '.cjs' || (ext === '.js' && nearestPkg.data.type !== 'module')
 
   if (
     !options.ssrOptimizeCheck &&
-    (!resolved.includes('node_modules') || // linked
+    (!isInNodeModules(resolved) || // linked
       !depsOptimizer || // resolving before listening to the server
       options.scan) // initial esbuild scan phase
   ) {
@@ -799,30 +808,38 @@ export function tryNodeResolve(
     : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
-  let include = depsOptimizer?.options.exclude
+  let include = depsOptimizer?.options.include
   if (options.ssrOptimizeCheck) {
     // we don't have the depsOptimizer
     exclude = options.ssrConfig?.optimizeDeps?.exclude
-    include = options.ssrConfig?.optimizeDeps?.exclude
+    include = options.ssrConfig?.optimizeDeps?.include
   }
 
   const skipOptimization =
     !isJsType ||
-    importer?.includes('node_modules') ||
+    (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
-    exclude?.includes(nestedPath) ||
+    exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved) ||
-    (!isBuild && ssr) ||
+    // During dev SSR, we don't have a way to reload the module graph if
+    // a non-optimized dep is found. So we need to skip optimization here.
+    // The only optimized deps are the ones explicitly listed in the config.
+    (!options.ssrOptimizeCheck && !isBuild && ssr) ||
     // Only optimize non-external CJS deps during SSR by default
     (ssr &&
-      !isCJS &&
-      !(include?.includes(pkgId) || include?.includes(nestedPath)))
+      !(
+        ext === '.cjs' ||
+        (ext === '.js' &&
+          findNearestPackageData(path.dirname(resolved), options.packageCache)
+            ?.data.type !== 'module')
+      ) &&
+      !(include?.includes(pkgId) || include?.includes(id)))
 
   if (options.ssrOptimizeCheck) {
     return {
       id: skipOptimization
         ? injectQuery(resolved, `__vite_skip_optimization`)
-        : resolved
+        : resolved,
     }
   }
 
@@ -845,12 +862,12 @@ export function tryNodeResolve(
     resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
-  if (isBuild) {
+  if (!options.idOnly && !options.scan && isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
       id: resolved,
-      moduleSideEffects: pkg.hasSideEffects(resolved)
+      moduleSideEffects: pkg.hasSideEffects(resolved),
     }
   } else {
     return { id: resolved! }
@@ -860,7 +877,9 @@ export function tryNodeResolve(
 export async function tryOptimizedResolve(
   depsOptimizer: DepsOptimizer,
   id: string,
-  importer?: string
+  importer?: string,
+  preserveSymlinks?: boolean,
+  packageCache?: PackageCache,
 ): Promise<string | undefined> {
   // TODO: we need to wait until scanning is done here as this function
   // is used in the preAliasPlugin to decide if an aliased dep is optimized,
@@ -878,31 +897,31 @@ export async function tryOptimizedResolve(
   if (!importer) return
 
   // further check if id is imported by nested dependency
-  let resolvedSrc: string | undefined
+  let idPkgDir: string | undefined
+  const nestedIdMatch = `> ${id}`
 
   for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
-    const pkgPath = optimizedData.id
-    // check for scenarios, e.g.
-    //   pkgPath  => "my-lib > foo"
-    //   id       => "foo"
-    // this narrows the need to do a full resolve
-    if (!pkgPath.endsWith(id)) continue
+    // check where "foo" is nested in "my-lib > foo"
+    if (!optimizedData.id.endsWith(nestedIdMatch)) continue
 
-    // lazily initialize resolvedSrc
-    if (resolvedSrc == null) {
-      try {
-        // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-      } catch {
-        // this is best-effort only so swallow errors
-        break
-      }
+    // lazily initialize idPkgDir
+    if (idPkgDir == null) {
+      idPkgDir = resolvePackageData(
+        id,
+        importer,
+        preserveSymlinks,
+        packageCache,
+      )?.dir
+      // if still null, it likely means that this id isn't a dep for importer.
+      // break to bail early
+      if (idPkgDir == null) break
+      idPkgDir = normalizePath(idPkgDir)
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src === resolvedSrc) {
+    if (optimizedData.src.startsWith(idPkgDir)) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }
@@ -912,20 +931,28 @@ export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   targetWeb: boolean,
-  options: InternalResolveOptions
+  options: InternalResolveOptions,
 ): string | undefined {
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
     return cached
   }
   try {
-    let entryPoint: string | undefined | void
+    let entryPoint: string | undefined
 
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
-      entryPoint = resolveExports(data, '.', options, targetWeb)
+      entryPoint = resolveExportsOrImports(
+        data,
+        '.',
+        options,
+        targetWeb,
+        'exports',
+      )
     }
+
+    const resolvedFromExports = !!entryPoint
 
     // if exports resolved to .mjs, still resolve other fields.
     // This is because .mjs files can technically import .cjs files which would
@@ -958,7 +985,7 @@ export function resolvePackageEntry(
           // instead; Otherwise, assume it's ESM and use it.
           const resolvedBrowserEntry = tryFsResolve(
             path.join(dir, browserEntry),
-            options
+            options,
           )
           if (resolvedBrowserEntry) {
             const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
@@ -976,7 +1003,9 @@ export function resolvePackageEntry(
       }
     }
 
-    if (!entryPoint || entryPoint.endsWith('.mjs')) {
+    // fallback to mainFields if still not resolved
+    // TODO: review if `.mjs` check is still needed
+    if (!resolvedFromExports && (!entryPoint || entryPoint.endsWith('.mjs'))) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {
@@ -995,29 +1024,35 @@ export function resolvePackageEntry(
 
     for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
+      let skipPackageJson = false
       if (
         options.mainFields[0] === 'sass' &&
         !options.extensions.includes(path.extname(entry))
       ) {
         entry = ''
-        options.skipPackageJson = true
-      }
-
-      // resolve object browser field in package.json
-      const { browser: browserField } = data
-      if (targetWeb && options.browserField && isObject(browserField)) {
-        entry = mapWithBrowserField(entry, browserField) || entry
+        skipPackageJson = true
+      } else {
+        // resolve object browser field in package.json
+        const { browser: browserField } = data
+        if (targetWeb && options.browserField && isObject(browserField)) {
+          entry = mapWithBrowserField(entry, browserField) || entry
+        }
       }
 
       const entryPointPath = path.join(dir, entry)
-      const resolvedEntryPoint = tryFsResolve(entryPointPath, options)
+      const resolvedEntryPoint = tryFsResolve(
+        entryPointPath,
+        options,
+        true,
+        true,
+        skipPackageJson,
+      )
       if (resolvedEntryPoint) {
-        isDebug &&
-          debug(
-            `[package entry] ${colors.cyan(id)} -> ${colors.dim(
-              resolvedEntryPoint
-            )}`
-          )
+        debug?.(
+          `[package entry] ${colors.cyan(id)} -> ${colors.dim(
+            resolvedEntryPoint,
+          )}`,
+        )
         setResolvedCache('.', resolvedEntryPoint, targetWeb)
         return resolvedEntryPoint
       }
@@ -1032,23 +1067,24 @@ function packageEntryFailure(id: string, details?: string) {
   throw new Error(
     `Failed to resolve entry for package "${id}". ` +
       `The package may have incorrect main/module/exports specified in its package.json` +
-      (details ? ': ' + details : '.')
+      (details ? ': ' + details : '.'),
   )
 }
 
-function resolveExports(
+function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
   options: InternalResolveOptionsWithOverrideConditions,
-  targetWeb: boolean
+  targetWeb: boolean,
+  type: 'imports' | 'exports',
 ) {
   const additionalConditions = new Set(
     options.overrideConditions || [
       'production',
       'development',
       'module',
-      ...options.conditions
-    ]
+      ...options.conditions,
+    ],
   )
 
   const conditions = [...additionalConditions].filter((condition) => {
@@ -1063,11 +1099,14 @@ function resolveExports(
     return true
   })
 
-  return _resolveExports(pkg, key, {
+  const fn = type === 'imports' ? imports : exports
+  const result = fn(pkg, key, {
     browser: targetWeb && !additionalConditions.has('node'),
     require: options.isRequire && !additionalConditions.has('import'),
-    conditions
+    conditions,
   })
+
+  return result ? result[0] : undefined
 }
 
 function resolveDeepImport(
@@ -1077,10 +1116,10 @@ function resolveDeepImport(
     setResolvedCache,
     getResolvedCache,
     dir,
-    data
+    data,
   }: PackageData,
   targetWeb: boolean,
-  options: InternalResolveOptions
+  options: InternalResolveOptions,
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
@@ -1095,7 +1134,13 @@ function resolveDeepImport(
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
       // resolve without postfix (see #7098)
       const { file, postfix } = splitFileAndPostfix(relativeId)
-      const exportsId = resolveExports(data, file, options, targetWeb)
+      const exportsId = resolveExportsOrImports(
+        data,
+        file,
+        options,
+        targetWeb,
+        'exports',
+      )
       if (exportsId !== undefined) {
         relativeId = exportsId + postfix
       } else {
@@ -1108,7 +1153,7 @@ function resolveDeepImport(
     if (!relativeId) {
       throw new Error(
         `Package subpath '${relativeId}' is not defined by "exports" in ` +
-          `${path.join(dir, 'package.json')}.`
+          `${path.join(dir, 'package.json')}.`,
       )
     }
   } else if (targetWeb && options.browserField && isObject(browserField)) {
@@ -1127,13 +1172,12 @@ function resolveDeepImport(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
-      targetWeb
+      targetWeb,
     )
     if (resolved) {
-      isDebug &&
-        debug(
-          `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`
-        )
+      debug?.(
+        `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
+      )
       setResolvedCache(id, resolved, targetWeb)
       return resolved
     }
@@ -1145,23 +1189,37 @@ function tryResolveBrowserMapping(
   importer: string | undefined,
   options: InternalResolveOptions,
   isFilePath: boolean,
-  externalize?: boolean
+  externalize?: boolean,
 ) {
   let res: string | undefined
   const pkg =
-    importer && (idToPkgMap.get(importer) || resolvePkg(importer, options))
+    importer &&
+    findNearestPackageData(path.dirname(importer), options.packageCache)
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
     if (browserMappedPath) {
-      const fsPath = path.join(pkg.dir, browserMappedPath)
-      if ((res = tryFsResolve(fsPath, options))) {
-        isDebug &&
-          debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        idToPkgMap.set(res, pkg)
-        const result = {
-          id: res,
-          moduleSideEffects: pkg.hasSideEffects(res)
+      if (
+        (res = bareImportRE.test(browserMappedPath)
+          ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
+          : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
+      ) {
+        debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+        let result: PartialResolvedId = { id: res }
+        if (options.idOnly) {
+          return result
+        }
+        if (!options.scan && options.isBuild) {
+          const resPkg = findNearestPackageData(
+            path.dirname(res),
+            options.packageCache,
+          )
+          if (resPkg) {
+            result = {
+              id: res,
+              moduleSideEffects: resPkg.hasSideEffects(res),
+            }
+          }
         }
         return externalize ? { ...result, external: true } : result
       }
@@ -1181,7 +1239,7 @@ function tryResolveBrowserMapping(
  */
 function mapWithBrowserField(
   relativePathInPkgDir: string,
-  map: Record<string, string | false>
+  map: Record<string, string | false>,
 ): string | false | undefined {
   const normalizedPath = path.posix.normalize(relativePathInPkgDir)
 
@@ -1202,46 +1260,8 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
 }
 
 function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
-  resolved = ensureVolumeInPath(resolved)
   if (!preserveSymlinks && browserExternalId !== resolved) {
-    resolved = fs.realpathSync(resolved)
+    resolved = safeRealpathSync(resolved)
   }
   return normalizePath(resolved)
-}
-
-/**
- * if importer was not resolved by vite's resolver previously
- * (when esbuild resolved it)
- * resolve importer's pkg and add to idToPkgMap
- */
-function resolvePkg(importer: string, options: InternalResolveOptions) {
-  const { root, preserveSymlinks, packageCache } = options
-
-  if (importer.includes('\x00')) {
-    return null
-  }
-
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
-    if (slashIndex < 0) {
-      break
-    }
-
-    prevSlashIndex = slashIndex + 1
-
-    const possiblePkgId = importer.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
-
-  let pkg: PackageData | undefined
-  possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
-    return pkg
-  })!
-
-  if (pkg) {
-    idToPkgMap.set(importer, pkg)
-  }
-  return pkg
 }

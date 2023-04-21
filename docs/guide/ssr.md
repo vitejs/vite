@@ -18,8 +18,8 @@ If you have questions, the community is usually helpful at [Vite Discord's #ssr 
 
 Vite provides built-in support for server-side rendering (SSR). The Vite playground contains example SSR setups for Vue 3 and React, which can be used as references for this guide:
 
-- [Vue 3](https://github.com/vitejs/vite/tree/main/playground/ssr-vue)
-- [React](https://github.com/vitejs/vite/tree/main/playground/ssr-react)
+- [Vue 3](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue)
+- [React](https://github.com/vitejs/vite-plugin-react/tree/main/playground/ssr-react)
 
 ## Source Structure
 
@@ -81,8 +81,8 @@ async function createServer() {
     appType: 'custom'
   })
 
-  // use vite's connect instance as middleware
-  // if you use your own express router (express.Router()), you should use router.use
+  // Use vite's connect instance as middleware. If you use your own
+  // express router (express.Router()), you should use router.use
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
@@ -107,21 +107,21 @@ app.use('*', async (req, res, next) => {
     // 1. Read index.html
     let template = fs.readFileSync(
       path.resolve(__dirname, 'index.html'),
-      'utf-8'
+      'utf-8',
     )
 
-    // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
-    //    also applies HTML transforms from Vite plugins, e.g. global preambles
-    //    from @vitejs/plugin-react
+    // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
+    //    and also applies HTML transforms from Vite plugins, e.g. global
+    //    preambles from @vitejs/plugin-react
     template = await vite.transformIndexHtml(url, template)
 
-    // 3. Load the server entry. vite.ssrLoadModule automatically transforms
-    //    your ESM source code to be usable in Node.js! There is no bundling
+    // 3. Load the server entry. ssrLoadModule automatically transforms
+    //    ESM source code to be usable in Node.js! There is no bundling
     //    required, and provides efficient invalidation similar to HMR.
     const { render } = await vite.ssrLoadModule('/src/entry-server.js')
 
-    // 4. render the app HTML. This assumes entry-server.js's exported `render`
-    //    function calls appropriate framework SSR APIs,
+    // 4. render the app HTML. This assumes entry-server.js's exported
+    //     `render` function calls appropriate framework SSR APIs,
     //    e.g. ReactDOMServer.renderToString()
     const appHtml = await render(url)
 
@@ -131,8 +131,8 @@ app.use('*', async (req, res, next) => {
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   } catch (e) {
-    // If an error is caught, let Vite fix the stack trace so it maps back to
-    // your actual source code.
+    // If an error is caught, let Vite fix the stack trace so it maps back
+    // to your actual source code.
     vite.ssrFixStacktrace(e)
     next(e)
   }
@@ -162,14 +162,14 @@ Our scripts in `package.json` will look like this:
   "scripts": {
     "dev": "node server",
     "build:client": "vite build --outDir dist/client",
-    "build:server": "vite build --outDir dist/server --ssr src/entry-server.js "
+    "build:server": "vite build --outDir dist/server --ssr src/entry-server.js"
   }
 }
 ```
 
 Note the `--ssr` flag which indicates this is an SSR build. It should also specify the SSR entry.
 
-Then, in `server.js` we need to add some production specific logic by checking `process.env.`<wbr>`NODE_ENV`:
+Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
 
 - Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
 
@@ -177,7 +177,7 @@ Then, in `server.js` we need to add some production specific logic by checking `
 
 - Move the creation and all usage of the `vite` dev server behind dev-only conditional branches, then add static file serving middlewares to serve files from `dist/client`.
 
-Refer to the [Vue](https://github.com/vitejs/vite/tree/main/playground/ssr-vue) and [React](https://github.com/vitejs/vite/tree/main/playground/ssr-react) demos for a working setup.
+Refer to the [Vue](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue) and [React](https://github.com/vitejs/vite-plugin-react/tree/main/playground/ssr-react) demos for a working setup.
 
 ## Generating Preload Directives
 
@@ -201,11 +201,11 @@ const html = await vueServerRenderer.renderToString(app, ctx)
 // ctx.modules is now a Set of module IDs that were used during the render
 ```
 
-In the production branch of `server.js` we need to read and pass the manifest to the `render` function exported by `src/entry-server.js`. This would provide us with enough information to render preload directives for files used by async routes! See [demo source](https://github.com/vitejs/vite/blob/main/playground/ssr-vue/src/entry-server.js) for a full example.
+In the production branch of `server.js` we need to read and pass the manifest to the `render` function exported by `src/entry-server.js`. This would provide us with enough information to render preload directives for files used by async routes! See [demo source](https://github.com/vitejs/vite-plugin-vue/blob/main/playground/ssr-vue/src/entry-server.js) for a full example. You can also use this information for [103 Early Hints](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/103).
 
 ## Pre-Rendering / SSG
 
-If the routes and the data needed for certain routes are known ahead of time, we can pre-render these routes into static HTML using the same logic as production SSR. This can also be considered a form of Static-Site Generation (SSG). See [demo pre-render script](https://github.com/vitejs/vite/blob/main/playground/ssr-vue/prerender.js) for working example.
+If the routes and the data needed for certain routes are known ahead of time, we can pre-render these routes into static HTML using the same logic as production SSR. This can also be considered a form of Static-Site Generation (SSG). See [demo pre-render script](https://github.com/vitejs/vite-plugin-vue/blob/main/playground/ssr-vue/prerender.js) for working example.
 
 ## SSR Externals
 
@@ -216,7 +216,7 @@ If a dependency needs to be transformed by Vite's pipeline, for example, because
 For linked dependencies, they are not externalized by default to take advantage of Vite's HMR. If this isn't desired, for example, to test dependencies as if they aren't linked, you can add it to [`ssr.external`](../config/ssr-options.md#ssr-external).
 
 :::warning Working with Aliases
-If you have configured aliases that redirect one package to another, you may want to alias the actual `node_modules` packages instead to make it work for SSR externalized dependencies. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+If you have configured aliases that redirect one package to another, you may want to alias the actual `node_modules` packages instead to make it work for SSR externalized dependencies. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.io/aliases/) support aliasing via the `npm:` prefix.
 :::
 
 ## SSR-specific Plugin Logic
@@ -237,7 +237,7 @@ export function mySSRPlugin() {
       if (options?.ssr) {
         // perform ssr-specific transform...
       }
-    }
+    },
   }
 }
 ```

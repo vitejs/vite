@@ -13,7 +13,7 @@ import {
   magenta,
   red,
   reset,
-  yellow
+  yellow,
 } from 'kolorist'
 
 // Avoids autoconversion to number of the project name by defining that the args
@@ -45,16 +45,16 @@ const FRAMEWORKS: Framework[] = [
     color: yellow,
     variants: [
       {
-        name: 'vanilla',
-        display: 'JavaScript',
-        color: yellow
-      },
-      {
         name: 'vanilla-ts',
         display: 'TypeScript',
-        color: blue
-      }
-    ]
+        color: blue,
+      },
+      {
+        name: 'vanilla',
+        display: 'JavaScript',
+        color: yellow,
+      },
+    ],
   },
   {
     name: 'vue',
@@ -62,28 +62,28 @@ const FRAMEWORKS: Framework[] = [
     color: green,
     variants: [
       {
-        name: 'vue',
-        display: 'JavaScript',
-        color: yellow
-      },
-      {
         name: 'vue-ts',
         display: 'TypeScript',
-        color: blue
+        color: blue,
+      },
+      {
+        name: 'vue',
+        display: 'JavaScript',
+        color: yellow,
       },
       {
         name: 'custom-create-vue',
         display: 'Customize with create-vue ↗',
         color: green,
-        customCommand: 'npm create vue@latest TARGET_DIR'
+        customCommand: 'npm create vue@latest TARGET_DIR',
       },
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
         color: lightGreen,
-        customCommand: 'npm exec nuxi init TARGET_DIR'
-      }
-    ]
+        customCommand: 'npm exec nuxi init TARGET_DIR',
+      },
+    ],
   },
   {
     name: 'react',
@@ -91,16 +91,26 @@ const FRAMEWORKS: Framework[] = [
     color: cyan,
     variants: [
       {
-        name: 'react',
-        display: 'JavaScript',
-        color: yellow
-      },
-      {
         name: 'react-ts',
         display: 'TypeScript',
-        color: blue
-      }
-    ]
+        color: blue,
+      },
+      {
+        name: 'react-swc-ts',
+        display: 'TypeScript + SWC',
+        color: blue,
+      },
+      {
+        name: 'react',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'react-swc',
+        display: 'JavaScript + SWC',
+        color: yellow,
+      },
+    ],
   },
   {
     name: 'preact',
@@ -108,16 +118,16 @@ const FRAMEWORKS: Framework[] = [
     color: magenta,
     variants: [
       {
-        name: 'preact',
-        display: 'JavaScript',
-        color: yellow
-      },
-      {
         name: 'preact-ts',
         display: 'TypeScript',
-        color: blue
-      }
-    ]
+        color: blue,
+      },
+      {
+        name: 'preact',
+        display: 'JavaScript',
+        color: yellow,
+      },
+    ],
   },
   {
     name: 'lit',
@@ -125,16 +135,16 @@ const FRAMEWORKS: Framework[] = [
     color: lightRed,
     variants: [
       {
-        name: 'lit',
-        display: 'JavaScript',
-        color: yellow
-      },
-      {
         name: 'lit-ts',
         display: 'TypeScript',
-        color: blue
-      }
-    ]
+        color: blue,
+      },
+      {
+        name: 'lit',
+        display: 'JavaScript',
+        color: yellow,
+      },
+    ],
   },
   {
     name: 'svelte',
@@ -142,22 +152,22 @@ const FRAMEWORKS: Framework[] = [
     color: red,
     variants: [
       {
-        name: 'svelte',
-        display: 'JavaScript',
-        color: yellow
-      },
-      {
         name: 'svelte-ts',
         display: 'TypeScript',
-        color: blue
+        color: blue,
+      },
+      {
+        name: 'svelte',
+        display: 'JavaScript',
+        color: yellow,
       },
       {
         name: 'custom-svelte-kit',
         display: 'SvelteKit ↗',
         color: red,
-        customCommand: 'npm create svelte@latest TARGET_DIR'
-      }
-    ]
+        customCommand: 'npm create svelte@latest TARGET_DIR',
+      },
+    ],
   },
   {
     name: 'others',
@@ -168,18 +178,24 @@ const FRAMEWORKS: Framework[] = [
         name: 'create-vite-extra',
         display: 'create-vite-extra ↗',
         color: reset,
-        customCommand: 'npm create vite-extra@latest TARGET_DIR'
-      }
-    ]
-  }
+        customCommand: 'npm create vite-extra@latest TARGET_DIR',
+      },
+      {
+        name: 'create-electron-vite',
+        display: 'create-electron-vite ↗',
+        color: reset,
+        customCommand: 'npm create electron-vite@latest TARGET_DIR',
+      },
+    ],
+  },
 ]
 
 const TEMPLATES = FRAMEWORKS.map(
-  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name]
+  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name],
 ).reduce((a, b) => a.concat(b), [])
 
 const renameFiles: Record<string, string | undefined> = {
-  _gitignore: '.gitignore'
+  _gitignore: '.gitignore',
 }
 
 const defaultTargetDir = 'vite-project'
@@ -206,7 +222,7 @@ async function init() {
           initial: defaultTargetDir,
           onState: (state) => {
             targetDir = formatTargetDir(state.value) || defaultTargetDir
-          }
+          },
         },
         {
           type: () =>
@@ -216,7 +232,7 @@ async function init() {
             (targetDir === '.'
               ? 'Current directory'
               : `Target directory "${targetDir}"`) +
-            ` is not empty. Remove existing files and continue?`
+            ` is not empty. Remove existing files and continue?`,
         },
         {
           type: (_, { overwrite }: { overwrite?: boolean }) => {
@@ -225,7 +241,7 @@ async function init() {
             }
             return null
           },
-          name: 'overwriteChecker'
+          name: 'overwriteChecker',
         },
         {
           type: () => (isValidPackageName(getProjectName()) ? null : 'text'),
@@ -233,7 +249,7 @@ async function init() {
           message: reset('Package name:'),
           initial: () => toValidPackageName(getProjectName()),
           validate: (dir) =>
-            isValidPackageName(dir) || 'Invalid package.json name'
+            isValidPackageName(dir) || 'Invalid package.json name',
         },
         {
           type:
@@ -242,7 +258,7 @@ async function init() {
           message:
             typeof argTemplate === 'string' && !TEMPLATES.includes(argTemplate)
               ? reset(
-                  `"${argTemplate}" isn't a valid template. Please choose from below: `
+                  `"${argTemplate}" isn't a valid template. Please choose from below: `,
                 )
               : reset('Select a framework:'),
           initial: 0,
@@ -250,9 +266,9 @@ async function init() {
             const frameworkColor = framework.color
             return {
               title: frameworkColor(framework.display || framework.name),
-              value: framework
+              value: framework,
             }
-          })
+          }),
         },
         {
           type: (framework: Framework) =>
@@ -264,16 +280,16 @@ async function init() {
               const variantColor = variant.color
               return {
                 title: variantColor(variant.display || variant.name),
-                value: variant.name
+                value: variant.name,
               }
-            })
-        }
+            }),
+        },
       ],
       {
         onCancel: () => {
           throw new Error(red('✖') + ' Operation cancelled')
-        }
-      }
+        },
+      },
     )
   } catch (cancelled: any) {
     console.log(cancelled.message)
@@ -292,7 +308,12 @@ async function init() {
   }
 
   // determine template
-  const template: string = variant || framework?.name || argTemplate
+  let template: string = variant || framework?.name || argTemplate
+  let isReactSwc = false
+  if (template.includes('-swc')) {
+    isReactSwc = true
+    template = template.replace('-swc', '')
+  }
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
@@ -303,7 +324,6 @@ async function init() {
 
   if (customCommand) {
     const fullCustomCommand = customCommand
-      .replace('TARGET_DIR', targetDir)
       .replace(/^npm create/, `${pkgManager} create`)
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
@@ -321,8 +341,10 @@ async function init() {
       })
 
     const [command, ...args] = fullCustomCommand.split(' ')
-    const { status } = spawn.sync(command, args, {
-      stdio: 'inherit'
+    // we replace TARGET_DIR here because targetDir may include a space
+    const replacedArgs = args.map((arg) => arg.replace('TARGET_DIR', targetDir))
+    const { status } = spawn.sync(command, replacedArgs, {
+      stdio: 'inherit',
     })
     process.exit(status ?? 0)
   }
@@ -332,7 +354,7 @@ async function init() {
   const templateDir = path.resolve(
     fileURLToPath(import.meta.url),
     '../..',
-    `template-${template}`
+    `template-${template}`,
   )
 
   const write = (file: string, content?: string) => {
@@ -350,16 +372,25 @@ async function init() {
   }
 
   const pkg = JSON.parse(
-    fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8')
+    fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8'),
   )
 
   pkg.name = packageName || getProjectName()
 
-  write('package.json', JSON.stringify(pkg, null, 2))
+  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
+  if (isReactSwc) {
+    setupReactSwc(root, template.endsWith('-ts'))
+  }
+
+  const cdProjectName = path.relative(cwd, root)
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
-    console.log(`  cd ${path.relative(cwd, root)}`)
+    console.log(
+      `  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`,
+    )
   }
   switch (pkgManager) {
     case 'yarn':
@@ -389,7 +420,7 @@ function copy(src: string, dest: string) {
 
 function isValidPackageName(projectName: string) {
   return /^(?:@[a-z\d\-*~][a-z\d\-*._~]*\/)?[a-z\d\-~][a-z\d\-._~]*$/.test(
-    projectName
+    projectName,
   )
 }
 
@@ -434,8 +465,28 @@ function pkgFromUserAgent(userAgent: string | undefined) {
   const pkgSpecArr = pkgSpec.split('/')
   return {
     name: pkgSpecArr[0],
-    version: pkgSpecArr[1]
+    version: pkgSpecArr[1],
   }
+}
+
+function setupReactSwc(root: string, isTs: boolean) {
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    return content.replace(
+      /"@vitejs\/plugin-react": ".+?"/,
+      `"@vitejs/plugin-react-swc": "^3.0.0"`,
+    )
+  })
+  editFile(
+    path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`),
+    (content) => {
+      return content.replace('@vitejs/plugin-react', '@vitejs/plugin-react-swc')
+    },
+  )
+}
+
+function editFile(file: string, callback: (content: string) => string) {
+  const content = fs.readFileSync(file, 'utf-8')
+  fs.writeFileSync(file, callback(content), 'utf-8')
 }
 
 init().catch((e) => {

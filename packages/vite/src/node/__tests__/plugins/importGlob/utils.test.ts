@@ -10,10 +10,10 @@ describe('getCommonBase()', async () => {
   })
   it('static file', () => {
     expect(
-      getCommonBase(['/a/b/**/*.vue', '/a/b/**/*.jsx', '/a/b/foo.js'])
+      getCommonBase(['/a/b/**/*.vue', '/a/b/**/*.jsx', '/a/b/foo.js']),
     ).toBe('/a/b')
     expect(getCommonBase(['/a/b/**/*.vue', '/a/b/**/*.jsx', '/a/foo.js'])).toBe(
-      '/a'
+      '/a',
     )
   })
   it('correct `scan()`', () => {

@@ -1,10 +1,10 @@
 import type { Server } from 'node:http'
-import { STATUS_CODES } from 'node:http'
+import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
 import colors from 'picocolors'
-import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
+import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
@@ -16,10 +16,14 @@ export const HMR_HEADER = 'vite-hmr'
 
 export type WebSocketCustomListener<T> = (
   data: T,
-  client: WebSocketClient
+  client: WebSocketClient,
 ) => void
 
 export interface WebSocketServer {
+  /**
+   * Listen on port and host
+   */
+  listen(): void
   /**
    * Get all connected clients.
    */
@@ -42,7 +46,7 @@ export interface WebSocketServer {
   on: WebSocketTypes.Server['on'] & {
     <T extends string>(
       event: T,
-      listener: WebSocketCustomListener<InferCustomEventPayload<T>>
+      listener: WebSocketCustomListener<InferCustomEventPayload<T>>,
     ): void
   }
   /**
@@ -74,16 +78,16 @@ const wsServerEvents = [
   'error',
   'headers',
   'listening',
-  'message'
+  'message',
 ]
 
 export function createWebSocketServer(
   server: Server | null,
   config: ResolvedConfig,
-  httpsOptions?: HttpsServerOptions
+  httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
   let wss: WebSocketServerRaw
-  let httpsServer: Server | undefined = undefined
+  let wsHttpServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
   const hmrServer = hmr && hmr.server
@@ -93,6 +97,8 @@ export function createWebSocketServer(
   const wsServer = hmrServer || (portsAreCompatible && server)
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
+  const port = hmrPort || 24678
+  const host = (hmr && hmr.host) || undefined
 
   if (wsServer) {
     wss = new WebSocketServerRaw({ noServer: true })
@@ -104,39 +110,28 @@ export function createWebSocketServer(
       }
     })
   } else {
-    const websocketServerOptions: ServerOptions = {}
-    const port = hmrPort || 24678
-    const host = (hmr && hmr.host) || undefined
-    if (httpsOptions) {
-      // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
-      // create an inline https server and mount the websocket server to it
-      httpsServer = createHttpsServer(httpsOptions, (req, res) => {
-        const statusCode = 426
-        const body = STATUS_CODES[statusCode]
-        if (!body)
-          throw new Error(
-            `No body text found for the ${statusCode} status code`
-          )
+    // http server request handler keeps the same with
+    // https://github.com/websockets/ws/blob/45e17acea791d865df6b255a55182e9c42e5877a/lib/websocket-server.js#L88-L96
+    const route = ((_, res) => {
+      const statusCode = 426
+      const body = STATUS_CODES[statusCode]
+      if (!body)
+        throw new Error(`No body text found for the ${statusCode} status code`)
 
-        res.writeHead(statusCode, {
-          'Content-Length': body.length,
-          'Content-Type': 'text/plain'
-        })
-        res.end(body)
+      res.writeHead(statusCode, {
+        'Content-Length': body.length,
+        'Content-Type': 'text/plain',
       })
-
-      httpsServer.listen(port, host)
-      websocketServerOptions.server = httpsServer
+      res.end(body)
+    }) as Parameters<typeof createHttpServer>[1]
+    if (httpsOptions) {
+      wsHttpServer = createHttpsServer(httpsOptions, route)
     } else {
-      // we don't need to serve over https, just let ws handle its own server
-      websocketServerOptions.port = port
-      if (host) {
-        websocketServerOptions.host = host
-      }
+      wsHttpServer = createHttpServer(route)
     }
-
     // vite dev server in middleware mode
-    wss = new WebSocketServerRaw(websocketServerOptions)
+    // need to call ws listen manually
+    wss = new WebSocketServerRaw({ server: wsHttpServer })
   }
 
   wss.on('connection', (socket) => {
@@ -152,6 +147,12 @@ export function createWebSocketServer(
       const client = getSocketClient(socket)
       listeners.forEach((listener) => listener(parsed.data, client))
     })
+    socket.on('error', (err) => {
+      config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
+        timestamp: true,
+        error: err,
+      })
+    })
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
@@ -163,12 +164,12 @@ export function createWebSocketServer(
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
         colors.red(`WebSocket server error: Port is already in use`),
-        { error: e }
+        { error: e },
       )
     } else {
       config.logger.error(
         colors.red(`WebSocket server error:\n${e.stack || e.message}`),
-        { error: e }
+        { error: e },
       )
     }
   })
@@ -184,14 +185,14 @@ export function createWebSocketServer(
             payload = {
               type: 'custom',
               event: args[0],
-              data: args[1]
+              data: args[1],
             }
           } else {
             payload = args[0]
           }
           socket.send(JSON.stringify(payload))
         },
-        socket
+        socket,
       })
     }
     return clientsMap.get(socket)!
@@ -204,6 +205,9 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    listen: () => {
+      wsHttpServer?.listen(port, host)
+    },
     on: ((event: string, fn: () => void) => {
       if (wsServerEvents.includes(event)) wss.on(event, fn)
       else {
@@ -231,7 +235,7 @@ export function createWebSocketServer(
         payload = {
           type: 'custom',
           event: args[0],
-          data: args[1]
+          data: args[1],
         }
       } else {
         payload = args[0]
@@ -260,8 +264,8 @@ export function createWebSocketServer(
           if (err) {
             reject(err)
           } else {
-            if (httpsServer) {
-              httpsServer.close((err) => {
+            if (wsHttpServer) {
+              wsHttpServer.close((err) => {
                 if (err) {
                   reject(err)
                 } else {
@@ -274,6 +278,6 @@ export function createWebSocketServer(
           }
         })
       })
-    }
+    },
   }
 }

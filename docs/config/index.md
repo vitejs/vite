@@ -82,7 +82,7 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
-## Environment Variables
+## Using Environment Variables in Config
 
 Environmental Variables can be obtained from `process.env` as usual.
 
@@ -98,8 +98,8 @@ export default defineConfig(({ command, mode }) => {
   return {
     // vite config
     define: {
-      __APP_ENV__: env.APP_ENV
-    }
+      __APP_ENV__: env.APP_ENV,
+    },
   }
 })
 ```

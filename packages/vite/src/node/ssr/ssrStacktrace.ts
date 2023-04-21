@@ -14,7 +14,7 @@ try {
 
 export function ssrRewriteStacktrace(
   stack: string,
-  moduleGraph: ModuleGraph
+  moduleGraph: ModuleGraph,
 ): string {
   return stack
     .split('\n')
@@ -35,21 +35,21 @@ export function ssrRewriteStacktrace(
 
           const pos = originalPositionFor(traced, {
             line: Number(line) - offset,
-            column: Number(column)
+            column: Number(column),
           })
 
           if (!pos.source || pos.line == null || pos.column == null) {
             return input
           }
 
-          const trimedVarName = varName.trim()
+          const trimmedVarName = varName.trim()
           const source = `${pos.source}:${pos.line}:${pos.column}`
-          if (!trimedVarName || trimedVarName === 'eval') {
+          if (!trimmedVarName || trimmedVarName === 'eval') {
             return `    at ${source}`
           } else {
-            return `    at ${trimedVarName} (${source})`
+            return `    at ${trimmedVarName} (${source})`
           }
-        }
+        },
       )
     })
     .join('\n')
@@ -58,16 +58,29 @@ export function ssrRewriteStacktrace(
 export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
   const { configurable, writable } = Object.getOwnPropertyDescriptor(
     e,
-    'stack'
+    'stack',
   )!
   if (configurable) {
     Object.defineProperty(e, 'stack', {
       value: stacktrace,
       enumerable: true,
       configurable: true,
-      writable: true
+      writable: true,
     })
   } else if (writable) {
     e.stack = stacktrace
   }
+}
+
+const rewroteStacktraces = new WeakSet()
+
+export function ssrFixStacktrace(e: Error, moduleGraph: ModuleGraph): void {
+  if (!e.stack) return
+  // stacktrace shouldn't be rewritten more than once
+  if (rewroteStacktraces.has(e)) return
+
+  const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+  rebindErrorStacktrace(e, stacktrace)
+
+  rewroteStacktraces.add(e)
 }

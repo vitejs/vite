@@ -9,7 +9,7 @@ const ssrTransformSimpleCode = async (code: string, url?: string) =>
 
 test('default import', async () => {
   expect(
-    await ssrTransformSimpleCode(`import foo from 'vue';console.log(foo.bar)`)
+    await ssrTransformSimpleCode(`import foo from 'vue';console.log(foo.bar)`),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     console.log(__vite_ssr_import_0__.default.bar)"
@@ -19,8 +19,8 @@ test('default import', async () => {
 test('named import', async () => {
   expect(
     await ssrTransformSimpleCode(
-      `import { ref } from 'vue';function foo() { return ref(0) }`
-    )
+      `import { ref } from 'vue';function foo() { return ref(0) }`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     function foo() { return __vite_ssr_import_0__.ref(0) }"
@@ -30,8 +30,8 @@ test('named import', async () => {
 test('namespace import', async () => {
   expect(
     await ssrTransformSimpleCode(
-      `import * as vue from 'vue';function foo() { return vue.ref(0) }`
-    )
+      `import * as vue from 'vue';function foo() { return vue.ref(0) }`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     function foo() { return __vite_ssr_import_0__.ref(0) }"
@@ -65,7 +65,7 @@ test('export var declaration', async () => {
 
 test('export named', async () => {
   expect(
-    await ssrTransformSimpleCode(`const a = 1, b = 2; export { a, b as c }`)
+    await ssrTransformSimpleCode(`const a = 1, b = 2; export { a, b as c }`),
   ).toMatchInlineSnapshot(`
     "const a = 1, b = 2; 
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, configurable: true, get(){ return a }});
@@ -75,7 +75,7 @@ test('export named', async () => {
 
 test('export named from', async () => {
   expect(
-    await ssrTransformSimpleCode(`export { ref, computed as c } from 'vue'`)
+    await ssrTransformSimpleCode(`export { ref, computed as c } from 'vue'`),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
 
@@ -87,8 +87,8 @@ test('export named from', async () => {
 test('named exports of imported binding', async () => {
   expect(
     await ssrTransformSimpleCode(
-      `import {createApp} from 'vue';export {createApp}`
-    )
+      `import {createApp} from 'vue';export {createApp}`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
 
@@ -99,13 +99,15 @@ test('named exports of imported binding', async () => {
 test('export * from', async () => {
   expect(
     await ssrTransformSimpleCode(
-      `export * from 'vue'\n` + `export * from 'react'`
-    )
+      `export * from 'vue'\n` + `export * from 'react'`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     __vite_ssr_exportAll__(__vite_ssr_import_0__);
     const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"react\\");
-    __vite_ssr_exportAll__(__vite_ssr_import_1__);"
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);
+
+    "
   `)
 })
 
@@ -120,31 +122,43 @@ test('export * as from', async () => {
 
 test('export default', async () => {
   expect(
-    await ssrTransformSimpleCode(`export default {}`)
+    await ssrTransformSimpleCode(`export default {}`),
   ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = {}"`)
 })
 
 test('export then import minified', async () => {
   expect(
     await ssrTransformSimpleCode(
-      `export * from 'vue';import {createApp} from 'vue';`
-    )
+      `export * from 'vue';import {createApp} from 'vue';`,
+    ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
-    __vite_ssr_exportAll__(__vite_ssr_import_1__);const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);
     "
+  `)
+})
+
+test('hoist import to top', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `path.resolve('server.js');import path from 'node:path';`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"node:path\\");
+    __vite_ssr_import_0__.default.resolve('server.js');"
   `)
 })
 
 test('import.meta', async () => {
   expect(
-    await ssrTransformSimpleCode(`console.log(import.meta.url)`)
+    await ssrTransformSimpleCode(`console.log(import.meta.url)`),
   ).toMatchInlineSnapshot(`"console.log(__vite_ssr_import_meta__.url)"`)
 })
 
 test('dynamic import', async () => {
   const result = await ssrTransformSimple(
-    `export const i = () => import('./foo')`
+    `export const i = () => import('./foo')`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const i = () => __vite_ssr_dynamic_import__('./foo')
@@ -156,7 +170,7 @@ test('dynamic import', async () => {
 
 test('do not rewrite method definition', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';class A { fn() { fn() } }`
+    `import { fn } from 'vue';class A { fn() { fn() } }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -167,7 +181,7 @@ test('do not rewrite method definition', async () => {
 
 test('do not rewrite when variable is in scope', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';function A(){ const fn = () => {}; return { fn }; }`
+    `import { fn } from 'vue';function A(){ const fn = () => {}; return { fn }; }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -179,7 +193,7 @@ test('do not rewrite when variable is in scope', async () => {
 // #5472
 test('do not rewrite when variable is in scope with object destructuring', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }`
+    `import { fn } from 'vue';function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -191,7 +205,7 @@ test('do not rewrite when variable is in scope with object destructuring', async
 // #5472
 test('do not rewrite when variable is in scope with array destructuring', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }`
+    `import { fn } from 'vue';function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -203,7 +217,7 @@ test('do not rewrite when variable is in scope with array destructuring', async 
 // #5727
 test('rewrite variable in string interpolation in function nested arguments', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';function A({foo = \`test\${fn}\`} = {}){ return {}; }`
+    `import { fn } from 'vue';function A({foo = \`test\${fn}\`} = {}){ return {}; }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -215,7 +229,7 @@ test('rewrite variable in string interpolation in function nested arguments', as
 // #6520
 test('rewrite variables in default value of destructuring params', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';function A({foo = fn}){ return {}; }`
+    `import { fn } from 'vue';function A({foo = fn}){ return {}; }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -226,7 +240,7 @@ test('rewrite variables in default value of destructuring params', async () => {
 
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransformSimple(
-    `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`
+    `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
@@ -237,7 +251,7 @@ test('do not rewrite when function declaration is in scope', async () => {
 
 test('do not rewrite catch clause', async () => {
   const result = await ssrTransformSimple(
-    `import {error} from './dependency';try {} catch(error) {}`
+    `import {error} from './dependency';try {} catch(error) {}`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./dependency\\");
@@ -250,8 +264,8 @@ test('do not rewrite catch clause', async () => {
 test('should declare variable for imported super class', async () => {
   expect(
     await ssrTransformSimpleCode(
-      `import { Foo } from './dependency';` + `class A extends Foo {}`
-    )
+      `import { Foo } from './dependency';` + `class A extends Foo {}`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./dependency\\");
     const Foo = __vite_ssr_import_0__.Foo;
@@ -264,8 +278,8 @@ test('should declare variable for imported super class', async () => {
     await ssrTransformSimpleCode(
       `import { Foo } from './dependency';` +
         `export default class A extends Foo {}\n` +
-        `export class B extends Foo {}`
-    )
+        `export class B extends Foo {}`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./dependency\\");
     const Foo = __vite_ssr_import_0__.Foo;
@@ -293,8 +307,9 @@ test('should handle default export variants', async () => {
   // default named functions
   expect(
     await ssrTransformSimpleCode(
-      `export default function foo() {}\n` + `foo.prototype = Object.prototype;`
-    )
+      `export default function foo() {}\n` +
+        `foo.prototype = Object.prototype;`,
+    ),
   ).toMatchInlineSnapshot(`
     "function foo() {}
     foo.prototype = Object.prototype;
@@ -303,8 +318,8 @@ test('should handle default export variants', async () => {
   // default named classes
   expect(
     await ssrTransformSimpleCode(
-      `export default class A {}\n` + `export class B extends A {}`
-    )
+      `export default class A {}\n` + `export class B extends A {}`,
+    ),
   ).toMatchInlineSnapshot(`
     "class A {}
     class B extends A {}
@@ -319,7 +334,7 @@ test('sourcemap source', async () => {
       `export const a = 1`,
       null,
       'input.js',
-      'export const a = 1 /* */'
+      'export const a = 1 /* */',
     )
   )?.map
   expect(map?.sources).toStrictEqual(['input.js'])
@@ -336,8 +351,8 @@ test('overwrite bindings', async () => {
         `const d = inject\n` +
         `function f() {  console.log(inject) }\n` +
         `function e() { const { inject } = { inject: true } }\n` +
-        `function g() { const f = () => { const inject = true }; console.log(inject) }\n`
-    )
+        `function g() { const f = () => { const inject = true }; console.log(inject) }\n`,
+    ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     const a = { inject: __vite_ssr_import_0__.inject }
@@ -353,7 +368,7 @@ test('overwrite bindings', async () => {
 
 test('Empty array pattern', async () => {
   expect(
-    await ssrTransformSimpleCode(`const [, LHS, RHS] = inMatch;`)
+    await ssrTransformSimpleCode(`const [, LHS, RHS] = inMatch;`),
   ).toMatchInlineSnapshot(`"const [, LHS, RHS] = inMatch;"`)
 })
 
@@ -365,11 +380,11 @@ import { foo, bar } from 'foo'
 const a = ({ _ = foo() }) => {}
 function b({ _ = bar() }) {}
 function c({ _ = bar() + foo() }) {}
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
     const a = ({ _ = __vite_ssr_import_0__.foo() }) => {}
     function b({ _ = __vite_ssr_import_0__.bar() }) {}
@@ -387,11 +402,11 @@ const a = () => {
   const { type: n = 'bar' } = {}
   console.log(n)
 }
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
     const a = () => {
       const { type: n = 'bar' } = {}
@@ -410,11 +425,11 @@ const foo = {}
 {
   const { [n]: m } = foo
 }
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
     const foo = {}
 
@@ -453,11 +468,11 @@ get()
 set()
 rest()
 objRest()
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
 
 
     function a() {
@@ -503,11 +518,11 @@ const obj = {
   [bar]: () => {},
   bar(foo) {}
 }
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
 
     const bar = 'bar'
@@ -535,11 +550,11 @@ class A {
   remove = 1
   add = null
 }
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
 
 
     const add = __vite_ssr_import_0__.add;
@@ -567,11 +582,11 @@ class A {
   #foo() {}
   bar(foo) {}
 }
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
 
     const bar = 'bar'
@@ -613,11 +628,11 @@ function foobar() {
 
 aaa()
 bbb()
-`
-    )
+`,
+    ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
 
 
     function foobar() {
@@ -661,15 +676,15 @@ test('jsx', async () => {
   const result = await transformWithEsbuild(code, id)
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"react\\");
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"react\\");
+      const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"foo\\");
 
-    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"foo\\");
 
-    function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_1__.Foo, null) }) {
-      return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
-    }
-    "
-  `)
+      function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_1__.Foo, null) }) {
+        return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
+      }
+      "
+    `)
 })
 
 test('continuous exports', async () => {
@@ -679,8 +694,8 @@ test('continuous exports', async () => {
 export function fn1() {
 }export function fn2() {
 }
-        `
-    )
+        `,
+    ),
   ).toMatchInlineSnapshot(`
     "
     function fn1() {
@@ -711,7 +726,7 @@ export default (function getRandom() {
   `)
 
   expect(
-    await ssrTransformSimpleCode(`export default (class A {});`)
+    await ssrTransformSimpleCode(`export default (class A {});`),
   ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = (class A {});"`)
 })
 
@@ -720,8 +735,8 @@ test('with hashbang', async () => {
   expect(
     await ssrTransformSimpleCode(
       `#!/usr/bin/env node
-console.log("it can parse the hashbang")`
-    )
+console.log("it can parse the hashbang")`,
+    ),
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node
     console.log(\\"it can parse the hashbang\\")"
@@ -798,16 +813,46 @@ function test() {
     var foo = () => { var why = 'would' }, bar = 'someone'
   }
   return [foo, bar]
-}`)
+}`),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
 
     function test() {
       if (true) {
         var foo = () => { var why = 'would' }, bar = 'someone'
       }
       return [foo, bar]
+    }"
+  `)
+})
+
+// #11806
+test('track scope by blocks', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { foo, bar, baz } from 'foobar'
+function test() {
+  [foo];
+  {
+    let foo = 10;
+    let bar = 10;
+  }
+  try {} catch (baz){ baz };
+  return bar;
+}`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
+
+    function test() {
+      [__vite_ssr_import_0__.foo];
+      {
+        let foo = 10;
+        let bar = 10;
+      }
+      try {} catch (baz){ baz };
+      return __vite_ssr_import_0__.bar;
     }"
   `)
 })
