@@ -126,6 +126,18 @@ export const core = [
     ],
     sponsor: 'https://github.com/sponsors/dominikg',
   },
+  {
+    avatar: 'https://github.com/sheremet-va.png',
+    name: 'Vladimir',
+    title: 'Core team member of Vitest & Vite',
+    desc: 'An open source fullstack developer',
+    links: [
+      { icon: 'github', link: 'https://github.com/sheremet-va' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sheremet_va' },
+      { icon: 'twitter', link: 'https://twitter.com/sheremet_va' },
+    ],
+    sponsor: 'https://github.com/sponsors/sheremet-va',
+  },
 ]
 
 export const emeriti = [

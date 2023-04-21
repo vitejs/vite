@@ -904,6 +904,7 @@ export function onRollupWarning(
           colors.yellow(`[plugin:${warning.plugin}]`),
         )} ${colors.yellow(warning.message)}`,
       )
+      return
     }
 
     warn(warning)
@@ -947,12 +948,12 @@ async function cjsSsrResolveExternal(
   }
 }
 
-function resolveUserExternal(
+export function resolveUserExternal(
   user: ExternalOption,
   id: string,
   parentId: string | undefined,
   isResolved: boolean,
-) {
+): boolean | null | void {
   if (typeof user === 'function') {
     return user(id, parentId, isResolved)
   } else if (Array.isArray(user)) {
