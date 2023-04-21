@@ -10,7 +10,7 @@
 
 Vite 4.3 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite4-3)
 
-[![Vite 4.3, It's Fast](https://vitejs.dev/og-image-announcing-vite4-3.png))](https://vitejs.dev/blog/announcing-vite4-3)
+[![Vite 4.3, It's Fast](https://vitejs.dev/og-image-announcing-vite4-3.png)](https://vitejs.dev/blog/announcing-vite4-3)
 
 In this minor, we focused on improving the dev server performance. The resolve logic got streamlined, improving hot paths and implementing smarter caching for finding `package.json`, TS config files, and resolved URL in general.
 
