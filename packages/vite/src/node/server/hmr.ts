@@ -5,7 +5,7 @@ import colors from 'picocolors'
 import type { Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath, unique, wrapId } from '../utils'
+import { createDebugger, getMd5, normalizePath, unique, wrapId } from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
@@ -17,6 +17,8 @@ export const debugHmr = createDebugger('vite:hmr')
 const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
+
+const fileMd5Cache = new Map<string, string>()
 
 export interface HmrOptions {
   protocol?: string
@@ -58,6 +60,14 @@ export async function handleHMRUpdate(
     config.inlineConfig.envFile !== false &&
     (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
+    // When the file content does not change, there is no need to restart the server
+    const content = await fsp.readFile(file, 'utf-8')
+    const hash = getMd5(content)
+    if (fileMd5Cache.get(file) === hash) {
+      return
+    }
+    fileMd5Cache.set(file, hash)
+
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(

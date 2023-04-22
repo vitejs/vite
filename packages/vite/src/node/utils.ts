@@ -948,6 +948,10 @@ export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
+export function getMd5(text: Buffer | string): string {
+  return createHash('md5').update(text).digest('hex')
+}
+
 const _dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const requireResolveFromRootWithFallback = (
