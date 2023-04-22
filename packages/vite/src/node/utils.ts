@@ -574,7 +574,7 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
+const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
 let firstSafeRealPathSyncRun = false
 
 function windowsSafeRealPathSync(path: string): string {
