@@ -92,11 +92,11 @@ export class MyElement extends LitElement {
         color: #535bf2;
       }
 
-      h1 {
+      ::slotted(h1) {
         font-size: 3.2em;
         line-height: 1.1;
       }
-
+      
       button {
         border-radius: 8px;
         border: 1px solid transparent;
