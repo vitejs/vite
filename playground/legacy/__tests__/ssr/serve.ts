@@ -1,6 +1,6 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
-import path from 'path'
+import path from 'node:path'
 import { ports, rootDir } from '~utils'
 
 export const port = ports['legacy/ssr']
@@ -13,8 +13,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     build: {
       target: 'esnext',
       ssr: 'entry-server.js',
-      outDir: 'dist/server'
-    }
+      outDir: 'dist/server',
+    },
   })
 
   const { default: express } = await import('express')
@@ -37,7 +37,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
             await new Promise((resolve) => {
               server.close(resolve)
             })
-          }
+          },
         })
       })
     } catch (e) {

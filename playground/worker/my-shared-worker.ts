@@ -1,22 +1,13 @@
-let count = 0
-const ports = new Set()
+let sharedWorkerCount = 0
 
-// @ts-expect-error
-onconnect = (event) => {
+// @ts-expect-error onconnect exists in worker
+self.onconnect = (event) => {
+  sharedWorkerCount++
   const port = event.ports[0]
-  ports.add(port)
-  port.postMessage(count)
-  port.onmessage = (message) => {
-    if (message.data === 'tick') {
-      count++
-      ports.forEach((p: any) => {
-        p.postMessage(count)
-      })
-    }
+  if (sharedWorkerCount >= 2) {
+    port.postMessage('pong')
   }
 }
 
 // for sourcemap
 console.log('my-shared-worker.js')
-
-export {}

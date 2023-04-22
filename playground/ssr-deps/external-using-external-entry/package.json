@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-external-using-external-entry",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "external-entry": "file:../external-entry"
+  }
+}

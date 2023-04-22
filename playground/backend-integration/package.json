@@ -1,5 +1,5 @@
 {
-  "name": "test-backend-integration",
+  "name": "@vitejs/test-backend-integration",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -8,10 +8,9 @@
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "tailwindcss": "^2.2.19"
-  },
   "devDependencies": {
-    "fast-glob": "^3.2.11"
+    "sass": "^1.59.3",
+    "tailwindcss": "^3.2.7",
+    "fast-glob": "^3.2.12"
   }
 }

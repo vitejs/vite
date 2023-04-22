@@ -9,12 +9,19 @@ https://github.com/facebookincubator/create-react-app/blob/master/LICENSE
 property targetTab: null
 property targetTabIndex: -1
 property targetWindow: null
+property theProgram: "Google Chrome"
 
 on run argv
   set theURL to item 1 of argv
 
-  with timeout of 2 seconds
-    tell application "Chrome"
+  -- Allow requested program to be optional,
+  -- default to Google Chrome
+  if (count of argv) > 1 then
+    set theProgram to item 2 of argv
+  end if
+
+  using terms from application "Google Chrome"
+    tell application theProgram
 
       if (count every window) = 0 then
         make new window
@@ -51,7 +58,7 @@ on run argv
         make new tab with properties {URL:theURL}
       end tell
     end tell
-  end timeout
+  end using terms from
 end run
 
 -- Function:
@@ -59,28 +66,30 @@ end run
 -- if found, store tab, index, and window in properties
 -- (properties were declared on top of file)
 on lookupTabWithUrl(lookupUrl)
-  tell application "Chrome"
-    -- Find a tab with the given url
-    set found to false
-    set theTabIndex to -1
-    repeat with theWindow in every window
-      set theTabIndex to 0
-      repeat with theTab in every tab of theWindow
-        set theTabIndex to theTabIndex + 1
-        if (theTab's URL as string) contains lookupUrl then
-          -- assign tab, tab index, and window to properties
-          set targetTab to theTab
-          set targetTabIndex to theTabIndex
-          set targetWindow to theWindow
-          set found to true
+  using terms from application "Google Chrome"
+    tell application theProgram
+      -- Find a tab with the given url
+      set found to false
+      set theTabIndex to -1
+      repeat with theWindow in every window
+        set theTabIndex to 0
+        repeat with theTab in every tab of theWindow
+          set theTabIndex to theTabIndex + 1
+          if (theTab's URL as string) contains lookupUrl then
+            -- assign tab, tab index, and window to properties
+            set targetTab to theTab
+            set targetTabIndex to theTabIndex
+            set targetWindow to theWindow
+            set found to true
+            exit repeat
+          end if
+        end repeat
+
+        if found then
           exit repeat
         end if
       end repeat
-
-      if found then
-        exit repeat
-      end if
-    end repeat
-  end tell
+    end tell
+  end using terms from
   return found
 end lookupTabWithUrl

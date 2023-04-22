@@ -166,6 +166,9 @@
   <img class="svg-frag-import" alt="" />
 </div>
 
+<h2>Unknown extension assets import</h2>
+<code class="unknown-ext"></code>
+
 <h2>?raw import</h2>
 <code class="raw"></code>
 
@@ -178,6 +181,14 @@
 <h2>new URL('...', import.meta.url)</h2>
 <img class="import-meta-url-img" />
 <code class="import-meta-url"></code>
+
+<h2>new URL('@/...', import.meta.url)</h2>
+<img class="import-meta-url-dep-img" />
+<code class="import-meta-url-dep"></code>
+
+<h2>new URL('/...', import.meta.url)</h2>
+<img class="import-meta-url-base-path-img" />
+<code class="import-meta-url-base-path"></code>
 
 <h2>new URL('...', import.meta.url,) (with comma)</h2>
 <img class="import-meta-url-img-comma" />
@@ -196,6 +207,9 @@
   <img class="dynamic-import-meta-url-img-2" />
   <code class="dynamic-import-meta-url-2"></code>
 </p>
+<p>
+  <code class="dynamic-import-meta-url-js"></code>
+</p>
 
 <h2>new URL(`./${dynamic}`, import.meta.url,) (with comma)</h2>
 <p>
@@ -212,6 +226,11 @@
   <code class="non-existent-import-meta-url"></code>
 </p>
 
+<h2>new URL(`${dynamic}`, import.meta.url)</h2>
+<p>
+  <code class="dynamic-import-meta-url-all"></code>
+</p>
+
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
 <code class="obj-import-express"></code>
@@ -220,7 +239,7 @@
   const obj = {
     import(t) {
       text('.obj-import-express', t)
-    }
+    },
   }
   const stringImport = "const t = import('package')"
   function text(el, text) {
@@ -263,6 +282,16 @@
   inline style
 </p>
 <p class="style-base64-assets">use style class</p>
+<h3>from publicDir</h3>
+<style>
+  .style-public-assets {
+    background: url('/icon.png');
+  }
+</style>
+<p class="inline-style-public" style="background: url(/icon.png)">
+  inline style
+</p>
+<p class="style-public-assets">use style class</p>
 
 <h3 class="import-css">@import</h3>
 <style class="style-import">
@@ -290,6 +319,12 @@
     />
   </g>
 </svg>
+
+<h3>assets in noscript</h3>
+<noscript>
+  <img class="noscript" src="./nested/asset.png" />
+</noscript>
+
 <link rel="stylesheet" href="asset/style.css" />
 <div class="relative-css">link style</div>
 <div class="relative-js"></div>
@@ -318,6 +353,9 @@
   text('.svg-frag-import-path', svgFrag)
   document.querySelector('.svg-frag-import').src = svgFrag + '#icon-heart-view'
 
+  import unknownExtUrl from './nested/foo.unknown'
+  text('.unknown-ext', unknownExtUrl)
+
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
 
@@ -334,6 +372,16 @@
   const metaUrl = new URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
+
+  const metaUrlDep = new URL('@/asset.png', import.meta.url)
+  text('.import-meta-url-dep', metaUrlDep)
+  document.querySelector('.import-meta-url-dep-img').src = metaUrlDep
+
+  // testing URLs for public assets served at the public base path
+  // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, self.location)
+  const metaUrlBasePath = new URL('/icon.png', import.meta.url)
+  text('.import-meta-url-base-path', metaUrlBasePath)
+  document.querySelector('.import-meta-url-base-path-img').src = metaUrlBasePath
 
   // prettier-ignore
   const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)
@@ -383,6 +431,18 @@
 
   testDynamicImportMetaUrlWithComma('icon', 1)
   testDynamicImportMetaUrlWithComma('asset', 2)
+
+  {
+    const name = 'test'
+    const js = new URL(`./nested/${name}.js`, import.meta.url).href
+    text('.dynamic-import-meta-url-js', js)
+  }
+
+  {
+    const name = './nested/icon'
+    const metaUrl = new URL(`${name}.png`, import.meta.url)
+    text(`.dynamic-import-meta-url-all`, metaUrl)
+  }
 
   function text(el, text) {
     document.querySelector(el).textContent = text

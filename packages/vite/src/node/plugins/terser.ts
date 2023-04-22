@@ -1,5 +1,5 @@
 import { Worker } from 'okie'
-import type { Terser } from 'types/terser'
+import type { Terser } from 'dep-types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
@@ -12,7 +12,7 @@ const loadTerserPath = (root: string) => {
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       throw new Error(
-        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.'
+        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.',
       )
     } else {
       const message = new Error(`terser failed to load:\n${e.message}`)
@@ -29,13 +29,13 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       async (
         terserPath: string,
         code: string,
-        options: Terser.MinifyOptions
+        options: Terser.MinifyOptions,
       ) => {
         // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
         // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
         const terser = require(terserPath)
         return terser.minify(code, options) as Terser.MinifyOutput
-      }
+      },
     )
 
   let worker: ReturnType<typeof makeWorker>
@@ -49,7 +49,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // can use terser.
       if (
         config.build.minify !== 'terser' &&
-        // @ts-ignore injected by @vitejs/plugin-legacy
+        // @ts-expect-error injected by @vitejs/plugin-legacy
         !outputOptions.__vite_force_terser__
       ) {
         return null
@@ -70,16 +70,16 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
-        toplevel: outputOptions.format === 'cjs'
+        toplevel: outputOptions.format === 'cjs',
       })
       return {
         code: res.code!,
-        map: res.map as any
+        map: res.map as any,
       }
     },
 
     closeBundle() {
       worker?.stop()
-    }
+    },
   }
 }

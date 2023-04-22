@@ -1,18 +1,16 @@
-import path from 'path'
+import path from 'node:path'
 import MagicString from 'magic-string'
 import type { EmittedAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import {
-  cleanUrl,
-  getHash,
-  injectQuery,
-  isRelativeBase,
-  parseRequest
-} from '../utils'
-import { onRollupWarning } from '../build'
+  createToImportMetaURLBasedRelativeRuntime,
+  onRollupWarning,
+  toOutputFilePathInJS,
+} from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -20,7 +18,7 @@ interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
   assets: Map<string, EmittedAsset>
 
-  // worker bundle don't deps on any more worker runtime info an id only had an result.
+  // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <input_filename, fileName>
   bundle: Map<string, string>
@@ -36,17 +34,40 @@ const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
-  asset: EmittedAsset
+  asset: EmittedAsset,
 ): void {
   const fileName = asset.fileName!
   const workerMap = workerCache.get(config.mainConfig || config)!
   workerMap.assets.set(fileName, asset)
 }
 
+// Ensure that only one rollup build is called at the same time to avoid
+// leaking state in plugins between worker builds.
+// TODO: Review if we can parallelize the bundling of workers.
+const workerConfigSemaphore = new WeakMap<
+  ResolvedConfig,
+  Promise<OutputChunk>
+>()
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null
+  query: Record<string, string> | null,
+): Promise<OutputChunk> {
+  const processing = workerConfigSemaphore.get(config)
+  if (processing) {
+    await processing
+    return bundleWorkerEntry(config, id, query)
+  }
+  const promise = serialBundleWorkerEntry(config, id, query)
+  workerConfigSemaphore.set(config, promise)
+  promise.then(() => workerConfigSemaphore.delete(config))
+  return promise
+}
+
+async function serialBundleWorkerEntry(
+  config: ResolvedConfig,
+  id: string,
+  query: Record<string, string> | null,
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
@@ -58,7 +79,7 @@ export async function bundleWorkerEntry(
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
-    preserveEntrySignatures: false
+    preserveEntrySignatures: false,
   })
   let chunk: OutputChunk
   try {
@@ -69,23 +90,23 @@ export async function bundleWorkerEntry(
         : workerOutputConfig
       : {}
     const {
-      output: [outputChunk, ...outputChunks]
+      output: [outputChunk, ...outputChunks],
     } = await bundle.generate({
       entryFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name].[hash].js'
+        '[name]-[hash].js',
       ),
       chunkFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name].[hash].js'
+        '[name]-[hash].js',
       ),
       assetFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name].[hash].[ext]'
+        '[name]-[hash].[ext]',
       ),
       ...workerConfig,
       format,
-      sourcemap: config.build.sourcemap
+      sourcemap: config.build.sourcemap,
     })
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
@@ -95,7 +116,7 @@ export async function bundleWorkerEntry(
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
-          type: 'asset'
+          type: 'asset',
         })
       }
     })
@@ -108,18 +129,12 @@ export async function bundleWorkerEntry(
 function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
   query: Record<string, string> | null,
-  chunk: OutputChunk
+  chunk: OutputChunk,
 ): OutputChunk {
   const { map: sourcemap } = chunk
 
   if (sourcemap) {
-    if (config.build.sourcemap === 'inline') {
-      // Manually add the sourcemap to the code if configured for inline sourcemaps.
-      // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
-      // Currently seems that it won't be resolved until Rollup 3
-      const dataUrl = sourcemap.toUrl()
-      chunk.code += `//# sourceMappingURL=${dataUrl}`
-    } else if (
+    if (
       config.build.sourcemap === 'hidden' ||
       config.build.sourcemap === true
     ) {
@@ -128,22 +143,8 @@ function emitSourcemapForWorkerEntry(
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
         type: 'asset',
-        source: data
+        source: data,
       })
-
-      // Emit the comment that tells the JS debugger where it can find the
-      // sourcemap file.
-      // 'hidden' causes the sourcemap file to be created but
-      // the comment in the file to be omitted.
-      if (config.build.sourcemap === true) {
-        // inline web workers need to use the full sourcemap path
-        // non-inline web workers can use a relative path
-        const sourceMapUrl =
-          query?.inline != null
-            ? mapFileName
-            : path.relative(config.build.assetsDir, mapFileName)
-        chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
-      }
     }
   }
 
@@ -154,7 +155,7 @@ export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 function encodeWorkerAssetFileName(
   fileName: string,
-  workerCache: WorkerCache
+  workerCache: WorkerCache,
 ): string {
   const { fileNameHash } = workerCache
   const hash = getHash(fileName)
@@ -167,7 +168,7 @@ function encodeWorkerAssetFileName(
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null
+  query: Record<string, string> | null,
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
@@ -177,20 +178,43 @@ export async function workerFileToUrl(
     saveEmitWorkerAsset(config, {
       fileName,
       source: outputChunk.code,
-      type: 'asset'
+      type: 'asset',
     })
     workerMap.bundle.set(id, fileName)
   }
+  return encodeWorkerAssetFileName(fileName, workerMap)
+}
 
-  return isRelativeBase(config.base)
-    ? encodeWorkerAssetFileName(fileName, workerMap)
-    : config.base + fileName
+export function webWorkerPostPlugin(): Plugin {
+  return {
+    name: 'vite:worker-post',
+    resolveImportMeta(property, { chunkId, format }) {
+      // document is undefined in the worker, so we need to avoid it in iife
+      if (property === 'url' && format === 'iife') {
+        return 'self.location.href'
+      }
+
+      return null
+    },
+  }
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let server: ViteDevServer
   const isWorker = config.isWorker
+
+  const isWorkerQueryId = (id: string) => {
+    const parsedQuery = parseRequest(id)
+    if (
+      parsedQuery &&
+      (parsedQuery.worker ?? parsedQuery.sharedworker) != null
+    ) {
+      return true
+    }
+
+    return false
+  }
 
   return {
     name: 'vite:worker',
@@ -206,26 +230,29 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       workerCache.set(config, {
         assets: new Map(),
         bundle: new Map(),
-        fileNameHash: new Map()
+        fileNameHash: new Map(),
       })
     },
 
     load(id) {
-      if (isBuild) {
-        const parsedQuery = parseRequest(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
-          return ''
-        }
+      if (isBuild && isWorkerQueryId(id)) {
+        return ''
       }
     },
 
-    async transform(raw, id) {
+    // @ts-expect-error return void to fallback to other plugins, even though
+    // the types doesn't allow it. https://github.com/rollup/rollup/pull/4932
+    shouldTransformCachedModule({ id }) {
+      if (isBuild && isWorkerQueryId(id) && config.build.watch) {
+        return true
+      }
+    },
+
+    async transform(raw, id, options) {
+      const ssr = options?.ssr === true
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
-        // if import worker by worker constructor will had query.type
+        // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
         const workerType = query['type']! as WorkerType
         let injectEnv = ''
@@ -245,9 +272,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-
         return {
-          code: injectEnv + raw
+          code: injectEnv + raw,
         }
       }
       if (
@@ -268,27 +294,42 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           : 'classic'
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+
       if (isBuild) {
-        getDepsOptimizer(config)?.registerWorkersSource(id)
+        getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
-          // inline as blob data url
-          return {
-            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
-              'base64'
-            )}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL ? new ${workerConstructor}(objURL${workerOptions}) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`,
+          const encodedJs = `const encodedJs = "${Buffer.from(
+            chunk.code,
+          ).toString('base64')}";`
 
+          const code =
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
+            workerConstructor === 'Worker'
+              ? `${encodedJs}
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper() {
+            let objURL;
+            try {
+              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              if (!objURL) throw ''
+              return new ${workerConstructor}(objURL)
+            } catch(e) {
+              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+            } finally {
+              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }
+          }`
+              : `${encodedJs}
+          export default function WorkerWrapper() {
+            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          }
+          `
+
+          return {
+            code,
             // Empty sourcemap to suppress Rollup warning
-            map: { mappings: '' }
+            map: { mappings: '' },
           }
         } else {
           url = await workerFileToUrl(config, id, query)
@@ -302,33 +343,39 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (query.url != null) {
         return {
           code: `export default ${JSON.stringify(url)}`,
-          map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
+          map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       }
 
       return {
         code: `export default function WorkerWrapper() {
           return new ${workerConstructor}(${JSON.stringify(
-          url
+          url,
         )}${workerOptions})
         }`,
-        map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
+        map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
       }
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let s: MagicString
       const result = () => {
         return (
           s && {
             code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null,
           }
         )
       }
-      if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+      if (code.match(workerAssetUrlRE)) {
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          outputOptions.format,
+          config.isWorker,
+        )
+
         let match: RegExpExecArray | null
         s = new MagicString(code)
+        workerAssetUrlRE.lastIndex = 0
 
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
@@ -337,33 +384,34 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          let outputFilepath = path.posix.relative(
-            path.dirname(chunk.fileName),
-            filename
+          const replacement = toOutputFilePathInJS(
+            filename,
+            'asset',
+            chunk.fileName,
+            'js',
+            config,
+            toRelativeRuntime,
           )
-          if (!outputFilepath.startsWith('.')) {
-            outputFilepath = './' + outputFilepath
-          }
-          const replacement = JSON.stringify(outputFilepath).slice(1, -1)
-          s.overwrite(match.index, match.index + full.length, replacement, {
-            contentOnly: true
-          })
+          const replacementString =
+            typeof replacement === 'string'
+              ? JSON.stringify(replacement).slice(1, -1)
+              : `"+${replacement.runtime}+"`
+          s.update(match.index, match.index + full.length, replacementString)
         }
-
-        // TODO: check if this should be removed
-        if (config.isWorker) {
-          s = s.replace('import.meta.url', 'self.location.href')
-          return result()
-        }
-      }
-      if (!isWorker) {
-        const workerMap = workerCache.get(config)!
-        workerMap.assets.forEach((asset) => {
-          this.emitFile(asset)
-          workerMap.assets.delete(asset.fileName!)
-        })
       }
       return result()
-    }
+    },
+
+    generateBundle(opts) {
+      // @ts-expect-error asset emits are skipped in legacy bundle
+      if (opts.__vite_skip_asset_emit__ || isWorker) {
+        return
+      }
+      const workerMap = workerCache.get(config)!
+      workerMap.assets.forEach((asset) => {
+        this.emitFile(asset)
+        workerMap.assets.delete(asset.fileName!)
+      })
+    },
   }
 }

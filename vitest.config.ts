@@ -6,11 +6,13 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       './playground/**/*.*',
-      './playground-temp/**/*.*'
+      './playground-temp/**/*.*',
     ],
-    testTimeout: 20000
+    testTimeout: 20000,
+    // node14 segfaults often with threads
+    threads: !process.versions.node.startsWith('14'),
   },
   esbuild: {
-    target: 'node14'
-  }
+    target: 'node14',
+  },
 })

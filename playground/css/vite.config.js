@@ -1,22 +1,37 @@
-const path = require('path')
+import path from 'node:path'
+import stylus from 'stylus'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
-  base: './',
+// trigger scss bug: https://github.com/sass/dart-sass/issues/710
+// make sure Vite handles safely
+// @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
+globalThis.window = {}
+// @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
+globalThis.location = new URL('http://localhost/')
+
+/** @type {import('vite').UserConfig} */
+// @ts-expect-error typecast
+export default defineConfig({
   build: {
-    cssTarget: 'chrome61'
+    cssTarget: 'chrome61',
+  },
+  esbuild: {
+    logOverride: {
+      'unsupported-css-property': 'silent',
+    },
   },
   resolve: {
     alias: {
-      '@': __dirname,
-      spacefolder: __dirname + '/folder with space'
-    }
+      '=': __dirname,
+      spacefolder: __dirname + '/folder with space',
+      '#alias': __dirname + '/aliased/foo.css',
+      '#alias?inline': __dirname + '/aliased/foo.css?inline',
+      '#alias-module': __dirname + '/aliased/bar.module.css',
+    },
   },
   css: {
     modules: {
-      generateScopedName: '[name]__[local]___[hash:base64:5]'
+      generateScopedName: '[name]__[local]___[hash:base64:5]',
 
       // example of how getJSON can be used to generate
       // typescript typings for css modules class names
@@ -39,17 +54,26 @@ module.exports = {
     preprocessorOptions: {
       scss: {
         additionalData: `$injectedColor: orange;`,
-        importer(url) {
-          if (url === 'virtual-dep') return { contents: '' }
-        }
+        importer: [
+          function (url) {
+            return url === 'virtual-dep' ? { contents: '' } : null
+          },
+          function (url) {
+            return url.endsWith('.wxss') ? { contents: '' } : null
+          },
+        ],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,
         imports: [
           './options/relative-import.styl',
-          path.join(__dirname, 'options/absolute-import.styl')
-        ]
-      }
-    }
-  }
-}
+          path.join(__dirname, 'options/absolute-import.styl'),
+        ],
+        define: {
+          $definedColor: new stylus.nodes.RGBA(51, 197, 255, 1),
+          definedFunction: () => new stylus.nodes.RGBA(255, 0, 98, 1),
+        },
+      },
+    },
+  },
+})

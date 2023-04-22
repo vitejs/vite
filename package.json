@@ -1,8 +1,9 @@
 {
-  "name": "vite-monorepo",
+  "name": "@vitejs/vite-monorepo",
   "private": true,
+  "type": "module",
   "engines": {
-    "node": ">=14.6.0"
+    "node": "^14.18.0 || >=16.0.0"
   },
   "homepage": "https://vitejs.dev/",
   "keywords": [
@@ -14,114 +15,119 @@
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "format": "prettier --write .",
-    "lint": "eslint packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**",
-    "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
+    "postinstall": "simple-git-hooks",
+    "format": "prettier --write --cache .",
+    "lint": "eslint --cache .",
+    "typecheck": "tsc -p scripts --noEmit && pnpm -r --parallel run typecheck",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
-    "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
+    "test-build": "VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
+    "test-build-without-plugin-commonjs": "VITE_TEST_WITHOUT_PLUGIN_COMMONJS=1 pnpm test-build",
     "test-unit": "vitest run",
     "test-docs": "pnpm run docs-build",
-    "debug-serve": "cross-env VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
-    "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
+    "debug-serve": "VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
+    "debug-build": "VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
     "docs": "vitepress dev docs",
     "docs-build": "vitepress build docs",
     "docs-serve": "vitepress serve docs",
-    "build": "pnpm -r --filter=./packages/* run build",
-    "dev": "pnpm -r --parallel --filter=./packages/* run dev",
-    "release": "esno scripts/release.ts",
-    "ci-publish": "esno scripts/publishCI.ts",
+    "build": "pnpm -r --filter='./packages/*' run build",
+    "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
+    "release": "tsx scripts/release.ts",
+    "ci-publish": "tsx scripts/publishCI.ts",
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.18.4",
-    "@microsoft/api-extractor": "^7.24.2",
-    "@rollup/plugin-typescript": "^8.3.2",
-    "@types/babel__core": "^7.1.19",
+    "@babel/types": "^7.21.3",
+    "@microsoft/api-extractor": "^7.34.4",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/babel__core": "^7.20.0",
     "@types/babel__standalone": "^7.1.4",
-    "@types/convert-source-map": "^1.5.2",
+    "@types/convert-source-map": "^2.0.0",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",
-    "@types/estree": "^0.0.51",
+    "@types/estree": "^1.0.0",
     "@types/etag": "^1.8.1",
-    "@types/fs-extra": "^9.0.13",
-    "@types/hash-sum": "^1.0.0",
+    "@types/fs-extra": "^11.0.1",
+    "@types/json-stable-stringify": "^1.0.34",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
-    "@types/mime": "^2.0.3",
-    "@types/minimist": "^1.2.2",
-    "@types/node": "^17.0.31",
-    "@types/prompts": "^2.4.0",
+    "@types/node": "^18.15.5",
+    "@types/picomatch": "^2.3.0",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
-    "@types/semver": "^7.3.9",
     "@types/stylus": "^0.48.38",
-    "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.27.0",
-    "@typescript-eslint/parser": "^5.27.0",
+    "@types/ws": "^8.5.4",
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
+    "@typescript-eslint/parser": "^5.56.0",
+    "@vitejs/release-scripts": "^1.1.0",
     "conventional-changelog-cli": "^2.2.2",
-    "cross-env": "^7.0.3",
-    "esbuild": "^0.14.38",
-    "eslint": "^8.17.0",
-    "eslint-define-config": "^1.5.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-node": "^11.1.0",
-    "esno": "^0.16.3",
-    "execa": "^5.1.1",
-    "fs-extra": "^10.1.0",
-    "kill-port": "^1.6.1",
-    "lint-staged": "^13.0.0",
-    "minimist": "^1.2.6",
-    "node-fetch": "^2.6.7",
+    "eslint": "^8.36.0",
+    "eslint-define-config": "^1.17.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-regexp": "^1.13.0",
+    "execa": "^7.1.1",
+    "fast-glob": "^3.2.12",
+    "fs-extra": "^11.1.1",
+    "lint-staged": "^13.2.0",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.22.2",
-    "pnpm": "^7.1.9",
-    "prettier": "2.6.2",
-    "prompts": "^2.4.2",
-    "rimraf": "^3.0.2",
-    "rollup": "^2.72.1",
-    "semver": "^7.3.7",
-    "simple-git-hooks": "^2.8.0",
-    "sirv": "^2.0.2",
-    "tslib": "^2.4.0",
-    "typescript": "^4.6.4",
-    "unbuild": "^0.7.4",
+    "playwright-chromium": "^1.31.2",
+    "prettier": "2.8.5",
+    "resolve": "^1.22.1",
+    "rimraf": "^4.4.0",
+    "rollup": "^3.20.2",
+    "simple-git-hooks": "^2.8.1",
+    "tslib": "^2.5.0",
+    "tsx": "^3.12.6",
+    "typescript": "^5.0.2",
+    "unbuild": "^1.1.2",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-draft.8",
-    "vitest": "^0.14.1",
-    "vue": "^3.2.37"
+    "vitepress": "^1.0.0-alpha.61",
+    "vitest": "^0.29.7",
+    "vue": "^3.2.47"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec lint-staged --concurrent false",
-    "commit-msg": "pnpm exec esno scripts/verifyCommit.ts $1"
+    "pre-commit": "pnpm exec lint-staged --concurrent false"
   },
   "lint-staged": {
     "*": [
-      "prettier --write --ignore-unknown"
+      "prettier --write --cache --ignore-unknown"
     ],
     "packages/*/{src,types}/**/*.ts": [
-      "eslint --fix"
+      "eslint --cache --fix"
     ],
     "packages/**/*.d.ts": [
-      "eslint --fix"
+      "eslint --cache --fix"
     ],
     "playground/**/__tests__/**/*.ts": [
-      "eslint --fix"
+      "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.1.9",
+  "packageManager": "pnpm@8.2.0",
   "pnpm": {
     "overrides": {
-      "vite": "workspace:*",
-      "@vitejs/plugin-vue": "workspace:*"
+      "vite": "workspace:*"
     },
     "packageExtensions": {
       "postcss-load-config": {
         "peerDependencies": {
           "postcss": "*"
         }
+      },
+      "acorn-walk": {
+        "peerDependencies": {
+          "acorn": "*"
+        }
       }
+    },
+    "patchedDependencies": {
+      "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch",
+      "sirv@2.0.2": "patches/sirv@2.0.2.patch",
+      "chokidar@3.5.3": "patches/chokidar@3.5.3.patch"
     }
+  },
+  "stackblitz": {
+    "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
 }

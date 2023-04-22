@@ -16,13 +16,13 @@ If you need a custom integration, you can follow the steps in this guide to conf
        manifest: true,
        rollupOptions: {
          // overwrite default .html entry
-         input: '/path/to/main.js'
-       }
-     }
+         input: '/path/to/main.js',
+       },
+     },
    })
    ```
 
-   If you haven't disabled the [module preload polyfill](/config/#build-polyfillmodulepreload), you also need to import the polyfill in your entry
+   If you haven't disabled the [module preload polyfill](/config/build-options.md#build-polyfillmodulepreload), you also need to import the polyfill in your entry
 
    ```js
    // add the beginning of your app entry
@@ -33,13 +33,14 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```html
    <!-- if development -->
+   <script type="module" src="http://localhost:5173/@vite/client"></script>
    <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
    In order to properly serve assets, you have two options:
 
    - Make sure the server is configured to proxy static assets requests to the Vite server
-   - Set [`server.origin`](https://vitejs.dev/config/#server-origin) so that generated asset URLs will be resolved using the back-end server URL instead of a relative path
+   - Set [`server.origin`](/config/server-options.md#server-origin) so that generated asset URLs will be resolved using the back-end server URL instead of a relative path
 
    This is needed for assets such as images to load properly.
 
@@ -82,7 +83,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - The manifest has a `Record<name, chunk>` structure
    - For entry or dynamic entry chunks, the key is the relative src path from project root.
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
-   - Chunks will contain information on its static and dynamic imports (both are keys that maps to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
+   - Chunks will contain information on its static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
 
    You can use this file to render links or preload directives with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
 

@@ -1,7 +1,8 @@
 {
-  "include": ["."],
+  "include": ["**/vite*config*", "**/*.ts"],
   "exclude": ["**/dist/**"],
   "compilerOptions": {
+    "checkJs": true,
     "target": "ES2020",
     "module": "ESNext",
     "outDir": "dist",
@@ -9,11 +10,11 @@
     "allowJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "jsx": "preserve",
-    "types": ["vite/client", "vitest/globals", "node"],
+    "types": ["vite/client", "node"],
     "paths": {
       "~utils": ["./test-utils.ts"]
     }

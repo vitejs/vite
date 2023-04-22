@@ -1,4 +1,5 @@
-import { getColor, page, serverLogs, untilUpdated } from '~utils'
+import { expect, test } from 'vitest'
+import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -10,7 +11,7 @@ test('should load full dynamic import from public', async () => {
   await untilUpdated(() => page.textContent('.view'), 'Qux view', true)
   // No warning should be logged as we are using @vite-ignore
   expect(
-    serverLogs.some((log) => log.includes('cannot be analyzed by vite'))
+    serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
   ).toBe(false)
 })
 
@@ -24,18 +25,18 @@ test('should load data URL of `data:`', async () => {
   await untilUpdated(() => page.textContent('.view'), 'data', true)
 })
 
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxd', async () => {
   await page.click('.mxd')
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })
 
 // in this case, it is not possible to detect the correct module
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxd2', async () => {
   await page.click('.mxd2')
   await untilUpdated(() => page.textContent('.view'), 'false', true)
 })
 
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxdjson', async () => {
   await page.click('.mxdjson')
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })
@@ -56,7 +57,7 @@ test('should load dynamic import with css', async () => {
   await untilUpdated(
     () => page.$eval('.view', (node) => window.getComputedStyle(node).color),
     'rgb(255, 0, 0)',
-    true
+    true,
   )
 })
 
@@ -64,7 +65,15 @@ test('should load dynamic import with vars', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars'),
     'hello',
-    true
+    true,
+  )
+})
+
+test('should load dynamic import with vars multiline', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars'),
+    'hello',
+    true,
   )
 })
 
@@ -72,7 +81,7 @@ test('should load dynamic import with vars alias', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-alias'),
     'hi',
-    true
+    true,
   )
 })
 
@@ -80,11 +89,43 @@ test('should load dynamic import with vars raw', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-raw'),
     'export function hello()',
-    true
+    true,
+  )
+})
+
+test('should load dynamic import with vars url', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-url'),
+    isBuild ? 'data:application/javascript' : '/alias/url.js',
+    true,
+  )
+})
+
+test('should load dynamic import with vars worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-worker'),
+    'load worker',
+    true,
   )
 })
 
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
   await untilUpdated(() => getColor('.pkg-css'), 'blue', true)
+})
+
+test('should work with load ../ and itself directory', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-self'),
+    'dynamic-import-self-content',
+    true,
+  )
+})
+
+test('should work with load ../ and contain itself directory', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-nested-self'),
+    'dynamic-import-nested-self-content',
+    true,
+  )
 })

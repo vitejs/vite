@@ -1,4 +1,4 @@
-import constant from './modules/module0'
+import constant from './modules/module0.js'
 
 self.onconnect = (event) => {
   const port = event.ports[0]

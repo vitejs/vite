@@ -31,41 +31,77 @@ declare module '*.module.pcss' {
   const classes: CSSModuleClasses
   export default classes
 }
+declare module '*.module.sss' {
+  const classes: CSSModuleClasses
+  export default classes
+}
 
 // CSS
 declare module '*.css' {
+  /**
+   * @deprecated Use `import style from './style.css?inline'` instead.
+   */
   const css: string
   export default css
 }
 declare module '*.scss' {
+  /**
+   * @deprecated Use `import style from './style.scss?inline'` instead.
+   */
   const css: string
   export default css
 }
 declare module '*.sass' {
+  /**
+   * @deprecated Use `import style from './style.sass?inline'` instead.
+   */
   const css: string
   export default css
 }
 declare module '*.less' {
+  /**
+   * @deprecated Use `import style from './style.less?inline'` instead.
+   */
   const css: string
   export default css
 }
 declare module '*.styl' {
+  /**
+   * @deprecated Use `import style from './style.styl?inline'` instead.
+   */
   const css: string
   export default css
 }
 declare module '*.stylus' {
+  /**
+   * @deprecated Use `import style from './style.stylus?inline'` instead.
+   */
   const css: string
   export default css
 }
 declare module '*.pcss' {
+  /**
+   * @deprecated Use `import style from './style.pcss?inline'` instead.
+   */
+  const css: string
+  export default css
+}
+declare module '*.sss' {
+  /**
+   * @deprecated Use `import style from './style.sss?inline'` instead.
+   */
   const css: string
   export default css
 }
 
 // Built-in asset types
-// see `src/constants.ts`
+// see `src/node/constants.ts`
 
 // images
+declare module '*.png' {
+  const src: string
+  export default src
+}
 declare module '*.jpg' {
   const src: string
   export default src
@@ -74,7 +110,15 @@ declare module '*.jpeg' {
   const src: string
   export default src
 }
-declare module '*.png' {
+declare module '*.jfif' {
+  const src: string
+  export default src
+}
+declare module '*.pjpeg' {
+  const src: string
+  export default src
+}
+declare module '*.pjp' {
   const src: string
   export default src
 }
@@ -129,6 +173,11 @@ declare module '*.aac' {
   export default src
 }
 
+declare module '*.opus' {
+  const src: string
+  export default src
+}
+
 // fonts
 declare module '*.woff' {
   const src: string
@@ -152,12 +201,6 @@ declare module '*.otf' {
 }
 
 // other
-declare module '*.wasm?init' {
-  const initWasm: (
-    options: WebAssembly.Imports
-  ) => Promise<WebAssembly.Instance>
-  export default initWasm
-}
 declare module '*.webmanifest' {
   const src: string
   export default src
@@ -169,6 +212,14 @@ declare module '*.pdf' {
 declare module '*.txt' {
   const src: string
   export default src
+}
+
+// wasm?init
+declare module '*.wasm?init' {
+  const initWasm: (
+    options: WebAssembly.Imports,
+  ) => Promise<WebAssembly.Instance>
+  export default initWasm
 }
 
 // web worker
@@ -186,11 +237,28 @@ declare module '*?worker&inline' {
   export default workerConstructor
 }
 
+declare module '*?worker&url' {
+  const src: string
+  export default src
+}
+
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
   }
   export default sharedWorkerConstructor
+}
+
+declare module '*?sharedworker&inline' {
+  const sharedWorkerConstructor: {
+    new (): SharedWorker
+  }
+  export default sharedWorkerConstructor
+}
+
+declare module '*?sharedworker&url' {
+  const src: string
+  export default src
 }
 
 declare module '*?raw' {

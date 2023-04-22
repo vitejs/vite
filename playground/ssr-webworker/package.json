@@ -1,5 +1,5 @@
 {
-  "name": "test-ssr-webworker",
+  "name": "@vitejs/test-ssr-webworker",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,10 +8,10 @@
     "build:worker": "vite build --ssr src/entry-worker.jsx --outDir dist/worker"
   },
   "dependencies": {
-    "react": "^17.0.2"
+    "react": "^18.2.0"
   },
   "devDependencies": {
     "miniflare": "^1.4.1",
-    "resolve-linked": "workspace:*"
+    "@vitejs/test-resolve-linked": "workspace:*"
   }
 }

@@ -1,12 +1,12 @@
-import fs from 'fs'
-import { dirname, join } from 'path'
+import fs from 'node:fs'
+import { dirname, join } from 'node:path'
 import { isFileReadable } from '../utils'
 
 // https://github.com/vitejs/vite/issues/2820#issuecomment-812495079
 const ROOT_FILES = [
   // '.git',
 
-  // https://pnpm.js.org/workspaces/
+  // https://pnpm.io/workspaces/
   'pnpm-workspace.yaml',
 
   // https://rushjs.io/pages/advanced/config_files/
@@ -17,7 +17,7 @@ const ROOT_FILES = [
   // 'nx.json',
 
   // https://github.com/lerna/lerna#lernajson
-  'lerna.json'
+  'lerna.json',
 ]
 
 // npm: https://docs.npmjs.com/cli/v7/using-npm/workspaces#installing-workspaces
@@ -58,7 +58,7 @@ export function searchForPackageRoot(current: string, root = current): string {
  */
 export function searchForWorkspaceRoot(
   current: string,
-  root = searchForPackageRoot(current)
+  root = searchForPackageRoot(current),
 ): string {
   if (hasRootFile(current)) return current
   if (hasWorkspacePackageJSON(current)) return current

@@ -1,10 +1,11 @@
-import type * as http from 'http'
+import type * as http from 'node:http'
+import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
-import type { Connect } from 'types/connect'
-import type { HttpProxy } from 'types/http-proxy'
+import type { Connect } from 'dep-types/connect'
+import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
 import { HMR_HEADER } from '../ws'
-import { createDebugger, isObject } from '../../utils'
+import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
@@ -24,35 +25,60 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   bypass?: (
     req: http.IncomingMessage,
     res: http.ServerResponse,
-    options: ProxyOptions
+    options: ProxyOptions,
   ) => void | null | undefined | false | string
 }
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
   options: NonNullable<CommonServerOptions['proxy']>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
 ): Connect.NextHandleFunction {
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
+    if (!opts) {
+      return
+    }
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
-    proxy.on('error', (err) => {
-      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
-        timestamp: true,
-        error: err
-      })
-    })
-
     if (opts.configure) {
       opts.configure(proxy, opts)
     }
+
+    proxy.on('error', (err, req, originalRes) => {
+      // When it is ws proxy, res is net.Socket
+      const res = originalRes as http.ServerResponse | net.Socket
+      if ('req' in res) {
+        config.logger.error(
+          `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
+            err.stack
+          }`,
+          {
+            timestamp: true,
+            error: err,
+          },
+        )
+        if (!res.headersSent && !res.writableEnded) {
+          res
+            .writeHead(500, {
+              'Content-Type': 'text/plain',
+            })
+            .end()
+        }
+      } else {
+        config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
+          timestamp: true,
+          error: err,
+        })
+        res.end()
+      }
+    })
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
   })
@@ -64,13 +90,15 @@ export function proxyMiddleware(
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
-            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            (opts.ws ||
+              opts.target?.toString().startsWith('ws:') ||
+              opts.target?.toString().startsWith('wss:')) &&
             req.headers['sec-websocket-protocol'] !== HMR_HEADER
           ) {
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
-            debug(`${req.url} -> ws ${opts.target}`)
+            debug?.(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
             return
           }
@@ -91,19 +119,15 @@ export function proxyMiddleware(
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
-            debug(`bypass: ${req.url} -> ${bypassResult}`)
-            return next()
-          } else if (isObject(bypassResult)) {
-            Object.assign(options, bypassResult)
-            debug(`bypass: ${req.url} use modified options: %O`, options)
+            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
             return next()
           } else if (bypassResult === false) {
-            debug(`bypass: ${req.url} -> 404`)
+            debug?.(`bypass: ${req.url} -> 404`)
             return res.end(404)
           }
         }
 
-        debug(`${req.url} -> ${opts.target || opts.forward}`)
+        debug?.(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
@@ -117,7 +141,7 @@ export function proxyMiddleware(
 
 function doesProxyContextMatchUrl(context: string, url: string): boolean {
   return (
-    (context.startsWith('^') && new RegExp(context).test(url)) ||
+    (context[0] === '^' && new RegExp(context).test(url)) ||
     url.startsWith(context)
   )
 }

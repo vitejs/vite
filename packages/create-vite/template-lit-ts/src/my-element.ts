@@ -1,7 +1,7 @@
-import { html, css, LitElement } from 'lit'
+import { LitElement, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import viteLogo from '/vite.svg'
 import litLogo from './assets/lit.svg'
+import viteLogo from '/vite.svg'
 
 /**
  * An example element.
@@ -26,12 +26,12 @@ export class MyElement extends LitElement {
   render() {
     return html`
       <div>
-        <a href="https://vitejs.dev" target="_blank"
-          ><img src="${viteLogo}" class="logo" alt="Vite logo"
-        /></a>
-        <a href="https://lit.dev" target="_blank"
-          ><img src=${litLogo} class="logo" alt="Lit logo"
-        /></a>
+        <a href="https://vitejs.dev" target="_blank">
+          <img src=${viteLogo} class="logo" alt="Vite logo" />
+        </a>
+        <a href="https://lit.dev" target="_blank">
+          <img src=${litLogo} class="logo lit" alt="Lit logo" />
+        </a>
       </div>
       <slot></slot>
       <div class="card">
@@ -59,9 +59,13 @@ export class MyElement extends LitElement {
       height: 6em;
       padding: 1.5em;
       will-change: filter;
+      transition: filter 300ms;
     }
     .logo:hover {
       filter: drop-shadow(0 0 2em #646cffaa);
+    }
+    .logo.lit:hover {
+      filter: drop-shadow(0 0 2em #325cffaa);
     }
 
     .card {

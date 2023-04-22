@@ -1,19 +1,23 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
-const vite = require('vite')
+import vite from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig({
+export default vite.defineConfig({
   base: '/es/',
-  enforce: 'pre',
+  resolve: {
+    alias: {
+      '@': __dirname,
+    },
+  },
   worker: {
     format: 'es',
-    plugins: [vueJsx()],
+    plugins: [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/worker_asset.[name].[ext]',
-        chunkFileNames: 'assets/worker_chunk.[name].js',
-        entryFileNames: 'assets/worker_entry.[name].js'
-      }
-    }
+        assetFileNames: 'assets/worker_asset-[name].[ext]',
+        chunkFileNames: 'assets/worker_chunk-[name].js',
+        entryFileNames: 'assets/worker_entry-[name].js',
+      },
+    },
   },
   build: {
     outDir: 'dist/es',
@@ -21,11 +25,12 @@ module.exports = vite.defineConfig({
       output: {
         assetFileNames: 'assets/[name].[ext]',
         chunkFileNames: 'assets/[name].js',
-        entryFileNames: 'assets/[name].js'
-      }
-    }
+        entryFileNames: 'assets/[name].js',
+      },
+    },
   },
   plugins: [
+    workerPluginTestPlugin(),
     {
       name: 'resolve-format-es',
 
@@ -33,10 +38,11 @@ module.exports = vite.defineConfig({
         if (id.includes('main.js')) {
           return code.replace(
             `/* flag: will replace in vite config import("./format-es.js") */`,
-            `import("./main-format-es")`
+            `import("./main-format-es")`,
           )
         }
-      }
-    }
-  ]
+      },
+    },
+  ],
+  cacheDir: 'node_modules/.vite-es',
 })

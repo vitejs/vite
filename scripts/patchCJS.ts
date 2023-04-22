@@ -3,7 +3,7 @@
 It converts
 
 ```ts
-exports["default"] = vuePlugin;
+exports.default = vuePlugin;
 exports.parseVueRequest = parseVueRequest;
 ```
 
@@ -11,18 +11,18 @@ to
 
 ```ts
 module.exports = vuePlugin;
-module.exports["default"] = vuePlugin;
+module.exports.default = vuePlugin;
 module.exports.parseVueRequest = parseVueRequest;
 ```
 */
 
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import colors from 'picocolors'
 
 const indexPath = 'dist/index.cjs'
 let code = readFileSync(indexPath, 'utf-8')
 
-const matchMixed = code.match(/\nexports\["default"\] = (\w+);/)
+const matchMixed = code.match(/\nexports.default = (\w+);/)
 if (matchMixed) {
   const name = matchMixed[1]
 
@@ -41,16 +41,16 @@ if (matchMixed) {
   writeFileSync(indexPath, lines.join('\n'))
 
   console.log(colors.bold(`${indexPath} CJS patched`))
-  process.exit()
+  process.exit(0)
 }
 
 const matchDefault = code.match(/\nmodule.exports = (\w+);/)
 
 if (matchDefault) {
-  code += `module.exports["default"] = ${matchDefault[1]};\n`
+  code += `module.exports.default = ${matchDefault[1]};\n`
   writeFileSync(indexPath, code)
   console.log(colors.bold(`${indexPath} CJS patched`))
-  process.exit()
+  process.exit(0)
 }
 
 console.error(colors.red(`${indexPath} CJS patch failed`))

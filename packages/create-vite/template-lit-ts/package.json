@@ -3,24 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "dist/my-element.es.mjs",
-  "exports": {
-    ".": "./dist/my-element.es.mjs"
-  },
-  "types": "types/my-element.d.ts",
-  "files": [
-    "dist",
-    "types"
-  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "lit": "^2.2.5"
+    "lit": "^2.6.1"
   },
   "devDependencies": {
-    "typescript": "^4.6.4",
-    "vite": "^2.9.9"
+    "typescript": "^5.0.2",
+    "vite": "^4.3.0"
   }
 }

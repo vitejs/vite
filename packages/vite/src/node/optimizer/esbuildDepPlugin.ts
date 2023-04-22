@@ -1,21 +1,24 @@
-import path from 'path'
-import { promises as fs } from 'fs'
+import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES } from '../constants'
-import type { ResolvedConfig } from '..'
+import { CSS_LANGS_RE, KNOWN_ASSET_TYPES } from '../constants'
+import { getDepOptimizationConfig } from '..'
+import type { PackageCache, ResolvedConfig } from '..'
 import {
+  escapeRegex,
   flattenId,
+  isBuiltin,
   isExternalUrl,
-  isRunningWithYarnPnp,
   moduleListContains,
-  normalizePath
+  normalizePath,
 } from '../utils'
-import { browserExternalId } from '../plugins/resolve'
-import type { ExportsData } from '.'
+import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
+
+const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
+const nonFacadePrefix = 'vite-cjs-external-facade:'
 
 const externalTypes = [
   'css',
@@ -27,45 +30,59 @@ const externalTypes = [
   'stylus',
   'pcss',
   'postcss',
+  // wasm
+  'wasm',
   // known SFC types
   'vue',
   'svelte',
   'marko',
   'astro',
+  'imba',
   // JSX/TSX may be configured to be compiled differently from how esbuild
   // handles it by default, so exclude them as well
   'jsx',
   'tsx',
-  ...KNOWN_ASSET_TYPES
+  ...KNOWN_ASSET_TYPES,
 ]
 
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
-  exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig
+  external: string[],
+  config: ResolvedConfig,
+  ssr: boolean,
 ): Plugin {
+  const { extensions } = getDepOptimizationConfig(config, ssr)
+
   // remove optimizable extensions from `externalTypes` list
-  const allExternalTypes = config.optimizeDeps.extensions
-    ? externalTypes.filter(
-        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
-      )
+  const allExternalTypes = extensions
+    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
 
+  // use separate package cache for optimizer as it caches paths around node_modules
+  // and it's unlikely for the core Vite process to traverse into node_modules again
+  const esmPackageCache: PackageCache = new Map()
+  const cjsPackageCache: PackageCache = new Map()
+
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false, scan: true })
+  const _resolve = config.createResolver({
+    asSrc: false,
+    scan: true,
+    packageCache: esmPackageCache,
+  })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
     isRequire: true,
-    scan: true
+    scan: true,
+    packageCache: cjsPackageCache,
   })
 
   const resolve = (
     id: string,
     importer: string,
     kind: ImportKind,
-    resolveDir?: string
+    resolveDir?: string,
   ): Promise<string | undefined> => {
     let _importer: string
     // explicit resolveDir - this is passed only during yarn pnp resolve for
@@ -77,56 +94,98 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined)
+    return resolver(id, _importer, undefined, ssr)
+  }
+
+  const resolveResult = (id: string, resolved: string) => {
+    if (resolved.startsWith(browserExternalId)) {
+      return {
+        path: id,
+        namespace: 'browser-external',
+      }
+    }
+    if (resolved.startsWith(optionalPeerDepId)) {
+      return {
+        path: resolved,
+        namespace: 'optional-peer-dep',
+      }
+    }
+    if (ssr && isBuiltin(resolved)) {
+      return
+    }
+    if (isExternalUrl(resolved)) {
+      return {
+        path: resolved,
+        external: true,
+      }
+    }
+    return {
+      path: path.resolve(resolved),
+    }
   }
 
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
+      // clear package cache when esbuild is finished
+      build.onEnd(() => {
+        esmPackageCache.clear()
+        cjsPackageCache.clear()
+      })
+
       // externalize assets and commonly known non-js file types
       // See #8459 for more details about this require-import conversion
       build.onResolve(
         {
-          filter: new RegExp(`\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`)
+          filter: new RegExp(
+            `\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`,
+          ),
         },
         async ({ path: id, importer, kind }) => {
           // if the prefix exist, it is already converted to `import`, so set `external: true`
           if (id.startsWith(convertedExternalPrefix)) {
             return {
               path: id.slice(convertedExternalPrefix.length),
-              external: true
+              external: true,
             }
           }
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            // here it is not set to `external: true` to convert `require` to `import`
+            if (kind === 'require-call') {
+              // here it is not set to `external: true` to convert `require` to `import`
+              return {
+                path: resolved,
+                namespace: externalWithConversionNamespace,
+              }
+            }
             return {
               path: resolved,
-              namespace: externalWithConversionNamespace
+              external: true,
             }
           }
-        }
+        },
       )
       build.onLoad(
         { filter: /./, namespace: externalWithConversionNamespace },
         (args) => {
           // import itself with prefix (this is the actual part of require-import conversion)
+          const modulePath = `"${convertedExternalPrefix}${args.path}"`
           return {
-            contents:
-              `export { default } from "${convertedExternalPrefix}${args.path}";` +
-              `export * from "${convertedExternalPrefix}${args.path}";`,
-            loader: 'js'
+            contents: CSS_LANGS_RE.test(args.path)
+              ? `import ${modulePath};`
+              : `export { default } from ${modulePath};` +
+                `export * from ${modulePath};`,
+            loader: 'js',
           }
-        }
+        },
       )
 
       function resolveEntry(id: string) {
         const flatId = flattenId(id)
         if (flatId in qualified) {
           return {
-            path: flatId,
-            namespace: 'dep'
+            path: qualified[flatId],
           }
         }
       }
@@ -134,15 +193,15 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+          if (moduleListContains(external, id)) {
             return {
               path: id,
-              external: true
+              external: true,
             }
           }
 
           // ensure esbuild uses our resolved entries
-          let entry: { path: string; namespace: string } | undefined
+          let entry: { path: string } | undefined
           // if this is an entry, return entry namespace resolve result
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry
@@ -156,88 +215,37 @@ export function esbuildDepPlugin(
           // use vite's own resolver
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            if (resolved.startsWith(browserExternalId)) {
-              return {
-                path: id,
-                namespace: 'browser-external'
-              }
-            }
-            if (isExternalUrl(resolved)) {
-              return {
-                path: resolved,
-                external: true
-              }
-            }
-            return {
-              path: path.resolve(resolved)
-            }
+            return resolveResult(id, resolved)
           }
-        }
+        },
       )
-
-      // For entry files, we'll read it ourselves and construct a proxy module
-      // to retain the entry's raw id instead of file path so that esbuild
-      // outputs desired output file structure.
-      // It is necessary to do the re-exporting to separate the virtual proxy
-      // module from the actual module since the actual module may get
-      // referenced via relative imports - if we don't separate the proxy and
-      // the actual module, esbuild will create duplicated copies of the same
-      // module!
-      const root = path.resolve(config.root)
-      build.onLoad({ filter: /.*/, namespace: 'dep' }, ({ path: id }) => {
-        const entryFile = qualified[id]
-
-        let relativePath = normalizePath(path.relative(root, entryFile))
-        if (
-          !relativePath.startsWith('./') &&
-          !relativePath.startsWith('../') &&
-          relativePath !== '.'
-        ) {
-          relativePath = `./${relativePath}`
-        }
-
-        let contents = ''
-        const { hasImports, exports, hasReExports } = exportsData[id]
-        if (!hasImports && !exports.length) {
-          // cjs
-          contents += `export default require("${relativePath}");`
-        } else {
-          if (exports.includes('default')) {
-            contents += `import d from "${relativePath}";export default d;`
-          }
-          if (hasReExports || exports.length > 1 || exports[0] !== 'default') {
-            contents += `\nexport * from "${relativePath}"`
-          }
-        }
-
-        return {
-          loader: 'js',
-          contents,
-          resolveDir: root
-        }
-      })
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
         ({ path }) => {
-          return {
-            // Return in CJS to intercept named imports. Use `Object.create` to
-            // create the Proxy in the prototype to workaround esbuild issue. Why?
-            //
-            // In short, esbuild cjs->esm flow:
-            // 1. Create empty object using `Object.create(Object.getPrototypeOf(module.exports))`.
-            // 2. Assign props of `module.exports` to the object.
-            // 3. Return object for ESM use.
-            //
-            // If we do `module.exports = new Proxy({}, {})`, step 1 returns empty object,
-            // step 2 does nothing as there's no props for `module.exports`. The final object
-            // is just an empty object.
-            //
-            // Creating the Proxy in the prototype satisfies step 1 immediately, which means
-            // the returned object is a Proxy that we can intercept.
-            //
-            // Note: Skip keys that are accessed by esbuild and browser devtools.
-            contents: `\
+          if (config.isProduction) {
+            return {
+              contents: 'module.exports = {}',
+            }
+          } else {
+            return {
+              // Return in CJS to intercept named imports. Use `Object.create` to
+              // create the Proxy in the prototype to workaround esbuild issue. Why?
+              //
+              // In short, esbuild cjs->esm flow:
+              // 1. Create empty object using `Object.create(Object.getPrototypeOf(module.exports))`.
+              // 2. Assign props of `module.exports` to the object.
+              // 3. Return object for ESM use.
+              //
+              // If we do `module.exports = new Proxy({}, {})`, step 1 returns empty object,
+              // step 2 does nothing as there's no props for `module.exports`. The final object
+              // is just an empty object.
+              //
+              // Creating the Proxy in the prototype satisfies step 1 immediately, which means
+              // the returned object is a Proxy that we can intercept.
+              //
+              // Note: Skip keys that are accessed by esbuild and browser devtools.
+              contents: `\
 module.exports = Object.create(new Proxy({}, {
   get(_, key) {
     if (
@@ -246,28 +254,78 @@ module.exports = Object.create(new Proxy({}, {
       key !== 'constructor' &&
       key !== 'splice'
     ) {
-      throw new Error(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
+      console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code. See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
     }
   }
-}))`
+}))`,
+            }
           }
-        }
+        },
       )
 
-      // yarn 2 pnp compat
-      if (isRunningWithYarnPnp) {
-        build.onResolve(
-          { filter: /.*/ },
-          async ({ path, importer, kind, resolveDir }) => ({
-            // pass along resolveDir for entries
-            path: await resolve(path, importer, kind, resolveDir)
-          })
-        )
-        build.onLoad({ filter: /.*/ }, async (args) => ({
-          contents: await fs.readFile(args.path),
-          loader: 'default'
-        }))
-      }
-    }
+      build.onLoad(
+        { filter: /.*/, namespace: 'optional-peer-dep' },
+        ({ path }) => {
+          if (config.isProduction) {
+            return {
+              contents: 'module.exports = {}',
+            }
+          } else {
+            const [, peerDep, parentDep] = path.split(':')
+            return {
+              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
+            }
+          }
+        },
+      )
+    },
+  }
+}
+
+const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
+
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+export function esbuildCjsExternalPlugin(
+  externals: string[],
+  platform: 'node' | 'browser',
+): Plugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
+
+      build.onResolve({ filter: new RegExp(`^${nonFacadePrefix}`) }, (args) => {
+        return {
+          path: args.path.slice(nonFacadePrefix.length),
+          external: true,
+        }
+      })
+
+      build.onResolve({ filter }, (args) => {
+        // preserve `require` for node because it's more accurate than converting it to import
+        if (args.kind === 'require-call' && platform !== 'node') {
+          return {
+            path: args.path,
+            namespace: cjsExternalFacadeNamespace,
+          }
+        }
+
+        return {
+          path: args.path,
+          external: true,
+        }
+      })
+
+      build.onLoad(
+        { filter: /.*/, namespace: cjsExternalFacadeNamespace },
+        (args) => ({
+          contents:
+            `import * as m from ${JSON.stringify(
+              nonFacadePrefix + args.path,
+            )};` + `module.exports = m;`,
+        }),
+      )
+    },
   }
 }
