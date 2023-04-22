@@ -96,7 +96,7 @@ export class MyElement extends LitElement {
         font-size: 3.2em;
         line-height: 1.1;
       }
-      
+
       button {
         border-radius: 8px;
         border: 1px solid transparent;
