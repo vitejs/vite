@@ -15,7 +15,7 @@ Check out the [Vite 5 discussion](https://github.com/vitejs/vite/discussions/124
 Vite does not have a fixed release cycle.
 
 - **Patch** releases are released as needed.
-- **Minor** releases always contain new features, with a typical time frame of ~2-3 months in between. Minor releases always go through a beta pre-release phase.
+- **Minor** releases always contain new features and are also released as needed. Minor releases always go through a beta pre-release phase.
 - **Major** releases generally align with [Node.js EOL schedule](https://endoflife.date/nodejs), and will be announced ahead of time. These releases will go through an early discussion phase, and both alpha and beta pre-release phases.
 
 The latest minor in the previous Vite Major to the latest one will keep receiving important fixes and security patches. After that, it would only get updates if there are security concerns. We recommend updating Vite regularly. Check out the [Migration Guides](https://vitejs.dev/guide/migration.html) when you update to each Major.
