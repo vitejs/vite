@@ -49,6 +49,41 @@ describe('mergeConfig', () => {
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
+  test('handles configs when it as a function', () => {
+    const baseConfig: UserConfigExport = {
+      resolve: {
+        alias: [
+          {
+            find: 'foo',
+            replacement: 'foo-value'
+          }
+        ]
+      }
+    }
+
+    const newConfig: UserConfigExport = {
+      server: {
+        open: true
+      }
+    }
+
+    const mergedConfig: UserConfigExport = {
+      resolve: {
+        alias: [
+          {
+            find: 'foo',
+            replacement: 'foo-value'
+          }
+        ]
+      },
+      server: {
+        open: true
+      }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
   test('keep object alias schema', () => {
     const baseConfig = {
       resolve: {

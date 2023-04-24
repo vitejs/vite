@@ -1042,7 +1042,8 @@ export function mergeConfig(
   overrides: Record<string, any>,
   isRoot = true,
 ): Record<string, any> {
-  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
+  const _overrides = typeof overrides === 'function' ? overrides() : overrides
+  return mergeConfigRecursively(defaults, _overrides, isRoot ? '' : '.')
 }
 
 export function mergeAlias(
