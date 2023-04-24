@@ -8,7 +8,7 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
-import { bindShortcuts } from './shortcuts'
+import { bindPreviewShortcuts, bindShortcuts } from './shortcuts'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -291,6 +291,7 @@ cli
     },
   )
 
+// preview
 cli
   .command('preview [root]', 'locally preview production build')
   .option('--host [host]', `[string] specify hostname`)
@@ -332,6 +333,7 @@ cli
           },
         })
         server.printUrls()
+        bindPreviewShortcuts(server)
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),

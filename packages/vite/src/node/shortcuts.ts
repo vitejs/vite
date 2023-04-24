@@ -1,6 +1,8 @@
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
 import { isDefined } from './utils'
+import type { PreviewServer } from './preview'
+import { openBrowser } from './server/openBrowser'
 
 export type BindShortcutsOptions = {
   /**
@@ -116,6 +118,86 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     description: 'quit',
     async action(server) {
       await server.close().finally(() => process.exit())
+    },
+  },
+]
+
+type PreviewShortcuts = {
+  key: string
+  description: string
+  action: (server: PreviewServer) => void
+}
+
+export function bindPreviewShortcuts(server: PreviewServer): void {
+  if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
+    return
+  }
+  server.config.logger.info(
+    colors.dim(colors.green('  ➜')) +
+      colors.dim('  press ') +
+      colors.bold('h') +
+      colors.dim(' to show help'),
+  )
+  let actionRunning = false
+  const onInput = async (input: string) => {
+    // ctrl+c or ctrl+d
+    if (input === '\x03' || input === '\x04') {
+      try {
+        server.httpServer.close()
+      } finally {
+        process.exit(1)
+      }
+    }
+    if (actionRunning) return
+    if (input === 'h') {
+      server.config.logger.info(
+        [
+          '',
+          colors.bold('  Shortcuts'),
+          ...previewShortcuts.map(
+            (shortcut) =>
+              colors.dim('  press ') +
+              colors.bold(shortcut.key) +
+              colors.dim(` to ${shortcut.description}`),
+          ),
+        ].join('\n'),
+      )
+    }
+
+    const shortcut = previewShortcuts.find((shortcut) => shortcut.key === input)
+    if (!shortcut) return
+    actionRunning = true
+    shortcut.action(server)
+    actionRunning = false
+  }
+
+  process.stdin.setRawMode(true)
+
+  process.stdin.on('data', onInput).setEncoding('utf8').resume()
+
+  server.httpServer.on('close', () => {
+    process.stdin.off('data', onInput).pause()
+  })
+}
+
+const previewShortcuts: PreviewShortcuts[] = [
+  {
+    key: 'o',
+    description: 'open in browser',
+    action(server) {
+      const url = server.resolvedUrls.local[0]
+      openBrowser(url, true, server.config.logger)
+    },
+  },
+  {
+    key: 'q',
+    description: 'quit',
+    action(server) {
+      try {
+        server.httpServer.close()
+      } finally {
+        process.exit()
+      }
     },
   },
 ]
