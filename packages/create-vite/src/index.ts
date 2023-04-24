@@ -72,6 +72,11 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'vue2',
+        display: 'Javascript',
+        color: yellow,
+      },
+      {
         name: 'custom-create-vue',
         display: 'Customize with create-vue ↗',
         color: green,
