@@ -586,6 +586,13 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
+  // Skip if using Node <16.18 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
+  const nodeVersion = process.versions.node.split('.').map(Number)
+  if (nodeVersion[0] < 16 || (nodeVersion[0] === 16 && nodeVersion[1] < 18)) {
+    safeRealpathSync = fs.realpathSync
+    return
+  }
+
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
