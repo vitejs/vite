@@ -743,6 +743,19 @@ console.log("it can parse the hashbang")`,
   `)
 })
 
+test('import hoisted after hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `#!/usr/bin/env node
+import "foo"`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "
+  `)
+})
+
 // #10289
 test('track scope by class, function, condition blocks', async () => {
   const code = `
