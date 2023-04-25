@@ -1,3 +1,11 @@
+## <small>4.0.3 (2023-04-25)</small>
+
+* feat(plugin-legacy): support file protocol (#8524) ([7a87ff4](https://github.com/vitejs/vite/commit/7a87ff4)), closes [#8524](https://github.com/vitejs/vite/issues/8524)
+* refactor(eslint): migrate to `eslint-plugin-n` (#12895) ([62ebe28](https://github.com/vitejs/vite/commit/62ebe28)), closes [#12895](https://github.com/vitejs/vite/issues/12895)
+* fix(deps): update all non-major dependencies (#12389) ([3e60b77](https://github.com/vitejs/vite/commit/3e60b77)), closes [#12389](https://github.com/vitejs/vite/issues/12389)
+
+
+
 ## <small>4.0.2 (2023-03-16)</small>
 
 * chore(deps): update all non-major dependencies (#12299) ([b41336e](https://github.com/vitejs/vite/commit/b41336e)), closes [#12299](https://github.com/vitejs/vite/issues/12299)
