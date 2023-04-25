@@ -13,13 +13,16 @@ import {
 } from '~utils'
 
 export const port = ports.cli
-
+export const streams = {} as {
+  build: { out: string[]; err: string[] }
+  server: { out: string[]; err: string[] }
+}
 export async function serve() {
   // collect stdout and stderr streams from child processes here to avoid interfering with regular vitest output
-  const streams = {
+  Object.assign(streams, {
     build: { out: [], err: [] },
     server: { out: [], err: [] },
-  }
+  })
   // helpers to collect streams
   const collectStreams = (name, process) => {
     process.stdout.on('data', (d) => streams[name].out.push(d.toString()))
