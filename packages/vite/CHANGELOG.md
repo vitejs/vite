@@ -1,3 +1,15 @@
+## <small>4.3.2 (2023-04-25)</small>
+
+* fix: status optional in windows network drive regex (fix: #12948) (#12949) ([f781fc6](https://github.com/vitejs/vite/commit/f781fc6)), closes [#12948](https://github.com/vitejs/vite/issues/12948) [#12949](https://github.com/vitejs/vite/issues/12949)
+* fix: use realpathSync for node <16.18 on windows (#12971) ([965839c](https://github.com/vitejs/vite/commit/965839c)), closes [#12971](https://github.com/vitejs/vite/issues/12971)
+* fix(ssr): hoist statements after hashbang (#12985) ([07bd6d1](https://github.com/vitejs/vite/commit/07bd6d1)), closes [#12985](https://github.com/vitejs/vite/issues/12985)
+* chore: build time message setting color (#12940) ([ada7cd5](https://github.com/vitejs/vite/commit/ada7cd5)), closes [#12940](https://github.com/vitejs/vite/issues/12940)
+* chore: remove extra ) in changelog (#12932) ([e7924d2](https://github.com/vitejs/vite/commit/e7924d2)), closes [#12932](https://github.com/vitejs/vite/issues/12932)
+* chore: upgrade rollup (#12965) ([bdb2f25](https://github.com/vitejs/vite/commit/bdb2f25)), closes [#12965](https://github.com/vitejs/vite/issues/12965)
+* refactor: resolveExports (#10917) ([ad21ec3](https://github.com/vitejs/vite/commit/ad21ec3)), closes [#10917](https://github.com/vitejs/vite/issues/10917)
+
+
+
 ## <small>4.3.1 (2023-04-20)</small>
 
 * fix: revert ensure module in graph before transforming (#12774) (#12929) ([9cc93a5](https://github.com/vitejs/vite/commit/9cc93a5)), closes [#12774](https://github.com/vitejs/vite/issues/12774) [#12929](https://github.com/vitejs/vite/issues/12929)
