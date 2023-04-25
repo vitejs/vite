@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { gzip } from 'node:zlib'
+import { gzip, brotliCompress } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
@@ -16,7 +16,8 @@ type LogEntry = {
   name: string
   group: (typeof groups)[number]['name']
   size: number
-  compressedSize: number | null
+  compressedSize: number | null,
+  compressedSizeBrotli: number | null
   mapSize: number | null
 }
 
@@ -24,6 +25,7 @@ const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
+  const compressBrotli = promisify(brotliCompress)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
   const tty = process.stdout.isTTY && !process.env.CI
@@ -56,6 +58,30 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     compressedCount++
     if (shouldLogInfo && tty) {
       writeLine(`computing gzip size (${compressedCount})...`)
+    }
+    return compressed.length
+  }
+
+  async function getCompressedSizeBrotli(
+    code: string | Uint8Array,
+  ): Promise<number | null> {
+    if (config.build.ssr || !config.build.reportCompressedSizeBrotli) {
+      return null
+    }
+    if (shouldLogInfo && !hasCompressChunk) {
+      if (!tty) {
+        config.logger.info('computing brotli size...')
+      } else {
+        writeLine('computing brotli size (0)...')
+      }
+      hasCompressChunk = true
+    }
+    const compressed = await compressBrotli(
+      typeof code === 'string' ? code : Buffer.from(code),
+    )
+    compressedCount++
+    if (shouldLogInfo && tty) {
+      writeLine(`computing brotli size (${compressedCount})...`)
     }
     return compressed.length
   }
@@ -145,6 +171,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     group: 'JS',
                     size: chunk.code.length,
                     compressedSize: await getCompressedSize(chunk.code),
+                    compressedSizeBrotli: await getCompressedSizeBrotli(chunk.code),
                     mapSize: chunk.map ? chunk.map.toString().length : null,
                   }
                 } else {
@@ -160,6 +187,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     compressedSize: isCompressible
                       ? await getCompressedSize(chunk.source)
                       : null,
+                    compressedSizeBrotli: isCompressible
+                      ? await getCompressedSizeBrotli(chunk.source)
+                      : null,
                   }
                 }
               },
@@ -172,6 +202,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         let biggestSize = 0
         let biggestMap = 0
         let biggestCompressSize = 0
+        let biggestCompressSizeBrotli = 0
         for (const entry of entries) {
           if (entry.name.length > longest) longest = entry.name.length
           if (entry.size > biggestSize) biggestSize = entry.size
@@ -184,11 +215,18 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           ) {
             biggestCompressSize = entry.compressedSize
           }
+          if (
+            entry.compressedSizeBrotli &&
+            entry.compressedSizeBrotli > biggestCompressSizeBrotli
+          ) {
+            biggestCompressSizeBrotli = entry.compressedSizeBrotli
+          }
         }
 
         const sizePad = displaySize(biggestSize).length
         const mapPad = displaySize(biggestMap).length
         const compressPad = displaySize(biggestCompressSize).length
+        const compressPadBrotli = displaySize(biggestCompressSizeBrotli).length
 
         const relativeOutDir = normalizePath(
           path.relative(
@@ -223,6 +261,13 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               log += colors.dim(
                 ` │ gzip: ${displaySize(entry.compressedSize).padStart(
                   compressPad,
+                )}`,
+              )
+            }
+            if (entry.compressedSizeBrotli) {
+              log += colors.dim(
+                ` │ brotli: ${displaySize(entry.compressedSizeBrotli).padStart(
+                  compressPadBrotli,
                 )}`,
               )
             }

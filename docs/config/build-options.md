@@ -231,6 +231,13 @@ By default, Vite will copy files from the `publicDir` into the `outDir` on build
 
 Enable/disable gzip-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
 
+## build.reportCompressedSizeBrotli
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+
 ## build.chunkSizeWarningLimit
 
 - **Type:** `number`
