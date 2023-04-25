@@ -64,7 +64,7 @@
     "eslint": "^8.36.0",
     "eslint-define-config": "^1.17.0",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-regexp": "^1.13.0",
     "execa": "^7.1.1",
     "fast-glob": "^3.2.12",
@@ -75,8 +75,8 @@
     "playwright-chromium": "^1.31.2",
     "prettier": "2.8.5",
     "resolve": "^1.22.1",
-    "rimraf": "^4.4.0",
-    "rollup": "^3.20.2",
+    "rimraf": "^5.0.0",
+    "rollup": "^3.21.0",
     "simple-git-hooks": "^2.8.1",
     "tslib": "^2.5.0",
     "tsx": "^3.12.6",
@@ -104,7 +104,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.30.0",
+  "packageManager": "pnpm@8.3.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"

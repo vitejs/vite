@@ -115,6 +115,13 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
+
+  /**
+   * Set by createResolver, we only care about the resolved id. moduleSideEffects
+   * and other fields are discarded so we can avoid computing them.
+   * @internal
+   */
+  idOnly?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -260,19 +267,29 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          const resPkg = findNearestPackageData(
-            path.dirname(res),
-            options.packageCache,
-          )
           res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
-          return resPkg
-            ? {
+          // If this isn't a script imported from a .html file, include side effects
+          // hints so the non-used code is properly tree-shaken during build time.
+          if (
+            !options.idOnly &&
+            !options.scan &&
+            options.isBuild &&
+            !importer?.endsWith('.html')
+          ) {
+            const resPkg = findNearestPackageData(
+              path.dirname(res),
+              options.packageCache,
+            )
+            if (resPkg) {
+              return {
                 id: res,
                 moduleSideEffects: resPkg.hasSideEffects(res),
               }
-            : res
+            }
+          }
+          return res
         }
       }
 
@@ -297,10 +314,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // external
       if (isExternalUrl(id)) {
-        return {
-          id,
-          external: true,
-        }
+        return options.idOnly ? id : { id, external: true }
       }
 
       // data uri: pass through (this only happens during build and will be
@@ -372,15 +386,17 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               this.error(message)
             }
 
-            return {
-              id,
-              external: true,
-            }
+            return options.idOnly ? id : { id, external: true }
           } else {
             if (!asSrc) {
               debug?.(
                 `externalized node built-in "${id}" to empty module. ` +
                   `(imported by: ${colors.white(colors.dim(importer))})`,
+              )
+            } else if (isProduction) {
+              this.warn(
+                `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
+                  `See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
               )
             }
             return isProduction
@@ -654,7 +670,6 @@ function tryResolveRealFileWithExtensions(
 export type InternalResolveOptionsWithOverrideConditions =
   InternalResolveOptions & {
     /**
-     * @deprecated In future, `conditions` will work like this.
      * @internal
      */
     overrideConditions?: string[]
@@ -682,7 +697,8 @@ export function tryNodeResolve(
   } else if (
     importer &&
     path.isAbsolute(importer) &&
-    fs.existsSync(cleanUrl(importer))
+    // css processing appends `*` for importer
+    (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
   ) {
     basedir = path.dirname(importer)
   } else {
@@ -763,7 +779,10 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  if ((isBuild && !depsOptimizer) || externalize) {
+  if (
+    !options.idOnly &&
+    ((!options.scan && isBuild && !depsOptimizer) || externalize)
+  ) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
@@ -843,7 +862,7 @@ export function tryNodeResolve(
     resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
-  if (isBuild) {
+  if (!options.idOnly && !options.scan && isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
@@ -1052,8 +1071,6 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
-const conditionalConditions = new Set(['production', 'development', 'module'])
-
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
@@ -1061,43 +1078,31 @@ function resolveExportsOrImports(
   targetWeb: boolean,
   type: 'imports' | 'exports',
 ) {
-  const overrideConditions = options.overrideConditions
-    ? new Set(options.overrideConditions)
-    : undefined
+  const additionalConditions = new Set(
+    options.overrideConditions || [
+      'production',
+      'development',
+      'module',
+      ...options.conditions,
+    ],
+  )
 
-  const conditions = []
-  if (
-    (!overrideConditions || overrideConditions.has('production')) &&
-    options.isProduction
-  ) {
-    conditions.push('production')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('development')) &&
-    !options.isProduction
-  ) {
-    conditions.push('development')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('module')) &&
-    !options.isRequire
-  ) {
-    conditions.push('module')
-  }
-  if (options.overrideConditions) {
-    conditions.push(
-      ...options.overrideConditions.filter((condition) =>
-        conditionalConditions.has(condition),
-      ),
-    )
-  } else if (options.conditions.length > 0) {
-    conditions.push(...options.conditions)
-  }
+  const conditions = [...additionalConditions].filter((condition) => {
+    switch (condition) {
+      case 'production':
+        return options.isProduction
+      case 'development':
+        return !options.isProduction
+      case 'module':
+        return !options.isRequire
+    }
+    return true
+  })
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, {
-    browser: targetWeb && !conditions.includes('node'),
-    require: options.isRequire && !conditions.includes('import'),
+    browser: targetWeb && !additionalConditions.has('node'),
+    require: options.isRequire && !additionalConditions.has('import'),
     conditions,
   })
 
@@ -1200,16 +1205,22 @@ function tryResolveBrowserMapping(
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        const resPkg = findNearestPackageData(
-          path.dirname(res),
-          options.packageCache,
-        )
-        const result = resPkg
-          ? {
+        let result: PartialResolvedId = { id: res }
+        if (options.idOnly) {
+          return result
+        }
+        if (!options.scan && options.isBuild) {
+          const resPkg = findNearestPackageData(
+            path.dirname(res),
+            options.packageCache,
+          )
+          if (resPkg) {
+            result = {
               id: res,
               moduleSideEffects: resPkg.hasSideEffects(res),
             }
-          : { id: res }
+          }
+        }
         return externalize ? { ...result, external: true } : result
       }
     } else if (browserMappedPath === false) {

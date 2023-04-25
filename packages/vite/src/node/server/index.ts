@@ -79,8 +79,6 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 
-export { searchForWorkspaceRoot } from './searchRoot'
-
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
@@ -346,11 +344,6 @@ export async function _createServer(
   options: { ws: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
-
-  if (isDepsOptimizerEnabled(config, false)) {
-    // start optimizer in the background, we still need to await the setup
-    await initDepsOptimizer(config)
-  }
 
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
@@ -656,13 +649,6 @@ export async function _createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
-  // when the optimizer is ready, hook server so that it can reload the page
-  // or invalidate the module graph when needed
-  const depsOptimizer = getDepsOptimizer(config)
-  if (depsOptimizer) {
-    depsOptimizer.server = server
-  }
-
   // httpServer.listen can be called multiple times
   // when port when using next port number
   // this code is to avoid calling buildStart multiple times
@@ -674,6 +660,10 @@ export async function _createServer(
 
     initingServer = (async function () {
       await container.buildStart({})
+      // start deps optimizer after all container plugins are ready
+      if (isDepsOptimizerEnabled(config, false)) {
+        await initDepsOptimizer(config, server)
+      }
       initingServer = undefined
       serverInited = true
     })()

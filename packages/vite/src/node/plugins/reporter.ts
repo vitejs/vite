@@ -91,6 +91,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       startTime = Date.now()
     },
 
+    buildStart() {
+      transformedCount = 0
+    },
+
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
@@ -256,8 +260,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     closeBundle() {
       if (shouldLogInfo && !config.build.watch) {
         config.logger.info(
-          `${colors.green(`✓`)} built in ${displayTime(
-            Date.now() - startTime,
+          `${colors.green(
+            `✓ built in ${displayTime(Date.now() - startTime)}`,
           )}`,
         )
       }
