@@ -38,7 +38,7 @@ We may ship incompatible changes to TypeScript definitions between minor version
 
 ### Node.js non-LTS versions
 
-Non-LTS Node.js versions (odd-numbered) support is dropped automatically in the next Vite Minor to their [EOL](https://endoflife.date/nodejs).
+Non-LTS Node.js versions (odd-numbered) are not tested as part of Vite's CI, but they should still work before their [EOL](https://endoflife.date/nodejs).
 
 ## Pre Releases​
 
