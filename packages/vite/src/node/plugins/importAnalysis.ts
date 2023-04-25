@@ -81,6 +81,7 @@ const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
 const importAnalysisHelperId = '\0vite/import-analysis-helper'
+const wrapppedImportAnalysisHelperId = wrapId(importAnalysisHelperId)
 
 /**
  * urls here are dynamic import() urls that couldn't be statically analyzed.
@@ -767,9 +768,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (needQueryInjectHelper) {
         str().prepend(
-          `import { __vite__injectQuery } from "${wrapId(
-            importAnalysisHelperId,
-          )}";`,
+          `import { __vite__injectQuery } from "${wrapppedImportAnalysisHelperId}";`,
         )
       }
 
