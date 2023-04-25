@@ -1,3 +1,11 @@
+## <small>4.3.1 (2023-04-25)</small>
+
+* chore(create-vite): bump vue-tsc (#12952) ([30fd101](https://github.com/vitejs/vite/commit/30fd101)), closes [#12952](https://github.com/vitejs/vite/issues/12952)
+* chore(create-vite): update to plugin-react 4.0.0 ([14cd939](https://github.com/vitejs/vite/commit/14cd939))
+* fix(create-vite): fix h1 css selector in lit templates (#12951) ([21c61cb](https://github.com/vitejs/vite/commit/21c61cb)), closes [#12951](https://github.com/vitejs/vite/issues/12951)
+
+
+
 ## 4.3.0 (2023-04-20)
 
 * fix(create-vite): update template-lit-ts tsconfig (fix #12854) (#12855) ([c186815](https://github.com/vitejs/vite/commit/c186815)), closes [#12854](https://github.com/vitejs/vite/issues/12854) [#12855](https://github.com/vitejs/vite/issues/12855)
