@@ -1408,10 +1408,14 @@ async function doImportCSSReplace(
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
   try {
+    const charset =
+      typeof config.esbuild === 'object' && config.esbuild?.charset
+        ? config.esbuild.charset
+        : 'utf8'
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
-      charset: 'utf8',
+      charset,
       ...resolveEsbuildMinifyOptions(config.esbuild || {}),
     })
     if (warnings.length) {
