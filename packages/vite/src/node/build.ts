@@ -353,6 +353,7 @@ export function resolveBuildOptions(
     ssrManifest: false,
     ssrEmitAssets: false,
     reportCompressedSize: true,
+    reportCompressedSizeBrotli: false,
     chunkSizeWarningLimit: 500,
     watch: null,
   }
