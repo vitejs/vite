@@ -325,15 +325,3 @@ export async function killProcess(
     serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
   }
 }
-
-export const toContain = (actuals: any[], matcher: string) => {
-  expect(actuals).toEqual(
-    expect.arrayContaining([expect.stringMatching(matcher)]),
-  )
-}
-
-export const notContain = (actuals: any[], matcher: string) => {
-  expect(actuals).not.toEqual(
-    expect.arrayContaining([expect.stringMatching(matcher)]),
-  )
-}

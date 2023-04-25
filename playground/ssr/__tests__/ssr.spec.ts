@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
-import { editFile, notContain, page, toContain, withRetry } from '~utils'
+import { editFile, page, withRetry } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -21,7 +21,11 @@ test(`deadlock doesn't happen`, async () => {
 test('should restart ssr', async () => {
   editFile('./vite.config.ts', (content) => content)
   await withRetry(async () => {
-    toContain(serverLogs, 'server restarted')
-    notContain(serverLogs, 'error')
+    expect(serverLogs).toEqual(
+      expect.arrayContaining([expect.stringMatching('server restarted')]),
+    )
+    expect(serverLogs).not.toEqual(
+      expect.arrayContaining([expect.stringMatching('error')]),
+    )
   })
 })
