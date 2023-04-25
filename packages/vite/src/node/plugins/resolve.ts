@@ -816,7 +816,7 @@ export function tryNodeResolve(
   }
 
   const skipOptimization =
-    !depsOptimizer?.options.autoDiscovery ||
+    depsOptimizer?.options.noDiscovery ||
     !isJsType ||
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||

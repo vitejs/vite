@@ -217,7 +217,7 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
-    if (!config.optimizeDeps.autoDiscovery) {
+    if (config.optimizeDeps.noDiscovery) {
       // We don't need to scan for dependencies or wait for the static crawl to end
       // Run the first optimization run immediately
       runOptimizer()

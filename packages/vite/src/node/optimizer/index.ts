@@ -126,17 +126,13 @@ export interface DepOptimizationConfig {
    */
   disabled?: boolean | 'build' | 'dev'
   /**
-   * Automatic dependency discovery. When enabled, every dependency discovered
-   * while processing the user modules will be optimized if not `excluded`.
-   * Vite also scans the module graph on cold start using esbuild, speeding up
-   * the discovery process for modules reachable from `entries`.
-   * When `autoDiscovery` is disabled, only dependencies listed in `include` will
-   * be optimized. The scanner isn't run for cold start in this case. CJS-only
-   * dependencies must be present in `include` during dev.
-   * @default true
+   * Automatic dependency discovery. When `noDiscovery` is true, only dependencies
+   * listed in `include` will be optimized. The scanner isn't run for cold start
+   * in this case. CJS-only dependencies must be present in `include` during dev.
+   * @default false
    * @experimental
    */
-  autoDiscovery?: boolean
+  noDiscovery?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
