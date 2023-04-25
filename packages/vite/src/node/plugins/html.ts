@@ -781,6 +781,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
+                  crossorigin: true,
                   href: toOutputAssetFilePath(cssChunk.fileName),
                 },
               },
