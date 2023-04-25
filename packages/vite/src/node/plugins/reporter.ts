@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { gzip, brotliCompress } from 'node:zlib'
+import { brotliCompress, gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
@@ -16,7 +16,7 @@ type LogEntry = {
   name: string
   group: (typeof groups)[number]['name']
   size: number
-  compressedSize: number | null,
+  compressedSize: number | null
   compressedSizeBrotli: number | null
   mapSize: number | null
 }
@@ -171,7 +171,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     group: 'JS',
                     size: chunk.code.length,
                     compressedSize: await getCompressedSize(chunk.code),
-                    compressedSizeBrotli: await getCompressedSizeBrotli(chunk.code),
+                    compressedSizeBrotli: await getCompressedSizeBrotli(
+                      chunk.code,
+                    ),
                     mapSize: chunk.map ? chunk.map.toString().length : null,
                   }
                 } else {
