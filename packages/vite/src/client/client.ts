@@ -591,22 +591,4 @@ export function createHotContext(ownerPath: string): ViteHotContext {
   return hot
 }
 
-/**
- * urls here are dynamic import() urls that couldn't be statically analyzed
- */
-export function injectQuery(url: string, queryToInject: string): string {
-  // skip urls that won't be handled by vite
-  if (url[0] !== '.' && url[0] !== '/') {
-    return url
-  }
-
-  // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
-  const { search, hash } = new URL(url, 'http://vitejs.dev')
-
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
-  }`
-}
-
 export { ErrorOverlay }

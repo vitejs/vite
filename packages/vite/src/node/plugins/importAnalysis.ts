@@ -80,6 +80,27 @@ const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
+const importAnalysisHelperId = '\0vite/import-analysis-helper'
+
+/**
+ * urls here are dynamic import() urls that couldn't be statically analyzed.
+ * browser-safe version of `injectQuery` util.
+ */
+function __vite__injectQuery(url: string, queryToInject: string): string {
+  // skip urls that won't be handled by vite
+  if (url[0] !== '.' && url[0] !== '/') {
+    return url
+  }
+
+  // can't use pathname from URL since it may be relative like ../
+  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
+  const { search, hash } = new URL(url, 'http://vitejs.dev')
+
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+    hash || ''
+  }`
+}
+
 interface UrlPosition {
   url: string
   start: number
@@ -199,6 +220,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     configureServer(_server) {
       server = _server
+    },
+
+    resolveId(id) {
+      if (id === importAnalysisHelperId) {
+        return id
+      }
+    },
+
+    load(id) {
+      if (id === importAnalysisHelperId) {
+        return 'export ' + __vite__injectQuery.toString()
+      }
     },
 
     async transform(source, importer, options) {
@@ -734,7 +767,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (needQueryInjectHelper) {
         str().prepend(
-          `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`,
+          `import { __vite__injectQuery } from "${wrapId(
+            importAnalysisHelperId,
+          )}";`,
         )
       }
 
