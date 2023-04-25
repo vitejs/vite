@@ -233,8 +233,8 @@ export interface BuildOptions {
    */
   reportCompressedSize?: boolean
   /**
-   * Set to false to disable reporting compressed chunk sizes.
-   * Can slightly improve build speed.
+   * Set to true to enable reporting compressed chunk sizes.
+   * Enabling this option can slightly deteriorate the build speed.
    * @default false
    */
   reportCompressedSizeBrotli?: boolean
