@@ -773,8 +773,15 @@ export function tryNodeResolve(
     }
     let resolvedId = id
     if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
-      resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-      debug?.(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
+      // id date-fns/locale
+      // resolve.id ...date-fns/esm/locale/index.js
+      const index = resolved.id.indexOf(id)
+      if (index > -1) {
+        resolvedId = resolved.id.slice(index)
+        debug?.(
+          `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`,
+        )
+      }
     }
     return { ...resolved, id: resolvedId, external: true }
   }
