@@ -33,6 +33,8 @@ export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
+const hashbangRE = /^#!.*\n/
+
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
@@ -92,13 +94,16 @@ async function ssrTransformScript(
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
+  // hoist at the start of the file, after the hashbang
+  const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
+
   function defineImport(source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
     // There will be an error if the module is called before it is imported,
     // so the module import statement is hoisted to the top
     s.appendLeft(
-      0,
+      hoistIndex,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`,
     )
     return importId
@@ -165,7 +170,7 @@ async function ssrTransformScript(
           // hoist re-exports near the defined import so they are immediately exported
           for (const spec of node.specifiers) {
             defineExport(
-              0,
+              hoistIndex,
               spec.exported.name,
               `${importId}.${spec.local.name}`,
             )
@@ -214,9 +219,9 @@ async function ssrTransformScript(
       const importId = defineImport(node.source.value as string)
       // hoist re-exports near the defined import so they are immediately exported
       if (node.exported) {
-        defineExport(0, node.exported.name, `${importId}`)
+        defineExport(hoistIndex, node.exported.name, `${importId}`)
       } else {
-        s.appendLeft(0, `${ssrExportAllKey}(${importId});\n`)
+        s.appendLeft(hoistIndex, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
