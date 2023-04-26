@@ -42,12 +42,12 @@ export function ssrRewriteStacktrace(
             return input
           }
 
-          const trimedVarName = varName.trim()
+          const trimmedVarName = varName.trim()
           const source = `${pos.source}:${pos.line}:${pos.column}`
-          if (!trimedVarName || trimedVarName === 'eval') {
+          if (!trimmedVarName || trimmedVarName === 'eval') {
             return `    at ${source}`
           } else {
-            return `    at ${trimedVarName} (${source})`
+            return `    at ${trimmedVarName} (${source})`
           }
         },
       )
@@ -70,4 +70,17 @@ export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
   } else if (writable) {
     e.stack = stacktrace
   }
+}
+
+const rewroteStacktraces = new WeakSet()
+
+export function ssrFixStacktrace(e: Error, moduleGraph: ModuleGraph): void {
+  if (!e.stack) return
+  // stacktrace shouldn't be rewritten more than once
+  if (rewroteStacktraces.has(e)) return
+
+  const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+  rebindErrorStacktrace(e, stacktrace)
+
+  rewroteStacktraces.add(e)
 }

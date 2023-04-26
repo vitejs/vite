@@ -6,6 +6,8 @@ import {
   isBuild,
   isServe,
   page,
+  serverLogs,
+  viteTestUrl,
 } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
@@ -113,8 +115,10 @@ test('CJS dep with css import', async () => {
   expect(await getColor('.cjs-with-assets')).toBe('blue')
 })
 
-test('dep w/ non-js files handled via plugin', async () => {
-  expect(await page.textContent('.plugin')).toMatch(`[success]`)
+test('externalize known non-js files in optimize included dep', async () => {
+  expect(await page.textContent('.externalize-known-non-js')).toMatch(
+    `[success]`,
+  )
 })
 
 test('vue + vuex', async () => {
@@ -139,6 +143,12 @@ test('import optimize-excluded package that imports optimized-included package',
 
 test('import aliased package with colon', async () => {
   expect(await page.textContent('.url')).toBe('vitejs.dev')
+})
+
+test('import aliased package using absolute path', async () => {
+  expect(await page.textContent('.alias-using-absolute-path')).toBe(
+    'From dep-alias-using-absolute-path',
+  )
 })
 
 test('variable names are reused in different scripts', async () => {
@@ -183,8 +193,32 @@ test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserErrors.map((error) => error.message)).toEqual(
     expect.arrayContaining([
       // from user source code
-      'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
-      'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
+      expect.stringContaining(
+        'Module "buffer" has been externalized for browser compatibility. Cannot access "buffer.Buffer" in client code.',
+      ),
+      expect.stringContaining(
+        'Module "child_process" has been externalized for browser compatibility. Cannot access "child_process.execSync" in client code.',
+      ),
     ]),
   )
+})
+
+test('pre bundle css require', async () => {
+  if (isServe) {
+    const response = page.waitForResponse(/@vitejs_test-dep-css-require\.js/)
+    await page.goto(viteTestUrl)
+    const content = await (await response).text()
+    expect(content).toMatch(
+      /import\s"\/@fs.+@vitejs\/test-dep-css-require\/style\.css"/,
+    )
+  }
+
+  expect(await getColor('.css-require')).toBe('red')
+})
+
+test.runIf(isBuild)('no missing deps during build', async () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('Missing dependency found after crawling ended')
+  })
 })

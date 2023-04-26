@@ -47,7 +47,7 @@ export const DEFAULT_CONFIG_FILES = [
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
 export const CSS_LANGS_RE =
-  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)/
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 
 export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
 
@@ -115,6 +115,7 @@ export const KNOWN_ASSET_TYPES = [
   'wav',
   'flac',
   'aac',
+  'opus',
 
   // fonts
   'woff2?',
@@ -145,3 +146,7 @@ export const wildcardHosts = new Set([
   '::',
   '0000:0000:0000:0000:0000:0000:0000:0000',
 ])
+
+export const DEFAULT_DEV_PORT = 5173
+
+export const DEFAULT_PREVIEW_PORT = 4173

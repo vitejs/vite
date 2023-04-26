@@ -39,12 +39,34 @@ export const core = [
     sponsor: 'https://github.com/sponsors/antfu',
   },
   {
+    avatar: 'https://github.com/bluwy.png',
+    name: 'Bjorn Lu',
+    title: 'Open Source Developer',
+    desc: 'Astro core residency. Svelte and Vite core team member.',
+    links: [
+      { icon: 'github', link: 'https://github.com/bluwy' },
+      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
+    ],
+    sponsor: 'https://bjornlu.com/sponsor',
+  },
+  {
+    avatar: 'https://github.com/sapphi-red.png',
+    name: 'green',
+    title: 'Web Developer',
+    desc: 'Vite team member. Call me sapphi or green or midori ;)',
+    links: [
+      { icon: 'github', link: 'https://github.com/sapphi-red' },
+      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
+    ],
+    sponsor: 'https://github.com/sponsors/sapphi-red',
+  },
+  {
     avatar: 'https://github.com/sodatea.png',
     name: 'Haoqun Jiang',
     title: 'Developer',
     org: 'Vue.js',
     orgLink: 'https://vuejs.org/',
-    desc: 'Vite/Vite core team member. Full-time open sourcerer.',
+    desc: 'Vue/Vite core team member. Full-time open sourcerer.',
     links: [
       { icon: 'github', link: 'https://github.com/sodatea' },
       { icon: 'twitter', link: 'https://twitter.com/haoqunjiang' },
@@ -76,17 +98,6 @@ export const core = [
     sponsor: 'https://github.com/sponsors/aleclarson',
   },
   {
-    avatar: 'https://github.com/bluwy.png',
-    name: 'Bjorn Lu',
-    title: 'Frontend Developer',
-    desc: 'Svelte and Vite team member. Something something opinions.',
-    links: [
-      { icon: 'github', link: 'https://github.com/bluwy' },
-      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
-    ],
-    sponsor: 'https://bjornlu.com/sponsor',
-  },
-  {
     avatar: 'https://github.com/poyoho.png',
     name: 'yoho',
     title: 'Frontend Developer',
@@ -97,16 +108,39 @@ export const core = [
     ],
   },
   {
-    avatar: 'https://github.com/sapphi-red.png',
-    name: 'green',
-    title: 'Web Developer',
-    desc: 'Vite team member. Call me sapphi or green or midori ;)',
-    links: [
-      { icon: 'github', link: 'https://github.com/sapphi-red' },
-      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
-    ],
-    sponsor: 'https://github.com/sponsors/sapphi-red',
+    avatar: 'https://github.com/ArnaudBarre.png',
+    name: 'Arnaud Barré',
+    title: 'Frontend Developer',
+    desc: 'Passionate by tooling around TypeScript and React.',
+    links: [{ icon: 'github', link: 'https://github.com/ArnaudBarre' }],
+    sponsor: 'https://github.com/sponsors/ArnaudBarre',
   },
+  {
+    avatar: 'https://github.com/dominikg.png',
+    name: 'Dominik G.',
+    title: 'Resident CI Expert',
+    desc: 'Team Member of Vite and Svelte',
+    links: [
+      { icon: 'github', link: 'https://github.com/dominikg' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@dominikg' },
+    ],
+    sponsor: 'https://github.com/sponsors/dominikg',
+  },
+  {
+    avatar: 'https://github.com/sheremet-va.png',
+    name: 'Vladimir',
+    title: 'Core team member of Vitest & Vite',
+    desc: 'An open source fullstack developer',
+    links: [
+      { icon: 'github', link: 'https://github.com/sheremet-va' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sheremet_va' },
+      { icon: 'twitter', link: 'https://twitter.com/sheremet_va' },
+    ],
+    sponsor: 'https://github.com/sponsors/sheremet-va',
+  },
+]
+
+export const emeriti = [
   {
     avatar: 'https://github.com/ygj6.png',
     name: 'ygj6',
@@ -128,9 +162,6 @@ export const core = [
       { icon: 'twitter', link: 'https://twitter.com/Niputi_' },
     ],
   },
-]
-
-export const emeriti = [
   {
     avatar: 'https://github.com/underfin.png',
     name: 'underfin',

@@ -1,5 +1,7 @@
 [build.environment]
   NODE_VERSION = "16"
+  # don't need playwright for docs build
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
 [build]
   publish = "docs/.vitepress/dist"
   command = "pnpm ci-docs"

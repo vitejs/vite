@@ -5,14 +5,12 @@ import {
   asyncFlatten,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
-  getPotentialTsSrcPaths,
   injectQuery,
   isFileReadable,
   isWindows,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
-  shouldServe,
 } from '../utils'
 
 describe('injectQuery', () => {
@@ -138,42 +136,6 @@ describe('resolveHostname', () => {
   })
 })
 
-test('ts import of file with .js extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.js')).toEqual([
-    'test-file.ts',
-    'test-file.tsx',
-  ])
-})
-
-test('ts import of file with .jsx extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.jsx')).toEqual(['test-file.tsx'])
-})
-
-test('ts import of file .mjs,.cjs extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.cjs')).toEqual([
-    'test-file.cts',
-    'test-file.ctsx',
-  ])
-  expect(getPotentialTsSrcPaths('test-file.mjs')).toEqual([
-    'test-file.mts',
-    'test-file.mtsx',
-  ])
-})
-
-test('ts import of file with .js before extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.js.js')).toEqual([
-    'test-file.js.ts',
-    'test-file.js.tsx',
-  ])
-})
-
-test('ts import of file with .js and query param', () => {
-  expect(getPotentialTsSrcPaths('test-file.js.js?lee=123')).toEqual([
-    'test-file.js.ts?lee=123',
-    'test-file.js.tsx?lee=123',
-  ])
-})
-
 describe('posToNumber', () => {
   test('simple', () => {
     const actual = posToNumber('a\nb', { line: 2, column: 0 })
@@ -239,12 +201,6 @@ describe('asyncFlatten', () => {
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])]),
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
-  })
-})
-
-describe('shouldServe', () => {
-  test('returns false for malformed URLs', () => {
-    expect(shouldServe('/%c0%ae%c0%ae/etc/passwd', '/assets/dir')).toBe(false)
   })
 })
 

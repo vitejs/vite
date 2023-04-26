@@ -4,6 +4,7 @@ import type {
   ManualChunkMeta,
   OutputOptions,
 } from 'rollup'
+import { isInNodeModules } from '../utils'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
@@ -12,7 +13,7 @@ import type { Plugin } from '../plugin'
 // copy from constants.ts
 const CSS_LANGS_RE =
   // eslint-disable-next-line regexp/no-unused-capturing-group
-  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\\?)/
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 export const isCSSRequest = (request: string): boolean =>
   CSS_LANGS_RE.test(request)
 
@@ -41,7 +42,7 @@ export function splitVendorChunk(
   const cache = options.cache ?? new SplitVendorChunkCache()
   return (id, { getModuleInfo }) => {
     if (
-      id.includes('node_modules') &&
+      isInNodeModules(id) &&
       !isCSSRequest(id) &&
       staticImportedByEntry(id, getModuleInfo, cache.cache)
     ) {

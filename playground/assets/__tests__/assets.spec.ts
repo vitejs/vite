@@ -24,6 +24,12 @@ const assetMatch = isBuild
 
 const iconMatch = `/foo/icon.png`
 
+const fetchPath = (p: string) => {
+  return fetch(path.posix.join(viteTestUrl, p), {
+    headers: { Accept: 'text/html,*/*' },
+  })
+}
+
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
@@ -31,12 +37,15 @@ test('should have no 404s', () => {
 })
 
 test('should get a 404 when using incorrect case', async () => {
-  expect((await fetch(path.posix.join(viteTestUrl, 'icon.png'))).status).toBe(
-    200,
-  )
-  expect((await fetch(path.posix.join(viteTestUrl, 'ICON.png'))).status).toBe(
-    404,
-  )
+  expect((await fetchPath('icon.png')).status).toBe(200)
+  // won't be wrote to index.html because the url includes `.`
+  expect((await fetchPath('ICON.png')).status).toBe(404)
+
+  expect((await fetchPath('bar')).status).toBe(200)
+  // fallback to index.html
+  const incorrectBarFetch = await fetchPath('BAR')
+  expect(incorrectBarFetch.status).toBe(200)
+  expect(incorrectBarFetch.headers.get('Content-Type')).toContain('text/html')
 })
 
 describe('injected scripts', () => {
@@ -402,4 +411,11 @@ test.skip('url() contains file in publicDir, as inline style', async () => {
   // It supposes to be `url("http://localhost:5173/foo/icon.png")`
   // (I built the playground to verify)
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
+})
+
+test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="noscript" src="\/foo\/assets\/asset-\w+\.png" \/>/,
+  )
 })

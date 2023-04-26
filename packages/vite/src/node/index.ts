@@ -1,3 +1,6 @@
+import type * as Rollup from 'rollup'
+
+export type { Rollup }
 export * from './config'
 export { createServer } from './server'
 export { preview } from './preview'
@@ -7,6 +10,7 @@ export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'
+export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'
 
 // additional types
@@ -30,6 +34,7 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
+  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'
@@ -72,14 +77,12 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
 } from './plugins/css'
-export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
-import type { ChunkMetadata } from './plugins/metadata'
 
 export type {
   WebSocketServer,
@@ -118,6 +121,7 @@ export type {
   GeneralImportGlobOptions,
   KnownAsTypeMap,
 } from 'types/importGlob'
+export type { ChunkMetadata } from 'types/metadata'
 
 // dep types
 export type {
@@ -139,9 +143,3 @@ export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-
-declare module 'rollup' {
-  export interface RenderedChunk {
-    viteMetadata: ChunkMetadata
-  }
-}

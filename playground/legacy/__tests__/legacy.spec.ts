@@ -23,11 +23,20 @@ test('import.meta.env.LEGACY', async () => {
     isBuild ? 'true' : 'false',
     true,
   )
+  await untilUpdated(() => page.textContent('#env-equal'), 'true', true)
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
   await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
+})
+
+test('async generator', async () => {
+  await untilUpdated(
+    () => page.textContent('#async-generator'),
+    '[0,1,2]',
+    true,
+  )
 })
 
 test('wraps with iife', async () => {
@@ -111,11 +120,24 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should emit css file', async () => {
-    expect(listAssets().some((filename) => filename.endsWith('.css')))
+    expect(
+      listAssets().some((filename) => filename.endsWith('.css')),
+    ).toBeTruthy()
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
     expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
+  })
+
+  test('should generate legacy sourcemap file', async () => {
+    expect(
+      listAssets().some((filename) => /index-legacy.+\.map$/.test(filename)),
+    ).toBeTruthy()
+    expect(
+      listAssets().some((filename) =>
+        /polyfills-legacy.+\.map$/.test(filename),
+      ),
+    ).toBeFalsy()
   })
 })
