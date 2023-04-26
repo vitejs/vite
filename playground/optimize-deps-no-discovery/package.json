@@ -1,0 +1,16 @@
+{
+  "name": "@vitejs/test-optimize-deps-no-discovery",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-dep-no-discovery": "file:./dep-no-discovery",
+    "vue": "^3.2.47",
+    "vuex": "^4.1.0"
+  }
+}
