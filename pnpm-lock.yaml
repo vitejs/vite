@@ -862,6 +862,20 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(vue@3.2.47)
 
+  playground/optimize-deps-no-discovery:
+    dependencies:
+      '@vitejs/test-dep-no-discovery':
+        specifier: file:./dep-no-discovery
+        version: file:playground/optimize-deps-no-discovery/dep-no-discovery
+      vue:
+        specifier: ^3.2.47
+        version: 3.2.47
+      vuex:
+        specifier: ^4.1.0
+        version: 4.1.0(vue@3.2.47)
+
+  playground/optimize-deps-no-discovery/dep-no-discovery: {}
+
   playground/optimize-deps/added-in-entries: {}
 
   playground/optimize-deps/dep-alias-using-absolute-path:
@@ -3948,17 +3962,12 @@ packages:
       '@vue/compiler-dom': 3.2.47
       '@vue/shared': 3.2.47
 
-  /@vue/devtools-api@6.4.4:
-    resolution: {integrity: sha512-Ku31WzpOV/8cruFaXaEZKF81WkNnvCSlBY4eOGtz5WMSdJvX1v1WWlSMGZeqUwPtQ27ZZz7B62erEMq8JDjcXw==}
-    dev: false
-
   /@vue/devtools-api@6.4.5:
     resolution: {integrity: sha512-JD5fcdIuFxU4fQyXUu3w2KpAJHzTVdN+p4iOX2lMWSHMOoQdMAcpFLZzm9Z/2nmsoZ1a96QEhZ26e50xLBsgOQ==}
     dev: false
 
   /@vue/devtools-api@6.5.0:
     resolution: {integrity: sha512-o9KfBeaBmCKl10usN4crU53fYtC1r7jJwdGKjPT24t348rHxgfpZ0xL3Xm/gLUYnc0oTp8LAmrxOeLyu6tbk2Q==}
-    dev: true
 
   /@vue/reactivity-transform@3.2.47:
     resolution: {integrity: sha512-m8lGXw8rdnPVVIdIFhf0LeQ/ixyHkH5plYuS83yop5n7ggVJU+z5v0zecwEnX7fa7HNLBhh2qngJJkxpwEEmYA==}
@@ -10076,7 +10085,7 @@ packages:
     peerDependencies:
       vue: ^3.2.0
     dependencies:
-      '@vue/devtools-api': 6.4.4
+      '@vue/devtools-api': 6.5.0
       vue: 3.2.47
     dev: false
 
@@ -10394,6 +10403,12 @@ packages:
     name: '@vitejs/test-json-module'
     version: 0.0.0
     dev: true
+
+  file:playground/optimize-deps-no-discovery/dep-no-discovery:
+    resolution: {directory: playground/optimize-deps-no-discovery/dep-no-discovery, type: directory}
+    name: '@vitejs/test-dep-no-discovery'
+    version: 1.0.0
+    dev: false
 
   file:playground/optimize-deps/added-in-entries:
     resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
