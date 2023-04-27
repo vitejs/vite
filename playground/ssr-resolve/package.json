@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@vitejs/test-entries": "file:./entries",
-    "@vitejs/test-resolve-pkg-exports": "file:./pkg-exports"
+    "@vitejs/test-resolve-pkg-exports": "file:./pkg-exports",
+    "@vitejs/test-deep-import": "file:./deep-import"
   }
 }
