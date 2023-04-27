@@ -786,4 +786,14 @@ if (import.meta.hot) {
     )
     await untilUpdated(() => el.textContent(), '2')
   })
+
+  test('issue-3303', async () => {
+    await page.goto(viteTestUrl + '/issue-3303/index.html')
+    const el = await page.$('.issue-3303')
+    expect(await el.textContent()).toBe('c')
+    editFile('issue-3303/c.js', (code) =>
+      code.replace(`export const c = 'c'`, `export const c = 'cc'`),
+    )
+    await untilUpdated(() => el.textContent(), 'cc')
+  })
 }
