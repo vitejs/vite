@@ -1218,5 +1218,5 @@ export function escapeRegex(str: string): string {
 export function indexOfReg(str: string, reg: RegExp, pos: number = 0): number {
   const matcher = str.slice(pos).match(reg)
 
-  return matcher ? matcher.index + pos : -1
+  return matcher?.index !== undefined ? matcher.index + pos : -1
 }
