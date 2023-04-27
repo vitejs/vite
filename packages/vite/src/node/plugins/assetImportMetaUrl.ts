@@ -115,7 +115,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
-                )}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
+                )}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}] || \`${builtUrl}\`, self.location)`,
               )
             }
           } else {
