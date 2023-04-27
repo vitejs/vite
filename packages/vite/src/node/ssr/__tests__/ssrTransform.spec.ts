@@ -869,3 +869,38 @@ function test() {
     }"
   `)
 })
+
+test('track scope in for loops', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { test } from './test.js'
+
+for (const test of tests) {
+  console.log(test)
+}
+
+for (let test = 0; test < 10; test++) {
+  console.log(test)
+}
+
+for (const test in tests) {
+  console.log(test)
+}`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./test.js\\");
+
+
+
+    for (const test of tests) {
+      console.log(test)
+    }
+
+    for (let test = 0; test < 10; test++) {
+      console.log(test)
+    }
+
+    for (const test in tests) {
+      console.log(test)
+    }"
+  `)
+})
