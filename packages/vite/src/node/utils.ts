@@ -1214,3 +1214,9 @@ const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
 }
+
+export function indexOfReg(str: string, reg: RegExp, pos: number = 0): number {
+  const matcher = str.slice(pos).match(reg)
+
+  return matcher ? matcher.index + pos : -1
+}

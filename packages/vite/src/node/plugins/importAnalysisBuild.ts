@@ -10,6 +10,7 @@ import {
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
+  indexOfReg,
   isDataUrl,
   isExternalUrl,
   isInNodeModules,
@@ -36,7 +37,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper'
-const preloadMarkerWithQuote = `"${preloadMarker}"` as const
+const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -507,10 +508,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
+              let markerStartPos = indexOfReg(code, preloadMarkerWithQuote, end)
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = code.indexOf(preloadMarkerWithQuote)
+                markerStartPos = indexOfReg(code, preloadMarkerWithQuote)
               }
 
               if (markerStartPos > 0) {
@@ -577,7 +578,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarkerWithQuote.length,
+                  markerStartPos + preloadMarker.length + 2,
                   `[${renderedDeps.join(',')}]`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
@@ -587,19 +588,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = code.indexOf(preloadMarkerWithQuote)
+          let markerStartPos = indexOfReg(code, preloadMarkerWithQuote)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarkerWithQuote.length,
+                markerStartPos + preloadMarker.length + 2,
                 'void 0',
               )
             }
-
-            markerStartPos = code.indexOf(
+            markerStartPos = indexOfReg(
+              code,
               preloadMarkerWithQuote,
-              markerStartPos + preloadMarkerWithQuote.length,
+              markerStartPos + preloadMarker.length + 2,
             )
           }
 
