@@ -141,7 +141,7 @@ export class ModuleGraph {
     mod.ssrModule = null
     mod.ssrError = null
 
-    // TODO: If the module is a HMR boundary, we don't need to invalidate its importer. Because...
+    // Fix #3033
     if (hmrBoundaries.includes(mod)) {
       return
     }
