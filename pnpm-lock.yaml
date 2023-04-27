@@ -1281,12 +1281,21 @@ importers:
 
   playground/ssr-resolve:
     dependencies:
+      '@vitejs/test-deep-import':
+        specifier: file:./deep-import
+        version: file:playground/ssr-resolve/deep-import
       '@vitejs/test-entries':
         specifier: file:./entries
         version: file:playground/ssr-resolve/entries
       '@vitejs/test-resolve-pkg-exports':
         specifier: file:./pkg-exports
         version: file:playground/ssr-resolve/pkg-exports
+
+  playground/ssr-resolve/deep-import: {}
+
+  playground/ssr-resolve/deep-import/bar: {}
+
+  playground/ssr-resolve/deep-import/foo: {}
 
   playground/ssr-resolve/entries: {}
 
@@ -10698,6 +10707,12 @@ packages:
     dependencies:
       '@vitejs/external-cjs': file:playground/ssr-noexternal/external-cjs
       '@vitejs/test-external-cjs': file:playground/ssr-noexternal/external-cjs
+    dev: false
+
+  file:playground/ssr-resolve/deep-import:
+    resolution: {directory: playground/ssr-resolve/deep-import, type: directory}
+    name: '@vitejs/test-deep-import'
+    version: 0.0.0
     dev: false
 
   file:playground/ssr-resolve/entries:
