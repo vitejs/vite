@@ -10,7 +10,6 @@ import {
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
-  indexOfReg,
   isDataUrl,
   isExternalUrl,
   isInNodeModules,
@@ -48,6 +47,20 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
+}
+
+function indexOfMatchInSlice(
+  str: string,
+  reg: RegExp,
+  pos: number = 0,
+): number {
+  if (pos !== 0) {
+    str = str.slice(pos)
+  }
+
+  const matcher = str.match(reg)
+
+  return matcher?.index !== undefined ? matcher.index + pos : -1
 }
 
 /**
@@ -508,10 +521,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = indexOfReg(code, preloadMarkerWithQuote, end)
+              let markerStartPos = indexOfMatchInSlice(
+                code,
+                preloadMarkerWithQuote,
+                end,
+              )
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = indexOfReg(code, preloadMarkerWithQuote)
+                markerStartPos = indexOfMatchInSlice(
+                  code,
+                  preloadMarkerWithQuote,
+                )
               }
 
               if (markerStartPos > 0) {
@@ -588,7 +608,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = indexOfReg(code, preloadMarkerWithQuote)
+          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerWithQuote)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
@@ -597,7 +617,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 'void 0',
               )
             }
-            markerStartPos = indexOfReg(
+            markerStartPos = indexOfMatchInSlice(
               code,
               preloadMarkerWithQuote,
               markerStartPos + preloadMarker.length + 2,
