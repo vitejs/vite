@@ -324,6 +324,17 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
+test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
+  expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
+    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+  )
+  expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
+    isBuild
+      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
+      : '/foo/nested/asset.png?abc',
+  )
+})
+
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
     new URL('non-existent', page.url()).pathname,

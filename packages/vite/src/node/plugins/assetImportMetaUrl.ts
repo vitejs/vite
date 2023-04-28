@@ -1,6 +1,8 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+// import qs from 'node:querystring'
+import { getQuery } from 'ufo'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
@@ -55,7 +57,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
-            const ast = this.parse(rawUrl)
+            let [pureUrl, queryString = ''] = rawUrl.split('?')
+            if (queryString) {
+              pureUrl += '`'
+              queryString = '?' + queryString.replace(/`$/, '')
+            }
+            const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
@@ -65,6 +72,16 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 continue
               }
 
+              const query = getQuery(queryString)
+              const globOptions = {
+                eager: true,
+                import: 'default',
+                query: {
+                  // A hack to allow 'as' & 'query' exist at the same time
+                  url: '',
+                  ...query,
+                },
+              }
               // Note: native import.meta.url is not supported in the baseline
               // target so we use the global location here. It can be
               // window.location or self.location in case it is used in a Web Worker.
@@ -74,7 +91,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
-                )}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
+                )}, ${JSON.stringify(
+                  globOptions,
+                )}))[${pureUrl}], self.location)`,
               )
               continue
             }
