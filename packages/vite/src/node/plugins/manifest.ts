@@ -12,6 +12,7 @@ export type Manifest = Record<string, ManifestChunk>
 export interface ManifestChunk {
   src?: string
   file: string
+  size?: number
   css?: string[]
   assets?: string[]
   isEntry?: boolean
@@ -66,6 +67,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
+          size: chunk.code.length,
         }
 
         if (chunk.facadeModuleId) {
