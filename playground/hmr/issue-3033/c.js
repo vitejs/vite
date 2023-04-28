@@ -3,7 +3,7 @@ import './b'
 export const c = 'c'
 
 function render(content) {
-  document.querySelector('.issue-3303').textContent = content
+  document.querySelector('.issue-3033').textContent = content
 }
 render(c)
 
