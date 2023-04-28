@@ -1,7 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
-// import qs from 'node:querystring'
 import { getQuery } from 'ufo'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
