@@ -12,9 +12,9 @@ patchedDependencies:
   dotenv-expand@9.0.0:
     hash: dccccn23nvejzy75sgiosdt2au
     path: patches/dotenv-expand@9.0.0.patch
-  sirv@2.0.2:
-    hash: hmoqtj4vy3i7wnpchga2a2mu3y
-    path: patches/sirv@2.0.2.patch
+  sirv@2.0.3:
+    hash: z45f224eewh2pgpijxcc3aboqm
+    path: patches/sirv@2.0.3.patch
 
 importers:
 
@@ -387,8 +387,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(rollup@3.21.0)
       sirv:
-        specifier: ^2.0.2
-        version: 2.0.2(patch_hash=hmoqtj4vy3i7wnpchga2a2mu3y)
+        specifier: ^2.0.3
+        version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
       source-map-js:
         specifier: ^1.0.2
         version: 1.0.2
@@ -431,9 +431,6 @@ importers:
       node-fetch:
         specifier: ^3.3.1
         version: 3.3.1
-      sirv:
-        specifier: ^2.0.2
-        version: 2.0.2(patch_hash=hmoqtj4vy3i7wnpchga2a2mu3y)
 
   playground/alias:
     dependencies:
@@ -693,7 +690,11 @@ importers:
         specifier: ^5.17.1
         version: 5.17.1
 
-  playground/lib: {}
+  playground/lib:
+    devDependencies:
+      sirv:
+        specifier: ^2.0.3
+        version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
 
   playground/minify: {}
 
@@ -9093,8 +9094,8 @@ packages:
     requiresBuild: true
     dev: true
 
-  /sirv@2.0.2(patch_hash=hmoqtj4vy3i7wnpchga2a2mu3y):
-    resolution: {integrity: sha512-4Qog6aE29nIjAOKe/wowFTxOdmbEZKb+3tsLljaBRzJwtqto0BChD2zzH0LhgCSXiI+V7X+Y45v14wBZQ1TK3w==}
+  /sirv@2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm):
+    resolution: {integrity: sha512-O9jm9BsID1P+0HOi81VpXPoDxYP374pkOLzACAoyUQ/3OUVndNpsz6wMnY2z+yOxzbllCKZrM+9QrWsv4THnyA==}
     engines: {node: '>= 10'}
     dependencies:
       '@polka/url': 1.0.0-next.21
