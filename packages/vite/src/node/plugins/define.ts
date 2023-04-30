@@ -41,13 +41,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     if (isBuild) {
       const match = key.match(metaEnvRe)
       if (match) {
-        userDefineEnv[match[1]] =
-          // test if value is raw identifier to wrap with __vite__ so when
-          // stringified for `import.meta.env`, we can remove the quotes and
-          // retain being an identifier
-          typeof val === 'string' && /^[\p{L}_$]/u.test(val.trim())
-            ? `__vite__define__${val}`
-            : val
+        userDefineEnv[match[1]] = `__vite__define__${userDefine[key]}`
       }
     }
   }
@@ -67,7 +61,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         ...config.env,
         SSR: '__vite__ssr__',
         ...userDefineEnv,
-      }).replace(/"__vite__define__(.+?)"/g, (_, val) => val),
+      }).replace(
+        /"__vite__define__(.+?)"([,}])/g,
+        (_, val, suffix) => `${val.replace(/(^\\")|(\\"$)/g, '"')}${suffix}`,
+      ),
     })
   }
 
