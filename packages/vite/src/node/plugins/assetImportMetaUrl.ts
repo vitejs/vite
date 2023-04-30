@@ -1,11 +1,11 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
-import { getQuery } from 'ufo'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
 import {
+  injectQuery,
   isParentDirectory,
   normalizePath,
   slash,
@@ -59,7 +59,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             let [pureUrl, queryString = ''] = rawUrl.split('?')
             if (queryString) {
               pureUrl += '`'
-              queryString = '?' + queryString.replace(/`$/, '')
+              queryString = '?' + queryString.slice(0, -1)
             }
             const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
@@ -71,15 +71,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 continue
               }
 
-              const query = getQuery(queryString)
               const globOptions = {
                 eager: true,
                 import: 'default',
-                query: {
-                  // A hack to allow 'as' & 'query' exist at the same time
-                  url: '',
-                  ...query,
-                },
+                // A hack to allow 'as' & 'query' exist at the same time
+                query: injectQuery(queryString, 'url'),
               }
               // Note: native import.meta.url is not supported in the baseline
               // target so we use the global location here. It can be
