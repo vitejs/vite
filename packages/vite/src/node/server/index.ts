@@ -675,6 +675,8 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
+        // ensure ws server started
+        ws.listen()
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
