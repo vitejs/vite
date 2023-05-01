@@ -34,6 +34,7 @@ import {
   isExternalUrl,
   isInNodeModules,
   isJSRequest,
+  isVirtualModule,
   joinUrlSegments,
   moduleListContains,
   normalizePath,
@@ -281,8 +282,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const importedBindings = enablePartialAccept
         ? new Map<string, Set<string>>()
         : null
-      const toAbsoluteUrl = (url: string) =>
-        path.posix.resolve(path.posix.dirname(importerModule.url), url)
+      const toAbsoluteUrl = (url: string) => {
+        return path.posix.resolve(path.posix.dirname(importerModule.url), url)
+      }
 
       const normalizeUrl = async (
         url: string,
@@ -742,7 +744,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(url),
+          isVirtualModule(url) ? url : toAbsoluteUrl(url),
           ssr,
         )
         normalizedAcceptedUrls.add(normalized)

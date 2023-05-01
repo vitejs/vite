@@ -25,6 +25,7 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import {
   evalValue,
+  isVirtualModule,
   normalizePath,
   slash,
   transformStableResult,
@@ -628,9 +629,4 @@ export function getCommonBase(globsResolved: string[]): null | string {
   if (!commonAncestor) commonAncestor = '/'
 
   return commonAncestor
-}
-
-export function isVirtualModule(id: string): boolean {
-  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
-  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

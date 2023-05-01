@@ -9,6 +9,7 @@ import {
   removeFile,
   untilBrowserLogAfter,
   untilUpdated,
+  viteServer,
   viteTestUrl,
 } from '~utils'
 
@@ -670,6 +671,14 @@ if (!isBuild) {
     await page.waitForNavigation()
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Compteur 0')
+  })
+
+  test('virtual module in module graph', async () => {
+    const moduleGraph = viteServer.moduleGraph
+    const virtualId = Array.from(moduleGraph.idToModuleMap.keys()).filter(
+      (id: string) => id.includes('virtual'),
+    )
+    expect(virtualId).toEqual(['\x00virtual:file', '/@id/__x00__virtual:file'])
   })
 
   test('handle virtual module updates', async () => {
