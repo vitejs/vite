@@ -248,7 +248,7 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
       line: parserError.startLine,
       column: parserError.startCol,
     },
-  } satisfies RollupError
+  } as RollupError
   return formattedError
 }
 
