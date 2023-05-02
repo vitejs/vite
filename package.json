@@ -41,6 +41,7 @@
     "@microsoft/api-extractor": "^7.34.4",
     "@rollup/plugin-typescript": "^11.1.0",
     "@types/babel__core": "^7.20.0",
+    "@types/babel__preset-env": "^7.9.2",
     "@types/babel__standalone": "^7.1.4",
     "@types/convert-source-map": "^2.0.0",
     "@types/cross-spawn": "^6.0.2",

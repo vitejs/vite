@@ -32,6 +32,9 @@ importers:
       '@types/babel__core':
         specifier: ^7.20.0
         version: 7.20.0
+      '@types/babel__preset-env':
+        specifier: ^7.9.2
+        version: 7.9.2
       '@types/babel__standalone':
         specifier: ^7.1.4
         version: 7.1.4
@@ -3564,6 +3567,10 @@ packages:
     resolution: {integrity: sha512-tFkciB9j2K755yrTALxD44McOrk+gfpIpvC3sxHjRawj6PfnQxrse4Clq5y/Rq+G3mrBurMax/lG8Qn2t9mSsg==}
     dependencies:
       '@babel/types': 7.21.4
+    dev: true
+
+  /@types/babel__preset-env@7.9.2:
+    resolution: {integrity: sha512-epEgKQiqTDZdPgYwtriYK1GVAGcyVZVvvw2UatX3+95mogKGimebApcMEWLF12uhUbNIvX284CSQEavnV/OIgw==}
     dev: true
 
   /@types/babel__standalone@7.1.4:
