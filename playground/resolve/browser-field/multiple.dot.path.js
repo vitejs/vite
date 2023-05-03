@@ -1,2 +1,2 @@
-const fs = require('node:fs')
+import fs from 'node:fs'
 console.log('this should not run in the browser')

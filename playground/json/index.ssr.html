@@ -12,10 +12,12 @@
 <script type="module">
   const startModule = Date.now()
   text('.fetch-json-module pre', await (await fetch('/json-module')).text())
+  // TODO: what is this for?
   text('.fetch-json-module code', Date.now() - startModule)
 
   const startFs = Date.now()
   text('.fetch-json-fs pre', await (await fetch('/json-fs')).text())
+  // TODO: what is this for?
   text('.fetch-json-fs code', Date.now() - startFs)
   function text(sel, text) {
     document.querySelector(sel).textContent = text

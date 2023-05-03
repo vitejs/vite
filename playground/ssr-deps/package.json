@@ -1,8 +1,8 @@
 {
   "name": "@vitejs/test-ssr-deps",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "version": "0.0.0",
   "scripts": {
     "dev": "node server",
     "serve": "NODE_ENV=production node server",

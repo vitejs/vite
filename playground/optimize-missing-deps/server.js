@@ -1,11 +1,15 @@
 // @ts-check
-const fs = require('node:fs')
-const path = require('node:path')
-const express = require('express')
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import express from 'express'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const isTest = process.env.VITEST
 
-async function createServer(root = process.cwd(), hmrPort) {
+export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
 
   const app = express()
@@ -13,7 +17,9 @@ async function createServer(root = process.cwd(), hmrPort) {
   /**
    * @type {import('vite').ViteDevServer}
    */
-  const vite = await require('vite').createServer({
+  const vite = await (
+    await import('vite')
+  ).createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -62,6 +68,3 @@ if (!isTest) {
     }),
   )
 }
-
-// for test use
-exports.createServer = createServer

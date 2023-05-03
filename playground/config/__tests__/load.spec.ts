@@ -1,6 +1,10 @@
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { loadConfigFromFile } from 'vite'
 import { expect, it } from 'vitest'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 it('loadConfigFromFile', async () => {
   const { config } = await loadConfigFromFile(
@@ -20,7 +24,7 @@ it('loadConfigFromFile', async () => {
           4,
         ],
       ],
-      "moduleCondition": "require condition",
+      "moduleCondition": "import condition",
     }
   `)
 })

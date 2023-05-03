@@ -2,16 +2,16 @@
 // the default e2e test serve behavior
 
 import path from 'node:path'
-import { hmrPorts, ports, rootDir } from '~utils'
+import kill from 'kill-port'
+import { ports, rootDir } from '~utils'
 
-export const port = ports['optimize-missing-deps']
+export const port = ports.json
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
+  await kill(port)
+
   const { createServer } = await import(path.resolve(rootDir, 'server.js'))
-  const { app, vite } = await createServer(
-    rootDir,
-    hmrPorts['optimize-missing-deps'],
-  )
+  const { app, vite } = await createServer(rootDir)
 
   return new Promise((resolve, reject) => {
     try {
