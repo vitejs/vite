@@ -12,6 +12,7 @@ const alias: Record<string, string | undefined> = {
   css: 'text/css',
   html: 'text/html',
   json: 'application/json',
+  wasm: 'application/wasm',
 }
 
 export interface SendOptions {
