@@ -161,7 +161,7 @@ The following hooks are called on each incoming module request:
 
 These hooks also have an extended `options` parameter with additional Vite-specific properties. You can read more in the [SSR documentation](/guide/ssr#ssr-specific-plugin-logic).
 
-During dev, `resolveId` will be called with the imported `source` and the proper `importer` value when resolving during the import analysis phase. Each imported URL will be resolved while transforming a JS source and normalized to a URL the browser can handle (relative paths will be transformed to absolute paths starting from root, and out-of-root paths will be prefixed with a `/@fs/` marker). When the browser request these modules, the Vite dev server no longer have information about the original `importer`. When `resolveId` is called for these URLs, the `importer` will be an absolute path for a generic `index.html` at root.
+Some `resolveId` calls' `importer` value may be an absolute path for a generic `index.html` at root as it's not always possible to derive the actual importer due to Vite's unbundled dev server pattern. For imports handled within Vite's resolve pipeline, the importer can be tracked during the import analysis phase, providing the correct `importer` value.
 
 The following hooks are called when the server is closed:
 
