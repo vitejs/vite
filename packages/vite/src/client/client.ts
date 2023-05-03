@@ -2,7 +2,6 @@ import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-// eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -366,9 +365,11 @@ const sheetsMap = new Map<string, HTMLStyleElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
-document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
-  sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
-})
+if ('document' in globalThis) {
+  document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
+    sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
+  })
+}
 
 // all css imports should be inserted at the same position
 // because after build it will be a single css file

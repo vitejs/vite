@@ -244,7 +244,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isBuild && isWorkerQueryId(id) && config.build.watch) {
         return true
       }
-      return false
     },
 
     async transform(raw, id, options) {

@@ -1,4 +1,4 @@
-/* eslint-disable node/no-extraneous-import */
+/* eslint-disable n/no-extraneous-import */
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
@@ -438,7 +438,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             }),
           ],
           [
-            '@babel/preset-env',
+            (await import('@babel/preset-env')).default,
             createBabelPresetEnvOptions(targets, {
               needPolyfills,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig,
@@ -608,7 +608,7 @@ export async function detectPolyfills(
     configFile: false,
     presets: [
       [
-        '@babel/preset-env',
+        (await import('@babel/preset-env')).default,
         createBabelPresetEnvOptions(targets, {
           ignoreBrowserslistConfig: true,
         }),

@@ -60,7 +60,9 @@ export function resolvePackageData(
 
     let pkg: string | null
     try {
-      pkg = pnp.resolveToUnqualified(pkgName, basedir)
+      pkg = pnp.resolveToUnqualified(pkgName, basedir, {
+        considerBuiltins: false,
+      })
     } catch {
       return null
     }

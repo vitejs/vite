@@ -14,7 +14,6 @@ import type { ResolvedConfig } from '../config'
 import {
   arraify,
   createDebugger,
-  emptyDir,
   flattenId,
   getHash,
   isOptimizable,
@@ -27,7 +26,6 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import type { ViteDevServer } from '../server'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
@@ -67,7 +65,6 @@ export interface DepsOptimizer {
   close: () => Promise<void>
 
   options: DepOptimizationOptions
-  server?: ViteDevServer
 }
 
 export interface DepOptimizationConfig {
@@ -129,6 +126,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+  /**
+   * Automatic dependency discovery. When `noDiscovery` is true, only dependencies
+   * listed in `include` will be optimized. The scanner isn't run for cold start
+   * in this case. CJS-only dependencies must be present in `include` during dev.
+   * @default false
+   * @experimental
+   */
+  noDiscovery?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -331,6 +336,8 @@ export function addOptimizedDepInfo(
   return depInfo
 }
 
+let firstLoadCachedDepOptimizationMetadata = true
+
 /**
  * Creates the initial dep optimization metadata, loading it from the deps cache
  * if it exists and pre-bundling isn't forced
@@ -343,16 +350,11 @@ export async function loadCachedDepOptimizationMetadata(
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
-  setTimeout(() => {
-    // Before Vite 2.9, dependencies were cached in the root of the cacheDir
-    // For compat, we remove the cache if we find the old structure
-    if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
-      emptyDir(config.cacheDir)
-    }
-    // Fire a clean up of stale cache dirs, in case old processes didn't
-    // terminate correctly
-    cleanupDepsCacheStaleDirs(config)
-  }, 100)
+  if (firstLoadCachedDepOptimizationMetadata) {
+    firstLoadCachedDepOptimizationMetadata = false
+    // Fire up a clean up of stale processing deps dirs if older process exited early
+    setTimeout(() => cleanupDepsCacheStaleDirs(config), 0)
+  }
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
@@ -507,6 +509,11 @@ export function runOptimizeDeps(
     metadata,
     cancel: cleanUp,
     commit: async () => {
+      if (cleaned) {
+        throw new Error(
+          'Can not commit a Deps Optimization run as it was cancelled',
+        )
+      }
       // Ignore clean up requests after this point so the temp folder isn't deleted before
       // we finish commiting the new deps cache files to the deps folder
       committed = true
@@ -709,23 +716,25 @@ async function prepareEsbuildOptimizerRun(
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
     optimizeDeps?.esbuildOptions ?? {}
 
-  for (const id in depsInfo) {
-    const src = depsInfo[id].src!
-    const exportsData = await (depsInfo[id].exportsData ??
-      extractExportsData(src, config, ssr))
-    if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader,
+  await Promise.all(
+    Object.keys(depsInfo).map(async (id) => {
+      const src = depsInfo[id].src!
+      const exportsData = await (depsInfo[id].exportsData ??
+        extractExportsData(src, config, ssr))
+      if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
+        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+        // This is useful for packages such as Gatsby.
+        esbuildOptions.loader = {
+          '.js': 'jsx',
+          ...esbuildOptions.loader,
+        }
       }
-    }
-    const flatId = flattenId(id)
-    flatIdDeps[flatId] = src
-    idToExports[id] = exportsData
-    flatIdToExports[flatId] = exportsData
-  }
+      const flatId = flattenId(id)
+      flatIdDeps[flatId] = src
+      idToExports[id] = exportsData
+      flatIdToExports[flatId] = exportsData
+    }),
+  )
 
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 

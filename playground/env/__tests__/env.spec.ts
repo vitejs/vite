@@ -37,8 +37,10 @@ test('inline variables', async () => {
   )
 })
 
-test('bool', async () => {
+test('define', async () => {
   expect(await page.textContent('.bool')).toBe('boolean')
+  expect(await page.textContent('.number')).toBe('number')
+  expect(await page.textContent('.string')).toBe('string')
 })
 
 test('NODE_ENV', async () => {
@@ -79,6 +81,8 @@ test('env object', async () => {
     MODE: mode,
     DEV: !isBuild,
     PROD: isBuild,
+    VITE_NUMBER: 123,
+    VITE_STRING: '123',
   })
 })
 
