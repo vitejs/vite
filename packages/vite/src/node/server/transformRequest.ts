@@ -223,6 +223,10 @@ async function loadAndTransform(
     }
   }
   if (code == null) {
+    // if this is an html, please skip the check
+    if (options.html && id.endsWith('.html')) {
+      return null
+    }
     const isPublicFile = checkPublicFile(url, config)
     const msg = isPublicFile
       ? `This file is in /public and will be copied as-is during build without ` +
