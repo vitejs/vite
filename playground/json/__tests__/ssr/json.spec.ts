@@ -1,6 +1,6 @@
-import { beforeEach, expect, test } from 'vitest'
+import { beforeEach, test } from 'vitest'
 import { port } from './serve'
-import { page } from '~utils'
+import { page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -9,11 +9,12 @@ beforeEach(async () => {
 })
 
 test('load json module', async () => {
-  expect(await page.textContent('.fetch-json-module pre')).toBe(
+  await untilUpdated(
+    () => page.textContent('.fetch-json-module pre'),
     'export default JSON.parse("{\\n  \\"hello\\": \\"hi\\"\\n}\\n")',
   )
 })
 
 test('fs json', async () => {
-  expect(await page.textContent('.fetch-json-fs pre')).toBe('61')
+  await untilUpdated(() => page.textContent('.fetch-json-fs pre'), '61')
 })
