@@ -76,6 +76,7 @@ import {
   numberToPos,
   prettifyUrl,
   timeFrom,
+  unwrapId,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
@@ -313,7 +314,7 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await moduleGraph?.ensureEntryFromUrl(options.id)
+      await moduleGraph?.ensureEntryFromUrl(unwrapId(options.id), this.ssr)
       // Not all options passed to this function make sense in the context of loading individual files,
       // but we can at least update the module info properties we support
       updateModuleInfo(options.id, options)
