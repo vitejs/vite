@@ -189,7 +189,7 @@ async function instantiateModule(
 
   function ssrExportAll(sourceModule: any) {
     for (const key in sourceModule) {
-      if (key !== 'default') {
+      if (key !== 'default' && key !== '__esModule') {
         Object.defineProperty(ssrModule, key, {
           enumerable: true,
           configurable: true,
