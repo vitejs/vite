@@ -25,7 +25,6 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import {
   evalValue,
-  isVirtualModule,
   normalizePath,
   slash,
   transformStableResult,
@@ -355,7 +354,7 @@ export async function transformGlobImport(
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
-  const isVirtual = isVirtualModule(id)
+  const isVirtual = !isAbsolute(id)
   const dir = isVirtual ? undefined : dirname(id)
   const matches = await parseImportGlob(
     code,
