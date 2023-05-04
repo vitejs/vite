@@ -221,6 +221,16 @@
   <code class="dynamic-import-meta-url-2-comma"></code>
 </p>
 
+<h2>new URL(`./${dynamic}?abc`, import.meta.url)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-1-query" />
+  <code class="dynamic-import-meta-url-1-query"></code>
+</p>
+<p>
+  <img class="dynamic-import-meta-url-img-2-query" />
+  <code class="dynamic-import-meta-url-2-query"></code>
+</p>
+
 <h2>new URL(`non-existent`, import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
@@ -431,6 +441,17 @@
 
   testDynamicImportMetaUrlWithComma('icon', 1)
   testDynamicImportMetaUrlWithComma('asset', 2)
+
+  function testDynamicImportMetaUrlWithQuery(name, i) {
+    // prettier-ignore
+    const metaUrl = new URL(`./nested/${name}.png?abc`, import.meta.url,)
+    text(`.dynamic-import-meta-url-${i}-query`, metaUrl)
+    document.querySelector(`.dynamic-import-meta-url-img-${i}-query`).src =
+      metaUrl
+  }
+
+  testDynamicImportMetaUrlWithQuery('icon', 1)
+  testDynamicImportMetaUrlWithQuery('asset', 2)
 
   {
     const name = 'test'
