@@ -77,7 +77,7 @@ import {
   prettifyUrl,
   timeFrom,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { CLIENT_ENTRY, ENV_ENTRY, FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
@@ -133,6 +133,9 @@ type PluginContext = Omit<
   // deprecated
   | 'moduleIds'
 >
+
+const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
+const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 
 export let parser = acorn.Parser
 
@@ -539,13 +542,18 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          combinedMap = combineSourcemaps(cleanUrl(this.filename), [
-            {
-              ...(m as RawSourceMap),
-              sourcesContent: combinedMap.sourcesContent,
-            },
-            combinedMap as RawSourceMap,
-          ]) as SourceMap
+          combinedMap = combineSourcemaps(
+            cleanUrl(this.filename),
+            [
+              {
+                ...(m as RawSourceMap),
+                sourcesContent: combinedMap.sourcesContent,
+              },
+              combinedMap as RawSourceMap,
+            ],
+            this.filename !== normalizedClientEntry &&
+              this.filename !== normalizedEnvEntry,
+          ) as SourceMap
         }
       }
       if (!combinedMap) {
