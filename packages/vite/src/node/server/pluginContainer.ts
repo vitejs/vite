@@ -531,6 +531,9 @@ export async function createPluginContainer(
       }
 
       let combinedMap = this.combinedMap
+      const excludeContent =
+        this.filename !== normalizedClientEntry &&
+        this.filename !== normalizedEnvEntry
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
         if (!('version' in (m as SourceMap))) {
@@ -551,8 +554,7 @@ export async function createPluginContainer(
               },
               combinedMap as RawSourceMap,
             ],
-            this.filename !== normalizedClientEntry &&
-              this.filename !== normalizedEnvEntry,
+            excludeContent,
           ) as SourceMap
         }
       }
