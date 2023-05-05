@@ -169,7 +169,7 @@ export function createDebugger(
 
   if (enabled) {
     return (...args: [string, ...any[]]) => {
-      if (!filter || args.some((a) => a?.includes(filter))) {
+      if (!filter || args.some((a) => a?.includes?.(filter))) {
         log(...args)
       }
     }
