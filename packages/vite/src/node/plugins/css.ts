@@ -10,10 +10,12 @@ import type {
   OutputChunk,
   RenderedChunk,
   RollupError,
+  SourceMap,
   SourceMapInput,
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
+import { toEncodedMap } from '@jridgewell/gen-mapping'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
@@ -27,6 +29,7 @@ import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
 import { resolveUserExternal, toOutputFilePathInCss } from '../build'
+import type { BuildOptions } from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -35,6 +38,7 @@ import {
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
+  ConcatSourcemaps,
   arrayEqual,
   asyncReplace,
   cleanUrl,
@@ -254,7 +258,17 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map,
-      } = await compileCSS(id, raw, config, urlReplacer)
+      } = await compileCSS({
+        id,
+        code: raw,
+        config,
+        urlReplacer,
+        sourcemap:
+          config.command === 'build'
+            ? config.build.sourcemap
+            : config.css?.devSourcemap,
+      })
+
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -335,6 +349,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
+  const extractedMap: Map<string, SourceMap> = new Map()
+  const referenceIdToSourcemap = new Map<string, string>()
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -440,6 +456,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const inlineCSS = inlineCSSRE.test(id)
       const isHTMLProxy = htmlProxyRE.test(id)
       const query = parseRequest(id)
+      const inlineSourcemap =
+        config.command === 'build'
+          ? config.build.sourcemap === 'inline'
+          : config.css?.devSourcemap
+
+      const getContentWithSourcemap = async (content: string) => {
+        if (inlineSourcemap) {
+          const sourcemap = this.getCombinedSourcemap()
+          if (sourcemap.mappings && !sourcemap.sourcesContent) {
+            await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
+          }
+          return getCodeWithSourcemap('css', content, sourcemap)
+        }
+        return content
+      }
+
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
@@ -447,6 +479,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         )
         return `export default ''`
       }
+
       if (!inlined) {
         styles.set(id, css)
       }
@@ -456,9 +489,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (modulesCode) {
           code = modulesCode
         } else {
-          let content = css
+          let content = await getContentWithSourcemap(css)
           if (config.build.cssMinify) {
-            content = await minifyCSS(content, config)
+            // TODO: combine sourcemap here
+            const { code } = await minifyCSS(content, config)
+            content = code
           }
           code = `export default ${JSON.stringify(content)}`
         }
@@ -470,9 +505,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         code = modulesCode || `export default ''`
       }
 
+      extractedMap.set(id, this.getCombinedSourcemap())
+
       return {
         code,
-        map: { mappings: '' },
+        map: this.getCombinedSourcemap() as ExistingRawSourceMap,
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
         moduleSideEffects: inlined ? false : 'no-treeshake',
@@ -482,10 +519,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
       let isPureCssChunk = true
+      const sourcemap = config.command === 'build' && !!config.build.sourcemap
       const ids = Object.keys(chunk.modules)
+      const concat = new ConcatSourcemaps(true, '', '\n')
+
       for (const id of ids) {
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
+          if (sourcemap) {
+            const extracted = extractedMap.get(id)!
+            concat.add(id, styles.get(id)!, extracted)
+          }
+
           // a css module contains JS, so it makes this not a pure css chunk
           if (cssModuleRE.test(id)) {
             isPureCssChunk = false
@@ -578,11 +623,29 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
+          let sourcemapInRenderChunk: string = ''
           const previousTask = emitTasks[emitTasks.length - 1]
           // finalizeCss is async which makes `emitFile` non-deterministic, so
           // we use a `.then` to wait for previous tasks before finishing this
-          const thisTask = finalizeCss(chunkCSS, true, config).then((css) => {
+          const thisTask = finalizeCss({
+            css: chunkCSS,
+            minify: true,
+            config,
+          }).then(({ css, map }) => {
             chunkCSS = css
+
+            const combinedSourcemap = combineSourcemaps(
+              cssFileName,
+              [
+                map ? JSON.parse(map) : undefined,
+                toEncodedMap(concat.sourceMap!),
+              ].filter(Boolean),
+              false,
+            )
+
+            if (combinedSourcemap.mappings) {
+              sourcemapInRenderChunk = combinedSourcemap.toString()
+            }
             // make sure the previous task is also finished, this works recursively
             return previousTask
           })
@@ -600,6 +663,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS,
           })
+
+          concat.sourceMap!.file = cssFileName
+          referenceIdToSourcemap.set(referenceId, sourcemapInRenderChunk)
+
           const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
           const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
@@ -620,7 +687,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // But because entry chunk can be imported by dynamic import,
           // we shouldn't remove the inlined CSS. (#10285)
 
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
+          chunkCSS = (
+            await finalizeCss({ css: chunkCSS, minify: true, config })
+          ).css
           let cssString = JSON.stringify(chunkCSS)
           cssString =
             renderAssetUrlInJS(
@@ -668,11 +737,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         for (const id of chunk.viteMetadata.importedCss) {
           hash += id
         }
+
         return hash
       }
     },
 
     async generateBundle(opts, bundle) {
+      const emitSourcemap = config.build.sourcemap && opts.sourcemap
+
       // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__) {
         return
@@ -739,13 +811,40 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let extractedCss = outputToExtractedCSSMap.get(opts)
+
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
+        const finalized = await finalizeCss({
+          css: extractedCss,
+          minify: true,
+          config,
+        })
+        extractedCss = finalized.css
+        const referenceId = this.emitFile({
           name: cssBundleName,
           type: 'asset',
           source: extractedCss,
+        })
+
+        if (emitSourcemap) {
+          referenceIdToSourcemap.set(referenceId, finalized.map)
+        }
+      }
+
+      // references
+      // https://github.com/egoist/rollup-plugin-postcss/blob/71593d9f4698ce564482b86cc2fa7f69626e8b8a/src/index.js#L249C11-L253
+      // https://github.com/Anidetrix/rollup-plugin-styles/blob/main/src/index.ts
+      if (emitSourcemap) {
+        referenceIdToSourcemap.forEach((mapOfRenderChunk, referenceId) => {
+          const fileName = this.getFileName(referenceId)
+          const chunk = bundle[fileName]
+          if (!chunk) return
+
+          this.emitFile({
+            type: 'asset',
+            fileName: fileName + '.map',
+            source: mapOfRenderChunk,
+          })
         })
       }
     },
@@ -816,23 +915,26 @@ const configToAtImportResolvers = new WeakMap<
   CSSAtImportResolvers
 >()
 
-async function compileCSS(
-  id: string,
-  code: string,
-  config: ResolvedConfig,
-  urlReplacer?: CssUrlReplacer,
-): Promise<{
+async function compileCSS({
+  id,
+  code,
+  config,
+  urlReplacer,
+  sourcemap,
+}: {
+  id: string
+  code: string
+  config: ResolvedConfig
+  urlReplacer?: CssUrlReplacer
+  sourcemap?: BuildOptions['sourcemap']
+}): Promise<{
   code: string
   map?: SourceMapInput
   ast?: PostCSS.Result
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const {
-    modules: modulesOptions,
-    preprocessorOptions,
-    devSourcemap,
-  } = config.css || {}
+  const { modules: modulesOptions, preprocessorOptions } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -887,7 +989,7 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
-    opts.enableSourcemap = devSourcemap ?? false
+    opts.enableSourcemap = sourcemap ?? false
 
     const preprocessResult = await preProcessor(
       code,
@@ -1020,7 +1122,7 @@ async function compileCSS(
           : postcssOptions.parser,
       to: source,
       from: source,
-      ...(devSourcemap
+      ...(sourcemap
         ? {
             map: {
               inline: false,
@@ -1073,7 +1175,7 @@ async function compileCSS(
     throw e
   }
 
-  if (!devSourcemap) {
+  if (!sourcemap) {
     return {
       ast: postcssResult,
       code: postcssResult.css,
@@ -1132,7 +1234,7 @@ export async function preprocessCSS(
   filename: string,
   config: ResolvedConfig,
 ): Promise<PreprocessCSSResult> {
-  return await compileCSS(filename, code, config)
+  return await compileCSS({ id: filename, code, config })
 }
 
 const postcssReturnsVirtualFilesRE = /^<.+>$/
@@ -1178,19 +1280,29 @@ function combineSourcemapsIfExists(
     : map1
 }
 
-async function finalizeCss(
-  css: string,
-  minify: boolean,
-  config: ResolvedConfig,
-) {
+async function finalizeCss({
+  css,
+  minify,
+  config,
+}: {
+  css: string
+  minify: boolean
+  config: ResolvedConfig
+}) {
+  const res = { css, map: '' }
+
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
-    css = await hoistAtRules(css)
+    res.css = await hoistAtRules(css)
   }
+
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config)
+    const minified = await minifyCSS(res.css, config)
+    res.css = minified.code
+    res.map = minified.map
   }
-  return css
+
+  return res
 }
 
 interface PostCSSConfigResult {
@@ -1409,18 +1521,25 @@ async function doImportCSSReplace(
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
   try {
-    const { code, warnings } = await transform(css, {
+    const { code, warnings, map } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      sourcemap:
+        config.build.sourcemap === true
+          ? 'external'
+          : config.build.sourcemap === 'hidden'
+          ? 'inline'
+          : false,
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
+
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
       config.logger.warn(
         colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
     }
-    return code
+    return { code, map }
   } catch (e) {
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
