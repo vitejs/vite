@@ -121,6 +121,11 @@ export default defineComponent({
 `.trim(),
         }
       }
+
+      // fallback to empty module for other vue files
+      if (id.endsWith('.vue')) {
+        return { code: `export default {}` }
+      }
     },
   }
 }
