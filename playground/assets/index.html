@@ -466,7 +466,6 @@
   testDynamicImportMetaUrlWithQuery('icon', 1)
   testDynamicImportMetaUrlWithQuery('asset', 2)
 
-  
   function testDynamicImportMetaUrlWithAlias(name, i) {
     const metaUrl = new URL(`@/${name}.png`, import.meta.url)
     text(`.dynamic-import-meta-url-${i}-alias`, metaUrl)
@@ -479,7 +478,7 @@
 
   {
     const name = 'test'
-    
+
     const js = new URL(`./nested/${name}.js`, import.meta.url).href
     text('.dynamic-import-meta-url-js', js)
 

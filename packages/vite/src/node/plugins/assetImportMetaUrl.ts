@@ -71,7 +71,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               const resolvedUrl = await aliaResolver(
                 rawUrl.slice(1),
                 undefined,
-                true
+                true,
               )
               if (resolvedUrl) {
                 newUrl = normalizePath(path.relative(config.root, resolvedUrl))
@@ -103,9 +103,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
-                )}, ${JSON.stringify(
-                  globOptions,
-                )}))[${newUrl ?? pureUrl}], self.location)`,
+                )}, ${JSON.stringify(globOptions)}))[${
+                  newUrl ?? pureUrl
+                }], self.location)`,
               )
               continue
             }
