@@ -246,9 +246,8 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
   })
 }
 
-const scriptModuleRE =
-  /(<script\b[^>]+type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gis
-export const scriptRE = /(<script(?:\s[^>]*>|>))(.*?)<\/script>/gis
+export const scriptRE =
+  /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
 export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
@@ -378,12 +377,11 @@ function esbuildScanPlugin(
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
-          const regex = isHtml ? scriptModuleRE : scriptRE
-          regex.lastIndex = 0
+          scriptRE.lastIndex = 0
           let js = ''
           let scriptId = 0
           let match: RegExpExecArray | null
-          while ((match = regex.exec(raw))) {
+          while ((match = scriptRE.exec(raw))) {
             const [, openTag, content] = match
             const typeMatch = openTag.match(typeRE)
             const type =
@@ -391,6 +389,10 @@ function esbuildScanPlugin(
             const langMatch = openTag.match(langRE)
             const lang =
               langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+            // skip non type module script
+            if (isHtml && type !== 'module') {
+              continue
+            }
             // skip type="application/ld+json" and other non-JS types
             if (
               type &&
