@@ -20,6 +20,10 @@ import type {
 import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
+import type {
+  LightningCSSDrafts,
+  LightningCSSTargets,
+} from 'dep-types/lightningcss'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
@@ -59,6 +63,7 @@ import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
+import { convertTargets } from './plugins/css'
 
 export interface BuildOptions {
   /**
@@ -133,6 +138,20 @@ export interface BuildOptions {
    * @default minify
    */
   cssMinify?: boolean
+  /**
+   * @experimental
+   * Use Lightning CSS to minify CSS. This should be installed as a peer
+   * dependency. Targets is automatically converted from esbuild (css)target, but
+   * can be provided for more granular control.
+   * @default esbuild
+   */
+  cssMinifier?:
+    | { minifier: 'esbuild' }
+    | {
+        minifier: 'LightningCSS'
+        targets?: LightningCSSTargets
+        drafts?: LightningCSSDrafts
+      }
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -298,8 +317,17 @@ export type ResolveModulePreloadDependenciesFn = (
 ) => string[]
 
 export interface ResolvedBuildOptions
-  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+  extends Required<
+    Omit<BuildOptions, 'polyfillModulePreload' | 'cssMinifier'>
+  > {
   modulePreload: false | ResolvedModulePreloadOptions
+  cssMinifier:
+    | { minifier: 'esbuild' }
+    | {
+        minifier: 'LightningCSS'
+        targets: LightningCSSTargets
+        drafts: LightningCSSDrafts
+      }
 }
 
 export function resolveBuildOptions(
@@ -417,6 +445,19 @@ export function resolveBuildOptions(
 
   if (resolved.cssMinify == null) {
     resolved.cssMinify = !!resolved.minify
+  }
+
+  if (!resolved.cssMinifier) {
+    resolved.cssMinifier = { minifier: 'esbuild' }
+  }
+
+  if (resolved.cssMinifier.minifier === 'LightningCSS') {
+    if (!resolved.cssMinifier.targets) {
+      resolved.cssMinifier.targets = convertTargets(resolved.cssTarget)
+    }
+    if (!resolved.cssMinifier.drafts) {
+      resolved.cssMinifier.drafts = {}
+    }
   }
 
   return resolved

@@ -21,7 +21,12 @@ import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
-import type { CSSOptions } from './plugins/css'
+import {
+  type CSSOptions,
+  type LightningCSSOptions,
+  type ResolvedLightningCSSOptions,
+  resolveCSSOptions,
+} from './plugins/css'
 import {
   asyncFlatten,
   createDebugger,
@@ -167,9 +172,16 @@ export interface UserConfig {
    */
   resolve?: ResolveOptions & { alias?: AliasOptions }
   /**
-   * CSS related options (preprocessors and CSS modules)
+   * CSS related options
+   * - CSSOptions is the default and provide configuration for PostCSS and
+   *   various preprocessors
+   * - LightningCSSOptions is an experimental option to handle CSS modules,
+   *   assets and imports via Lightning CSS. It requires to install it
+   *   as a peer dependency. This is incompatible with the use of preprocessors.
+   *
+   * See build options to configure CSS minification.
    */
-  css?: CSSOptions
+  css?: CSSOptions | LightningCSSOptions
   /**
    * JSON loading options
    */
@@ -326,7 +338,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker'
+  > & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -349,6 +364,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    css: CSSOptions | ResolvedLightningCSSOptions | undefined
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
@@ -672,6 +688,7 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
+    css: resolveCSSOptions(config.css, resolvedBuildOptions),
     esbuild:
       config.esbuild === false
         ? false
