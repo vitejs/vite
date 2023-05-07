@@ -321,6 +321,11 @@ async function waitForSuccessfulPing(
     try {
       await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
+        headers: {
+          // Custom headers won't be included in a request with no-cors so (ab)use one of the
+          // safelisted headers to identify the ping request
+          Accept: 'text/x-vite-ping',
+        },
       })
       return true
     } catch {}
