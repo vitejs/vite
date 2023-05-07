@@ -29,7 +29,7 @@ describe.runIf(isServe)('serve', () => {
 
   test('linked css', async () => {
     const res = await page.request.get(
-      new URL('./linked.css', page.url()).href,
+      new URL('./linked-with-import.css', page.url()).href,
       {
         headers: {
           accept: 'text/css',
@@ -40,12 +40,19 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACT,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
+        "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
         "sources": [
-          "/root/linked.css",
+          "be-imported.css",
+          "linked-with-import.css",
         ],
         "sourcesContent": [
-          ".linked {
+          ".be-imported {
+        color: red;
+      }
+      ",
+          "@import '@/be-imported.css';
+
+      .linked-with-import {
         color: red;
       }
       ",
