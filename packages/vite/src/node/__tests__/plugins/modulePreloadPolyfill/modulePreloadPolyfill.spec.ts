@@ -1,5 +1,3 @@
-import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, it } from 'vitest'
 import type { ModuleFormat, RollupOutput } from 'rollup'
 import { build } from '../../../build'
