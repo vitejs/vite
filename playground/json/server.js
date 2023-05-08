@@ -4,8 +4,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 
-const isTest = process.env.VITEST
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const isTest = process.env.VITEST
 
 export async function createServer(root = process.cwd()) {
   const resolve = (p) => path.resolve(__dirname, p)

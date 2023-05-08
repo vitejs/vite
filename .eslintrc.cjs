@@ -189,6 +189,7 @@ module.exports = defineConfig({
         'playground/**/*{commonjs,cjs}*',
         'playground/**/*dep*/**',
         'playground/resolve/browser-module-field2/index.web.js',
+        'playground/resolve/browser-field/**',
       ],
       rules: {
         'import/no-commonjs': 'error',

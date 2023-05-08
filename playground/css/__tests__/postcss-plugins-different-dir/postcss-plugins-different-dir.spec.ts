@@ -1,11 +1,7 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 import { expect, test } from 'vitest'
 import { getBgColor, getColor, isServe, page, ports } from '~utils'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 // Regression test for https://github.com/vitejs/vite/issues/4000
 test.runIf(isServe)('postcss plugins in different dir', async () => {

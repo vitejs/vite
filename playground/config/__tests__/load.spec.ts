@@ -1,10 +1,6 @@
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 import { loadConfigFromFile } from 'vite'
 import { expect, it } from 'vitest'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 it('loadConfigFromFile', async () => {
   const { config } = await loadConfigFromFile(
