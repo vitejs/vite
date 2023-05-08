@@ -56,10 +56,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
-            let [pureUrl, queryString = ''] = rawUrl.split('?')
+            const queryDelimiterIndex = getQueryDelimiterIndex(rawUrl)
+            let pureUrl = rawUrl.slice(0, queryDelimiterIndex)
+            let queryString = rawUrl.slice(queryDelimiterIndex)
             if (queryString) {
               pureUrl += '`'
-              queryString = '?' + queryString.slice(0, -1)
+              queryString = queryString.slice(0, -1)
             }
             const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
@@ -166,4 +168,18 @@ function buildGlobPattern(ast: any) {
     pattern += ast.quasis[i].value.raw
   }
   return pattern
+}
+
+function getQueryDelimiterIndex(rawUrl: string): number {
+  let bracketsStack = 0
+  for (let i = 0; i < rawUrl.length; i++) {
+    if (rawUrl[i] === '{') {
+      bracketsStack++
+    } else if (rawUrl[i] === '}') {
+      bracketsStack--
+    } else if (rawUrl[i] === '?' && bracketsStack === 0) {
+      return i
+    }
+  }
+  return -1
 }
