@@ -5,11 +5,8 @@ import type { ModuleFormat, RollupOutput } from 'rollup'
 import { build } from '../../../build'
 import { modulePreloadPolyfillId } from '../../../plugins/modulePreloadPolyfill'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
-
 const buildProject = ({ format = 'es' as ModuleFormat } = {}) =>
   build({
-    root: resolve(__dirname, 'packages/build-project'),
     logLevel: 'silent',
     build: {
       write: false,
