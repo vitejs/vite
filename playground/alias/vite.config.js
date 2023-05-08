@@ -1,10 +1,6 @@
 import path from 'node:path'
-import url from 'node:url'
 import module from 'node:module'
 import { defineConfig } from 'vite'
-
-const __filename = url.fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 const require = module.createRequire(import.meta.url)
 
