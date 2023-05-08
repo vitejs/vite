@@ -1067,7 +1067,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(relativePath)}', ${
+    `"${escapeId(relativePath)}", ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1076,7 +1076,7 @@ const getFileUrlFromFullPath = (path: string) =>
   `require('u' + 'rl').pathToFileURL(${path}).href`
 
 const getFileUrlFromRelativePath = (path: string) =>
-  getFileUrlFromFullPath(`__dirname + '/${path}'`)
+  getFileUrlFromFullPath(`__dirname + "/${path}"`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1084,16 +1084,16 @@ const relativeUrlMechanisms: Record<
 > = {
   amd: (relativePath) => {
     if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+    return getResolveUrl(`require.toUrl("${relativePath}"), document.baseURI`)
   },
   cjs: (relativePath) =>
     `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
-  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  es: (relativePath) => getResolveUrl(`"${relativePath}", import.meta.url`),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
-  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  system: (relativePath) => getResolveUrl(`"${relativePath}", module.meta.url`),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1104,7 +1104,7 @@ const relativeUrlMechanisms: Record<
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
-    getResolveUrl(`'${relativePath}', self.location.href`),
+    getResolveUrl(`"${relativePath}", self.location.href`),
 } as const satisfies Record<string, (relativePath: string) => string>
 
 export type RenderBuiltAssetUrl = (
