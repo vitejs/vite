@@ -79,6 +79,19 @@ export function proxyMiddleware(
         res.end()
       }
     })
+
+    proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+      socket.on('error', (err) => {
+        config.logger.error(
+          `${colors.red(`ws proxy socket error:`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err,
+          },
+        )
+      })
+    })
+
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
   })
