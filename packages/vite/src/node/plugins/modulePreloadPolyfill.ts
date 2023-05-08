@@ -25,7 +25,7 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
         if (!polyfillString) {
           polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
         }
-        return polyfillString
+        return { code: polyfillString, moduleSideEffects: true }
       }
     },
   }
