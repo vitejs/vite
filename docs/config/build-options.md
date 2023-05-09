@@ -19,8 +19,8 @@ Note the build will fail if the code contains features that cannot be safely tra
 
 ## build.modulePreload
 
-- **Type:** `boolean | { polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
-- **Default:** `{ polyfill: true }`
+- **Type:** `boolean | { crossOrigin?: boolean | 'anonymous' | 'use-credentials', polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
+- **Default:** `{ polyfill: true, crossOrigin: true }`
 
 By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-HTML custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
@@ -57,6 +57,8 @@ modulePreload: {
 ```
 
 The resolved dependency paths can be further modified using [`experimental.renderBuiltUrl`](../guide/build.md#advanced-base-options).
+
+The `crossOrigin` option controls setting the `crossorigin` attribute on preloaded dynamic imports chunks. This is true by default and can be disabled using `{ crossOrigin: false }`. It can also be set to one of the string values accepted by the [link tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link#acrossorigin).
 
 ## build.polyfillModulePreload
 
