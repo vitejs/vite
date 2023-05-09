@@ -57,12 +57,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           // potential dynamic template string
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             const queryDelimiterIndex = getQueryDelimiterIndex(rawUrl)
-            let pureUrl = rawUrl.slice(0, queryDelimiterIndex)
-            let queryString = rawUrl.slice(queryDelimiterIndex)
-            if (queryString) {
-              pureUrl += '`'
-              queryString = queryString.slice(0, -1)
-            }
+            const hasQueryDelimiter = queryDelimiterIndex !== -1
+            const pureUrl = hasQueryDelimiter
+              ? rawUrl.slice(0, queryDelimiterIndex) + '`'
+              : rawUrl
+            const queryString = hasQueryDelimiter
+              ? rawUrl.slice(queryDelimiterIndex, -1)
+              : ''
             const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
