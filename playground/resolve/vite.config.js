@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { defineConfig, normalizePath } from 'vite'
-import { a } from './config-dep'
+import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile

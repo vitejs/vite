@@ -2,6 +2,7 @@
   "name": "@vitejs/test-optimize-missing-deps",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "node server"
   },

@@ -1,4 +1,4 @@
-module.exports = () => ({
+export default () => ({
   name: 'plugin-for-worker',
   transform(code, id) {
     if (id.includes('worker/modules/test-plugin.js')) {

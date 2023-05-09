@@ -1,6 +1,7 @@
 {
   "name": "@vitejs/test-optimize-deps",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",

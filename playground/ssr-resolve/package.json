@@ -2,6 +2,7 @@
   "name": "@vitejs/test-ssr-resolve",
   "private": true,
   "version": "0.0.0",
+  "type": "commonjs",
   "scripts": {
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite build"

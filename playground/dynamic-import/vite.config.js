@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import vite from 'vite'
+import { defineConfig } from 'vite'
 
-export default vite.defineConfig({
+export default defineConfig({
   plugins: [
     {
       name: 'copy',

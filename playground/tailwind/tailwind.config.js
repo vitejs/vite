@@ -1,3 +1,5 @@
+/** @type {import('tailwindcss').Config} */
+
 module.exports = {
   content: [
     // Before editing this section, make sure no paths are matching with `/src/App.vue`

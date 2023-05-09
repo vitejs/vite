@@ -1,5 +1,6 @@
 {
   "name": "@vite/test-config-plugin-module-condition",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
