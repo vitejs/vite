@@ -1,5 +1,7 @@
 import fs from 'node:fs'
+import module from 'node:module'
 import { defineConfig } from 'vite'
+const require = module.createRequire(import.meta.url)
 
 // Overriding the NODE_ENV set by vitest
 process.env.NODE_ENV = ''
