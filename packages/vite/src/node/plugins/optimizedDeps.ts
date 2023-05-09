@@ -107,9 +107,18 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
           skipSelf: true,
         })
         if (resolved) {
-          depsOptimizer.delayDepsOptimizerUntil(resolved.id, async () => {
-            await this.load(resolved)
-          })
+          // must wait for all the register ids loaded,
+          // otherwise there would be a deadlock
+          const promise = depsOptimizer.delayDepsOptimizerUntil(
+            resolved.id,
+            async () => {
+              await this.load(resolved)
+            },
+          )
+          if (promise?.then) {
+            await promise
+          }
+
           return resolved
         }
       }

@@ -707,7 +707,7 @@ async function createDepsOptimizer(
   }
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
     if (crawlEndFinder && !depsOptimizer.isOptimizedDepFile(id)) {
-      crawlEndFinder.delayDepsOptimizerUntil(id, done)
+      return crawlEndFinder.delayDepsOptimizerUntil(id, done)
     }
   }
   function ensureFirstRun() {
@@ -720,7 +720,10 @@ const callCrawlEndIfIdleAfterMs = 50
 interface CrawlEndFinder {
   ensureFirstRun: () => void
   registerWorkersSource: (id: string) => void
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
+  delayDepsOptimizerUntil: (
+    id: string,
+    done: () => Promise<any>,
+  ) => void | Promise<void>
   cancel: () => void
 }
 
@@ -768,12 +771,15 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     checkIfCrawlEndAfterTimeout()
   }
 
-  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
+  function delayDepsOptimizerUntil(
+    id: string,
+    done: () => Promise<any>,
+  ): void | Promise<void> {
     if (!seenIds.has(id)) {
       seenIds.add(id)
       if (!workersSources.has(id)) {
         registeredIds.add(id)
-        done()
+        return done()
           .catch(() => {})
           .finally(() => markIdAsDone(id))
       }
