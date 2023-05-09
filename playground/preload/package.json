@@ -15,7 +15,11 @@
     "dev:preload-disabled": "vite --config vite.config-preload-disabled.ts",
     "build:preload-disabled": "vite build --config vite.config-preload-disabled.ts",
     "debug:preload-disabled": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-disabled.ts",
-    "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
+    "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts",
+    "dev:preload-credentials": "vite --config vite.config-preload-credentials.ts",
+    "build:preload-credentials": "vite build --config vite.config-preload-credentials.ts",
+    "debug:preload-credentials": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-credentials.ts",
+    "preview:preload-credentials": "vite preview --config vite.config-preload-credentials.ts"
   },
   "devDependencies": {
     "terser": "^5.31.0",
