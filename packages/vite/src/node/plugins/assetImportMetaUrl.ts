@@ -14,6 +14,8 @@ import {
 import { CLIENT_ENTRY } from '../constants'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -28,6 +30,16 @@ import { preloadHelperId } from './importAnalysisBuild'
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const normalizedPublicDir = normalizePath(config.publicDir)
   let assetResolver: ResolveFn
+
+  const fsResolveOptions: InternalResolveOptions = {
+    ...config.resolve,
+    root: config.root,
+    isProduction: config.isProduction,
+    isBuild: config.command === 'build',
+    packageCache: config.packageCache,
+    ssrConfig: config.ssr,
+    asSrc: true,
+  }
 
   return {
     name: 'vite:asset-import-meta-url',
@@ -98,6 +110,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
+            file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
             assetResolver ??= config.createResolver({
               extensions: [],
