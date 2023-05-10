@@ -190,6 +190,14 @@
 <img class="import-meta-url-base-path-img" />
 <code class="import-meta-url-base-path"></code>
 
+<h2>new URL('...', import.meta.url (without extension))</h2>
+<p>
+  <code class="import-meta-url-content-without-extension"></code>
+</p>
+<p>
+  <code class="import-meta-url-without-extension"></code>
+</p>
+
 <h2>new URL('...', import.meta.url,) (with comma)</h2>
 <img class="import-meta-url-img-comma" />
 <code class="import-meta-url-comma"></code>
@@ -392,6 +400,13 @@
   const metaUrlBasePath = new URL('/icon.png', import.meta.url)
   text('.import-meta-url-base-path', metaUrlBasePath)
   document.querySelector('.import-meta-url-base-path-img').src = metaUrlBasePath
+
+  const metaUrlWithoutExtension = new URL('./nested/test', import.meta.url)
+  text('.import-meta-url-without-extension', metaUrlWithoutExtension)
+  ;(async () => {
+    const res = await fetch(metaUrlWithoutExtension)
+    text('.import-meta-url-content-without-extension', await res.text())
+  })()
 
   // prettier-ignore
   const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)
