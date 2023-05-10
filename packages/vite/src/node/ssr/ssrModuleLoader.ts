@@ -222,7 +222,7 @@ async function instantiateModule(
       ssrExportAllKey,
       '"use strict";' +
         result.code +
-        `\n//# sourceURL=${mod.file}${sourceMapSuffix}`,
+        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
