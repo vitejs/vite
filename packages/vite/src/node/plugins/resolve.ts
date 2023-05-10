@@ -498,7 +498,7 @@ function splitFileAndPostfix(path: string) {
   return { file, postfix: path.slice(file.length) }
 }
 
-function tryFsResolve(
+export function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,

@@ -312,6 +312,15 @@ test('new URL("/...", import.meta.url)', async () => {
   )
 })
 
+test('new URL(..., import.meta.url) without extension', async () => {
+  expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
+    isBuild ? 'data:application/javascript' : 'nested/test.js',
+  )
+  expect(
+    await page.textContent('.import-meta-url-content-without-extension'),
+  ).toContain('export default class')
+})
+
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
     isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png',
