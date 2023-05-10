@@ -91,7 +91,6 @@ describe.runIf(isServe)('stacktrace', () => {
         )
 
         lines.forEach((line) => {
-          console.log('🧐', line.trim())
           expect(line.trim()).toMatch(reg)
         })
       })
