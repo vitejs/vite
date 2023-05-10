@@ -90,6 +90,15 @@ wResolve.addEventListener('message', (ev) =>
   text('.worker-import-meta-url-resolve', JSON.stringify(ev.data)),
 )
 
+// url import worker without extension
+const wWithoutExt = new Worker(
+  new URL('../url-worker', import.meta.url),
+  /* @vite-ignore */ workerOptions,
+)
+wWithoutExt.addEventListener('message', (ev) =>
+  text('.worker-import-meta-url-without-extension', JSON.stringify(ev.data)),
+)
+
 const genWorkerName = () => 'module'
 const w2 = new SharedWorker(
   new URL('../url-shared-worker.js', import.meta.url),

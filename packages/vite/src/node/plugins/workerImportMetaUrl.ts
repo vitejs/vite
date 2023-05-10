@@ -17,6 +17,8 @@ import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -99,6 +101,16 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let workerResolver: ResolveFn
 
+  const fsResolveOptions: InternalResolveOptions = {
+    ...config.resolve,
+    root: config.root,
+    isProduction: config.isProduction,
+    isBuild: config.command === 'build',
+    packageCache: config.packageCache,
+    ssrConfig: config.ssr,
+    asSrc: true,
+  }
+
   return {
     name: 'vite:worker-import-meta-url',
 
@@ -143,6 +155,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = path.resolve(path.dirname(id), url)
+            file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
             workerResolver ??= config.createResolver({
               extensions: [],
