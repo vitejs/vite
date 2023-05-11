@@ -92,6 +92,15 @@ Defining `publicDir` as `false` disables this feature.
 
 See [The `public` Directory](/guide/assets#the-public-directory) for more details.
 
+## plainCopyDir
+
+- **Type:** `string | false`
+- **Default:** `"js"`
+
+Plain copy every file recursively in this directory into distribution directory and keep the relative original path tree. This option is especially useful if a project needs to use bundled, non-ESM js files. With this option this kind of file can be automatically copied into the distribution folder.
+
+Defining `plainCopyDir` as `false` disables this feature.
+
 ## cacheDir
 
 - **Type:** `string`

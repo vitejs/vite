@@ -555,6 +555,35 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export function mkdir(filePath: string): void {
+  const dirCache = new Map()
+  const filePathParts = filePath.split('/')
+  let dir = filePathParts[0]
+  for (let i = 1; i < filePathParts.length; i++) {
+    if (!dirCache.get(dir) && !fs.existsSync(dir)) {
+      dirCache.set(dir, true)
+      fs.mkdirSync(dir)
+    }
+    dir = dir + '/' + filePathParts[i]
+  }
+}
+
+export function copyFile(start: string, end: string): void {
+  if (!fs.existsSync(end)) {
+    mkdir(end)
+  }
+
+  fs.stat(start, (e, s) => {
+    if (s.isFile()) {
+      fs.writeFileSync(end, fs.readFileSync(start))
+    } else {
+      fs.readdirSync(start, 'utf8').forEach((f) => {
+        copyFile(start + '/' + f, end + '/' + f)
+      })
+    }
+  })
+}
+
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737

@@ -30,6 +30,7 @@ import { terserPlugin } from './plugins/terser'
 import {
   asyncFlatten,
   copyDir,
+  copyFile,
   emptyDir,
   joinUrlSegments,
   normalizePath,
@@ -753,6 +754,9 @@ function prepareOutDir(
       fs.existsSync(config.publicDir)
     ) {
       copyDir(config.publicDir, outDir)
+    }
+    if (config.plainCopyDir && fs.existsSync(config.plainCopyDir)) {
+      copyFile(config.plainCopyDir, outDir)
     }
   }
 }

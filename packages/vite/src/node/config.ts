@@ -151,6 +151,14 @@ export interface UserConfig {
    * Default to `.vite` when no `package.json` is detected.
    * @default 'node_modules/.vite'
    */
+  plainCopyDir?: string | false
+  /**
+   * Plain copy every file recursively in this directory into distribution directory
+   * and keep the relative original path tree. This option is especially useful if
+   * a project needs to use bundled, non-ESM js files. With this option this kind
+   * of file can be automatically copied into the distribution folder.
+   * @default 'js'
+   */
   cacheDir?: string
   /**
    * Explicitly set a mode to run in. This will override the default mode for
@@ -339,6 +347,7 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     rawBase: string
     publicDir: string
+    plainCopyDir: string
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
@@ -619,6 +628,15 @@ export async function resolveConfig(
         )
       : ''
 
+  const { plainCopyDir } = config
+  const resolvedplainCopyDir =
+    plainCopyDir !== false && plainCopyDir !== ''
+      ? path.resolve(
+          resolvedRoot,
+          typeof plainCopyDir === 'string' ? plainCopyDir : 'public',
+        )
+      : ''
+
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
   const ssr = resolveSSROptions(
     config.ssr,
@@ -663,6 +681,7 @@ export async function resolveConfig(
     rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
+    plainCopyDir: resolvedplainCopyDir,
     cacheDir,
     command,
     mode,
