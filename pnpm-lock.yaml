@@ -392,9 +392,6 @@ importers:
       sirv:
         specifier: ^2.0.2
         version: 2.0.2(patch_hash=hmoqtj4vy3i7wnpchga2a2mu3y)
-      source-map-js:
-        specifier: ^1.0.2
-        version: 1.0.2
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
