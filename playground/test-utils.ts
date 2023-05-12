@@ -18,6 +18,7 @@ export * from './vitestSetup'
 export const ports = {
   cli: 9510,
   'cli-module': 9511,
+  json: 9512,
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,

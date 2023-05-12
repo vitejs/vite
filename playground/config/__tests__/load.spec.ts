@@ -20,7 +20,7 @@ it('loadConfigFromFile', async () => {
           4,
         ],
       ],
-      "moduleCondition": "require condition",
+      "moduleCondition": "import condition",
     }
   `)
 })

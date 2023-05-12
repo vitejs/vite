@@ -1600,6 +1600,7 @@ function cleanScssBugUrl(url: string) {
   if (
     // check bug via `window` and `location` global
     typeof window !== 'undefined' &&
+    typeof location !== 'undefined' &&
     typeof location?.href === 'string'
   ) {
     const prefix = location.href.replace(/\/$/, '')

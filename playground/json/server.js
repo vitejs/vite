@@ -1,21 +1,22 @@
 // @ts-check
-const fs = require('node:fs')
-const path = require('node:path')
-const express = require('express')
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import express from 'express'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
-async function createServer(
-  root = process.cwd(),
-  isProd = process.env.NODE_ENV === 'production',
-) {
+export async function createServer(root = process.cwd()) {
   const resolve = (p) => path.resolve(__dirname, p)
   const app = express()
 
   /**
    * @type {import('vite').ViteDevServer}
    */
-  const vite = await require('vite').createServer({
+  const vite = await (
+    await import('vite')
+  ).createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -50,13 +51,16 @@ async function createServer(
 
       if (url === '/json-fs') {
         console.time('transform module')
-        const source = fs.readFileSync('./test.json', { encoding: 'utf-8' })
+        const source = fs.readFileSync(path.resolve(__dirname, './test.json'), {
+          encoding: 'utf-8',
+        })
         const json = await vite.ssrTransform(
           `export default ${source}`,
           null,
           './output.json',
         )
         console.timeEnd('transform module')
+        // @ts-expect-error ignore in test
         res.status(200).end(String(json.code.length))
         return
       }
@@ -83,6 +87,3 @@ if (!isTest) {
     }),
   )
 }
-
-// for test use
-exports.createServer = createServer
