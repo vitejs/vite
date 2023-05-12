@@ -404,7 +404,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (isDirectCSSRequest(id)) {
-          return htmlProxyRE.test(id) ? await getContentWithSourcemap(css) : css
+          return null
         }
         // server only
         if (options?.ssr) {
