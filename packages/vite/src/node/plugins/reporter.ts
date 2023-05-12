@@ -98,8 +98,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
-          process.stdout.clearLine(0)
-          process.stdout.cursorTo(0)
+          clearLine()
         }
         config.logger.info(
           `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
