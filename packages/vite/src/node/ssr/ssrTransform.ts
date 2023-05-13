@@ -279,18 +279,13 @@ async function ssrTransformScript(
           ...map,
           sources: inMap.sources,
           sourcesContent: inMap.sourcesContent,
-          // sourceRoot: inMap.sourceRoot,
         } as RawSourceMap,
         inMap as RawSourceMap,
       ],
       false,
     ) as SourceMap
   } else {
-    if (inMap?.sources) {
-      map.sources = inMap.sources
-    } else {
-      map.sources = [url]
-    }
+    map.sources = [url]
     // needs to use originalCode instead of code
     // because code might be already transformed even if map is null
     map.sourcesContent = [originalCode]
