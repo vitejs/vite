@@ -3,7 +3,6 @@ import { promisify } from 'node:util'
 import path from 'node:path'
 import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
-import { normalizePath } from 'vite'
 import { port } from './serve'
 import { editFile, isServe, page, untilUpdated } from '~utils'
 
@@ -84,9 +83,9 @@ describe.runIf(isServe)('stacktrace', () => {
 
         const reg = new RegExp(
           // TODO: ts without sourcemaps will resolve column to 8 which should be 9
-          normalizePath(
-            path.resolve(__dirname, '../src', `error.${ext}`),
-          ).replace('.', '\\.') + ':2:[89]',
+          path
+            .resolve(__dirname, '../src', `error.${ext}`)
+            .replace(/\\/g, '\\\\') + ':2:[89]',
           'i',
         )
 

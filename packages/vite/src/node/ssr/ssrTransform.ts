@@ -1,3 +1,4 @@
+import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
 import type {
@@ -285,7 +286,7 @@ async function ssrTransformScript(
       false,
     ) as SourceMap
   } else {
-    map.sources = [url]
+    map.sources = [path.basename(url)]
     // needs to use originalCode instead of code
     // because code might be already transformed even if map is null
     map.sourcesContent = [originalCode]
