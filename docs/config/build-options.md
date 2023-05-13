@@ -98,7 +98,7 @@ If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets
 - **Type:** `boolean`
 - **Default:** `true`
 
-Enable/disable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
+Enable/disable CSS code splitting. When enabled, CSS imported in async JS chunks will be preserved as chunks and fetched together when the chunk is fetched.
 
 If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
