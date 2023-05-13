@@ -1411,8 +1411,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
-      charset: 'utf8',
-      ...resolveEsbuildMinifyOptions(config.esbuild || {}),
+      ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
@@ -1432,10 +1431,11 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   }
 }
 
-function resolveEsbuildMinifyOptions(
+function resolveMinifyCssEsbuildOptions(
   options: ESBuildOptions,
 ): TransformOptions {
   const base: TransformOptions = {
+    charset: options.charset ?? 'utf8',
     logLevel: options.logLevel,
     logLimit: options.logLimit,
     logOverride: options.logOverride,
