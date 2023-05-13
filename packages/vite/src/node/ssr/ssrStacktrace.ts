@@ -36,7 +36,8 @@ export function ssrRewriteStacktrace(
 
           const pos = originalPositionFor(traced, {
             line: Number(line) - offset,
-            column: Number(column),
+            // stacktrace's column is 1-indexed, but sourcemap's one is 0-indexed
+            column: Number(column) - 1,
           })
 
           if (!pos.source || pos.line == null || pos.column == null) {
@@ -45,7 +46,8 @@ export function ssrRewriteStacktrace(
 
           const trimmedVarName = varName.trim()
           const sourceFile = path.resolve(path.dirname(id), pos.source)
-          const source = `${sourceFile}:${pos.line}:${pos.column}`
+          // stacktrace's column is 1-indexed, but sourcemap's one is 0-indexed
+          const source = `${sourceFile}:${pos.line}:${pos.column + 1}`
           if (!trimmedVarName || trimmedVarName === 'eval') {
             return `    at ${source}`
           } else {

@@ -82,10 +82,9 @@ describe.runIf(isServe)('stacktrace', () => {
           .filter((line) => line.includes('Module.error'))
 
         const reg = new RegExp(
-          // TODO: ts without sourcemaps will resolve column to 8 which should be 9
           path
             .resolve(__dirname, '../src', `error.${ext}`)
-            .replace(/\\/g, '\\\\') + ':2:[89]',
+            .replace(/\\/g, '\\\\') + ':2:9',
           'i',
         )
 
