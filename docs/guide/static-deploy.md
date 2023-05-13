@@ -180,7 +180,6 @@ jobs:
   ```
 </details>
 
-
 ## GitLab Pages and GitLab CI
 
 1. Set the correct `base` in `vite.config.js`.
