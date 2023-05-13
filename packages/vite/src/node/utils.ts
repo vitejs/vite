@@ -137,7 +137,7 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^[\w@](?!.*:\/\/)/
+export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
