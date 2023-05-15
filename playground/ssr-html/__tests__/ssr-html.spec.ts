@@ -62,23 +62,36 @@ describe.runIf(isServe)('hmr', () => {
 describe.runIf(isServe)('stacktrace', () => {
   const execFileAsync = promisify(execFile)
 
-  for (const sourcemapsEnabled of [false, true]) {
-    test(`stacktrace is correct when sourcemaps is${
-      sourcemapsEnabled ? '' : ' not'
-    } enabled in Node.js`, async () => {
-      const testStacktraceFile = path.resolve(
-        __dirname,
-        '../test-stacktrace.js',
-      )
+  for (const ext of ['js', 'ts']) {
+    for (const sourcemapsEnabled of [false, true]) {
+      test(`stacktrace of ${ext} is correct when sourcemaps is${
+        sourcemapsEnabled ? '' : ' not'
+      } enabled in Node.js`, async () => {
+        const testStacktraceFile = path.resolve(
+          __dirname,
+          '../test-stacktrace.js',
+        )
 
-      const p = await execFileAsync('node', [
-        testStacktraceFile,
-        '' + sourcemapsEnabled,
-      ])
-      const line = p.stdout
-        .split('\n')
-        .find((line) => line.includes('Module.error'))
-      expect(line.trim()).toMatch(/[\\/]src[\\/]error\.js:2:9/)
-    })
+        const p = await execFileAsync('node', [
+          testStacktraceFile,
+          '' + sourcemapsEnabled,
+          ext,
+        ])
+        const lines = p.stdout
+          .split('\n')
+          .filter((line) => line.includes('Module.error'))
+
+        const reg = new RegExp(
+          path
+            .resolve(__dirname, '../src', `error.${ext}`)
+            .replace(/\\/g, '\\\\') + ':2:9',
+          'i',
+        )
+
+        lines.forEach((line) => {
+          expect(line.trim()).toMatch(reg)
+        })
+      })
+    }
   }
 })
