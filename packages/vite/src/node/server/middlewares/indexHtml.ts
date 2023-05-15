@@ -36,6 +36,7 @@ import {
   wrapId,
 } from '../../utils'
 import { checkPublicFile } from '../../plugins/asset'
+import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 
 interface AssetNode {
   start: number
@@ -268,7 +269,22 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
-      s.overwrite(start, end, result?.code || '')
+      let content = ''
+      if (result) {
+        if (result.map) {
+          if (result.map.mappings && !result.map.sourcesContent) {
+            await injectSourcesContent(
+              result.map,
+              proxyModulePath,
+              config.logger,
+            )
+          }
+          content = getCodeWithSourcemap('css', result.code, result.map)
+        } else {
+          content = result.code
+        }
+      }
+      s.overwrite(start, end, content)
     }),
   )
 

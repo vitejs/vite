@@ -117,7 +117,7 @@ export interface PluginContainer {
       inMap?: SourceDescription['map']
       ssr?: boolean
     },
-  ): Promise<SourceDescription | null>
+  ): Promise<{ code: string; map: SourceMap | null }>
   load(
     id: string,
     options?: {
