@@ -377,6 +377,8 @@ export async function _createServer(
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
+  moduleGraph.ensureEntryFromUrl(path.resolve(config.root, '_vite_entry_.js'))
+
   let exitProcess: () => void
 
   const server: ViteDevServer = {
