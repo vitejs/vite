@@ -239,6 +239,16 @@
   <code class="dynamic-import-meta-url-2-query"></code>
 </p>
 
+<h2>new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-1-ternary" />
+  <code class="dynamic-import-meta-url-1-ternary"></code>
+</p>
+<p>
+  <img class="dynamic-import-meta-url-img-2-ternary" />
+  <code class="dynamic-import-meta-url-2-ternary"></code>
+</p>
+
 <h2>new URL(`non-existent`, import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
@@ -467,6 +477,17 @@
 
   testDynamicImportMetaUrlWithQuery('icon', 1)
   testDynamicImportMetaUrlWithQuery('asset', 2)
+
+  function testDynamicImportMetaUrlWithTernaryOperator(name, i) {
+    // prettier-ignore
+    const metaUrl = new URL(`./nested/${1 === 0 ? 'failed' : name}.png?abc`, import.meta.url,)
+    text(`.dynamic-import-meta-url-${i}-ternary`, metaUrl)
+    document.querySelector(`.dynamic-import-meta-url-img-${i}-ternary`).src =
+      metaUrl
+  }
+
+  testDynamicImportMetaUrlWithTernaryOperator('icon', 1)
+  testDynamicImportMetaUrlWithTernaryOperator('asset', 2)
 
   {
     const name = 'test'
