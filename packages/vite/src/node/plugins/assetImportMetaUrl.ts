@@ -30,6 +30,7 @@ import { tryFsResolve } from './resolve'
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const normalizedPublicDir = normalizePath(config.publicDir)
   let assetResolver: ResolveFn
+  let aliaResolver: ResolveFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -76,6 +77,22 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
+              let newUrl: string | undefined
+              // rawUrl could include alias, try to resolve it
+              aliaResolver ??= config.createResolver()
+              const resolvedUrl = await aliaResolver(
+                rawUrl.slice(1),
+                undefined,
+                true,
+              )
+              if (resolvedUrl) {
+                newUrl = normalizePath(path.relative(config.root, resolvedUrl))
+                if (!newUrl.startsWith('.')) {
+                  newUrl = `/${newUrl}`
+                }
+                newUrl = '`' + newUrl
+              }
+
               const pattern = buildGlobPattern(templateLiteral)
               if (pattern.startsWith('**')) {
                 // don't transform for patterns like this
@@ -98,9 +115,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
-                )}, ${JSON.stringify(
-                  globOptions,
-                )}))[${pureUrl}], self.location)`,
+                )}, ${JSON.stringify(globOptions)}))[${
+                  newUrl ?? pureUrl
+                }], self.location)`,
               )
               continue
             }

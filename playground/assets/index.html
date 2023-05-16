@@ -239,6 +239,19 @@
   <code class="dynamic-import-meta-url-2-query"></code>
 </p>
 
+<h2>new URL(`@/${dynamic}`, import.meta.url)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-1-alias" />
+  <code class="dynamic-import-meta-url-1-alias"></code>
+</p>
+<p>
+  <img class="dynamic-import-meta-url-img-2-alias" />
+  <code class="dynamic-import-meta-url-2-alias"></code>
+</p>
+<p>
+  <code class="dynamic-import-meta-url-js-alias"></code>
+</p>
+
 <h2>new URL(`non-existent`, import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
@@ -468,10 +481,24 @@
   testDynamicImportMetaUrlWithQuery('icon', 1)
   testDynamicImportMetaUrlWithQuery('asset', 2)
 
+  function testDynamicImportMetaUrlWithAlias(name, i) {
+    const metaUrl = new URL(`@/${name}.png`, import.meta.url)
+    text(`.dynamic-import-meta-url-${i}-alias`, metaUrl)
+    document.querySelector(`.dynamic-import-meta-url-img-${i}-alias`).src =
+      metaUrl
+  }
+
+  testDynamicImportMetaUrlWithAlias('icon', 1)
+  testDynamicImportMetaUrlWithAlias('asset', 2)
+
   {
     const name = 'test'
+
     const js = new URL(`./nested/${name}.js`, import.meta.url).href
     text('.dynamic-import-meta-url-js', js)
+
+    const aliasedJs = new URL(`@/${name}.js`, import.meta.url).href
+    text('.dynamic-import-meta-url-js-alias', aliasedJs)
   }
 
   {
