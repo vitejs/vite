@@ -28,6 +28,7 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
+  isJSRequest,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -35,6 +36,7 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
+import { isCSSRequest } from '../../plugins/css'
 import { checkPublicFile } from '../../plugins/asset'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 
@@ -82,6 +84,12 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
+function shouldPreTransform(url: string, config: ResolvedConfig) {
+  return (
+    !checkPublicFile(url, config) && (isJSRequest(url) || isCSSRequest(url))
+  )
+}
+
 const processNodeUrl = (
   attr: Token.Attribute,
   sourceCodeLocation: Token.Location,
@@ -104,7 +112,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
-    if (server && !checkPublicFile(url, config)) {
+    if (server && shouldPreTransform(url, config)) {
       preTransformRequest(server, fullUrl, devBase)
     }
   } else if (
@@ -116,7 +124,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const fullUrl = path.posix.join(devBase, url)
-      if (server && !checkPublicFile(url, config)) {
+      if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
