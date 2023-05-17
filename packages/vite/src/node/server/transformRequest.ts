@@ -73,7 +73,7 @@ export function transformRequest(
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
     return server.moduleGraph
-      .getModuleByUrl(url, options.ssr)
+      .getModuleByUrl(removeTimestampQuery(url), options.ssr)
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
