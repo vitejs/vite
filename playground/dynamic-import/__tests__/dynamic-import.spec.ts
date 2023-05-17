@@ -133,10 +133,18 @@ test('should work with load ../ and contain itself directory', async () => {
 test.runIf(isBuild)(
   'should rollup warn when static and dynamic import a module in same chunk',
   async () => {
-    await untilUpdated(
-      () => serverLogs.join('\n'),
+    const log = serverLogs.join('\n')
+    expect(log).toContain(
       'dynamic import will not move module into another chunk',
-      true,
+    )
+    expect(log).toMatch(
+      /\(!\).*\/dynamic-import\/files\/mxd\.js is dynamically imported by/,
+    )
+    expect(log).toMatch(
+      /\(!\).*\/dynamic-import\/files\/mxd\.json is dynamically imported by/,
+    )
+    expect(log).not.toMatch(
+      /\(!\).*\/dynamic-import\/nested\/shared\.js is dynamically imported by/,
     )
   },
 )
