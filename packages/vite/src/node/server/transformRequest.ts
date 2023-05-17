@@ -46,7 +46,9 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
-  const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
+  const cacheKey =
+    (options.ssr ? 'ssr:' : options.html ? 'html:' : '') +
+    removeTimestampQuery(url)
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -73,7 +75,7 @@ export function transformRequest(
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
     return server.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url), options.ssr)
+      .getModuleByUrl(url, options.ssr)
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
