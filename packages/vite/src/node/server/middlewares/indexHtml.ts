@@ -28,6 +28,8 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
+  isDataUrl,
+  isExternalUrl,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -82,6 +84,10 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
+function shouldPreTransform(url: string, config: ResolvedConfig) {
+  return !checkPublicFile(url, config) && !isExternalUrl(url) && !isDataUrl(url)
+}
+
 const processNodeUrl = (
   attr: Token.Attribute,
   sourceCodeLocation: Token.Location,
@@ -104,7 +110,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
-    if (server && !checkPublicFile(url, config)) {
+    if (server && shouldPreTransform(url, config)) {
       preTransformRequest(server, fullUrl, devBase)
     }
   } else if (
@@ -116,7 +122,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const fullUrl = path.posix.join(devBase, url)
-      if (server && !checkPublicFile(url, config)) {
+      if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
@@ -334,14 +340,28 @@ export function indexHtmlMiddleware(
   }
 }
 
-function preTransformRequest(server: ViteDevServer, url: string, base: string) {
+async function preTransformRequest(
+  server: ViteDevServer,
+  url: string,
+  base: string,
+) {
   if (!server.config.server.preTransformRequests) return
 
   url = unwrapId(stripBase(url, base))
 
-  // transform all url as non-ssr as html includes client-side assets only
-  server.transformRequest(url).catch((e) => {
-    // Unexpected error, log the issue but avoid an unhandled exception
-    server.config.logger.error(e.message)
-  })
+  // check if the dep has been hmr updated. If yes, we need to attach
+  // its last updated timestamp to force the browser to fetch the most
+  // up-to-date version of this module.
+  try {
+    await server.moduleGraph.ensureEntryFromUrl(url)
+
+    // transform all url as non-ssr as html includes client-side assets only
+    server.transformRequest(url).catch((e) => {
+      // Unexpected error, log the issue but avoid an unhandled exception
+      server.config.logger.error(e.message)
+    })
+  } catch (e: any) {
+    // it's possible that the dep fails to resolve (non-existent import)
+    // attach location to the missing import
+  }
 }
