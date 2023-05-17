@@ -404,7 +404,9 @@ export async function _createServer(
       if (isDepsOptimizerEnabled(config, true)) {
         await initDevSsrDepsOptimizer(config, server)
       }
-      await updateCjsSsrExternals(server)
+      if (config.legacy?.buildSsrCjsExternalHeuristics) {
+        await updateCjsSsrExternals(server)
+      }
       return ssrLoadModule(
         url,
         server,
