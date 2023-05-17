@@ -349,19 +349,14 @@ async function preTransformRequest(
 
   url = unwrapId(stripBase(url, base))
 
-  // check if the dep has been hmr updated. If yes, we need to attach
-  // its last updated timestamp to force the browser to fetch the most
-  // up-to-date version of this module.
   try {
     await server.moduleGraph.ensureEntryFromUrl(url)
 
     // transform all url as non-ssr as html includes client-side assets only
-    server.transformRequest(url).catch((e) => {
-      // Unexpected error, log the issue but avoid an unhandled exception
-      server.config.logger.error(e.message)
-    })
+    await server.transformRequest(url)
   } catch (e: any) {
     // it's possible that the dep fails to resolve (non-existent import)
-    // attach location to the missing import
+    // log the issue but avoid an unhandled exception
+    server.config.logger.error(e.message)
   }
 }
