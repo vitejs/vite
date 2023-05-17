@@ -30,6 +30,7 @@ import {
   injectQuery,
   isDataUrl,
   isExternalUrl,
+  isJSRequest,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -85,7 +86,12 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
 }
 
 function shouldPreTransform(url: string, config: ResolvedConfig) {
-  return !checkPublicFile(url, config) && !isExternalUrl(url) && !isDataUrl(url)
+  return (
+    !checkPublicFile(url, config) &&
+    !isExternalUrl(url) &&
+    !isDataUrl(url) &&
+    isJSRequest(url)
+  )
 }
 
 const processNodeUrl = (
