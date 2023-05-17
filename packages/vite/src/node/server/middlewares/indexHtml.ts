@@ -28,8 +28,6 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
-  isDataUrl,
-  isExternalUrl,
   isJSRequest,
   joinUrlSegments,
   normalizePath,
@@ -88,10 +86,7 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
 
 function shouldPreTransform(url: string, config: ResolvedConfig) {
   return (
-    !checkPublicFile(url, config) &&
-    !isExternalUrl(url) &&
-    !isDataUrl(url) &&
-    (isJSRequest(url) || isCSSRequest(url))
+    !checkPublicFile(url, config) && (isJSRequest(url) || isCSSRequest(url))
   )
 }
 
