@@ -38,6 +38,7 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
+import { isCSSRequest } from '../../plugins/css'
 import { checkPublicFile } from '../../plugins/asset'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 
@@ -90,7 +91,7 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
     !checkPublicFile(url, config) &&
     !isExternalUrl(url) &&
     !isDataUrl(url) &&
-    isJSRequest(url)
+    (isJSRequest(url) || isCSSRequest(url))
   )
 }
 
@@ -346,23 +347,14 @@ export function indexHtmlMiddleware(
   }
 }
 
-async function preTransformRequest(
-  server: ViteDevServer,
-  url: string,
-  base: string,
-) {
+function preTransformRequest(server: ViteDevServer, url: string, base: string) {
   if (!server.config.server.preTransformRequests) return
 
   url = unwrapId(stripBase(url, base))
 
-  try {
-    await server.moduleGraph.ensureEntryFromUrl(url)
-
-    // transform all url as non-ssr as html includes client-side assets only
-    await server.transformRequest(url)
-  } catch (e: any) {
-    // it's possible that the dep fails to resolve (non-existent import)
-    // log the issue but avoid an unhandled exception
+  // transform all url as non-ssr as html includes client-side assets only
+  server.transformRequest(url).catch((e) => {
+    // Unexpected error, log the issue but avoid an unhandled exception
     server.config.logger.error(e.message)
-  }
+  })
 }
