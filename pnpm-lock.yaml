@@ -90,8 +90,8 @@ importers:
         specifier: ^5.59.0
         version: 5.59.0(eslint@8.38.0)(typescript@5.0.2)
       '@vitejs/release-scripts':
-        specifier: ^1.1.0
-        version: 1.1.0
+        specifier: ^1.2.0
+        version: 1.2.0
       conventional-changelog-cli:
         specifier: ^2.2.2
         version: 2.2.2
@@ -3891,15 +3891,15 @@ packages:
       vue: 3.2.47
     dev: true
 
-  /@vitejs/release-scripts@1.1.0:
-    resolution: {integrity: sha512-pxP72AGDRGu6vufj8vrdmFll++N0K7aNDSWWYzPb28NgE5RjOdo99uLgJEpl3Ee/wEOnHKT2zJ9HN2GN44SUPQ==}
+  /@vitejs/release-scripts@1.2.0:
+    resolution: {integrity: sha512-HdLOS/BQtavOis+VvT1517y7a5jYEMuBIybnL1F1Pd7vIXkFYPdo0vSKtnDBILOHhFT27SYist4BFkppDvsBnA==}
     dependencies:
-      execa: 6.1.0
+      execa: 7.1.1
       minimist: 1.2.8
       picocolors: 1.0.0
       prompts: 2.4.2
       publint: 0.1.11
-      semver: 7.3.8
+      semver: 7.5.1
     dev: true
 
   /@vitest/expect@0.30.1:
@@ -5962,21 +5962,6 @@ packages:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
     dev: true
 
-  /execa@6.1.0:
-    resolution: {integrity: sha512-QVWlX2e50heYJcCPG0iWtf8r0xjEYfz/OYLGDYH+IyjWezzPNxz63qNFOu0l4YftGWuizFVZHHs8PrLU5p2IDA==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-    dependencies:
-      cross-spawn: 7.0.3
-      get-stream: 6.0.1
-      human-signals: 3.0.1
-      is-stream: 3.0.0
-      merge-stream: 2.0.0
-      npm-run-path: 5.1.0
-      onetime: 6.0.0
-      signal-exit: 3.0.7
-      strip-final-newline: 3.0.0
-    dev: true
-
   /execa@7.1.1:
     resolution: {integrity: sha512-wH0eMf/UXckdUYnO21+HDztteVv05rq2GXksxT4fCGeHkBhw1DROXh40wcjMcRqDOWE7iPJ4n3M7e2+YFP+76Q==}
     engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
@@ -6609,11 +6594,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: false
-
-  /human-signals@3.0.1:
-    resolution: {integrity: sha512-rQLskxnM/5OCldHo+wNXbpVgDn5A17CUoKX+7Sokwaknlq7CdSnphy0W39GU8dw59XiCXmFXDg4fRuckQRKewQ==}
-    engines: {node: '>=12.20.0'}
-    dev: true
 
   /human-signals@4.3.0:
     resolution: {integrity: sha512-zyzVyMjpGBX2+6cDVZeFPCdtOtdsxOeseRhB9tkQ6xXmGUNrcnBzdEKPy3VPNYz+4gy1oukVOXcrJCunSyc6QQ==}
@@ -8992,6 +8972,14 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+
+  /semver@7.5.1:
+    resolution: {integrity: sha512-Wvss5ivl8TMRZXXESstBA4uR5iXgEN/VC5/sOcuXdVLzcdkz4HWetIoRfG5gb5X+ij/G9rw9YoGn3QoQ8OCSpw==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dependencies:
+      lru-cache: 6.0.0
+    dev: true
 
   /send@0.18.0:
     resolution: {integrity: sha512-qqWzuOjSFOuqPjFe4NOsMLafToQQwBSOEpS+FwEt3A2V3vKubTquT3vmLTQpFgMXp8AlFWFuP1qKaJZOtPpVXg==}
