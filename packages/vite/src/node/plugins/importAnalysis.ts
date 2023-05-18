@@ -54,6 +54,7 @@ import {
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { checkPublicFile } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
@@ -650,7 +651,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
               server.transformRequest(url, { ssr }).catch((e) => {
-                if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+                if (
+                  e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+                  e?.code === ERR_CLOSED_SERVER
+                ) {
                   // This are expected errors
                   return
                 }
