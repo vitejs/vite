@@ -47,16 +47,8 @@ export function resolveSSROptions(
 ): ResolvedSSROptions {
   ssr ??= {}
   const optimizeDeps = ssr.optimizeDeps ?? {}
-  let format: SSRFormat = 'esm'
-  let target: SSRTarget = 'node'
-  if (buildSsrCjsExternalHeuristics) {
-    if (ssr) {
-      format = 'cjs'
-    } else {
-      target = 'node'
-      format = 'cjs'
-    }
-  }
+  const format: SSRFormat = buildSsrCjsExternalHeuristics ? 'cjs' : 'esm'
+  const target: SSRTarget = 'node'
   return {
     format,
     target,
