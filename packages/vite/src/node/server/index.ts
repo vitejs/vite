@@ -366,7 +366,7 @@ export async function _createServer(
 
   const watcher = chokidar.watch(
     // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
+    [root, ...config.configFileDependencies, config.envDir],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -404,7 +404,9 @@ export async function _createServer(
       if (isDepsOptimizerEnabled(config, true)) {
         await initDevSsrDepsOptimizer(config, server)
       }
-      await updateCjsSsrExternals(server)
+      if (config.legacy?.buildSsrCjsExternalHeuristics) {
+        await updateCjsSsrExternals(server)
+      }
       return ssrLoadModule(
         url,
         server,

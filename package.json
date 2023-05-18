@@ -6,6 +6,10 @@
     "node": "^14.18.0 || >=16.0.0"
   },
   "homepage": "https://vitejs.dev/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git"
+  },
   "keywords": [
     "frontend",
     "hmr",
@@ -60,7 +64,7 @@
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.59.0",
     "@typescript-eslint/parser": "^5.59.0",
-    "@vitejs/release-scripts": "^1.1.0",
+    "@vitejs/release-scripts": "^1.2.0",
     "conventional-changelog-cli": "^2.2.2",
     "eslint": "^8.38.0",
     "eslint-define-config": "^1.18.0",
