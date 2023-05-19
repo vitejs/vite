@@ -207,7 +207,7 @@ export async function createPluginContainer(
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of getSortedPlugins(hookName)) {
-      if (closed) throwClosedServerError()
+      // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
       const hook = plugin[hookName]
       if (!hook) continue
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -587,8 +587,7 @@ export async function createPluginContainer(
   const processesing = new Set<Promise<any>>()
   function registerPromise<T>(promise: Promise<T>) {
     processesing.add(promise)
-    promise.finally(() => processesing.delete(promise))
-    return promise
+    return promise.finally(() => processesing.delete(promise))
   }
   function ensurePromise<T>(promise: undefined | T | Promise<T>) {
     if (!(promise as any)?.then) {
@@ -779,6 +778,8 @@ export async function createPluginContainer(
 
     async close() {
       if (closed) return
+      closed = true
+      await Promise.allSettled(Array.from(processesing))
       const ctx = new Context()
       await hookParallel(
         'buildEnd',
@@ -790,8 +791,6 @@ export async function createPluginContainer(
         () => ctx,
         () => [],
       )
-      closed = true
-      await Promise.allSettled(Array.from(processesing))
     },
   }
 
