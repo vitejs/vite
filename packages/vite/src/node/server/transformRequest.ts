@@ -111,9 +111,8 @@ export function transformRequest(
     timestamp,
     abort: clearCache,
   })
-  request.then(clearCache, clearCache)
 
-  return request
+  return request.finally(clearCache)
 }
 
 async function doTransform(

@@ -467,6 +467,13 @@ export async function _createServer(
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
       ])
+      while (server._pendingRequests.size > 0) {
+        await Promise.allSettled(
+          [...server._pendingRequests.values()].map(
+            (pending) => pending.request,
+          ),
+        )
+      }
       server.resolvedUrls = null
     },
     printUrls() {
