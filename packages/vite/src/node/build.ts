@@ -427,10 +427,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   post: Plugin[]
 }> {
   const options = config.build
-  const { commonjsOptions } = options
+  // We don't use optimized dependencies while bundling workers
   const usePluginCommonjs =
-    !Array.isArray(commonjsOptions?.include) ||
-    commonjsOptions?.include.length !== 0
+    !isDepsOptimizerEnabled(config, !!config.build.ssr) || config.isWorker
   const rollupOptionsPlugins = options.rollupOptions.plugins
   return {
     pre: [

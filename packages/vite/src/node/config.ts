@@ -457,13 +457,11 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
-  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+  if (process.env.VITE_TEST_BUILD_OPTIMIZED_DEPS) {
     config = mergeConfig(config, {
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } },
     })
-    config.build ??= {}
-    config.build.commonjsOptions = { include: [] }
   }
 
   // Define logger

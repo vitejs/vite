@@ -38,16 +38,25 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-
+  let depsOptimizerPlugin
+  if (isBuild) {
+    if (
+      isDepsOptimizerEnabled(config, !!config.build.ssr) &&
+      !config.isWorker
+    ) {
+      depsOptimizerPlugin = optimizedDepsBuildPlugin(config)
+    }
+  } else {
+    // dev
+    if (
+      isDepsOptimizerEnabled(config, false) ||
+      isDepsOptimizerEnabled(config, true)
+    ) {
+      depsOptimizerPlugin = optimizedDepsPlugin(config)
+    }
+  }
   return [
-    ...(isDepsOptimizerEnabled(config, false) ||
-    isDepsOptimizerEnabled(config, true)
-      ? [
-          isBuild
-            ? optimizedDepsBuildPlugin(config)
-            : optimizedDepsPlugin(config),
-        ]
-      : []),
+    ...(depsOptimizerPlugin ? [depsOptimizerPlugin] : []),
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
     watchPackageDataPlugin(config.packageCache),

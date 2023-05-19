@@ -12,7 +12,6 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
-import { getDepsOptimizer } from '../optimizer'
 import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
@@ -115,7 +114,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
-      const ssr = options?.ssr === true
       if (
         !options?.ssr &&
         (code.includes('new Worker') || code.includes('new SharedWorker')) &&
@@ -171,7 +169,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let builtUrl: string
           if (isBuild) {
-            getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
             builtUrl = await workerFileToUrl(config, file, query)
           } else {
             builtUrl = await fileToUrl(cleanUrl(file), config, this)

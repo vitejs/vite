@@ -41,11 +41,8 @@ export function getDepsOptimizer(
   config: ResolvedConfig,
   ssr?: boolean,
 ): DepsOptimizer | undefined {
-  // Workers compilation shares the DepsOptimizer from the main build
   const isDevSsr = ssr && config.command !== 'build'
-  return (isDevSsr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(
-    config.mainConfig || config,
-  )
+  return (isDevSsr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(config)
 }
 
 export async function initDepsOptimizer(
@@ -114,7 +111,6 @@ async function createDepsOptimizer(
     isOptimizedDepUrl: createIsOptimizedDepUrl(config),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
-    registerWorkersSource,
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     ensureFirstRun,
@@ -702,9 +698,6 @@ async function createDepsOptimizer(
     crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
   }
 
-  function registerWorkersSource(id: string) {
-    crawlEndFinder?.registerWorkersSource(id)
-  }
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
     if (crawlEndFinder && !depsOptimizer.isOptimizedDepFile(id)) {
       crawlEndFinder.delayDepsOptimizerUntil(id, done)
@@ -719,7 +712,6 @@ const callCrawlEndIfIdleAfterMs = 50
 
 interface CrawlEndFinder {
   ensureFirstRun: () => void
-  registerWorkersSource: (id: string) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   cancel: () => void
 }
@@ -727,7 +719,6 @@ interface CrawlEndFinder {
 function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   const registeredIds = new Set<string>()
   const seenIds = new Set<string>()
-  const workersSources = new Set<string>()
   let timeoutHandle: NodeJS.Timeout | undefined
 
   let cancelled = false
@@ -758,25 +749,13 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     firstRunEnsured = true
   }
 
-  function registerWorkersSource(id: string): void {
-    workersSources.add(id)
-
-    // Avoid waiting for this id, as it may be blocked by the rollup
-    // bundling process of the worker that also depends on the optimizer
-    registeredIds.delete(id)
-
-    checkIfCrawlEndAfterTimeout()
-  }
-
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
     if (!seenIds.has(id)) {
       seenIds.add(id)
-      if (!workersSources.has(id)) {
-        registeredIds.add(id)
-        done()
-          .catch(() => {})
-          .finally(() => markIdAsDone(id))
-      }
+      registeredIds.add(id)
+      done()
+        .catch(() => {})
+        .finally(() => markIdAsDone(id))
     }
   }
   function markIdAsDone(id: string): void {
@@ -800,7 +779,6 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
 
   return {
     ensureFirstRun,
-    registerWorkersSource,
     delayDepsOptimizerUntil,
     cancel,
   }
@@ -826,7 +804,6 @@ async function createDevSsrDepsOptimizer(
     // noop, there is no scanning during dev SSR
     // the optimizer blocks the server start
     run: () => {},
-    registerWorkersSource: (id: string) => {},
     delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
     resetRegisteredIds: () => {},
     ensureFirstRun: () => {},
