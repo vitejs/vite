@@ -585,15 +585,15 @@ export async function createPluginContainer(
 
   let closed = false
   const processesing = new Set<Promise<any>>()
-  function registerPromise<T>(promise: Promise<T>) {
+  function awaitPromiseOnClose<T>(promise: Promise<T>) {
     processesing.add(promise)
     return promise.finally(() => processesing.delete(promise))
   }
-  function ensurePromise<T>(promise: undefined | T | Promise<T>) {
-    if (!(promise as any)?.then) {
-      return promise
+  function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
+    if (!(maybePromise as any)?.then) {
+      return maybePromise
     }
-    return registerPromise(promise as Promise<T>)
+    return awaitPromiseOnClose(maybePromise as Promise<T>)
   }
 
   const container: PluginContainer = {
@@ -602,8 +602,9 @@ export async function createPluginContainer(
       for (const optionsHook of getSortedPluginHooks('options')) {
         if (closed) throwClosedServerError()
         options =
-          (await ensurePromise(optionsHook.call(minimalContext, options))) ||
-          options
+          (await handleHookPromise(
+            optionsHook.call(minimalContext, options),
+          )) || options
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
@@ -620,7 +621,7 @@ export async function createPluginContainer(
     getModuleInfo,
 
     async buildStart() {
-      await registerPromise(
+      await handleHookPromise(
         hookParallel(
           'buildStart',
           (plugin) => new Context(plugin),
@@ -652,7 +653,7 @@ export async function createPluginContainer(
           'handler' in plugin.resolveId
             ? plugin.resolveId.handler
             : plugin.resolveId
-        const result = await ensurePromise(
+        const result = await handleHookPromise(
           handler.call(ctx as any, rawId, importer, {
             assertions: options?.assertions ?? {},
             custom: options?.custom,
@@ -711,7 +712,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         const handler =
           'handler' in plugin.load ? plugin.load.handler : plugin.load
-        const result = await ensurePromise(
+        const result = await handleHookPromise(
           handler.call(ctx as any, id, { ssr }),
         )
         if (result != null) {
@@ -742,7 +743,7 @@ export async function createPluginContainer(
             ? plugin.transform.handler
             : plugin.transform
         try {
-          result = await ensurePromise(
+          result = await handleHookPromise(
             handler.call(ctx as any, code, id, { ssr }),
           )
         } catch (e) {
