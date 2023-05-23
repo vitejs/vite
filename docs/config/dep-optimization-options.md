@@ -65,3 +65,10 @@ Optimizing dependencies in build mode is **experimental**. If enabled, it remove
 
 If you want to try this build strategy, you can use `optimizeDeps.disabled: false`. `@rollup/plugin-commonjs` can be removed by passing `build.commonjsOptions: { include: [] }`.
 :::
+
+## optimizeDeps.needsInterop
+
+- **Experimental**
+- **Type:** `string[]`
+
+Forces ESM interop when importing these dependencies. Some legacy packages advertise themselves as ESM but use `require` internally. Adding these packages to `needsInterop` can speed up cold start by avoiding full-page reloads. You'll receive a warning if one of your dependencies is triggering a reload, suggesting to add the package name to this array in your config.
