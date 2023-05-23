@@ -636,10 +636,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
           const wrapIdx = code.indexOf('System.register')
-          const insertMark = "'use strict';"
-          const insertIdx = code.indexOf(insertMark, wrapIdx)
+          const executeFnStart =
+            code.indexOf('{', code.indexOf('execute:', wrapIdx)) + 1
           const s = new MagicString(code)
-          s.appendLeft(insertIdx + insertMark.length, injectCode)
+          s.appendRight(executeFnStart, injectCode)
           if (config.build.sourcemap) {
             // resolve public URL from CSS paths, we need to use absolute paths
             return {

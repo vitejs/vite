@@ -457,7 +457,12 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
-  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+  // If there are custom commonjsOptions, don't force optimized deps for this test
+  // even if the env var is set as it would interfere with the playground specs.
+  if (
+    !config.build?.commonjsOptions &&
+    process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS
+  ) {
     config = mergeConfig(config, {
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } },
