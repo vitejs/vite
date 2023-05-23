@@ -998,7 +998,7 @@ async function bundleConfigFile(
           const resolveByViteResolver = (
             id: string,
             importer: string,
-            require: boolean,
+            isRequire: boolean,
           ) => {
             return tryNodeResolve(
               id,
@@ -1017,7 +1017,7 @@ async function bundleConfigFile(
                 extensions: DEFAULT_EXTENSIONS,
                 preserveSymlinks: false,
                 packageCache,
-                isRequire: require,
+                isRequire,
               },
               false,
             )?.id
@@ -1058,15 +1058,15 @@ async function bundleConfigFile(
                 idFsPath = resolveByViteResolver(id, importer, !isImport)
               } catch (e) {
                 if (!isImport) {
-                  let canResolveWithRequire = false
+                  let canResolveWithImport = false
                   try {
-                    canResolveWithRequire = !!resolveByViteResolver(
+                    canResolveWithImport = !!resolveByViteResolver(
                       id,
                       importer,
                       false,
                     )
                   } catch {}
-                  if (canResolveWithRequire) {
+                  if (canResolveWithImport) {
                     throw new Error(
                       `Failed to resolve ${JSON.stringify(
                         id,
