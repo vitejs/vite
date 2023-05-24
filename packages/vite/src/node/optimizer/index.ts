@@ -78,7 +78,7 @@ export interface DepOptimizationConfig {
    */
   exclude?: string[]
   /**
-   * Force ESM interop when importing for these dependencies. Some legacy
+   * Forces ESM interop when importing these dependencies. Some legacy
    * packages advertise themselves as ESM but use `require` internally
    * @experimental
    */
