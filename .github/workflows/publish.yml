@@ -23,10 +23,10 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2.2.4
 
-      - name: Set node version to 16.x
+      - name: Set node version to 18.x
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
           registry-url: https://registry.npmjs.org/
           cache: "pnpm"
 
