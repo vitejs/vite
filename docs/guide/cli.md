@@ -98,7 +98,7 @@ vite optimize [root]
 
 ### `vite preview`
 
-Locally preview production build.
+Locally preview the production build. Do not use this as a production server as it's not designed for it.
 
 #### Usage
 
