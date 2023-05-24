@@ -10,7 +10,7 @@ Browser compatibility target for the final bundle. The default value is a Vite s
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
-- If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2021'`.
+- If the [`build.minify`](#build-minify) option is `'terser'` and the installed Terser version is below 5.16.0, `'esnext'` will be forced down to `'es2021'`.
 - In other cases, it will perform no transpilation at all.
 
 The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be an ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
@@ -78,7 +78,7 @@ Specify the output directory (relative to [project root](/guide/#index-html-and-
 - **Type:** `string`
 - **Default:** `assets`
 
-Specify the directory to nest generated assets under (relative to `build.outDir`).
+Specify the directory to nest generated assets under (relative to `build.outDir`. This is not used in [Library Mode](/guide/build#library-mode)).
 
 ## build.assetsInlineLimit
 
@@ -98,7 +98,7 @@ If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets
 - **Type:** `boolean`
 - **Default:** `true`
 
-Enable/disable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
+Enable/disable CSS code splitting. When enabled, CSS imported in async JS chunks will be preserved as chunks and fetched together when the chunk is fetched.
 
 If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
@@ -116,6 +116,13 @@ This option allows users to set a different browser target for CSS minification 
 It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
 In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
+
+## build.cssMinify
+
+- **Type:** `boolean`
+- **Default:** the same as [`build.minify`](#build-minify)
+
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` to minify CSS.
 
 ## build.sourcemap
 
@@ -229,7 +236,7 @@ Enable/disable gzip-compressed size reporting. Compressing large output files ca
 - **Type:** `number`
 - **Default:** `500`
 
-Limit for chunk size warnings (in kbs).
+Limit for chunk size warnings (in kbs). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
 
 ## build.watch
 

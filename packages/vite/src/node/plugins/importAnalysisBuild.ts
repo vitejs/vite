@@ -5,12 +5,14 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
+import convertSourceMap from 'convert-source-map'
 import {
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
+  isInNodeModules,
   moduleListContains,
 } from '../utils'
 import type { Plugin } from '../plugin'
@@ -19,6 +21,7 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { SPECIAL_QUERY_RE } from '../constants'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
@@ -33,7 +36,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper'
-const preloadMarkerWithQuote = `"${preloadMarker}"` as const
+const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -43,7 +46,21 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
-  return relPath.startsWith('.') ? relPath : `./${relPath}`
+  return relPath[0] === '.' ? relPath : `./${relPath}`
+}
+
+function indexOfMatchInSlice(
+  str: string,
+  reg: RegExp,
+  pos: number = 0,
+): number {
+  if (pos !== 0) {
+    str = str.slice(pos)
+  }
+
+  const matcher = str.match(reg)
+
+  return matcher?.index !== undefined ? matcher.index + pos : -1
 }
 
 /**
@@ -194,10 +211,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (
-        importer.includes('node_modules') &&
-        !dynamicImportPrefixRE.test(source)
-      ) {
+      if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
         return
       }
 
@@ -348,13 +362,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else if (needsInterop) {
                 // config.logger.info(`${url} needs interop`)
-                interopNamedImports(str(), imports[index], url, index)
+                interopNamedImports(
+                  str(),
+                  imports[index],
+                  url,
+                  index,
+                  importer,
+                  config,
+                )
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                let rewrittenUrl = JSON.stringify(file)
-                if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
-                str().update(start, end, rewrittenUrl)
+                const rewrittenUrl = JSON.stringify(file)
+                const s = isDynamicImport ? start : start - 1
+                const e = isDynamicImport ? end : end + 1
+                str().update(s, e, rewrittenUrl)
               }
             }
           }
@@ -372,6 +394,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           (source.slice(expStart, start).includes('from') || isDynamicImport) &&
           // already has ?used query (by import.meta.glob)
           !specifier.match(/\?used(&|$)/) &&
+          // don't append ?used when SPECIAL_QUERY_RE exists
+          !specifier.match(SPECIAL_QUERY_RE) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
@@ -507,10 +531,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
+              let markerStartPos = indexOfMatchInSlice(
+                code,
+                preloadMarkerWithQuote,
+                end,
+              )
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = code.indexOf(preloadMarkerWithQuote)
+                markerStartPos = indexOfMatchInSlice(
+                  code,
+                  preloadMarkerWithQuote,
+                )
               }
 
               if (markerStartPos > 0) {
@@ -577,7 +608,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarkerWithQuote.length,
+                  markerStartPos + preloadMarker.length + 2,
                   `[${renderedDeps.join(',')}]`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
@@ -587,19 +618,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = code.indexOf(preloadMarkerWithQuote)
+          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerWithQuote)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarkerWithQuote.length,
+                markerStartPos + preloadMarker.length + 2,
                 'void 0',
               )
             }
-
-            markerStartPos = code.indexOf(
+            markerStartPos = indexOfMatchInSlice(
+              code,
               preloadMarkerWithQuote,
-              markerStartPos + preloadMarkerWithQuote.length,
+              markerStartPos + preloadMarker.length + 2,
             )
           }
 
@@ -617,6 +648,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               ) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
+
+              if (config.build.sourcemap === 'inline') {
+                chunk.code = chunk.code.replace(
+                  convertSourceMap.mapFileCommentRegex,
+                  '',
+                )
+                chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
+              } else if (config.build.sourcemap) {
+                const mapAsset = bundle[chunk.fileName + '.map']
+                if (mapAsset && mapAsset.type === 'asset') {
+                  mapAsset.source = map.toString()
+                }
+              }
             }
           }
         }

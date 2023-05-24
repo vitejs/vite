@@ -312,6 +312,15 @@ test('new URL("/...", import.meta.url)', async () => {
   )
 })
 
+test('new URL(..., import.meta.url) without extension', async () => {
+  expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
+    isBuild ? 'data:application/javascript' : 'nested/test.js',
+  )
+  expect(
+    await page.textContent('.import-meta-url-content-without-extension'),
+  ).toContain('export default class')
+})
+
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
     isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png',
@@ -321,6 +330,28 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
     isBuild ? 'data:application/javascript;base64' : '/foo/nested/test.js',
+  )
+})
+
+test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
+  expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
+    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+  )
+  expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
+    isBuild
+      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
+      : '/foo/nested/asset.png?abc',
+  )
+})
+
+test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async () => {
+  expect(await page.textContent('.dynamic-import-meta-url-1-ternary')).toMatch(
+    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+  )
+  expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
+    isBuild
+      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
+      : '/foo/nested/asset.png?abc',
   )
 })
 
@@ -408,4 +439,11 @@ test.skip('url() contains file in publicDir, as inline style', async () => {
   // It supposes to be `url("http://localhost:5173/foo/icon.png")`
   // (I built the playground to verify)
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
+})
+
+test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="noscript" src="\/foo\/assets\/asset-\w+\.png" \/>/,
+  )
 })

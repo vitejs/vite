@@ -1,1 +1,1 @@
-module.exports = require('../../vite.config-runtime-base')
+export { default } from '../../vite.config-runtime-base'

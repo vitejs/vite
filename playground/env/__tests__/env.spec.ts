@@ -37,12 +37,18 @@ test('inline variables', async () => {
   )
 })
 
-test('bool', async () => {
+test('define', async () => {
   expect(await page.textContent('.bool')).toBe('boolean')
+  expect(await page.textContent('.number')).toBe('number')
+  expect(await page.textContent('.string')).toBe('string')
 })
 
 test('NODE_ENV', async () => {
   expect(await page.textContent('.node-env')).toBe(process.env.NODE_ENV)
+  expect(await page.textContent('.global-node-env')).toBe(process.env.NODE_ENV)
+  expect(await page.textContent('.global-this-node-env')).toBe(
+    process.env.NODE_ENV,
+  )
 })
 
 test('expand', async () => {
@@ -75,6 +81,8 @@ test('env object', async () => {
     MODE: mode,
     DEV: !isBuild,
     PROD: isBuild,
+    VITE_NUMBER: 123,
+    VITE_STRING: '123',
   })
 })
 

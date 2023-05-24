@@ -412,7 +412,7 @@ export async function transformGlobImport(
             ? options.query
             : stringifyQuery(options.query as any)
 
-          if (query && !query.startsWith('?')) query = `?${query}`
+          if (query && query[0] !== '?') query = `?${query}`
 
           const resolvePaths = (file: string) => {
             if (!dir) {
@@ -425,14 +425,14 @@ export async function transformGlobImport(
             }
 
             let importPath = relative(dir, file)
-            if (!importPath.startsWith('.')) importPath = `./${importPath}`
+            if (importPath[0] !== '.') importPath = `./${importPath}`
 
             let filePath: string
             if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (!filePath.startsWith('.')) filePath = `/${filePath}`
+              if (filePath[0] !== '.') filePath = `/${filePath}`
             }
 
             return { filePath, importPath }
@@ -583,13 +583,13 @@ export async function toAbsoluteGlob(
   resolveId: IdResolver,
 ): Promise<string> {
   let pre = ''
-  if (glob.startsWith('!')) {
+  if (glob[0] === '!') {
     pre = '!'
     glob = glob.slice(1)
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
-  if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
+  if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
@@ -606,7 +606,7 @@ export async function toAbsoluteGlob(
 
 export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
-    .filter((g) => !g.startsWith('!'))
+    .filter((g) => g[0] !== '!')
     .map((glob) => {
       let { base } = scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
@@ -632,5 +632,5 @@ export function getCommonBase(globsResolved: string[]): null | string {
 
 export function isVirtualModule(id: string): boolean {
   // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
-  return id.startsWith('virtual:') || id.startsWith('\0') || !id.includes('/')
+  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

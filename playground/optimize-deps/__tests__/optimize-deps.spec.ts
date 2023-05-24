@@ -6,6 +6,8 @@ import {
   isBuild,
   isServe,
   page,
+  serverLogs,
+  viteTestUrl,
 } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
@@ -143,6 +145,12 @@ test('import aliased package with colon', async () => {
   expect(await page.textContent('.url')).toBe('vitejs.dev')
 })
 
+test('import aliased package using absolute path', async () => {
+  expect(await page.textContent('.alias-using-absolute-path')).toBe(
+    'From dep-alias-using-absolute-path',
+  )
+})
+
 test('variable names are reused in different scripts', async () => {
   expect(await page.textContent('.reused-variable-names')).toBe('reused')
 })
@@ -193,4 +201,24 @@ test.runIf(isServe)('error on builtin modules usage', () => {
       ),
     ]),
   )
+})
+
+test('pre bundle css require', async () => {
+  if (isServe) {
+    const response = page.waitForResponse(/@vitejs_test-dep-css-require\.js/)
+    await page.goto(viteTestUrl)
+    const content = await (await response).text()
+    expect(content).toMatch(
+      /import\s"\/@fs.+@vitejs\/test-dep-css-require\/style\.css"/,
+    )
+  }
+
+  expect(await getColor('.css-require')).toBe('red')
+})
+
+test.runIf(isBuild)('no missing deps during build', async () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('Missing dependency found after crawling ended')
+  })
 })

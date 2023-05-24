@@ -1,5 +1,5 @@
-const { resolve } = require('node:path')
-const { normalizePath } = require('vite')
+import { resolve } from 'node:path'
+import { defineConfig, normalizePath } from 'vite'
 
 let transformCount = 1
 
@@ -20,6 +20,6 @@ const transformPlugin = {
   },
 }
 
-module.exports = {
+export default defineConfig({
   plugins: [transformPlugin],
-}
+})
