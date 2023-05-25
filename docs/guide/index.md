@@ -110,6 +110,8 @@ Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.htm
 #### Specifying Alternative Root
 
 Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
+When running vite from the command line, Vite will automatically try to resolve a config file named vite.config.js inside [project root](/guide/index.md#index-html-and-project-root).
+⚠️ If you move your `index.html` file to a subdirectory, you also need to move your `vite.config.js` file to the same directory.
 
 ## Command Line Interface
 
