@@ -1003,6 +1003,7 @@ async function compileCSS(
     return {
       code,
       map: preprocessorMap,
+      deps,
     }
   }
 
