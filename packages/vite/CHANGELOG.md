@@ -1,3 +1,9 @@
+## <small>4.0.5 (2023-05-26)</small>
+
+* fix: fs.deny with leading double slash (#13348) ([28548b5](https://github.com/vitejs/vite/commit/28548b5)), closes [#13348](https://github.com/vitejs/vite/issues/13348)
+
+
+
 ## <small>4.0.4 (2023-01-03)</small>
 
 * fix: importmap should insert before module preload link (#11492) ([25c64d7](https://github.com/vitejs/vite/commit/25c64d7)), closes [#11492](https://github.com/vitejs/vite/issues/11492)
