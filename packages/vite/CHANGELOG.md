@@ -1,3 +1,9 @@
+## <small>4.1.5 (2023-05-26)</small>
+
+* fix: fs.deny with leading double slash (#13348) ([7b61464](https://github.com/vitejs/vite/commit/7b61464)), closes [#13348](https://github.com/vitejs/vite/issues/13348)
+
+
+
 ## <small>4.1.4 (2023-02-21)</small>
 
 * fix(define): should not stringify vite internal env (#12120) ([73c3999](https://github.com/vitejs/vite/commit/73c3999)), closes [#12120](https://github.com/vitejs/vite/issues/12120)
