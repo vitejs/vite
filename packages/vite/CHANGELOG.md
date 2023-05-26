@@ -1,3 +1,9 @@
+## <small>3.2.7 (2023-05-26)</small>
+
+* fix: port #13348 to v3, fs.deny with leading double slash (#13349) ([0574f80](https://github.com/vitejs/vite/commit/0574f80)), closes [#13348](https://github.com/vitejs/vite/issues/13348) [#13349](https://github.com/vitejs/vite/issues/13349)
+
+
+
 ## <small>3.2.6 (2023-04-18)</small>
 
 * fix: escape msg in render restricted error html, backport (#12889) (#12892) ([b48ac2a](https://github.com/vitejs/vite/commit/b48ac2a)), closes [#12889](https://github.com/vitejs/vite/issues/12889) [#12892](https://github.com/vitejs/vite/issues/12892)
