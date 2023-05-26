@@ -1,3 +1,9 @@
+## <small>2.9.16 (2023-05-26)</small>
+
+* fix: port #13348 to v2, fs.deny with leading double slash (#13350) ([7d8100a](https://github.com/vitejs/vite/commit/7d8100a)), closes [#13348](https://github.com/vitejs/vite/issues/13348) [#13350](https://github.com/vitejs/vite/issues/13350)
+
+
+
 ## <small>2.9.15 (2022-08-12)</small>
 
 * fix: backport make `resolveConfig()` concurrent safe (#9224) (#9229) ([7f01a00](https://github.com/vitejs/vite/commit/7f01a00)), closes [#9224](https://github.com/vitejs/vite/issues/9224) [#9229](https://github.com/vitejs/vite/issues/9229)
