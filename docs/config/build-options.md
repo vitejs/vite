@@ -245,6 +245,12 @@ Limit for chunk size warnings (in kbs). It is compared against the uncompressed 
 
 Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
 
+::: warning Watch a package inside `node_modules/`
+
+It's currently not possible to watch a package inside `node_modules/` until https://github.com/vitejs/vite/issues/8619 is resolved. There isn't a known workaround for Vite build yet.
+
+:::
+
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
 There are cases that file system watching does not work with WSL2.
