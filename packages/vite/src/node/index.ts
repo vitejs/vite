@@ -76,8 +76,7 @@ export type {
   CSSOptions,
   CSSModulesOptions,
   PreprocessCSSResult,
-  LightningCSSOptions,
-  ResolvedLightningCSSOptions,
+  ResolvedCSSOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'

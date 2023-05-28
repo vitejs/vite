@@ -74,9 +74,17 @@ import type { ESBuildOptions } from './esbuild'
 
 export interface CSSOptions {
   /**
+   * Using lightningcss is an experimental option to handle CSS modules,
+   * assets and imports via Lightning CSS. It requires to install it as a
+   * peer dependency. This is incompatible with the use of preprocessors.
+   *
+   * @default 'postcss'
+   * @experimental
+   */
+  transformer?: 'postcss' | 'lightningcss'
+  /**
    * https://github.com/css-modules/postcss-modules
    */
-  transformer?: 'PostCSS'
   modules?: CSSModulesOptions | false
   preprocessorOptions?: Record<string, any>
   postcss?:
@@ -90,6 +98,19 @@ export interface CSSOptions {
    * @experimental
    */
   devSourcemap?: boolean
+
+  /**
+   * @experimental
+   */
+  lightningcss?: {
+    modules?: LightningCSS['CSSModulesConfig']
+    /**
+     * Use `{ nesting: true }` to enable support for CSS nesting. The implementation
+     * is following the ongoing specification, so this could contain
+     * breaking changes in future version of Lightning CSS.
+     */
+    drafts?: LightningCSS['Drafts']
+  }
 }
 
 export interface CSSModulesOptions {
@@ -119,47 +140,34 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-/**
- * @experimental
- */
-export interface LightningCSSOptions {
-  transformer: 'LightningCSS'
-  modules?: LightningCSS['CSSModulesConfig']
-  /**
-   * Use `{ nesting: true }` to enable support for CSS nesting. The implementation
-   * is following the ongoing specification, so this could contain
-   * breaking changes in future version of Lightning CSS.
-   */
-  drafts?: LightningCSS['Drafts']
-}
-
-/**
- * @experimental
- */
-export interface ResolvedLightningCSSOptions {
-  transformer: 'LightningCSS'
-  targets: LightningCSS['Targets']
-  modules: LightningCSS['CSSModulesConfig'] | undefined
-  drafts: LightningCSS['Drafts']
+export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
+  lightningcss?: {
+    targets: LightningCSS['Targets']
+    modules: LightningCSS['CSSModulesConfig'] | undefined
+    drafts: LightningCSS['Drafts']
+  }
 }
 
 export function resolveCSSOptions(
-  options: CSSOptions | LightningCSSOptions | undefined,
+  options: CSSOptions | undefined,
   resolvedBuildOptions: ResolvedBuildOptions,
-): CSSOptions | ResolvedLightningCSSOptions | undefined {
-  if (options?.transformer === 'LightningCSS') {
+): ResolvedCSSOptions | undefined {
+  if (options?.lightningcss) {
     return {
-      transformer: 'LightningCSS',
-      targets:
-        resolvedBuildOptions.cssMinifier.minifier === 'LightningCSS' &&
-        resolvedBuildOptions.cssMinifier.targets
-          ? resolvedBuildOptions.cssMinifier.targets
-          : convertTargets(resolvedBuildOptions.cssTarget),
-      modules: options.modules,
-      drafts: options.drafts ?? {},
+      ...options,
+      lightningcss: {
+        targets:
+          resolvedBuildOptions.cssMinifier.minifier === 'lightningcss' &&
+          resolvedBuildOptions.cssMinifier.targets
+            ? resolvedBuildOptions.cssMinifier.targets
+            : convertTargets(resolvedBuildOptions.cssTarget),
+        modules: options.lightningcss.modules,
+        drafts: options.lightningcss.drafts ?? {},
+      },
     }
   }
-  return options
+  // TS doesn't narrow the type with the previous if :/
+  return options as Omit<CSSOptions, 'lightningcss'>
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
@@ -237,8 +245,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   })
 
   // warm up cache for resolved postcss config
-  if (config.css?.transformer !== 'LightningCSS') {
-    resolvePostcssConfig(config, config.css)
+  if (config.css?.transformer !== 'lightningcss') {
+    resolvePostcssConfig(config)
   }
 
   return {
@@ -442,10 +450,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
-          if (
-            config.css?.transformer === 'LightningCSS' ||
-            config.css?.devSourcemap
-          ) {
+          if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
             if (sourcemap.mappings && !sourcemap.sourcesContent) {
               await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
@@ -891,8 +896,8 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  if (config.css?.transformer === 'LightningCSS') {
-    return compileLightningCSS(id, code, config, config.css, urlReplacer)
+  if (config.css?.transformer === 'lightningcss') {
+    return compileLightningCSS(id, code, config, urlReplacer)
   }
 
   const {
@@ -906,7 +911,7 @@ async function compileCSS(
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
-  const postcssConfig = await resolvePostcssConfig(config, config.css)
+  const postcssConfig = await resolvePostcssConfig(config)
 
   // 1. plain css that needs no processing
   if (
@@ -1269,7 +1274,6 @@ interface PostCSSConfigResult {
 
 async function resolvePostcssConfig(
   config: ResolvedConfig,
-  cssConfig: CSSOptions | undefined,
 ): Promise<PostCSSConfigResult | null> {
   let result = postcssConfigCache.get(config)
   if (result !== undefined) {
@@ -1277,7 +1281,7 @@ async function resolvePostcssConfig(
   }
 
   // inline postcss config via vite config
-  const inlineOptions = cssConfig?.postcss
+  const inlineOptions = config.css?.postcss
   if (isObject(inlineOptions)) {
     const options = { ...inlineOptions }
 
@@ -1478,7 +1482,7 @@ async function doImportCSSReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  if (config.build.cssMinifier?.minifier === 'LightningCSS') {
+  if (config.build.cssMinifier?.minifier === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
       filename: cssBundleName,
       code: Buffer.from(css),
@@ -2132,7 +2136,6 @@ async function compileLightningCSS(
   id: string,
   src: string,
   config: ResolvedConfig,
-  cssConfig: ResolvedLightningCSSOptions,
   urlReplacer?: CssUrlReplacer,
 ): ReturnType<typeof compileCSS> {
   const deps = new Set<string>()
@@ -2145,7 +2148,7 @@ async function compileLightningCSS(
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
-        targets: cssConfig.targets,
+        targets: config.css?.lightningcss?.targets,
         minify: config.isProduction && config.build.cssMinify,
         analyzeDependencies: true,
       })
@@ -2178,14 +2181,14 @@ async function compileLightningCSS(
             return id
           },
         },
-        targets: cssConfig.targets,
+        targets: config.css?.lightningcss?.targets,
         minify: config.isProduction && config.build.cssMinify,
-        sourceMap: true,
+        sourceMap: config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
-          ? cssConfig.modules ?? true
+          ? config.css?.lightningcss?.modules ?? true
           : undefined,
-        drafts: cssConfig.drafts,
+        drafts: config.css?.lightningcss?.drafts,
       })
 
   let css = res.code.toString()

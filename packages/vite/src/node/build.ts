@@ -145,7 +145,7 @@ export interface BuildOptions {
   cssMinifier?:
     | { minifier: 'esbuild' }
     | {
-        minifier: 'LightningCSS'
+        minifier: 'lightningcss'
         targets?: LightningCSS['Targets']
         drafts?: LightningCSS['Drafts']
       }
@@ -321,7 +321,7 @@ export interface ResolvedBuildOptions
   cssMinifier:
     | { minifier: 'esbuild' }
     | {
-        minifier: 'LightningCSS'
+        minifier: 'lightningcss'
         targets: LightningCSS['Targets']
         drafts: LightningCSS['Drafts']
       }
@@ -448,7 +448,7 @@ export function resolveBuildOptions(
     resolved.cssMinifier = { minifier: 'esbuild' }
   }
 
-  if (resolved.cssMinifier.minifier === 'LightningCSS') {
+  if (resolved.cssMinifier.minifier === 'lightningcss') {
     if (!resolved.cssMinifier.targets) {
       resolved.cssMinifier.targets = convertTargets(resolved.cssTarget)
     }
