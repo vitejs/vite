@@ -20,11 +20,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type {
-  LightningCSSDrafts,
-  LightningCSSModulesConfig,
-  LightningCSSTargets,
-} from 'dep-types/lightningcss'
+import type { LightningCSS } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -128,13 +124,13 @@ export interface CSSModulesOptions {
  */
 export interface LightningCSSOptions {
   transformer: 'LightningCSS'
-  modules?: LightningCSSModulesConfig
+  modules?: LightningCSS['CSSModulesConfig']
   /**
    * Use `{ nesting: true }` to enable support for CSS nesting. The implementation
    * is following the ongoing specification, so this could contain
    * breaking changes in future version of Lightning CSS.
    */
-  drafts?: LightningCSSDrafts
+  drafts?: LightningCSS['Drafts']
 }
 
 /**
@@ -142,9 +138,9 @@ export interface LightningCSSOptions {
  */
 export interface ResolvedLightningCSSOptions {
   transformer: 'LightningCSS'
-  targets: LightningCSSTargets
-  modules: LightningCSSModulesConfig | undefined
-  drafts: LightningCSSDrafts
+  targets: LightningCSS['Targets']
+  modules: LightningCSS['CSSModulesConfig'] | undefined
+  drafts: LightningCSS['Drafts']
 }
 
 export function resolveCSSOptions(
@@ -2232,7 +2228,7 @@ async function compileLightningCSS(
 
 // Convert https://esbuild.github.io/api/#target
 // To https://github.com/parcel-bundler/lightningcss/blob/master/node/targets.d.ts
-const map: Record<string, keyof LightningCSSTargets | false | undefined> = {
+const map: Record<string, keyof LightningCSS['Targets'] | false | undefined> = {
   chrome: 'chrome',
   edge: 'edge',
   firefox: 'firefox',
@@ -2269,8 +2265,8 @@ const versionRE = /\d/
 
 export const convertTargets = (
   esbuildTarget: string | string[] | false,
-): LightningCSSTargets => {
-  const targets: LightningCSSTargets = {}
+): LightningCSS['Targets'] => {
+  const targets: LightningCSS['Targets'] = {}
   if (!esbuildTarget) return targets
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {

@@ -145,8 +145,4 @@ export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type {
-  LightningCSSTargets,
-  LightningCSSDrafts,
-  LightningCSSModulesConfig,
-} from 'dep-types/lightningcss'
+export type { LightningCSS } from 'dep-types/lightningcss'

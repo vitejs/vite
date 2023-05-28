@@ -20,10 +20,7 @@ import type {
 import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
-import type {
-  LightningCSSDrafts,
-  LightningCSSTargets,
-} from 'dep-types/lightningcss'
+import type { LightningCSS } from 'dep-types/lightningcss'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
@@ -149,8 +146,8 @@ export interface BuildOptions {
     | { minifier: 'esbuild' }
     | {
         minifier: 'LightningCSS'
-        targets?: LightningCSSTargets
-        drafts?: LightningCSSDrafts
+        targets?: LightningCSS['Targets']
+        drafts?: LightningCSS['Drafts']
       }
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
@@ -325,8 +322,8 @@ export interface ResolvedBuildOptions
     | { minifier: 'esbuild' }
     | {
         minifier: 'LightningCSS'
-        targets: LightningCSSTargets
-        drafts: LightningCSSDrafts
+        targets: LightningCSS['Targets']
+        drafts: LightningCSS['Drafts']
       }
 }
 
