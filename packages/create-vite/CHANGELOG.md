@@ -1,3 +1,11 @@
+## <small>4.3.2 (2023-05-29)</small>
+
+* fix: upgrade svelte-check preventing unmet peer deps errors (#13103) ([c63ba3f](https://github.com/vitejs/vite/commit/c63ba3f)), closes [#13103](https://github.com/vitejs/vite/issues/13103)
+* fix(create-vite): use `"target": "ES2020"` in React template (#13147) ([23096b1](https://github.com/vitejs/vite/commit/23096b1)), closes [#13147](https://github.com/vitejs/vite/issues/13147)
+* chore(deps): update all non-major dependencies (#12805) ([5731ac9](https://github.com/vitejs/vite/commit/5731ac9)), closes [#12805](https://github.com/vitejs/vite/issues/12805)
+
+
+
 ## <small>4.3.1 (2023-04-25)</small>
 
 * chore(create-vite): bump vue-tsc (#12952) ([30fd101](https://github.com/vitejs/vite/commit/30fd101)), closes [#12952](https://github.com/vitejs/vite/issues/12952)
