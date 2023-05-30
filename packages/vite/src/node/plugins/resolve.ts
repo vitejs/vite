@@ -700,7 +700,11 @@ export function tryNodeResolve(
     // css processing appends `*` for importer
     (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
   ) {
-    basedir = path.dirname(importer)
+    if (tryStatSync(importer)?.isFile()) {
+      basedir = path.dirname(importer)
+    } else {
+      basedir = importer
+    }
   } else {
     basedir = root
   }
