@@ -72,6 +72,8 @@ document
 
 text('#asset-path', viteSvgPath)
 
+text('#csp-hashes', __CORRECT_CSP_HASHES_IN_README__)
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }

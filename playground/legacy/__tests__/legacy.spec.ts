@@ -89,6 +89,10 @@ test('asset url', async () => {
   )
 })
 
+test('correct CSP hashes in README.md', async () => {
+  await untilUpdated(() => page.textContent('#csp-hashes'), 'true', true)
+})
+
 describe.runIf(isBuild)('build', () => {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
