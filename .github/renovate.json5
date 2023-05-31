@@ -22,5 +22,5 @@
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
     "miniflare", // `miniflare:v2.0.0+` only supports node 16.7
   ],
-  "baseBranches": ["main", "/^v.*/"]
+  "baseBranches": ["main", "/^v.*/"],
 }
