@@ -154,3 +154,14 @@ If these code are used inside dependencies, you could use [`patch-package`](http
 ### Browser extensions
 
 Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.
+
+### Cross drive links on Windows
+
+If there's a cross drive links in your project on Windows, Vite may not work.
+
+An example of cross drive links are:
+
+- a virtual drive linked to a folder by `subst` command
+- a symlink/junction to a different drive by `mklink` command (e.g. Yarn global cache)
+
+Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)
