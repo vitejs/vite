@@ -21,6 +21,10 @@ subWorker.onmessage = (ev) => {
 const classicWorker = new Worker(new URL('./url-worker.js', import.meta.url), {
   type: 'module',
 })
+
+new Worker(new URL('./worker-nested-worker1.js', import.meta.url), {
+  type: 'module',
+})
 classicWorker.addEventListener('message', (ev) => {
   self.postMessage({
     type: 'constructor',

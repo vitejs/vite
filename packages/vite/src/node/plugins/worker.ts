@@ -173,7 +173,7 @@ export async function workerFileToUrl(
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(config, id, query)
+    const outputChunk = await serialBundleWorkerEntry(config, id, query)
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
