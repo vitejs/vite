@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   define: {
     __CORRECT_CSP_HASHES_IN_README__: JSON.stringify(
-      isCorrectCspHashesInMarkdown(),
+      isCorrectCspHashesInReadme(),
     ),
   },
 
