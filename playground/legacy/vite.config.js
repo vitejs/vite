@@ -3,19 +3,6 @@ import path from 'node:path'
 import legacy, { cspHashes } from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
-function isCorrectCspHashesInReadme() {
-  const readme = fs
-    .readFileSync(
-      path.resolve(__dirname, 'node_modules/@vitejs/plugin-legacy/README.md'),
-    )
-    .toString()
-  const hashesInDoc = [...readme.matchAll(/`sha256-(.+)`/g)].map(
-    (match) => match[1],
-  )
-
-  return cspHashes.every((hash, index) => hash === hashesInDoc[index])
-}
-
 export default defineConfig({
   base: './',
   plugins: [
@@ -24,11 +11,6 @@ export default defineConfig({
       modernPolyfills: true,
     }),
   ],
-  define: {
-    __CORRECT_CSP_HASHES_IN_README__: JSON.stringify(
-      isCorrectCspHashesInReadme(),
-    ),
-  },
 
   build: {
     cssCodeSplit: false,

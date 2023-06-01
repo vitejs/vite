@@ -1,7 +1,10 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { expect, test } from 'vitest'
 import type { ecmaVersion } from 'acorn'
 import { parse } from 'acorn'
 import { detectModernBrowserDetector } from '../snippets'
+import { cspHashes } from '..'
 
 const shouldFailVersions: ecmaVersion[] = []
 for (let v = 2015; v <= 2019; v++) {
@@ -34,3 +37,16 @@ for (const version of shouldPassVersions) {
     }).not.toThrow()
   })
 }
+
+test('CSP hashes in README.md should be correct', () => {
+  const readme = fs
+    .readFileSync(path.resolve(__dirname, '../../README.md'))
+    .toString()
+  const hashesInDoc = [...readme.matchAll(/`sha256-(.+)`/g)].map(
+    (match) => match[1],
+  )
+
+  expect(
+    cspHashes.every((hash, index) => hash === hashesInDoc[index]),
+  ).toBeTruthy()
+})
