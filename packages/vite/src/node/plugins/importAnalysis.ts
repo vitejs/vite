@@ -15,6 +15,7 @@ import {
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
   FS_PREFIX,
+  VALID_ID_PREFIX,
 } from '../constants'
 import {
   debugHmr,
@@ -390,7 +391,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               unwrapId(url),
               ssr,
               canSkipImportAnalysis(url) || forceSkipImportAnalysis,
-              resolved,
+              // Only reuse the resolved result if it isn't a virtual module or bare import
+              // These require double resolution after the import is rewritten
+              url.startsWith(VALID_ID_PREFIX) ? undefined : resolved,
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
