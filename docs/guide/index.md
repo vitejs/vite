@@ -110,6 +110,7 @@ Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.htm
 #### Specifying Alternative Root
 
 Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
+Note that Vite will also resolve [its config file (i.e. `vite.config.js`)](/config/#configuring-vite) inside the project root, so you'll need to move it if the root is changed.
 
 ## Command Line Interface
 
@@ -140,7 +141,7 @@ cd vite
 pnpm install
 cd packages/vite
 pnpm run build
-pnpm link --global # you can use your preferred package manager for this step
+pnpm link --global # use your preferred package manager for this step
 ```
 
 Then go to your Vite based project and run `pnpm link --global vite` (or the package manager that you used to link `vite` globally). Now restart the development server to ride on the bleeding edge!

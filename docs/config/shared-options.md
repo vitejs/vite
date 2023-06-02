@@ -33,11 +33,11 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ## define
 
-- **Type:** `Record<string, string>`
+- **Type:** `Record<string, any>`
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
-- Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
+- String values will be used as raw expressions, so if defining a string constant, **it needs to be explicitly quoted** (e.g. with `JSON.stringify`).
 
 - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
@@ -111,7 +111,7 @@ When aliasing to file system paths, always use absolute paths. Relative alias va
 More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
 
 ::: warning Using with SSR
-If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.io/aliases/) support aliasing via the `npm:` prefix.
 :::
 
 ## resolve.dedupe
@@ -171,7 +171,7 @@ In future, `resolve.mainFields`'s default value will be `['browser', 'module', '
 ## resolve.extensions
 
 - **Type:** `string[]`
-- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
 List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
@@ -226,7 +226,15 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 - **Type:** `Record<string, object>`
 
-Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. Example:
+Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
+
+- `sass`/`scss` - [Options](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
+- `less` - [Options](https://lesscss.org/usage/#less-options).
+- `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
+
+All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
+
+Example:
 
 ```js
 export default defineConfig({
@@ -235,8 +243,13 @@ export default defineConfig({
       scss: {
         additionalData: `$injectedColor: orange;`,
       },
+      less: {
+        math: 'parens-division',
+      },
       styl: {
-        additionalData: `$injectedColor ?= orange`,
+        define: {
+          $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
+        },
       },
     },
   },
@@ -325,6 +338,40 @@ export default defineConfig({
 
 Adjust console output verbosity. Default is `'info'`.
 
+## customLogger
+
+- **Type:**
+  ```ts
+  interface Logger {
+    info(msg: string, options?: LogOptions): void
+    warn(msg: string, options?: LogOptions): void
+    warnOnce(msg: string, options?: LogOptions): void
+    error(msg: string, options?: LogErrorOptions): void
+    clearScreen(type: LogType): void
+    hasErrorLogged(error: Error | RollupError): boolean
+    hasWarned: boolean
+  }
+  ```
+
+Use a custom logger to log messages. You can use Vite's `createLogger` API to get the default logger and customize it to, for example, change the message or filter out certain warnings.
+
+```js
+import { createLogger, defineConfig } from 'vite'
+
+const logger = createLogger()
+const loggerWarn = logger.warn
+
+logger.warn = (msg, options) => {
+  // Ignore empty CSS files warning
+  if (msg.includes('vite:css') && msg.includes(' is empty')) return
+  loggerWarn(msg, options)
+}
+
+export default defineConfig({
+  customLogger: logger,
+})
+```
+
 ## clearScreen
 
 - **Type:** `boolean`
@@ -350,6 +397,15 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 
 :::warning SECURITY NOTES
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
+
+If you would like to expose an unprefixed variable, you can use [define](#define) to expose it:
+
+```js
+define: {
+  'import.meta.env.ENV_VARIABLE': JSON.stringify(process.env.ENV_VARIABLE)
+}
+```
+
 :::
 
 ## appType

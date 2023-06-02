@@ -34,7 +34,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 ```
 
 ::: tip NOTE
-When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.`<wbr>`NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.`<wbr>`NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
+When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
 :::
 
 ## `InlineConfig`
@@ -196,6 +196,46 @@ import { preview } from 'vite'
 
   previewServer.printUrls()
 })()
+```
+
+## `PreviewServer`
+
+```ts
+interface PreviewServer extends PreviewServerForHook {
+  resolvedUrls: ResolvedServerUrls
+}
+```
+
+## `PreviewServerForHook`
+
+```ts
+interface PreviewServerForHook {
+  /**
+   * The resolved vite config object
+   */
+  config: ResolvedConfig
+  /**
+   * A connect app instance.
+   * - Can be used to attach custom middlewares to the preview server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
+   * https://github.com/senchalabs/connect#use-middleware
+   */
+  middlewares: Connect.Server
+  /**
+   * native Node http server instance
+   */
+  httpServer: http.Server
+  /**
+   * The resolved urls Vite prints on the CLI
+   */
+  resolvedUrls: ResolvedServerUrls | null
+  /**
+   * Print server urls
+   */
+  printUrls(): void
+}
 ```
 
 ## `resolveConfig`

@@ -14,7 +14,7 @@
 </script>
 
 <script type="module">
-  import myLib from './my-lib-custom-filename.mjs'
+  import myLib from './my-lib-custom-filename.js'
 
   myLib('.es')
 </script>
@@ -25,7 +25,7 @@
   message('.dynamic-import-message')
 </script>
 
-<script src="./my-lib-custom-filename.umd.js"></script>
+<script src="./my-lib-custom-filename.umd.cjs"></script>
 <script>
   MyLib('.umd')
   delete window.MyLib // so that it won't affect iife

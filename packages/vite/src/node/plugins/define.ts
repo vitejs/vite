@@ -1,11 +1,12 @@
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { transformStableResult } from '../utils'
+import { escapeRegex, transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
+const metaEnvRe = /import\.meta\.env\.(.+)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -31,29 +32,59 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   const userDefine: Record<string, string> = {}
+  const userDefineEnv: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
     userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
+
+    // make sure `import.meta.env` object has user define properties
+    if (isBuild) {
+      const match = key.match(metaEnvRe)
+      if (match) {
+        userDefineEnv[match[1]] = `__vite__define__${userDefine[key]}`
+      }
+    }
   }
 
   // during dev, import.meta properties are handled by importAnalysis plugin.
-  // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
-    const env: Record<string, any> = {
-      ...config.env,
-      SSR: !!config.build.ssr,
-    }
     // set here to allow override with config.define
-    importMetaKeys['import.meta.hot'] = `false`
-    for (const key in env) {
-      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
+    importMetaKeys['import.meta.hot'] = `undefined`
+    for (const key in config.env) {
+      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(config.env[key])
     }
     Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(config.env),
+      'import.meta.env': JSON.stringify({
+        ...config.env,
+        SSR: '__vite__ssr__',
+        ...userDefineEnv,
+      }).replace(
+        /"__vite__define__(.+?)"([,}])/g,
+        (_, val, suffix) => `${val.replace(/(^\\")|(\\"$)/g, '"')}${suffix}`,
+      ),
     })
+  }
+
+  function getImportMetaKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaKeys,
+      'import.meta.env.SSR': ssr + '',
+    }
+  }
+
+  function getImportMetaFallbackKeys(ssr: boolean): Record<string, string> {
+    if (!isBuild) return {}
+    return {
+      ...importMetaFallbackKeys,
+      'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
+        '"__vite__ssr__"',
+        ssr + '',
+      ),
+    }
   }
 
   function generatePattern(
@@ -63,9 +94,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...importMetaKeys,
+      ...getImportMetaKeys(ssr),
       ...userDefine,
-      ...importMetaFallbackKeys,
+      ...getImportMetaFallbackKeys(ssr),
       ...(replaceProcessEnv ? processEnv : {}),
     }
 
@@ -79,11 +110,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           // Mustn't be preceded by a char that can be part of an identifier
           // or a '.' that isn't part of a spread operator
           '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
-            replacementsKeys
-              .map((str) => {
-                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-              })
-              .join('|') +
+            replacementsKeys.map(escapeRegex).join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
             ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',

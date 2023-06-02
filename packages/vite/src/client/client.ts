@@ -2,7 +2,6 @@ import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-// eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -23,7 +22,7 @@ const importMetaUrl = new URL(import.meta.url)
 // use server configuration, then fallback to inference
 const serverHost = __SERVER_HOST__
 const socketProtocol =
-  __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
+  __HMR_PROTOCOL__ || (importMetaUrl.protocol === 'https:' ? 'wss' : 'ws')
 const hmrPort = __HMR_PORT__
 const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
   hmrPort || importMetaUrl.port
@@ -315,69 +314,94 @@ async function waitForSuccessfulPing(
 ) {
   const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  const ping = async () => {
+    // A fetch on a websocket URL will return a successful promise with status 400,
+    // but will reject a networking error.
+    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
     try {
-      // A fetch on a websocket URL will return a successful promise with status 400,
-      // but will reject a networking error.
-      // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
       await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
+        headers: {
+          // Custom headers won't be included in a request with no-cors so (ab)use one of the
+          // safelisted headers to identify the ping request
+          Accept: 'text/x-vite-ping',
+        },
       })
-      break
-    } catch (e) {
-      // wait ms before attempting to ping again
-      await new Promise((resolve) => setTimeout(resolve, ms))
+      return true
+    } catch {}
+    return false
+  }
+
+  if (await ping()) {
+    return
+  }
+  await wait(ms)
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    if (document.visibilityState === 'visible') {
+      if (await ping()) {
+        break
+      }
+      await wait(ms)
+    } else {
+      await waitForWindowShow()
     }
   }
 }
 
-// https://wicg.github.io/construct-stylesheets
-const supportsConstructedSheet = (() => {
-  // TODO: re-enable this try block once Chrome fixes the performance of
-  // rule insertion in really big stylesheets
-  // try {
-  //   new CSSStyleSheet()
-  //   return true
-  // } catch (e) {}
-  return false
-})()
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
-const sheetsMap = new Map<
-  string,
-  HTMLStyleElement | CSSStyleSheet | undefined
->()
+function waitForWindowShow() {
+  return new Promise<void>((resolve) => {
+    const onChange = async () => {
+      if (document.visibilityState === 'visible') {
+        resolve()
+        document.removeEventListener('visibilitychange', onChange)
+      }
+    }
+    document.addEventListener('visibilitychange', onChange)
+  })
+}
+
+const sheetsMap = new Map<string, HTMLStyleElement>()
+
+// collect existing style elements that may have been inserted during SSR
+// to avoid FOUC or duplicate styles
+if ('document' in globalThis) {
+  document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
+    sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
+  })
+}
+
+// all css imports should be inserted at the same position
+// because after build it will be a single css file
+let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
-  if (supportsConstructedSheet && !content.includes('@import')) {
-    if (style && !(style instanceof CSSStyleSheet)) {
-      removeStyle(id)
-      style = undefined
-    }
+  if (!style) {
+    style = document.createElement('style')
+    style.setAttribute('type', 'text/css')
+    style.setAttribute('data-vite-dev-id', id)
+    style.textContent = content
 
-    if (!style) {
-      style = new CSSStyleSheet()
-      style.replaceSync(content)
-      document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
-    } else {
-      style.replaceSync(content)
-    }
-  } else {
-    if (style && !(style instanceof HTMLStyleElement)) {
-      removeStyle(id)
-      style = undefined
-    }
-
-    if (!style) {
-      style = document.createElement('style')
-      style.setAttribute('type', 'text/css')
-      style.setAttribute('data-vite-dev-id', id)
-      style.textContent = content
+    if (!lastInsertedStyle) {
       document.head.appendChild(style)
+
+      // reset lastInsertedStyle after async
+      // because dynamically imported css will be splitted into a different file
+      setTimeout(() => {
+        lastInsertedStyle = undefined
+      }, 0)
     } else {
-      style.textContent = content
+      lastInsertedStyle.insertAdjacentElement('afterend', style)
     }
+    lastInsertedStyle = style
+  } else {
+    style.textContent = content
   }
   sheetsMap.set(id, style)
 }
@@ -385,13 +409,7 @@ export function updateStyle(id: string, content: string): void {
 export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
-    if (style instanceof CSSStyleSheet) {
-      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
-        (s: CSSStyleSheet) => s !== style,
-      )
-    } else {
-      document.head.removeChild(style)
-    }
+    document.head.removeChild(style)
     sheetsMap.delete(id)
   }
 }
@@ -585,7 +603,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
  */
 export function injectQuery(url: string, queryToInject: string): string {
   // skip urls that won't be handled by vite
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     return url
   }
 

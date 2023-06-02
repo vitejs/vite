@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import type * as http from 'node:http'
 import sirv from 'sirv'
@@ -17,6 +18,7 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
+import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
 
@@ -43,11 +45,21 @@ export function resolvePreviewOptions(
   }
 }
 
-export interface PreviewServer {
+// TODO: merge with PreviewServer in Vite 5
+export interface PreviewServerForHook {
   /**
    * The resolved vite config object
    */
   config: ResolvedConfig
+  /**
+   * A connect app instance.
+   * - Can be used to attach custom middlewares to the preview server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
+   * https://github.com/senchalabs/connect#use-middleware
+   */
+  middlewares: Connect.Server
   /**
    * native Node http server instance
    */
@@ -55,19 +67,20 @@ export interface PreviewServer {
   /**
    * The resolved urls Vite prints on the CLI
    */
-  resolvedUrls: ResolvedServerUrls
+  resolvedUrls: ResolvedServerUrls | null
   /**
    * Print server urls
    */
   printUrls(): void
 }
 
+export interface PreviewServer extends PreviewServerForHook {
+  resolvedUrls: ResolvedServerUrls
+}
+
 export type PreviewServerHook = (
   this: void,
-  server: {
-    middlewares: Connect.Server
-    httpServer: http.Server
-  },
+  server: PreviewServerForHook,
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
@@ -83,6 +96,21 @@ export async function preview(
     'production',
   )
 
+  const distDir = path.resolve(config.root, config.build.outDir)
+  if (
+    !fs.existsSync(distDir) &&
+    // error if no plugins implement `configurePreviewServer`
+    config.plugins.every((plugin) => !plugin.configurePreviewServer) &&
+    // error if called in CLI only. programmatic usage could access `httpServer`
+    // and affect file serving
+    process.argv[1]?.endsWith(path.normalize('bin/vite.js')) &&
+    process.argv[2] === 'preview'
+  ) {
+    throw new Error(
+      `The directory "${config.build.outDir}" does not exist. Did you build your project?`,
+    )
+  }
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
@@ -91,10 +119,27 @@ export async function preview(
   )
   setClientErrorHandler(httpServer, config.logger)
 
+  const options = config.preview
+  const logger = config.logger
+
+  const server: PreviewServerForHook = {
+    config,
+    middlewares: app,
+    httpServer,
+    resolvedUrls: null,
+    printUrls() {
+      if (server.resolvedUrls) {
+        printServerUrls(server.resolvedUrls, options.host, logger.info)
+      } else {
+        throw new Error('cannot print server URLs before server is listening.')
+      }
+    },
+  }
+
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook({ middlewares: app, httpServer }))
+    postHooks.push(await hook(server))
   }
 
   // cors
@@ -115,33 +160,32 @@ export async function preview(
     config.base === './' || config.base === '' ? '/' : config.base
 
   // static assets
-  const distDir = path.resolve(config.root, config.build.outDir)
   const headers = config.preview.headers
-  const assetServer = sirv(distDir, {
-    etag: true,
-    dev: true,
-    single: config.appType === 'spa',
-    setHeaders(res) {
-      if (headers) {
-        for (const name in headers) {
-          res.setHeader(name, headers[name]!)
+  const viteAssetMiddleware = (...args: readonly [any, any?, any?]) =>
+    sirv(distDir, {
+      etag: true,
+      dev: true,
+      single: config.appType === 'spa',
+      setHeaders(res) {
+        if (headers) {
+          for (const name in headers) {
+            res.setHeader(name, headers[name]!)
+          }
         }
-      }
-    },
-    shouldServe(filePath) {
-      return shouldServeFile(filePath, distDir)
-    },
-  })
-  app.use(previewBase, assetServer)
+      },
+      shouldServe(filePath) {
+        return shouldServeFile(filePath, distDir)
+      },
+    })(...args)
+
+  app.use(previewBase, viteAssetMiddleware)
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
-  const options = config.preview
   const hostname = await resolveHostname(options.host)
-  const port = options.port ?? 4173
+  const port = options.port ?? DEFAULT_PREVIEW_PORT
   const protocol = options.https ? 'https' : 'http'
-  const logger = config.logger
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -150,7 +194,7 @@ export async function preview(
     logger,
   })
 
-  const resolvedUrls = await resolveServerUrls(
+  server.resolvedUrls = await resolveServerUrls(
     httpServer,
     config.preview,
     config,
@@ -167,12 +211,5 @@ export async function preview(
     )
   }
 
-  return {
-    config,
-    httpServer,
-    resolvedUrls,
-    printUrls() {
-      printServerUrls(resolvedUrls, options.host, logger.info)
-    },
-  }
+  return server as PreviewServer
 }

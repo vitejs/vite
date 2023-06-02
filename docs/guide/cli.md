@@ -4,7 +4,7 @@
 
 ### `vite`
 
-Start Vite dev server in the current directory. Will enter the watch mode in development environment and run mode in CI automatically.
+Start Vite dev server in the current directory.
 
 #### Usage
 
@@ -54,7 +54,7 @@ vite build [root]
 | `--assetsDir <dir>`            | Directory under outDir to place assets in (default: `"assets"`) (`string`)                                          |
 | `--assetsInlineLimit <number>` | Static asset base64 inline threshold in bytes (default: `4096`) (`number`)                                          |
 | `--ssr [entry]`                | Build specified entry for server-side rendering (`string`)                                                          |
-| `--sourcemap`                  | Output source maps for build (default: `false`) (`boolean`)                                                         |
+| `--sourcemap [output]`         | Output source maps for build (default: `false`) (`boolean \| "inline" \| "hidden"`)                                 |
 | `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`) |
 | `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                      |
 | `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                        |
@@ -98,7 +98,7 @@ vite optimize [root]
 
 ### `vite preview`
 
-Locally preview production build.
+Locally preview the production build. Do not use this as a production server as it's not designed for it.
 
 #### Usage
 

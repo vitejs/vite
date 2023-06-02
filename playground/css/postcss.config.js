@@ -1,11 +1,12 @@
-module.exports = {
-  plugins: [require('postcss-nested'), testDirDep, testSourceInput],
-}
+import fs from 'node:fs'
+import path from 'node:path'
+import glob from 'fast-glob'
+import { normalizePath } from 'vite'
+import postcssNested from 'postcss-nested'
 
-const fs = require('node:fs')
-const path = require('node:path')
-const glob = require('fast-glob')
-const { normalizePath } = require('vite')
+export default {
+  plugins: [postcssNested, testDirDep, testSourceInput],
+}
 
 /**
  * A plugin for testing the `dir-dependency` message handling.
