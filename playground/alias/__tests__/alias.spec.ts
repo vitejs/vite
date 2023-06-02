@@ -45,6 +45,12 @@ test('aliased module', async () => {
   )
 })
 
+test('dep with ts paths', async () => {
+  expect(await page.textContent('.dep-with-ts-paths')).toMatch(
+    '[success] dep with ts paths',
+  )
+})
+
 test('custom resolver', async () => {
   expect(await page.textContent('.custom-resolver')).toMatch(
     '[success] alias to custom-resolver path',

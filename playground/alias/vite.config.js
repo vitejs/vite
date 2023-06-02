@@ -24,6 +24,11 @@ export default defineConfig({
       },
       // aliasing one unoptimized dep to an optimized dep
       { find: 'foo', replacement: 'vue' },
+      // For dep-with-fs-paths
+      {
+        find: '@core',
+        replacement: '@vitejs/test-resolve-linked-with-ts-paths/src',
+      },
       {
         find: 'custom-resolver',
         replacement: path.resolve(__dirname, 'test.js'),

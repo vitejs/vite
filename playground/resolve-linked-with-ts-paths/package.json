@@ -1,0 +1,11 @@
+{
+  "name": "@vitejs/test-resolve-linked-with-ts-paths",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "type": "module",
+  "module": "src/index.ts",
+  "devDependencies": {
+    "typescript": "^5.0.2"
+  }
+}

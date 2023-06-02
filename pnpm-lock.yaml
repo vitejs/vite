@@ -437,6 +437,9 @@ importers:
 
   playground/alias:
     dependencies:
+      '@vitejs/test-resolve-linked-with-ts-paths':
+        specifier: workspace:*
+        version: link:../resolve-linked-with-ts-paths
       '@vue/shared':
         specifier: ^3.2.47
         version: 3.2.47
@@ -1043,6 +1046,12 @@ importers:
   playground/resolve-config: {}
 
   playground/resolve-linked: {}
+
+  playground/resolve-linked-with-ts-paths:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.2
+        version: 5.0.2
 
   playground/resolve/browser-field:
     dependencies:
@@ -4595,7 +4604,7 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
-  /cjstoesm@1.1.4(typescript@4.6.4):
+  /cjstoesm@1.1.4(typescript@4.8.4):
     resolution: {integrity: sha512-cixLJwK2HS8R8J1jJcYwlrLxWUbdNms5EmVQuvP3O0CGvHNv2WVd2gnqTP/tbTEYzbgWiSYQBZDoAakqsSl94Q==}
     engines: {node: '>=10.0.0'}
     hasBin: true
@@ -4605,13 +4614,13 @@ packages:
       '@wessberg/stringutil': 1.0.19
       chalk: 4.1.2
       commander: 7.2.0
-      compatfactory: 0.0.6(typescript@4.6.4)
+      compatfactory: 0.0.6(typescript@4.8.4)
       crosspath: 0.0.8
       fast-glob: 3.2.12
       helpertypes: 0.0.2
       reserved-words: 0.1.2
       resolve: 1.22.2
-      typescript: 4.6.4
+      typescript: 4.8.4
     dev: true
 
   /clean-stack@2.2.0:
@@ -4741,14 +4750,14 @@ packages:
       dot-prop: 5.3.0
     dev: true
 
-  /compatfactory@0.0.6(typescript@4.6.4):
+  /compatfactory@0.0.6(typescript@4.8.4):
     resolution: {integrity: sha512-F1LpdNxgxay4UdanmeL75+guJPDg2zu8bFZDVih/kse5hA3oa+aMgvk4tLwq7AFBpy3S0ilnPdSfYsTl/L9NXA==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       typescript: '>=3.x || >= 4.x'
     dependencies:
       helpertypes: 0.0.2
-      typescript: 4.6.4
+      typescript: 4.8.4
     dev: true
 
   /concat-map@0.0.1:
@@ -7479,7 +7488,7 @@ packages:
       '@mrbbot/node-fetch': 4.6.0
       '@peculiar/webcrypto': 1.3.3
       chokidar: 3.5.3(patch_hash=dzxbf3kgof5pdmbsyih2x43sq4)
-      cjstoesm: 1.1.4(typescript@4.6.4)
+      cjstoesm: 1.1.4(typescript@4.8.4)
       dotenv: 8.6.0
       env-paths: 2.2.1
       event-target-shim: 6.0.2
@@ -7495,7 +7504,7 @@ packages:
       semiver: 1.1.0
       source-map-support: 0.5.21
       tslib: 2.5.0
-      typescript: 4.6.4
+      typescript: 4.8.4
       typeson: 6.1.0
       typeson-registry: 1.0.0-alpha.39
       web-streams-polyfill: 3.2.1
@@ -9728,12 +9737,6 @@ packages:
       call-bind: 1.0.2
       for-each: 0.3.3
       is-typed-array: 1.1.10
-    dev: true
-
-  /typescript@4.6.4:
-    resolution: {integrity: sha512-9ia/jWHIEbo49HfjrLGfKbZSuWo9iTMwXO+Ca3pRsSpbsMbc7/IU8NKdCZVRRBafVPGnoJeFL76ZOAA84I9fEg==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
     dev: true
 
   /typescript@4.8.4:
