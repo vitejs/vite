@@ -918,13 +918,13 @@ export async function loadConfigFromFile(
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    for (const filename of DEFAULT_CONFIG_FILES) {
+    DEFAULT_CONFIG_FILES.some(filename => {
       const filePath = path.resolve(configRoot, filename)
-      if (!fs.existsSync(filePath)) continue
-
-      resolvedPath = filePath
-      break
-    }
+      if (fs.existsSync(filePath)) {
+        resolvedPath = filePath
+        return true
+      }
+    })
   }
 
   if (!resolvedPath) {
