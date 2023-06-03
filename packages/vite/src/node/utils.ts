@@ -881,13 +881,18 @@ export async function resolveServerUrls(
   const base =
     config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
-  if (hostname.host && loopbackHosts.has(hostname.host)) {
+  if (hostname.host) {
     let hostnameName = hostname.name
     // ipv6 host
     if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
-    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+    const address = `${protocol}://${hostnameName}:${port}${base}`
+    if (loopbackHosts.has(hostname.host)) {
+      local.push(address)
+    } else {
+      network.push(address)
+    }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
