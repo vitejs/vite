@@ -138,17 +138,19 @@ export interface BuildOptions {
   /**
    * @experimental
    * Use Lightning CSS to minify CSS. This should be installed as a peer
-   * dependency. Targets is automatically converted from esbuild (css)target, but
-   * can be provided for more granular control.
+   * dependency.
    * @default esbuild
    */
-  cssMinifier?:
-    | { minifier: 'esbuild' }
-    | {
-        minifier: 'lightningcss'
-        targets?: LightningCSS['Targets']
-        drafts?: LightningCSS['Drafts']
-      }
+  cssMinifier?: 'esbuild' | 'lightningcss'
+  /**
+   * @experimental
+   * Targets is automatically converted from esbuild (css)target, but
+   * can be provided for more granular control.
+   */
+  lightningcss?: {
+    targets?: LightningCSS['Targets']
+    drafts?: LightningCSS['Drafts']
+  }
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -315,16 +317,13 @@ export type ResolveModulePreloadDependenciesFn = (
 
 export interface ResolvedBuildOptions
   extends Required<
-    Omit<BuildOptions, 'polyfillModulePreload' | 'cssMinifier'>
+    Omit<BuildOptions, 'polyfillModulePreload' | 'lightningcss'>
   > {
   modulePreload: false | ResolvedModulePreloadOptions
-  cssMinifier:
-    | { minifier: 'esbuild' }
-    | {
-        minifier: 'lightningcss'
-        targets: LightningCSS['Targets']
-        drafts: LightningCSS['Drafts']
-      }
+  lightningcss?: {
+    targets: LightningCSS['Targets']
+    drafts: LightningCSS['Drafts']
+  }
 }
 
 export function resolveBuildOptions(
@@ -444,16 +443,11 @@ export function resolveBuildOptions(
     resolved.cssMinify = !!resolved.minify
   }
 
-  if (!resolved.cssMinifier) {
-    resolved.cssMinifier = { minifier: 'esbuild' }
-  }
-
-  if (resolved.cssMinifier.minifier === 'lightningcss') {
-    if (!resolved.cssMinifier.targets) {
-      resolved.cssMinifier.targets = convertTargets(resolved.cssTarget)
-    }
-    if (!resolved.cssMinifier.drafts) {
-      resolved.cssMinifier.drafts = {}
+  if (resolved.cssMinifier === 'lightningcss') {
+    resolved.lightningcss = {
+      targets:
+        resolved.lightningcss?.targets ?? convertTargets(resolved.cssTarget),
+      drafts: resolved.lightningcss?.drafts ?? {},
     }
   }
 

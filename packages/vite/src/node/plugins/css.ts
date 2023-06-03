@@ -157,9 +157,9 @@ export function resolveCSSOptions(
       ...options,
       lightningcss: {
         targets:
-          resolvedBuildOptions.cssMinifier.minifier === 'lightningcss' &&
-          resolvedBuildOptions.cssMinifier.targets
-            ? resolvedBuildOptions.cssMinifier.targets
+          resolvedBuildOptions.cssMinifier === 'lightningcss' &&
+          resolvedBuildOptions.lightningcss?.targets
+            ? resolvedBuildOptions.lightningcss.targets
             : convertTargets(resolvedBuildOptions.cssTarget),
         modules: options.lightningcss.modules,
         drafts: options.lightningcss.drafts ?? {},
@@ -1482,12 +1482,12 @@ async function doImportCSSReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  if (config.build.cssMinifier?.minifier === 'lightningcss') {
+  if (config.build.cssMinifier === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
       filename: cssBundleName,
       code: Buffer.from(css),
-      targets: config.build.cssMinifier.targets,
-      drafts: config.build.cssMinifier.drafts,
+      targets: config.build.lightningcss!.targets,
+      drafts: config.build.lightningcss!.drafts,
       minify: true,
     })
     if (warnings.length) {
