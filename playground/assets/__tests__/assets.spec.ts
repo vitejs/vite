@@ -408,12 +408,13 @@ test('inline style test', async () => {
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    const loadPromise = page.waitForEvent('load')
     editFile(
       './css/import.css',
       (code) => code.replace('#0088ff', '#00ff88'),
       true,
     )
-    await page.waitForNavigation()
+    await loadPromise
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
   })
 }

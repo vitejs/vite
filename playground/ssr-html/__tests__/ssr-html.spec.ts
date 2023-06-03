@@ -48,10 +48,13 @@ describe.runIf(isServe)('hmr', () => {
     await page.goto(url)
     const el = await page.$('.virtual')
     expect(await el.textContent()).toBe('[success]')
+
+    const loadPromise = page.waitForEvent('load')
     editFile('src/importedVirtual.js', (code) =>
       code.replace('[success]', '[wow]'),
     )
-    await page.waitForNavigation()
+    await loadPromise
+
     await untilUpdated(async () => {
       const el = await page.$('.virtual')
       return await el.textContent()
