@@ -229,7 +229,7 @@ if (!isBuild) {
   })
 
   test('not loaded dynamic import', async () => {
-    await page.goto(viteTestUrl + '/counter/index.html')
+    await page.goto(viteTestUrl + '/counter/index.html', { waitUntil: 'load' })
 
     let btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
@@ -237,8 +237,9 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Counter 1')
 
     // Modifying `index.ts` triggers a page reload, as expected
+    const indexTsLoadPromise = page.waitForEvent('load')
     editFile('counter/index.ts', (code) => code)
-    await page.waitForNavigation()
+    await indexTsLoadPromise
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
 
@@ -251,13 +252,12 @@ if (!isBuild) {
     // (Note that, a dynamic import that is never loaded and that does not
     // define `accept.module.hot.accept` may wrongfully trigger a full page
     // reload, see discussion at #7561.)
+    const depTsLoadPromise = page.waitForEvent('load', { timeout: 1000 })
     editFile('counter/dep.ts', (code) => code)
-    try {
-      await page.waitForNavigation({ timeout: 1000 })
-    } catch (err) {
-      const errMsg = 'page.waitForNavigation: Timeout 1000ms exceeded.'
-      expect(err.message.slice(0, errMsg.length)).toBe(errMsg)
-    }
+    await expect(depTsLoadPromise).rejects.toThrow(
+      /page\.waitForEvent: Timeout \d+ms exceeded while waiting for event "load"/,
+    )
+
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
   })
@@ -653,10 +653,12 @@ if (!isBuild) {
   test('css in html hmr', async () => {
     await page.goto(viteTestUrl)
     expect(await getBg('.import-image')).toMatch('icon')
-    await page.goto(viteTestUrl + '/foo/')
+    await page.goto(viteTestUrl + '/foo/', { waitUntil: 'load' })
     expect(await getBg('.import-image')).toMatch('icon')
+
+    const loadPromise = page.waitForEvent('load')
     editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
-    await page.waitForNavigation()
+    await loadPromise
     expect(await getBg('.import-image')).toMatch('')
   })
 
@@ -664,10 +666,12 @@ if (!isBuild) {
     await page.goto(viteTestUrl + '/counter/index.html')
     let btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
+
+    const loadPromise = page.waitForEvent('load')
     editFile('counter/index.html', (code) =>
       code.replace('Counter', 'Compteur'),
     )
-    await page.waitForNavigation()
+    await loadPromise
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Compteur 0')
   })
@@ -701,18 +705,20 @@ if (!isBuild) {
     const unImportCode = `// ${importCode}`
     const timeout = 2000
 
-    await page.goto(viteTestUrl + '/missing-import/index.html')
+    await page.goto(viteTestUrl + '/missing-import/index.html', {
+      waitUntil: 'load',
+    })
 
     await untilBrowserLogAfter(async () => {
-      const navigationPromise = page.waitForNavigation({ timeout })
+      const loadPromise = page.waitForEvent('load', { timeout })
       editFile(file, (code) => code.replace(importCode, unImportCode))
-      await navigationPromise
+      await loadPromise
     }, 'missing test')
 
     await untilBrowserLogAfter(async () => {
-      const navigationPromise = page.waitForNavigation({ timeout })
+      const loadPromise = page.waitForEvent('load', { timeout })
       editFile(file, (code) => code.replace(unImportCode, importCode))
-      await navigationPromise
+      await loadPromise
     }, /500/)
   })
 
