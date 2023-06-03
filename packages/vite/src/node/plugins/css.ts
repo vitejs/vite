@@ -517,7 +517,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ? getCssAssetDirname(cssAssetName)
             : undefined
 
-        const toRelative = (filename: string, importer: string) => {
+        const toRelative = (filename: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
           return relativePath[0] === '.' ? relativePath : './' + relativePath
