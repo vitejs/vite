@@ -100,6 +100,19 @@ describe('asset imports from js', () => {
   test('from /public', async () => {
     expect(await page.textContent('.public-import')).toMatch(iconMatch)
   })
+
+  test('from /public (json)', async () => {
+    expect(await page.textContent('.public-json-import')).toMatch(
+      '/foo/foo.json',
+    )
+    expect(await page.textContent('.public-json-import-content'))
+      .toMatchInlineSnapshot(`
+      "{
+        \\"foo\\": \\"bar\\"
+      }
+      "
+    `)
+  })
 })
 
 describe('css url() references', () => {
