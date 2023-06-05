@@ -60,6 +60,9 @@ export default defineConfig({
 
 This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache })` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
 
+::: warning
+You should use `build.rollupOptions.output.manualChunks` function form when using this plugin for correct work
+:::
 ## Rebuild on files changes
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch) via `build.watch`:
