@@ -28,6 +28,7 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
+  isJSRequest,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
@@ -35,7 +36,9 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
+import { isCSSRequest } from '../../plugins/css'
 import { checkPublicFile } from '../../plugins/asset'
+import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 
 interface AssetNode {
   start: number
@@ -81,6 +84,12 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
+function shouldPreTransform(url: string, config: ResolvedConfig) {
+  return (
+    !checkPublicFile(url, config) && (isJSRequest(url) || isCSSRequest(url))
+  )
+}
+
 const processNodeUrl = (
   attr: Token.Attribute,
   sourceCodeLocation: Token.Location,
@@ -103,7 +112,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
     overwriteAttrValue(s, sourceCodeLocation, fullUrl)
-    if (server && !checkPublicFile(url, config)) {
+    if (server && shouldPreTransform(url, config)) {
       preTransformRequest(server, fullUrl, devBase)
     }
   } else if (
@@ -115,7 +124,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const fullUrl = path.posix.join(devBase, url)
-      if (server && !checkPublicFile(url, config)) {
+      if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
@@ -268,7 +277,22 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
-      s.overwrite(start, end, result?.code || '')
+      let content = ''
+      if (result) {
+        if (result.map) {
+          if (result.map.mappings && !result.map.sourcesContent) {
+            await injectSourcesContent(
+              result.map,
+              proxyModulePath,
+              config.logger,
+            )
+          }
+          content = getCodeWithSourcemap('css', result.code, result.map)
+        } else {
+          content = result.code
+        }
+      }
+      s.overwrite(start, end, content)
     }),
   )
 

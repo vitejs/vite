@@ -404,7 +404,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (isDirectCSSRequest(id)) {
-          return await getContentWithSourcemap(css)
+          return null
         }
         // server only
         if (options?.ssr) {
@@ -517,7 +517,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ? getCssAssetDirname(cssAssetName)
             : undefined
 
-        const toRelative = (filename: string, importer: string) => {
+        const toRelative = (filename: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
           return relativePath[0] === '.' ? relativePath : './' + relativePath
@@ -636,10 +636,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
           const wrapIdx = code.indexOf('System.register')
-          const insertMark = "'use strict';"
-          const insertIdx = code.indexOf(insertMark, wrapIdx)
+          const executeFnStart =
+            code.indexOf('{', code.indexOf('execute:', wrapIdx)) + 1
           const s = new MagicString(code)
-          s.appendLeft(insertIdx + insertMark.length, injectCode)
+          s.appendRight(executeFnStart, injectCode)
           if (config.build.sourcemap) {
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
@@ -1003,6 +1003,7 @@ async function compileCSS(
     return {
       code,
       map: preprocessorMap,
+      deps,
     }
   }
 
@@ -1411,8 +1412,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
-      charset: 'utf8',
-      ...resolveEsbuildMinifyOptions(config.esbuild || {}),
+      ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
@@ -1432,10 +1432,11 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   }
 }
 
-function resolveEsbuildMinifyOptions(
+function resolveMinifyCssEsbuildOptions(
   options: ESBuildOptions,
 ): TransformOptions {
   const base: TransformOptions = {
+    charset: options.charset ?? 'utf8',
     logLevel: options.logLevel,
     logLimit: options.logLimit,
     logOverride: options.logOverride,

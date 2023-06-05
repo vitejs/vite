@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "license": "MIT",
   "author": "Evan You",
   "files": [

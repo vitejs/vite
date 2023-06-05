@@ -3,6 +3,7 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
+  bareImportRE,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
@@ -12,6 +13,25 @@ import {
   processSrcSetSync,
   resolveHostname,
 } from '../utils'
+
+describe('bareImportRE', () => {
+  test('should work with normal package name', () => {
+    expect(bareImportRE.test('vite')).toBe(true)
+  })
+  test('should work with scoped package name', () => {
+    expect(bareImportRE.test('@vitejs/plugin-vue')).toBe(true)
+  })
+
+  test('should work with absolute paths', () => {
+    expect(bareImportRE.test('/foo')).toBe(false)
+    expect(bareImportRE.test('C:/foo')).toBe(false)
+    expect(bareImportRE.test('C:\\foo')).toBe(false)
+  })
+  test('should work with relative path', () => {
+    expect(bareImportRE.test('./foo')).toBe(false)
+    expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
 
 describe('injectQuery', () => {
   if (isWindows) {
