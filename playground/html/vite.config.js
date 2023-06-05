@@ -35,6 +35,7 @@ export default defineConfig({
 
   define: {
     'import.meta.env.VITE_NUMBER': 5173,
+    'import.meta.env.VITE_STRING': JSON.stringify('string'),
   },
 
   plugins: [

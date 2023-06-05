@@ -959,7 +959,13 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   for (const key in config.define) {
     if (key.startsWith(`import.meta.env.`)) {
       const val = config.define[key]
-      env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
+      if (typeof val === 'string') {
+        try {
+          env[key.slice(16)] = JSON.parse(val)
+        } catch {} // ignore non-JSON.parse-able values
+      } else {
+        env[key.slice(16)] = JSON.stringify(val)
+      }
     }
   }
   return (html, ctx) => {
