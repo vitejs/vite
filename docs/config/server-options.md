@@ -34,6 +34,13 @@ The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is becaus
 
 :::
 
+::: tip Accessing the server on WSL2 from your LAN
+
+When running Vite on WSL2, it is not sufficient to set `host: true` to access the server from your LAN.
+See [the WSL document](https://learn.microsoft.com/en-us/windows/wsl/networking#accessing-a-wsl-2-distribution-from-your-local-area-network-lan) for more details.
+
+:::
+
 ## server.port
 
 - **Type:** `number`

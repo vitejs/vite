@@ -36,7 +36,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper'
-const preloadMarkerWithQuote = `"${preloadMarker}"` as const
+const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -47,6 +47,20 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
+}
+
+function indexOfMatchInSlice(
+  str: string,
+  reg: RegExp,
+  pos: number = 0,
+): number {
+  if (pos !== 0) {
+    str = str.slice(pos)
+  }
+
+  const matcher = str.match(reg)
+
+  return matcher?.index !== undefined ? matcher.index + pos : -1
 }
 
 /**
@@ -507,10 +521,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
+              let markerStartPos = indexOfMatchInSlice(
+                code,
+                preloadMarkerWithQuote,
+                end,
+              )
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = code.indexOf(preloadMarkerWithQuote)
+                markerStartPos = indexOfMatchInSlice(
+                  code,
+                  preloadMarkerWithQuote,
+                )
               }
 
               if (markerStartPos > 0) {
@@ -577,7 +598,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarkerWithQuote.length,
+                  markerStartPos + preloadMarker.length + 2,
                   `[${renderedDeps.join(',')}]`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
@@ -587,19 +608,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = code.indexOf(preloadMarkerWithQuote)
+          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerWithQuote)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarkerWithQuote.length,
+                markerStartPos + preloadMarker.length + 2,
                 'void 0',
               )
             }
-
-            markerStartPos = code.indexOf(
+            markerStartPos = indexOfMatchInSlice(
+              code,
               preloadMarkerWithQuote,
-              markerStartPos + preloadMarkerWithQuote.length,
+              markerStartPos + preloadMarker.length + 2,
             )
           }
 

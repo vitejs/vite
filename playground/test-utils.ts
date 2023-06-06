@@ -18,6 +18,7 @@ export * from './vitestSetup'
 export const ports = {
   cli: 9510,
   'cli-module': 9511,
+  json: 9512,
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,
@@ -307,6 +308,9 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   delete m.file
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  if (m.sourceRoot) {
+    m.sourceRoot = m.sourceRoot.replace(root, '/root')
+  }
   return m
 }
 

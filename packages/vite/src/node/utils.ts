@@ -137,7 +137,7 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^[\w@](?!.*:\/\/)/
+export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
@@ -169,7 +169,7 @@ export function createDebugger(
 
   if (enabled) {
     return (...args: [string, ...any[]]) => {
-      if (!filter || args.some((a) => a?.includes(filter))) {
+      if (!filter || args.some((a) => a?.includes?.(filter))) {
         log(...args)
       }
     }
@@ -574,7 +574,7 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
+const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
 let firstSafeRealPathSyncRun = false
 
 function windowsSafeRealPathSync(path: string): string {
@@ -586,6 +586,13 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
+  // Skip if using Node <16.18 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
+  const nodeVersion = process.versions.node.split('.').map(Number)
+  if (nodeVersion[0] < 16 || (nodeVersion[0] === 16 && nodeVersion[1] < 18)) {
+    safeRealpathSync = fs.realpathSync
+    return
+  }
+
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
@@ -874,13 +881,18 @@ export async function resolveServerUrls(
   const base =
     config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
-  if (hostname.host && loopbackHosts.has(hostname.host)) {
+  if (hostname.host) {
     let hostnameName = hostname.name
     // ipv6 host
     if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
-    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+    const address = `${protocol}://${hostnameName}:${port}${base}`
+    if (loopbackHosts.has(hostname.host)) {
+      local.push(address)
+    } else {
+      network.push(address)
+    }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])

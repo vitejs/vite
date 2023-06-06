@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
@@ -69,6 +70,7 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
+const promisifiedRealpath = promisify(fs.realpath)
 
 export type {
   RenderBuiltAssetUrl,
@@ -455,7 +457,12 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
-  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+  // If there are custom commonjsOptions, don't force optimized deps for this test
+  // even if the env var is set as it would interfere with the playground specs.
+  if (
+    !config.build?.commonjsOptions &&
+    process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS
+  ) {
     config = mergeConfig(config, {
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } },
@@ -1051,7 +1058,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fs.promises.readFile(args.path, 'utf8')
+            const contents = await fsp.readFile(args.path, 'utf8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
@@ -1106,7 +1113,11 @@ async function loadConfigFromBundledFile(
   // for cjs, we can register a custom loader via `_require.extensions`
   else {
     const extension = path.extname(fileName)
-    const realFileName = await fsp.realpath(fileName)
+    // We don't use fsp.realpath() here because it has the same behaviour as
+    // fs.realpath.native. On some Windows systems, it returns uppercase volume
+    // letters (e.g. "C:\") while the Node.js loader uses lowercase volume letters.
+    // See https://github.com/vitejs/vite/issues/12923
+    const realFileName = await promisifiedRealpath(fileName)
     const loaderExt = extension in _require.extensions ? extension : '.js'
     const defaultLoader = _require.extensions[loaderExt]!
     _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {

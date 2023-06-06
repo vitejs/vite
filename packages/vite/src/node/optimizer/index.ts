@@ -78,7 +78,7 @@ export interface DepOptimizationConfig {
    */
   exclude?: string[]
   /**
-   * Force ESM interop when importing for these dependencies. Some legacy
+   * Forces ESM interop when importing these dependencies. Some legacy
    * packages advertise themselves as ESM but use `require` internally
    * @experimental
    */
@@ -125,6 +125,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+  /**
+   * Automatic dependency discovery. When `noDiscovery` is true, only dependencies
+   * listed in `include` will be optimized. The scanner isn't run for cold start
+   * in this case. CJS-only dependencies must be present in `include` during dev.
+   * @default false
+   * @experimental
+   */
+  noDiscovery?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {

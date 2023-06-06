@@ -2,6 +2,7 @@
   "name": "@vitejs/test-assets",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "dev": "vite",

@@ -189,7 +189,7 @@ async function instantiateModule(
 
   function ssrExportAll(sourceModule: any) {
     for (const key in sourceModule) {
-      if (key !== 'default') {
+      if (key !== 'default' && key !== '__esModule') {
         Object.defineProperty(ssrModule, key, {
           enumerable: true,
           configurable: true,
@@ -222,7 +222,7 @@ async function instantiateModule(
       ssrExportAllKey,
       '"use strict";' +
         result.code +
-        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
+        `\n//# sourceURL=${mod.id}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
