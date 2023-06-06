@@ -266,6 +266,10 @@ function mergeConfig(
 
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
 
+::: tip NOTE
+`mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
+:::
+
 ## `searchForWorkspaceRoot`
 
 **Type Signature:**
