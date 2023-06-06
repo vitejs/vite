@@ -51,11 +51,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
-import type {
-  InternalResolveOptions,
-  InternalResolveOptionsWithOverrideConditions,
-  ResolveOptions,
-} from './plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -1003,20 +999,45 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptionsWithOverrideConditions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            overrideConditions: ['node'],
-            dedupe: [],
-            extensions: DEFAULT_EXTENSIONS,
-            preserveSymlinks: false,
-            packageCache: new Map(),
+          const packageCache = new Map()
+          const resolveByViteResolver = (
+            id: string,
+            importer: string,
+            isRequire: boolean,
+          ) => {
+            return tryNodeResolve(
+              id,
+              importer,
+              {
+                root: path.dirname(fileName),
+                isBuild: true,
+                isProduction: true,
+                preferRelative: false,
+                tryIndex: true,
+                mainFields: [],
+                browserField: false,
+                conditions: [],
+                overrideConditions: ['node'],
+                dedupe: [],
+                extensions: DEFAULT_EXTENSIONS,
+                preserveSymlinks: false,
+                packageCache,
+                isRequire,
+              },
+              false,
+            )?.id
+          }
+          const isESMFile = (id: string): boolean => {
+            if (id.endsWith('.mjs')) return true
+            if (id.endsWith('.cjs')) return false
+
+            const nearestPackageJson = findNearestPackageData(
+              path.dirname(id),
+              packageCache,
+            )
+            return (
+              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
+            )
           }
 
           // externalize bare imports
@@ -1036,15 +1057,39 @@ async function bundleConfigFile(
                 return { external: true }
               }
 
-              const isIdESM = isESM || kind === 'dynamic-import'
-              let idFsPath = tryNodeResolve(
-                id,
-                importer,
-                { ...options, isRequire: !isIdESM },
-                false,
-              )?.id
-              if (idFsPath && isIdESM) {
+              const isImport = isESM || kind === 'dynamic-import'
+              let idFsPath: string | undefined
+              try {
+                idFsPath = resolveByViteResolver(id, importer, !isImport)
+              } catch (e) {
+                if (!isImport) {
+                  let canResolveWithImport = false
+                  try {
+                    canResolveWithImport = !!resolveByViteResolver(
+                      id,
+                      importer,
+                      false,
+                    )
+                  } catch {}
+                  if (canResolveWithImport) {
+                    throw new Error(
+                      `Failed to resolve ${JSON.stringify(
+                        id,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                    )
+                  }
+                }
+                throw e
+              }
+              if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
+              }
+              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+                throw new Error(
+                  `${JSON.stringify(
+                    id,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                )
               }
               return {
                 path: idFsPath,
