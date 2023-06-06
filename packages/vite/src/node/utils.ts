@@ -240,6 +240,22 @@ export function isParentDirectory(dir: string, file: string): boolean {
   )
 }
 
+/**
+ * Check if 2 file name are identical
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param file1 - normalized absolute path
+ * @param file2 - normalized absolute path
+ * @returns true if both files url are identical
+ */
+export function isSameFileUri(file1: string, file2: string): boolean {
+  return (
+    file1 === file2 ||
+    (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
+  )
+}
+
 export const queryRE = /\?.*$/s
 
 const postfixRE = /[?#].*$/s
@@ -881,13 +897,18 @@ export async function resolveServerUrls(
   const base =
     config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
-  if (hostname.host && loopbackHosts.has(hostname.host)) {
+  if (hostname.host !== undefined && !wildcardHosts.has(hostname.host)) {
     let hostnameName = hostname.name
     // ipv6 host
     if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
-    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+    const address = `${protocol}://${hostnameName}:${port}${base}`
+    if (loopbackHosts.has(hostname.host)) {
+      local.push(address)
+    } else {
+      network.push(address)
+    }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
@@ -1037,11 +1058,18 @@ function mergeConfigRecursively(
   return merged
 }
 
-export function mergeConfig(
-  defaults: Record<string, any>,
-  overrides: Record<string, any>,
+export function mergeConfig<
+  D extends Record<string, any>,
+  O extends Record<string, any>,
+>(
+  defaults: D extends Function ? never : D,
+  overrides: O extends Function ? never : O,
   isRoot = true,
 ): Record<string, any> {
+  if (typeof defaults === 'function' || typeof overrides === 'function') {
+    throw new Error(`Cannot merge config in form of callback`)
+  }
+
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
