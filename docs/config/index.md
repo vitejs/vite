@@ -71,7 +71,7 @@ It is important to note that in Vite's API the `command` value is `serve` during
 
 ## Async Config
 
-If the config needs to call async function, it can export a async function instead:
+To use async functions in your configuration, make sure to export the config as an async function:
 
 ```js
 export default defineConfig(async ({ command, mode }) => {
