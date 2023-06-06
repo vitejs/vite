@@ -655,7 +655,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
                   e?.code === ERR_CLOSED_SERVER
                 ) {
-                  // This are expected errors
+                  // these are expected errors
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
