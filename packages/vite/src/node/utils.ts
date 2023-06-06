@@ -240,6 +240,22 @@ export function isParentDirectory(dir: string, file: string): boolean {
   )
 }
 
+/**
+ * Check if 2 file name are identical
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param file1 - normalized absolute path
+ * @param file2 - normalized absolute path
+ * @returns true if both files url are identical
+ */
+export function isSameFileUri(file1: string, file2: string): boolean {
+  return (
+    file1 === file2 ||
+    (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
+  )
+}
+
 export const queryRE = /\?.*$/s
 
 const postfixRE = /[?#].*$/s
