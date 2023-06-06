@@ -185,6 +185,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       )
       if (resolvedImports) {
         id = resolvedImports
+
+        if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
+          return id
+        }
       }
 
       if (importer) {
