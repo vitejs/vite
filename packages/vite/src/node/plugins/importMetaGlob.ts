@@ -13,7 +13,7 @@ import type {
   TemplateLiteral,
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
-import type { RollupError } from 'rollup'
+import type { CustomPluginOptions, RollupError } from 'rollup'
 import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
@@ -75,7 +75,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         code,
         id,
         config.root,
-        (im) => this.resolve(im, id).then((i) => i?.id || im),
+        (im, _, options) =>
+          this.resolve(im, id, options).then((i) => i?.id || im),
         config.isProduction,
         config.experimental.importGlobRestoreExtension,
       )
@@ -546,6 +547,12 @@ export async function transformGlobImport(
 type IdResolver = (
   id: string,
   importer?: string,
+  options?: {
+    assertions?: Record<string, string>
+    custom?: CustomPluginOptions
+    isEntry?: boolean
+    skipSelf?: boolean
+  },
 ) => Promise<string | undefined> | string | undefined
 
 function globSafePath(path: string) {
@@ -594,7 +601,16 @@ export async function toAbsoluteGlob(
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const resolved = normalizePath((await resolveId(glob, importer)) || glob)
+  const isSubImportsPattern = glob.startsWith('#') && glob.includes('*')
+
+  const resolved = normalizePath(
+    (await resolveId(glob, importer, {
+      custom: { 'vite:import-glob': { isSubImportsPattern } },
+    })) || glob,
+  )
+  if (isSubImportsPattern) {
+    return join(root, resolved)
+  }
   if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
   }
