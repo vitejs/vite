@@ -356,7 +356,7 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
       e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
       e?.code === ERR_CLOSED_SERVER
     ) {
-      // This are expected errors
+      // these are expected errors
       return
     }
     server.config.logger.error(e.message)
