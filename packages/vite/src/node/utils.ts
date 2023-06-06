@@ -1042,11 +1042,18 @@ function mergeConfigRecursively(
   return merged
 }
 
-export function mergeConfig(
-  defaults: Record<string, any>,
-  overrides: Record<string, any>,
+export function mergeConfig<
+  D extends Record<string, any>,
+  O extends Record<string, any>,
+>(
+  defaults: D extends Function ? never : D,
+  overrides: O extends Function ? never : O,
   isRoot = true,
 ): Record<string, any> {
+  if (typeof defaults === 'function' || typeof overrides === 'function') {
+    throw new Error(`Cannot merge config in form of callback`)
+  }
+
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
