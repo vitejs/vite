@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, page, testDir, untilUpdated } from '~utils'
+import { isBuild, page, readManifest, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong')
@@ -27,6 +27,10 @@ test('inlined', async () => {
 
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong')
+})
+
+test('inline shared worker', async () => {
+  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
@@ -76,20 +80,33 @@ describe.runIf(isBuild)('build', () => {
       '"type":"constructor"',
     )
   })
+
+  test('should not emit worker manifest', async () => {
+    const manifest = readManifest('iife')
+    expect(manifest['index.html']).toBeDefined()
+  })
 })
 
 test('module worker', async () => {
   await untilUpdated(
-    () => page.textContent('.worker-import-meta-url'),
-    'A string',
+    async () => page.textContent('.worker-import-meta-url'),
+    /A\sstring.*\/iife\/.+url-worker\.js/,
+    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
+    /A\sstring.*\/iife\/.+url-worker\.js/,
+    true,
+  )
+  await untilUpdated(
+    () => page.textContent('.worker-import-meta-url-without-extension'),
     'A string',
+    true,
   )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
+    true,
   )
 })
 

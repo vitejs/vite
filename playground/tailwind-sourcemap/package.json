@@ -2,6 +2,7 @@
   "name": "@vitejs/test-tailwind-sourcemap",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,6 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "tailwindcss": "^3.2.7"
+    "tailwindcss": "^3.3.1"
   }
 }

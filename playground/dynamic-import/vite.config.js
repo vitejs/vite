@@ -1,8 +1,8 @@
-const fs = require('node:fs')
-const path = require('node:path')
-const vite = require('vite')
+import fs from 'node:fs'
+import path from 'node:path'
+import { defineConfig } from 'vite'
 
-module.exports = vite.defineConfig({
+export default defineConfig({
   plugins: [
     {
       name: 'copy',

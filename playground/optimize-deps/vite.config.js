@@ -1,12 +1,12 @@
-const fs = require('node:fs')
+import fs from 'node:fs'
+import module from 'node:module'
+import { defineConfig } from 'vite'
+const require = module.createRequire(import.meta.url)
 
 // Overriding the NODE_ENV set by vitest
 process.env.NODE_ENV = ''
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   resolve: {
     dedupe: ['react'],
     alias: {
@@ -50,6 +50,13 @@ module.exports = {
     // Avoid @rollup/plugin-commonjs
     commonjsOptions: {
       include: [],
+    },
+    rollupOptions: {
+      onwarn(msg, warn) {
+        // filter `"Buffer" is not exported by "__vite-browser-external"` warning
+        if (msg.message.includes('Buffer')) return
+        warn(msg)
+      },
     },
   },
 
@@ -95,7 +102,7 @@ module.exports = {
       },
     },
   ],
-}
+})
 
 // Handles Test.vue in dep-linked-include package
 function testVue() {
@@ -115,6 +122,11 @@ export default defineComponent({
 })
 `.trim(),
         }
+      }
+
+      // fallback to empty module for other vue files
+      if (id.endsWith('.vue')) {
+        return { code: `export default {}` }
       }
     },
   }

@@ -121,6 +121,12 @@ See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/e
 
 You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
+## Optimized Dependencies
+
+### Outdated pre-bundled deps when linking to a local package
+
+The hash key used to invalidate optimized dependencies depend on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
+
 ## Others
 
 ### Module externalized for browser compatibility
@@ -144,3 +150,18 @@ For example, you might see these errors.
 > TypeError: Cannot create property 'foo' on boolean 'false'
 
 If these code are used inside dependencies, you could use [`patch-package`](https://github.com/ds300/patch-package) (or [`yarn patch`](https://yarnpkg.com/cli/patch) or [`pnpm patch`](https://pnpm.io/cli/patch)) for an escape hatch.
+
+### Browser extensions
+
+Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.
+
+### Cross drive links on Windows
+
+If there's a cross drive links in your project on Windows, Vite may not work.
+
+An example of cross drive links are:
+
+- a virtual drive linked to a folder by `subst` command
+- a symlink/junction to a different drive by `mklink` command (e.g. Yarn global cache)
+
+Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)

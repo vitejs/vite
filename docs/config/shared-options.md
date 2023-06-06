@@ -111,7 +111,7 @@ When aliasing to file system paths, always use absolute paths. Relative alias va
 More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
 
 ::: warning Using with SSR
-If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.io/aliases/) support aliasing via the `npm:` prefix.
 :::
 
 ## resolve.dedupe
@@ -226,7 +226,15 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 - **Type:** `Record<string, object>`
 
-Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. Example:
+Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
+
+- `sass`/`scss` - [Options](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
+- `less` - [Options](https://lesscss.org/usage/#less-options).
+- `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
+
+All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
+
+Example:
 
 ```js
 export default defineConfig({
@@ -235,8 +243,13 @@ export default defineConfig({
       scss: {
         additionalData: `$injectedColor: orange;`,
       },
+      less: {
+        math: 'parens-division',
+      },
       styl: {
-        additionalData: `$injectedColor ?= orange`,
+        define: {
+          $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
+        },
       },
     },
   },
@@ -384,6 +397,15 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 
 :::warning SECURITY NOTES
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
+
+If you would like to expose an unprefixed variable, you can use [define](#define) to expose it:
+
+```js
+define: {
+  'import.meta.env.ENV_VARIABLE': JSON.stringify(process.env.ENV_VARIABLE)
+}
+```
+
 :::
 
 ## appType

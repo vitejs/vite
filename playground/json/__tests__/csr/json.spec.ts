@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
-import testJson from '../test.json'
-import hmrJson from '../hmr.json'
+import deepJson from 'vue/package.json'
+import testJson from '../../test.json'
+import hmrJson from '../../hmr.json'
 import { editFile, isBuild, isServe, page, untilUpdated } from '~utils'
 
-const deepJson = require('vue/package.json')
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
 const hmrStringified = JSON.stringify(hmrJson)
@@ -45,7 +45,7 @@ test('?url', async () => {
 
 test('?raw', async () => {
   expect(await page.textContent('.raw')).toBe(
-    readFileSync(require.resolve('../test.json'), 'utf-8'),
+    readFileSync(require.resolve('../../test.json'), 'utf-8'),
   )
 })
 

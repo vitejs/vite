@@ -34,6 +34,13 @@ The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is becaus
 
 :::
 
+::: tip Accessing the server on WSL2 from your LAN
+
+When running Vite on WSL2, it is not sufficient to set `host: true` to access the server from your LAN.
+See [the WSL document](https://learn.microsoft.com/en-us/windows/wsl/networking#accessing-a-wsl-2-distribution-from-your-local-area-network-lan) for more details.
+
+:::
+
 ## server.port
 
 - **Type:** `number`
@@ -318,3 +325,30 @@ export default defineConfig({
   },
 })
 ```
+
+## server.sourcemapIgnoreList
+
+- **Type:** `false | (sourcePath: string, sourcemapPath: string) => boolean`
+- **Default:** `(sourcePath) => sourcePath.includes('node_modules')`
+
+Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/articles/x-google-ignore-list/).
+
+`server.sourcemapIgnoreList` is the equivalent of [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
+
+By default, it excludes all paths containing `node_modules`. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
+
+```js
+export default defineConfig({
+  server: {
+    // This is the default value, and will add all files with node_modules
+    // in their paths to the ignore list.
+    sourcemapIgnoreList(sourcePath, sourcemapPath) {
+      return sourcePath.includes('node_modules')
+    }
+  }
+};
+```
+
+::: tip Note
+[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined rollup options.
+:::

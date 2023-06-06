@@ -1,8 +1,7 @@
-const path = require('node:path')
-const vite = require('vite')
-const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
+import { defineConfig } from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig({
+export default defineConfig({
   base: './',
   resolve: {
     alias: {
@@ -47,4 +46,5 @@ module.exports = vite.defineConfig({
       },
     },
   ],
+  cacheDir: 'node_modules/.vite-relative-base',
 })

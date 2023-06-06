@@ -20,6 +20,8 @@ type LogEntry = {
   mapSize: number | null
 }
 
+const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
+
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
@@ -89,11 +91,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       startTime = Date.now()
     },
 
+    buildStart() {
+      transformedCount = 0
+    },
+
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
-          process.stdout.clearLine(0)
-          process.stdout.cursorTo(0)
+          clearLine()
         }
         config.logger.info(
           `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
@@ -144,12 +149,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                 } else {
                   if (chunk.fileName.endsWith('.map')) return null
                   const isCSS = chunk.fileName.endsWith('.css')
+                  const isCompressible =
+                    isCSS || COMPRESSIBLE_ASSETS_RE.test(chunk.fileName)
                   return {
                     name: chunk.fileName,
                     group: isCSS ? 'CSS' : 'Assets',
                     size: chunk.source.length,
                     mapSize: null, // Rollup doesn't support CSS maps?
-                    compressedSize: isCSS
+                    compressedSize: isCompressible
                       ? await getCompressedSize(chunk.source)
                       : null,
                   }
@@ -188,7 +195,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             path.resolve(config.root, outDir ?? config.build.outDir),
           ),
         )
-        const assetsDir = `${config.build.assetsDir}/`
+        const assetsDir = path.join(config.build.assetsDir, '/')
 
         for (const group of groups) {
           const filtered = entries.filter((e) => e.group === group.name)
@@ -199,14 +206,15 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
             let log = colors.dim(relativeOutDir + '/')
-            log += entry.name.startsWith(assetsDir)
-              ? colors.dim(assetsDir) +
-                group.color(
-                  entry.name
-                    .slice(assetsDir.length)
-                    .padEnd(longest + 2 - assetsDir.length),
-                )
-              : group.color(entry.name.padEnd(longest + 2))
+            log +=
+              !config.build.lib && entry.name.startsWith(assetsDir)
+                ? colors.dim(assetsDir) +
+                  group.color(
+                    entry.name
+                      .slice(assetsDir.length)
+                      .padEnd(longest + 2 - assetsDir.length),
+                  )
+                : group.color(entry.name.padEnd(longest + 2))
             log += colors.bold(
               sizeColor(displaySize(entry.size).padStart(sizePad)),
             )
@@ -251,8 +259,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     closeBundle() {
       if (shouldLogInfo && !config.build.watch) {
         config.logger.info(
-          `${colors.green(`✓`)} built in ${displayTime(
-            Date.now() - startTime,
+          `${colors.green(
+            `✓ built in ${displayTime(Date.now() - startTime)}`,
           )}`,
         )
       }

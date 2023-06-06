@@ -18,25 +18,29 @@ export * from './vitestSetup'
 export const ports = {
   cli: 9510,
   'cli-module': 9511,
+  json: 9512,
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,
   'legacy/client-and-ssr': 9523,
-  'ssr-deps': 9600,
-  'ssr-html': 9601,
-  'ssr-noexternal': 9602,
-  'ssr-pug': 9603,
-  'ssr-webworker': 9606,
+  'assets/url-base': 9524, // not imported but used in `assets/vite.config-url-base.js`
+  ssr: 9600,
+  'ssr-deps': 9601,
+  'ssr-html': 9602,
+  'ssr-noexternal': 9603,
+  'ssr-pug': 9604,
+  'ssr-webworker': 9605,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
-  'ssr-deps': 24681,
-  'ssr-html': 24682,
-  'ssr-noexternal': 24683,
-  'ssr-pug': 24684,
+  ssr: 24681,
+  'ssr-deps': 24682,
+  'ssr-html': 24683,
+  'ssr-noexternal': 24684,
+  'ssr-pug': 24685,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -68,7 +72,11 @@ const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
 async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
   if (typeof el === 'string') {
-    return await page.$(el)
+    const realEl = await page.$(el)
+    if (realEl == null) {
+      throw new Error(`Cannot find element: "${el}"`)
+    }
+    return realEl
   }
   return el
 }
@@ -150,14 +158,19 @@ export function readManifest(base = ''): Manifest {
  */
 export async function untilUpdated(
   poll: () => string | Promise<string>,
-  expected: string,
+  expected: string | RegExp,
   runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
-    if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
+    if (
+      (typeof expected === 'string'
+        ? actual.indexOf(expected) > -1
+        : actual.match(expected)) ||
+      tries === maxTries - 1
+    ) {
       expect(actual).toMatch(expected)
       break
     } else {
@@ -295,6 +308,9 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   delete m.file
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  if (m.sourceRoot) {
+    m.sourceRoot = m.sourceRoot.replace(root, '/root')
+  }
   return m
 }
 

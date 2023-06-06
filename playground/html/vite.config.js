@@ -1,9 +1,7 @@
-const { resolve } = require('node:path')
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
@@ -29,8 +27,14 @@ module.exports = {
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
+        env: resolve(__dirname, 'env.html'),
+        sideEffects: resolve(__dirname, 'side-effects/index.html'),
       },
     },
+  },
+
+  define: {
+    'import.meta.env.VITE_NUMBER': 5173,
   },
 
   plugins: [
@@ -189,4 +193,4 @@ ${
       },
     },
   ],
-}
+})
