@@ -534,3 +534,7 @@ test('async css order with css modules', async () => {
     expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
   }, true)
 })
+
+test('@import scss', async () => {
+  expect(await getColor('.at-import-scss')).toBe('red')
+})
