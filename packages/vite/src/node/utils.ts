@@ -897,7 +897,7 @@ export async function resolveServerUrls(
   const base =
     config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
-  if (hostname.host) {
+  if (hostname.host !== undefined && !wildcardHosts.has(hostname.host)) {
     let hostnameName = hostname.name
     // ipv6 host
     if (hostnameName.includes(':')) {
