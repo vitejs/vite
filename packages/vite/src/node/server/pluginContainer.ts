@@ -88,7 +88,7 @@ export const ERR_CLOSED_SERVER = 'ERR_CLOSED_SERVER'
 
 export function throwClosedServerError(): never {
   const err: any = new Error(
-    'The server is being restarted or closed, request is outdated',
+    'The server is being restarted or closed. Request is outdated',
   )
   err.code = ERR_CLOSED_SERVER
   // This error will be caught by the transform middleware that will
