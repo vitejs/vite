@@ -116,6 +116,10 @@ export function splitVendorChunkPlugin(): Plugin {
               }
               // else, leave the object form of manualChunks untouched, as
               // we can't safely replicate rollup handling.
+              // eslint-disable-next-line no-console
+              console.warn(
+                '(!) `build.rollupOptions.manualChunks` object form is ignored when used with the `splitVendorChunk` plugin. Consider using the function form instead.',
+              )
             } else {
               output.manualChunks = viteManualChunks
             }
