@@ -42,6 +42,13 @@ if (import.meta.hot) {
     handleDep('multi deps', foo, nestedFoo)
   })
 
+  import.meta.hot.accept(
+    ['virtual:file', '/@id/__x00__virtual:file'],
+    ([rawVirtualPath, acceptedVirtualPath]) => {
+      text('.virtual', acceptedVirtualPath.virtual)
+    },
+  )
+
   import.meta.hot.dispose(() => {
     console.log(`foo was:`, foo)
   })
