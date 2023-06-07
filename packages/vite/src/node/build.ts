@@ -865,7 +865,6 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`,
 ]
 
-const tty = process.stdout.isTTY && !process.env.CI
 export function onRollupWarning(
   warning: RollupWarning,
   warn: WarningHandler,
@@ -911,6 +910,7 @@ export function onRollupWarning(
     warn(warning)
   }
 
+  const tty = process.stdout.isTTY && !process.env.CI
   if (tty) {
     process.stdout.clearLine(0)
     process.stdout.cursorTo(0)
