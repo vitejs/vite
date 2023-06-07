@@ -34,6 +34,8 @@
     "@vitejs/test-resolve-exports-legacy-fallback": "link:./exports-legacy-fallback",
     "@vitejs/test-resolve-exports-path": "link:./exports-path",
     "@vitejs/test-resolve-exports-with-module": "link:./exports-with-module",
+    "@vitejs/test-resolve-exports-with-module-condition": "link:./exports-with-module-condition",
+    "@vitejs/test-resolve-exports-with-module-condition-required": "link:./exports-with-module-condition-required",
     "@vitejs/test-resolve-linked": "workspace:*",
     "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
     "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir"

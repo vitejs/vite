@@ -1034,6 +1034,12 @@ importers:
       '@vitejs/test-resolve-exports-with-module':
         specifier: link:./exports-with-module
         version: link:exports-with-module
+      '@vitejs/test-resolve-exports-with-module-condition':
+        specifier: link:./exports-with-module-condition
+        version: link:exports-with-module-condition
+      '@vitejs/test-resolve-exports-with-module-condition-required':
+        specifier: link:./exports-with-module-condition-required
+        version: link:exports-with-module-condition-required
       '@vitejs/test-resolve-imports-pkg':
         specifier: link:./imports-path/other-pkg
         version: link:imports-path/other-pkg
@@ -1094,6 +1100,14 @@ importers:
   playground/resolve/exports-path: {}
 
   playground/resolve/exports-with-module: {}
+
+  playground/resolve/exports-with-module-condition: {}
+
+  playground/resolve/exports-with-module-condition-required:
+    dependencies:
+      '@vitejs/test-resolve-exports-with-module-condition':
+        specifier: link:../exports-with-module-condition
+        version: link:../exports-with-module-condition
 
   playground/resolve/imports-path/other-pkg: {}
 

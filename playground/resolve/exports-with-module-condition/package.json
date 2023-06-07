@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-resolve-exports-with-module-condition",
+  "private": true,
+  "version": "1.0.0",
+  "exports": {
+    "module": "./index.esm.js",
+    "import": "./index.mjs",
+    "require": "./index.js"
+  }
+}

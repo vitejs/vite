@@ -1105,8 +1105,6 @@ function resolveExportsOrImports(
         return options.isProduction
       case 'development':
         return !options.isProduction
-      case 'module':
-        return !options.isRequire
     }
     return true
   })
