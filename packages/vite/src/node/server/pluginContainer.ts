@@ -585,16 +585,14 @@ export async function createPluginContainer(
 
   let closed = false
   const processesing = new Set<Promise<any>>()
-  function awaitPromiseOnClose<T>(promise: Promise<T>) {
-    processesing.add(promise)
-    return promise.finally(() => processesing.delete(promise))
-  }
   // keeps track of hook promises so that we can wait for them all to finish upon closing the server
   function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
     if (!(maybePromise as any)?.then) {
       return maybePromise
     }
-    return awaitPromiseOnClose(maybePromise as Promise<T>)
+    const promise = maybePromise as Promise<T>
+    processesing.add(promise)
+    return promise.finally(() => processesing.delete(promise))
   }
 
   const container: PluginContainer = {
