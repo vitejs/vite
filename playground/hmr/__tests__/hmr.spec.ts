@@ -712,20 +712,19 @@ if (!isBuild) {
     const file = 'missing-import/a.js'
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
-    const timeout = 2000
 
     await page.goto(viteTestUrl + '/missing-import/index.html', {
       waitUntil: 'load',
     })
 
     await untilBrowserLogAfter(async () => {
-      const loadPromise = page.waitForEvent('load', { timeout })
+      const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(importCode, unImportCode))
       await loadPromise
     }, 'missing test')
 
     await untilBrowserLogAfter(async () => {
-      const loadPromise = page.waitForEvent('load', { timeout })
+      const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await loadPromise
     }, /500/)
