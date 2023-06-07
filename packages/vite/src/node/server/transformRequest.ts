@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
@@ -188,7 +188,7 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
-        code = await fs.readFile(file, 'utf-8')
+        code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
@@ -324,7 +324,7 @@ async function loadAndTransform(
 
 function createConvertSourceMapReadMap(originalFileName: string) {
   return (filename: string) => {
-    return fs.readFile(
+    return fsp.readFile(
       path.resolve(path.dirname(originalFileName), filename),
       'utf-8',
     )
