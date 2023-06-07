@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import readLine from 'node:readline'
 import colors from 'picocolors'
 import type {
   ExternalOption,
@@ -911,8 +910,8 @@ export function onRollupWarning(
     warn(warning)
   }
 
-  readLine.clearLine(process.stdout, 0)
-  readLine.cursorTo(process.stdout, 0)
+  process.stdout.clearLine(0)
+  process.stdout.cursorTo(0)
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
