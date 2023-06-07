@@ -689,10 +689,12 @@ export async function build(
       prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    const res = []
+    const pendingRes: Promise<RollupOutput>[] = []
     for (const output of normalizedOutputs) {
-      res.push(await bundle[options.write ? 'write' : 'generate'](output))
+      pendingRes.push(bundle[options.write ? 'write' : 'generate'](output))
     }
+    const res = await Promise.all(pendingRes)
+
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
