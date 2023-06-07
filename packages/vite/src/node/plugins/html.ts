@@ -955,6 +955,8 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   const pattern = /%(\S+?)%/g
   const envPrefix = resolveEnvPrefix({ envPrefix: config.envPrefix })
   const env: Record<string, any> = { ...config.env }
+  const ignoredImportMetaEnvKeys = new Set()
+
   // account for user env defines
   for (const key in config.define) {
     if (key.startsWith(`import.meta.env.`)) {
@@ -966,7 +968,9 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
             throw 'parsed value should be string'
           }
           env[key.slice(16)] = parsed
-        } catch {} // ignore non-JSON.parse-able values and non-string parsed values
+        } catch {
+          ignoredImportMetaEnvKeys.add(key.slice(16))
+        }
       } else {
         env[key.slice(16)] = JSON.stringify(val)
       }
@@ -977,7 +981,19 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       if (key in env) {
         return env[key]
       } else {
-        if (envPrefix.some((prefix) => key.startsWith(prefix))) {
+        if (ignoredImportMetaEnvKeys.has(key)) {
+          const relativeHtml = normalizePath(
+            path.relative(config.root, ctx.filename),
+          )
+          config.logger.warn(
+            colors.yellow(
+              colors.bold(
+                `(!) ${text} was found in /${relativeHtml} but was not replaced. ` +
+                  `Only quoted strings and non-string values can be used for HTML Env Replacement.`,
+              ),
+            ),
+          )
+        } else if (envPrefix.some((prefix) => key.startsWith(prefix))) {
           const relativeHtml = normalizePath(
             path.relative(config.root, ctx.filename),
           )
