@@ -115,7 +115,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       for (const id of chunk.moduleIds) {
         const module = this.getModuleInfo(id)
         if (!module) continue
-        // warn if a module is imported both dynamically and statically in a chunk
+        // When a dynamic importer shares a chunk with the imported module,
+        // warn that the dynamic imported module will not be moved to another chunk (#12850).
         if (module.importers.length && module.dynamicImporters.length) {
           for (const dynamicImporter of module.dynamicImporters) {
             if (chunk.moduleIds.includes(dynamicImporter)) {
