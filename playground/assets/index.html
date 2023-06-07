@@ -190,6 +190,14 @@
 <img class="import-meta-url-base-path-img" />
 <code class="import-meta-url-base-path"></code>
 
+<h2>new URL('...', import.meta.url (without extension))</h2>
+<p>
+  <code class="import-meta-url-content-without-extension"></code>
+</p>
+<p>
+  <code class="import-meta-url-without-extension"></code>
+</p>
+
 <h2>new URL('...', import.meta.url,) (with comma)</h2>
 <img class="import-meta-url-img-comma" />
 <code class="import-meta-url-comma"></code>
@@ -219,6 +227,26 @@
 <p>
   <img class="dynamic-import-meta-url-img-2-comma" />
   <code class="dynamic-import-meta-url-2-comma"></code>
+</p>
+
+<h2>new URL(`./${dynamic}?abc`, import.meta.url)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-1-query" />
+  <code class="dynamic-import-meta-url-1-query"></code>
+</p>
+<p>
+  <img class="dynamic-import-meta-url-img-2-query" />
+  <code class="dynamic-import-meta-url-2-query"></code>
+</p>
+
+<h2>new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-1-ternary" />
+  <code class="dynamic-import-meta-url-1-ternary"></code>
+</p>
+<p>
+  <img class="dynamic-import-meta-url-img-2-ternary" />
+  <code class="dynamic-import-meta-url-2-ternary"></code>
 </p>
 
 <h2>new URL(`non-existent`, import.meta.url)</h2>
@@ -383,6 +411,13 @@
   text('.import-meta-url-base-path', metaUrlBasePath)
   document.querySelector('.import-meta-url-base-path-img').src = metaUrlBasePath
 
+  const metaUrlWithoutExtension = new URL('./nested/test', import.meta.url)
+  text('.import-meta-url-without-extension', metaUrlWithoutExtension)
+  ;(async () => {
+    const res = await fetch(metaUrlWithoutExtension)
+    text('.import-meta-url-content-without-extension', await res.text())
+  })()
+
   // prettier-ignore
   const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)
   text('.import-meta-url-comma', metaUrlWithComma)
@@ -431,6 +466,28 @@
 
   testDynamicImportMetaUrlWithComma('icon', 1)
   testDynamicImportMetaUrlWithComma('asset', 2)
+
+  function testDynamicImportMetaUrlWithQuery(name, i) {
+    // prettier-ignore
+    const metaUrl = new URL(`./nested/${name}.png?abc`, import.meta.url,)
+    text(`.dynamic-import-meta-url-${i}-query`, metaUrl)
+    document.querySelector(`.dynamic-import-meta-url-img-${i}-query`).src =
+      metaUrl
+  }
+
+  testDynamicImportMetaUrlWithQuery('icon', 1)
+  testDynamicImportMetaUrlWithQuery('asset', 2)
+
+  function testDynamicImportMetaUrlWithTernaryOperator(name, i) {
+    // prettier-ignore
+    const metaUrl = new URL(`./nested/${1 === 0 ? 'failed' : name}.png?abc`, import.meta.url,)
+    text(`.dynamic-import-meta-url-${i}-ternary`, metaUrl)
+    document.querySelector(`.dynamic-import-meta-url-img-${i}-ternary`).src =
+      metaUrl
+  }
+
+  testDynamicImportMetaUrlWithTernaryOperator('icon', 1)
+  testDynamicImportMetaUrlWithTernaryOperator('asset', 2)
 
   {
     const name = 'test'

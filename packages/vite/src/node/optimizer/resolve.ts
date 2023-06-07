@@ -30,7 +30,12 @@ export function createOptimizeDepsIncludeResolver(
       config.root,
       config.resolve.preserveSymlinks,
     )
-    return await resolve(nestedPath, basedir, undefined, ssr)
+    return await resolve(
+      nestedPath,
+      path.resolve(basedir, 'package.json'),
+      undefined,
+      ssr,
+    )
   }
 }
 

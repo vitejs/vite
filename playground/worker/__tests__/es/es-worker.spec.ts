@@ -114,6 +114,11 @@ test('module worker', async () => {
     true,
   )
   await untilUpdated(
+    () => page.textContent('.worker-import-meta-url-without-extension'),
+    'A string',
+    true,
+  )
+  await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
     true,

@@ -185,6 +185,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       )
       if (resolvedImports) {
         id = resolvedImports
+
+        if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
+          return id
+        }
       }
 
       if (importer) {
@@ -498,7 +502,7 @@ function splitFileAndPostfix(path: string) {
   return { file, postfix: path.slice(file.length) }
 }
 
-function tryFsResolve(
+export function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,

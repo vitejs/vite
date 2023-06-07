@@ -1,3 +1,59 @@
+## <small>4.3.9 (2023-05-26)</small>
+
+* fix: fs.deny with leading double slash (#13348) ([813ddd6](https://github.com/vitejs/vite/commit/813ddd6)), closes [#13348](https://github.com/vitejs/vite/issues/13348)
+* fix: optimizeDeps during build and external ids (#13274) ([e3db771](https://github.com/vitejs/vite/commit/e3db771)), closes [#13274](https://github.com/vitejs/vite/issues/13274)
+* fix(css): return deps if have no postcss plugins (#13344) ([28923fb](https://github.com/vitejs/vite/commit/28923fb)), closes [#13344](https://github.com/vitejs/vite/issues/13344)
+* fix(legacy): style insert order (#13266) ([e444375](https://github.com/vitejs/vite/commit/e444375)), closes [#13266](https://github.com/vitejs/vite/issues/13266)
+* chore: revert prev release commit ([2a30a07](https://github.com/vitejs/vite/commit/2a30a07))
+* release: v4.3.9 ([5c9abf7](https://github.com/vitejs/vite/commit/5c9abf7))
+* docs: optimizeDeps.needsInterop (#13323) ([b34e79c](https://github.com/vitejs/vite/commit/b34e79c)), closes [#13323](https://github.com/vitejs/vite/issues/13323)
+* test: respect commonjs options in playgrounds (#13273) ([19e8c68](https://github.com/vitejs/vite/commit/19e8c68)), closes [#13273](https://github.com/vitejs/vite/issues/13273)
+* refactor: simplify SSR options' if statement (#13254) ([8013a66](https://github.com/vitejs/vite/commit/8013a66)), closes [#13254](https://github.com/vitejs/vite/issues/13254)
+* perf(ssr): calculate stacktrace offset lazily (#13256) ([906c4c1](https://github.com/vitejs/vite/commit/906c4c1)), closes [#13256](https://github.com/vitejs/vite/issues/13256)
+
+
+
+## <small>4.3.8 (2023-05-18)</small>
+
+* fix: avoid outdated module to crash in importAnalysis after restart (#13231) ([3609e79](https://github.com/vitejs/vite/commit/3609e79)), closes [#13231](https://github.com/vitejs/vite/issues/13231)
+* fix(ssr): skip updateCjsSsrExternals if legacy flag disabled (#13230) ([13fc345](https://github.com/vitejs/vite/commit/13fc345)), closes [#13230](https://github.com/vitejs/vite/issues/13230)
+
+
+
+## <small>4.3.7 (2023-05-16)</small>
+
+* fix: revert only watch .env files in envDir (#12587) (#13217) ([0fd4616](https://github.com/vitejs/vite/commit/0fd4616)), closes [#12587](https://github.com/vitejs/vite/issues/12587) [#13217](https://github.com/vitejs/vite/issues/13217)
+* fix(assetImportMetaUrl): allow ternary operator in template literal urls (#13121) ([d5d9a31](https://github.com/vitejs/vite/commit/d5d9a31)), closes [#13121](https://github.com/vitejs/vite/issues/13121)
+
+
+
+## <small>4.3.6 (2023-05-15)</small>
+
+* fix: avoid dev-server crash when ws proxy error (#12829) ([87e1f58](https://github.com/vitejs/vite/commit/87e1f58)), closes [#12829](https://github.com/vitejs/vite/issues/12829)
+* fix: call `tryFsResolve` for relative `new URL(foo, import.meta.url)` (#13142) ([eeb0617](https://github.com/vitejs/vite/commit/eeb0617)), closes [#13142](https://github.com/vitejs/vite/issues/13142)
+* fix: don't inject CSS sourcemap for direct requests (#13115) ([7d80a47](https://github.com/vitejs/vite/commit/7d80a47)), closes [#13115](https://github.com/vitejs/vite/issues/13115)
+* fix: handle more yarn pnp load errors (#13160) ([adf61d9](https://github.com/vitejs/vite/commit/adf61d9)), closes [#13160](https://github.com/vitejs/vite/issues/13160)
+* fix(build): declare moduleSideEffects for vite:modulepreload-polyfill (#13099) ([d63129b](https://github.com/vitejs/vite/commit/d63129b)), closes [#13099](https://github.com/vitejs/vite/issues/13099)
+* fix(css): respect `esbuild.charset` when minify (#13190) ([4fd35ed](https://github.com/vitejs/vite/commit/4fd35ed)), closes [#13190](https://github.com/vitejs/vite/issues/13190)
+* fix(server): intercept ping requests (#13117) ([d06cc42](https://github.com/vitejs/vite/commit/d06cc42)), closes [#13117](https://github.com/vitejs/vite/issues/13117)
+* fix(ssr): stacktrace uses abs path with or without sourcemap (#12902) ([88c855e](https://github.com/vitejs/vite/commit/88c855e)), closes [#12902](https://github.com/vitejs/vite/issues/12902)
+* perf: skip windows absolute paths for node resolve (#13162) ([e640939](https://github.com/vitejs/vite/commit/e640939)), closes [#13162](https://github.com/vitejs/vite/issues/13162)
+* chore: remove useless dep (#13165) ([9a7ec98](https://github.com/vitejs/vite/commit/9a7ec98)), closes [#13165](https://github.com/vitejs/vite/issues/13165)
+* chore(reporter): reuse clearLine (#13156) ([535795a](https://github.com/vitejs/vite/commit/535795a)), closes [#13156](https://github.com/vitejs/vite/issues/13156)
+
+
+
+## <small>4.3.5 (2023-05-05)</small>
+
+* fix: location is not defined error in cleanScssBugUrl (#13100) ([91d7b67](https://github.com/vitejs/vite/commit/91d7b67)), closes [#13100](https://github.com/vitejs/vite/issues/13100)
+* fix: unwrapId and pass ssr flag when adding to moduleGraph in this.load (#13083) ([9041e19](https://github.com/vitejs/vite/commit/9041e19)), closes [#13083](https://github.com/vitejs/vite/issues/13083)
+* fix(assetImportMetaUrl): reserve dynamic template literal query params (#13034) ([7089528](https://github.com/vitejs/vite/commit/7089528)), closes [#13034](https://github.com/vitejs/vite/issues/13034)
+* fix(debug): skip filter object args (#13098) ([d95a9af](https://github.com/vitejs/vite/commit/d95a9af)), closes [#13098](https://github.com/vitejs/vite/issues/13098)
+* fix(scan): handle html script tag attributes that contain ">" (#13101) ([8a37de6](https://github.com/vitejs/vite/commit/8a37de6)), closes [#13101](https://github.com/vitejs/vite/issues/13101)
+* fix(ssr): ignore __esModule for ssrExportAll (#13084) ([8a8ea1d](https://github.com/vitejs/vite/commit/8a8ea1d)), closes [#13084](https://github.com/vitejs/vite/issues/13084)
+
+
+
 ## <small>4.3.4 (2023-05-02)</small>
 
 * fix(define): incorrect raw expression value type in build (#13003) ([8f4cf07](https://github.com/vitejs/vite/commit/8f4cf07)), closes [#13003](https://github.com/vitejs/vite/issues/13003)
