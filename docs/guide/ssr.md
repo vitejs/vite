@@ -7,7 +7,7 @@ The following guide also assumes prior experience working with SSR in your frame
 :::
 
 :::warning Low-level API
-This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first. That said, many applications are successfully built directly on top of Vite's native low-level API.
+The low-level API provided by Vite is meant for library and framework authors. If you are looking to create an application with Server-Side Rendering (SSR), it is recommended to use the higher-level SSR plugins and tools available in the [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) section. One widely adopted solution for building SSR applications with Vite is the [vite-plugin-ssr](https://vite-plugin-ssr.com) plugin. It provides a framework-agnostic approach to building SSR applications with Vite, and supports multiple rendering modes, including SPA, SSR, and SSG. That said, many applications are successfully built directly on top of Vite's native low-level API.
 :::
 
 :::tip Help
