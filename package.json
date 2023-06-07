@@ -128,8 +128,8 @@
     },
     "patchedDependencies": {
       "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch",
-      "sirv@2.0.2": "patches/sirv@2.0.2.patch",
-      "chokidar@3.5.3": "patches/chokidar@3.5.3.patch"
+      "chokidar@3.5.3": "patches/chokidar@3.5.3.patch",
+      "sirv@2.0.3": "patches/sirv@2.0.3.patch"
     }
   },
   "stackblitz": {
