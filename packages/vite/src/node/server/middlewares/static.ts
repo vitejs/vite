@@ -102,7 +102,7 @@ export function serveStaticMiddleware(
     }
 
     const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
-    const pathname = decodeURIComponent(url.pathname)
+    const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -136,7 +136,7 @@ export function serveStaticMiddleware(
     }
 
     if (redirectedPathname) {
-      url.pathname = encodeURIComponent(redirectedPathname)
+      url.pathname = encodeURI(redirectedPathname)
       req.url = url.href.slice(url.origin.length)
     }
 
@@ -160,7 +160,7 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.pathname.startsWith(FS_PREFIX)) {
-      const pathname = decodeURIComponent(url.pathname)
+      const pathname = decodeURI(url.pathname)
       // restrict files outside of `fs.allow`
       if (
         !ensureServingAccess(
@@ -176,7 +176,7 @@ export function serveRawFsMiddleware(
       let newPathname = pathname.slice(FS_PREFIX.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
 
-      url.pathname = encodeURIComponent(newPathname)
+      url.pathname = encodeURI(newPathname)
       req.url = url.href.slice(url.origin.length)
       serveFromRoot(req, res, next)
     } else {
