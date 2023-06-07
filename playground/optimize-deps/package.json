@@ -23,6 +23,8 @@
     "@vitejs/test-dep-linked-include": "link:./dep-linked-include",
     "@vitejs/test-dep-node-env": "file:./dep-node-env",
     "@vitejs/test-dep-not-js": "file:./dep-not-js",
+    "@vitejs/test-dep-optimize-exports-with-glob": "file:./dep-optimize-exports-with-glob",
+    "@vitejs/test-dep-optimize-with-glob": "file:./dep-optimize-with-glob",
     "@vitejs/test-dep-relative-to-main": "file:./dep-relative-to-main",
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
