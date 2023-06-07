@@ -7,6 +7,7 @@ import {
   bareImportRE,
   createDebugger,
   createFilter,
+  getNpmPackageName,
   isBuiltin,
   isDefined,
   isInNodeModules,
@@ -340,14 +341,4 @@ export function cjsShouldExternalizeForSSR(
     }
   })
   return should
-}
-
-function getNpmPackageName(importPath: string): string | null {
-  const parts = importPath.split('/')
-  if (parts[0][0] === '@') {
-    if (!parts[1]) return null
-    return `${parts[0]}/${parts[1]}`
-  } else {
-    return parts[0]
-  }
 }

@@ -35,6 +35,16 @@ export default defineConfig({
 
 By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
+**Experimental:** If you're using a library with many deep imports, you can also specify a trailing glob pattern to pre-bundle all deep imports at once. This will avoid constantly pre-bundling whenever a new deep import is used. For example:
+
+```js
+export default defineConfig({
+  optimizeDeps: {
+    include: ['my-lib/components/**/*.vue'],
+  },
+})
+```
+
 ## optimizeDeps.esbuildOptions
 
 - **Type:** [`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)
