@@ -589,6 +589,7 @@ export async function createPluginContainer(
     processesing.add(promise)
     return promise.finally(() => processesing.delete(promise))
   }
+  // keeps track of hook promises so that we can wait for them all to finish upon closing the server
   function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
     if (!(maybePromise as any)?.then) {
       return maybePromise
