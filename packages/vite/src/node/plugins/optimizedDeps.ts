@@ -106,12 +106,12 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
           ...options,
           skipSelf: true,
         })
-        if (resolved) {
+        if (resolved && !resolved.external) {
           depsOptimizer.delayDepsOptimizerUntil(resolved.id, async () => {
             await this.load(resolved)
           })
-          return resolved
         }
+        return resolved
       }
     },
 

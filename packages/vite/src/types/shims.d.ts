@@ -31,6 +31,7 @@ declare module 'postcss-import' {
       basedir: string,
       importOptions: any,
     ) => string | string[] | Promise<string | string[]>
+    load: (id: string) => Promise<string>
     nameLayer: (index: number, rootFilename: string) => string
   }) => Plugin
   export = plugin

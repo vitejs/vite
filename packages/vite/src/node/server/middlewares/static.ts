@@ -14,6 +14,7 @@ import {
   isImportRequest,
   isInternalRequest,
   isParentDirectory,
+  isSameFileUri,
   isWindows,
   removeLeadingSlash,
   shouldServeFile,
@@ -100,7 +101,7 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = new URL(req.url!, 'http://example.com')
+    const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
     const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
@@ -153,7 +154,7 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!, 'http://example.com')
+    const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
@@ -199,7 +200,11 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
+  if (
+    server.config.server.fs.allow.some(
+      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
+    )
+  )
     return true
 
   return false

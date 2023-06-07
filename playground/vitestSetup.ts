@@ -63,7 +63,7 @@ export let testDir: string
 export let testName: string
 /**
  * current test using vite inline config
- * when using server.js is not possible to get the config
+ * when using serve.[jt]s is not possible to get the config
  */
 export let viteConfig: InlineConfig | undefined
 

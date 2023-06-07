@@ -53,9 +53,3 @@ We periodically deprecate features that have been superseded by better alternati
 ## Experimental Features​
 
 Some features are marked as experimental when released in a stable version of Vite. Experimental features allows us to gather real-world experience to influence their final design. The goal is to let users provide feedback by testing them in production. Experimental features themselves are considered unstable, and should only be used in a controlled manner. These features may change between Minors, so users must pin their Vite version when they rely on them.
-
-## RFCs​
-
-Many changes, including features, bug fixes, and documentation improvements are discussed, implemented and reviewed via GitHub discussions, issues, and pull requests workflow. For substantial changes that would affect several downstream projects, we offer a Request For Comments (RFC) process to help gather consensus among the Vite core team, the Ecosystem, and the community.
-
-Continue reading about the RFC process in the [vitejs/rfcs](https://github.com/vitejs/rfcs) repo on GitHub.
