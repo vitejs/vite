@@ -10,6 +10,7 @@ import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
+import { parse as parseJS } from 'acorn'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
@@ -963,11 +964,7 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       const val = config.define[key]
       if (typeof val === 'string') {
         try {
-          const parsed = JSON.parse(val)
-          if (typeof parsed !== 'string') {
-            throw 'parsed value should be string'
-          }
-          env[key.slice(16)] = parsed
+          env[key.slice(16)] = extractStringLiteral(val)
         } catch {
           ignoredImportMetaEnvKeys.add(key.slice(16))
         }
@@ -1261,4 +1258,44 @@ function incrementIndent(indent: string = '') {
 
 export function getAttrKey(attr: Token.Attribute): string {
   return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
+}
+
+function extractStringLiteral(source: string): string {
+  if (source === '') {
+    throw new Error(`expected non empty string.`)
+  }
+
+  const node = (
+    parseJS(source, {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    }) as any
+  ).body[0]
+  if (node.type !== 'ExpressionStatement') {
+    throw new Error(`expected ExpressionStatement. got ${node.type}`)
+  }
+
+  const exp = node.expression
+  if (exp.type === 'Literal') {
+    if (typeof exp.value !== 'string') {
+      throw new Error(
+        `expected string literal expession. got ${typeof exp.value} literal expession.`,
+      )
+    }
+    return exp.value
+  } else if (exp.type === 'TemplateLiteral') {
+    if (exp.quasis.length !== 1) {
+      throw new Error(
+        `expected template literal expession without inline expressions.`,
+      )
+    }
+    const element = exp.quasis[0]
+    if (element.type !== 'TemplateElement') {
+      throw new Error(`expected TemplateElement. got ${element.type}`)
+    }
+    return element.value.cooked
+  }
+  throw new Error(
+    `expected literal expession or template literal expression. got ${exp.type}`,
+  )
 }
