@@ -961,8 +961,12 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       const val = config.define[key]
       if (typeof val === 'string') {
         try {
-          env[key.slice(16)] = JSON.parse(val)
-        } catch {} // ignore non-JSON.parse-able values
+          const parsed = JSON.parse(val)
+          if (typeof parsed !== 'string') {
+            throw 'parsed value should be string'
+          }
+          env[key.slice(16)] = parsed
+        } catch {} // ignore non-JSON.parse-able values and non-string parsed values
       } else {
         env[key.slice(16)] = JSON.stringify(val)
       }
