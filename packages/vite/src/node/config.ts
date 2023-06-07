@@ -321,6 +321,11 @@ export interface ResolveWorkerOptions extends PluginHookUtils {
 }
 
 export interface InlineConfig extends UserConfig {
+  /**
+   * To be set by framework building on top of Vite (Astro, Nuxt, ...) or tools
+   * using Vite pipeline (Vitest) so that plugins can adapt to the context
+   */
+  framework?: string
   configFile?: string | false
   envFile?: false
 }
@@ -330,6 +335,7 @@ export type ResolvedConfig = Readonly<
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
+    framework?: string
     root: string
     base: string
     /** @internal */
