@@ -7,6 +7,7 @@ import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
+import glob from 'fast-glob'
 import { createFilter } from '@rollup/pluginutils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
@@ -25,9 +26,9 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import { resolvePackageData } from '../packages'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
+import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -78,7 +79,7 @@ export interface DepOptimizationConfig {
    */
   exclude?: string[]
   /**
-   * Force ESM interop when importing for these dependencies. Some legacy
+   * Forces ESM interop when importing these dependencies. Some legacy
    * packages advertise themselves as ESM but use `require` internally
    * @experimental
    */
@@ -844,8 +845,19 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
+
+    const includes = [...optimizeDepsInclude, ...extra]
+    for (let i = 0; i < includes.length; i++) {
+      const id = includes[i]
+      if (glob.isDynamicPattern(id)) {
+        const globIds = expandGlobIds(id, config)
+        includes.splice(i, 1, ...globIds)
+        i += globIds.length - 1
+      }
+    }
+
     const resolve = createOptimizeDepsIncludeResolver(config, ssr)
-    for (const id of [...optimizeDepsInclude, ...extra]) {
+    for (const id of includes) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
@@ -865,50 +877,6 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
-}
-
-function createOptimizeDepsIncludeResolver(
-  config: ResolvedConfig,
-  ssr: boolean,
-) {
-  const resolve = config.createResolver({
-    asSrc: false,
-    scan: true,
-    ssrOptimizeCheck: ssr,
-    ssrConfig: config.ssr,
-    packageCache: new Map(),
-  })
-  return async (id: string) => {
-    const lastArrowIndex = id.lastIndexOf('>')
-    if (lastArrowIndex === -1) {
-      return await resolve(id, undefined, undefined, ssr)
-    }
-    // split nested selected id by last '>', for example:
-    // 'foo > bar > baz' => 'foo > bar' & 'baz'
-    const nestedRoot = id.substring(0, lastArrowIndex).trim()
-    const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolveBasedir(
-      nestedRoot,
-      config.root,
-      config.resolve.preserveSymlinks,
-    )
-    return await resolve(nestedPath, basedir, undefined, ssr)
-  }
-}
-
-/**
- * Continously resolve the basedir of packages separated by '>'
- */
-function nestedResolveBasedir(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-) {
-  const pkgs = id.split('>').map((pkg) => pkg.trim())
-  for (const pkg of pkgs) {
-    basedir = resolvePackageData(pkg, basedir, preserveSymlinks)?.dir || basedir
-  }
-  return basedir
 }
 
 export function newDepOptimizationProcessing(): DepOptimizationProcessing {

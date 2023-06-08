@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
-import fs, { promises as fsp } from 'node:fs'
+import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {

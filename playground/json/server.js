@@ -50,7 +50,7 @@ export async function createServer(root = process.cwd()) {
       }
 
       if (url === '/json-fs') {
-        console.time('transform module')
+        // console.time('transform module')
         const source = fs.readFileSync(path.resolve(__dirname, './test.json'), {
           encoding: 'utf-8',
         })
@@ -59,7 +59,7 @@ export async function createServer(root = process.cwd()) {
           null,
           './output.json',
         )
-        console.timeEnd('transform module')
+        // console.timeEnd('transform module')
         // @ts-expect-error ignore in test
         res.status(200).end(String(json.code.length))
         return
