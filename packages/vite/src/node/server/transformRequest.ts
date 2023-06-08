@@ -20,6 +20,7 @@ import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+import { throwClosedServerError } from './pluginContainer'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -46,6 +47,8 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
+  if (server._restartPromise) throwClosedServerError()
+
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
   // This module may get invalidated while we are processing it. For example
@@ -108,9 +111,8 @@ export function transformRequest(
     timestamp,
     abort: clearCache,
   })
-  request.then(clearCache, clearCache)
 
-  return request
+  return request.finally(clearCache)
 }
 
 async function doTransform(
@@ -253,6 +255,9 @@ async function loadAndTransform(
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
   }
+
+  if (server._restartPromise) throwClosedServerError()
+
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
   ensureWatchedFile(watcher, mod.file, root)
@@ -313,6 +318,8 @@ async function loadAndTransform(
       }
     }
   }
+
+  if (server._restartPromise) throwClosedServerError()
 
   const result =
     ssr && !server.config.experimental.skipSsrTransform

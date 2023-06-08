@@ -54,6 +54,7 @@ import {
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { checkPublicFile } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
@@ -255,10 +256,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       if (!importerModule) {
-        // When the server is restarted, the module graph is cleared, so we
-        // return without transforming. This request is no longer valid, a full reload
-        // is going to request this id again. Throwing an outdated error so we
-        // properly finish the request with a 504 sent to the browser.
+        // This request is no longer valid. It could happen for optimized deps
+        // requests. A full reload is going to request this id again.
+        // Throwing an outdated error so we properly finish the request with a
+        // 504 sent to the browser.
         throwOutdatedRequest(importer)
       }
 
@@ -650,8 +651,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
               server.transformRequest(url, { ssr }).catch((e) => {
-                if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
-                  // This are expected errors
+                if (
+                  e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+                  e?.code === ERR_CLOSED_SERVER
+                ) {
+                  // these are expected errors
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
