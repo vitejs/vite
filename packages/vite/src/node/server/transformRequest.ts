@@ -3,7 +3,7 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
-import type { SourceDescription, SourceMap } from 'rollup'
+import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
@@ -141,13 +141,22 @@ async function doTransform(
     return cached
   }
 
-  // resolve
-  const id =
-    module?.id ??
-    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id ??
-    url
+  const resolved = module
+    ? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
 
-  const result = loadAndTransform(id, url, server, options, timestamp)
+  // resolve
+  const id = module?.id ?? resolved?.id ?? url
+
+  const result = loadAndTransform(
+    id,
+    url,
+    server,
+    options,
+    timestamp,
+    module,
+    resolved,
+  )
 
   getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
 
@@ -160,6 +169,8 @@ async function loadAndTransform(
   server: ViteDevServer,
   options: TransformOptions,
   timestamp: number,
+  mod?: ModuleNode,
+  resolved?: PartialResolvedId,
 ) {
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
@@ -243,7 +254,7 @@ async function loadAndTransform(
     throw err
   }
   // ensure module in graph after successful load
-  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
+  mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
