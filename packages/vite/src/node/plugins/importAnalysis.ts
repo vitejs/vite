@@ -256,10 +256,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       if (!importerModule) {
-        // When the server is restarted, the module graph is cleared, so we
-        // return without transforming. This request is no longer valid, a full reload
-        // is going to request this id again. Throwing an outdated error so we
-        // properly finish the request with a 504 sent to the browser.
+        // This request is no longer valid. It could happen for optimized deps
+        // requests. A full reload is going to request this id again.
+        // Throwing an outdated error so we properly finish the request with a
+        // 504 sent to the browser.
         throwOutdatedRequest(importer)
       }
 
