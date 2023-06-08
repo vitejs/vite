@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { promises as fs } from 'node:fs'
+import fsp from 'node:fs/promises'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
@@ -27,7 +27,7 @@ export async function injectSourcesContent(
   let sourceRoot: string | undefined
   try {
     // The source root is undefined for virtual modules and permission errors.
-    sourceRoot = await fs.realpath(
+    sourceRoot = await fsp.realpath(
       path.resolve(path.dirname(file), map.sourceRoot || ''),
     )
   } catch {}
@@ -40,7 +40,7 @@ export async function injectSourcesContent(
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
-        return fs.readFile(sourcePath, 'utf-8').catch(() => {
+        return fsp.readFile(sourcePath, 'utf-8').catch(() => {
           missingSources.push(sourcePath)
           return null
         })

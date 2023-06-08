@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
 import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
-import type { Manifest } from 'vite'
+import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
@@ -150,6 +150,15 @@ export function findAssetFile(
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
     fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
+  )
+}
+
+export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      'utf-8',
+    ),
   )
 }
 

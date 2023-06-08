@@ -1,5 +1,5 @@
 diff --git a/build.js b/build.js
-index b046ee138b1f9047c70beaeea7279d3476d7e8cd..574ce1410a1344a4db292803d05c303f8c03767c 100644
+index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..85b82c90346e829bbf723e913f282c80096df061 100644
 --- a/build.js
 +++ b/build.js
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -19,7 +19,7 @@ index b046ee138b1f9047c70beaeea7279d3476d7e8cd..574ce1410a1344a4db292803d05c303f
  			headers = toHeaders(name, stats, isEtag);
  			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
  			return { abs, stats, headers };
-@@ -172,7 +173,7 @@ module.exports = function (dir, opts={}) {
+@@ -176,7 +177,7 @@ module.exports = function (dir, opts={}) {
  			catch (err) { /* malform uri */ }
  		}
  
@@ -29,7 +29,7 @@ index b046ee138b1f9047c70beaeea7279d3476d7e8cd..574ce1410a1344a4db292803d05c303f
  
  		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
 diff --git a/build.mjs b/build.mjs
-index fe01068d0dd3f788a0978802db1747dd83c5825e..fb099c38cc2cbd59300471e7307625e2fc127f0c 100644
+index c93bbe6bdfb7ad13ee20f0c44d80d6aacdd64087..3dc3e22f09abcae51aef7b75c34dc08b1f6e6abd 100644
 --- a/build.mjs
 +++ b/build.mjs
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -49,7 +49,7 @@ index fe01068d0dd3f788a0978802db1747dd83c5825e..fb099c38cc2cbd59300471e7307625e2
  			headers = toHeaders(name, stats, isEtag);
  			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
  			return { abs, stats, headers };
-@@ -172,7 +173,7 @@ export default function (dir, opts={}) {
+@@ -176,7 +177,7 @@ export default function (dir, opts={}) {
  			catch (err) { /* malform uri */ }
  		}
  

@@ -60,6 +60,10 @@ export default defineConfig({
 
 This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache })` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
 
+::: warning
+You should use `build.rollupOptions.output.manualChunks` function form when using this plugin. If the object form is used, the plugin won't have any effect.
+:::
+
 ## Rebuild on files changes
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch) via `build.watch`:
@@ -113,6 +117,8 @@ export default defineConfig({
 ```
 
 If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
+
+Note that for HTML files, Vite ignores the name given to the entry in the `rollupOptions.input` object and instead respects the resolved id of the file when generating the HTML asset in the dist folder. This ensures a consistent structure with the way the dev server works.
 
 ## Library Mode
 

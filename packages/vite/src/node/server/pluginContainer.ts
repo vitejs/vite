@@ -84,6 +84,18 @@ import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 
+export const ERR_CLOSED_SERVER = 'ERR_CLOSED_SERVER'
+
+export function throwClosedServerError(): never {
+  const err: any = new Error(
+    'The server is being restarted or closed. Request is outdated',
+  )
+  err.code = ERR_CLOSED_SERVER
+  // This error will be caught by the transform middleware that will
+  // send a 504 status code request timeout
+  throw err
+}
+
 export interface PluginContainerOptions {
   cwd?: string
   output?: OutputOptions
@@ -195,6 +207,7 @@ export async function createPluginContainer(
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of getSortedPlugins(hookName)) {
+      // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
       const hook = plugin[hookName]
       if (!hook) continue
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -571,12 +584,26 @@ export async function createPluginContainer(
   }
 
   let closed = false
+  const processesing = new Set<Promise<any>>()
+  // keeps track of hook promises so that we can wait for them all to finish upon closing the server
+  function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
+    if (!(maybePromise as any)?.then) {
+      return maybePromise
+    }
+    const promise = maybePromise as Promise<T>
+    processesing.add(promise)
+    return promise.finally(() => processesing.delete(promise))
+  }
 
   const container: PluginContainer = {
     options: await (async () => {
       let options = rollupOptions
       for (const optionsHook of getSortedPluginHooks('options')) {
-        options = (await optionsHook.call(minimalContext, options)) || options
+        if (closed) throwClosedServerError()
+        options =
+          (await handleHookPromise(
+            optionsHook.call(minimalContext, options),
+          )) || options
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
@@ -593,10 +620,12 @@ export async function createPluginContainer(
     getModuleInfo,
 
     async buildStart() {
-      await hookParallel(
-        'buildStart',
-        (plugin) => new Context(plugin),
-        () => [container.options as NormalizedInputOptions],
+      await handleHookPromise(
+        hookParallel(
+          'buildStart',
+          (plugin) => new Context(plugin),
+          () => [container.options as NormalizedInputOptions],
+        ),
       )
     },
 
@@ -609,10 +638,10 @@ export async function createPluginContainer(
       ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = debugResolve ? performance.now() : 0
-
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of getSortedPlugins('resolveId')) {
+        if (closed) throwClosedServerError()
         if (!plugin.resolveId) continue
         if (skip?.has(plugin)) continue
 
@@ -623,13 +652,15 @@ export async function createPluginContainer(
           'handler' in plugin.resolveId
             ? plugin.resolveId.handler
             : plugin.resolveId
-        const result = await handler.call(ctx as any, rawId, importer, {
-          assertions: options?.assertions ?? {},
-          custom: options?.custom,
-          isEntry: !!options?.isEntry,
-          ssr,
-          scan,
-        })
+        const result = await handleHookPromise(
+          handler.call(ctx as any, rawId, importer, {
+            assertions: options?.assertions ?? {},
+            custom: options?.custom,
+            isEntry: !!options?.isEntry,
+            ssr,
+            scan,
+          }),
+        )
         if (!result) continue
 
         if (typeof result === 'string') {
@@ -675,11 +706,14 @@ export async function createPluginContainer(
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('load')) {
+        if (closed) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler =
           'handler' in plugin.load ? plugin.load.handler : plugin.load
-        const result = await handler.call(ctx as any, id, { ssr })
+        const result = await handleHookPromise(
+          handler.call(ctx as any, id, { ssr }),
+        )
         if (result != null) {
           if (isObject(result)) {
             updateModuleInfo(id, result)
@@ -696,6 +730,7 @@ export async function createPluginContainer(
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('transform')) {
+        if (closed) throwClosedServerError()
         if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id
@@ -707,7 +742,9 @@ export async function createPluginContainer(
             ? plugin.transform.handler
             : plugin.transform
         try {
-          result = await handler.call(ctx as any, code, id, { ssr })
+          result = await handleHookPromise(
+            handler.call(ctx as any, code, id, { ssr }),
+          )
         } catch (e) {
           ctx.error(e)
         }
@@ -741,6 +778,8 @@ export async function createPluginContainer(
 
     async close() {
       if (closed) return
+      closed = true
+      await Promise.allSettled(Array.from(processesing))
       const ctx = new Context()
       await hookParallel(
         'buildEnd',
@@ -752,7 +791,6 @@ export async function createPluginContainer(
         () => ctx,
         () => [],
       )
-      closed = true
     },
   }
 
