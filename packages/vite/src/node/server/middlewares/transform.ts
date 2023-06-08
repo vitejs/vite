@@ -35,6 +35,7 @@ import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
+import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
@@ -224,6 +225,21 @@ export function transformMiddleware(
         if (!res.writableEnded) {
           res.statusCode = 504 // status code request timeout
           res.statusMessage = 'Outdated Optimize Dep'
+          res.end()
+        }
+        // We don't need to log an error in this case, the request
+        // is outdated because new dependencies were discovered and
+        // the new pre-bundle dependencies have changed.
+        // A full-page reload has been issued, and these old requests
+        // can't be properly fulfilled. This isn't an unexpected
+        // error but a normal part of the missing deps discovery flow
+        return
+      }
+      if (e?.code === ERR_CLOSED_SERVER) {
+        // Skip if response has already been sent
+        if (!res.writableEnded) {
+          res.statusCode = 504 // status code request timeout
+          res.statusMessage = 'Outdated Request'
           res.end()
         }
         // We don't need to log an error in this case, the request
