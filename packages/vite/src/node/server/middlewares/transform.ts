@@ -45,8 +45,6 @@ const knownIgnoreList = new Set(['/', '/favicon.ico'])
 export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  // cache moduleGraph, as server.moduleGraph references a clean graph that this middleware shouldn't
-  // read or modify after a restart
   const {
     config: { root, logger },
     moduleGraph,
