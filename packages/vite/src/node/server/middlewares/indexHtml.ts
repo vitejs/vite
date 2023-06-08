@@ -351,7 +351,6 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
 
   // transform all url as non-ssr as html includes client-side assets only
   server.transformRequest(url).catch((e) => {
-    // Unexpected error, log the issue but avoid an unhandled exception
     if (
       e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
       e?.code === ERR_CLOSED_SERVER
@@ -359,6 +358,7 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
       // these are expected errors
       return
     }
+    // Unexpected error, log the issue but avoid an unhandled exception
     server.config.logger.error(e.message)
   })
 }
