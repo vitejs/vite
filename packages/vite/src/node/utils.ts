@@ -11,12 +11,19 @@ import type { AddressInfo, Server } from 'node:net'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import {
+  GenMapping,
+  addMapping,
+  setSourceContent,
+} from '@jridgewell/gen-mapping'
+import { SourceMapConsumer } from '@jridgewell/source-map'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
+import { eachMapping } from '@jridgewell/trace-mapping'
 
-import type { TransformResult } from 'rollup'
+import type { SourceMap, TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
@@ -792,6 +799,7 @@ export function combineSourcemaps(
       excludeContent,
     )
   }
+
   if (!map.file) {
     delete map.file
   }
@@ -1251,4 +1259,155 @@ export function getNpmPackageName(importPath: string): string | null {
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
+}
+
+// based on https://github.com/floridoo/concat-with-sourcemaps
+export class ConcatSourcemaps {
+  public lineOffset: number = 0
+  public columnOffset: number = 0
+  public sourceMapping: boolean
+  public contentParts: Buffer[]
+  public separator: Buffer
+  public separatorLineOffset: number = 0
+  public separatorColumnOffset: number = 0
+  public sourceMap: GenMapping | null = null
+
+  public constructor(
+    generateSourceMap: boolean,
+    fileName: string,
+    separator: string,
+  ) {
+    this.lineOffset = 0
+    this.columnOffset = 0
+    this.sourceMapping = generateSourceMap
+    this.contentParts = []
+
+    if (separator === undefined) {
+      this.separator = bufferFrom('')
+    } else {
+      this.separator = bufferFrom(separator)
+    }
+
+    if (this.sourceMapping) {
+      this.sourceMap = new GenMapping({
+        file: unixStylePath(fileName),
+      })
+      this.separatorLineOffset = 0
+      this.separatorColumnOffset = 0
+      const separatorString = this.separator.toString()
+      for (let i = 0; i < separatorString.length; i++) {
+        this.separatorColumnOffset++
+        if (separatorString[i] === '\n') {
+          this.separatorLineOffset++
+          this.separatorColumnOffset = 0
+        }
+      }
+    }
+  }
+
+  public add(
+    filePath: string,
+    content: string | Buffer,
+    sourceMap: SourceMap,
+  ): void {
+    filePath = filePath && unixStylePath(filePath)
+
+    if (!Buffer.isBuffer(content)) {
+      content = bufferFrom(content)
+    }
+
+    if (this.contentParts.length !== 0) {
+      this.contentParts.push(this.separator)
+    }
+    this.contentParts.push(content)
+
+    if (this.sourceMapping) {
+      const contentString = content.toString()
+      const lines = contentString.split('\n').length
+
+      if (sourceMap && sourceMap.mappings && sourceMap.mappings.length > 0) {
+        const upstreamSM = new SourceMapConsumer(
+          sourceMap.toString(),
+          undefined,
+        )
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const _this = this
+        // @ts-expect-error internal property
+        eachMapping(upstreamSM._map, (mapping) => {
+          if (mapping.source && mapping.originalLine) {
+            addMapping(_this.sourceMap!, {
+              generated: {
+                line: _this.lineOffset + mapping.generatedLine,
+                column:
+                  (mapping.generatedLine === 1 ? _this.columnOffset : 0) +
+                  mapping.generatedColumn,
+              },
+              original: {
+                line: mapping.originalLine,
+                column: mapping.originalColumn,
+              },
+              source: mapping.source,
+              // @ts-expect-error too strict overload
+              name: mapping.name,
+            })
+          }
+        })
+        if (upstreamSM.sourcesContent) {
+          upstreamSM.sourcesContent.forEach(function (sourceContent, i) {
+            setSourceContent(
+              _this.sourceMap!,
+              upstreamSM.sources[i]!,
+              sourceContent,
+            )
+          })
+        }
+      } else {
+        if (sourceMap && sourceMap.sources && sourceMap.sources.length > 0)
+          filePath = sourceMap.sources[0]
+        if (filePath) {
+          for (let i = 1; i <= lines; i++) {
+            addMapping(this.sourceMap!, {
+              generated: {
+                line: this.lineOffset + i,
+                column: i === 1 ? this.columnOffset : 0,
+              },
+              original: {
+                line: i,
+                column: 0,
+              },
+              source: filePath,
+            })
+          }
+          if (sourceMap && sourceMap.sourcesContent)
+            setSourceContent(
+              this.sourceMap!,
+              filePath,
+              sourceMap.sourcesContent[0],
+            )
+        }
+      }
+      if (lines > 1) this.columnOffset = 0
+      if (this.separatorLineOffset === 0)
+        this.columnOffset +=
+          contentString.length -
+          Math.max(0, contentString.lastIndexOf('\n') + 1)
+      this.columnOffset += this.separatorColumnOffset
+      this.lineOffset += lines - 1 + this.separatorLineOffset
+    }
+  }
+}
+
+function bufferFrom(content: string) {
+  try {
+    return Buffer.from(content)
+  } catch (e) {
+    if (Object.prototype.toString.call(content) !== '[object String]') {
+      throw new TypeError('separator must be a string')
+    }
+    return new Buffer(content)
+  }
+}
+
+function unixStylePath(filePath: string) {
+  return filePath.replace(/\\/g, '/')
 }

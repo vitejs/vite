@@ -2,18 +2,13 @@ import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
   extractSourcemap,
+  findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
   isServe,
   page,
   serverLogs,
 } from '~utils'
-
-test.runIf(isBuild)('should not output sourcemap warning (#4939)', () => {
-  serverLogs.forEach((log) => {
-    expect(log).not.toMatch('Sourcemap is likely to be incorrect')
-  })
-})
 
 describe.runIf(isServe)('serve', () => {
   const getStyleTagContentIncluding = async (content: string) => {
@@ -239,5 +234,18 @@ describe.runIf(isServe)('serve', () => {
     serverLogs.forEach((log) => {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
+  })
+})
+
+describe.runIf(isBuild)('build', () => {
+  test('should not output sourcemap warning (#4939)', () => {
+    serverLogs.forEach((log) => {
+      expect(log).not.toMatch('Sourcemap is likely to be incorrect')
+    })
+  })
+
+  test('external sourcemap', () => {
+    const map = findAssetFile(/index-.*\.css\.map/)
+    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchSnapshot()
   })
 })

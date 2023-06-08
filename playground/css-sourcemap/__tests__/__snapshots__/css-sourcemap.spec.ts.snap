@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`build > external sourcemap 1`] = `
+{
+  "mappings": "AAAA,sIACE,UCAA,iBACE,aCDF,kBACE,qBCDF",
+  "sources": [
+    "/root/linked.css",
+    "/root/imported.module.sass?used",
+    "/root/imported.less",
+    "/root/imported.styl",
+  ],
+  "sourcesContent": [
+    ".linked {
+  color: red;
+}
+",
+    ".imported
+  &-sass-module
+    color: red
+",
+    ".imported {
+  &-less {
+    color: @color;
+  }
+}
+",
+    ".imported
+  &-stylus
+    color blue-red-mixed
+",
+  ],
+  "version": 3,
+}
+`;

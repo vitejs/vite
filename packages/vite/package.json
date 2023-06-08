@@ -77,6 +77,8 @@
     "@ampproject/remapping": "^2.2.1",
     "@babel/parser": "^7.21.4",
     "@babel/types": "^7.21.4",
+    "@jridgewell/gen-mapping": "^0.3.2",
+    "@jridgewell/source-map": "^0.3.3",
     "@jridgewell/trace-mapping": "^0.3.18",
     "@rollup/plugin-alias": "^4.0.4",
     "@rollup/plugin-commonjs": "^25.0.0",
