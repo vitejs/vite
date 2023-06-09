@@ -1141,18 +1141,17 @@ async function loadConfigFromBundledFile(
 ): Promise<UserConfigExport> {
   // for esm, before we can register loaders without requiring users to run node
   // with --experimental-loader themselves, we have to do a hack here:
-  // write it to disk, load it with native Node ESM, then delete the file.
+  // convert to base64, load it with native Node ESM.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`
-    const fileNameTmp = `${fileBase}.mjs`
-    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    await fsp.writeFile(fileNameTmp, bundledCode)
     try {
-      return (await dynamicImport(fileUrl)).default
-    } finally {
-      fs.unlink(fileNameTmp, () => {}) // Ignore errors
+      return (
+        await dynamicImport(
+          'data:text/javascript;base64,' +
+            Buffer.from(bundledCode).toString('base64'),
+        )
+      ).default
+    } catch (e) {
+      throw new Error(`${e.message} at ${fileName}`)
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
