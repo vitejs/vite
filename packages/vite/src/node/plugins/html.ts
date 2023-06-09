@@ -463,13 +463,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-          // <tag style="... url(...) ..."></tag>
+          // <tag style="... url(...) or image-set(...) ..."></tag>
           // extract inline styles as virtual css and add class attribute to tag for selecting
           const inlineStyle = node.attrs.find(
             (prop) =>
               prop.prefix === undefined &&
               prop.name === 'style' &&
-              prop.value.includes('url('), // only url(...) in css need to emit file
+              // only url(...) or image-set(...) in css need to emit file
+              (prop.value.includes('url(') ||
+                prop.value.includes('image-set(')),
           )
           if (inlineStyle) {
             inlineModuleIndex++
