@@ -148,13 +148,22 @@ describe('css url() references', () => {
     expect(imageSet).toContain('image-set(url("data:image/png;base64,')
   })
 
-  test('image-set with multiple descriptor', async () => {
+  test('image-set with gradient', async () => {
     const imageSet = await getBg('.css-image-set-gradient')
     expect(imageSet).toContain('image-set(url("data:image/png;base64,')
   })
 
   test('image-set with multiple descriptor', async () => {
     const imageSet = await getBg('.css-image-set-multiple-descriptor')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  test('image-set with multiple descriptor as inline style', async () => {
+    const imageSet = await getBg(
+      '.css-image-set-multiple-descriptor-inline-style',
+    )
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
