@@ -119,6 +119,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         // warn that the dynamic imported module will not be moved to another chunk (#12850).
         if (module.importers.length && module.dynamicImporters.length) {
           for (const dynamicImporter of module.dynamicImporters) {
+            // Filter out the intersection of dynamic importers and sibling modules in
+            // the same chunk. The intersecting dynamic importers' dynamic import is not
+            // expected to work. Note we're only detecting the direct ineffective
+            // dynamic import here.
             if (chunk.moduleIds.includes(dynamicImporter)) {
               this.warn(
                 `\n(!) ${
