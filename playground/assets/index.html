@@ -26,6 +26,10 @@
   <li>Relative: <code class="asset-import-relative"></code></li>
   <li>Absolute: <code class="asset-import-absolute"></code></li>
   <li>From publicDir: <code class="public-import"></code></li>
+  <li>
+    From publicDir (json): <code class="public-json-import"></code> Content:
+    <code class="public-json-import-content"></code>
+  </li>
 </ul>
 
 <h2>CSS url references</h2>
@@ -377,6 +381,13 @@
 
   import publicUrl from '/icon.png'
   text('.public-import', publicUrl)
+
+  import publicJsonUrl from '/foo.json?url'
+  text('.public-json-import', publicJsonUrl)
+  ;(async () => {
+    const res = await fetch(publicJsonUrl)
+    text('.public-json-import-content', await res.text())
+  })()
 
   import svgFrag from './nested/fragment.svg'
   text('.svg-frag-import-path', svgFrag)

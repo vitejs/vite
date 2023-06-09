@@ -37,6 +37,7 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
+import { urlRE } from '../../plugins/asset'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -136,14 +137,22 @@ export function transformMiddleware(
 
           if (isImportRequest(url)) {
             const rawUrl = removeImportQuery(url)
-
-            warning =
-              'Assets in public cannot be imported from JavaScript.\n' +
-              `Instead of ${colors.cyan(
-                rawUrl,
-              )}, put the file in the src directory, and use ${colors.cyan(
-                rawUrl.replace(publicPath, '/src/'),
-              )} instead.`
+            if (urlRE.test(url)) {
+              warning =
+                `Assets in the public directory are served at the root path.\n` +
+                `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
+                  rawUrl.replace(publicPath, '/'),
+                )}.`
+            } else {
+              warning =
+                'Assets in public directory cannot be imported from JavaScript.\n' +
+                `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
+                  rawUrl.replace(publicPath, '/src/'),
+                )} instead of ${colors.cyan(rawUrl)}.\n` +
+                `If you intend to use the URL of that asset, use ${colors.cyan(
+                  injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
+                )}.`
+            }
           } else {
             warning =
               `files in the public directory are served at the root path.\n` +

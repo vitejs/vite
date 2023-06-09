@@ -55,7 +55,7 @@ import {
 } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
-import { checkPublicFile } from './asset'
+import { checkPublicFile, urlRE } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
@@ -507,14 +507,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // warn imports to non-asset /public files
             if (
               specifier[0] === '/' &&
-              !config.assetsInclude(cleanUrl(specifier)) &&
-              !specifier.endsWith('.json') &&
+              !(
+                config.assetsInclude(cleanUrl(specifier)) ||
+                urlRE.test(specifier)
+              ) &&
               checkPublicFile(specifier, config)
             ) {
               throw new Error(
-                `Cannot import non-asset file ${specifier} which is inside /public.` +
+                `Cannot import non-asset file ${specifier} which is inside /public. ` +
                   `JS/CSS files inside /public are copied as-is on build and ` +
-                  `can only be referenced via <script src> or <link href> in html.`,
+                  `can only be referenced via <script src> or <link href> in html. ` +
+                  `If you want to get the URL of that file, use ${injectQuery(
+                    specifier,
+                    'url',
+                  )} instead.`,
               )
             }
 

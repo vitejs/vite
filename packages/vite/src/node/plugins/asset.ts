@@ -29,7 +29,7 @@ import { FS_PREFIX } from '../constants'
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
-const urlRE = /(\?|&)url(?:&|$)/
+export const urlRE = /(\?|&)url(?:&|$)/
 const jsSourceMapRE = /\.[cm]?js\.map$/
 const unnededFinalQueryCharRE = /[?&]$/
 
@@ -147,7 +147,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     resolveId(id) {
-      if (!config.assetsInclude(cleanUrl(id))) {
+      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
         return
       }
       // imports to absolute urls pointing to files in /public
