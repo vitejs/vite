@@ -240,3 +240,7 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .sort()
   expect(expectedNames).toEqual(foundAliasNames)
 })
+
+test('sub imports', async () => {
+  expect(await page.textContent('.sub-imports')).toMatch('bar foo')
+})

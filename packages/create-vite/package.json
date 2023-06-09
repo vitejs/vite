@@ -35,7 +35,7 @@
     "@types/minimist": "^1.2.2",
     "@types/prompts": "^2.4.4",
     "cross-spawn": "^7.0.3",
-    "kolorist": "^1.7.0",
+    "kolorist": "^1.8.0",
     "minimist": "^1.2.8",
     "prompts": "^2.4.2"
   }

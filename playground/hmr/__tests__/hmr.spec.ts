@@ -9,6 +9,7 @@ import {
   removeFile,
   untilBrowserLogAfter,
   untilUpdated,
+  viteServer,
   viteTestUrl,
 } from '~utils'
 
@@ -676,6 +677,14 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Compteur 0')
   })
 
+  test('virtual module in module graph', async () => {
+    const moduleGraph = viteServer.moduleGraph
+    const virtualId = Array.from(moduleGraph.idToModuleMap.keys()).filter(
+      (id: string) => id.includes('virtual'),
+    )
+    expect(virtualId).toEqual(['\x00virtual:file', '/@id/__x00__virtual:file'])
+  })
+
   test('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual')
@@ -703,20 +712,19 @@ if (!isBuild) {
     const file = 'missing-import/a.js'
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
-    const timeout = 2000
 
     await page.goto(viteTestUrl + '/missing-import/index.html', {
       waitUntil: 'load',
     })
 
     await untilBrowserLogAfter(async () => {
-      const loadPromise = page.waitForEvent('load', { timeout })
+      const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(importCode, unImportCode))
       await loadPromise
     }, 'missing test')
 
     await untilBrowserLogAfter(async () => {
-      const loadPromise = page.waitForEvent('load', { timeout })
+      const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await loadPromise
     }, /500/)

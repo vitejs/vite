@@ -11,6 +11,6 @@
   },
   "devDependencies": {
     "fast-glob": "^3.2.12",
-    "sass": "^1.62.0"
+    "sass": "^1.63.2"
   }
 }
