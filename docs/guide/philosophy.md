@@ -9,7 +9,7 @@ Vite doesn't intend to cover every use case for every user. Vite aims to support
 Vite provides opinionated features that pushes writing modern code. For example:
 
 - The source code can only be written in ESM, where non-ESM dependencies needs to be [pre-bundled as ESM](./dep-pre-bundling) in order to work.
-- Web workers are encouraged to be written with the [`new Worker` syntax](/features#web-workers) to follow modern standards.
+- Web workers are encouraged to be written with the [`new Worker` syntax](./features#web-workers) to follow modern standards.
 - Node.js modules cannot be used in the browser.
 
 When adding new features, these patterns are followed to create a future-proof API, rather than following the competition.
