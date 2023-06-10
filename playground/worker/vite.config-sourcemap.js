@@ -1,4 +1,4 @@
-import vite from 'vite'
+import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
 /** @param {boolean | 'inline' | 'hidden' | 'sourcemap'} sourcemap */
@@ -15,7 +15,7 @@ export default (sourcemap) => {
   const typeName =
     typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
 
-  return vite.defineConfig({
+  return defineConfig({
     base: `/iife-${typeName}/`,
     resolve: {
       alias: {

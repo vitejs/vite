@@ -98,8 +98,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
-          process.stdout.clearLine(0)
-          process.stdout.cursorTo(0)
+          clearLine()
         }
         config.logger.info(
           `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
@@ -260,8 +259,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     closeBundle() {
       if (shouldLogInfo && !config.build.watch) {
         config.logger.info(
-          `${colors.green(`✓`)} built in ${displayTime(
-            Date.now() - startTime,
+          `${colors.green(
+            `✓ built in ${displayTime(Date.now() - startTime)}`,
           )}`,
         )
       }

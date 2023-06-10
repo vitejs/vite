@@ -10,5 +10,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_BOOL': true,
+    'import.meta.env.VITE_NUMBER': '123',
+    'import.meta.env.VITE_STRING': JSON.stringify('123'),
   },
 })

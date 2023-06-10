@@ -10,6 +10,7 @@ module.exports = defineConfig({
     'plugin:@typescript-eslint/recommended',
     'plugin:regexp/recommended',
   ],
+  ignorePatterns: ['packages/create-vite/template-**'],
   plugins: ['import', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -178,6 +179,21 @@ module.exports = defineConfig({
         'no-empty': 'off',
         'no-constant-condition': 'off',
         '@typescript-eslint/no-empty-function': 'off',
+      },
+    },
+    {
+      files: ['playground/**'],
+      excludedFiles: [
+        'playground/ssr-resolve/**',
+        'playground/**/*{commonjs,cjs}*/**',
+        'playground/**/*{commonjs,cjs}*',
+        'playground/**/*dep*/**',
+        'playground/resolve/browser-module-field2/index.web.js',
+        'playground/resolve/browser-field/**',
+        'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
+      ],
+      rules: {
+        'import/no-commonjs': 'error',
       },
     },
     {

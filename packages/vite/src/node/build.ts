@@ -904,11 +904,17 @@ export function onRollupWarning(
           colors.yellow(`[plugin:${warning.plugin}]`),
         )} ${colors.yellow(warning.message)}`,
       )
+      return
     }
 
     warn(warning)
   }
 
+  const tty = process.stdout.isTTY && !process.env.CI
+  if (tty) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+  }
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)

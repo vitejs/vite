@@ -5,6 +5,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
 import {
+  injectQuery,
   isParentDirectory,
   normalizePath,
   slash,
@@ -13,6 +14,8 @@ import {
 import { CLIENT_ENTRY } from '../constants'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -27,6 +30,16 @@ import { preloadHelperId } from './importAnalysisBuild'
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const normalizedPublicDir = normalizePath(config.publicDir)
   let assetResolver: ResolveFn
+
+  const fsResolveOptions: InternalResolveOptions = {
+    ...config.resolve,
+    root: config.root,
+    isProduction: config.isProduction,
+    isBuild: config.command === 'build',
+    packageCache: config.packageCache,
+    ssrConfig: config.ssr,
+    asSrc: true,
+  }
 
   return {
     name: 'vite:asset-import-meta-url',
@@ -55,7 +68,15 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
-            const ast = this.parse(rawUrl)
+            const queryDelimiterIndex = getQueryDelimiterIndex(rawUrl)
+            const hasQueryDelimiter = queryDelimiterIndex !== -1
+            const pureUrl = hasQueryDelimiter
+              ? rawUrl.slice(0, queryDelimiterIndex) + '`'
+              : rawUrl
+            const queryString = hasQueryDelimiter
+              ? rawUrl.slice(queryDelimiterIndex, -1)
+              : ''
+            const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
@@ -65,6 +86,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 continue
               }
 
+              const globOptions = {
+                eager: true,
+                import: 'default',
+                // A hack to allow 'as' & 'query' exist at the same time
+                query: injectQuery(queryString, 'url'),
+              }
               // Note: native import.meta.url is not supported in the baseline
               // target so we use the global location here. It can be
               // window.location or self.location in case it is used in a Web Worker.
@@ -74,7 +101,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
-                )}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
+                )}, ${JSON.stringify(
+                  globOptions,
+                )}))[${pureUrl}], self.location)`,
               )
               continue
             }
@@ -84,6 +113,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
+            file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
             assetResolver ??= config.createResolver({
               extensions: [],
@@ -152,4 +182,18 @@ function buildGlobPattern(ast: any) {
     pattern += ast.quasis[i].value.raw
   }
   return pattern
+}
+
+function getQueryDelimiterIndex(rawUrl: string): number {
+  let bracketsStack = 0
+  for (let i = 0; i < rawUrl.length; i++) {
+    if (rawUrl[i] === '{') {
+      bracketsStack++
+    } else if (rawUrl[i] === '}') {
+      bracketsStack--
+    } else if (rawUrl[i] === '?' && bracketsStack === 0) {
+      return i
+    }
+  }
+  return -1
 }

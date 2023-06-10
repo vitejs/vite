@@ -217,7 +217,11 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
-    if (!isBuild) {
+    if (config.optimizeDeps.noDiscovery) {
+      // We don't need to scan for dependencies or wait for the static crawl to end
+      // Run the first optimization run immediately
+      runOptimizer()
+    } else if (!isBuild) {
       // Important, the scanner is dev only
       depsOptimizer.scanProcessing = new Promise((resolve) => {
         // Runs in the background in case blocking high priority tasks

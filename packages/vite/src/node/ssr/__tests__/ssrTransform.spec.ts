@@ -743,6 +743,19 @@ console.log("it can parse the hashbang")`,
   `)
 })
 
+test('import hoisted after hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `#!/usr/bin/env node
+import "foo"`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "
+  `)
+})
+
 // #10289
 test('track scope by class, function, condition blocks', async () => {
   const code = `
@@ -853,6 +866,41 @@ function test() {
       }
       try {} catch (baz){ baz };
       return __vite_ssr_import_0__.bar;
+    }"
+  `)
+})
+
+test('track scope in for loops', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { test } from './test.js'
+
+for (const test of tests) {
+  console.log(test)
+}
+
+for (let test = 0; test < 10; test++) {
+  console.log(test)
+}
+
+for (const test in tests) {
+  console.log(test)
+}`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./test.js\\");
+
+
+
+    for (const test of tests) {
+      console.log(test)
+    }
+
+    for (let test = 0; test < 10; test++) {
+      console.log(test)
+    }
+
+    for (const test in tests) {
+      console.log(test)
     }"
   `)
 })

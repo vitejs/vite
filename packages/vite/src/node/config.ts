@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
@@ -50,11 +51,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
-import type {
-  InternalResolveOptions,
-  InternalResolveOptionsWithOverrideConditions,
-  ResolveOptions,
-} from './plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -69,6 +66,7 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
+const promisifiedRealpath = promisify(fs.realpath)
 
 export type {
   RenderBuiltAssetUrl,
@@ -455,7 +453,12 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
-  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+  // If there are custom commonjsOptions, don't force optimized deps for this test
+  // even if the env var is set as it would interfere with the playground specs.
+  if (
+    !config.build?.commonjsOptions &&
+    process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS
+  ) {
     config = mergeConfig(config, {
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } },
@@ -996,20 +999,45 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptionsWithOverrideConditions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            overrideConditions: ['node'],
-            dedupe: [],
-            extensions: DEFAULT_EXTENSIONS,
-            preserveSymlinks: false,
-            packageCache: new Map(),
+          const packageCache = new Map()
+          const resolveByViteResolver = (
+            id: string,
+            importer: string,
+            isRequire: boolean,
+          ) => {
+            return tryNodeResolve(
+              id,
+              importer,
+              {
+                root: path.dirname(fileName),
+                isBuild: true,
+                isProduction: true,
+                preferRelative: false,
+                tryIndex: true,
+                mainFields: [],
+                browserField: false,
+                conditions: [],
+                overrideConditions: ['node'],
+                dedupe: [],
+                extensions: DEFAULT_EXTENSIONS,
+                preserveSymlinks: false,
+                packageCache,
+                isRequire,
+              },
+              false,
+            )?.id
+          }
+          const isESMFile = (id: string): boolean => {
+            if (id.endsWith('.mjs')) return true
+            if (id.endsWith('.cjs')) return false
+
+            const nearestPackageJson = findNearestPackageData(
+              path.dirname(id),
+              packageCache,
+            )
+            return (
+              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
+            )
           }
 
           // externalize bare imports
@@ -1029,15 +1057,39 @@ async function bundleConfigFile(
                 return { external: true }
               }
 
-              const isIdESM = isESM || kind === 'dynamic-import'
-              let idFsPath = tryNodeResolve(
-                id,
-                importer,
-                { ...options, isRequire: !isIdESM },
-                false,
-              )?.id
-              if (idFsPath && isIdESM) {
+              const isImport = isESM || kind === 'dynamic-import'
+              let idFsPath: string | undefined
+              try {
+                idFsPath = resolveByViteResolver(id, importer, !isImport)
+              } catch (e) {
+                if (!isImport) {
+                  let canResolveWithImport = false
+                  try {
+                    canResolveWithImport = !!resolveByViteResolver(
+                      id,
+                      importer,
+                      false,
+                    )
+                  } catch {}
+                  if (canResolveWithImport) {
+                    throw new Error(
+                      `Failed to resolve ${JSON.stringify(
+                        id,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                    )
+                  }
+                }
+                throw e
+              }
+              if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
+              }
+              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+                throw new Error(
+                  `${JSON.stringify(
+                    id,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                )
               }
               return {
                 path: idFsPath,
@@ -1051,7 +1103,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fs.promises.readFile(args.path, 'utf8')
+            const contents = await fsp.readFile(args.path, 'utf8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
@@ -1089,24 +1141,27 @@ async function loadConfigFromBundledFile(
 ): Promise<UserConfigExport> {
   // for esm, before we can register loaders without requiring users to run node
   // with --experimental-loader themselves, we have to do a hack here:
-  // write it to disk, load it with native Node ESM, then delete the file.
+  // convert to base64, load it with native Node ESM.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`
-    const fileNameTmp = `${fileBase}.mjs`
-    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    await fsp.writeFile(fileNameTmp, bundledCode)
     try {
-      return (await dynamicImport(fileUrl)).default
-    } finally {
-      fs.unlink(fileNameTmp, () => {}) // Ignore errors
+      return (
+        await dynamicImport(
+          'data:text/javascript;base64,' +
+            Buffer.from(bundledCode).toString('base64'),
+        )
+      ).default
+    } catch (e) {
+      throw new Error(`${e.message} at ${fileName}`)
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
   else {
     const extension = path.extname(fileName)
-    const realFileName = await fsp.realpath(fileName)
+    // We don't use fsp.realpath() here because it has the same behaviour as
+    // fs.realpath.native. On some Windows systems, it returns uppercase volume
+    // letters (e.g. "C:\") while the Node.js loader uses lowercase volume letters.
+    // See https://github.com/vitejs/vite/issues/12923
+    const realFileName = await promisifiedRealpath(fileName)
     const loaderExt = extension in _require.extensions ? extension : '.js'
     const defaultLoader = _require.extensions[loaderExt]!
     _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {
