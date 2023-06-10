@@ -100,7 +100,7 @@
     "dep-types": "link:./src/types",
     "dotenv": "^16.1.4",
     "dotenv-expand": "^9.0.0",
-    "es-module-lexer": "^1.2.1",
+    "es-module-lexer": "^1.3.0",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
