@@ -689,7 +689,7 @@ export async function build(
       prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    const res = []
+    const res: RollupOutput[] = []
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
