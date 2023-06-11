@@ -121,7 +121,7 @@ async function instantiateModule(
 
   const {
     isProduction,
-    resolve: { dedupe, preserveSymlinks },
+    resolve: { dedupe, preserveSymlinks, conditions },
     root,
   } = server.config
 
@@ -129,7 +129,7 @@ async function instantiateModule(
     mainFields: ['main'],
     browserField: true,
     conditions: [],
-    overrideConditions: ['production', 'development'],
+    overrideConditions: [...conditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
