@@ -693,7 +693,6 @@ export async function build(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
-
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
