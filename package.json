@@ -41,7 +41,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.22.4",
+    "@babel/types": "^7.22.5",
     "@microsoft/api-extractor": "^7.35.2",
     "@rollup/plugin-typescript": "^11.1.1",
     "@types/babel__core": "^7.20.1",
@@ -56,12 +56,12 @@
     "@types/json-stable-stringify": "^1.0.34",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
-    "@types/node": "^18.16.16",
+    "@types/node": "^18.16.17",
     "@types/picomatch": "^2.3.0",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
     "@types/stylus": "^0.48.38",
-    "@types/ws": "^8.5.4",
+    "@types/ws": "^8.5.5",
     "@typescript-eslint/eslint-plugin": "^5.59.9",
     "@typescript-eslint/parser": "^5.59.9",
     "@vitejs/release-scripts": "^1.2.0",
@@ -77,7 +77,7 @@
     "lint-staged": "^13.2.2",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.34.3",
+    "playwright-chromium": "^1.35.0",
     "prettier": "2.8.8",
     "resolve": "^1.22.2",
     "rimraf": "^5.0.1",
@@ -88,7 +88,7 @@
     "typescript": "^5.0.2",
     "unbuild": "^1.2.1",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-beta.1",
+    "vitepress": "1.0.0-beta.2",
     "vitest": "^0.32.0",
     "vue": "^3.3.4"
   },
@@ -109,7 +109,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.6.1",
+  "packageManager": "pnpm@8.6.2",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
