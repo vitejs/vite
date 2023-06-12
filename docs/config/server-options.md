@@ -247,12 +247,6 @@ async function createServer() {
 createServer()
 ```
 
-## server.base
-
-- **Type:** `string | undefined`
-
-Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start with the `/` character.
-
 ## server.fs.strict
 
 - **Type:** `boolean`

@@ -95,11 +95,6 @@ export interface ServerOptions extends CommonServerOptions {
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**
-   * Prepend this folder to http requests, for use when proxying vite as a subfolder
-   * Should start and end with the `/` character
-   */
-  base?: string
-  /**
    * Options for files served via '/\@fs/'.
    */
   fs?: FileSystemServeOptions
