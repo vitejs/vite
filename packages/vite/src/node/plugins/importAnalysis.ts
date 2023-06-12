@@ -665,7 +665,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
-                config.logger.error(e.message)
+                config.logger.error(e.message, { error: e })
               })
             }
           } else if (!importer.startsWith(clientDir)) {
