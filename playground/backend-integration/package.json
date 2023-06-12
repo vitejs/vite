@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "sass": "^1.63.2",
+    "sass": "^1.63.3",
     "tailwindcss": "^3.3.2",
     "fast-glob": "^3.2.12"
   }
