@@ -136,7 +136,7 @@ export function createIsConfiguredAsSsrExternal(
     try {
       return !!tryNodeResolve(
         id,
-        importer,
+        config.command === 'build' ? undefined : importer,
         resolveOptions,
         ssr?.target === 'webworker',
         undefined,
