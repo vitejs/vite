@@ -274,6 +274,7 @@ describe('env', () => {
     expect(await page.textContent('.env-define-template-literal')).toBe(
       'template literal',
     )
+    expect(await page.textContent('.env-define-null-string')).toBe('null')
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
     expect(await page.textContent('.env-dev')).toBe(isServe + '')
