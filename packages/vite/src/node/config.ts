@@ -1144,10 +1144,16 @@ async function loadConfigFromBundledFile(
   // convert to base64, load it with native Node ESM.
   if (isESM) {
     try {
+      // Postfix the bundled code with a timestamp to avoid Node's ESM loader cache
+      const configTimestamp = `${fileName}.timestamp:${Date.now()}-${Math.random()
+        .toString(16)
+        .slice(2)}`
       return (
         await dynamicImport(
           'data:text/javascript;base64,' +
-            Buffer.from(bundledCode).toString('base64'),
+            Buffer.from(`${bundledCode}\n//${configTimestamp}`).toString(
+              'base64',
+            ),
         )
       ).default
     } catch (e) {
