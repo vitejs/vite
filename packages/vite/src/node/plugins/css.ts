@@ -570,10 +570,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
           const isEntry = chunk.isEntry && isPureCssChunk
-          const cssAssetName =
+          const cssAssetName = normalizePath(
             !isEntry && chunk.facadeModuleId
-              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-              : chunk.name
+              ? path.relative(config.root, chunk.facadeModuleId)
+              : chunk.name,
+          )
 
           const lang = path.extname(cssAssetName).slice(1)
           const cssFileName = ensureFileExt(cssAssetName, '.css')
