@@ -689,7 +689,7 @@ export async function build(
       prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    const res = []
+    const res: RollupOutput[] = []
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
@@ -910,6 +910,11 @@ export function onRollupWarning(
     warn(warning)
   }
 
+  const tty = process.stdout.isTTY && !process.env.CI
+  if (tty) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+  }
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)

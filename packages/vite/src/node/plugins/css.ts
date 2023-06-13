@@ -517,7 +517,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ? getCssAssetDirname(cssAssetName)
             : undefined
 
-        const toRelative = (filename: string, importer: string) => {
+        const toRelative = (filename: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
           return relativePath[0] === '.' ? relativePath : './' + relativePath
@@ -954,6 +954,12 @@ async function compileCSS(
 
           return id
         },
+        async load(id) {
+          const code = fs.readFileSync(id, 'utf-8')
+          const result = await compileCSS(id, code, config)
+          result.deps?.forEach((dep) => deps.add(dep))
+          return result.code
+        },
         nameLayer(index) {
           return `vite--anon-layer-${getHash(id)}-${index}`
         },
@@ -1003,6 +1009,7 @@ async function compileCSS(
     return {
       code,
       map: preprocessorMap,
+      deps,
     }
   }
 
