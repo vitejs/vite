@@ -92,11 +92,12 @@ const _require = createRequire(import.meta.url)
 
 const isSsrExternalCache = new WeakMap<
   ResolvedConfig,
-  (id: string) => boolean | undefined
+  (id: string, importer?: string) => boolean | undefined
 >()
 
 export function shouldExternalizeForSSR(
   id: string,
+  importer: string | undefined,
   config: ResolvedConfig,
 ): boolean | undefined {
   let isSsrExternal = isSsrExternalCache.get(config)
@@ -104,12 +105,12 @@ export function shouldExternalizeForSSR(
     isSsrExternal = createIsSsrExternal(config)
     isSsrExternalCache.set(config, isSsrExternal)
   }
-  return isSsrExternal(id)
+  return isSsrExternal(id, importer)
 }
 
 export function createIsConfiguredAsSsrExternal(
   config: ResolvedConfig,
-): (id: string) => boolean {
+): (id: string, importer?: string) => boolean {
   const { ssr, root } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
@@ -126,6 +127,7 @@ export function createIsConfiguredAsSsrExternal(
 
   const isExternalizable = (
     id: string,
+    importer?: string,
     configuredAsExternal?: boolean,
   ): boolean => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
@@ -134,7 +136,9 @@ export function createIsConfiguredAsSsrExternal(
     try {
       return !!tryNodeResolve(
         id,
-        undefined,
+        // Skip passing importer in build to avoid externalizing non-hoisted dependencies
+        // unresolveable from root (which would be unresolvable from output bundles also)
+        config.command === 'build' ? undefined : importer,
         resolveOptions,
         ssr?.target === 'webworker',
         undefined,
@@ -157,7 +161,7 @@ export function createIsConfiguredAsSsrExternal(
 
   // Returns true if it is configured as external, false if it is filtered
   // by noExternal and undefined if it isn't affected by the explicit config
-  return (id: string) => {
+  return (id: string, importer?: string) => {
     const { ssr } = config
     if (ssr) {
       if (
@@ -169,14 +173,14 @@ export function createIsConfiguredAsSsrExternal(
       }
       const pkgName = getNpmPackageName(id)
       if (!pkgName) {
-        return isExternalizable(id)
+        return isExternalizable(id, importer)
       }
       if (
         // A package name in ssr.external externalizes every
         // externalizable package entry
         ssr.external?.includes(pkgName)
       ) {
-        return isExternalizable(id, true)
+        return isExternalizable(id, importer, true)
       }
       if (typeof noExternal === 'boolean') {
         return !noExternal
@@ -185,24 +189,24 @@ export function createIsConfiguredAsSsrExternal(
         return false
       }
     }
-    return isExternalizable(id)
+    return isExternalizable(id, importer)
   }
 }
 
 function createIsSsrExternal(
   config: ResolvedConfig,
-): (id: string) => boolean | undefined {
+): (id: string, importer?: string) => boolean | undefined {
   const processedIds = new Map<string, boolean | undefined>()
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
-  return (id: string) => {
+  return (id: string, importer?: string) => {
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
     let external = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
-      external = isBuiltin(id) || isConfiguredAsExternal(id)
+      external = isBuiltin(id) || isConfiguredAsExternal(id, importer)
     }
     processedIds.set(id, external)
     return external

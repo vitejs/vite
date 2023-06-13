@@ -23,7 +23,7 @@
     "@vitejs/test-no-external-cjs": "file:./no-external-cjs",
     "@vitejs/test-import-builtin-cjs": "file:./import-builtin-cjs",
     "@vitejs/test-no-external-css": "file:./no-external-css",
-    "@vitejs/test-non-optimized-with-nested-external": "file:./non-optimized-with-nested-external",
+    "@vitejs/test-non-optimized-with-nested-external": "workspace:*",
     "@vitejs/test-optimized-with-nested-external": "file:./optimized-with-nested-external",
     "@vitejs/test-optimized-cjs-with-nested-external": "file:./optimized-with-nested-external",
     "@vitejs/test-external-using-external-entry": "file:./external-using-external-entry",
