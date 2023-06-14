@@ -99,6 +99,9 @@
 <h2>Pre bundle css require</h2>
 <div class="css-require">css require</div>
 
+<h2>Pre bundle css modules require</h2>
+<div class="css-module-require">This should be red</div>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -127,6 +130,10 @@
 
   import '@vitejs/test-dep-cjs-with-assets'
   import '@vitejs/test-dep-css-require'
+  import cssModuleRequire from '@vitejs/test-dep-css-require/mod.cjs'
+  document
+    .querySelector('.css-module-require')
+    .classList.add(cssModuleRequire.cssModuleRequire)
 
   import { env } from '@vitejs/test-dep-node-env'
   text('.node-env', env)
