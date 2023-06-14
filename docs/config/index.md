@@ -98,7 +98,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     // vite config
     define: {
-      __APP_ENV__: env.APP_ENV,
+      __APP_ENV__: JSON.stringify(env.APP_ENV),
     },
   }
 })
