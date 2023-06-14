@@ -5,6 +5,7 @@ import type {
 } from 'node:http'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
+import { removeTimestampQuery } from '../utils'
 import { getCodeWithSourcemap } from './sourcemap'
 
 const alias: Record<string, string | undefined> = {
@@ -59,6 +60,10 @@ export function send(
   if (map && map.mappings) {
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
+    }
+  } else {
+    if (type === 'js') {
+      content += `\n//# sourceURL=${removeTimestampQuery(req.url!)}`
     }
   }
 
