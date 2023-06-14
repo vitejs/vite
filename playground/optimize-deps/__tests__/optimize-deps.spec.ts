@@ -215,6 +215,7 @@ test('pre bundle css require', async () => {
   }
 
   expect(await getColor('.css-require')).toBe('red')
+  expect(await getColor('.css-module-require')).toBe('red')
 })
 
 test.runIf(isBuild)('no missing deps during build', async () => {

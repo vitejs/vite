@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
-import { CSS_LANGS_RE, KNOWN_ASSET_TYPES } from '../constants'
+import { KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
 import type { PackageCache, ResolvedConfig } from '..'
 import {
@@ -12,6 +12,7 @@ import {
   normalizePath,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
+import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -172,10 +173,11 @@ export function esbuildDepPlugin(
           // import itself with prefix (this is the actual part of require-import conversion)
           const modulePath = `"${convertedExternalPrefix}${args.path}"`
           return {
-            contents: CSS_LANGS_RE.test(args.path)
-              ? `import ${modulePath};`
-              : `export { default } from ${modulePath};` +
-                `export * from ${modulePath};`,
+            contents:
+              isCSSRequest(args.path) && !isModuleCSSRequest(args.path)
+                ? `import ${modulePath};`
+                : `export { default } from ${modulePath};` +
+                  `export * from ${modulePath};`,
             loader: 'js',
           }
         },
