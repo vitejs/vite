@@ -191,6 +191,10 @@ export async function transformWithEsbuild(
     if (e.errors) {
       e.frame = ''
       e.errors.forEach((m: Message) => {
+        if (m.text === 'Experimental decorators are not currently enabled') {
+          m.text +=
+            '. Vite 4.4+ now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
+        }
         e.frame += `\n` + prettifyMessage(m, code)
       })
       e.loc = e.errors[0].location
