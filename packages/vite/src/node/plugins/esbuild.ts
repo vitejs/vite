@@ -160,9 +160,9 @@ export async function transformWithEsbuild(
   // object and esbuild throws an error for extra fields
   // @ts-expect-error include exists in ESBuildOptions
   delete resolvedOptions.include
-  // @ts-expect-error include exists in ESBuildOptions
+  // @ts-expect-error exclude exists in ESBuildOptions
   delete resolvedOptions.exclude
-  // @ts-expect-error include exists in ESBuildOptions
+  // @ts-expect-error jsxInject exists in ESBuildOptions
   delete resolvedOptions.jsxInject
 
   try {
