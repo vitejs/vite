@@ -995,6 +995,10 @@ importers:
 
   playground/preserve-symlinks/module-a: {}
 
+  playground/proxy-hmr: {}
+
+  playground/proxy-hmr/other-app: {}
+
   playground/resolve:
     dependencies:
       '@babel/runtime':

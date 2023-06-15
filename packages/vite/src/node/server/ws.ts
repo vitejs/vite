@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { Server } from 'node:http'
 import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -101,9 +102,17 @@ export function createWebSocketServer(
   const host = (hmr && hmr.host) || undefined
 
   if (wsServer) {
+    let hmrBase = config.base
+    const hmrPath = hmr ? hmr.path : undefined
+    if (hmrPath) {
+      hmrBase = path.posix.join(hmrBase, hmrPath)
+    }
     wss = new WebSocketServerRaw({ noServer: true })
     wsServer.on('upgrade', (req, socket, head) => {
-      if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
+      if (
+        req.headers['sec-websocket-protocol'] === HMR_HEADER &&
+        req.url === hmrBase
+      ) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
           wss.emit('connection', ws, req)
         })
