@@ -56,6 +56,7 @@ type TSConfigJSON = {
   extends?: string
   compilerOptions?: {
     alwaysStrict?: boolean
+    experimentalDecorators?: boolean
     importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
     jsx?: 'preserve' | 'react' | 'react-jsx' | 'react-jsxdev'
     jsxFactory?: string
@@ -101,6 +102,7 @@ export async function transformWithEsbuild(
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
       'alwaysStrict',
+      'experimentalDecorators',
       'importsNotUsedAsValues',
       'jsx',
       'jsxFactory',
