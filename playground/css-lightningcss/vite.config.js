@@ -9,6 +9,6 @@ export default defineConfig({
   },
   build: {
     cssTarget: ['chrome61'],
-    cssMinifier: 'lightningcss',
+    cssMinify: 'lightningcss',
   },
 })

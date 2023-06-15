@@ -20,7 +20,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { LightningCSS } from 'dep-types/lightningcss'
+import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -102,15 +102,7 @@ export interface CSSOptions {
   /**
    * @experimental
    */
-  lightningcss?: {
-    modules?: LightningCSS['CSSModulesConfig']
-    /**
-     * Use `{ nesting: true }` to enable support for CSS nesting. The implementation
-     * is following the ongoing specification, so this could contain
-     * breaking changes in future version of Lightning CSS.
-     */
-    drafts?: LightningCSS['Drafts']
-  }
+  lightningcss?: LightningCSSOptions
 }
 
 export interface CSSModulesOptions {
@@ -141,10 +133,8 @@ export interface CSSModulesOptions {
 }
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: {
-    targets: LightningCSS['Targets']
-    modules: LightningCSS['CSSModulesConfig'] | undefined
-    drafts: LightningCSS['Drafts']
+  lightningcss?: LightningCSSOptions & {
+    targets: LightningCSSOptions['targets']
   }
 }
 
@@ -156,13 +146,10 @@ export function resolveCSSOptions(
     return {
       ...options,
       lightningcss: {
+        ...options.lightningcss,
         targets:
-          resolvedBuildOptions.cssMinifier === 'lightningcss' &&
-          resolvedBuildOptions.lightningcss?.targets
-            ? resolvedBuildOptions.lightningcss.targets
-            : convertTargets(resolvedBuildOptions.cssTarget),
-        modules: options.lightningcss.modules,
-        drafts: options.lightningcss.drafts ?? {},
+          options.lightningcss.targets ??
+          convertTargets(resolvedBuildOptions.cssTarget),
       },
     }
   }
@@ -1482,12 +1469,12 @@ async function doImportCSSReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  if (config.build.cssMinifier === 'lightningcss') {
+  if (config.build.cssMinify === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
+      ...config.css?.lightningcss,
+      cssModules: undefined,
       filename: cssBundleName,
       code: Buffer.from(css),
-      targets: config.build.lightningcss!.targets,
-      drafts: config.build.lightningcss!.drafts,
       minify: true,
     })
     if (warnings.length) {
@@ -2149,7 +2136,7 @@ async function compileLightningCSS(
         filename,
         code: Buffer.from(src),
         targets: config.css?.lightningcss?.targets,
-        minify: config.isProduction && config.build.cssMinify,
+        minify: config.isProduction && !!config.build.cssMinify,
         analyzeDependencies: true,
       })
     : await (
@@ -2182,11 +2169,11 @@ async function compileLightningCSS(
           },
         },
         targets: config.css?.lightningcss?.targets,
-        minify: config.isProduction && config.build.cssMinify,
+        minify: config.isProduction && !!config.build.cssMinify,
         sourceMap: config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
-          ? config.css?.lightningcss?.modules ?? true
+          ? config.css?.lightningcss?.cssModules ?? true
           : undefined,
         drafts: config.css?.lightningcss?.drafts,
       })
@@ -2231,7 +2218,11 @@ async function compileLightningCSS(
 
 // Convert https://esbuild.github.io/api/#target
 // To https://github.com/parcel-bundler/lightningcss/blob/master/node/targets.d.ts
-const map: Record<string, keyof LightningCSS['Targets'] | false | undefined> = {
+
+const map: Record<
+  string,
+  keyof NonNullable<LightningCSSOptions['targets']> | false | undefined
+> = {
   chrome: 'chrome',
   edge: 'edge',
   firefox: 'firefox',
@@ -2268,8 +2259,8 @@ const versionRE = /\d/
 
 export const convertTargets = (
   esbuildTarget: string | string[] | false,
-): LightningCSS['Targets'] => {
-  const targets: LightningCSS['Targets'] = {}
+): LightningCSSOptions['targets'] => {
+  const targets: LightningCSSOptions['targets'] = {}
   if (!esbuildTarget) return targets
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {

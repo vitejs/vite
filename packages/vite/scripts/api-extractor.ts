@@ -8,10 +8,7 @@ const result = Extractor.invoke(
         // @ts-expect-error TS requires to use the const enum, which is not available as the named export in tsx
         message.logLevel = 'none'
       }
-      if (
-        message.sourceFilePath?.includes('lightningcss') &&
-        message.messageId === 'tsdoc-characters-after-block-tag'
-      ) {
+      if (message.sourceFilePath?.includes('lightningcss')) {
         ignore()
       }
       if (message.messageId === 'ae-forgotten-export') {
