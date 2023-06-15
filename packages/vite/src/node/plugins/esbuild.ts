@@ -65,6 +65,7 @@ type TSConfigJSON = {
     preserveValueImports?: boolean
     target?: string
     useDefineForClassFields?: boolean
+    verbatimModuleSyntax?: boolean
   }
   [key: string]: any
 }
@@ -111,6 +112,7 @@ export async function transformWithEsbuild(
       'preserveValueImports',
       'target',
       'useDefineForClassFields',
+      'verbatimModuleSyntax',
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
