@@ -12,6 +12,18 @@ export interface CustomEventMap {
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
   'vite:invalidate': InvalidatePayload
+  'vite:ws:connect': WebSocketConnectionPayload
+  'vite:ws:disconnect': WebSocketConnectionPayload
+}
+
+export interface WebSocketConnectionPayload {
+  /**
+   * @experimental
+   * We expose this instance experimentally to see potential usage.
+   * This might be removed in the future if we didn't find reasonable use cases.
+   * If you find this useful, please open an issue with details so we can discuss and make it stable API.
+   */
+  webSocket: WebSocket
 }
 
 export interface InvalidatePayload {
