@@ -132,7 +132,17 @@ function preload(
         })
       }
     }),
-  ).then(() => baseModule())
+  )
+    .then(() => baseModule())
+    .catch((err) => {
+      const e = new Event('vite:preloadError', { cancelable: true })
+      // @ts-expect-error custom payload
+      e.payload = err
+      window.dispatchEvent(e)
+      if (!e.defaultPrevented) {
+        throw err
+      }
+    })
 }
 
 /**
