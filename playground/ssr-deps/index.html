@@ -12,5 +12,15 @@
       // hydration scripts
       import '@vitejs/test-css-lib'
     </script>
+    <script type="module">
+      // Using dynamic import, so the module is transformed when browser actually
+      // requests it. This essentially disables pre-transform optimization that's
+      // crucial to trigger a race condition, covered by the test case introduced
+      // in https://github.com/vitejs/vite/pull/11973
+      import('virtual:isomorphic-module').then(({ default: message }) => {
+        document.querySelector('.isomorphic-module-browser').textContent =
+          message
+      })
+    </script>
   </body>
 </html>

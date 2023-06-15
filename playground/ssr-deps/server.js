@@ -64,6 +64,23 @@ export async function createServer(root = process.cwd(), hmrPort) {
           }
         },
       },
+      {
+        name: 'virtual-isomorphic-module',
+        resolveId(id) {
+          if (id === 'virtual:isomorphic-module') {
+            return '\0virtual:isomorphic-module'
+          }
+        },
+        load(id, { ssr }) {
+          if (id === '\0virtual:isomorphic-module') {
+            if (ssr) {
+              return 'export { default } from "/src/isomorphic-module-server.js";'
+            } else {
+              return 'export { default } from "/src/isomorphic-module-browser.js";'
+            }
+          }
+        },
+      },
     ],
   })
   // use vite's connect instance as middleware
