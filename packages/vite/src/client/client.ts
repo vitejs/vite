@@ -81,7 +81,7 @@ function setupWebSocket(
     'open',
     () => {
       isOpened = true
-      notifyListeners('vite:ws:connect', socket)
+      notifyListeners('vite:ws:connect', { webSocket: socket })
     },
     { once: true },
   )
@@ -100,7 +100,7 @@ function setupWebSocket(
       return
     }
 
-    notifyListeners('vite:ws:disconnect', socket)
+    notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     console.log(`[vite] server connection lost. polling for restart...`)
     await waitForSuccessfulPing(protocol, hostAndPath)
