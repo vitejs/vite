@@ -151,7 +151,6 @@ export async function transformWithEsbuild(
       options.jsxFactory && (compilerOptions.jsxFactory = undefined)
       options.jsxFragment && (compilerOptions.jsxFragmentFactory = undefined)
       options.jsxImportSource && (compilerOptions.jsxImportSource = undefined)
-      options.target && (compilerOptions.target = undefined)
     }
 
     tsconfigRaw = {
