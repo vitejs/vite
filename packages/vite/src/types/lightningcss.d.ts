@@ -9,7 +9,7 @@ import type {
 
 /**
  * Options are spread, so you can also use options that are not typed here like
- * visitor that will impact to much the bundle size.
+ * visitor (not exposed because it would impact too much the bundle size)
  */
 export type LightningCSSOptions = {
   targets?: Targets

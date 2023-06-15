@@ -26,11 +26,12 @@ import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
-import type { ResolveFn, ResolvedBuildOptions, ViteDevServer } from '../'
+import type { ResolveFn, ViteDevServer } from '../'
 import { resolveUserExternal, toOutputFilePathInCss } from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
+  ESBUILD_MODULES_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
@@ -140,7 +141,6 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
-  resolvedBuildOptions: ResolvedBuildOptions,
 ): ResolvedCSSOptions | undefined {
   if (options?.lightningcss) {
     return {
@@ -149,7 +149,7 @@ export function resolveCSSOptions(
         ...options.lightningcss,
         targets:
           options.lightningcss.targets ??
-          convertTargets(resolvedBuildOptions.cssTarget),
+          convertTargets(ESBUILD_MODULES_TARGET),
       },
     }
   }
@@ -1472,6 +1472,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   if (config.build.cssMinify === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
       ...config.css?.lightningcss,
+      targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
       filename: cssBundleName,
       code: Buffer.from(css),
@@ -2257,11 +2258,17 @@ const esMap: Record<number, string[]> = {
 const esRE = /es(\d{4})/
 const versionRE = /\d/
 
+const convertTargetsCache = new Map<
+  string | string[],
+  LightningCSSOptions['targets']
+>()
 export const convertTargets = (
   esbuildTarget: string | string[] | false,
 ): LightningCSSOptions['targets'] => {
+  if (!esbuildTarget) return {}
+  const cached = convertTargetsCache.get(esbuildTarget)
+  if (cached) return cached
   const targets: LightningCSSOptions['targets'] = {}
-  if (!esbuildTarget) return targets
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {
     const match = e.match(esRE)
@@ -2294,5 +2301,6 @@ export const convertTargets = (
     throw new Error(`Unsupported target "${entry}"`)
   }
 
+  convertTargetsCache.set(esbuildTarget, targets)
   return targets
 }

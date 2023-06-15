@@ -680,7 +680,7 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
-    css: resolveCSSOptions(config.css, resolvedBuildOptions),
+    css: resolveCSSOptions(config.css),
     esbuild:
       config.esbuild === false
         ? false
