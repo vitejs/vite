@@ -158,19 +158,22 @@ export async function transformWithEsbuild(
     }
   }
 
-  const resolvedOptions = {
+  const resolvedOptions: TransformOptions = {
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
     ...options,
     loader,
     tsconfigRaw,
-  } as ESBuildOptions
+  }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions
   // object and esbuild throws an error for extra fields
+  // @ts-expect-error include exists in ESBuildOptions
   delete resolvedOptions.include
+  // @ts-expect-error include exists in ESBuildOptions
   delete resolvedOptions.exclude
+  // @ts-expect-error include exists in ESBuildOptions
   delete resolvedOptions.jsxInject
 
   try {
