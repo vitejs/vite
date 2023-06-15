@@ -12,7 +12,7 @@ Vite provides opinionated features that pushes writing modern code. For example:
 - Web workers are encouraged to be written with the [`new Worker` syntax](./features#web-workers) to follow modern standards.
 - Node.js modules cannot be used in the browser.
 
-When adding new features, these patterns are followed to create a future-proof API, rather than following the competition.
+When adding new features, these patterns are followed to create a future-proof API, which may not always be compatible with other build tools.
 
 ## A Pragmatic Approach to Performance
 
