@@ -146,10 +146,6 @@ export function updateModules(
   for (const mod of modules) {
     const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
     const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
-    if (hasDeadEnd) {
-      needFullReload = true
-      continue
-    }
 
     moduleGraph.invalidateModule(
       mod,
@@ -160,6 +156,11 @@ export function updateModules(
     )
 
     if (needFullReload) {
+      continue
+    }
+
+    if (hasDeadEnd) {
+      needFullReload = true
       continue
     }
 
