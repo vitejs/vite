@@ -7,7 +7,7 @@ function App() {
   const [count, setCount] = createSignal(0)
 
   return (
-    <div>
+    <>
       <div>
         <a href="https://vitejs.dev" target="_blank">
           <img src={viteLogo} class="logo" alt="Vite logo" />
@@ -28,7 +28,7 @@ function App() {
       <p class="read-the-docs">
         Click on the Vite and Solid logos to learn more
       </p>
-    </div>
+    </>
   )
 }
 
