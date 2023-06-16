@@ -5,6 +5,7 @@ import type {
 } from 'node:http'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
+import MagicString from 'magic-string'
 import { removeTimestampQuery } from '../utils'
 import { getCodeWithSourcemap } from './sourcemap'
 
@@ -63,7 +64,15 @@ export function send(
     }
   } else {
     if (type === 'js') {
-      content += `\n//# sourceURL=${removeTimestampQuery(req.url!)}`
+      const urlWithoutTimestamp = removeTimestampQuery(req.url!)
+      if (req.url! !== urlWithoutTimestamp) {
+        const ms = new MagicString(content.toString())
+        content = getCodeWithSourcemap(
+          type,
+          content.toString(),
+          ms.generateMap({ source: urlWithoutTimestamp, hires: true }),
+        )
+      }
     }
   }
 
