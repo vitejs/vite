@@ -69,7 +69,7 @@ function indexOfMatchInSlice(
  */
 
 function detectScriptRel() {
-  const relList = document.createElement('link').relList
+  const relList = typeof document !== 'undefined' && document.createElement('link').relList
   return relList && relList.supports && relList.supports('modulepreload')
     ? 'modulepreload'
     : 'preload'
