@@ -328,7 +328,7 @@ export interface ResolvedServerUrls {
   network: string[]
 }
 
-export async function createServer(
+export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { ws: true })
