@@ -4,7 +4,7 @@ title: Configuring Vite
 
 # Configuring Vite
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).
+When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).The order in which vite automatically resolve for config files is: `vite.config.js`, `vite.config.mjs`, `vite.config.ts`, `vite.config.cjs`, `vite.config.mts`, `vite.config.cts`.
 
 The most basic config file looks like this:
 
