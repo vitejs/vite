@@ -130,9 +130,9 @@ export interface BuildOptions {
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
-   * @default minify
+   * @default 'esbuild'
    */
-  cssMinify?: boolean
+  cssMinify?: boolean | 'esbuild' | 'lightningcss'
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.

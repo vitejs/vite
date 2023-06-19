@@ -1,0 +1,3 @@
+.path-resolving-css {
+  composes: apply-color from './composed.module.css';
+}

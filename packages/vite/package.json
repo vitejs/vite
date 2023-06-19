@@ -56,7 +56,7 @@
     "build-types": "run-s build-types-temp build-types-pre-patch build-types-roll build-types-post-patch build-types-check",
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "build-types-pre-patch": "tsx scripts/prePatchTypes.ts",
-    "build-types-roll": "api-extractor run && rimraf temp",
+    "build-types-roll": "tsx scripts/api-extractor.ts run && rimraf temp",
     "build-types-post-patch": "tsx scripts/postPatchTypes.ts",
     "build-types-check": "tsx scripts/checkBuiltTypes.ts && tsc --project tsconfig.check.json",
     "typecheck": "tsc --noEmit",
@@ -108,6 +108,7 @@
     "http-proxy": "^1.18.1",
     "json-stable-stringify": "^1.0.2",
     "launch-editor-middleware": "^2.6.0",
+    "lightningcss": "^1.21.0",
     "magic-string": "^0.30.0",
     "micromatch": "^4.0.5",
     "mlly": "^1.3.0",
@@ -139,6 +140,7 @@
     "sass": "*",
     "stylus": "*",
     "sugarss": "*",
+    "lightningcss": "^1.21.0",
     "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
@@ -155,6 +157,9 @@
       "optional": true
     },
     "sugarss": {
+      "optional": true
+    },
+    "lightningcss": {
       "optional": true
     },
     "terser": {
