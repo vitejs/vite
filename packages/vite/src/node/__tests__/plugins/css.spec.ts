@@ -3,7 +3,12 @@ import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
-import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
+import {
+  convertTargets,
+  cssPlugin,
+  cssUrlRE,
+  hoistAtRules,
+} from '../../plugins/css'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -237,3 +242,19 @@ async function createCssPluginTransform(
     },
   }
 }
+
+describe('convertTargets', () => {
+  test('basic cases', () => {
+    expect(convertTargets('es2018')).toStrictEqual({
+      chrome: 4128768,
+      edge: 5177344,
+      firefox: 3801088,
+      safari: 786432,
+      opera: 3276800,
+    })
+    expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
+      ios_saf: 851968,
+      safari: 852224,
+    })
+  })
+})

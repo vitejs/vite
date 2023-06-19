@@ -1,0 +1,8 @@
+@import './linked-at-import.css';
+
+/* test nesting */
+.wrapper {
+  .linked {
+    color: blue;
+  }
+}

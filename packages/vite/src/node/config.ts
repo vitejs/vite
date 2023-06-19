@@ -21,7 +21,11 @@ import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
-import type { CSSOptions } from './plugins/css'
+import {
+  type CSSOptions,
+  type ResolvedCSSOptions,
+  resolveCSSOptions,
+} from './plugins/css'
 import {
   asyncFlatten,
   createDebugger,
@@ -326,7 +330,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker'
+  > & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -349,6 +356,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    css: ResolvedCSSOptions | undefined
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
@@ -672,6 +680,7 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
+    css: resolveCSSOptions(config.css),
     esbuild:
       config.esbuild === false
         ? false

@@ -1,0 +1,28 @@
+<link rel="stylesheet" href="./linked.css" />
+
+<div class="wrapper">
+  <h1>Lightning CSS</h1>
+
+  <p class="linked">&lt;link&gt;: This should be blue</p>
+  <p class="linked-at-import">@import in &lt;link&gt;: This should be red</p>
+
+  <p class="imported">import from js: This should be green</p>
+  <p class="imported-at-import">
+    @import in import from js: This should be purple
+  </p>
+
+  <p class="modules">CSS modules: this should be turquoise</p>
+  <p>Imported CSS module:</p>
+  <pre class="modules-code"></pre>
+
+  <p>Imported compose/from CSS module:</p>
+  <p class="path-resolved-modules-css">
+    CSS modules composes path resolving: this should be turquoise
+  </p>
+  <pre class="path-resolved-modules-code"></pre>
+
+  <p>Inline CSS module:</p>
+  <pre class="modules-inline"></pre>
+</div>
+
+<script type="module" src="./main.js"></script>
