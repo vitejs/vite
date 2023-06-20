@@ -135,7 +135,11 @@ module.exports = defineConfig({
       },
     },
     {
-      files: ['packages/vite/src/types/**', '*.spec.ts'],
+      files: [
+        'packages/vite/src/types/**',
+        'packages/vite/scripts/**',
+        '*.spec.ts',
+      ],
       rules: {
         'n/no-extraneous-import': 'off',
       },
