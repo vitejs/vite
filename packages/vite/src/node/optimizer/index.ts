@@ -290,7 +290,7 @@ export async function optimizeServerSsrDeps(
         resolve: false,
       })
       if (typeof noExternal === 'function') {
-        noExternalFilter = (dep: any) => excludeFilter(dep) && !noExternal(dep)
+        noExternalFilter = (dep: any) => excludeFilter(dep) && noExternal(dep)
       } else {
         noExternalFilter = excludeFilter
       }
