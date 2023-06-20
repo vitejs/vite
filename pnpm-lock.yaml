@@ -539,6 +539,8 @@ importers:
 
   playground/css-dynamic-import: {}
 
+  playground/css-extract: {}
+
   playground/css-lightningcss:
     devDependencies:
       lightningcss:

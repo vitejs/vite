@@ -610,6 +610,50 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const inlineCSS = async () => {
+        // legacy build and inline css
+
+        // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+        // and injected later by the `'vite:build-html'` plugin into the `index.html`
+        // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+        // But because entry chunk can be imported by dynamic import,
+        // we shouldn't remove the inlined CSS. (#10285)
+
+        chunkCSS = await finalizeCss(chunkCSS, true, config)
+        let cssString = JSON.stringify(chunkCSS)
+        cssString =
+          renderAssetUrlInJS(
+            this,
+            config,
+            chunk,
+            opts,
+            cssString,
+          )?.toString() || cssString
+        const style = `__vite_style__`
+        const injectCode =
+          `var ${style} = document.createElement('style');` +
+          `${style}.textContent = ${cssString};` +
+          `document.head.appendChild(${style});`
+        const wrapIdx = code.indexOf('System.register')
+        const executeFnStart =
+          code.indexOf('{', code.indexOf('execute:', wrapIdx)) + 1
+        const s = new MagicString(code)
+        s.appendRight(executeFnStart, injectCode)
+        if (config.build.sourcemap) {
+          // resolve public URL from CSS paths, we need to use absolute paths
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: true }),
+          }
+        } else {
+          return { code: s.toString() }
+        }
+      }
+
+      if (!config.build.cssExtract) {
+        return await inlineCSS()
+      }
+
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
@@ -659,43 +703,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             emitTasks = []
           }
         } else if (!config.build.ssr) {
-          // legacy build and inline css
-
-          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
-          // and injected later by the `'vite:build-html'` plugin into the `index.html`
-          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
-          // But because entry chunk can be imported by dynamic import,
-          // we shouldn't remove the inlined CSS. (#10285)
-
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
-          let cssString = JSON.stringify(chunkCSS)
-          cssString =
-            renderAssetUrlInJS(
-              this,
-              config,
-              chunk,
-              opts,
-              cssString,
-            )?.toString() || cssString
-          const style = `__vite_style__`
-          const injectCode =
-            `var ${style} = document.createElement('style');` +
-            `${style}.textContent = ${cssString};` +
-            `document.head.appendChild(${style});`
-          const wrapIdx = code.indexOf('System.register')
-          const executeFnStart =
-            code.indexOf('{', code.indexOf('execute:', wrapIdx)) + 1
-          const s = new MagicString(code)
-          s.appendRight(executeFnStart, injectCode)
-          if (config.build.sourcemap) {
-            // resolve public URL from CSS paths, we need to use absolute paths
-            return {
-              code: s.toString(),
-              map: s.generateMap({ hires: true }),
-            }
-          } else {
-            return { code: s.toString() }
-          }
+          return await inlineCSS()
         }
       } else {
         chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)

@@ -119,6 +119,13 @@ export interface BuildOptions {
    */
   cssCodeSplit?: boolean
   /**
+   * Whether to extract CSS. When disabled, CSS will be
+   * inlined as strings in the chunk, e.g. in lib mode, CSS will be inlined
+   * in the output file.
+   * @default true
+   */
+  cssExtract?: boolean
+  /**
    * An optional separate target for CSS minification.
    * As esbuild only supports configuring targets to mainstream
    * browsers, users may need this option when they are targeting
@@ -335,6 +342,7 @@ export function resolveBuildOptions(
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
+    cssExtract: true,
     sourcemap: false,
     rollupOptions: {},
     minify: raw?.ssr ? false : 'esbuild',

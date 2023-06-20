@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  findAssetFile,
   isBuild,
   isServe,
   page,
@@ -65,6 +66,18 @@ describe.runIf(isBuild)('build', () => {
     expect(es).toMatch('process.env.NODE_ENV')
     expect(iife).toMatch('process.env.NODE_ENV')
     expect(umd).toMatch('process.env.NODE_ENV')
+  })
+
+  test('CSS extract', async () => {
+    expect(
+      findAssetFile('my-lib-custom-filename.iife.js$', '', 'cssextract'),
+    ).toMatch('.index{color:#00f}.message2{color:red}')
+    expect(
+      findAssetFile('my-lib-custom-filename.umd.cjs$', '', 'cssextract'),
+    ).toMatch('.index{color:#00f}.message2{color:red}')
+    expect(
+      findAssetFile('my-lib-custom-filename.js$', '', 'cssextract'),
+    ).toMatch('.index{color:#00f}.message2{color:red}')
   })
 })
 
