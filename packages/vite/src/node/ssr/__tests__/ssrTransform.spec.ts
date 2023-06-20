@@ -904,3 +904,14 @@ for (const test in tests) {
     }"
   `)
 })
+
+test('avoid binding ClassExpression', async () => {
+  const result = await ssrTransformSimple(
+    `import Foo, {Bar} from './foo';console.log(Foo, Bar);const obj = {foo: class Foo{}, bar: class Bar{}}`,
+  )
+  expect(result?.code).toMatchInlineSnapshot(`
+
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\");
+    console.log(__vite_ssr_import_0__.default, __vite_ssr_import_0__.Bar);const obj = {foo: class Foo{}, bar: class Bar{}}"
+  `)
+})
