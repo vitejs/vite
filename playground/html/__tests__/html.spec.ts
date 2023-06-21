@@ -310,7 +310,6 @@ describe('special character', () => {
   })
 
   test('should fetch html proxy', async () => {
-    console.log(browserLogs)
     expect(browserLogs).toContain('special character')
   })
 })
