@@ -130,6 +130,7 @@ export class ModuleGraph {
     seen: Set<ModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
+    hmrBoundaries: ModuleNode[] = [],
   ): void {
     if (seen.has(mod)) {
       return
@@ -148,6 +149,11 @@ export class ModuleGraph {
     mod.ssrTransformResult = null
     mod.ssrModule = null
     mod.ssrError = null
+
+    // Fix #3033
+    if (hmrBoundaries.includes(mod)) {
+      return
+    }
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
         this.invalidateModule(importer, seen, timestamp, isHmr)
