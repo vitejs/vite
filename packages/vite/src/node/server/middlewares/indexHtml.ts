@@ -331,7 +331,11 @@ export function indexHtmlMiddleware(
       if (fs.existsSync(filename)) {
         try {
           let html = await fsp.readFile(filename, 'utf-8')
-          html = await server.transformIndexHtml(url, html, req.originalUrl)
+          html = await server.transformIndexHtml(
+            decodeURI(url),
+            html,
+            req.originalUrl,
+          )
           return send(req, res, html, 'html', {
             headers: server.config.server.headers,
           })

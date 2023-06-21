@@ -303,3 +303,14 @@ describe('side-effects', () => {
     expect(browserLogs).toContain('message from sideEffects script')
   })
 })
+
+describe('special character', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/a á.html')
+  })
+
+  test('should fetch html proxy', async () => {
+    console.log(browserLogs)
+    expect(browserLogs).toContain('special character')
+  })
+})
