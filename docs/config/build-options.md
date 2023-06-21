@@ -119,10 +119,10 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 
 ## build.cssMinify
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'esbuild' | 'lightningcss'`
 - **Default:** the same as [`build.minify`](#build-minify)
 
-This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` to minify CSS.
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` by default to minify CSS. Set the option to `'lightningcss'` to use [Lightning CSS](https://lightningcss.dev/minification.html) instead. If selected, it can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss).
 
 ## build.sourcemap
 
