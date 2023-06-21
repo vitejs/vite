@@ -187,7 +187,7 @@ You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DE
 
 - No need to worry about code style as long as you have installed the dev dependencies. Modified files are automatically formatted with Prettier on commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)).
 
-- PR title must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated.
+- PR title and commit messages must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated. Commit messages are automatically validated before commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)).
 
 ## Maintenance Guidelines
 

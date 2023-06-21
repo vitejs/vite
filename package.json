@@ -93,7 +93,8 @@
     "vue": "^3.3.4"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec lint-staged --concurrent false"
+    "pre-commit": "pnpm exec lint-staged --concurrent false",
+    "commit-msg": "node scripts/verifyCommit.js"
   },
   "lint-staged": {
     "*": [
