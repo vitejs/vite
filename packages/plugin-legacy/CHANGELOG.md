@@ -1,3 +1,13 @@
+## <small>4.0.5 (2023-06-21)</small>
+
+* chore: add funding field (#13585) ([2501627](https://github.com/vitejs/vite/commit/2501627)), closes [#13585](https://github.com/vitejs/vite/issues/13585)
+* chore(deps): update all non-major dependencies (#13553) ([3ea0534](https://github.com/vitejs/vite/commit/3ea0534)), closes [#13553](https://github.com/vitejs/vite/issues/13553)
+* fix(deps): update all non-major dependencies (#13059) ([123ef4c](https://github.com/vitejs/vite/commit/123ef4c)), closes [#13059](https://github.com/vitejs/vite/issues/13059)
+* fix(deps): update all non-major dependencies (#13488) ([bd09248](https://github.com/vitejs/vite/commit/bd09248)), closes [#13488](https://github.com/vitejs/vite/issues/13488)
+* docs(legacy): add test case to ensure correct csp hashes in readme.md (#13384) ([bf0cd25](https://github.com/vitejs/vite/commit/bf0cd25)), closes [#13384](https://github.com/vitejs/vite/issues/13384)
+
+
+
 ## <small>4.0.4 (2023-05-24)</small>
 
 * fix(legacy): import `@babel/preset-env` (#12961) ([d53c650](https://github.com/vitejs/vite/commit/d53c650)), closes [#12961](https://github.com/vitejs/vite/issues/12961)
