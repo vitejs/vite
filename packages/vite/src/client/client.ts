@@ -171,7 +171,7 @@ async function handleMessage(payload: HMRPayload) {
         isFirstUpdate = false
       }
       await Promise.all(
-        payload.updates.map(async (update): Promise<void> => {
+        (payload.updates || []).map(async (update): Promise<void> => {
           if (update.type === 'js-update') {
             return queueUpdate(fetchUpdate(update))
           }
