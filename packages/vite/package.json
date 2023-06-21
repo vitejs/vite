@@ -49,6 +49,7 @@
     "url": "https://github.com/vitejs/vite/issues"
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/#readme",
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "rimraf dist && pnpm run build-bundle -w",
     "build": "rimraf dist && run-s build-bundle build-types",
