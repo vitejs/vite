@@ -58,6 +58,7 @@ import {
   stripBomTag,
 } from '../utils'
 import type { Logger } from '../logger'
+import { Worker } from '../okie'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -361,6 +362,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         code: css,
         map,
       }
+    },
+    buildEnd() {
+      scssWorker.stop()
     },
   }
 }
@@ -1704,6 +1708,36 @@ function loadPreprocessor(
   }
 }
 
+const loadedPreprocessorPath: Partial<
+  Record<PreprocessLang | PostCssDialectLang, string>
+> = {}
+
+function loadPreprocessorPath(
+  lang: PreprocessLang | PostCssDialectLang,
+  root: string,
+): string {
+  const cached = loadedPreprocessorPath[lang]
+  if (cached) {
+    return cached
+  }
+  try {
+    const resolved = requireResolveFromRootWithFallback(root, lang)
+    return (loadedPreprocessorPath[lang] = resolved)
+  } catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND') {
+      throw new Error(
+        `Preprocessor dependency "${lang}" not found. Did you install it?`,
+      )
+    } else {
+      const message = new Error(
+        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`,
+      )
+      message.stack = e.stack + '\n' + message.stack
+      throw message
+    }
+  }
+}
+
 declare const window: unknown | undefined
 declare const location: { href: string } | undefined
 
@@ -1742,6 +1776,89 @@ function fixScssBugImportValue(
   return data
 }
 
+let scssWorker: ReturnType<typeof makeScssWorker>
+const makeScssWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
+  const internalImporter = async (
+    url: string,
+    importer: string,
+    filename: string,
+  ) => {
+    importer = cleanScssBugUrl(importer)
+    const resolved = await resolvers.sass(url, importer)
+    if (resolved) {
+      try {
+        const data = await rebaseUrls(resolved, filename, alias, '$')
+        return fixScssBugImportValue(data)
+      } catch (data) {
+        return data
+      }
+    } else {
+      return null
+    }
+  }
+
+  const worker = new Worker(
+    async (
+      sassPath: string,
+      data: string,
+      options: SassStylePreprocessorOptions,
+    ) => {
+      // eslint-disable-next-line no-restricted-globals
+      const sass: typeof Sass = require(sassPath)
+      // eslint-disable-next-line no-restricted-globals
+      const path = require('node:path')
+
+      // NOTE: `sass` always runs it's own importer first, and only falls back to
+      // the `importer` option when it can't resolve a path
+      const _internalImporter: Sass.Importer = (url, importer, done) => {
+        internalImporter(url, importer, options.filename).then((data) =>
+          done?.(data),
+        )
+      }
+      const importer = [_internalImporter]
+      if (options.importer) {
+        Array.isArray(options.importer)
+          ? importer.unshift(...options.importer)
+          : importer.unshift(options.importer)
+      }
+
+      const finalOptions: Sass.Options = {
+        ...options,
+        data,
+        file: options.filename,
+        outFile: options.filename,
+        importer,
+        ...(options.enableSourcemap
+          ? {
+              sourceMap: true,
+              omitSourceMapUrl: true,
+              sourceMapRoot: path.dirname(options.filename),
+            }
+          : {}),
+      }
+      return new Promise<{
+        css: string
+        map?: string | undefined
+        stats: Sass.Result['stats']
+      }>((resolve, reject) => {
+        sass.render(finalOptions, (err, res) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve({
+              css: res.css.toString(),
+              map: res.map?.toString(),
+              stats: res.stats,
+            })
+          }
+        })
+      })
+    },
+    { parentFunctions: { internalImporter } },
+  )
+  return worker
+}
+
 // .scss/.sass processor
 const scss: SassStylePreprocessor = async (
   source,
@@ -1749,27 +1866,8 @@ const scss: SassStylePreprocessor = async (
   options,
   resolvers,
 ) => {
-  const render = loadPreprocessor(PreprocessLang.sass, root).render
-  // NOTE: `sass` always runs it's own importer first, and only falls back to
-  // the `importer` option when it can't resolve a path
-  const internalImporter: Sass.Importer = (url, importer, done) => {
-    importer = cleanScssBugUrl(importer)
-    resolvers.sass(url, importer).then((resolved) => {
-      if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias, '$')
-          .then((data) => done?.(fixScssBugImportValue(data)))
-          .catch((data) => done?.(data))
-      } else {
-        done?.(null)
-      }
-    })
-  }
-  const importer = [internalImporter]
-  if (options.importer) {
-    Array.isArray(options.importer)
-      ? importer.unshift(...options.importer)
-      : importer.unshift(options.importer)
-  }
+  const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
+  scssWorker ||= makeScssWorker(resolvers, options.alias)
 
   const { content: data, map: additionalMap } = await getSource(
     source,
@@ -1777,31 +1875,9 @@ const scss: SassStylePreprocessor = async (
     options.additionalData,
     options.enableSourcemap,
   )
-  const finalOptions: Sass.Options = {
-    ...options,
-    data,
-    file: options.filename,
-    outFile: options.filename,
-    importer,
-    ...(options.enableSourcemap
-      ? {
-          sourceMap: true,
-          omitSourceMapUrl: true,
-          sourceMapRoot: path.dirname(options.filename),
-        }
-      : {}),
-  }
 
   try {
-    const result = await new Promise<Sass.Result>((resolve, reject) => {
-      render(finalOptions, (err, res) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(res)
-        }
-      })
-    })
+    const result = await scssWorker.run(sassPath, data, options)
     const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
     const map: ExistingRawSourceMap | undefined = result.map
       ? JSON.parse(result.map.toString())
