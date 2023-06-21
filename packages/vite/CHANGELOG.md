@@ -1,5 +1,19 @@
 ## 4.4.0-beta.1 (2023-06-21)
 
+### Experimental support for Lightning CSS
+
+Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](https://main.vitejs.dev/config/shared-options.html#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dev dependency. If enabled, CSS files will be processed by Lightning CSS instead of PostCSS.
+
+Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](https://main.vitejs.dev/config/build-options.html#css-minify).
+
+See beta docs at the [Lighting CSS guide](https://main.vitejs.dev/guide/features.html#lightning-css).
+
+### esbuild 0.18 update
+
+[esbuild 0.18](https://github.com/evanw/esbuild/blob/main/CHANGELOG.md#0180) contains backwards-incompatible changes to esbuild's handling of `tsconfig.json` files. We think they shouldn't affect Vite users, you can review [#13525](https://github.com/vitejs/vite/issues/13525) for more information.
+
+
+
 * chore: add funding field (#13585) ([2501627](https://github.com/vitejs/vite/commit/2501627)), closes [#13585](https://github.com/vitejs/vite/issues/13585)
 * chore: clean up changelog, downgrade conventional-changelog-cli to v2 (#13566) ([435bacc](https://github.com/vitejs/vite/commit/435bacc)), closes [#13566](https://github.com/vitejs/vite/issues/13566)
 * fix: avoid binding ClassExpression (#13572) ([1a0c806](https://github.com/vitejs/vite/commit/1a0c806)), closes [#13572](https://github.com/vitejs/vite/issues/13572)
