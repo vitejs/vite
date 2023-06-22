@@ -1,3 +1,11 @@
+## 4.4.0-beta.2 (2023-06-22)
+
+* fix(hmr): only invalidate `lastHMRTimestamp` of importers if the invalidated module is not a HMR bou ([1143e0b](https://github.com/vitejs/vite/commit/1143e0b)), closes [#13024](https://github.com/vitejs/vite/issues/13024)
+* fix(indexHtml): decode html URI (#13581) ([f8868af](https://github.com/vitejs/vite/commit/f8868af)), closes [#13581](https://github.com/vitejs/vite/issues/13581)
+* chore: add notes to 4.4.0-beta.1 changelog (#13586) ([097c583](https://github.com/vitejs/vite/commit/097c583)), closes [#13586](https://github.com/vitejs/vite/issues/13586)
+
+
+
 ## 4.4.0-beta.1 (2023-06-21)
 
 ### Experimental support for Lightning CSS
