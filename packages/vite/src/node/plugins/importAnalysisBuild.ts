@@ -31,7 +31,7 @@ import { interopNamedImports } from './importAnalysis'
  * dropped.
  */
 export const isModernFlag = `__VITE_IS_MODERN__`
-export const preloadMethod = `vitePreload`
+export const preloadMethod = `__vitePreload`
 export const preloadCallMethod = `__vitePreloadCall`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
@@ -221,9 +221,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     })
   `
 
-  // There are three different cases for the preload list format in vitePreload
+  // There are three different cases for the preload list format in __vitePreload
   //
-  // vitePreload(() => import(asyncChunk), [ ...deps... ])
+  // __vitePreload(() => import(asyncChunk), [ ...deps... ])
   //
   // This is maintained to keep backwards compatibility as some users developed plugins
   // using regex over this list to workaround the fact that module preload wasn't
@@ -235,8 +235,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       `function(dep, importerUrl) { return dep.startsWith('.') ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
     ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the vitePreload helper itself.
-      // The importerUrl is passed as third parameter to vitePreload in this case
+      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+      // The importerUrl is passed as third parameter to __vitePreload in this case
       `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
     : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
       // is appended inside __vitePreload too.
