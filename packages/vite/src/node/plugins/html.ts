@@ -18,8 +18,10 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
+  isUrl,
   normalizePath,
   processSrcSet,
+  removeLeadingSlash,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
@@ -40,7 +42,8 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE = /\?html-proxy=?(?:&inline-css)?&index=(\d+)\.(js|css)$/
+const htmlProxyRE =
+  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
@@ -94,7 +97,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
-        const result = htmlProxyMap.get(config)!.get(url)![index]
+        const result = htmlProxyMap.get(config)!.get(url)?.[index]
         if (result) {
           return result
         } else {
@@ -286,11 +289,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
   )
   preHooks.unshift(preImportMapHook(config))
-  normalHooks.unshift(htmlEnvHook(config))
+  preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
-    url.startsWith('#') ||
+    url[0] === '#' ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
@@ -461,13 +464,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-          // <tag style="... url(...) ..."></tag>
+          // <tag style="... url(...) or image-set(...) ..."></tag>
           // extract inline styles as virtual css and add class attribute to tag for selecting
           const inlineStyle = node.attrs.find(
             (prop) =>
               prop.prefix === undefined &&
               prop.name === 'style' &&
-              prop.value.includes('url('), // only url(...) in css need to emit file
+              // only url(...) or image-set(...) in css need to emit file
+              (prop.value.includes('url(') ||
+                prop.value.includes('image-set(')),
           )
           if (inlineStyle) {
             inlineModuleIndex++
@@ -477,7 +482,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             const sourceCodeLocation = node.sourceCodeLocation!.attrs!['style']
@@ -537,7 +542,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
-            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+            !namedOutput.includes(removeLeadingSlash(content)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
               const url =
@@ -811,11 +816,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
-          return normalizePath(
-            toOutputPublicAssetFilePath(
-              getPublicAssetFilename(fileHash, config)!,
-            ),
+          const publicAssetPath = toOutputPublicAssetFilePath(
+            getPublicAssetFilename(fileHash, config)!,
           )
+
+          return isUrl(publicAssetPath)
+            ? publicAssetPath
+            : normalizePath(publicAssetPath)
         })
 
         if (chunk && canInlineEntry) {

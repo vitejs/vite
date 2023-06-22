@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [14, 16, 18]
+        node_version: [14, 16, 18, 20]
         include:
           # Active LTS + other OS
           - os: macos-latest
@@ -58,7 +58,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@04124efe7560d15e11ea2ba96c0df2989f68f1f4 # v35.6.1
+        uses: tj-actions/changed-files@e1754a427f478b8778d349341b8f1d80f1f47f44 # v36.4.0
         with:
           files: |
             docs/**
@@ -67,8 +67,14 @@ jobs:
             packages/create-vite/template**
             **.md
 
+      - name: Install pnpm (node 14, pnpm 7)
+        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version == 14
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: 7
+
       - name: Install pnpm
-        if: steps.changed-files.outputs.only_changed != 'true'
+        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version != 14
         uses: pnpm/action-setup@v2.2.4
 
       - name: Set node version to ${{ matrix.node_version }}

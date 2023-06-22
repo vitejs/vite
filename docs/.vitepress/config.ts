@@ -92,10 +92,7 @@ export default defineConfig({
     ja: { label: '日本語', link: 'https://ja.vitejs.dev' },
     es: { label: 'Español', link: 'https://es.vitejs.dev' },
     pt: { label: 'Português', link: 'https://pt.vitejs.dev' },
-  },
-
-  vue: {
-    reactivityTransform: true,
+    ko: { label: '한국어', link: 'https://ko.vitejs.dev' },
   },
 
   themeConfig: {
@@ -140,6 +137,7 @@ export default defineConfig({
         text: 'Resources',
         items: [
           { text: 'Team', link: '/team' },
+          { text: 'Releases', link: '/releases' },
           {
             items: [
               {
@@ -236,6 +234,10 @@ export default defineConfig({
             {
               text: 'Troubleshooting',
               link: '/guide/troubleshooting',
+            },
+            {
+              text: 'Philoshophy',
+              link: '/guide/philosophy',
             },
             {
               text: 'Migration from v3',

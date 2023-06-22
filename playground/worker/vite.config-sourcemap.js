@@ -1,4 +1,4 @@
-import vite from 'vite'
+import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
 /** @param {boolean | 'inline' | 'hidden' | 'sourcemap'} sourcemap */
@@ -12,10 +12,11 @@ export default (sourcemap) => {
     sourcemap = true
   }
 
-  return vite.defineConfig({
-    base: `/iife-${
-      typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-    }/`,
+  const typeName =
+    typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
+
+  return defineConfig({
+    base: `/iife-${typeName}/`,
     resolve: {
       alias: {
         '@': __dirname,
@@ -33,9 +34,7 @@ export default (sourcemap) => {
       },
     },
     build: {
-      outDir: `dist/iife-${
-        typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-      }/`,
+      outDir: `dist/iife-${typeName}/`,
       sourcemap: sourcemap,
       rollupOptions: {
         output: {
@@ -46,5 +45,6 @@ export default (sourcemap) => {
       },
     },
     plugins: [workerPluginTestPlugin()],
+    cacheDir: `node_modules/.vite-sourcemap-${typeName}`,
   })
 }

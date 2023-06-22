@@ -297,6 +297,10 @@ test('@import dependency w/ sass export mapping', async () => {
   expect(await getColor('.css-dep-exports-sass')).toBe('orange')
 })
 
+test('@import dependency that @import another dependency', async () => {
+  expect(await getColor('.css-proxy-dep')).toBe('purple')
+})
+
 test('@import dependency w/out package scss', async () => {
   expect(await getColor('.sass-dep')).toBe('lavender')
 })
@@ -529,4 +533,8 @@ test('async css order with css modules', async () => {
   await withRetry(async () => {
     expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
   }, true)
+})
+
+test('@import scss', async () => {
+  expect(await getColor('.at-import-scss')).toBe('red')
 })

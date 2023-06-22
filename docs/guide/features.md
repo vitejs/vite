@@ -74,7 +74,7 @@ You can read more about the transition in the [TypeScript 3.7 release notes](htt
 
 If you are using a library that heavily relies on class fields, please be careful about the library's intended usage of it.
 
-Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties), [Vue Class Components 8.x](https://github.com/vuejs/vue-class-component/issues/465), etc.
+Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties).
 
 But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
 
@@ -96,7 +96,7 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 /// <reference types="vite/client" />
 ```
 
-Also, you can add `vite/client` to `compilerOptions.types` of your `tsconfig`:
+Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json
 {
@@ -138,8 +138,8 @@ Vite provides first-class Vue support:
 
 - Vue 3 SFC support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
 - Vue 3 JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
-- Vue 2.7 support via [@vitejs/plugin-vue2](https://github.com/vitejs/vite-plugin-vue2)
-- Vue <2.7 support via [vite-plugin-vue2](https://github.com/underfin/vite-plugin-vue2)
+- Vue 2.7 SFC support via [@vitejs/plugin-vue2](https://github.com/vitejs/vite-plugin-vue2)
+- Vue 2.7 JSX support via [@vitejs/plugin-vue2-jsx](https://github.com/vitejs/vite-plugin-vue2-jsx)
 
 ## JSX
 
@@ -248,9 +248,31 @@ You can also use CSS modules combined with pre-processors by prepending `.module
 The automatic injection of CSS contents can be turned off via the `?inline` query parameter. In this case, the processed CSS string is returned as the module's default export as usual, but the styles aren't injected to the page.
 
 ```js
-import styles from './foo.css' // will be injected into the page
+import './foo.css' // will be injected into the page
 import otherStyles from './bar.css?inline' // will not be injected
 ```
+
+::: tip NOTE
+Default and named imports from CSS files (e.g `import style from './foo.css'`) are deprecated since Vite 4. Use the `?inline` query instead.
+:::
+
+### Lightning CSS
+
+Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](../config/shared-options.md#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dependency:
+
+```bash
+npm add -D lightningcss
+```
+
+If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightining CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
+
+To configue CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (wich configures the way PostCSS handles CSS modules).
+
+By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#css-minify).
+
+::: tip NOTE
+[CSS Pre-processors](/#css-pre-processors) aren't supported when using Lightning CSS.
+:::
 
 ## Static Assets
 
@@ -347,7 +369,7 @@ const modules = {
 `import.meta.glob` also supports importing files as strings (similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string)) with the [Import Reflection](https://github.com/tc39/proposal-import-reflection) syntax:
 
 ```js
-const modules = import.meta.glob('./dir/*.js', { as: 'raw' })
+const modules = import.meta.glob('./dir/*.js', { as: 'raw', eager: true })
 ```
 
 The above will be transformed into the following:
@@ -537,7 +559,7 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-The worker script can also use `import` statements instead of `importScripts()` - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
+The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During dev this relies on [browser native support](https://caniuse.com/?search=module%20worker) (currently not supported in Firefox), but for the production build it is compiled away.
 
 By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
 

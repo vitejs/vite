@@ -1,3 +1,56 @@
+## <small>4.3.2 (2023-05-29)</small>
+
+* fix: upgrade svelte-check preventing unmet peer deps errors (#13103) ([c63ba3f](https://github.com/vitejs/vite/commit/c63ba3f)), closes [#13103](https://github.com/vitejs/vite/issues/13103)
+* fix(create-vite): use `"target": "ES2020"` in React template (#13147) ([23096b1](https://github.com/vitejs/vite/commit/23096b1)), closes [#13147](https://github.com/vitejs/vite/issues/13147)
+* chore(deps): update all non-major dependencies (#12805) ([5731ac9](https://github.com/vitejs/vite/commit/5731ac9)), closes [#12805](https://github.com/vitejs/vite/issues/12805)
+
+
+
+## <small>4.3.1 (2023-04-25)</small>
+
+* chore(create-vite): bump vue-tsc (#12952) ([30fd101](https://github.com/vitejs/vite/commit/30fd101)), closes [#12952](https://github.com/vitejs/vite/issues/12952)
+* chore(create-vite): update to plugin-react 4.0.0 ([14cd939](https://github.com/vitejs/vite/commit/14cd939))
+* fix(create-vite): fix h1 css selector in lit templates (#12951) ([21c61cb](https://github.com/vitejs/vite/commit/21c61cb)), closes [#12951](https://github.com/vitejs/vite/issues/12951)
+
+
+
+## 4.3.0 (2023-04-20)
+
+* fix(create-vite): update template-lit-ts tsconfig (fix #12854) (#12855) ([c186815](https://github.com/vitejs/vite/commit/c186815)), closes [#12854](https://github.com/vitejs/vite/issues/12854) [#12855](https://github.com/vitejs/vite/issues/12855)
+* feat(create-vite): add eslint to React templates (#12801) ([d84460a](https://github.com/vitejs/vite/commit/d84460a)), closes [#12801](https://github.com/vitejs/vite/issues/12801)
+* feat(create-vite): move TypeScript ones up (#12057) ([313712d](https://github.com/vitejs/vite/commit/313712d)), closes [#12057](https://github.com/vitejs/vite/issues/12057)
+* chore(create-vite): remove unnecessary App class Reference (#12771) ([1607f4a](https://github.com/vitejs/vite/commit/1607f4a)), closes [#12771](https://github.com/vitejs/vite/issues/12771)
+* chore(create-vite): remove wrapper div for react template (#12867) ([3679bd7](https://github.com/vitejs/vite/commit/3679bd7)), closes [#12867](https://github.com/vitejs/vite/issues/12867)
+* chore(deps): update dependency @tsconfig/svelte to v4 (#12879) ([79619a9](https://github.com/vitejs/vite/commit/79619a9)), closes [#12879](https://github.com/vitejs/vite/issues/12879)
+* docs: update link to svelte-hmr (#12893) ([2ddeead](https://github.com/vitejs/vite/commit/2ddeead)), closes [#12893](https://github.com/vitejs/vite/issues/12893)
+
+
+
+## 4.3.0-beta.0 (2023-04-06)
+
+* chore: use @vitejs/release-scripts (#12682) ([9c37cc1](https://github.com/vitejs/vite/commit/9c37cc1)), closes [#12682](https://github.com/vitejs/vite/issues/12682)
+* chore(create-vite): revert to vite 4.2 (#12456) ([535c8c5](https://github.com/vitejs/vite/commit/535c8c5)), closes [#12456](https://github.com/vitejs/vite/issues/12456)
+* chore(create-vite): rollback to vite 4.1 due to npm publish outage ([d8cb765](https://github.com/vitejs/vite/commit/d8cb765))
+* chore(create-vite): update to vite 4.3 beta ([9b0df5d](https://github.com/vitejs/vite/commit/9b0df5d))
+* feat(create-vite): lit templates will create application instead of library (#12459) ([8186b9b](https://github.com/vitejs/vite/commit/8186b9b)), closes [#12459](https://github.com/vitejs/vite/issues/12459)
+* feat(create-vite): stricter TS configs in templates (#12604) ([4ffaeee](https://github.com/vitejs/vite/commit/4ffaeee)), closes [#12604](https://github.com/vitejs/vite/issues/12604)
+* feat(create-vite): use typescript 5.0 in templates (#12481) ([8582e2d](https://github.com/vitejs/vite/commit/8582e2d)), closes [#12481](https://github.com/vitejs/vite/issues/12481)
+* fix(create-vite): skip lib check in tsconfig templates (#12591) ([a59914c](https://github.com/vitejs/vite/commit/a59914c)), closes [#12591](https://github.com/vitejs/vite/issues/12591)
+* fix(create-vite): updated js & ts templates with new react docs link (#12479) ([c327006](https://github.com/vitejs/vite/commit/c327006)), closes [#12479](https://github.com/vitejs/vite/issues/12479)
+* fix(deps): update all non-major dependencies (#12389) ([3e60b77](https://github.com/vitejs/vite/commit/3e60b77)), closes [#12389](https://github.com/vitejs/vite/issues/12389)
+
+
+
+## 4.2.0 (2023-03-16)
+
+* chore(create-vite): update plugin-vue ([e06cda9](https://github.com/vitejs/vite/commit/e06cda9))
+* chore(deps): update all non-major dependencies (#12299) ([b41336e](https://github.com/vitejs/vite/commit/b41336e)), closes [#12299](https://github.com/vitejs/vite/issues/12299)
+* feat(create-vite): support create-electron-vite (#12390) ([708133e](https://github.com/vitejs/vite/commit/708133e)), closes [#12390](https://github.com/vitejs/vite/issues/12390)
+* style(create-vite): use quotes for attributes consistently (#12383) ([46c5f46](https://github.com/vitejs/vite/commit/46c5f46)), closes [#12383](https://github.com/vitejs/vite/issues/12383)
+* fix(create-vite): fix broken vite logo when base changed (#12374) ([2b472d1](https://github.com/vitejs/vite/commit/2b472d1)), closes [#12374](https://github.com/vitejs/vite/issues/12374)
+
+
+
 ## 4.2.0-beta.1 (2023-03-07)
 
 * chore(create-vite): update to beta deps ([5ffcaa0](https://github.com/vitejs/vite/commit/5ffcaa0))

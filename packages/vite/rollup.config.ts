@@ -71,14 +71,6 @@ const sharedNodeOptions = defineConfig({
     freeze: false,
   },
   onwarn(warning, warn) {
-    // node-resolve complains a lot about this but seems to still work?
-    if (warning.message.includes('Package subpath')) {
-      return
-    }
-    // we use the eval('require') trick to deal with optional deps
-    if (warning.message.includes('Use of eval')) {
-      return
-    }
     if (warning.message.includes('Circular dependency')) {
       return
     }
@@ -122,11 +114,18 @@ function createNodePlugins(
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
           pattern: /require(?=\((configFile|'ts-node')\))/g,
-          replacement: `eval('require')`,
+          replacement: `__require`,
         },
         'json-stable-stringify/index.js': {
           pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
           replacement: 'var json = JSON',
+        },
+        // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
+        // However, we always pass the `resolve` option. Remove this import to avoid
+        // bundling the `resolve` dep.
+        'postcss-import/index.js': {
+          src: 'const resolveId = require("./lib/resolve-id")',
+          replacement: 'const resolveId = (id) => id',
         },
       }),
 
@@ -161,6 +160,7 @@ function createNodeConfig(isProduction: boolean) {
     },
     external: [
       'fsevents',
+      'lightningcss',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
@@ -308,7 +308,7 @@ const __require = require;
 
       return {
         code: s.toString(),
-        map: s.generateMap(),
+        map: s.generateMap({ hires: true }),
       }
     },
   }
