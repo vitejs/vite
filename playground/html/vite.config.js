@@ -29,6 +29,7 @@ export default defineConfig({
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
         env: resolve(__dirname, 'env.html'),
         sideEffects: resolve(__dirname, 'side-effects/index.html'),
+        'a á': resolve(__dirname, 'a á.html'),
       },
     },
   },

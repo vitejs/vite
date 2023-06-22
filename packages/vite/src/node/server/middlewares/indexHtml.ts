@@ -150,6 +150,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
+  htmlPath = decodeURI(htmlPath)
 
   let proxyModulePath: string
   let proxyModuleUrl: string
