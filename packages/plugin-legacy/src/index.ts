@@ -483,27 +483,29 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const htmlFilename = chunk.facadeModuleId?.replace(/\?.*$/, '')
 
       // 1. inject modern polyfills
-      const modernPolyfillFilename = facadeToModernPolyfillMap.get(
-        chunk.facadeModuleId,
-      )
-
-      if (modernPolyfillFilename && genModern) {
-        tags.push({
-          tag: 'script',
-          attrs: {
-            type: 'module',
-            crossorigin: true,
-            src: toAssetPathFromHtml(
-              modernPolyfillFilename,
-              chunk.facadeModuleId!,
-              config,
-            ),
-          },
-        })
-      } else if (modernPolyfills.size && genModern) {
-        throw new Error(
-          `No corresponding modern polyfill chunk found for ${htmlFilename}`,
+      if (genModern) {
+        const modernPolyfillFilename = facadeToModernPolyfillMap.get(
+          chunk.facadeModuleId,
         )
+
+        if (modernPolyfillFilename) {
+          tags.push({
+            tag: 'script',
+            attrs: {
+              type: 'module',
+              crossorigin: true,
+              src: toAssetPathFromHtml(
+                modernPolyfillFilename,
+                chunk.facadeModuleId!,
+                config,
+              ),
+            },
+          })
+        } else if (modernPolyfills.size) {
+          throw new Error(
+            `No corresponding modern polyfill chunk found for ${htmlFilename}`,
+          )
+        }
       }
 
       if (!genLegacy) {
@@ -511,13 +513,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 2. inject Safari 10 nomodule fix
-      genModern &&
+      if (genModern) {
         tags.push({
           tag: 'script',
           attrs: { nomodule: genModern },
           children: safari10NoModuleFix,
           injectTo: 'body',
         })
+      }
 
       // 3. inject legacy polyfills
       const legacyPolyfillFilename = facadeToLegacyPolyfillMap.get(
@@ -575,12 +578,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 5. inject dynamic import fallback entry
-      if (
-        genLegacy &&
-        legacyPolyfillFilename &&
-        legacyEntryFilename &&
-        genModern
-      ) {
+      if (legacyPolyfillFilename && legacyEntryFilename && genModern) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
