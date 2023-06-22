@@ -2,7 +2,7 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
-import { createDebugger } from '../utils'
+import { createDebugger, isBoolean, isString } from '../utils'
 
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,
@@ -59,7 +59,7 @@ export async function injectSourcesContent(
 }
 
 export function genSourceMapUrl(map: SourceMap | string): string {
-  if (typeof map !== 'string') {
+  if (!isString(map)) {
     map = JSON.stringify(map)
   }
   return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
@@ -107,7 +107,7 @@ export function applySourcemapIgnoreList(
         : path.resolve(path.dirname(sourcemapPath), sourcePath),
       sourcemapPath,
     )
-    if (logger && typeof ignoreList !== 'boolean') {
+    if (logger && !isBoolean(ignoreList)) {
       logger.warn('sourcemapIgnoreList function must return a boolean.')
     }
 

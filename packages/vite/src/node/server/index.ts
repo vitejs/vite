@@ -24,8 +24,10 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  isBoolean,
   isInNodeModules,
   isParentDirectory,
+  isString,
   mergeConfig,
   normalizePath,
   resolveHostname,
@@ -438,10 +440,9 @@ export async function _createServer(
       const url =
         server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
       if (url) {
-        const path =
-          typeof options.open === 'string'
-            ? new URL(options.open, url).href
-            : url
+        const path = isString(options.open)
+          ? new URL(options.open, url).href
+          : url
 
         _openBrowser(path, true, server.config.logger)
       } else {
@@ -600,7 +601,7 @@ export async function _createServer(
   // cors (enabled by default)
   const { cors } = serverConfig
   if (cors !== false) {
-    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+    middlewares.use(corsMiddleware(isBoolean(cors) ? {} : cors))
   }
 
   // proxy

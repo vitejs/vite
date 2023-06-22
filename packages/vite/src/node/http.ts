@@ -7,7 +7,7 @@ import type {
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
-import { isObject } from './utils'
+import { isObject, isString } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 
@@ -136,7 +136,7 @@ export async function resolveHttpsConfig(
 }
 
 async function readFileIfExists(value?: string | Buffer | any[]) {
-  if (typeof value === 'string') {
+  if (isString(value)) {
     return fsp.readFile(path.resolve(value)).catch(() => value)
   }
   return value

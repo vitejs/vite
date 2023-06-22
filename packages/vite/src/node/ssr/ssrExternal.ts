@@ -8,6 +8,7 @@ import {
   createDebugger,
   createFilter,
   getNpmPackageName,
+  isBoolean,
   isBuiltin,
   isDefined,
   isInNodeModules,
@@ -115,7 +116,7 @@ export function createIsConfiguredAsSsrExternal(
   const noExternal = ssr?.noExternal
   const noExternalFilter =
     noExternal !== 'undefined' &&
-    typeof noExternal !== 'boolean' &&
+    !isBoolean(noExternal) &&
     createFilter(undefined, noExternal, { resolve: false })
 
   const resolveOptions: InternalResolveOptions = {
@@ -182,7 +183,7 @@ export function createIsConfiguredAsSsrExternal(
       ) {
         return isExternalizable(id, importer, true)
       }
-      if (typeof noExternal === 'boolean') {
+      if (isBoolean(noExternal)) {
         return !noExternal
       }
       if (noExternalFilter && !noExternalFilter(pkgName)) {

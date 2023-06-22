@@ -29,6 +29,7 @@ import {
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
+  isString,
   isTsRequest,
   isWindows,
   normalizePath,
@@ -977,16 +978,15 @@ export function resolvePackageEntry(
     ) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
-      const browserEntry =
-        typeof data.browser === 'string'
-          ? data.browser
-          : isObject(data.browser) && data.browser['.']
+      const browserEntry = isString(data.browser)
+        ? data.browser
+        : isObject(data.browser) && data.browser['.']
       if (browserEntry) {
         // check if the package also has a "module" field.
         if (
           !options.isRequire &&
           options.mainFields.includes('module') &&
-          typeof data.module === 'string' &&
+          isString(data.module) &&
           data.module !== browserEntry
         ) {
           // if both are present, we may have a problem: some package points both
@@ -1020,7 +1020,7 @@ export function resolvePackageEntry(
     if (!resolvedFromExports && (!entryPoint || entryPoint.endsWith('.mjs'))) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
-        if (typeof data[field] === 'string') {
+        if (isString(data[field])) {
           entryPoint = data[field]
           break
         }

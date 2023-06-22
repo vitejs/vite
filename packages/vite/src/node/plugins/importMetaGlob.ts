@@ -25,6 +25,8 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import {
   evalValue,
+  isObject,
+  isString,
   normalizePath,
   slash,
   transformStableResult,
@@ -144,7 +146,7 @@ function parseGlobOptions(
     }
   }
 
-  if (typeof opts.query === 'object') {
+  if (isObject(opts.query)) {
     for (const key in opts.query) {
       const value = opts.query[key]
       if (!['string', 'number', 'boolean'].includes(typeof value)) {
@@ -252,7 +254,7 @@ export async function parseImportGlob(
     const validateLiteral = (element: Expression | SpreadElement | null) => {
       if (!element) return
       if (element.type === 'Literal') {
-        if (typeof element.value !== 'string')
+        if (!isString(element.value))
           throw err(
             `Expected glob to be a string, but got "${typeof element.value}"`,
           )
@@ -409,7 +411,7 @@ export async function transformGlobImport(
 
           let query = !options.query
             ? ''
-            : typeof options.query === 'string'
+            : isString(options.query)
             ? options.query
             : stringifyQuery(options.query as any)
 

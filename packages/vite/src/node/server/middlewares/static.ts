@@ -15,6 +15,7 @@ import {
   isInternalRequest,
   isParentDirectory,
   isSameFileUri,
+  isString,
   isWindows,
   removeLeadingSlash,
   shouldServeFile,
@@ -107,10 +108,9 @@ export function serveStaticMiddleware(
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
     for (const { find, replacement } of server.config.resolve.alias) {
-      const matches =
-        typeof find === 'string'
-          ? pathname.startsWith(find)
-          : find.test(pathname)
+      const matches = isString(find)
+        ? pathname.startsWith(find)
+        : find.test(pathname)
       if (matches) {
         redirectedPathname = pathname.replace(find, replacement)
         break

@@ -20,6 +20,7 @@ import type { ResolvedConfig } from '../config'
 import {
   cleanUrl,
   getHash,
+  isString,
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
@@ -99,10 +100,9 @@ export function renderAssetUrlInJS(
       config,
       toRelativeRuntime,
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
-        : `"+${replacement.runtime}+"`
+    const replacementString = isString(replacement)
+      ? JSON.stringify(replacement).slice(1, -1)
+      : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
 
@@ -122,10 +122,9 @@ export function renderAssetUrlInJS(
       config,
       toRelativeRuntime,
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
-        : `"+${replacement.runtime}+"`
+    const replacementString = isString(replacement)
+      ? JSON.stringify(replacement).slice(1, -1)
+      : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
 

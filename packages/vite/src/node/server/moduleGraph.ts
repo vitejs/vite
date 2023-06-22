@@ -3,6 +3,7 @@ import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
+  isString,
   normalizePath,
   removeImportQuery,
   removeTimestampQuery,
@@ -193,7 +194,7 @@ export class ModuleGraph {
     // update import graph
     for (const imported of importedModules) {
       const nextIndex = index++
-      if (typeof imported === 'string') {
+      if (isString(imported)) {
         resolvePromises.push(
           this.ensureEntryFromUrl(imported, ssr).then((dep) => {
             dep.importers.add(mod)
@@ -237,7 +238,7 @@ export class ModuleGraph {
     index = 0
     for (const accepted of acceptedModules) {
       const nextIndex = index++
-      if (typeof accepted === 'string') {
+      if (isString(accepted)) {
         resolvePromises.push(
           this.ensureEntryFromUrl(accepted, ssr).then((dep) => {
             resolveResults[nextIndex] = dep

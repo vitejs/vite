@@ -33,7 +33,9 @@ import {
   dynamicImport,
   isBuiltin,
   isExternalUrl,
+  isFunction,
   isObject,
+  isString,
   lookupFile,
   mergeAlias,
   mergeConfig,
@@ -436,7 +438,7 @@ export async function resolveConfig(
       return false
     } else if (!p.apply) {
       return true
-    } else if (typeof p.apply === 'function') {
+    } else if (isFunction(p.apply)) {
       return p.apply({ ...config, mode }, configEnv)
     } else {
       return p.apply === command
@@ -622,10 +624,7 @@ export async function resolveConfig(
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
-      ? path.resolve(
-          resolvedRoot,
-          typeof publicDir === 'string' ? publicDir : 'public',
-        )
+      ? path.resolve(resolvedRoot, isString(publicDir) ? publicDir : 'public')
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
@@ -960,7 +959,7 @@ export async function loadConfigFromFile(
     )
     debug?.(`bundled config file loaded in ${getTime()}`)
 
-    const config = await (typeof userConfig === 'function'
+    const config = await (isFunction(userConfig)
       ? userConfig(configEnv)
       : userConfig)
     if (!isObject(config)) {

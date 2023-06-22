@@ -4,7 +4,7 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isDefined, normalizePath } from '../utils'
+import { isDefined, isString, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -50,9 +50,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       }
       hasCompressChunk = true
     }
-    const compressed = await compress(
-      typeof code === 'string' ? code : Buffer.from(code),
-    )
+    const compressed = await compress(isString(code) ? code : Buffer.from(code))
     compressedCount++
     if (shouldLogInfo && tty) {
       writeLine(`computing gzip size (${compressedCount})...`)

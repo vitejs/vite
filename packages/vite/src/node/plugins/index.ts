@@ -5,6 +5,7 @@ import type { HookHandler, Plugin } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { watchPackageDataPlugin } from '../packages'
+import { isObject } from '../utils'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
@@ -55,7 +56,7 @@ export async function resolvePlugins(
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     modulePreload === true ||
-    (typeof modulePreload === 'object' && modulePreload.polyfill)
+    (isObject(modulePreload) && modulePreload.polyfill)
       ? modulePreloadPolyfillPlugin(config)
       : null,
     resolvePlugin({
@@ -123,9 +124,7 @@ export function createPluginHookUtils(
     return plugins
       .map((p) => {
         const hook = p[hookName]!
-        return typeof hook === 'object' && 'handler' in hook
-          ? hook.handler
-          : hook
+        return isObject(hook) && 'handler' in hook ? hook.handler : hook
       })
       .filter(Boolean)
   }
@@ -146,7 +145,7 @@ export function getSortedPluginsByHook(
   for (const plugin of plugins) {
     const hook = plugin[hookName]
     if (hook) {
-      if (typeof hook === 'object') {
+      if (isObject(hook)) {
         if (hook.order === 'pre') {
           pre.push(plugin)
           continue

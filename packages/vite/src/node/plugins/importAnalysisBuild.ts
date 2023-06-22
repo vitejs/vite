@@ -13,6 +13,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isInNodeModules,
+  isString,
   moduleListContains,
 } from '../utils'
 import type { Plugin } from '../plugin'
@@ -587,10 +588,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       config,
                       toRelativePath,
                     )
-                    const replacementString =
-                      typeof replacement === 'string'
-                        ? JSON.stringify(replacement)
-                        : replacement.runtime
+                    const replacementString = isString(replacement)
+                      ? JSON.stringify(replacement)
+                      : replacement.runtime
 
                     return replacementString
                   })

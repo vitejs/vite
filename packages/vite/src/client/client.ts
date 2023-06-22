@@ -1,6 +1,7 @@
 import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
+import { isFunction, isString } from '../node/utils'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -554,10 +555,10 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     },
 
     accept(deps?: any, callback?: any) {
-      if (typeof deps === 'function' || !deps) {
+      if (isFunction(deps) || !deps) {
         // self-accept: hot.accept(() => {})
         acceptDeps([ownerPath], ([mod]) => deps?.(mod))
-      } else if (typeof deps === 'string') {
+      } else if (isString(deps)) {
         // explicit deps
         acceptDeps([deps], ([mod]) => callback?.(mod))
       } else if (Array.isArray(deps)) {

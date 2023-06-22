@@ -6,7 +6,7 @@ import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
-import { joinUrlSegments, normalizePath } from '../utils'
+import { isString, joinUrlSegments, normalizePath } from '../utils'
 
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
@@ -77,10 +77,9 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       this.emitFile({
-        fileName:
-          typeof config.build.ssrManifest === 'string'
-            ? config.build.ssrManifest
-            : 'ssr-manifest.json',
+        fileName: isString(config.build.ssrManifest)
+          ? config.build.ssrManifest
+          : 'ssr-manifest.json',
         type: 'asset',
         source: jsonStableStringify(ssrManifest, { space: 2 }),
       })

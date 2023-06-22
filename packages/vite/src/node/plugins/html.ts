@@ -16,8 +16,12 @@ import {
   cleanUrl,
   generateCodeFrame,
   getHash,
+  isBoolean,
   isDataUrl,
   isExternalUrl,
+  isFunction,
+  isObject,
+  isString,
   isUrl,
   normalizePath,
   processSrcSet,
@@ -594,7 +598,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const { modulePreload } = config.build
         if (
           (modulePreload === true ||
-            (typeof modulePreload === 'object' && modulePreload.polyfill)) &&
+            (isObject(modulePreload) && modulePreload.polyfill)) &&
           (someScriptsAreAsync || someScriptsAreDefer)
         ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
@@ -748,8 +752,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const { modulePreload } = config.build
             if (modulePreload !== false) {
               const resolveDependencies =
-                typeof modulePreload === 'object' &&
-                modulePreload.resolveDependencies
+                isObject(modulePreload) && modulePreload.resolveDependencies
               const importsFileNames = imports.map((chunk) => chunk.fileName)
               const resolvedDeps = resolveDependencies
                 ? resolveDependencies(chunk.fileName, importsFileNames, {
@@ -962,7 +965,7 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   for (const key in config.define) {
     if (key.startsWith(`import.meta.env.`)) {
       const val = config.define[key]
-      env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
+      env[key.slice(16)] = isString(val) ? val : JSON.stringify(val)
     }
   }
   return (html, ctx) => {
@@ -1005,7 +1008,7 @@ export function resolveHtmlTransforms(
     const hook = plugin.transformIndexHtml
     if (!hook) continue
 
-    if (typeof hook === 'function') {
+    if (isFunction(hook)) {
       normalHooks.push(hook)
     } else {
       // `enforce` had only two possible values for the `transformIndexHtml` hook
@@ -1038,7 +1041,7 @@ export async function applyHtmlTransforms(
     if (!res) {
       continue
     }
-    if (typeof res === 'string') {
+    if (isString(res)) {
       html = res
     } else {
       let tags: HtmlTagDescriptor[]
@@ -1212,7 +1215,7 @@ function serializeTags(
   tags: HtmlTagDescriptor['children'],
   indent: string = '',
 ): string {
-  if (typeof tags === 'string') {
+  if (isString(tags)) {
     return tags
   } else if (tags && tags.length) {
     return tags.map((tag) => `${indent}${serializeTag(tag, indent)}\n`).join('')
@@ -1223,7 +1226,7 @@ function serializeTags(
 function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
   let res = ''
   for (const key in attrs) {
-    if (typeof attrs[key] === 'boolean') {
+    if (isBoolean(attrs[key])) {
       res += attrs[key] ? ` ${key}` : ``
     } else {
       res += ` ${key}=${JSON.stringify(attrs[key])}`

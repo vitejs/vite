@@ -4,7 +4,7 @@ import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
-import { createDebugger } from '../../utils'
+import { createDebugger, isString } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
@@ -41,7 +41,7 @@ export function proxyMiddleware(
     if (!opts) {
       return
     }
-    if (typeof opts === 'string') {
+    if (isString(opts)) {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
@@ -139,7 +139,7 @@ export function proxyMiddleware(
 
         if (opts.bypass) {
           const bypassResult = opts.bypass(req, res, opts)
-          if (typeof bypassResult === 'string') {
+          if (isString(bypassResult)) {
             req.url = bypassResult
             debug?.(`bypass: ${req.url} -> ${bypassResult}`)
             return next()

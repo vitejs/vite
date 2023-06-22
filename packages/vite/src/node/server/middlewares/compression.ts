@@ -5,6 +5,7 @@
 // This is based on https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/polkompress.js
 // MIT Licensed https://github.com/preactjs/wmr/blob/main/LICENSE
 import zlib from 'node:zlib'
+import { isFunction, isObject, isString } from '../../utils'
 
 /* global Buffer */
 
@@ -19,8 +20,8 @@ const gzip = true
 const getChunkSize = (chunk, enc) => (chunk ? Buffer.byteLength(chunk, enc) : 0)
 
 export default function compression() {
-  const brotliOpts = (typeof brotli === 'object' && brotli) || {}
-  const gzipOpts = (typeof gzip === 'object' && gzip) || {}
+  const brotliOpts = (isObject(brotli) && brotli) || {}
+  const gzipOpts = (isObject(gzip) && gzip) || {}
 
   // disable Brotli on Node<12.7 where it is unsupported:
   if (!zlib.createBrotliCompress) brotli = false
@@ -83,7 +84,7 @@ export default function compression() {
     const { end, write, on, writeHead } = res
 
     res.writeHead = function (status, reason, headers) {
-      if (typeof reason !== 'string') [headers, reason] = [reason, headers]
+      if (!isString(reason)) [headers, reason] = [reason, headers]
       if (headers) for (let i in headers) res.setHeader(i, headers[i])
       pendingStatus = status
       return this
@@ -97,7 +98,7 @@ export default function compression() {
     }
 
     res.end = function (chunk, enc, cb) {
-      if (arguments.length > 0 && typeof chunk !== 'function') {
+      if (arguments.length > 0 && !isFunction(chunk)) {
         size += getChunkSize(chunk, enc)
       }
       if (!started) start()

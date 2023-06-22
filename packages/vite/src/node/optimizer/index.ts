@@ -16,7 +16,9 @@ import {
   createDebugger,
   flattenId,
   getHash,
+  isFunction,
   isOptimizable,
+  isString,
   isWindows,
   lookupFile,
   normalizeId,
@@ -280,9 +282,7 @@ export async function optimizeServerSsrDeps(
 
   const noExternal = config.ssr?.noExternal
   if (noExternal) {
-    alsoInclude = arraify(noExternal).filter(
-      (ne) => typeof ne === 'string',
-    ) as string[]
+    alsoInclude = arraify(noExternal).filter((ne) => isString(ne)) as string[]
     noExternalFilter =
       noExternal === true
         ? (dep: unknown) => true
@@ -756,14 +756,14 @@ async function prepareEsbuildOptimizerRun(
   if (isBuild) {
     let rollupOptionsExternal = config?.build?.rollupOptions?.external
     if (rollupOptionsExternal) {
-      if (typeof rollupOptionsExternal === 'string') {
+      if (isString(rollupOptionsExternal)) {
         rollupOptionsExternal = [rollupOptionsExternal]
       }
       // TODO: decide whether to support RegExp and function options
       // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
       if (
         !Array.isArray(rollupOptionsExternal) ||
-        rollupOptionsExternal.some((ext) => typeof ext !== 'string')
+        rollupOptionsExternal.some((ext) => !isString(ext))
       ) {
         throw new Error(
           `[vite] 'build.rollupOptions.external' can only be an array of strings or a string when using esbuild optimization at build time.`,
@@ -1230,7 +1230,7 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       },
     },
     (_, value) => {
-      if (typeof value === 'function' || value instanceof RegExp) {
+      if (isFunction(value) || value instanceof RegExp) {
         return value.toString()
       }
       return value

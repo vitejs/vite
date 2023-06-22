@@ -10,6 +10,7 @@ import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
+  isFunction,
   normalizePath,
   parseRequest,
   removeComments,
@@ -39,10 +40,10 @@ interface DynamicImportPattern {
 const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
   const v = glob[path]
   if (v) {
-    return typeof v === 'function' ? v() : Promise.resolve(v)
+    return isFunction(v) ? v() : Promise.resolve(v)
   }
   return new Promise((_, reject) => {
-    ;(typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
+    ;(isFunction(queueMicrotask) ? queueMicrotask : setTimeout)(
       reject.bind(null, new Error('Unknown variable dynamic import: ' + path)),
     )
   })

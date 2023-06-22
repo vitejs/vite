@@ -3,7 +3,7 @@ import type { OutputAsset, OutputChunk } from 'rollup'
 import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { normalizePath } from '../utils'
+import { isString, normalizePath } from '../utils'
 import { generatedAssets } from './asset'
 import type { GeneratedAssetMeta } from './asset'
 
@@ -128,7 +128,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
-        } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
+        } else if (chunk.type === 'asset' && isString(chunk.name)) {
           // Add every unique asset to the manifest, keyed by its original name
           const assetMeta = fileNameToAssetMeta.get(chunk.fileName)
           const src = assetMeta?.originalName ?? chunk.name
@@ -154,10 +154,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const outputLength = Array.isArray(output) ? output.length : 1
       if (outputCount >= outputLength) {
         this.emitFile({
-          fileName:
-            typeof config.build.manifest === 'string'
-              ? config.build.manifest
-              : 'manifest.json',
+          fileName: isString(config.build.manifest)
+            ? config.build.manifest
+            : 'manifest.json',
           type: 'asset',
           source: jsonStableStringify(manifest, { space: 2 }),
         })

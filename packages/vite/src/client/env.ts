@@ -1,12 +1,13 @@
+import { isDefined } from '../node/utils'
 declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
 
 const context = (() => {
-  if (typeof globalThis !== 'undefined') {
+  if (isDefined(globalThis)) {
     return globalThis
-  } else if (typeof self !== 'undefined') {
+  } else if (isDefined(self)) {
     return self
-  } else if (typeof window !== 'undefined') {
+  } else if (isDefined(window)) {
     return window
   } else {
     return Function('return this')()

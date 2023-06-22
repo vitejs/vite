@@ -163,7 +163,7 @@ export function createDebugger(
 
   let enabled = log.enabled
   if (enabled && onlyWhenFocused) {
-    const ns = typeof onlyWhenFocused === 'string' ? onlyWhenFocused : namespace
+    const ns = isString(onlyWhenFocused) ? onlyWhenFocused : namespace
     enabled = !!DEBUG?.includes(ns)
   }
 
@@ -380,6 +380,16 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
+export const isFunction = (val: unknown): val is Function =>
+  typeof val === 'function'
+
+export const isString = (val: unknown): val is string => typeof val === 'string'
+
+export const isNumber = (val: unknown): val is number => typeof val === 'number'
+
+export const isBoolean = (val: unknown): val is boolean =>
+  typeof val === 'boolean'
+
 export function tryStatSync(file: string): fs.Stats | undefined {
   try {
     return fs.statSync(file, { throwIfNoEntry: false })
@@ -417,7 +427,7 @@ export function posToNumber(
   source: string,
   pos: number | { line: number; column: number },
 ): number {
-  if (typeof pos === 'number') return pos
+  if (isNumber(pos)) return pos
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
@@ -431,7 +441,7 @@ export function numberToPos(
   source: string,
   offset: number | { line: number; column: number },
 ): { line: number; column: number } {
-  if (typeof offset !== 'number') return offset
+  if (!isNumber(offset)) return offset
   if (offset > source.length) {
     throw new Error(
       `offset is longer than source length! offset ${offset} > length ${source.length}`,
@@ -947,7 +957,7 @@ export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
 // @ts-expect-error jest only exists when running Jest
-export const usingDynamicImport = typeof jest === 'undefined'
+export const usingDynamicImport = !isDefined(jest)
 
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
@@ -1066,7 +1076,7 @@ export function mergeConfig<
   overrides: O extends Function ? never : O,
   isRoot = true,
 ): Record<string, any> {
-  if (typeof defaults === 'function' || typeof overrides === 'function') {
+  if (isFunction(defaults) || isFunction(overrides)) {
     throw new Error(`Cannot merge config in form of callback`)
   }
 
@@ -1106,7 +1116,7 @@ function normalizeSingleAlias({
   customResolver,
 }: Alias): Alias {
   if (
-    typeof find === 'string' &&
+    isString(find) &&
     find[find.length - 1] === '/' &&
     replacement[replacement.length - 1] === '/'
   ) {

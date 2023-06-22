@@ -11,7 +11,7 @@ import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
-import { isObject } from '../utils'
+import { isObject, isString } from '../utils'
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -190,7 +190,7 @@ export function createWebSocketServer(
       clientsMap.set(socket, {
         send: (...args) => {
           let payload: HMRPayload
-          if (typeof args[0] === 'string') {
+          if (isString(args[0])) {
             payload = {
               type: 'custom',
               event: args[0],
@@ -240,7 +240,7 @@ export function createWebSocketServer(
 
     send(...args: any[]) {
       let payload: HMRPayload
-      if (typeof args[0] === 'string') {
+      if (isString(args[0])) {
         payload = {
           type: 'custom',
           event: args[0],

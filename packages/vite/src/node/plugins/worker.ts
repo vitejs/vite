@@ -5,7 +5,13 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
+import {
+  cleanUrl,
+  getHash,
+  injectQuery,
+  isString,
+  parseRequest,
+} from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
@@ -390,10 +396,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             config,
             toRelativeRuntime,
           )
-          const replacementString =
-            typeof replacement === 'string'
-              ? JSON.stringify(replacement).slice(1, -1)
-              : `"+${replacement.runtime}+"`
+          const replacementString = isString(replacement)
+            ? JSON.stringify(replacement).slice(1, -1)
+            : `"+${replacement.runtime}+"`
           s.update(match.index, match.index + full.length, replacementString)
         }
       }

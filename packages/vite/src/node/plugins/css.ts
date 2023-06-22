@@ -46,8 +46,11 @@ import {
   generateCodeFrame,
   getHash,
   isDataUrl,
+  isDefined,
   isExternalUrl,
+  isFunction,
   isObject,
+  isString,
   joinUrlSegments,
   normalizePath,
   parseRequest,
@@ -389,7 +392,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   const getCssAssetDirname = (cssAssetName: string) => {
     if (!assetFileNames) {
       return config.build.assetsDir
-    } else if (typeof assetFileNames === 'string') {
+    } else if (isString(assetFileNames)) {
       return path.dirname(assetFileNames)
     } else {
       return path.dirname(
@@ -1042,7 +1045,7 @@ async function compileCSS(
           outputFileName: string,
         ) {
           modules = _modules
-          if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
+          if (modulesOptions && isFunction(modulesOptions.getJSON)) {
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
           }
         },
@@ -1278,8 +1281,7 @@ async function resolvePostcssConfig(
       plugins: inlineOptions.plugins || [],
     }
   } else {
-    const searchPath =
-      typeof inlineOptions === 'string' ? inlineOptions : config.root
+    const searchPath = isString(inlineOptions) ? inlineOptions : config.root
     result = postcssrc({}, searchPath).catch((e) => {
       if (!/No PostCSS Config found/.test(e.message)) {
         if (e instanceof Error) {
@@ -1681,9 +1683,9 @@ declare const location: { href: string } | undefined
 function cleanScssBugUrl(url: string) {
   if (
     // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
-    typeof location?.href === 'string'
+    isDefined(window) &&
+    isDefined(location) &&
+    isString(location?.href)
   ) {
     const prefix = location.href.replace(/\/$/, '')
     return url.replace(prefix, '')
@@ -1699,8 +1701,8 @@ function fixScssBugImportValue(
   // to prevent internal error when it loads itself
   if (
     // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
+    isDefined(window) &&
+    isDefined(location) &&
     data &&
     'file' in data &&
     (!('contents' in data) || data.contents == null)
@@ -1839,8 +1841,7 @@ async function rebaseUrls(
     if (url.startsWith(variablePrefix)) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
-      const matches =
-        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+      const matches = isString(find) ? url.startsWith(find) : find.test(url)
       if (matches) {
         return url
       }
@@ -2080,9 +2081,9 @@ async function getSource(
 ): Promise<{ content: string; map?: ExistingRawSourceMap }> {
   if (!additionalData) return { content: source }
 
-  if (typeof additionalData === 'function') {
+  if (isFunction(additionalData)) {
     const newContent = await additionalData(source, filename)
-    if (typeof newContent === 'string') {
+    if (isString(newContent)) {
       return { content: newContent }
     }
     return newContent

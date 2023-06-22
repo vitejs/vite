@@ -1,5 +1,6 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { isFunction } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper'
@@ -9,9 +10,9 @@ const wasmHelper = async (opts = {}, url: string) => {
   if (url.startsWith('data:')) {
     const urlContent = url.replace(/^data:.*?base64,/, '')
     let bytes
-    if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
+    if (isFunction(Buffer) && isFunction(Buffer.from)) {
       bytes = Buffer.from(urlContent, 'base64')
-    } else if (typeof atob === 'function') {
+    } else if (isFunction(atob)) {
       const binaryString = atob(urlContent)
       bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) {

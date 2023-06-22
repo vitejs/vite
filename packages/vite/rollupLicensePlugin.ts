@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import license from 'rollup-plugin-license'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
+import { isString } from './src/node/utils'
 
 export default function licensePlugin(
   licenseFilePath: string,
@@ -50,7 +51,7 @@ export default function licensePlugin(
             }
             const names = new Set()
             for (const person of [author, ...maintainers, ...contributors]) {
-              const name = typeof person === 'string' ? person : person?.name
+              const name = isString(person) ? person : person?.name
               if (name) {
                 names.add(name)
               }
@@ -60,7 +61,7 @@ export default function licensePlugin(
             }
             if (repository) {
               text += `Repository: ${
-                typeof repository === 'string' ? repository : repository.url
+                isString(repository) ? repository : repository.url
               }\n`
             }
             if (licenseText) {

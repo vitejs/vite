@@ -5,6 +5,9 @@ import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
   isBuiltin,
+  isDefined,
+  isFunction,
+  isObject,
   unwrapId,
   usingDynamicImport,
 } from '../utils'
@@ -277,7 +280,7 @@ async function nodeImport(
       // Non-external modules can import ESM-only modules, but only outside
       // of test runs, because we use Node `require` in Jest to avoid segfault.
       // @ts-expect-error jest only exists when running Jest
-      typeof jest === 'undefined'
+      !isDefined(jest)
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,
       false,
@@ -322,5 +325,5 @@ function proxyESM(mod: any) {
 }
 
 function isPrimitive(value: any) {
-  return !value || (typeof value !== 'object' && typeof value !== 'function')
+  return !value || (!isObject(value) && !isFunction(value))
 }

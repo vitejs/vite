@@ -1,7 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
+import {
+  createFilter,
+  isBoolean,
+  isInNodeModules,
+  safeRealpathSync,
+} from './utils'
 import type { Plugin } from './plugin'
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -168,7 +173,7 @@ export function loadPackageData(pkgPath: string): PackageData {
   const pkgDir = path.dirname(pkgPath)
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean
-  if (typeof sideEffects === 'boolean') {
+  if (isBoolean(sideEffects)) {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {
     const finalPackageSideEffects = sideEffects.map((sideEffect) => {

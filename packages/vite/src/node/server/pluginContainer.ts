@@ -71,7 +71,9 @@ import {
   ensureWatchedFile,
   generateCodeFrame,
   isExternalUrl,
+  isNumber,
   isObject,
+  isString,
   normalizePath,
   numberToPos,
   prettifyUrl,
@@ -316,7 +318,7 @@ export async function createPluginContainer(
         ssr: this.ssr,
         scan: this._scan,
       })
-      if (typeof out === 'string') out = { id: out }
+      if (isString(out)) out = { id: out }
       return out as ResolvedId | null
     }
 
@@ -407,9 +409,8 @@ export async function createPluginContainer(
     position: number | { column: number; line: number } | undefined,
     ctx: Context,
   ) {
-    const err = (
-      typeof e === 'string' ? new Error(e) : e
-    ) as postcss.CssSyntaxError & RollupError
+    const err = (isString(e) ? new Error(e) : e) as postcss.CssSyntaxError &
+      RollupError
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }
@@ -466,15 +467,15 @@ export async function createPluginContainer(
 
       if (
         ctx instanceof TransformContext &&
-        typeof err.loc?.line === 'number' &&
-        typeof err.loc?.column === 'number'
+        isNumber(err.loc?.line) &&
+        isNumber(err.loc?.column)
       ) {
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
           const { source, line, column } = originalPositionFor(traced, {
-            line: Number(err.loc.line),
-            column: Number(err.loc.column),
+            line: Number(err.loc!.line),
+            column: Number(err.loc!.column),
           })
           if (source && line != null && column != null) {
             err.loc = { file: source, line, column }
@@ -499,8 +500,8 @@ export async function createPluginContainer(
     }
 
     if (
-      typeof err.loc?.column !== 'number' &&
-      typeof err.loc?.line !== 'number' &&
+      !isNumber(err.loc?.column) &&
+      !isNumber(err.loc?.line) &&
       !err.loc?.file
     ) {
       delete err.loc
@@ -543,7 +544,7 @@ export async function createPluginContainer(
 
       let combinedMap = this.combinedMap
       for (let m of this.sourcemapChain) {
-        if (typeof m === 'string') m = JSON.parse(m)
+        if (isString(m)) m = JSON.parse(m)
         if (!('version' in (m as SourceMap))) {
           // empty, nullified source map
           combinedMap = this.combinedMap = null
@@ -663,7 +664,7 @@ export async function createPluginContainer(
         )
         if (!result) continue
 
-        if (typeof result === 'string') {
+        if (isString(result)) {
           id = result
         } else {
           id = result.id

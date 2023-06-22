@@ -12,6 +12,7 @@ import {
   createDebugger,
   ensureWatchedFile,
   isObject,
+  isString,
   prettifyUrl,
   removeTimestampQuery,
   timeFrom,
@@ -284,7 +285,7 @@ async function loadAndTransform(
   }
 
   if (map && mod.file) {
-    map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
+    map = (isString(map) ? JSON.parse(map) : map) as SourceMap
     if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }

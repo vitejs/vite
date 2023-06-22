@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { isObject, normalizePath, resolveHostname } from '../utils'
+import { isObject, isString, normalizePath, resolveHostname } from '../utils'
 
 const process_env_NODE_ENV_RE =
   /(\bglobal(This)?\.)?\bprocess\.env\.NODE_ENV\b/g
@@ -108,7 +108,7 @@ function serializeDefine(define: Record<string, any>): string {
   for (const key in define) {
     const val = define[key]
     res += `${JSON.stringify(key)}: ${
-      typeof val === 'string' ? `(${val})` : JSON.stringify(val)
+      isString(val) ? `(${val})` : JSON.stringify(val)
     }, `
   }
   return res + `}`

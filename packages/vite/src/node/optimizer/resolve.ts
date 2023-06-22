@@ -2,7 +2,7 @@ import path from 'node:path'
 import glob from 'fast-glob'
 import micromatch from 'micromatch'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName, slash } from '../utils'
+import { escapeRegex, getNpmPackageName, isString, slash } from '../utils'
 import { resolvePackageData } from '../packages'
 
 export function createOptimizeDepsIncludeResolver(
@@ -60,7 +60,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
   // if package has exports field, get all possible export paths and apply
   // glob on them with micromatch
   if (exports) {
-    if (typeof exports === 'string' || Array.isArray(exports)) {
+    if (isString(exports) || Array.isArray(exports)) {
       return [pkgName]
     }
 
@@ -146,7 +146,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
 function getFirstExportStringValue(
   obj: string | string[] | Record<string, any>,
 ): string | undefined {
-  if (typeof obj === 'string') {
+  if (isString(obj)) {
     return obj
   } else if (Array.isArray(obj)) {
     return obj[0]

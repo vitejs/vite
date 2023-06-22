@@ -21,6 +21,7 @@ import {
   isInNodeModules,
   isObject,
   isOptimizable,
+  isString,
   moduleListContains,
   multilineCommentsRE,
   normalizePath,
@@ -170,7 +171,7 @@ async function computeEntries(config: ResolvedConfig) {
     entries = await globEntries(explicitEntryPatterns, config)
   } else if (buildInput) {
     const resolvePath = (p: string) => path.resolve(config.root, p)
-    if (typeof buildInput === 'string') {
+    if (isString(buildInput)) {
       entries = [resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
       entries = buildInput.map(resolvePath)

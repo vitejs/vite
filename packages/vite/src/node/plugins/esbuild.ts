@@ -19,6 +19,7 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
+  isString,
   timeFrom,
 } from '../utils'
 import type { ViteDevServer } from '../server'
@@ -98,7 +99,7 @@ export async function transformWithEsbuild(
   let tsconfigRaw = options?.tsconfigRaw
 
   // if options provide tsconfigRaw in string, it takes highest precedence
-  if (typeof tsconfigRaw !== 'string') {
+  if (!isString(tsconfigRaw)) {
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [

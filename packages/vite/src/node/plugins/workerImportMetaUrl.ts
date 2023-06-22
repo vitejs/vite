@@ -8,6 +8,7 @@ import {
   cleanUrl,
   evalValue,
   injectQuery,
+  isObject,
   parseRequest,
   slash,
   transformStableResult,
@@ -51,7 +52,7 @@ function parseWorkerOptions(
     return {}
   }
 
-  if (typeof opts !== 'object') {
+  if (!isObject(opts)) {
     throw err(
       `Expected worker options to be an object, got ${typeof opts}`,
       optsStartIndex,

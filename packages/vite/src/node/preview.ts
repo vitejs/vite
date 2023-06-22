@@ -16,7 +16,13 @@ import {
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
+import {
+  isBoolean,
+  isString,
+  resolveHostname,
+  resolveServerUrls,
+  shouldServeFile,
+} from './utils'
 import { printServerUrls } from './logger'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from '.'
@@ -145,7 +151,7 @@ export async function preview(
   // cors
   const { cors } = config.preview
   if (cors !== false) {
-    app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+    app.use(corsMiddleware(isBoolean(cors) ? {} : cors))
   }
 
   // proxy
@@ -201,7 +207,7 @@ export async function preview(
   )
 
   if (options.open) {
-    const path = typeof options.open === 'string' ? options.open : previewBase
+    const path = isString(options.open) ? options.open : previewBase
     openBrowser(
       path.startsWith('http')
         ? path

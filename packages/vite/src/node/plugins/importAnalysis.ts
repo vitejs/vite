@@ -34,6 +34,7 @@ import {
   isExternalUrl,
   isInNodeModules,
   isJSRequest,
+  isString,
   joinUrlSegments,
   moduleListContains,
   normalizePath,
@@ -186,9 +187,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       for (const key in config.define) {
         if (key.startsWith(`import.meta.env.`)) {
           const val = config.define[key]
-          _env += `${key} = ${
-            typeof val === 'string' ? val : JSON.stringify(val)
-          };`
+          _env += `${key} = ${isString(val) ? val : JSON.stringify(val)};`
         }
       }
     }

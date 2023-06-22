@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex, transformStableResult } from '../utils'
+import { escapeRegex, isString, transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -35,7 +35,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const userDefineEnv: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
-    userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
+    userDefine[key] = isString(val) ? val : JSON.stringify(val)
 
     // make sure `import.meta.env` object has user define properties
     if (isBuild) {

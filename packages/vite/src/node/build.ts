@@ -31,6 +31,10 @@ import {
   asyncFlatten,
   copyDir,
   emptyDir,
+  isBoolean,
+  isFunction,
+  isObject,
+  isString,
   joinUrlSegments,
   normalizePath,
   requireResolveFromRootWithFallback,
@@ -374,7 +378,7 @@ export function resolveBuildOptions(
     modulePreload:
       modulePreload === false
         ? false
-        : typeof modulePreload === 'object'
+        : isObject(modulePreload)
         ? {
             ...defaultModulePreload,
             ...modulePreload,
@@ -491,7 +495,7 @@ export async function build(
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
     ? options.rollupOptions?.input ||
-      (typeof libOptions.entry === 'string'
+      (isString(libOptions.entry)
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
         ? libOptions.entry.map(resolve)
@@ -501,11 +505,11 @@ export async function build(
               resolve(file),
             ]),
           ))
-    : typeof options.ssr === 'string'
+    : isString(options.ssr)
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
 
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+  if (ssr && isString(input) && input.endsWith('.html')) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`,
@@ -622,7 +626,7 @@ export async function build(
           output.format === 'umd' ||
           output.format === 'iife' ||
           (ssrWorkerBuild &&
-            (typeof input === 'string' || Object.keys(input).length === 1)),
+            (isString(input) || Object.keys(input).length === 1)),
         ...output,
       }
     }
@@ -782,14 +786,14 @@ export function resolveLibFilename(
   extension?: JsExt,
   packageCache?: PackageCache,
 ): string {
-  if (typeof libOptions.fileName === 'function') {
+  if (isFunction(libOptions.fileName)) {
     return libOptions.fileName(format, entryName)
   }
 
   const packageJson = findNearestPackageData(root, packageCache)?.data
   const name =
     libOptions.fileName ||
-    (packageJson && typeof libOptions.entry === 'string'
+    (packageJson && isString(libOptions.entry)
       ? getPkgName(packageJson.name)
       : entryName)
 
@@ -814,8 +818,7 @@ export function resolveBuildOutputs(
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
     const libHasMultipleEntries =
-      typeof libOptions.entry !== 'string' &&
-      Object.values(libOptions.entry).length > 1
+      !isString(libOptions.entry) && Object.values(libOptions.entry).length > 1
     const libFormats =
       libOptions.formats ||
       (libHasMultipleEntries ? ['es', 'cjs'] : ['es', 'umd'])
@@ -959,7 +962,7 @@ export function resolveUserExternal(
   parentId: string | undefined,
   isResolved: boolean,
 ): boolean | null | void {
-  if (typeof user === 'function') {
+  if (isFunction(user)) {
     return user(id, parentId, isResolved)
   } else if (Array.isArray(user)) {
     return user.some((test) => isExternal(id, test))
@@ -969,7 +972,7 @@ export function resolveUserExternal(
 }
 
 function isExternal(id: string, test: string | RegExp) {
-  if (typeof test === 'string') {
+  if (isString(test)) {
     return id === test
   } else {
     return test.test(id)
@@ -1142,11 +1145,11 @@ export function toOutputFilePathInJS(
       type,
       ssr: !!config.build.ssr,
     })
-    if (typeof result === 'object') {
+    if (isObject(result)) {
       if (result.runtime) {
         return { runtime: result.runtime }
       }
-      if (typeof result.relative === 'boolean') {
+      if (isBoolean(result.relative)) {
         relative = result.relative
       }
     } else if (result) {
@@ -1189,13 +1192,13 @@ export function toOutputFilePathWithoutRuntime(
       type,
       ssr: !!config.build.ssr,
     })
-    if (typeof result === 'object') {
+    if (isObject(result)) {
       if (result.runtime) {
         throw new Error(
           `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`,
         )
       }
-      if (typeof result.relative === 'boolean') {
+      if (isBoolean(result.relative)) {
         relative = result.relative
       }
     } else if (result) {

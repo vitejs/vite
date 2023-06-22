@@ -4,7 +4,7 @@ import type {
   ManualChunkMeta,
   OutputOptions,
 } from 'rollup'
-import { isInNodeModules } from '../utils'
+import { isFunction, isInNodeModules } from '../utils'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
@@ -108,7 +108,7 @@ export function splitVendorChunkPlugin(): Plugin {
           const viteManualChunks = createSplitVendorChunk(output, config)
           if (viteManualChunks) {
             if (output.manualChunks) {
-              if (typeof output.manualChunks === 'function') {
+              if (isFunction(output.manualChunks)) {
                 const userManualChunks = output.manualChunks
                 output.manualChunks = (id: string, api: ManualChunkMeta) => {
                   return userManualChunks(id, api) ?? viteManualChunks(id, api)

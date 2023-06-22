@@ -16,6 +16,7 @@ import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
+import { isString } from '../utils'
 
 /**
  * Reads the BROWSER environment variable and decides what to do with it.
@@ -27,7 +28,7 @@ export function openBrowser(
 ): void {
   // The browser executable to open.
   // See https://github.com/sindresorhus/open#app for documentation.
-  const browser = typeof opt === 'string' ? opt : process.env.BROWSER || ''
+  const browser = isString(opt) ? opt : process.env.BROWSER || ''
   if (browser.toLowerCase().endsWith('.js')) {
     executeNodeScript(browser, url, logger)
   } else if (browser.toLowerCase() !== 'none') {
