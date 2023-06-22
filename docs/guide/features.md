@@ -30,7 +30,17 @@ Note you don't need to manually set these up - when you [create an app via `crea
 
 Vite supports importing `.ts` files out of the box.
 
-Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process (you can run `tsc --noEmit` in the build script or install `vue-tsc` and run `vue-tsc --noEmit` to also type check your `*.vue` files).
+### Transpile Only
+
+Note that Vite only performs transpilation on `.ts` files and does **NOT** perform type checking. It assumes type checking is taken care of by your IDE and build process.
+
+The reason Vite does not perform type checking as part of the transform process is because the two jobs work fundamentally differently. Transpilation can work on a per-file basis and aligns perfectly with Vite's on-demand compile model. In comparison, type checking requires knowledge of the entire module graph. Shoe-horning type checking into Vite's transform pipeline will inevitably compromise Vite's speed benefits.
+
+Vite's job is to get your source modules into a form that can run in the browser as fast as possible. To that end, we recommend separating static analysis checks from Vite's transform pipeline. This principle applies to other static analysis checks such as ESLint.
+
+- For production builds, you can run `tsc --noEmit` in addition to Vite's build command.
+
+- During development, if you need more than IDE hints, we recommend running `tsc --noEmit --watch` in a separate process, or use [vite-plugin-checker](https://github.com/fi3ework/vite-plugin-checker) if you prefer having type errors directly reported in the browser.
 
 Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
@@ -64,7 +74,7 @@ You can read more about the transition in the [TypeScript 3.7 release notes](htt
 
 If you are using a library that heavily relies on class fields, please be careful about the library's intended usage of it.
 
-Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties), [Vue Class Components 8.x](https://github.com/vuejs/vue-class-component/issues/465), etc.
+Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties).
 
 But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
 
@@ -86,7 +96,7 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 /// <reference types="vite/client" />
 ```
 
-Also, you can add `vite/client` to `compilerOptions.types` of your `tsconfig`:
+Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json
 {
@@ -103,16 +113,22 @@ This will provide the following type shims:
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
-To override the default typing, declare it before the triple-slash reference. For example, to make the default import of `*.svg` a React component:
+To override the default typing, add a type definition file that contains your typings. Then, add the type reference before `vite/client`.
 
-```ts
-declare module '*.svg' {
-  const content: React.FC<React.SVGProps<SVGElement>>
-  export default content
-}
+For example, to make the default import of `*.svg` a React component:
 
-/// <reference types="vite/client" />
-```
+- `vite-env-override.d.ts` (the file that contains your typings):
+  ```ts
+  declare module '*.svg' {
+    const content: React.FC<React.SVGProps<SVGElement>>
+    export default content
+  }
+  ```
+- The file containing the reference to `vite/client`:
+  ```ts
+  /// <reference types="./vite-env-override.d.ts" />
+  /// <reference types="vite/client" />
+  ```
 
 :::
 
@@ -122,8 +138,8 @@ Vite provides first-class Vue support:
 
 - Vue 3 SFC support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
 - Vue 3 JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
-- Vue 2.7 support via [@vitejs/plugin-vue2](https://github.com/vitejs/vite-plugin-vue2)
-- Vue <2.7 support via [vite-plugin-vue2](https://github.com/underfin/vite-plugin-vue2)
+- Vue 2.7 SFC support via [@vitejs/plugin-vue2](https://github.com/vitejs/vite-plugin-vue2)
+- Vue 2.7 JSX support via [@vitejs/plugin-vue2-jsx](https://github.com/vitejs/vite-plugin-vue2-jsx)
 
 ## JSX
 
@@ -232,9 +248,31 @@ You can also use CSS modules combined with pre-processors by prepending `.module
 The automatic injection of CSS contents can be turned off via the `?inline` query parameter. In this case, the processed CSS string is returned as the module's default export as usual, but the styles aren't injected to the page.
 
 ```js
-import styles from './foo.css' // will be injected into the page
-import otherStyles from './bar.css?inline' // will not be injected into the page
+import './foo.css' // will be injected into the page
+import otherStyles from './bar.css?inline' // will not be injected
 ```
+
+::: tip NOTE
+Default and named imports from CSS files (e.g `import style from './foo.css'`) are deprecated since Vite 4. Use the `?inline` query instead.
+:::
+
+### Lightning CSS
+
+Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](../config/shared-options.md#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dependency:
+
+```bash
+npm add -D lightningcss
+```
+
+If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightining CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
+
+To configue CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (wich configures the way PostCSS handles CSS modules).
+
+By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#css-minify).
+
+::: tip NOTE
+[CSS Pre-processors](/#css-pre-processors) aren't supported when using Lightning CSS.
+:::
 
 ## Static Assets
 
@@ -331,7 +369,7 @@ const modules = {
 `import.meta.glob` also supports importing files as strings (similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string)) with the [Import Reflection](https://github.com/tc39/proposal-import-reflection) syntax:
 
 ```js
-const modules = import.meta.glob('./dir/*.js', { as: 'raw' })
+const modules = import.meta.glob('./dir/*.js', { as: 'raw', eager: true })
 ```
 
 The above will be transformed into the following:
@@ -388,7 +426,10 @@ const modules = {
 When combined with `eager` it's even possible to have tree-shaking enabled for those modules.
 
 ```ts
-const modules = import.meta.glob('./dir/*.js', { import: 'setup', eager: true })
+const modules = import.meta.glob('./dir/*.js', {
+  import: 'setup',
+  eager: true,
+})
 ```
 
 ```ts
@@ -433,10 +474,8 @@ const modules = import.meta.glob('./dir/*.js', {
 ```ts
 // code produced by vite:
 const modules = {
-  './dir/foo.js': () =>
-    import('./dir/foo.js?foo=bar&bar=true').then((m) => m.setup),
-  './dir/bar.js': () =>
-    import('./dir/bar.js?foo=bar&bar=true').then((m) => m.setup),
+  './dir/foo.js': () => import('./dir/foo.js?foo=bar&bar=true'),
+  './dir/bar.js': () => import('./dir/bar.js?foo=bar&bar=true'),
 }
 ```
 
@@ -520,7 +559,7 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-The worker script can also use `import` statements instead of `importScripts()` - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
+The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During dev this relies on [browser native support](https://caniuse.com/?search=module%20worker) (currently not supported in Firefox), but for the production build it is compiled away.
 
 By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
 

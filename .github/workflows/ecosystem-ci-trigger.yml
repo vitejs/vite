@@ -15,22 +15,19 @@ jobs:
             const user = context.payload.sender.login
             console.log(`Validate user: ${user}`)
 
-            const allowedUsers = new Set([
-              'yyx990803',
-              'patak-dev',
-              'antfu',
-              'sodatea',
-              'Shinigami92',
-              'aleclarson',
-              'bluwy',
-              'poyoho',
-              'sapphi-red',
-              'ygj6',
-              'Niputi',
-              'dominikg'
-            ])
+            let hasTriagePermission = false
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: user,
+              });
+              hasTriagePermission = data.user.permissions.triage
+            } catch (e) {
+              console.warn(e)
+            }
 
-            if (allowedUsers.has(user)) {
+            if (hasTriagePermission) {
               console.log('Allowed')
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
@@ -80,7 +77,7 @@ jobs:
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
 
-            const suite = comment.replace(/^\/ecosystem-ci run/, '').trim()
+            const suite = comment.split('\n')[0].replace(/^\/ecosystem-ci run/, '').trim()
 
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,

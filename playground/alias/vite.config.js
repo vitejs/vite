@@ -1,9 +1,10 @@
-const path = require('node:path')
+import path from 'node:path'
+import module from 'node:module'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+const require = module.createRequire(import.meta.url)
+
+export default defineConfig({
   resolve: {
     alias: [
       { find: 'fs', replacement: path.resolve(__dirname, 'test.js') },
@@ -39,4 +40,4 @@ module.exports = {
     __VUE_OPTIONS_API__: true,
     __VUE_PROD_DEVTOOLS__: true,
   },
-}
+})

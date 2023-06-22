@@ -2,6 +2,7 @@
   "name": "@vitejs/test-env",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "VITE_INLINE=inline-serve vite",
     "build": "VITE_INLINE=inline-build vite build",

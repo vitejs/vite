@@ -63,7 +63,7 @@ export let testDir: string
 export let testName: string
 /**
  * current test using vite inline config
- * when using server.js is not possible to get the config
+ * when using serve.[jt]s is not possible to get the config
  */
 export let viteConfig: InlineConfig | undefined
 
@@ -83,6 +83,12 @@ declare module 'vite' {
     testConfig?: {
       // relative base output use relative path
       // rewrite the url to truth file path
+      baseRoute: string
+    }
+  }
+
+  interface UserConfig {
+    testConfig?: {
       baseRoute: string
     }
   }
@@ -306,7 +312,7 @@ export async function notifyRebuildComplete(
   return watcher.off('event', callback)
 }
 
-function createInMemoryLogger(logs: string[]): Logger {
+export function createInMemoryLogger(logs: string[]): Logger {
   const loggedErrors = new WeakSet<Error | RollupError>()
   const warnedMessages = new Set<string>()
 

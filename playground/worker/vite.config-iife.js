@@ -1,7 +1,7 @@
-const vite = require('vite')
-const workerPluginTestPlugin = require('./worker-plugin-test-plugin')
+import { defineConfig } from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig({
+export default defineConfig({
   base: '/iife/',
   resolve: {
     alias: {
@@ -38,6 +38,7 @@ module.exports = vite.defineConfig({
   },
   build: {
     outDir: 'dist/iife',
+    manifest: true,
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name].[ext]',
@@ -47,4 +48,5 @@ module.exports = vite.defineConfig({
     },
   },
   plugins: [workerPluginTestPlugin()],
+  cacheDir: 'node_modules/.vite-iife',
 })

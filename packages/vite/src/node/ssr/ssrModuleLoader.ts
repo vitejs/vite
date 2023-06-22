@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
@@ -10,6 +11,7 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
+import { genSourceMapUrl } from '../server/sourcemap'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -25,8 +27,19 @@ interface SSRContext {
 
 type SSRModule = Record<string, any>
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const AsyncFunction = async function () {}.constructor as typeof Function
+let fnDeclarationLineCount = 0
+{
+  const body = '/*code*/'
+  const source = new AsyncFunction('a', 'b', body).toString()
+  fnDeclarationLineCount =
+    source.slice(0, source.indexOf(body)).split('\n').length - 1
+}
+
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
+const importErrors = new WeakMap<Error, { importee: string }>()
 
 export async function ssrLoadModule(
   url: string,
@@ -130,32 +143,39 @@ async function instantiateModule(
   const pendingDeps: string[] = []
 
   const ssrImport = async (dep: string) => {
-    if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod.file!, resolveOptions)
-    }
-    // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
-    dep = unwrapId(dep)
-    if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
-      pendingDeps.push(dep)
-      if (pendingDeps.length === 1) {
-        pendingImports.set(url, pendingDeps)
+    try {
+      if (dep[0] !== '.' && dep[0] !== '/') {
+        return await nodeImport(dep, mod.file!, resolveOptions)
       }
-      const mod = await ssrLoadModule(
-        dep,
-        server,
-        context,
-        urlStack,
-        fixStacktrace,
-      )
-      if (pendingDeps.length === 1) {
-        pendingImports.delete(url)
-      } else {
-        pendingDeps.splice(pendingDeps.indexOf(dep), 1)
+      // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
+      dep = unwrapId(dep)
+      if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
+        pendingDeps.push(dep)
+        if (pendingDeps.length === 1) {
+          pendingImports.set(url, pendingDeps)
+        }
+        const mod = await ssrLoadModule(
+          dep,
+          server,
+          context,
+          urlStack,
+          fixStacktrace,
+        )
+        if (pendingDeps.length === 1) {
+          pendingImports.delete(url)
+        } else {
+          pendingDeps.splice(pendingDeps.indexOf(dep), 1)
+        }
+        // return local module to avoid race condition #5470
+        return mod
       }
-      // return local module to avoid race condition #5470
-      return mod
+      return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+    } catch (err) {
+      // tell external error handler which mod was imported with error
+      importErrors.set(err, { importee: dep })
+
+      throw err
     }
-    return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
 
   const ssrDynamicImport = (dep: string) => {
@@ -169,7 +189,7 @@ async function instantiateModule(
 
   function ssrExportAll(sourceModule: any) {
     for (const key in sourceModule) {
-      if (key !== 'default') {
+      if (key !== 'default' && key !== '__esModule') {
         Object.defineProperty(ssrModule, key, {
           enumerable: true,
           configurable: true,
@@ -181,9 +201,18 @@ async function instantiateModule(
     }
   }
 
+  let sourceMapSuffix = ''
+  if (result.map) {
+    const moduleSourceMap = Object.assign({}, result.map, {
+      // currently we need to offset the line
+      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
+      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
+    })
+    sourceMapSuffix =
+      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
+  }
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const AsyncFunction = async function () {}.constructor as typeof Function
     const initModule = new AsyncFunction(
       `global`,
       ssrModuleExportsKey,
@@ -191,7 +220,9 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`,
+      '"use strict";' +
+        result.code +
+        `\n//# sourceURL=${mod.id}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
@@ -203,17 +234,27 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
+    const errorData = importErrors.get(e)
+
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
-      server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${e.stack}`,
-        {
-          timestamp: true,
-          clear: server.config.clearScreen,
-          error: e,
-        },
-      )
     }
+
+    server.config.logger.error(
+      colors.red(
+        `Error when evaluating SSR module ${url}:` +
+          (errorData?.importee
+            ? ` failed to import "${errorData.importee}"`
+            : '') +
+          `\n|- ${e.stack}\n`,
+      ),
+      {
+        timestamp: true,
+        clear: server.config.clearScreen,
+        error: e,
+      },
+    )
+
     throw e
   }
 
@@ -227,7 +268,7 @@ async function nodeImport(
   resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
-  if (id.startsWith('node:') || isBuiltin(id)) {
+  if (id.startsWith('node:') || id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(
@@ -254,10 +295,8 @@ async function nodeImport(
     }
   }
 
-  try {
-    const mod = await dynamicImport(url)
-    return proxyESM(mod)
-  } catch {}
+  const mod = await dynamicImport(url)
+  return proxyESM(mod)
 }
 
 // rollup-style default import interop for cjs

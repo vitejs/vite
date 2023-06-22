@@ -4,6 +4,8 @@ sidebar: false
 
 # Announcing Vite 2.0
 
+_February 16, 2021_ - Check out the [Vite 3.0 announcement](./announcing-vite3.md)
+
 <p style="text-align:center">
   <img src="/logo.svg" style="height:200px">
 </p>

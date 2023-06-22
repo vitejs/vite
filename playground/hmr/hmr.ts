@@ -3,6 +3,7 @@ import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
 import './invalidation/parent'
 import './file-delete-restore'
+import './optional-chaining/parent'
 
 export const foo = 1
 text('.app', foo)
@@ -40,6 +41,13 @@ if (import.meta.hot) {
   import.meta.hot.accept(['./hmrDep'], ([{ foo, nestedFoo }]) => {
     handleDep('multi deps', foo, nestedFoo)
   })
+
+  import.meta.hot.accept(
+    ['virtual:file', '/@id/__x00__virtual:file'],
+    ([rawVirtualPath, acceptedVirtualPath]) => {
+      text('.virtual', acceptedVirtualPath.virtual)
+    },
+  )
 
   import.meta.hot.dispose(() => {
     console.log(`foo was:`, foo)

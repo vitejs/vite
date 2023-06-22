@@ -12,7 +12,9 @@ Vite (French word for "quick", pronounced `/vit/`<button style="border:none;padd
 
 - A build command that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
 
-Vite is opinionated and comes with sensible defaults out of the box, but is also highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
+Vite is opinionated and comes with sensible defaults out of the box. Read about what's possible in the [Features Guide](./features). Support for frameworks or integration with other tools is possible through [Plugins](./using-plugins). The [Config Section](../config/) explains how to adapt Vite to your project if needed.
+
+Vite is also highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
 
 You can learn more about the rationale behind the project in the [Why Vite](./why) section.
 
@@ -110,6 +112,7 @@ Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.htm
 #### Specifying Alternative Root
 
 Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
+Note that Vite will also resolve [its config file (i.e. `vite.config.js`)](/config/#configuring-vite) inside the project root, so you'll need to move it if the root is changed.
 
 ## Command Line Interface
 
@@ -140,7 +143,7 @@ cd vite
 pnpm install
 cd packages/vite
 pnpm run build
-pnpm link --global # you can use your preferred package manager for this step
+pnpm link --global # use your preferred package manager for this step
 ```
 
 Then go to your Vite based project and run `pnpm link --global vite` (or the package manager that you used to link `vite` globally). Now restart the development server to ride on the bleeding edge!

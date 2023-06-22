@@ -146,6 +146,8 @@ test('stylus', async () => {
   const relativeImportAlias = await page.$('.stylus-import-alias')
   const optionsRelativeImport = await page.$('.stylus-options-relative-import')
   const optionsAbsoluteImport = await page.$('.stylus-options-absolute-import')
+  const optionsDefineVar = await page.$('.stylus-options-define-var')
+  const optionsDefineFunc = await page.$('.stylus-options-define-func')
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(additionalData)).toBe('orange')
@@ -156,6 +158,8 @@ test('stylus', async () => {
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
+  expect(await getColor(optionsDefineVar)).toBe('rgb(51, 197, 255)')
+  expect(await getColor(optionsDefineFunc)).toBe('rgb(255, 0, 98)')
 
   editFile('stylus.styl', (code) =>
     code.replace('$color ?= blue', '$color ?= red'),
@@ -283,6 +287,18 @@ test('@import dependency w/ style entry', async () => {
 
 test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
+})
+
+test('@import dependency w/ style export mapping', async () => {
+  expect(await getColor('.css-dep-exports')).toBe('purple')
+})
+
+test('@import dependency w/ sass export mapping', async () => {
+  expect(await getColor('.css-dep-exports-sass')).toBe('orange')
+})
+
+test('@import dependency that @import another dependency', async () => {
+  expect(await getColor('.css-proxy-dep')).toBe('purple')
 })
 
 test('@import dependency w/out package scss', async () => {
@@ -517,4 +533,8 @@ test('async css order with css modules', async () => {
   await withRetry(async () => {
     expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
   }, true)
+})
+
+test('@import scss', async () => {
+  expect(await getColor('.at-import-scss')).toBe('red')
 })

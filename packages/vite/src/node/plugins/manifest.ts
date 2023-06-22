@@ -92,10 +92,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (chunk.viteMetadata.importedCss.size) {
+        if (chunk.viteMetadata?.importedCss.size) {
           manifestChunk.css = [...chunk.viteMetadata.importedCss]
         }
-        if (chunk.viteMetadata.importedAssets.size) {
+        if (chunk.viteMetadata?.importedAssets.size) {
           manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
         }
 

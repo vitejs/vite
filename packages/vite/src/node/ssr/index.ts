@@ -11,7 +11,7 @@ export interface SSROptions {
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
-   * Default: 'node'
+   * @default 'node'
    */
   target?: SSRTarget
   /**
@@ -20,6 +20,7 @@ export interface SSROptions {
    * left marked as experimental to give users more time to update to ESM. CJS builds requires
    * complex externalization heuristics that aren't present in the ESM format.
    * @experimental
+   * @default 'esm'
    */
   format?: SSRFormat
   /**
@@ -46,16 +47,8 @@ export function resolveSSROptions(
 ): ResolvedSSROptions {
   ssr ??= {}
   const optimizeDeps = ssr.optimizeDeps ?? {}
-  let format: SSRFormat = 'esm'
-  let target: SSRTarget = 'node'
-  if (buildSsrCjsExternalHeuristics) {
-    if (ssr) {
-      format = 'cjs'
-    } else {
-      target = 'node'
-      format = 'cjs'
-    }
-  }
+  const format: SSRFormat = buildSsrCjsExternalHeuristics ? 'cjs' : 'esm'
+  const target: SSRTarget = 'node'
   return {
     format,
     target,
