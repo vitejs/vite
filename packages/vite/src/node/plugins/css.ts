@@ -688,10 +688,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             emitTasks = []
           }
         } else if (!config.build.ssr) {
-          // inline css only in library mode
-          if (!config.build.lib) {
-            return null
-          }
+          // inline css
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
           cssString =
