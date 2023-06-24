@@ -54,7 +54,8 @@ import type {
   PluginContext as RollupPluginContext,
   SourceDescription,
   SourceMap,
- TransformResult} from 'rollup'
+  TransformResult,
+} from 'rollup'
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
