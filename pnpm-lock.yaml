@@ -10973,7 +10973,3 @@ packages:
     name: '@vitejs/test-dep-to-optimize'
     version: 1.0.0
     dev: false
-
-settings:
-  autoInstallPeers: false
-  excludeLinksFromLockfile: false
