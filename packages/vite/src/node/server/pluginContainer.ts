@@ -50,11 +50,11 @@ import type {
   PartialResolvedId,
   ResolvedId,
   RollupError,
+  RollupLog,
   PluginContext as RollupPluginContext,
   SourceDescription,
   SourceMap,
-  TransformResult,
-} from 'rollup'
+ TransformResult} from 'rollup'
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
@@ -83,6 +83,8 @@ import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
+
+const noop = () => {}
 
 export const ERR_CLOSED_SERVER = 'ERR_CLOSED_SERVER'
 
@@ -186,6 +188,11 @@ export async function createPluginContainer(
       rollupVersion,
       watchMode: true,
     },
+    debug: noop,
+    info: noop,
+    warn: noop,
+    // @ts-expect-error noop
+    error: noop,
   }
 
   function warnIncompatibleMethod(method: string, plugin: string) {
@@ -271,7 +278,7 @@ export async function createPluginContainer(
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
-    meta = minimalContext.meta
+    meta = minimalContext.meta!
     ssr = false
     _scan = false
     _activePlugin: Plugin | null
@@ -377,10 +384,10 @@ export async function createPluginContainer(
     }
 
     warn(
-      e: string | RollupError,
+      e: string | RollupLog | (() => string | RollupLog),
       position?: number | { column: number; line: number },
     ) {
-      const err = formatError(e, position, this)
+      const err = formatError(typeof e === 'function' ? e() : e, position, this)
       const msg = buildErrorMessage(
         err,
         [colors.yellow(`warning: ${err.message}`)],
@@ -400,6 +407,9 @@ export async function createPluginContainer(
       // the the error middleware.
       throw formatError(e, position, this)
     }
+
+    debug = noop
+    info = noop
   }
 
   function formatError(
