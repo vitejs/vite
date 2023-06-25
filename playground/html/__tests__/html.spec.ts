@@ -150,7 +150,7 @@ describe.runIf(isBuild)('build', () => {
     const countPreloadTags = _countTags.bind(this, 'link[rel=modulepreload]')
 
     test('is inlined', async () => {
-      await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
+      await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
       expect(await countScriptTags()).toBeGreaterThan(1)
       expect(await countPreloadTags()).toBe(0)
     })
@@ -162,6 +162,10 @@ describe.runIf(isBuild)('build', () => {
     })
 
     test('execution order when inlined', async () => {
+      await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
+      expect((await page.textContent('#output')).trim()).toBe(
+        'dep1 common dep2 dep3 shared',
+      )
       await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
       expect((await page.textContent('#output')).trim()).toBe(
         'dep1 common dep2 dep3 shared',

@@ -221,7 +221,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       try {
         imports = parseImports(source)[0]
       } catch (e: any) {
-        this.error(e, e.idx)
+        this.error(e)
       }
 
       if (!imports.length) {
@@ -462,7 +462,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e: any) {
-            this.error(e, e.idx)
+            this.error(e)
           }
 
           const s = new MagicString(code)
