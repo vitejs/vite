@@ -1,3 +1,9 @@
+## 4.4.0-beta.3 (2023-06-25)
+
+* chore: upgrade rollup to 3.25.2 (#13608) ([5497abe](https://github.com/vitejs/vite/commit/5497abe)), closes [#13608](https://github.com/vitejs/vite/issues/13608)
+
+
+
 ## 4.4.0-beta.2 (2023-06-22)
 
 * fix(hmr): only invalidate `lastHMRTimestamp` of importers if the invalidated module is not a HMR bou ([1143e0b](https://github.com/vitejs/vite/commit/1143e0b)), closes [#13024](https://github.com/vitejs/vite/issues/13024)
