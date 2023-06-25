@@ -341,7 +341,7 @@ export async function _createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
-  if (inlineConfig.configFile !== false) {
+  if (inlineConfig.configFile !== false && config.mode !== 'test') {
     const entries = await computeEntries(config)
     if (!entries.length) {
       throw new Error(
