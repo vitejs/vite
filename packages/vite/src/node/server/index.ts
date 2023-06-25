@@ -341,11 +341,13 @@ export async function _createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
-  const entries = await computeEntries(config)
-  if (!entries.length) {
-    throw new Error(
-      `Could not auto-determine entry point from rollupOptions or html files in project.`,
-    )
+  if (inlineConfig.configFile !== false) {
+    const entries = await computeEntries(config)
+    if (!entries.length) {
+      throw new Error(
+        `Could not auto-determine entry point from rollupOptions or html files in project.`,
+      )
+    }
   }
 
   const { root, server: serverConfig } = config
