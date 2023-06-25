@@ -279,7 +279,7 @@ export async function createPluginContainer(
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
-    meta = minimalContext.meta!
+    meta = minimalContext.meta
     ssr = false
     _scan = false
     _activePlugin: Plugin | null

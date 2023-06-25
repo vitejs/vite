@@ -6,7 +6,12 @@ import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
-import { joinUrlSegments, normalizePath } from '../utils'
+import {
+  generateCodeFrame,
+  joinUrlSegments,
+  normalizePath,
+  numberToPos,
+} from '../utils'
 
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
@@ -42,7 +47,16 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             try {
               imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
             } catch (e: any) {
-              this.error(e)
+              const loc = numberToPos(code, e.idx)
+              this.error({
+                name: e.name,
+                message: e.message,
+                stack: e.stack,
+                cause: e.cause,
+                pos: e.idx,
+                loc: { ...loc, file: chunk.fileName },
+                frame: generateCodeFrame(code, loc),
+              })
             }
             if (imports.length) {
               for (let index = 0; index < imports.length; index++) {
