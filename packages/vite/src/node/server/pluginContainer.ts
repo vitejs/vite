@@ -504,7 +504,7 @@ export async function createPluginContainer(
           }
         }
         if (code) {
-          err.frame = generateCodeFrame(code, err.loc)
+          err.frame = generateCodeFrame(`${code}`, err.loc)
         }
       }
     }
