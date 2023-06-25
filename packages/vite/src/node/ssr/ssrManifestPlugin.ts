@@ -42,7 +42,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             try {
               imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
             } catch (e: any) {
-              this.error(e, e.idx)
+              this.error(e)
             }
             if (imports.length) {
               for (let index = 0; index < imports.length; index++) {
