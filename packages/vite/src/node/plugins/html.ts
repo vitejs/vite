@@ -606,6 +606,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(options, bundle) {
       const analyzedChunk: Map<OutputChunk, number> = new Map()
+      const inlineEntryChunk: Map<string, number> = new Map()
       const getImportedChunks = (
         chunk: OutputChunk,
         seen: Set<string> = new Set(),
@@ -827,7 +828,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         if (chunk && canInlineEntry) {
           // all imports from entry have been inlined to html, prevent rollup from outputting it
-          delete bundle[chunk.fileName]
+          const importNum = inlineEntryChunk.get(chunk.fileName) || 0
+          inlineEntryChunk.set(chunk.fileName, importNum + 1)
         }
 
         const shortEmitName = normalizePath(path.relative(config.root, id))
@@ -836,6 +838,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           fileName: shortEmitName,
           source: result,
         })
+      }
+
+      for (const [fileName, importNum] of inlineEntryChunk) {
+        // #13436, only remove the independent inline entry chunk
+        if (importNum === 1) {
+          delete bundle[fileName]
+        }
       }
     },
   }
