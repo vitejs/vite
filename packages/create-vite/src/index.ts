@@ -8,6 +8,7 @@ import {
   blue,
   cyan,
   green,
+  lightBlue,
   lightGreen,
   lightRed,
   magenta,
@@ -166,6 +167,18 @@ const FRAMEWORKS: Framework[] = [
         display: 'SvelteKit ↗',
         color: red,
         customCommand: 'npm create svelte@latest TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'qwik',
+    display: 'Qwik',
+    color: lightBlue,
+    variants: [
+      {
+        name: 'qwik-ts',
+        display: 'TypeScript',
+        color: lightBlue,
       },
     ],
   },
