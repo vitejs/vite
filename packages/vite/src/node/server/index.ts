@@ -40,6 +40,7 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
+import { computeEntries } from '../optimizer/scan'
 import { bindShortcuts } from '../shortcuts'
 import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
@@ -339,6 +340,13 @@ export async function _createServer(
   options: { ws: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
+
+  const entries = await computeEntries(config)
+  if (!entries.length) {
+    throw new Error(
+      `Could not auto-determine entry point from rollupOptions or html files in project.`,
+    )
+  }
 
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)

@@ -160,7 +160,9 @@ export function scanImports(config: ResolvedConfig): {
   }
 }
 
-async function computeEntries(config: ResolvedConfig) {
+export async function computeEntries(
+  config: ResolvedConfig,
+): Promise<string[]> {
   let entries: string[] = []
 
   const explicitEntryPatterns = config.optimizeDeps.entries
