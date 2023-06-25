@@ -5,16 +5,17 @@ import type {
   ExternalOption,
   InputOption,
   InternalModuleFormat,
+  LoggingFunction,
   ModuleFormat,
   OutputOptions,
   Plugin,
   RollupBuild,
   RollupError,
+  RollupLog,
   RollupOptions,
   RollupOutput,
   RollupWarning,
   RollupWatcher,
-  WarningHandler,
   WatcherOptions,
 } from 'rollup'
 import type { Terser } from 'dep-types/terser'
@@ -867,47 +868,58 @@ const dynamicImportWarningIgnoreList = [
 
 export function onRollupWarning(
   warning: RollupWarning,
-  warn: WarningHandler,
+  warn: LoggingFunction,
   config: ResolvedConfig,
 ): void {
-  function viteWarn(warning: RollupWarning) {
-    if (warning.code === 'UNRESOLVED_IMPORT') {
-      const id = warning.id
-      const exporter = warning.exporter
-      // throw unless it's commonjs external...
-      if (!id || !/\?commonjs-external$/.test(id)) {
-        throw new Error(
-          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
-            `This is most likely unintended because it can break your application at runtime.\n` +
-            `If you do want to externalize this module explicitly add it to\n` +
-            `\`build.rollupOptions.external\``,
+  const viteWarn: LoggingFunction = (warnLog) => {
+    let warning: string | RollupLog
+
+    if (typeof warnLog === 'function') {
+      warning = warnLog()
+    } else {
+      warning = warnLog
+    }
+
+    if (typeof warning === 'object') {
+      if (warning.code === 'UNRESOLVED_IMPORT') {
+        const id = warning.id
+        const exporter = warning.exporter
+        // throw unless it's commonjs external...
+        if (!id || !/\?commonjs-external$/.test(id)) {
+          throw new Error(
+            `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+              `This is most likely unintended because it can break your application at runtime.\n` +
+              `If you do want to externalize this module explicitly add it to\n` +
+              `\`build.rollupOptions.external\``,
+          )
+        }
+      }
+
+      if (
+        warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+        dynamicImportWarningIgnoreList.some((msg) =>
+          // @ts-expect-error warning is RollupLog
+          warning.message.includes(msg),
         )
+      ) {
+        return
+      }
+
+      if (warningIgnoreList.includes(warning.code!)) {
+        return
+      }
+
+      if (warning.code === 'PLUGIN_WARNING') {
+        config.logger.warn(
+          `${colors.bold(
+            colors.yellow(`[plugin:${warning.plugin}]`),
+          )} ${colors.yellow(warning.message)}`,
+        )
+        return
       }
     }
 
-    if (
-      warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-      dynamicImportWarningIgnoreList.some((msg) =>
-        warning.message.includes(msg),
-      )
-    ) {
-      return
-    }
-
-    if (warningIgnoreList.includes(warning.code!)) {
-      return
-    }
-
-    if (warning.code === 'PLUGIN_WARNING') {
-      config.logger.warn(
-        `${colors.bold(
-          colors.yellow(`[plugin:${warning.plugin}]`),
-        )} ${colors.yellow(warning.message)}`,
-      )
-      return
-    }
-
-    warn(warning)
+    warn(warnLog)
   }
 
   const tty = process.stdout.isTTY && !process.env.CI
