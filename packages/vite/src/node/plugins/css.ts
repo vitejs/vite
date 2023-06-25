@@ -6,6 +6,7 @@ import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
+  InternalModuleFormat,
   NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
@@ -216,6 +217,30 @@ const postcssConfigCache = new WeakMap<
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
+}
+
+export function calcEmptyChunkRE(
+  pureCssChunkNames: string[],
+  format: InternalModuleFormat,
+): RegExp {
+  const emptyChunkFiles = pureCssChunkNames
+    .map((file) => path.basename(file))
+    .join('|')
+    .replace(/\./g, '\\.')
+  let regexStr: string
+  switch (format) {
+    case 'es':
+      regexStr = `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+      break
+    // notice we allow regex group capturing only on the system format case
+    case 'system':
+      regexStr = `\\w.import\\(\\s*["'][^"']*(${emptyChunkFiles})["']\\);?\n?`
+      break
+    default:
+      regexStr = `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`
+      break
+  }
+  return new RegExp(regexStr, 'g')
 }
 
 /**
@@ -615,7 +640,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk)
         }
-        if (opts.format === 'es' || opts.format === 'cjs') {
+        if (
+          opts.format === 'es' ||
+          opts.format === 'cjs' ||
+          opts.format === 'system'
+        ) {
           const cssAssetName = chunk.facadeModuleId
             ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
             : chunk.name
@@ -659,14 +688,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             emitTasks = []
           }
         } else if (!config.build.ssr) {
-          // legacy build and inline css
-
-          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
-          // and injected later by the `'vite:build-html'` plugin into the `index.html`
-          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
-          // But because entry chunk can be imported by dynamic import,
-          // we shouldn't remove the inlined CSS. (#10285)
-
+          // inline css
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
           cssString =
@@ -744,16 +766,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const emptyChunkFiles = pureCssChunkNames
-          .map((file) => path.basename(file))
-          .join('|')
-          .replace(/\./g, '\\.')
-        const emptyChunkRE = new RegExp(
-          opts.format === 'es'
-            ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
-            : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
-          'g',
-        )
+        // if the format is `system`, the removing process of the empty chunk is done in the
+        //   `importAnalysisBuild` plugin on `generateBundle()`.
+        const emptyChunkRE =
+          opts.format !== 'system'
+            ? calcEmptyChunkRE(pureCssChunkNames, opts.format)
+            : undefined
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
@@ -771,11 +789,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
-            chunk.code = chunk.code.replace(
-              emptyChunkRE,
-              // remove css import while preserving source map location
-              (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`,
-            )
+            if (emptyChunkRE !== undefined) {
+              chunk.code = chunk.code.replace(
+                emptyChunkRE,
+                // remove css import while preserving source map location
+                (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`,
+              )
+            }
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!

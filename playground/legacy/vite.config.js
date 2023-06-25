@@ -13,7 +13,7 @@ export default defineConfig({
   ],
 
   build: {
-    cssCodeSplit: false,
+    cssCodeSplit: true,
     manifest: true,
     sourcemap: true,
     rollupOptions: {
