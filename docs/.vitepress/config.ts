@@ -236,7 +236,7 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
-              text: 'Philoshophy',
+              text: 'Philosophy',
               link: '/guide/philosophy',
             },
             {
