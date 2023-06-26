@@ -256,7 +256,10 @@ async function ssrTransformScript(
           const topNode = parentStack[parentStack.length - 2]
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
-      } else if (parent.type !== 'ClassExpression') {
+      } else if (
+        // don't transform class name identifier
+        !(parent.type === 'ClassExpression' && id === parent.id)
+      ) {
         s.update(id.start, id.end, binding)
       }
     },
