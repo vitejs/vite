@@ -1,15 +1,14 @@
 import { component$, useSignal } from '@builder.io/qwik'
-import type { DocumentHead } from '@builder.io/qwik-city'
 
-import qwiklogo from '~/assets/qwik.svg'
-import viteLogo from '~/assets/vite.svg'
+import qwiklogo from '../../assets/qwik.svg'
+import viteLogo from '../../assets/vite.svg'
 
-export default component$(() => {
+export const App = component$(() => {
   const count = useSignal(0)
 
   return (
     <>
-      <div id="root">
+      <div id="container">
         <div>
           <a href="https://vitejs.dev" target="_blank">
             <img src={viteLogo} class="logo" alt="Vite logo" />
@@ -34,13 +33,3 @@ export default component$(() => {
     </>
   )
 })
-
-export const head: DocumentHead = {
-  title: 'Vite + Qwik + TS',
-  meta: [
-    {
-      name: 'description',
-      content: 'Qwik site description',
-    },
-  ],
-}

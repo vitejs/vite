@@ -180,6 +180,12 @@ const FRAMEWORKS: Framework[] = [
         display: 'TypeScript',
         color: lightBlue,
       },
+      {
+        name: 'custom-qwik-city',
+        display: 'QwikCity ↗',
+        color: lightBlue,
+        customCommand: 'npm create qwik@latest TARGET_DIR',
+      },
     ],
   },
   {
