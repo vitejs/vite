@@ -571,6 +571,23 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+/**
+ * Wrapper to prevent `fs.realpathSync.native` errors in Windows virtual and RAM disks
+ * that bypass the Volume Mount Manager, in programs such as imDisk
+ * @param path - a path to a file
+ * @returns {string}
+ */
+function wrapRealpathSyncNative(path: string): string {
+  if (typeof fs.realpathSync.native === 'function') {
+      try {
+        return fs.realpathSync.native(path);
+      } catch {
+        // Ignore errors
+      }
+  }
+  return fs.realpathSync(path);
+}
+
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
@@ -582,7 +599,7 @@ export let safeRealpathSync = isWindows
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
 function windowsMappedRealpathSync(path: string) {
-  const realPath = fs.realpathSync.native(path)
+  const realPath = wrapRealpathSyncNative(path)
   if (realPath.startsWith('\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
       if (realPath.startsWith(network)) return realPath.replace(network, volume)
@@ -619,7 +636,7 @@ function optimizeSafeRealPathSync() {
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
     if (windowsNetworkMap.size === 0) {
-      safeRealpathSync = fs.realpathSync.native
+      safeRealpathSync = wrapRealpathSyncNative
     } else {
       safeRealpathSync = windowsMappedRealpathSync
     }
