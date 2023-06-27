@@ -51,7 +51,15 @@ export function getAffectedGlobModules(
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
   for (const [id, allGlobs] of server._importGlobMap!) {
-    if (allGlobs.some((glob) => isMatch(file, glob)))
+    // (glob1 || glob2) && !glob3 && !glob4...
+    if (
+      allGlobs.some((glob) =>
+        glob.reduce((match, g) => {
+          const m = isMatch(file, g)
+          return g[0] === '!' ? match && m : match || m
+        }, glob[0] === '!'),
+      )
+    )
       modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
   }
   modules.forEach((i) => {

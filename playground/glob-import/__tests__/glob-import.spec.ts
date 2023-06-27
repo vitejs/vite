@@ -178,6 +178,18 @@ if (!isBuild) {
       expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
     })
   })
+
+  test('no hmr for adding/removing files', async () => {
+    let request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
+    addFile('nohmr.js', '')
+    let response = await request.catch(() => ({ status: () => -1 }))
+    expect(response.status()).toBe(-1)
+
+    request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
+    removeFile('nohmr.js')
+    response = await request.catch(() => ({ status: () => -1 }))
+    expect(response.status()).toBe(-1)
+  })
 }
 
 test('tree-shake eager css', async () => {
