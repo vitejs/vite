@@ -33,21 +33,28 @@ export async function injectSourcesContent(
   } catch {}
 
   const missingSources: string[] = []
-  map.sourcesContent = await Promise.all(
-    map.sources.map((sourcePath) => {
+  const sourcesContent = map.sourcesContent || []
+  await Promise.all(
+    map.sources.map(async (sourcePath, index) => {
+      let content = null
       if (sourcePath && !virtualSourceRE.test(sourcePath)) {
         sourcePath = decodeURI(sourcePath)
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
-        return fsp.readFile(sourcePath, 'utf-8').catch(() => {
-          missingSources.push(sourcePath)
-          return null
-        })
+        // inject content from source file when sourcesContent is null
+        content =
+          sourcesContent[index] ??
+          (await fsp.readFile(sourcePath, 'utf-8').catch(() => {
+            missingSources.push(sourcePath)
+            return null
+          }))
       }
-      return null
+      sourcesContent[index] = content
     }),
   )
+
+  map.sourcesContent = sourcesContent
 
   // Use this command…
   //    DEBUG="vite:sourcemap" vite build
