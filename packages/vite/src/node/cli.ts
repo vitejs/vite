@@ -70,9 +70,9 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<Options extends GlobalCLIOptions>(
-  options: Options,
-): Omit<Options, keyof GlobalCLIOptions> {
+function cleanOptions<
+  Options extends GlobalCLIOptions & (ServerOptions | BuildOptions),
+>(options: Options): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
   delete ret['--']
   delete ret.c
@@ -87,6 +87,18 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+
+  // convert the sourcemap option to a boolean if necessary
+  if ('sourcemap' in ret) {
+    const sourcemap = ret.sourcemap as `${boolean}` | 'inline' | 'hidden'
+    ret.sourcemap =
+      sourcemap === 'true'
+        ? true
+        : sourcemap === 'false'
+        ? false
+        : ret.sourcemap
+  }
+
   return ret
 }
 
