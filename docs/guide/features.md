@@ -264,7 +264,7 @@ Starting from Vite 4.4, there is experimental support for [Lightning CSS](https:
 npm add -D lightningcss
 ```
 
-If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightining CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
+If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightning CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
 
 To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).
 
