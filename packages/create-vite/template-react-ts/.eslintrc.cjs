@@ -21,7 +21,5 @@ module.exports = {
       { allowConstantExport: true },
     ],
     '@typescript-eslint/no-non-null-assertion': 'off',
-    '@typescript-eslint/no-unnecessary-condition': 'warn',
-    '@typescript-eslint/non-nullable-type-assertion-style': 'warn',
   },
 }
