@@ -135,7 +135,11 @@ module.exports = defineConfig({
       },
     },
     {
-      files: ['packages/vite/src/types/**', '*.spec.ts'],
+      files: [
+        'packages/vite/src/types/**',
+        'packages/vite/scripts/**',
+        '*.spec.ts',
+      ],
       rules: {
         'n/no-extraneous-import': 'off',
       },
@@ -179,6 +183,21 @@ module.exports = defineConfig({
         'no-empty': 'off',
         'no-constant-condition': 'off',
         '@typescript-eslint/no-empty-function': 'off',
+      },
+    },
+    {
+      files: ['playground/**'],
+      excludedFiles: [
+        'playground/ssr-resolve/**',
+        'playground/**/*{commonjs,cjs}*/**',
+        'playground/**/*{commonjs,cjs}*',
+        'playground/**/*dep*/**',
+        'playground/resolve/browser-module-field2/index.web.js',
+        'playground/resolve/browser-field/**',
+        'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
+      ],
+      rules: {
+        'import/no-commonjs': 'error',
       },
     },
     {

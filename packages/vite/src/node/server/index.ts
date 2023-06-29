@@ -95,11 +95,6 @@ export interface ServerOptions extends CommonServerOptions {
    */
   middlewareMode?: boolean | 'html' | 'ssr'
   /**
-   * Prepend this folder to http requests, for use when proxying vite as a subfolder
-   * Should start and end with the `/` character
-   */
-  base?: string
-  /**
    * Options for files served via '/\@fs/'.
    */
   fs?: FileSystemServeOptions
@@ -333,7 +328,7 @@ export interface ResolvedServerUrls {
   network: string[]
 }
 
-export async function createServer(
+export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { ws: true })
@@ -366,7 +361,7 @@ export async function _createServer(
 
   const watcher = chokidar.watch(
     // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
+    [root, ...config.configFileDependencies, config.envDir],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -404,7 +399,9 @@ export async function _createServer(
       if (isDepsOptimizerEnabled(config, true)) {
         await initDevSsrDepsOptimizer(config, server)
       }
-      await updateCjsSsrExternals(server)
+      if (config.legacy?.buildSsrCjsExternalHeuristics) {
+        await updateCjsSsrExternals(server)
+      }
       return ssrLoadModule(
         url,
         server,
@@ -438,7 +435,8 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const url = server.resolvedUrls?.local[0]
+      const url =
+        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
       if (url) {
         const path =
           typeof options.open === 'string'
@@ -465,6 +463,17 @@ export async function _createServer(
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
       ])
+      // Await pending requests. We throw early in transformRequest
+      // and in hooks if the server is closing, so the import analysis
+      // plugin stops pre-transforming static imports and this block
+      // is resolved sooner.
+      while (server._pendingRequests.size > 0) {
+        await Promise.allSettled(
+          [...server._pendingRequests.values()].map(
+            (pending) => pending.request,
+          ),
+        )
+      }
       server.resolvedUrls = null
     },
     printUrls() {
@@ -608,6 +617,16 @@ export async function _createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
+  // ping request handler
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  middlewares.use(function viteHMRPingMiddleware(req, res, next) {
+    if (req.headers['accept'] === 'text/x-vite-ping') {
+      res.writeHead(204).end()
+    } else {
+      next()
+    }
+  })
+
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
@@ -675,6 +694,8 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
+        // ensure ws server started
+        ws.listen()
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)

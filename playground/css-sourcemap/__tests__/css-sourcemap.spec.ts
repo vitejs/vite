@@ -37,22 +37,7 @@ describe.runIf(isServe)('serve', () => {
       },
     )
     const css = await res.text()
-    const map = extractSourcemap(css)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACT,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
-        "sources": [
-          "/root/linked.css",
-        ],
-        "sourcesContent": [
-          ".linked {
-        color: red;
-      }
-      ",
-        ],
-        "version": 3,
-      }
-    `)
+    expect(css).not.toContain('sourceMappingURL')
   })
 
   test('linked css with import', async () => {

@@ -54,7 +54,8 @@ import {
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { checkPublicFile } from './asset'
+import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
+import { checkPublicFile, urlRE } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
@@ -254,11 +255,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
-      if (!importerModule && depsOptimizer?.isOptimizedDepFile(importer)) {
-        // Ids of optimized deps could be invalidated and removed from the graph
-        // Return without transforming, this request is no longer valid, a full reload
-        // is going to request this id again. Throwing an outdated error so we
-        // properly finish the request with a 504 sent to the browser.
+      if (!importerModule) {
+        // This request is no longer valid. It could happen for optimized deps
+        // requests. A full reload is going to request this id again.
+        // Throwing an outdated error so we properly finish the request with a
+        // 504 sent to the browser.
         throwOutdatedRequest(importer)
       }
 
@@ -491,7 +492,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 ) {
                   return
                 }
-              } else if (shouldExternalizeForSSR(specifier, config)) {
+              } else if (shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
               if (isBuiltin(specifier)) {
@@ -506,14 +507,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // warn imports to non-asset /public files
             if (
               specifier[0] === '/' &&
-              !config.assetsInclude(cleanUrl(specifier)) &&
-              !specifier.endsWith('.json') &&
+              !(
+                config.assetsInclude(cleanUrl(specifier)) ||
+                urlRE.test(specifier)
+              ) &&
               checkPublicFile(specifier, config)
             ) {
               throw new Error(
-                `Cannot import non-asset file ${specifier} which is inside /public.` +
+                `Cannot import non-asset file ${specifier} which is inside /public. ` +
                   `JS/CSS files inside /public are copied as-is on build and ` +
-                  `can only be referenced via <script src> or <link href> in html.`,
+                  `can only be referenced via <script src> or <link href> in html. ` +
+                  `If you want to get the URL of that file, use ${injectQuery(
+                    specifier,
+                    'url',
+                  )} instead.`,
               )
             }
 
@@ -650,12 +657,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
               server.transformRequest(url, { ssr }).catch((e) => {
-                if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
-                  // This are expected errors
+                if (
+                  e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+                  e?.code === ERR_CLOSED_SERVER
+                ) {
+                  // these are expected errors
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
-                config.logger.error(e.message)
+                config.logger.error(e.message, { error: e })
               })
             }
           } else if (!importer.startsWith(clientDir)) {
@@ -741,8 +751,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
+        const isRelative = url[0] === '.'
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(url),
+          isRelative ? toAbsoluteUrl(url) : url,
           ssr,
         )
         normalizedAcceptedUrls.add(normalized)

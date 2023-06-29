@@ -2,6 +2,7 @@
   "name": "@vitejs/test-import-assertion",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
