@@ -8,11 +8,11 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "devDependencies": {
-    "vite": "^4.2.1",
-    "vite-plugin-solid": "^2.6.1"
-  },
   "dependencies": {
-    "solid-js": "^1.7.1"
+    "solid-js": "^1.7.7"
+  },
+  "devDependencies": {
+    "vite": "^4.3.9",
+    "vite-plugin-solid": "^2.7.0"
   }
 }
