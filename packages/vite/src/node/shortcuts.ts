@@ -4,30 +4,35 @@ import { isDefined } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
-export type BindShortcutsOptions = {
+export type BindShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Print a one line hint to the terminal.
    */
   print?: boolean
-  customShortcuts?: (CLIShortcut | undefined | null)[]
+  customShortcuts?: (CLIShortcut<Server> | undefined | null)[]
 }
 
-export type CLIShortcut = {
+export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   key: string
   description: string
-  action(server: ViteDevServer): void | Promise<void>
+  action(server: Server): void | Promise<void>
 }
 
-export function bindShortcuts(
-  server: ViteDevServer,
-  opts: BindShortcutsOptions,
+export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
+  server: Server,
+  opts?: BindShortcutsOptions<Server>,
 ): void {
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
   }
-  server._shortcutsOptions = opts
 
-  if (opts.print) {
+  const isDev = isDevServer(server)
+
+  if (isDev) {
+    server._shortcutsOptions = opts
+  }
+
+  if (opts?.print) {
     server.config.logger.info(
       colors.dim(colors.green('  ➜')) +
         colors.dim('  press ') +
@@ -36,16 +41,25 @@ export function bindShortcuts(
     )
   }
 
-  const shortcuts = (opts.customShortcuts ?? [])
+  const shortcuts = (opts?.customShortcuts ?? [])
     .filter(isDefined)
-    .concat(BASE_SHORTCUTS)
+    // @ts-expect-error passing the right types, but typescript can't detect it
+    .concat(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS)
 
   let actionRunning = false
 
   const onInput = async (input: string) => {
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
-      await server.close().finally(() => process.exit(1))
+      try {
+        if (isDev) {
+          await server.close()
+        } else {
+          server.httpServer.close()
+        }
+      } finally {
+        process.exit(1)
+      }
       return
     }
 
@@ -83,7 +97,13 @@ export function bindShortcuts(
   })
 }
 
-const BASE_SHORTCUTS: CLIShortcut[] = [
+function isDevServer(
+  server: ViteDevServer | PreviewServer,
+): server is ViteDevServer {
+  return 'pluginContainer' in server
+}
+
+const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
   {
     key: 'r',
     description: 'restart the server',
@@ -122,65 +142,7 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
   },
 ]
 
-type PreviewShortcuts = {
-  key: string
-  description: string
-  action: (server: PreviewServer) => void
-}
-
-export function bindPreviewShortcuts(server: PreviewServer): void {
-  if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
-    return
-  }
-  server.config.logger.info(
-    colors.dim(colors.green('  ➜')) +
-      colors.dim('  press ') +
-      colors.bold('h') +
-      colors.dim(' to show help'),
-  )
-  let actionRunning = false
-  const onInput = async (input: string) => {
-    // ctrl+c or ctrl+d
-    if (input === '\x03' || input === '\x04') {
-      try {
-        server.httpServer.close()
-      } finally {
-        process.exit(1)
-      }
-    }
-    if (actionRunning) return
-    if (input === 'h') {
-      server.config.logger.info(
-        [
-          '',
-          colors.bold('  Shortcuts'),
-          ...previewShortcuts.map(
-            (shortcut) =>
-              colors.dim('  press ') +
-              colors.bold(shortcut.key) +
-              colors.dim(` to ${shortcut.description}`),
-          ),
-        ].join('\n'),
-      )
-    }
-
-    const shortcut = previewShortcuts.find((shortcut) => shortcut.key === input)
-    if (!shortcut) return
-    actionRunning = true
-    shortcut.action(server)
-    actionRunning = false
-  }
-
-  process.stdin.setRawMode(true)
-
-  process.stdin.on('data', onInput).setEncoding('utf8').resume()
-
-  server.httpServer.on('close', () => {
-    process.stdin.off('data', onInput).pause()
-  })
-}
-
-const previewShortcuts: PreviewShortcuts[] = [
+const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
   {
     key: 'o',
     description: 'open in browser',
