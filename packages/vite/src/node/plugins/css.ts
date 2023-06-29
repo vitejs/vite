@@ -683,7 +683,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
           const wrapIdx = code.indexOf('System.register')
-          const executeFnStart = wrapIdx >= 0 ? code.indexOf('execute:', wrapIdx) : 0
+          const executeFnStart =
+            wrapIdx >= 0 ? code.indexOf('execute:', wrapIdx) : 0
           const injectionPoint = code.indexOf('{', executeFnStart) + 1
           const s = new MagicString(code)
           s.appendRight(injectionPoint, injectCode)
