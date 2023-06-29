@@ -70,9 +70,9 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<
-  Options extends GlobalCLIOptions & (ServerOptions | BuildOptions),
->(options: Options): Omit<Options, keyof GlobalCLIOptions> {
+function cleanOptions<Options extends GlobalCLIOptions>(
+  options: Options,
+): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
   delete ret['--']
   delete ret.c
