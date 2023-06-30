@@ -32,8 +32,8 @@ test('imported glob css no inline', async () => {
 
 test('imported glob css no inline, not use default should not warning', async () => {
   browserLogs.forEach((msg) => {
-    expect(msg).not.toContain(
-      "Default and named imports from CSS files are deprecated. Use the ?inline query instead. For example: import css from './imported.css?inline'",
+    expect(msg).not.toMatch(
+      /Default import of CSS without `\?inline` is deprecated./,
     )
   })
 })
