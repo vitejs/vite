@@ -205,6 +205,7 @@ async function loadAndTransform(
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
+          e.message = `${e.message}, Error loading ${url}`
           throw e
         }
       }
