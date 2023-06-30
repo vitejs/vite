@@ -709,7 +709,13 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
 
-  playground/minify: {}
+  playground/minify:
+    dependencies:
+      minified-module:
+        specifier: file:./dir/module
+        version: file:playground/minify/dir/module
+
+  playground/minify/dir/module: {}
 
   playground/multiple-entrypoints:
     devDependencies:
@@ -10637,6 +10643,11 @@ packages:
     resolution: {directory: playground/json/json-module, type: directory}
     name: '@vitejs/test-json-module'
     dev: true
+
+  file:playground/minify/dir/module:
+    resolution: {directory: playground/minify/dir/module, type: directory}
+    name: '@vitejs/test-minify'
+    dev: false
 
   file:playground/optimize-deps-no-discovery/dep-no-discovery:
     resolution: {directory: playground/optimize-deps-no-discovery/dep-no-discovery, type: directory}
