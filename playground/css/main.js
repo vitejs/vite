@@ -84,6 +84,10 @@ if (import.meta.env.DEV) {
 import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
 
+// dynamic imported vars
+const vars = 'index'
+import(`./dynamic-imported/${vars}.css`)
+
 // glob
 const glob = import.meta.glob('./glob-import/*.css', { query: '?inline' })
 Promise.all(
@@ -93,6 +97,10 @@ Promise.all(
 })
 
 // globEager
+// warning please use import.meta.glob('./glob-import/*.css', { query: '?inline' })
+// IF Not Use Default Should No Warning console https://github.com/vitejs/vite/issues/12001#issuecomment-1612411026
+import.meta.globEager('./glob-import-noinline/*.css')
+
 const globEager = import.meta.glob('./glob-import/*.css', {
   eager: true,
   query: '?inline',

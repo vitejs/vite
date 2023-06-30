@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import {
+  browserLogs,
   editFile,
   findAssetFile,
   getBg,
@@ -22,6 +23,24 @@ test('imported css', async () => {
   expect(glob).toContain('.dir-import')
   const globEager = await page.textContent('.imported-css-globEager')
   expect(globEager).toContain('.dir-import')
+})
+
+test('imported glob css no inline', async () => {
+  const globEagerNoInline = await page.$('.dir-import-no-inline-eager')
+  expect(await getColor(globEagerNoInline)).toBe('grey')
+})
+
+test('imported glob css no inline, not use default should not warning', async () => {
+  browserLogs.forEach((msg) => {
+    expect(msg).not.toContain(
+      "Default and named imports from CSS files are deprecated. Use the ?inline query instead. For example: import css from './imported.css?inline'",
+    )
+  })
+})
+
+test('dynamic imported css', async () => {
+  const dynamic = await page.$('.dynamic-imported-css')
+  expect(await getColor(dynamic)).toBe('red')
 })
 
 test('inline imported css', async () => {

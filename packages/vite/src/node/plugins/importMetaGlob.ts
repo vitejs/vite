@@ -456,6 +456,7 @@ export async function transformGlobImport(
 
             const isCSS =
               !query && isCSSRequest(file) && !isModuleCSSRequest(file)
+
             includesCSS ||= isCSS
 
             const importKey =
@@ -472,13 +473,16 @@ export async function transformGlobImport(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
               if (!isProduction && isCSS) {
+                // https://github.com/vitejs/vite/issues/12001
                 objectProps.push(
-                  `get ${JSON.stringify(
-                    filePath,
-                  )}() { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${variableName} }`,
+                  `${JSON.stringify(filePath)}: new Proxy(${variableName}, {
+                    get: function(target, prop, receiver) {
+                      if (prop === 'default') {
+                        ${createCssDefaultImportWarning(globs, options)}
+                      }
+                      return Reflect.get(target, prop, receiver);
+                    },
+                  })`,
                 )
               } else {
                 objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
@@ -488,13 +492,21 @@ export async function transformGlobImport(
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               if (!isProduction && isCSS) {
+                // https://github.com/vitejs/vite/issues/12001
+                // there is filter module css (isCSS => !isModuleCSSRequest), so just handle default now
                 objectProps.push(
-                  `${JSON.stringify(
-                    filePath,
-                  )}: () => { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${importStatement}}`,
+                  `${JSON.stringify(filePath)}: () => {
+                      return ${importStatement}.then(m => {
+                        return new Proxy(m, {
+                          get: function(target, prop, receiver) {
+                            if (prop === 'default') {
+                              ${createCssDefaultImportWarning(globs, options)}
+                            }
+                            return Reflect.get(target, prop, receiver)
+                          },
+                        })
+                      })
+                    }`,
                 )
               } else {
                 objectProps.push(
