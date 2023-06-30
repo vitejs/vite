@@ -85,7 +85,7 @@ import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
 
 // dynamic imported vars
-const vars = 'index'
+const vars = 'dynamic-imported'
 import(`./dynamic-imported/${vars}.css`)
 
 // glob
