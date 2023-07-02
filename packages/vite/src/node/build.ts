@@ -56,7 +56,6 @@ import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
-import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
@@ -650,19 +649,11 @@ export async function build(
     if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
-      const resolvedChokidarOptions = resolveChokidarOptions(
-        config,
-        config.build.watch.chokidar,
-      )
-
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
         output: normalizedOutputs,
-        watch: {
-          ...config.build.watch,
-          chokidar: resolvedChokidarOptions,
-        },
+        watch: config.build.watch,
       })
 
       watcher.on('event', (event) => {

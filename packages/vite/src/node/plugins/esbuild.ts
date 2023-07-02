@@ -232,10 +232,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:esbuild',
     configureServer(_server) {
       server = _server
-      server.watcher
-        .on('add', reloadOnTsconfigChange)
-        .on('change', reloadOnTsconfigChange)
-        .on('unlink', reloadOnTsconfigChange)
+      server.watcher.on((event) => reloadOnTsconfigChange(event.path))
     },
     buildEnd() {
       // recycle serve to avoid preventing Node self-exit (#6815)

@@ -60,7 +60,6 @@ import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
@@ -82,6 +81,7 @@ import {
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
+import type { Watcher } from '../watch'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 
@@ -155,7 +155,7 @@ export let parser = acorn.Parser
 export async function createPluginContainer(
   config: ResolvedConfig,
   moduleGraph?: ModuleGraph,
-  watcher?: FSWatcher,
+  watcher?: Watcher,
 ): Promise<PluginContainer> {
   const {
     plugins,

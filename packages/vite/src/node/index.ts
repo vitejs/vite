@@ -1,6 +1,9 @@
 import type * as Rollup from 'rollup'
-
 export type { Rollup }
+
+import type * as ParcelWatcher from '@parcel/watcher'
+export type { ParcelWatcher }
+
 export * from './config'
 export { createServer } from './server'
 export { preview } from './preview'
@@ -65,6 +68,7 @@ export type {
   LogType,
   LoggerOptions,
 } from './logger'
+export type { Watcher, WatchEventHandler } from './watch'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
@@ -135,11 +139,6 @@ export type {
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
 export type { HttpProxy } from 'dep-types/http-proxy'
-export type {
-  FSWatcher,
-  WatchOptions,
-  AwaitWriteFinishOptions,
-} from 'dep-types/chokidar'
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'

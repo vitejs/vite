@@ -67,6 +67,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
+    "@parcel/watcher": "^2.2.0",
     "esbuild": "^0.18.10",
     "postcss": "^8.4.24",
     "rollup": "^3.25.2"
@@ -91,7 +92,6 @@
     "acorn": "^8.9.0",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
-    "chokidar": "^3.5.3",
     "connect": "^3.7.0",
     "connect-history-api-fallback": "^2.0.0",
     "convert-source-map": "^2.0.0",
