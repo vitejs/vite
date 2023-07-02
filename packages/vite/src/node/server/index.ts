@@ -5,8 +5,6 @@ import { performance } from 'node:perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
-import chokidar from 'chokidar'
-import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
@@ -45,7 +43,8 @@ import type { BindShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { resolveChokidarOptions } from '../watch'
+import type { WatchOptions } from '../watch'
+import { Watcher, resolveWatchOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -85,8 +84,7 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
-   * chokidar watch options
-   * https://github.com/paulmillr/chokidar#api
+   * vite watch options
    */
   watch?: WatchOptions
   /**
@@ -192,10 +190,9 @@ export interface ViteDevServer {
    */
   httpServer: http.Server | null
   /**
-   * chokidar watcher instance
-   * https://github.com/paulmillr/chokidar#api
+   * vite watcher instance
    */
-  watcher: FSWatcher
+  watcher: Watcher
   /**
    * web socket server with `send(payload)` method
    */
@@ -344,11 +341,6 @@ export async function _createServer(
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
-  const resolvedWatchOptions = resolveChokidarOptions(config, {
-    disableGlobbing: true,
-    ...serverConfig.watch,
-  })
-
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
@@ -359,11 +351,10 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const watcher = chokidar.watch(
-    // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, config.envDir],
-    resolvedWatchOptions,
-  ) as FSWatcher
+  const resolvedWatchOptions = resolveWatchOptions(config, serverConfig.watch)
+  const watcher = new Watcher(resolvedWatchOptions)
+  // config file dependencies and env file might be outside of root
+  watcher.add([root, ...config.configFileDependencies, config.envDir])
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr }),
@@ -540,13 +531,9 @@ export async function _createServer(
     }
   }
 
-  const onFileAddUnlink = async (file: string) => {
-    file = normalizePath(file)
-    await handleFileAddUnlink(file, server)
-    await onHMRUpdate(file, true)
-  }
+  watcher.on(async (event, file) => {
+    if (event !== 'change') return
 
-  watcher.on('change', async (file) => {
     file = normalizePath(file)
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
@@ -554,8 +541,12 @@ export async function _createServer(
     await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', onFileAddUnlink)
-  watcher.on('unlink', onFileAddUnlink)
+  watcher.on(async (event, file) => {
+    if (event !== 'rename') return
+    file = normalizePath(file)
+    await handleFileAddUnlink(file, server)
+    await onHMRUpdate(file, true)
+  })
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)

@@ -10,9 +10,6 @@ overrides:
 packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
 
 patchedDependencies:
-  chokidar@3.5.3:
-    hash: dzxbf3kgof5pdmbsyih2x43sq4
-    path: patches/chokidar@3.5.3.patch
   dotenv-expand@9.0.0:
     hash: dccccn23nvejzy75sgiosdt2au
     path: patches/dotenv-expand@9.0.0.patch
@@ -294,9 +291,6 @@ importers:
       cac:
         specifier: ^6.7.14
         version: 6.7.14
-      chokidar:
-        specifier: ^3.5.3
-        version: 3.5.3(patch_hash=dzxbf3kgof5pdmbsyih2x43sq4)
       connect:
         specifier: ^3.7.0
         version: 3.7.0
@@ -4764,7 +4758,7 @@ packages:
     resolution: {integrity: sha512-BrgHpW9NURQgzoNyjfq0Wu6VFO6D7IZEmJNdtgNqpzGG8RuNFHt2jQxWlAs4HMe119chBnv+34syEZtc6IhLtA==}
     dev: true
 
-  /chokidar@3.5.3(patch_hash=dzxbf3kgof5pdmbsyih2x43sq4):
+  /chokidar@3.5.3:
     resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}
     engines: {node: '>= 8.10.0'}
     dependencies:
@@ -4777,7 +4771,6 @@ packages:
       readdirp: 3.6.0
     optionalDependencies:
       fsevents: 2.3.2
-    patched: true
 
   /chownr@2.0.0:
     resolution: {integrity: sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==}
@@ -7760,7 +7753,7 @@ packages:
       '@iarna/toml': 2.2.5
       '@mrbbot/node-fetch': 4.6.0
       '@peculiar/webcrypto': 1.3.3
-      chokidar: 3.5.3(patch_hash=dzxbf3kgof5pdmbsyih2x43sq4)
+      chokidar: 3.5.3
       cjstoesm: 1.1.4(typescript@4.6.4)
       dotenv: 8.6.0
       env-paths: 2.2.1
@@ -9157,7 +9150,7 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
-      chokidar: 3.5.3(patch_hash=dzxbf3kgof5pdmbsyih2x43sq4)
+      chokidar: 3.5.3
       immutable: 4.0.0
       source-map-js: 1.0.2
     dev: true
@@ -9668,7 +9661,7 @@ packages:
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
-      chokidar: 3.5.3(patch_hash=dzxbf3kgof5pdmbsyih2x43sq4)
+      chokidar: 3.5.3
       didyoumean: 1.2.2
       dlv: 1.1.3
       fast-glob: 3.2.12
