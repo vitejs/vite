@@ -433,14 +433,15 @@ export async function _createServer(
       }
       return server
     },
-    openBrowser() {
+    openBrowser(open?: string) {
       const options = server.config.server
       const url =
         server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      const resolvedOpen = open ?? options.open
       if (url) {
         const path =
-          typeof options.open === 'string'
-            ? new URL(options.open, url).href
+          typeof resolvedOpen === 'string'
+            ? new URL(resolvedOpen, url).href
             : url
 
         _openBrowser(path, true, server.config.logger)
