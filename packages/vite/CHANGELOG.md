@@ -1,3 +1,19 @@
+## 4.4.0-beta.4 (2023-07-03)
+
+* fix: lightningCSS should load external URL in CSS file (#13692) ([8517645](https://github.com/vitejs/vite/commit/8517645)), closes [#13692](https://github.com/vitejs/vite/issues/13692)
+* fix: shortcut open browser when set host (#13677) ([6f1c55e](https://github.com/vitejs/vite/commit/6f1c55e)), closes [#13677](https://github.com/vitejs/vite/issues/13677)
+* fix(cli): convert the sourcemap option to boolean (fix #13638) (#13663) ([d444bfe](https://github.com/vitejs/vite/commit/d444bfe)), closes [#13638](https://github.com/vitejs/vite/issues/13638) [#13663](https://github.com/vitejs/vite/issues/13663)
+* fix(css): use esbuild legalComments config when minifying CSS (#13661) ([2d9008e](https://github.com/vitejs/vite/commit/2d9008e)), closes [#13661](https://github.com/vitejs/vite/issues/13661)
+* fix(sourcemap): preserve original sourcesContent (#13662) ([f6362b6](https://github.com/vitejs/vite/commit/f6362b6)), closes [#13662](https://github.com/vitejs/vite/issues/13662)
+* fix(ssr): transform superclass identifier (#13635) ([c5b2c8f](https://github.com/vitejs/vite/commit/c5b2c8f)), closes [#13635](https://github.com/vitejs/vite/issues/13635)
+* chore: fix pnpm bug with version-less workspace (#13700) ([e48d35d](https://github.com/vitejs/vite/commit/e48d35d)), closes [#13700](https://github.com/vitejs/vite/issues/13700)
+* chore: show error position (#13623) ([90271a6](https://github.com/vitejs/vite/commit/90271a6)), closes [#13623](https://github.com/vitejs/vite/issues/13623)
+* chore(deps): update all non-major dependencies (#13633) ([c72fb9b](https://github.com/vitejs/vite/commit/c72fb9b)), closes [#13633](https://github.com/vitejs/vite/issues/13633)
+* feat: preview mode add keyboard shortcuts (#12968) ([126e93e](https://github.com/vitejs/vite/commit/126e93e)), closes [#12968](https://github.com/vitejs/vite/issues/12968)
+* feat: update esbuild to 0.18.10 (#13644) ([f900acd](https://github.com/vitejs/vite/commit/f900acd)), closes [#13644](https://github.com/vitejs/vite/issues/13644)
+
+
+
 ## 4.4.0-beta.3 (2023-06-25)
 
 * chore: upgrade rollup to 3.25.2 (#13608) ([5497abe](https://github.com/vitejs/vite/commit/5497abe)), closes [#13608](https://github.com/vitejs/vite/issues/13608)
