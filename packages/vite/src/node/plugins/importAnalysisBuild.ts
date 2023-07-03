@@ -652,11 +652,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 source: chunk.fileName,
                 hires: true,
               })
-              const map = combineSourcemaps(
-                chunk.fileName,
-                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
-                false,
-              ) as SourceMap
+              const map = combineSourcemaps(chunk.fileName, [
+                nextMap as RawSourceMap,
+                chunk.map as RawSourceMap,
+              ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
 
