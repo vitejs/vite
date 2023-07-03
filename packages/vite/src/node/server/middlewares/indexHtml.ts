@@ -283,7 +283,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       let content = ''
       if (result) {
         if (result.map) {
-          if (result.map.mappings && !result.map.sourcesContent) {
+          if (result.map.mappings) {
             await injectSourcesContent(
               result.map,
               proxyModulePath,
