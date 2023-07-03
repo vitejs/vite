@@ -1420,6 +1420,14 @@ async function rewriteCssImageSet(
     return url
   })
 }
+function skipUrlReplacer(rawUrl: string) {
+  return (
+    isExternalUrl(rawUrl) ||
+    isDataUrl(rawUrl) ||
+    rawUrl[0] === '#' ||
+    varRE.test(rawUrl)
+  )
+}
 async function doUrlReplace(
   rawUrl: string,
   matched: string,
@@ -1433,12 +1441,7 @@ async function doUrlReplace(
     rawUrl = rawUrl.slice(1, -1)
   }
 
-  if (
-    isExternalUrl(rawUrl) ||
-    isDataUrl(rawUrl) ||
-    rawUrl[0] === '#' ||
-    varRE.test(rawUrl)
-  ) {
+  if (skipUrlReplacer(rawUrl)) {
     return matched
   }
 
@@ -2184,6 +2187,10 @@ async function compileLightningCSS(
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
+        if (skipUrlReplacer(dep.url)) {
+          css = css.replace(dep.placeholder, dep.url)
+          break
+        }
         deps.add(dep.url)
         if (urlReplacer) {
           css = css.replace(dep.placeholder, await urlReplacer(dep.url, id))
