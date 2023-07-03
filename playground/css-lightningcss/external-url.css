@@ -1,0 +1,7 @@
+.external {
+  background-image: url('https://vitejs.dev/logo.svg');
+  background-size: 100%;
+  width: 200px;
+  height: 200px;
+  background-color: #bed;
+}

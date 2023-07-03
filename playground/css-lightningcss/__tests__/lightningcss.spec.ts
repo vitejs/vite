@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
+  getBg,
   getColor,
   isBuild,
   page,
@@ -64,4 +65,9 @@ test.runIf(isBuild)('minify css', async () => {
   const cssFile = findAssetFile(/index-\w+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test('css with external url', async () => {
+  const css = await page.$('.external')
+  expect(await getBg(css)).toMatch('url("https://vitejs.dev/logo.svg")')
 })
