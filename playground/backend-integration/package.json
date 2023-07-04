@@ -12,6 +12,6 @@
   "devDependencies": {
     "sass": "^1.63.6",
     "tailwindcss": "^3.3.2",
-    "fast-glob": "^3.2.12"
+    "fast-glob": "^3.3.0"
   }
 }
