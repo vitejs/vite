@@ -578,14 +578,11 @@ export function copyDir(srcDir: string, destDir: string): void {
  * @returns {string}
  */
 function wrapRealpathSyncNative(path: string): string {
-  if (typeof fs.realpathSync.native === 'function') {
-    try {
-      return fs.realpathSync.native(path)
-    } catch {
-      // Ignore errors
-    }
+  try {
+    return fs.realpathSync.native(path)
+  } catch {
+    return fs.realpathSync(path)
   }
-  return fs.realpathSync(path)
 }
 
 // `fs.realpathSync.native` resolves differently in Windows network drive,
