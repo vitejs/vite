@@ -19,6 +19,7 @@ import {
   removeLeadingSlash,
   shouldServeFile,
   slash,
+  stripBase,
 } from '../../utils'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
@@ -194,7 +195,8 @@ export function isFileServingAllowed(
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
-  const file = fsPathFromUrl(url)
+  // stripBase: https://github.com/vitejs/vite/issues/9438#issuecomment-1486662486
+  const file = fsPathFromUrl(stripBase(url, server.config.rawBase))
 
   if (server._fsDenyGlob(file)) return false
 
