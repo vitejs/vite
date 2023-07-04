@@ -132,6 +132,16 @@ export async function transformWithEsbuild(
       ...tsconfigRaw?.compilerOptions,
     }
 
+    // esbuild uses `useDefineForClassFields: true` when `tsconfig.compilerOptions.target` isn't declared
+    // but we want `useDefineForClassFields: false` when `tsconfig.compilerOptions.target` isn't declared
+    // to align with the TypeScript's behavior
+    if (
+      compilerOptions.useDefineForClassFields === undefined &&
+      compilerOptions.target === undefined
+    ) {
+      compilerOptions.useDefineForClassFields = false
+    }
+
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
