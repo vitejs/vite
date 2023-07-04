@@ -556,8 +556,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
             }
 
-            // record as safe modules
-            server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
+            // record as safe modules # stripBase: https://github.com/vitejs/vite/issues/9438#issuecomment-1486662486
+            server?.moduleGraph.safeModulesPath.add(
+              fsPathFromUrl(stripBase(url, base)),
+            )
 
             if (url !== specifier) {
               let rewriteDone = false
