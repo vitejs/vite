@@ -1,3 +1,58 @@
+## 4.4.0-beta.4 (2023-07-03)
+
+* fix: lightningCSS should load external URL in CSS file (#13692) ([8517645](https://github.com/vitejs/vite/commit/8517645)), closes [#13692](https://github.com/vitejs/vite/issues/13692)
+* fix: shortcut open browser when set host (#13677) ([6f1c55e](https://github.com/vitejs/vite/commit/6f1c55e)), closes [#13677](https://github.com/vitejs/vite/issues/13677)
+* fix(cli): convert the sourcemap option to boolean (fix #13638) (#13663) ([d444bfe](https://github.com/vitejs/vite/commit/d444bfe)), closes [#13638](https://github.com/vitejs/vite/issues/13638) [#13663](https://github.com/vitejs/vite/issues/13663)
+* fix(css): use esbuild legalComments config when minifying CSS (#13661) ([2d9008e](https://github.com/vitejs/vite/commit/2d9008e)), closes [#13661](https://github.com/vitejs/vite/issues/13661)
+* fix(sourcemap): preserve original sourcesContent (#13662) ([f6362b6](https://github.com/vitejs/vite/commit/f6362b6)), closes [#13662](https://github.com/vitejs/vite/issues/13662)
+* fix(ssr): transform superclass identifier (#13635) ([c5b2c8f](https://github.com/vitejs/vite/commit/c5b2c8f)), closes [#13635](https://github.com/vitejs/vite/issues/13635)
+* chore: fix pnpm bug with version-less workspace (#13700) ([e48d35d](https://github.com/vitejs/vite/commit/e48d35d)), closes [#13700](https://github.com/vitejs/vite/issues/13700)
+* chore: show error position (#13623) ([90271a6](https://github.com/vitejs/vite/commit/90271a6)), closes [#13623](https://github.com/vitejs/vite/issues/13623)
+* chore(deps): update all non-major dependencies (#13633) ([c72fb9b](https://github.com/vitejs/vite/commit/c72fb9b)), closes [#13633](https://github.com/vitejs/vite/issues/13633)
+* feat: preview mode add keyboard shortcuts (#12968) ([126e93e](https://github.com/vitejs/vite/commit/126e93e)), closes [#12968](https://github.com/vitejs/vite/issues/12968)
+* feat: update esbuild to 0.18.10 (#13644) ([f900acd](https://github.com/vitejs/vite/commit/f900acd)), closes [#13644](https://github.com/vitejs/vite/issues/13644)
+
+
+
+## 4.4.0-beta.3 (2023-06-25)
+
+* chore: upgrade rollup to 3.25.2 (#13608) ([5497abe](https://github.com/vitejs/vite/commit/5497abe)), closes [#13608](https://github.com/vitejs/vite/issues/13608)
+
+
+
+## 4.4.0-beta.2 (2023-06-22)
+
+* fix(hmr): only invalidate `lastHMRTimestamp` of importers if the invalidated module is not a HMR bou ([1143e0b](https://github.com/vitejs/vite/commit/1143e0b)), closes [#13024](https://github.com/vitejs/vite/issues/13024)
+* fix(indexHtml): decode html URI (#13581) ([f8868af](https://github.com/vitejs/vite/commit/f8868af)), closes [#13581](https://github.com/vitejs/vite/issues/13581)
+* chore: add notes to 4.4.0-beta.1 changelog (#13586) ([097c583](https://github.com/vitejs/vite/commit/097c583)), closes [#13586](https://github.com/vitejs/vite/issues/13586)
+
+
+
+## 4.4.0-beta.1 (2023-06-21)
+
+### Experimental support for Lightning CSS
+
+Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](https://main.vitejs.dev/config/shared-options.html#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dev dependency. If enabled, CSS files will be processed by Lightning CSS instead of PostCSS.
+
+Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](https://main.vitejs.dev/config/build-options.html#css-minify).
+
+See beta docs at the [Lighting CSS guide](https://main.vitejs.dev/guide/features.html#lightning-css).
+
+### esbuild 0.18 update
+
+[esbuild 0.18](https://github.com/evanw/esbuild/blob/main/CHANGELOG.md#0180) contains backwards-incompatible changes to esbuild's handling of `tsconfig.json` files. We think they shouldn't affect Vite users, you can review [#13525](https://github.com/vitejs/vite/issues/13525) for more information.
+
+
+
+* chore: add funding field (#13585) ([2501627](https://github.com/vitejs/vite/commit/2501627)), closes [#13585](https://github.com/vitejs/vite/issues/13585)
+* chore: clean up changelog, downgrade conventional-changelog-cli to v2 (#13566) ([435bacc](https://github.com/vitejs/vite/commit/435bacc)), closes [#13566](https://github.com/vitejs/vite/issues/13566)
+* fix: avoid binding ClassExpression (#13572) ([1a0c806](https://github.com/vitejs/vite/commit/1a0c806)), closes [#13572](https://github.com/vitejs/vite/issues/13572)
+* fix: the shortcut fails to open browser when set the host (#13579) ([e0a48c5](https://github.com/vitejs/vite/commit/e0a48c5)), closes [#13579](https://github.com/vitejs/vite/issues/13579)
+* fix(proxy): forward SSE close event (#13578) ([4afbccb](https://github.com/vitejs/vite/commit/4afbccb)), closes [#13578](https://github.com/vitejs/vite/issues/13578)
+* feat: update esbuild to 0.18.6 (#13577) ([4cc671f](https://github.com/vitejs/vite/commit/4cc671f)), closes [#13577](https://github.com/vitejs/vite/issues/13577)
+
+
+
 ## 4.4.0-beta.0 (2023-06-20)
 
 * feat: asset type add apng (#13294) ([a11b6f6](https://github.com/vitejs/vite/commit/a11b6f6)), closes [#13294](https://github.com/vitejs/vite/issues/13294)

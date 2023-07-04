@@ -150,6 +150,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
+  htmlPath = decodeURI(htmlPath)
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -282,7 +283,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       let content = ''
       if (result) {
         if (result.map) {
-          if (result.map.mappings && !result.map.sourcesContent) {
+          if (result.map.mappings) {
             await injectSourcesContent(
               result.map,
               proxyModulePath,

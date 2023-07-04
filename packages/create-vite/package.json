@@ -31,6 +31,7 @@
     "url": "https://github.com/vitejs/vite/issues"
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
     "@types/minimist": "^1.2.2",
     "@types/prompts": "^2.4.4",
