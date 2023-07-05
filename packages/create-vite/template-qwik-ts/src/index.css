@@ -19,14 +19,13 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
-
 a:hover {
   color: #535bf2;
 }
 
 body {
   margin: 0;
-  display: grid;
+  display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
@@ -48,19 +47,12 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-
 button:hover {
   border-color: #646cff;
 }
-
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-#container {
-  display: grid;
-  place-items: center;
 }
 
 @media (prefers-color-scheme: light) {
@@ -68,36 +60,10 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
-
   a:hover {
     color: #747bff;
   }
-
   button {
     background-color: #f9f9f9;
   }
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-.card {
-  padding: 2em;
-  text-align: center;
-}
-
-.read-the-docs {
-  color: #888;
 }
