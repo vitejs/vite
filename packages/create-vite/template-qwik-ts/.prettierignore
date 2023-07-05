@@ -1,6 +1,0 @@
-# Files Prettier should not format
-**/*.log
-**/.DS_Store
-*.
-dist
-node_modules
