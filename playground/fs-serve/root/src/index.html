@@ -53,8 +53,10 @@
   text('.full', JSON.stringify(json))
   text('.named', msg)
 
+  const base = typeof BASE !== 'undefined' ? BASE : ''
+
   // inside allowed dir, safe fetch
-  fetch('/src/safe.txt')
+  fetch(base + '/src/safe.txt')
     .then((r) => {
       text('.safe-fetch-status', r.status)
       return r.text()
@@ -64,7 +66,7 @@
     })
 
   // inside allowed dir with query, safe fetch
-  fetch('/src/safe.txt?query')
+  fetch(base + '/src/safe.txt?query')
     .then((r) => {
       text('.safe-fetch-query-status', r.status)
       return r.text()
@@ -74,7 +76,7 @@
     })
 
   // inside allowed dir, safe fetch
-  fetch('/src/subdir/safe.txt')
+  fetch(base + '/src/subdir/safe.txt')
     .then((r) => {
       text('.safe-fetch-subdir-status', r.status)
       return r.text()
@@ -84,7 +86,7 @@
     })
 
   // inside allowed dir, with special characters, safe fetch
-  fetch('/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.txt')
+  fetch(base + '/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.txt')
     .then((r) => {
       text('.safe-fetch-subdir-special-characters-status', r.status)
       return r.text()
@@ -94,7 +96,7 @@
     })
 
   // outside of allowed dir, treated as unsafe
-  fetch('/unsafe.txt')
+  fetch(base + '/unsafe.txt')
     .then((r) => {
       text('.unsafe-fetch-status', r.status)
       return r.text()
@@ -107,7 +109,7 @@
     })
 
   // outside of allowed dir with special characters #8498
-  fetch('/src/%2e%2e%2funsafe%2etxt')
+  fetch(base + '/src/%2e%2e%2funsafe%2etxt')
     .then((r) => {
       text('.unsafe-fetch-8498-status', r.status)
       return r.text()
@@ -120,7 +122,7 @@
     })
 
   // outside of allowed dir with special characters 2 #8498
-  fetch('/src/%252e%252e%252funsafe%252etxt')
+  fetch(base + '/src/%252e%252e%252funsafe%252etxt')
     .then((r) => {
       text('.unsafe-fetch-8498-2-status', r.status)
       return r.text()
@@ -133,7 +135,7 @@
     })
 
   // imported before, should be treated as safe
-  fetch('/@fs/' + ROOT + '/safe.json')
+  fetch(base + '/@fs/' + ROOT + '/safe.json')
     .then((r) => {
       text('.safe-fs-fetch-status', r.status)
       return r.json()
@@ -143,7 +145,7 @@
     })
 
   // imported before with query, should be treated as safe
-  fetch('/@fs/' + ROOT + '/safe.json?query')
+  fetch(base + '/@fs/' + ROOT + '/safe.json?query')
     .then((r) => {
       text('.safe-fs-fetch-query-status', r.status)
       return r.json()
@@ -153,7 +155,7 @@
     })
 
   // not imported before, outside of root, treated as unsafe
-  fetch('/@fs/' + ROOT + '/unsafe.json')
+  fetch(base + '/@fs/' + ROOT + '/unsafe.json')
     .then((r) => {
       text('.unsafe-fs-fetch-status', r.status)
       return r.json()
@@ -166,7 +168,7 @@
     })
 
   // outside root with special characters #8498
-  fetch('/@fs/' + ROOT + '/root/src/%2e%2e%2f%2e%2e%2funsafe%2ejson')
+  fetch(base + '/@fs/' + ROOT + '/root/src/%2e%2e%2f%2e%2e%2funsafe%2ejson')
     .then((r) => {
       text('.unsafe-fs-fetch-8498-status', r.status)
       return r.json()
@@ -177,7 +179,10 @@
 
   // outside root with special characters 2 #8498
   fetch(
-    '/@fs/' + ROOT + '/root/src/%252e%252e%252f%252e%252e%252funsafe%252ejson',
+    base +
+      '/@fs/' +
+      ROOT +
+      '/root/src/%252e%252e%252f%252e%252e%252funsafe%252ejson',
   )
     .then((r) => {
       text('.unsafe-fs-fetch-8498-2-status', r.status)
@@ -189,7 +194,8 @@
 
   // not imported before, inside root with special characters, treated as safe
   fetch(
-    '/@fs/' +
+    base +
+      '/@fs/' +
       ROOT +
       '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json',
   )
@@ -202,7 +208,7 @@
     })
 
   // .env, denied by default
-  fetch('/@fs/' + ROOT + '/root/.env')
+  fetch(base + '/@fs/' + ROOT + '/root/.env')
     .then((r) => {
       text('.unsafe-dotenv', r.status)
     })
