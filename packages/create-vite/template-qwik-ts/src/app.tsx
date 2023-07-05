@@ -20,9 +20,6 @@ export const App = component$(() => {
       <h1>Vite + Qwik</h1>
       <div class="card">
         <button onClick$={() => count.value++}>count is {count.value}</button>
-        <p>
-          Edit <code>src/app.tsx</code> and save to test HMR
-        </p>
       </div>
       <p class="read-the-docs">
         Click on the Vite and Qwik logos to learn more
