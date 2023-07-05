@@ -8,13 +8,13 @@ import {
   blue,
   cyan,
   green,
-  lightBlue,
   lightGreen,
   lightRed,
   magenta,
   red,
   reset,
   yellow,
+  lightBlue
 } from 'kolorist'
 
 // Avoids autoconversion to number of the project name by defining that the args
@@ -167,6 +167,23 @@ const FRAMEWORKS: Framework[] = [
         display: 'SvelteKit ↗',
         color: red,
         customCommand: 'npm create svelte@latest TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'solid',
+    display: 'Solid',
+    color: blue,
+    variants: [
+      {
+        name: 'solid-ts',
+        display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'solid',
+        display: 'JavaScript',
+        color: yellow,
       },
     ],
   },
@@ -502,7 +519,7 @@ function setupReactSwc(root: string, isTs: boolean) {
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.0.0"`,
+      `"@vitejs/plugin-react-swc": "^3.3.2"`,
     )
   })
   editFile(
