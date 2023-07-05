@@ -578,15 +578,11 @@ export let safeRealpathSync = isWindows
   ? windowsSafeRealPathSync
   : fs.realpathSync.native
 
-// when using `fs.realpathSync.native` get errors in Windows virtual and RAM disks
-// that bypass the Volume Mount Manager, in programs such as imDisk
-let supportedRealpathSync = fs.realpathSync.native
-
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
 function windowsMappedRealpathSync(path: string) {
-  const realPath = supportedRealpathSync(path)
+  const realPath = fs.realpathSync.native(path)
   if (realPath.startsWith('\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
       if (realPath.startsWith(network)) return realPath.replace(network, volume)
@@ -613,13 +609,14 @@ function optimizeSafeRealPathSync() {
     return
   }
   // Check the availability `fs.realpathSync.native`
-  // in Windows virtual and RAM disks that bypass the Volume Mount Manager
+  // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
   try {
     fs.realpathSync.native(path.resolve('./'))
   } catch (error) {
     if (~error.message.indexOf('EISDIR: illegal operation on a directory')) {
-      supportedRealpathSync = fs.realpathSync
+      safeRealpathSync = fs.realpathSync
+      return
     }
   }
   exec('net use', (error, stdout) => {
@@ -632,7 +629,7 @@ function optimizeSafeRealPathSync() {
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
     if (windowsNetworkMap.size === 0) {
-      safeRealpathSync = supportedRealpathSync
+      safeRealpathSync = fs.realpathSync.native
     } else {
       safeRealpathSync = windowsMappedRealpathSync
     }
