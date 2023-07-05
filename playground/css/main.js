@@ -97,8 +97,8 @@ Promise.all(
 })
 
 // globEager
-// warning please use import.meta.glob('./glob-import/*.css', { query: '?inline' })
-// IF Not Use Default Should No Warning console https://github.com/vitejs/vite/issues/12001#issuecomment-1612411026
+// No warning to use `{ query: '?inline' }` is logged because `default` isn't accessed
+// https://github.com/vitejs/vite/issues/12001#issuecomment-1612411026
 import.meta.globEager('./glob-import-noinline/*.css')
 
 const globEager = import.meta.glob('./glob-import/*.css', {
