@@ -1,2 +1,2 @@
 import sourcemap from './worker-sourcemap-config.js'
-export default sourcemap(true)
+export default sourcemap('hidden')
