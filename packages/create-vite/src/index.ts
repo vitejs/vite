@@ -198,10 +198,15 @@ const FRAMEWORKS: Framework[] = [
         color: lightBlue,
       },
       {
+        name: 'qwik',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
         name: 'custom-qwik-city',
         display: 'QwikCity ↗',
         color: lightBlue,
-        customCommand: 'npm create qwik@latest TARGET_DIR',
+        customCommand: 'npm create qwik@latest basic TARGET_DIR',
       },
     ],
   },
