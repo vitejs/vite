@@ -11,17 +11,27 @@ export const App = component$(() => {
     <>
       <div>
         <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} width={32} height={32} class="logo" alt="Vite logo" />
+          <img
+            src={viteLogo}
+            width={32}
+            height={32}
+            class="logo"
+            alt="Vite logo"
+          />
         </a>
         <a href="https://qwik.builder.io" target="_blank">
-          <img src={qwikLogo} width={110} height={118} class="logo qwik" alt="Qwik logo" />
+          <img
+            src={qwikLogo}
+            width={110}
+            height={118}
+            class="logo qwik"
+            alt="Qwik logo"
+          />
         </a>
       </div>
       <h1>Vite + Qwik</h1>
       <div class="card">
-        <button onClick$={() => count.value++}>
-          count is {count.value}
-        </button>
+        <button onClick$={() => count.value++}>count is {count.value}</button>
         <p>
           Edit <code>src/app.tsx</code> and save to test HMR
         </p>
@@ -31,4 +41,4 @@ export const App = component$(() => {
       </p>
     </>
   )
-});
+})

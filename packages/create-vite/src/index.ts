@@ -8,13 +8,13 @@ import {
   blue,
   cyan,
   green,
+  lightBlue,
   lightGreen,
   lightRed,
   magenta,
   red,
   reset,
   yellow,
-  lightBlue
 } from 'kolorist'
 
 // Avoids autoconversion to number of the project name by defining that the args

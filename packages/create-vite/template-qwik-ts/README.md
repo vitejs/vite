@@ -6,9 +6,11 @@ This starter is using a pure CSR (Client Side Rendering) mode. This means, that 
 
 ```ts
 export default defineConfig({
-  plugins: [qwikVite({
-    csr: true,
-  })],
+  plugins: [
+    qwikVite({
+      csr: true,
+    }),
+  ],
 })
 ```
 
@@ -21,8 +23,6 @@ $ npm install # or pnpm install or yarn install
 ```
 
 Learn more on the [Qwik Website](https://qwik.builder.io) and join our community on our [Discord](https://qwik.builder.io/chat)
-
-
 
 ## Available Scripts
 
