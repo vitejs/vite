@@ -170,6 +170,23 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'solid',
+    display: 'Solid',
+    color: blue,
+    variants: [
+      {
+        name: 'solid-ts',
+        display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'solid',
+        display: 'JavaScript',
+        color: yellow,
+      },
+    ],
+  },
+  {
     name: 'others',
     display: 'Others',
     color: reset,
@@ -483,7 +500,7 @@ function setupReactSwc(root: string, isTs: boolean) {
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.0.0"`,
+      `"@vitejs/plugin-react-swc": "^3.3.2"`,
     )
   })
   editFile(

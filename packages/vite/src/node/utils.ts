@@ -748,7 +748,6 @@ const nullSourceMap: RawSourceMap = {
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
-  excludeContent = true,
 ): RawSourceMap {
   if (
     sourcemapList.length === 0 ||
@@ -778,19 +777,15 @@ export function combineSourcemaps(
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, excludeContent)
+    map = remapping(sourcemapList, () => null)
   } else {
-    map = remapping(
-      sourcemapList[0],
-      function loader(sourcefile) {
-        if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
-          return sourcemapList[mapIndex++]
-        } else {
-          return null
-        }
-      },
-      excludeContent,
-    )
+    map = remapping(sourcemapList[0], function loader(sourcefile) {
+      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
+      }
+    })
   }
   if (!map.file) {
     delete map.file
