@@ -15,10 +15,18 @@ export class Watcher {
   constructor(private opts: Options) {}
 
   on(eventHandler: WatchEventHandler): void {
+    if (arguments.length > 1) {
+      // eslint-disable-next-line prefer-rest-params
+      eventHandler = handleChokidarArgs(arguments)
+    }
     this.eventHandlers.add(eventHandler)
   }
 
   off(eventHandler: WatchEventHandler): void {
+    if (arguments.length > 1) {
+      // eslint-disable-next-line prefer-rest-params
+      eventHandler = handleChokidarArgs(arguments)
+    }
     this.eventHandlers.delete(eventHandler)
   }
 
@@ -96,4 +104,34 @@ export function resolveWatchOptions(
   }
 
   return resolvedWatchOptions
+}
+
+// Temporary code to handle chokidar style events for tests to pass
+const createChokidarEvents = ['add', 'addDir']
+const updateChokidarEvents = ['change']
+const deleteChokidarEvents = ['unlink', 'unlinkDir']
+function handleChokidarArgs(args: IArguments): WatchEventHandler {
+  const [chokidarEvent, chokidarHandler] = args
+  return (event) => {
+    switch (event.type) {
+      case 'create':
+        if (createChokidarEvents.includes(chokidarEvent)) {
+          chokidarHandler(event.path)
+        }
+        break
+      case 'update':
+        if (updateChokidarEvents.includes(chokidarEvent)) {
+          chokidarHandler(event.path)
+        }
+        break
+      case 'delete':
+        if (deleteChokidarEvents.includes(chokidarEvent)) {
+          chokidarHandler(event.path)
+        }
+        break
+      default:
+        // Unsupported: 'ready', 'raw', 'error'
+        break
+    }
+  }
 }

@@ -230,8 +230,8 @@ importers:
   packages/vite:
     dependencies:
       '@parcel/watcher':
-        specifier: ^2.2.0
-        version: 2.2.0
+        specifier: ^2.2.1-alpha.0
+        version: 2.2.1-alpha.0
       esbuild:
         specifier: ^0.18.10
         version: 0.18.10
@@ -3471,8 +3471,8 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.13.0
 
-  /@parcel/watcher-android-arm64@2.2.0:
-    resolution: {integrity: sha512-nU2wh00CTQT9rr1TIKTjdQ9lAGYpmz6XuKw0nAwAN+S2A5YiD55BK1u+E5WMCT8YOIDe/n6gaj4o/Bi9294SSQ==}
+  /@parcel/watcher-android-arm64@2.2.1-alpha.0:
+    resolution: {integrity: sha512-S+5dA60f8z4rB/2RNMgoKQVV3a/bOIVzKIfwXP1nE3OUyhikWwtOhV5sDZDZeU7Nl676mFuVBwlMh4au/Yn8/Q==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [android]
@@ -3480,8 +3480,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-darwin-arm64@2.2.0:
-    resolution: {integrity: sha512-cJl0UZDcodciy3TDMomoK/Huxpjlkkim3SyMgWzjovHGOZKNce9guLz2dzuFwfObBFCjfznbFMIvAZ5syXotYw==}
+  /@parcel/watcher-darwin-arm64@2.2.1-alpha.0:
+    resolution: {integrity: sha512-J4TTmKYREuNZdysaUUAXRPnuXzpa4muoDfmyvBIxJetL7mePnOH2md5B1aMY9nvUGqu8smFdsDLtoUOs0u3YmA==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [darwin]
@@ -3489,8 +3489,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-darwin-x64@2.2.0:
-    resolution: {integrity: sha512-QI77zxaGrCV1StKcoRYfsUfmUmvPMPfQrubkBBy5XujV2fwaLgZivQOTQMBgp5K2+E19u1ufpspKXAPqSzpbyg==}
+  /@parcel/watcher-darwin-x64@2.2.1-alpha.0:
+    resolution: {integrity: sha512-Hj2rpxFYU8SN+8DBXFcYtB1cT/jU9qK6yrLXaf0OUBlY2Cl0AKsJdpi1TNXfr3zcwoWF3XTU6Wo6OXApozs2LQ==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [darwin]
@@ -3498,8 +3498,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-linux-arm-glibc@2.2.0:
-    resolution: {integrity: sha512-I2GPBcAXazPzabCmfsa3HRRW+MGlqxYd8g8RIueJU+a4o5nyNZDz0CR1cu0INT0QSQXEZV7w6UE8Hz9CF8u3Pg==}
+  /@parcel/watcher-linux-arm-glibc@2.2.1-alpha.0:
+    resolution: {integrity: sha512-nmLSEhzYACM+EsGGRoZENcmEzluOs+KgjRF9QCNqoNmToKDYV2gs296k6AIRqOIFfK9FzW9BvK7TAzvY4TNrjw==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
@@ -3507,8 +3507,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-linux-arm64-glibc@2.2.0:
-    resolution: {integrity: sha512-St5mlfp+2lS9AmgixUqfwJa/DwVmTCJxC1HcOubUTz6YFOKIlkHCeUa1Bxi4E/tR/HSez8+heXHL8HQkJ4Bd8g==}
+  /@parcel/watcher-linux-arm64-glibc@2.2.1-alpha.0:
+    resolution: {integrity: sha512-Z1aBGp3NQTpH0pT/p8sbFr4N+yHtHUxiJZSOPbihT7YijAY2zydF+efCrhpNVE6XDFiuvxtEUVs6FWUFQ8YpBQ==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
@@ -3516,8 +3516,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-linux-arm64-musl@2.2.0:
-    resolution: {integrity: sha512-jS+qfhhoOBVWwMLP65MaG8xdInMK30pPW8wqTCg2AAuVJh5xepMbzkhHJ4zURqHiyY3EiIRuYu4ONJKCxt8iqA==}
+  /@parcel/watcher-linux-arm64-musl@2.2.1-alpha.0:
+    resolution: {integrity: sha512-+m7pMraCIyhQ2XnWH0G1b3uSEf2+bq2LqreNPHiUibe7BBpa7Z9d7hBMYmILLy+esEC2URcy6TafU+p1UHtnBA==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
@@ -3525,8 +3525,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-linux-x64-glibc@2.2.0:
-    resolution: {integrity: sha512-xJvJ7R2wJdi47WZBFS691RDOWvP1j/IAs3EXaWVhDI8FFITbWrWaln7KoNcR0Y3T+ZwimFY/cfb0PNht1q895g==}
+  /@parcel/watcher-linux-x64-glibc@2.2.1-alpha.0:
+    resolution: {integrity: sha512-hO9PbAbyCQiDvPDAiGJ3Cx8YdFEtrpgzye3Duj6fAInO3cvAEhbnzeDLO8Aq28i1r09mYQwnCl49cGhy3xZOpg==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
@@ -3534,8 +3534,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-linux-x64-musl@2.2.0:
-    resolution: {integrity: sha512-D+NMpgr23a+RI5mu8ZPKWy7AqjBOkURFDgP5iIXXEf/K3hm0jJ3ogzi0Ed2237B/CdYREimCgXyeiAlE/FtwyA==}
+  /@parcel/watcher-linux-x64-musl@2.2.1-alpha.0:
+    resolution: {integrity: sha512-AgaxwfmUBU/82O2NJcDbak2hAYrWZArbmbALzRsf6zmm2FKwhhF2QaqGAosxFD5exR6wCE7volHXRUeNzkjrlw==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
@@ -3543,8 +3543,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-win32-arm64@2.2.0:
-    resolution: {integrity: sha512-z225cPn3aygJsyVUOWwfyW+fY0Tvk7N3XCOl66qUPFxpbuXeZuiuuJemmtm8vxyqa3Ur7peU/qJxrpC64aeI7Q==}
+  /@parcel/watcher-win32-arm64@2.2.1-alpha.0:
+    resolution: {integrity: sha512-hoBLJ2daehtZ5/L45R9wsQ5cIDJIY4J7bST261ZvUSPj6vfIHRJRXok3jei8tc5l+wh1maXtP2ADaE6GkXZuRQ==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [win32]
@@ -3552,8 +3552,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher-win32-x64@2.2.0:
-    resolution: {integrity: sha512-JqGW0RJ61BkKx+yYzIURt9s53P7xMVbv0uxYPzAXLBINGaFmkIKSuUPyBVfy8TMbvp93lvF4SPBNDzVRJfvgOw==}
+  /@parcel/watcher-win32-x64@2.2.1-alpha.0:
+    resolution: {integrity: sha512-C75GAgu3PzfiSkF9ex6Sdqq/zv5ZomJkPVH6/Wq0mADkL6BiFMd8uBT5F/iSPnkWVJjQnA976k/rWJZCLdyX8A==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [win32]
@@ -3561,8 +3561,8 @@ packages:
     dev: false
     optional: true
 
-  /@parcel/watcher@2.2.0:
-    resolution: {integrity: sha512-71S4TF+IMyAn24PK4KSkdKtqJDR3zRzb0HE3yXpacItqTM7XfF2f5q9NEGLEVl0dAaBAGfNwDCjH120y25F6Tg==}
+  /@parcel/watcher@2.2.1-alpha.0:
+    resolution: {integrity: sha512-/pOCqIpA0xswCULEKndY7bVKzgt7MtKERE6IKfBLpr/e/thb9po6ES+aEcfol3YDEMYY13pbGdAK81A+LjICUA==}
     engines: {node: '>= 10.0.0'}
     dependencies:
       detect-libc: 1.0.3
@@ -3570,16 +3570,16 @@ packages:
       micromatch: 4.0.5
       node-addon-api: 7.0.0
     optionalDependencies:
-      '@parcel/watcher-android-arm64': 2.2.0
-      '@parcel/watcher-darwin-arm64': 2.2.0
-      '@parcel/watcher-darwin-x64': 2.2.0
-      '@parcel/watcher-linux-arm-glibc': 2.2.0
-      '@parcel/watcher-linux-arm64-glibc': 2.2.0
-      '@parcel/watcher-linux-arm64-musl': 2.2.0
-      '@parcel/watcher-linux-x64-glibc': 2.2.0
-      '@parcel/watcher-linux-x64-musl': 2.2.0
-      '@parcel/watcher-win32-arm64': 2.2.0
-      '@parcel/watcher-win32-x64': 2.2.0
+      '@parcel/watcher-android-arm64': 2.2.1-alpha.0
+      '@parcel/watcher-darwin-arm64': 2.2.1-alpha.0
+      '@parcel/watcher-darwin-x64': 2.2.1-alpha.0
+      '@parcel/watcher-linux-arm-glibc': 2.2.1-alpha.0
+      '@parcel/watcher-linux-arm64-glibc': 2.2.1-alpha.0
+      '@parcel/watcher-linux-arm64-musl': 2.2.1-alpha.0
+      '@parcel/watcher-linux-x64-glibc': 2.2.1-alpha.0
+      '@parcel/watcher-linux-x64-musl': 2.2.1-alpha.0
+      '@parcel/watcher-win32-arm64': 2.2.1-alpha.0
+      '@parcel/watcher-win32-x64': 2.2.1-alpha.0
     dev: false
 
   /@peculiar/asn1-schema@2.1.0:

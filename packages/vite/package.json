@@ -67,7 +67,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@parcel/watcher": "^2.2.0",
+    "@parcel/watcher": "^2.2.1-alpha.0",
     "esbuild": "^0.18.10",
     "postcss": "^8.4.24",
     "rollup": "^3.25.2"
