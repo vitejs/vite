@@ -33,7 +33,7 @@ export const App = component$(() => {
       <div class="card">
         <button onClick$={() => count.value++}>count is {count.value}</button>
         <p>
-          Edit <code>src/app.tsx</code> and save to test HMR
+          Edit <code>src/app.jsx</code> and save to test HMR
         </p>
       </div>
       <p class="read-the-docs">
