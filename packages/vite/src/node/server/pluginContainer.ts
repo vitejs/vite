@@ -565,10 +565,7 @@ export async function createPluginContainer(
           combinedMap = m as SourceMap
         } else {
           combinedMap = combineSourcemaps(cleanUrl(this.filename), [
-            {
-              ...(m as RawSourceMap),
-              sourcesContent: combinedMap.sourcesContent,
-            },
+            m as RawSourceMap,
             combinedMap as RawSourceMap,
           ]) as SourceMap
         }
