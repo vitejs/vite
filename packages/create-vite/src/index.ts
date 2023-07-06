@@ -8,6 +8,7 @@ import {
   blue,
   cyan,
   green,
+  lightBlue,
   lightGreen,
   lightRed,
   magenta,
@@ -183,6 +184,29 @@ const FRAMEWORKS: Framework[] = [
         name: 'solid',
         display: 'JavaScript',
         color: yellow,
+      },
+    ],
+  },
+  {
+    name: 'qwik',
+    display: 'Qwik',
+    color: lightBlue,
+    variants: [
+      {
+        name: 'qwik-ts',
+        display: 'TypeScript',
+        color: lightBlue,
+      },
+      {
+        name: 'qwik',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'custom-qwik-city',
+        display: 'QwikCity ↗',
+        color: lightBlue,
+        customCommand: 'npm create qwik@latest basic TARGET_DIR',
       },
     ],
   },
