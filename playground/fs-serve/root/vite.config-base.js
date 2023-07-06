@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 
-const BASE = '/base'
+const BASE = '/base/'
 
 export default defineConfig({
   base: BASE,
