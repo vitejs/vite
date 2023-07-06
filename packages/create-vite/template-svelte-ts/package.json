@@ -16,6 +16,6 @@
     "svelte-check": "^3.4.4",
     "tslib": "^2.6.0",
     "typescript": "^5.0.2",
-    "vite": "^4.3.9"
+    "vite": "^4.4.0"
   }
 }
