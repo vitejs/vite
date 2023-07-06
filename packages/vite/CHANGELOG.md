@@ -1,3 +1,11 @@
+## <small>4.4.1 (2023-07-06)</small>
+
+* fix: revert #13073, use consistent virtual module ID in module graph (#13734) ([f589ac0](https://github.com/vitejs/vite/commit/f589ac0)), closes [#13073](https://github.com/vitejs/vite/issues/13073) [#13734](https://github.com/vitejs/vite/issues/13734)
+* fix: revert import config module as data (#13731) ([b0bfa01](https://github.com/vitejs/vite/commit/b0bfa01)), closes [#13731](https://github.com/vitejs/vite/issues/13731)
+* chore: changelog notes and clean for 4.4 (#13728) ([3f4e36e](https://github.com/vitejs/vite/commit/3f4e36e)), closes [#13728](https://github.com/vitejs/vite/issues/13728)
+
+
+
 ## 4.4.0 (2023-07-06)
 
 ### Experimental support for Lightning CSS
