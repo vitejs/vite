@@ -1,3 +1,22 @@
+## 4.4.0 (2023-07-06)
+
+* feat: update eslint config in React templates (#13550) ([6fe1491](https://github.com/vitejs/vite/commit/6fe1491)), closes [#13550](https://github.com/vitejs/vite/issues/13550)
+* feat(create-vite): add qwik templates (#13620) ([ef4602b](https://github.com/vitejs/vite/commit/ef4602b)), closes [#13620](https://github.com/vitejs/vite/issues/13620)
+* feat(create-vite): add solidjs templates (#12218) (#12241) ([277e844](https://github.com/vitejs/vite/commit/277e844)), closes [#12218](https://github.com/vitejs/vite/issues/12218) [#12241](https://github.com/vitejs/vite/issues/12241)
+* feat(create-vite): update create vite for Svelte 4 (#13602) ([8868fb7](https://github.com/vitejs/vite/commit/8868fb7)), closes [#13602](https://github.com/vitejs/vite/issues/13602)
+* fix: 'module' is not defined eslint error in template-react (fix #13517) (#13518) ([41380a5](https://github.com/vitejs/vite/commit/41380a5)), closes [#13517](https://github.com/vitejs/vite/issues/13517) [#13518](https://github.com/vitejs/vite/issues/13518)
+* fix(create-vite): support bun as a script runner (#13402) ([471fba2](https://github.com/vitejs/vite/commit/471fba2)), closes [#13402](https://github.com/vitejs/vite/issues/13402)
+* fix(deps): update all non-major dependencies (#13059) ([123ef4c](https://github.com/vitejs/vite/commit/123ef4c)), closes [#13059](https://github.com/vitejs/vite/issues/13059)
+* fix(deps): update all non-major dependencies (#13488) ([bd09248](https://github.com/vitejs/vite/commit/bd09248)), closes [#13488](https://github.com/vitejs/vite/issues/13488)
+* fix(deps): update all non-major dependencies (#13701) ([02c6bc3](https://github.com/vitejs/vite/commit/02c6bc3)), closes [#13701](https://github.com/vitejs/vite/issues/13701)
+* fix(template): bump react-swc plugin version (#13699) ([8315f9e](https://github.com/vitejs/vite/commit/8315f9e)), closes [#13699](https://github.com/vitejs/vite/issues/13699)
+* chore: add funding field (#13585) ([2501627](https://github.com/vitejs/vite/commit/2501627)), closes [#13585](https://github.com/vitejs/vite/issues/13585)
+* chore(deps): update all non-major dependencies (#13553) ([3ea0534](https://github.com/vitejs/vite/commit/3ea0534)), closes [#13553](https://github.com/vitejs/vite/issues/13553)
+* chore(deps): update all non-major dependencies (#13633) ([c72fb9b](https://github.com/vitejs/vite/commit/c72fb9b)), closes [#13633](https://github.com/vitejs/vite/issues/13633)
+* chore(deps): update dependency @tsconfig/svelte to v5 (#13702) ([70f0659](https://github.com/vitejs/vite/commit/70f0659)), closes [#13702](https://github.com/vitejs/vite/issues/13702)
+
+
+
 ## <small>4.3.2 (2023-05-29)</small>
 
 * fix: upgrade svelte-check preventing unmet peer deps errors (#13103) ([c63ba3f](https://github.com/vitejs/vite/commit/c63ba3f)), closes [#13103](https://github.com/vitejs/vite/issues/13103)
