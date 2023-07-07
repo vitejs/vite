@@ -11,7 +11,6 @@ export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'
 export { buildErrorMessage } from './server/middlewares/error'
-export { bindShortcuts } from './shortcuts'
 export * from './publicUtils'
 
 // additional types
@@ -100,8 +99,6 @@ export type {
   TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
-
-export type { BindShortcutsOptions, CLIShortcut } from './shortcuts'
 
 export type {
   HMRPayload,
