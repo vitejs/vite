@@ -4,6 +4,7 @@ import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
+  ConfigEnv,
   InlineConfig,
   Logger,
   PluginOption,
@@ -197,27 +198,31 @@ beforeAll(async (s) => {
   }
 })
 
-function loadConfigFromDir(dir: string) {
-  return loadConfigFromFile(
-    {
-      command: isBuild ? 'build' : 'serve',
-      mode: isBuild ? 'production' : 'development',
-    },
-    undefined,
-    dir,
-  )
-}
-
 export async function startDefaultServe(): Promise<void> {
   let config: UserConfig | null = null
-  // config file near the *.spec.ts
-  const res = await loadConfigFromDir(dirname(testPath))
-  if (res) {
-    config = res.config
+
+  const configEnv: ConfigEnv = {
+    command: isBuild ? 'build' : 'serve',
+    mode: isBuild ? 'production' : 'development',
+  }
+
+  // config file named by convention as the *.spec.ts folder
+  const variantName = path.basename(dirname(testPath))
+  if (variantName !== '__tests__') {
+    const configVariantPath = path.resolve(
+      rootDir,
+      `vite.config-${variantName}.js`,
+    )
+    if (fs.existsSync(configVariantPath)) {
+      const res = await loadConfigFromFile(configEnv, configVariantPath)
+      if (res) {
+        config = res.config
+      }
+    }
   }
   // config file from test root dir
   if (!config) {
-    const res = await loadConfigFromDir(rootDir)
+    const res = await loadConfigFromFile(configEnv, undefined, rootDir)
     if (res) {
       config = res.config
     }
