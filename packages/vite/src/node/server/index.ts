@@ -272,6 +272,10 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
+   * Bind shortcuts
+   */
+  bindShortcuts(options?: BindShortcutsOptions): void
+  /**
    * Restart the server.
    *
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
@@ -490,6 +494,9 @@ export async function _createServer(
           'cannot print server URLs before server.listen is called.',
         )
       }
+    },
+    bindShortcuts(options) {
+      bindShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {

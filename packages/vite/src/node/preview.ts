@@ -18,6 +18,8 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
+import { bindShortcuts } from './shortcuts'
+import type { BindShortcutsOptions } from './shortcuts'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
@@ -72,6 +74,10 @@ export interface PreviewServerForHook {
    * Print server urls
    */
   printUrls(): void
+  /**
+   * Bind shortcuts
+   */
+  bindShortcuts(options?: BindShortcutsOptions): void
 }
 
 export interface PreviewServer extends PreviewServerForHook {
@@ -133,6 +139,9 @@ export async function preview(
       } else {
         throw new Error('cannot print server URLs before server is listening.')
       }
+    },
+    bindShortcuts(options) {
+      bindShortcuts(server as PreviewServer, options)
     },
   }
 
