@@ -285,7 +285,7 @@ async function loadAndTransform(
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings && !map.sourcesContent) {
+    if (map.mappings) {
       await injectSourcesContent(map, mod.file, logger)
     }
 

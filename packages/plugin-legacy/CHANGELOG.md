@@ -1,3 +1,10 @@
+## 4.1.0 (2023-07-06)
+
+* feat(plugin-legacy): add option to output only legacy builds (#10139) ([931b24f](https://github.com/vitejs/vite/commit/931b24f)), closes [#10139](https://github.com/vitejs/vite/issues/10139)
+* fix(deps): update all non-major dependencies (#13701) ([02c6bc3](https://github.com/vitejs/vite/commit/02c6bc3)), closes [#13701](https://github.com/vitejs/vite/issues/13701)
+
+
+
 ## <small>4.0.5 (2023-06-21)</small>
 
 * chore: add funding field (#13585) ([2501627](https://github.com/vitejs/vite/commit/2501627)), closes [#13585](https://github.com/vitejs/vite/issues/13585)

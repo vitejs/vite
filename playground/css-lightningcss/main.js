@@ -1,6 +1,7 @@
 import './minify.css'
 import './imported.css'
 import mod from './mod.module.css'
+import './external-url.css'
 
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
