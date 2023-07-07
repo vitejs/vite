@@ -753,7 +753,21 @@ function prepareOutDir(
       config.publicDir &&
       fs.existsSync(config.publicDir)
     ) {
-      copyDir(config.publicDir, outDir)
+      if (areSeparateFolders(outDir, config.publicDir)) {
+        copyDir(config.publicDir, outDir)
+      } else {
+        config.logger.warn(
+          colors.yellow(
+            `\n${colors.bold(
+              `(!)`,
+            )} The public directory feature is diabled. outDir ${colors.white(
+              colors.dim(outDir),
+            )} and publicDir ${colors.white(
+              colors.dim(config.publicDir),
+            )} are not separate folders.\n`,
+          ),
+        )
+      }
     }
   }
 }
@@ -1223,3 +1237,15 @@ export function toOutputFilePathWithoutRuntime(
 
 export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
 export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
+
+function isSameOrSubfolder(parent: string, dir: string) {
+  const relative = path.relative(parent, dir)
+  return (
+    relative === '' ||
+    (!relative.startsWith('..') && !path.isAbsolute(relative))
+  )
+}
+
+function areSeparateFolders(a: string, b: string) {
+  return !isSameOrSubfolder(a, b) && !isSameOrSubfolder(b, a)
+}
