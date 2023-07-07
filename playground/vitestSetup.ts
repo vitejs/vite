@@ -214,7 +214,6 @@ export async function startDefaultServe(): Promise<void> {
       `vite.config-${variantName}.js`,
     )
     if (fs.existsSync(configVariantPath)) {
-      console.log(`load config from ${configVariantPath}`)
       const res = await loadConfigFromFile(configEnv, configVariantPath)
       if (res) {
         config = res.config
