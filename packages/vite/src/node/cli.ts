@@ -303,6 +303,7 @@ cli
     },
   )
 
+// preview
 cli
   .command('preview [root]', 'locally preview production build')
   .option('--host [host]', `[string] specify hostname`)
@@ -344,6 +345,7 @@ cli
           },
         })
         server.printUrls()
+        bindShortcuts(server, { print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),
