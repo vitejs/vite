@@ -1,5 +1,5 @@
 {
-  "name": "vite-typescript-starter",
+  "name": "vite-qwik",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,5 +11,8 @@
   "devDependencies": {
     "typescript": "^5.0.2",
     "vite": "^4.4.0"
+  },
+  "dependencies": {
+    "@builder.io/qwik": "^1.2.5"
   }
 }
