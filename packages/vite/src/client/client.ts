@@ -167,8 +167,7 @@ async function handleMessage(payload: HMRPayload) {
         window.location.reload()
         return
       } else {
-        if (clearErrorOverlayTimeout) clearTimeout(clearErrorOverlayTimeout)
-        clearErrorOverlayTimeout = setTimeout(clearErrorOverlay, 50)
+        clearErrorOverlay()
         isFirstUpdate = false
       }
       await Promise.all(
@@ -289,11 +288,8 @@ function notifyListeners(event: string, data: any): void {
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
-let clearErrorOverlayTimeout: ReturnType<typeof setTimeout> | undefined
-
 function createErrorOverlay(err: ErrorPayload['err']) {
   if (!enableOverlay) return
-  if (clearErrorOverlayTimeout) clearTimeout(clearErrorOverlayTimeout)
   clearErrorOverlay()
   document.body.appendChild(new ErrorOverlay(err))
 }
