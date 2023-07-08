@@ -157,7 +157,7 @@ async function handleMessage(payload: HMRPayload) {
         }
       }, __HMR_TIMEOUT__)
       break
-    case 'update':
+    case 'update': {
       notifyListeners('vite:beforeUpdate', payload)
       // if this is the first update and there's already an error overlay, it
       // means the page opened with existing server compile error and the whole
@@ -167,13 +167,15 @@ async function handleMessage(payload: HMRPayload) {
         window.location.reload()
         return
       } else {
-        clearErrorOverlay()
         isFirstUpdate = false
       }
-      await Promise.all(
-        payload.updates.map(async (update): Promise<void> => {
+      const startUpdateTime = Date.now()
+      const results = await Promise.all(
+        payload.updates.map(async (update): Promise<boolean> => {
           if (update.type === 'js-update') {
-            return queueUpdate(fetchUpdate(update))
+            const promise = fetchUpdate(update)
+            await queueUpdate(promise.then((r) => r?.run))
+            return promise.then((r) => r?.fetchFailed ?? false)
           }
 
           // css-update
@@ -191,7 +193,7 @@ async function handleMessage(payload: HMRPayload) {
           )
 
           if (!el) {
-            return
+            return false
           }
 
           const newPath = `${base}${searchUrl.slice(1)}${
@@ -206,20 +208,24 @@ async function handleMessage(payload: HMRPayload) {
           return new Promise((resolve) => {
             const newLinkTag = el.cloneNode() as HTMLLinkElement
             newLinkTag.href = new URL(newPath, el.href).href
-            const removeOldEl = () => {
+            const removeOldEl = (failed: boolean) => {
               el.remove()
               console.debug(`[vite] css hot updated: ${searchUrl}`)
-              resolve()
+              resolve(failed)
             }
-            newLinkTag.addEventListener('load', removeOldEl)
-            newLinkTag.addEventListener('error', removeOldEl)
+            newLinkTag.addEventListener('load', () => removeOldEl(false))
+            newLinkTag.addEventListener('error', () => removeOldEl(true))
             outdatedLinkTags.add(el)
             el.after(newLinkTag)
           })
         }),
       )
+      if (results.every((el) => !el) && startUpdateTime > lastErrorTime) {
+        clearErrorOverlay()
+      }
       notifyListeners('vite:afterUpdate', payload)
       break
+    }
     case 'custom': {
       notifyListeners(payload.event, payload.data)
       break
@@ -288,9 +294,11 @@ function notifyListeners(event: string, data: any): void {
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
+let lastErrorTime = 0
 function createErrorOverlay(err: ErrorPayload['err']) {
   if (!enableOverlay) return
   clearErrorOverlay()
+  lastErrorTime = Date.now()
   document.body.appendChild(new ErrorOverlay(err))
 }
 
@@ -446,6 +454,7 @@ async function fetchUpdate({
   }
 
   let fetchedModule: ModuleNamespace | undefined
+  let fetchFailed = false
   const isSelfUpdate = path === acceptedPath
 
   // determine the qualified callbacks before we re-import the modules
@@ -468,15 +477,21 @@ async function fetchUpdate({
       )
     } catch (e) {
       warnFailedFetch(e, acceptedPath)
+      fetchFailed = true
     }
   }
 
-  return () => {
-    for (const { deps, fn } of qualifiedCallbacks) {
-      fn(deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)))
-    }
-    const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-    console.debug(`[vite] hot updated: ${loggedPath}`)
+  return {
+    fetchFailed,
+    run: () => {
+      for (const { deps, fn } of qualifiedCallbacks) {
+        fn(
+          deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)),
+        )
+      }
+      const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
+      console.debug(`[vite] hot updated: ${loggedPath}`)
+    },
   }
 }
 
