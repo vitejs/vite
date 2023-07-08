@@ -9,10 +9,10 @@ function App() {
   return (
     <>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
+        <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
           <img src={viteLogo} class="logo" alt="Vite logo" />
         </a>
-        <a href="https://solidjs.com" target="_blank">
+        <a href="https://solidjs.com" target="_blank" rel="noreferrer">
           <img src={solidLogo} class="logo solid" alt="Solid logo" />
         </a>
       </div>

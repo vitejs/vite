@@ -26,10 +26,10 @@ export class MyElement extends LitElement {
   render() {
     return html`
       <div>
-        <a href="https://vitejs.dev" target="_blank">
+        <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
           <img src=${viteLogo} class="logo" alt="Vite logo" />
         </a>
-        <a href="https://lit.dev" target="_blank">
+        <a href="https://lit.dev" target="_blank" rel="noreferrer">
           <img src=${litLogo} class="logo lit" alt="Lit logo" />
         </a>
       </div>
