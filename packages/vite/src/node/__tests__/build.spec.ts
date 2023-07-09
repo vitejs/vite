@@ -655,6 +655,54 @@ describe('onRollupLog', () => {
       /Rollup failed to resolve import/,
     )
   })
+
+  test.each([[`Unsupported expression`], [`statically analyzed`]])(
+    'should ignore dynamic import warnings (%s)',
+    async (message: string) => {
+      const rollupLogger = vi.fn(() => {})
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+      const config = await resolveConfig(
+        { customLogger: logger },
+        'build',
+        'production',
+        'production',
+      )
+      const log: RollupLog = {
+        code: 'PLUGIN_WARNING',
+        message: message,
+        plugin: 'rollup-plugin-dynamic-import-variables',
+      }
+      onRollupLog('warn', log, rollupLogger, config)
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
+
+  test.each([[`CIRCULAR_DEPENDENCY`], [`THIS_IS_UNDEFINED`]])(
+    'should ignore some warnings (%s)',
+    async (code: string) => {
+      const rollupLogger = vi.fn(() => {})
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+      const config = await resolveConfig(
+        { customLogger: logger },
+        'build',
+        'production',
+        'production',
+      )
+      const log: RollupLog = {
+        code: code,
+        message: 'test message',
+        plugin: pluginName,
+      }
+      onRollupLog('warn', log, rollupLogger, config)
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
 })
 
 /**
