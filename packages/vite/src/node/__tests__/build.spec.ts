@@ -1,10 +1,22 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
-import { describe, expect, test, vi } from 'vitest'
-import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import type {
+  LogLevel,
+  OutputChunk,
+  OutputOptions,
+  RollupLog,
+  RollupOutput,
+} from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
+import {
+  build,
+  onRollupLog,
+  resolveBuildOutputs,
+  resolveLibFilename,
+} from '../build'
+import { resolveConfig } from '../config'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 
@@ -529,6 +541,118 @@ describe('resolveBuildOutputs', () => {
       colors.yellow(
         `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
       ),
+    )
+  })
+})
+
+describe('onRollupLog', () => {
+  const pluginName = 'rollup-plugin-test'
+  const msgInfo = 'This is the INFO message.'
+  const msgWarn = 'This is the WARN message.'
+  const msgDebug = 'This is the DEBUG message.'
+  const buildProject = async (level: LogLevel, logger: Logger) => {
+    return (await build({
+      root: resolve(__dirname, 'packages/build-project'),
+      logLevel: 'info',
+      build: {
+        write: false,
+        rollupOptions: {
+          logLevel: 'debug',
+        },
+      },
+      customLogger: logger,
+      plugins: [
+        {
+          name: pluginName,
+          resolveId(id) {
+            switch (level) {
+              case 'info':
+                this.info(msgInfo)
+                break
+              case 'warn':
+                this.warn(msgWarn)
+                break
+
+              case 'debug':
+                this.debug(msgDebug)
+                break
+              // error is nothing to do because rollup dose not call logger handler at error.
+              default:
+                break
+            }
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `export default "This is test module";`
+            }
+          },
+        },
+      ],
+    })) as RollupOutput
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('Rollou logs of info should be handled vite', async () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+    await buildProject('info', logger)
+    const logs = loggerSpy.mock.calls.flat()
+    expect(logs).contain(
+      `${colors.bold(colors.green(`[plugin:${pluginName}]`))} ${colors.green(
+        msgInfo,
+      )}`,
+    )
+  })
+
+  test('Rollou logs of warn should be handled vite', async () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+    await buildProject('warn', logger)
+    const logs = loggerSpy.mock.calls.flat()
+    expect(logs).contain(
+      `${colors.bold(colors.yellow(`[plugin:${pluginName}]`))} ${colors.yellow(
+        msgWarn,
+      )}`,
+    )
+  })
+
+  test('Rollou logs of debug should be handled vite', async () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+    await buildProject('debug', logger)
+    const logs = loggerSpy.mock.calls.flat()
+    expect(logs).contain(
+      `${colors.bold(colors.gray(`[plugin:${pluginName}]`))} ${colors.gray(
+        msgDebug,
+      )}`,
+    )
+  })
+
+  test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
+    const logger = createLogger()
+    const loggerMock = vi.fn(() => {})
+    const config = await resolveConfig(
+      { customLogger: logger },
+      'build',
+      'production',
+      'production',
+    )
+    const log: RollupLog = {
+      code: 'UNRESOLVED_IMPORT',
+      message: 'test',
+    }
+    expect(() => onRollupLog('warn', log, loggerMock, config)).toThrowError(
+      /Rollup failed to resolve import/,
     )
   })
 })
