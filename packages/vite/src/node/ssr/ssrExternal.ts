@@ -114,7 +114,7 @@ export function createIsConfiguredAsSsrExternal(
   const { ssr, root } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
-    noExternal !== 'undefined' &&
+    isDefined(noExternal) &&
     typeof noExternal !== 'boolean' &&
     createFilter(undefined, noExternal, { resolve: false })
 

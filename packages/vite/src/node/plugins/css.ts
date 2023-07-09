@@ -46,6 +46,7 @@ import {
   generateCodeFrame,
   getHash,
   isDataUrl,
+  isDefined,
   isExternalUrl,
   isObject,
   joinUrlSegments,
@@ -1709,8 +1710,8 @@ declare const location: { href: string } | undefined
 function cleanScssBugUrl(url: string) {
   if (
     // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
+    isDefined(window) &&
+    isDefined(location) &&
     typeof location?.href === 'string'
   ) {
     const prefix = location.href.replace(/\/$/, '')
@@ -1727,8 +1728,8 @@ function fixScssBugImportValue(
   // to prevent internal error when it loads itself
   if (
     // check bug via `window` and `location` global
-    typeof window !== 'undefined' &&
-    typeof location !== 'undefined' &&
+    isDefined(window) &&
+    isDefined(location) &&
     data &&
     'file' in data &&
     (!('contents' in data) || data.contents == null)
