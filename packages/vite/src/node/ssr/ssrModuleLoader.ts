@@ -12,6 +12,7 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
+import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -74,7 +75,14 @@ export async function ssrLoadModule(
     .finally(() => {
       pendingModules.delete(url)
     })
-  return modulePromise
+  return modulePromise.catch((e) => {
+    if (e?.code === ERR_CLOSED_SERVER) {
+      // these are expected errors, return empty module
+      return {}
+    }
+
+    throw e
+  })
 }
 
 async function instantiateModule(
