@@ -760,7 +760,7 @@ function prepareOutDir(
           colors.yellow(
             `\n${colors.bold(
               `(!)`,
-            )} The public directory feature is diabled. outDir ${colors.white(
+            )} The public directory feature is disabled. outDir ${colors.white(
               colors.dim(outDir),
             )} and publicDir ${colors.white(
               colors.dim(config.publicDir),
