@@ -142,7 +142,7 @@ const debounceReload = (time: number) => {
     }, time)
   }
 }
-const pageReload = debounceReload(50)
+const pageReload = debounceReload(150)
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
