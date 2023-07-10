@@ -2177,6 +2177,9 @@ async function compileLightningCSS(
             if (filePath === filename) {
               return src
             }
+            if (!filePath?.endsWith('.css') && src) {
+              return src
+            }
             return fs.readFileSync(toAbsolute(filePath), 'utf-8')
           },
           async resolve(id, from) {
