@@ -1,3 +1,11 @@
+## <small>4.4.3 (2023-07-11)</small>
+
+* fix: avoid early error when server is closed in ssr (#13787) ([89d01eb](https://github.com/vitejs/vite/commit/89d01eb)), closes [#13787](https://github.com/vitejs/vite/issues/13787)
+* fix(deps): update all non-major dependencies (#13758) ([8ead116](https://github.com/vitejs/vite/commit/8ead116)), closes [#13758](https://github.com/vitejs/vite/issues/13758)
+* fix(server): remove restart guard on restart (#13789) ([2a38ef7](https://github.com/vitejs/vite/commit/2a38ef7)), closes [#13789](https://github.com/vitejs/vite/issues/13789)
+
+
+
 ## <small>4.4.2 (2023-07-07)</small>
 
 * fix(css): use single postcss instance (#13738) ([c02fac4](https://github.com/vitejs/vite/commit/c02fac4)), closes [#13738](https://github.com/vitejs/vite/issues/13738)
