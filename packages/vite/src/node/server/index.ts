@@ -854,9 +854,7 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
-  // prevent new server `restart` function from calling
-  newServer._restartPromise = server._restartPromise
-
+  // Assign new server props to existing server instance
   Object.assign(server, newServer)
 
   const {
@@ -883,9 +881,6 @@ async function restartServer(server: ViteDevServer) {
     shortcutsOptions.print = false
     bindShortcuts(newServer, shortcutsOptions)
   }
-
-  // new server (the current server) can restart now
-  newServer._restartPromise = null
 }
 
 async function updateCjsSsrExternals(server: ViteDevServer) {
