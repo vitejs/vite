@@ -464,9 +464,11 @@ export async function _createServer(
         closeHttpServer(),
       ])
       // Await pending requests. We throw early in transformRequest
-      // and in hooks if the server is closing, so the import analysis
-      // plugin stops pre-transforming static imports and this block
-      // is resolved sooner.
+      // and in hooks if the server is closing for non-ssr requests,
+      // so the import analysis plugin stops pre-transforming static
+      // imports and this block is resolved sooner.
+      // During SSR, we let pending requests finish to avoid exposing
+      // the server closed error to the users.
       while (server._pendingRequests.size > 0) {
         await Promise.allSettled(
           [...server._pendingRequests.values()].map(
