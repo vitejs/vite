@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@babel/types": "^7.22.5",
-    "@microsoft/api-extractor": "^7.36.0",
+    "@microsoft/api-extractor": "^7.36.1",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/babel__core": "^7.20.1",
     "@types/babel__preset-env": "^7.9.2",
@@ -62,8 +62,8 @@
     "@types/sass": "~1.43.1",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.5",
-    "@typescript-eslint/eslint-plugin": "^5.61.0",
-    "@typescript-eslint/parser": "^5.61.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/release-scripts": "^1.2.0",
     "conventional-changelog-cli": "^2.2.2",
     "eslint": "^8.44.0",
@@ -89,7 +89,7 @@
     "unbuild": "^1.2.1",
     "vite": "workspace:*",
     "vitepress": "1.0.0-beta.5",
-    "vitest": "^0.32.4",
+    "vitest": "^0.33.0",
     "vue": "^3.3.4"
   },
   "simple-git-hooks": {
@@ -109,7 +109,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.6.6",
+  "packageManager": "pnpm@8.6.7",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
