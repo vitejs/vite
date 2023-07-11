@@ -109,7 +109,7 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
-export function defineConfig(config: UserConfigExport): UserConfigExport {
+export function defineConfig<T extends UserConfigExport>(config: T): T {
   return config
 }
 
