@@ -116,9 +116,45 @@ code {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.btn-close {
+  display: block;
+  position: absolute;
+  top: 10px;
+  right: 10px;  
+  width: 25px;
+  height: 25px;
+  background: var(--dim);
+  border: 2px solid var(--window-background);
+  border-radius: 50%;
+  opacity: 0.4;
+}
+ 
+.btn-close::before, .btn-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 20px;
+  background: var(--window-background);
+}
+ 
+.btn-close::before {
+  transform: translate(-50%,-50%) rotate(45deg);
+}
+ 
+.btn-close::after {
+  transform: translate(-50%,-50%) rotate(-45deg);
+}
+
+.btn-close:hover {
+  opacity: 1;
+}
 </style>
 <div class="backdrop" part="backdrop">
   <div class="window" part="window">
+    <span class="btn-close"></span>
     <pre class="message" part="message"><span class="plugin" part="plugin"></span><span class="message-body" part="message-body"></span></pre>
     <pre class="file" part="file"></pre>
     <pre class="frame" part="frame"></pre>
@@ -170,6 +206,9 @@ export class ErrorOverlay extends HTMLElement {
 
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()
+    })
+    this.root.querySelector('.btn-close')!.addEventListener('click', (e) => {
+      this.close()
     })
     this.addEventListener('click', () => {
       this.close()
