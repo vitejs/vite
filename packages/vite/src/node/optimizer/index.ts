@@ -1182,25 +1182,23 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-const lockfileFormats = [
-  { name: 'package-lock.json', checkPatches: true, manager: 'npm' },
-  { name: 'yarn.lock', checkPatches: true, manager: 'yarn' }, // Included in lockfile for v2+
-  { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
-  { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
-].sort((_, { manager }) => {
-  return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
-})
-const lockfileNames = lockfileFormats.map((l) => l.name)
+const checkPatches = {
+  'package-lock.json': true,
+  'yarn.lock': true, // Included in lockfile for v2+
+  'pnpm-lock.yaml': false, // Included in lockfile
+  'bun.lockb': true,
+}
+
+const lockfileNames = Object.keys(checkPatches)
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
   const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
-    const lockfileName = path.basename(lockfilePath)
-    const { checkPatches } = lockfileFormats.find(
-      (f) => f.name === lockfileName,
-    )!
-    if (checkPatches) {
+    const lockfileName = path.basename(
+      lockfilePath,
+    ) as keyof typeof checkPatches
+    if (checkPatches[lockfileName]) {
       // Default of https://github.com/ds300/patch-package
       const fullPath = path.join(path.dirname(lockfilePath), 'patches')
       const stat = tryStatSync(fullPath)
