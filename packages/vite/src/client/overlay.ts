@@ -174,6 +174,8 @@ export class ErrorOverlay extends HTMLElement {
     this.addEventListener('click', () => {
       this.close()
     })
+
+    document.addEventListener('keydown', this.pressEscToClose)
   }
 
   text(selector: string, text: string, linkFiles = false): void {
@@ -204,6 +206,13 @@ export class ErrorOverlay extends HTMLElement {
 
   close(): void {
     this.parentNode?.removeChild(this)
+    document.removeEventListener('keydown', this.pressEscToClose)
+  }
+
+  pressEscToClose(e: KeyboardEvent): void {
+    if (e.key === 'Escape' || e.code === 'Escape') {
+      this.close()
+    }
   }
 }
 
