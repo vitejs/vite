@@ -177,11 +177,11 @@ export class ErrorOverlay extends HTMLElement {
       this.close()
     })
 
-    this.closeOnEsc = ((e: KeyboardEvent) => {
+    this.closeOnEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
         this.close()
       }
-    }).bind(this)
+    }
 
     document.addEventListener('keydown', this.closeOnEsc)
   }
