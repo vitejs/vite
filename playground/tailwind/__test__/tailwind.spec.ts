@@ -28,7 +28,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/views/Page.vue',
       ],
-      true,
+      false,
     )
     await untilUpdated(() => el.textContent(), '|Page title updated|')
 
@@ -41,7 +41,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/components/HelloWorld.vue',
       ],
-      true,
+      false,
     )
     await untilUpdated(() => getColor(el2), 'rgb(10, 20, 30)')
   })
