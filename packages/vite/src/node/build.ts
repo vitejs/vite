@@ -1238,14 +1238,8 @@ export function toOutputFilePathWithoutRuntime(
 export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
 export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
 
-function isSameOrSubfolder(parent: string, dir: string) {
-  const relative = path.relative(parent, dir)
-  return (
-    relative === '' ||
-    (!relative.startsWith('..') && !path.isAbsolute(relative))
-  )
-}
-
 function areSeparateFolders(a: string, b: string) {
-  return !isSameOrSubfolder(a, b) && !isSameOrSubfolder(b, a)
+  const na = normalizePath(a)
+  const nb = normalizePath(b)
+  return na !== nb && !na.startsWith(nb + '/') && !nb.startsWith(na + '/')
 }
