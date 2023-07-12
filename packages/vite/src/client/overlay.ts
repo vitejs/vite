@@ -171,11 +171,23 @@ export class ErrorOverlay extends HTMLElement {
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()
     })
+
+    const close = () => {
+      this.parentNode?.removeChild(this)
+      document.removeEventListener('keydown', closeOnEsc)
+    }
+
     this.addEventListener('click', () => {
-      this.close()
+      close()
     })
 
-    document.addEventListener('keydown', this.pressEscToClose)
+    const closeOnEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        close()
+      }
+    }
+
+    document.addEventListener('keydown', closeOnEsc)
   }
 
   text(selector: string, text: string, linkFiles = false): void {
@@ -201,17 +213,6 @@ export class ErrorOverlay extends HTMLElement {
           curIndex += frag.length + file.length
         }
       }
-    }
-  }
-
-  close(): void {
-    this.parentNode?.removeChild(this)
-    document.removeEventListener('keydown', this.pressEscToClose)
-  }
-
-  pressEscToClose(e: KeyboardEvent): void {
-    if (e.key === 'Escape' || e.code === 'Escape') {
-      this.close()
     }
   }
 }
