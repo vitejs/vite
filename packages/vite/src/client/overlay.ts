@@ -140,6 +140,7 @@ const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 const { HTMLElement = class {} as typeof globalThis.HTMLElement } = globalThis
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
+  closeOnEsc: (e: KeyboardEvent) => void
 
   constructor(err: ErrorPayload['err'], links = true) {
     super()
@@ -172,22 +173,17 @@ export class ErrorOverlay extends HTMLElement {
       e.stopPropagation()
     })
 
-    const close = () => {
-      this.parentNode?.removeChild(this)
-      document.removeEventListener('keydown', closeOnEsc)
-    }
-
     this.addEventListener('click', () => {
-      close()
+      this.close()
     })
 
-    const closeOnEsc = (e: KeyboardEvent) => {
+    this.closeOnEsc = ((e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
-        close()
+        this.close()
       }
-    }
+    }).bind(this)
 
-    document.addEventListener('keydown', closeOnEsc)
+    document.addEventListener('keydown', this.closeOnEsc)
   }
 
   text(selector: string, text: string, linkFiles = false): void {
@@ -214,6 +210,10 @@ export class ErrorOverlay extends HTMLElement {
         }
       }
     }
+  }
+  close(): void {
+    this.parentNode?.removeChild(this)
+    document.removeEventListener('keydown', this.closeOnEsc)
   }
 }
 
