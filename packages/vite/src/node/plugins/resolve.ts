@@ -114,7 +114,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
-  shouldExternalize?: (id: string) => boolean | undefined
+  shouldExternalize?: (id: string, importer?: string) => boolean | undefined
 
   /**
    * Set by createResolver, we only care about the resolved id. moduleSideEffects
@@ -185,6 +185,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       )
       if (resolvedImports) {
         id = resolvedImports
+
+        if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
+          return id
+        }
       }
 
       if (importer) {
@@ -325,7 +329,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        const external = options.shouldExternalize?.(id)
+        const external = options.shouldExternalize?.(id, importer)
         if (
           !external &&
           asSrc &&
@@ -498,7 +502,7 @@ function splitFileAndPostfix(path: string) {
   return { file, postfix: path.slice(file.length) }
 }
 
-function tryFsResolve(
+export function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
@@ -670,7 +674,6 @@ function tryResolveRealFileWithExtensions(
 export type InternalResolveOptionsWithOverrideConditions =
   InternalResolveOptions & {
     /**
-     * @deprecated In future, `conditions` will work like this.
      * @internal
      */
     overrideConditions?: string[]
@@ -695,11 +698,13 @@ export function tryNodeResolve(
   let basedir: string
   if (dedupe?.includes(pkgId)) {
     basedir = root
-  } else if (importer && path.isAbsolute(importer)) {
+  } else if (
+    importer &&
+    path.isAbsolute(importer) &&
+    // css processing appends `*` for importer
+    (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
+  ) {
     basedir = path.dirname(importer)
-    if (!fs.existsSync(basedir)) {
-      basedir = root
-    }
   } else {
     basedir = root
   }
@@ -772,8 +777,15 @@ export function tryNodeResolve(
     }
     let resolvedId = id
     if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
-      resolvedId = resolved.id.slice(resolved.id.indexOf(id))
-      debug?.(`[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`)
+      // id date-fns/locale
+      // resolve.id ...date-fns/esm/locale/index.js
+      const index = resolved.id.indexOf(id)
+      if (index > -1) {
+        resolvedId = resolved.id.slice(index)
+        debug?.(
+          `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`,
+        )
+      }
     }
     return { ...resolved, id: resolvedId, external: true }
   }
@@ -815,6 +827,7 @@ export function tryNodeResolve(
   }
 
   const skipOptimization =
+    depsOptimizer?.options.noDiscovery ||
     !isJsType ||
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
@@ -1070,8 +1083,6 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
-const conditionalConditions = new Set(['production', 'development', 'module'])
-
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
@@ -1079,43 +1090,29 @@ function resolveExportsOrImports(
   targetWeb: boolean,
   type: 'imports' | 'exports',
 ) {
-  const overrideConditions = options.overrideConditions
-    ? new Set(options.overrideConditions)
-    : undefined
+  const additionalConditions = new Set(
+    options.overrideConditions || [
+      'production',
+      'development',
+      'module',
+      ...options.conditions,
+    ],
+  )
 
-  const conditions = []
-  if (
-    (!overrideConditions || overrideConditions.has('production')) &&
-    options.isProduction
-  ) {
-    conditions.push('production')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('development')) &&
-    !options.isProduction
-  ) {
-    conditions.push('development')
-  }
-  if (
-    (!overrideConditions || overrideConditions.has('module')) &&
-    !options.isRequire
-  ) {
-    conditions.push('module')
-  }
-  if (options.overrideConditions) {
-    conditions.push(
-      ...options.overrideConditions.filter((condition) =>
-        conditionalConditions.has(condition),
-      ),
-    )
-  } else if (options.conditions.length > 0) {
-    conditions.push(...options.conditions)
-  }
+  const conditions = [...additionalConditions].filter((condition) => {
+    switch (condition) {
+      case 'production':
+        return options.isProduction
+      case 'development':
+        return !options.isProduction
+    }
+    return true
+  })
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, {
-    browser: targetWeb && !conditions.includes('node'),
-    require: options.isRequire && !conditions.includes('import'),
+    browser: targetWeb && !additionalConditions.has('node'),
+    require: options.isRequire && !additionalConditions.has('import'),
     conditions,
   })
 

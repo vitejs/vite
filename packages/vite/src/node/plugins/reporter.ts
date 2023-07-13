@@ -98,8 +98,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
-          process.stdout.clearLine(0)
-          process.stdout.cursorTo(0)
+          clearLine()
         }
         config.logger.info(
           `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
@@ -112,7 +111,35 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       compressedCount = 0
     },
 
-    renderChunk() {
+    renderChunk(code, chunk) {
+      for (const id of chunk.moduleIds) {
+        const module = this.getModuleInfo(id)
+        if (!module) continue
+        // When a dynamic importer shares a chunk with the imported module,
+        // warn that the dynamic imported module will not be moved to another chunk (#12850).
+        if (module.importers.length && module.dynamicImporters.length) {
+          // Filter out the intersection of dynamic importers and sibling modules in
+          // the same chunk. The intersecting dynamic importers' dynamic import is not
+          // expected to work. Note we're only detecting the direct ineffective
+          // dynamic import here.
+          if (
+            module.dynamicImporters.some((m) => chunk.moduleIds.includes(m))
+          ) {
+            this.warn(
+              `\n(!) ${
+                module.id
+              } is dynamically imported by ${module.dynamicImporters
+                .map((m) => m)
+                .join(', ')} but also statically imported by ${module.importers
+                .map((m) => m)
+                .join(
+                  ', ',
+                )}, dynamic import will not move module into another chunk.\n`,
+            )
+          }
+        }
+      }
+
       chunkCount++
       if (shouldLogInfo) {
         if (!tty) {
@@ -260,8 +287,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     closeBundle() {
       if (shouldLogInfo && !config.build.watch) {
         config.logger.info(
-          `${colors.green(`✓`)} built in ${displayTime(
-            Date.now() - startTime,
+          `${colors.green(
+            `✓ built in ${displayTime(Date.now() - startTime)}`,
           )}`,
         )
       }

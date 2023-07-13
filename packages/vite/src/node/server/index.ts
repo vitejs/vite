@@ -80,8 +80,6 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 
-export { searchForWorkspaceRoot } from './searchRoot'
-
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
@@ -97,11 +95,6 @@ export interface ServerOptions extends CommonServerOptions {
    * @default false
    */
   middlewareMode?: boolean | 'html' | 'ssr'
-  /**
-   * Prepend this folder to http requests, for use when proxying vite as a subfolder
-   * Should start and end with the `/` character
-   */
-  base?: string
   /**
    * Options for files served via '/\@fs/'.
    */
@@ -336,7 +329,7 @@ export interface ResolvedServerUrls {
   network: string[]
 }
 
-export async function createServer(
+export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { ws: true })
@@ -347,11 +340,6 @@ export async function _createServer(
   options: { ws: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
-
-  if (isDepsOptimizerEnabled(config, false)) {
-    // start optimizer in the background, we still need to await the setup
-    await initDepsOptimizer(config)
-  }
 
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
@@ -374,7 +362,7 @@ export async function _createServer(
 
   const watcher = chokidar.watch(
     // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, path.join(config.envDir, '.env*')],
+    [root, ...config.configFileDependencies, config.envDir],
     resolvedWatchOptions,
   ) as FSWatcher
 
@@ -412,7 +400,9 @@ export async function _createServer(
       if (isDepsOptimizerEnabled(config, true)) {
         await initDevSsrDepsOptimizer(config, server)
       }
-      await updateCjsSsrExternals(server)
+      if (config.legacy?.buildSsrCjsExternalHeuristics) {
+        await updateCjsSsrExternals(server)
+      }
       return ssrLoadModule(
         url,
         server,
@@ -446,7 +436,8 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const url = server.resolvedUrls?.local[0]
+      const url =
+        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
       if (url) {
         const path =
           typeof options.open === 'string'
@@ -498,6 +489,19 @@ export async function _createServer(
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
       ])
+      // Await pending requests. We throw early in transformRequest
+      // and in hooks if the server is closing for non-ssr requests,
+      // so the import analysis plugin stops pre-transforming static
+      // imports and this block is resolved sooner.
+      // During SSR, we let pending requests finish to avoid exposing
+      // the server closed error to the users.
+      while (server._pendingRequests.size > 0) {
+        await Promise.allSettled(
+          [...server._pendingRequests.values()].map(
+            (pending) => pending.request,
+          ),
+        )
+      }
       server.resolvedUrls = null
     },
     printUrls() {
@@ -641,6 +645,16 @@ export async function _createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
+  // ping request handler
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  middlewares.use(function viteHMRPingMiddleware(req, res, next) {
+    if (req.headers['accept'] === 'text/x-vite-ping') {
+      res.writeHead(204).end()
+    } else {
+      next()
+    }
+  })
+
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
@@ -682,13 +696,6 @@ export async function _createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
-  // when the optimizer is ready, hook server so that it can reload the page
-  // or invalidate the module graph when needed
-  const depsOptimizer = getDepsOptimizer(config)
-  if (depsOptimizer) {
-    depsOptimizer.server = server
-  }
-
   // httpServer.listen can be called multiple times
   // when port when using next port number
   // this code is to avoid calling buildStart multiple times
@@ -700,6 +707,10 @@ export async function _createServer(
 
     initingServer = (async function () {
       await container.buildStart({})
+      // start deps optimizer after all container plugins are ready
+      if (isDepsOptimizerEnabled(config, false)) {
+        await initDepsOptimizer(config, server)
+      }
       initingServer = undefined
       serverInited = true
     })()
@@ -711,6 +722,8 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
+        // ensure ws server started
+        ws.listen()
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
@@ -867,9 +880,7 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
-  // prevent new server `restart` function from calling
-  newServer._restartPromise = server._restartPromise
-
+  // Assign new server props to existing server instance
   Object.assign(server, newServer)
 
   const {
@@ -896,9 +907,6 @@ async function restartServer(server: ViteDevServer) {
     shortcutsOptions.print = false
     bindShortcuts(newServer, shortcutsOptions)
   }
-
-  // new server (the current server) can restart now
-  newServer._restartPromise = null
 }
 
 async function updateCjsSsrExternals(server: ViteDevServer) {

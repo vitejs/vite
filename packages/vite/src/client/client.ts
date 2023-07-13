@@ -2,7 +2,6 @@ import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-// eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -82,6 +81,7 @@ function setupWebSocket(
     'open',
     () => {
       isOpened = true
+      notifyListeners('vite:ws:connect', { webSocket: socket })
     },
     { once: true },
   )
@@ -99,6 +99,8 @@ function setupWebSocket(
       onCloseWithoutOpen()
       return
     }
+
+    notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     console.log(`[vite] server connection lost. polling for restart...`)
     await waitForSuccessfulPing(protocol, hostAndPath)
@@ -127,6 +129,20 @@ function cleanUrl(pathname: string): string {
 
 let isFirstUpdate = true
 const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
+
+const debounceReload = (time: number) => {
+  let timer: ReturnType<typeof setTimeout> | null
+  return () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    timer = setTimeout(() => {
+      location.reload()
+    }, time)
+  }
+}
+const pageReload = debounceReload(50)
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -220,11 +236,11 @@ async function handleMessage(payload: HMRPayload) {
           payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
-          location.reload()
+          pageReload()
         }
         return
       } else {
-        location.reload()
+        pageReload()
       }
       break
     case 'prune':
@@ -322,6 +338,11 @@ async function waitForSuccessfulPing(
     try {
       await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
+        headers: {
+          // Custom headers won't be included in a request with no-cors so (ab)use one of the
+          // safelisted headers to identify the ping request
+          Accept: 'text/x-vite-ping',
+        },
       })
       return true
     } catch {}
@@ -366,9 +387,11 @@ const sheetsMap = new Map<string, HTMLStyleElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
-document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
-  sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
-})
+if ('document' in globalThis) {
+  document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
+    sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
+  })
+}
 
 // all css imports should be inserted at the same position
 // because after build it will be a single css file

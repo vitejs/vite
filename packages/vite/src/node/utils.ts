@@ -137,7 +137,7 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^[\w@](?!.*:\/\/)/
+export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
@@ -169,7 +169,7 @@ export function createDebugger(
 
   if (enabled) {
     return (...args: [string, ...any[]]) => {
-      if (!filter || args.some((a) => a?.includes(filter))) {
+      if (!filter || args.some((a) => a?.includes?.(filter))) {
         log(...args)
       }
     }
@@ -237,6 +237,22 @@ export function isParentDirectory(dir: string, file: string): boolean {
   return (
     file.startsWith(dir) ||
     (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+  )
+}
+
+/**
+ * Check if 2 file name are identical
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param file1 - normalized absolute path
+ * @param file2 - normalized absolute path
+ * @returns true if both files url are identical
+ */
+export function isSameFileUri(file1: string, file2: string): boolean {
+  return (
+    file1 === file2 ||
+    (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
   )
 }
 
@@ -574,7 +590,7 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+) +(\w:) +([^ ]+)\s/
+const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
 let firstSafeRealPathSyncRun = false
 
 function windowsSafeRealPathSync(path: string): string {
@@ -586,6 +602,13 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
+  // Skip if using Node <16.18 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
+  const nodeVersion = process.versions.node.split('.').map(Number)
+  if (nodeVersion[0] < 16 || (nodeVersion[0] === 16 && nodeVersion[1] < 18)) {
+    safeRealpathSync = fs.realpathSync
+    return
+  }
+
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
@@ -725,7 +748,6 @@ const nullSourceMap: RawSourceMap = {
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
-  excludeContent = true,
 ): RawSourceMap {
   if (
     sourcemapList.length === 0 ||
@@ -755,19 +777,15 @@ export function combineSourcemaps(
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, excludeContent)
+    map = remapping(sourcemapList, () => null)
   } else {
-    map = remapping(
-      sourcemapList[0],
-      function loader(sourcefile) {
-        if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
-          return sourcemapList[mapIndex++]
-        } else {
-          return null
-        }
-      },
-      excludeContent,
-    )
+    map = remapping(sourcemapList[0], function loader(sourcefile) {
+      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
+      }
+    })
   }
   if (!map.file) {
     delete map.file
@@ -874,13 +892,18 @@ export async function resolveServerUrls(
   const base =
     config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
-  if (hostname.host && loopbackHosts.has(hostname.host)) {
+  if (hostname.host !== undefined && !wildcardHosts.has(hostname.host)) {
     let hostnameName = hostname.name
     // ipv6 host
     if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
-    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+    const address = `${protocol}://${hostnameName}:${port}${base}`
+    if (loopbackHosts.has(hostname.host)) {
+      local.push(address)
+    } else {
+      network.push(address)
+    }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
@@ -1030,11 +1053,18 @@ function mergeConfigRecursively(
   return merged
 }
 
-export function mergeConfig(
-  defaults: Record<string, any>,
-  overrides: Record<string, any>,
+export function mergeConfig<
+  D extends Record<string, any>,
+  O extends Record<string, any>,
+>(
+  defaults: D extends Function ? never : D,
+  overrides: O extends Function ? never : O,
   isRoot = true,
 ): Record<string, any> {
+  if (typeof defaults === 'function' || typeof overrides === 'function') {
+    throw new Error(`Cannot merge config in form of callback`)
+  }
+
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
@@ -1201,6 +1231,16 @@ export function evalValue<T = any>(rawValue: string): T {
     return (\n${rawValue}\n)
   `)
   return fn()
+}
+
+export function getNpmPackageName(importPath: string): string | null {
+  const parts = importPath.split('/')
+  if (parts[0][0] === '@') {
+    if (!parts[1]) return null
+    return `${parts[0]}/${parts[1]}`
+  } else {
+    return parts[0]
+  }
 }
 
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g

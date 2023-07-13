@@ -3,6 +3,7 @@ import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
+import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -13,6 +14,7 @@ import {
   isImportRequest,
   isInternalRequest,
   isParentDirectory,
+  isSameFileUri,
   isWindows,
   removeLeadingSlash,
   shouldServeFile,
@@ -99,8 +101,8 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = new URL(req.url!, 'http://example.com')
-    const pathname = decodeURIComponent(url.pathname)
+    const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
+    const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -134,7 +136,7 @@ export function serveStaticMiddleware(
     }
 
     if (redirectedPathname) {
-      url.pathname = encodeURIComponent(redirectedPathname)
+      url.pathname = encodeURI(redirectedPathname)
       req.url = url.href.slice(url.origin.length)
     }
 
@@ -152,13 +154,13 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!, 'http://example.com')
+    const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.pathname.startsWith(FS_PREFIX)) {
-      const pathname = decodeURIComponent(url.pathname)
+      const pathname = decodeURI(url.pathname)
       // restrict files outside of `fs.allow`
       if (
         !ensureServingAccess(
@@ -174,7 +176,7 @@ export function serveRawFsMiddleware(
       let newPathname = pathname.slice(FS_PREFIX.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
 
-      url.pathname = encodeURIComponent(newPathname)
+      url.pathname = encodeURI(newPathname)
       req.url = url.href.slice(url.origin.length)
       serveFromRoot(req, res, next)
     } else {
@@ -183,6 +185,9 @@ export function serveRawFsMiddleware(
   }
 }
 
+/**
+ * Check if the url is allowed to be served, via the `server.fs` config.
+ */
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
@@ -195,7 +200,11 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
+  if (
+    server.config.server.fs.allow.some(
+      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
+    )
+  )
     return true
 
   return false
@@ -236,7 +245,7 @@ function renderRestrictedErrorHTML(msg: string): string {
   return html`
     <body>
       <h1>403 Restricted</h1>
-      <p>${msg.replace(/\n/g, '<br/>')}</p>
+      <p>${escapeHtml(msg).replace(/\n/g, '<br/>')}</p>
       <style>
         body {
           padding: 1em 2em;

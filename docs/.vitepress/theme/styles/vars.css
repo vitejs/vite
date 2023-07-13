@@ -114,3 +114,7 @@
 .dark .vp-doc .custom-block a {
   transition: color 0.25s;
 }
+
+.vp-sponsor.aside .vp-sponsor-grid.mini .vp-sponsor-grid-image {
+  max-width: 124px;
+}

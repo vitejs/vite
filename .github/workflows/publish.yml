@@ -12,6 +12,9 @@ jobs:
     # prevents this action from running on forks
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     environment: Release
     steps:
       - name: Checkout

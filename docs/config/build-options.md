@@ -98,7 +98,7 @@ If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets
 - **Type:** `boolean`
 - **Default:** `true`
 
-Enable/disable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
+Enable/disable CSS code splitting. When enabled, CSS imported in async JS chunks will be preserved as chunks and fetched together when the chunk is fetched.
 
 If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
@@ -119,10 +119,10 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 
 ## build.cssMinify
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'esbuild' | 'lightningcss'`
 - **Default:** the same as [`build.minify`](#build-minify)
 
-This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` to minify CSS.
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` by default to minify CSS. Set the option to `'lightningcss'` to use [Lightning CSS](https://lightningcss.dev/minification.html) instead. If selected, it can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss).
 
 ## build.sourcemap
 
