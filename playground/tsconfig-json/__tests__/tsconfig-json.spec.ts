@@ -67,4 +67,16 @@ describe('transformWithEsbuild', () => {
       'import { MainTypeOnlyClass } from "./not-used-type";',
     )
   })
+
+  test('experimentalDecorators', async () => {
+    const main = path.resolve(__dirname, '../src/decorator.ts')
+    const mainContent = fs.readFileSync(main, 'utf-8')
+    // Should not error when transpiling decorators
+    // TODO: In Vite 5, this should require setting `tsconfigRaw.experimentalDecorators`
+    // or via the closest `tsconfig.json`
+    const result = await transformWithEsbuild(mainContent, main, {
+      target: 'es2020',
+    })
+    expect(result.code).toContain('__decorateClass')
+  })
 })
