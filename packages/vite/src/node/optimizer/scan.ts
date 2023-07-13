@@ -207,6 +207,7 @@ async function prepareEsbuildScanner(
 
   const {
     plugins = [],
+    tsconfig,
     tsconfigRaw,
     ...esbuildOptions
   } = config.optimizeDeps?.esbuildOptions ?? {}
@@ -222,8 +223,9 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    tsconfig,
     tsconfigRaw:
-      typeof tsconfigRaw === 'string'
+      tsconfig || typeof tsconfigRaw === 'string'
         ? tsconfigRaw
         : {
             ...tsconfigRaw,
