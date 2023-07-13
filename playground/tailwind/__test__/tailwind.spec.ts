@@ -59,7 +59,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/App.vue',
       ],
-      true,
+      false,
     )
     await untilUpdated(() => getColor(el), 'rgb(11, 22, 33)')
   })
@@ -77,6 +77,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js',
       ],
+      false,
     )
     await untilUpdated(() => getBgColor(el), 'rgb(220, 38, 38)')
   })
