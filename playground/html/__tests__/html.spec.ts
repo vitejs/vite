@@ -245,6 +245,26 @@ describe.runIf(isServe)('invalid', () => {
     expect(message).toMatch(/^Unable to parse HTML/)
   })
 
+  test('should close overlay when clicked away', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
+
+    await page.click('html')
+    const isVisbleOverlay = await errorOverlay.isVisible()
+    expect(isVisbleOverlay).toBeFalsy()
+  })
+
+  test('should close overlay when escape key is pressed', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
+
+    await page.keyboard.press('Escape')
+    const isVisbleOverlay = await errorOverlay.isVisible()
+    expect(isVisbleOverlay).toBeFalsy()
+  })
+
   test('should reload when fixed', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
