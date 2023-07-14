@@ -111,7 +111,8 @@
   "packageManager": "pnpm@8.6.7",
   "pnpm": {
     "overrides": {
-      "vite": "workspace:*"
+      "vite": "workspace:*",
+      "is-core-module": "npm:is-builtin-module@^3.2.1"
     },
     "packageExtensions": {
       "postcss-load-config": {
