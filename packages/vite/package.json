@@ -52,9 +52,9 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "rimraf dist && pnpm run build-bundle -w",
-    "build": "rimraf dist && run-s build-bundle build-types",
+    "build": "rimraf dist && pnpm build-bundle && pnpm build-types",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-types": "run-s build-types-temp build-types-pre-patch build-types-roll build-types-post-patch build-types-check",
+    "build-types": "pnpm run --sequential \"/^build-types-.*/\"",
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "build-types-pre-patch": "tsx scripts/prePatchTypes.ts",
     "build-types-roll": "tsx scripts/api-extractor.ts run && rimraf temp",
