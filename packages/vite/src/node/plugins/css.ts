@@ -682,10 +682,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `var ${style} = document.createElement('style');` +
             `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
+          let injectionPoint
           const wrapIdx = code.indexOf('System.register')
-          const executeFnStart =
-            wrapIdx >= 0 ? code.indexOf('execute:', wrapIdx) : 0
-          const injectionPoint = code.indexOf('{', executeFnStart) + 1
+          if (wrapIdx >= 0) {
+            const executeFnStart = code.indexOf('execute:', wrapIdx)
+            injectionPoint = code.indexOf('{', executeFnStart) + 1
+          } else {
+            const insertMark = "'use strict';"
+            injectionPoint = code.indexOf(insertMark) + insertMark.length
+          }
           const s = new MagicString(code)
           s.appendRight(injectionPoint, injectCode)
           if (config.build.sourcemap) {
