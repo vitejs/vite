@@ -268,7 +268,7 @@ If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To 
 
 To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).
 
-By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#css-minify).
+By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
 
 ::: tip NOTE
 [CSS Pre-processors](#css-pre-processors) aren't supported when using Lightning CSS.
