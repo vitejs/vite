@@ -68,7 +68,7 @@
     "conventional-changelog-cli": "^2.2.2",
     "eslint": "^8.44.0",
     "eslint-define-config": "^1.21.0",
-    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-import": "npm:eslint-plugin-i@2.27.5-4",
     "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-regexp": "^1.15.0",
     "execa": "^7.1.1",
