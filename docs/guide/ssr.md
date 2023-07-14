@@ -270,3 +270,7 @@ Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
 ## SSR Format
 
 By default, Vite generates the SSR bundle in ESM. There is experimental support for configuring `ssr.format`, but it isn't recommended. Future efforts around SSR development will be based on ESM, and CommonJS remains available for backward compatibility. If using ESM for SSR isn't possible in your project, you can set `legacy.buildSsrCjsExternalHeuristics: true` to generate a CJS bundle using the same [externalization heuristics of Vite v2](https://v2.vitejs.dev/guide/ssr.html#ssr-externals).
+
+:::warning Warning
+Experimental `legacy.buildSsrCjsExternalHeuristics` and `ssr.format: 'cjs'` are going to be removed in Vite 5. Find more information and give feedback [in this discussion](https://github.com/vitejs/vite/discussions/13816).
+:::
