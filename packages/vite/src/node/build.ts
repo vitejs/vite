@@ -151,7 +151,7 @@ export interface BuildOptions {
    * Options for terser
    * https://terser.org/docs/api-reference#minify-options
    */
-  terserOptions?: Terser.MinifyOptions
+  terserOptions?: Terser.MinifyOptions & { maxWorkers?: number }
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/configuration-options/

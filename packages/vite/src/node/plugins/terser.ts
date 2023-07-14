@@ -35,7 +35,9 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
         const terser = require(terserPath)
         return terser.minify(code, options) as Terser.MinifyOutput
-      },
+      },{
+        max: config?.build?.terserOptions?.maxWorkers
+      }
     )
 
   let worker: ReturnType<typeof makeWorker>
