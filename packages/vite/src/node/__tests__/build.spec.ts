@@ -598,7 +598,7 @@ describe('onRollupLog', () => {
     vi.restoreAllMocks()
   })
 
-  test('Rollou logs of info should be handled vite', async () => {
+  test('Rollup logs of info should be handled by vite', async () => {
     const logger = createLogger()
     const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
 
@@ -611,7 +611,7 @@ describe('onRollupLog', () => {
     )
   })
 
-  test('Rollou logs of warn should be handled vite', async () => {
+  test('Rollup logs of warn should be handled by vite', async () => {
     const logger = createLogger()
     const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     vi.spyOn(logger, 'info').mockImplementation(() => {})
@@ -625,7 +625,7 @@ describe('onRollupLog', () => {
     )
   })
 
-  test('Rollou logs of debug should be handled vite', async () => {
+  test('Rollup logs of debug should be handled by vite', async () => {
     const logger = createLogger()
     const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
 
