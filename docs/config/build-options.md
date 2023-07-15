@@ -198,11 +198,11 @@ npm add -D terser
 
 ## build.terserOptions
 
-- **Type:** `TerserOptions` & `maxWorkers`
+- **Type:** `TerserOptions` & `maxWorkers?: number`
 
 Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
 
-In addition to the terser options, it is also possible to provide the `maxWorkers` option.
+In addition to the terser options, it is also possible to provide the `terserOptions.maxWorkers` option.
 
 - **Type:** `number`
 - **Default:** `undefined`
