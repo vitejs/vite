@@ -151,8 +151,11 @@ export interface BuildOptions {
   /**
    * Options for terser
    * https://terser.org/docs/api-reference#minify-options
+   *
+   * In addition to the terser options, it is also possible to provide the `maxWorkers` option
+   * Max amount of workers to spawn. Defaults to the number of CPUs minus 1.
    */
-  terserOptions?: Terser.MinifyOptions
+  terserOptions?: Terser.MinifyOptions & { maxWorkers?: number }
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/configuration-options/
