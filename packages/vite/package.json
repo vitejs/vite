@@ -1,6 +1,6 @@
 {
-  "name": "vite",
-  "version": "4.4.4",
+  "name": "sang-react-vite",
+  "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
