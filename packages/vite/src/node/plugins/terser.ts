@@ -36,6 +36,9 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         const terser = require(terserPath)
         return terser.minify(code, options) as Terser.MinifyOutput
       },
+      {
+        max: config?.build?.terserOptions?.workers,
+      }
     )
 
   let worker: ReturnType<typeof makeWorker>
