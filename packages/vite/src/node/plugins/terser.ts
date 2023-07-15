@@ -24,6 +24,7 @@ const loadTerserPath = (root: string) => {
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
+  const { maxWorkers, ...terserOptions } = config.build.terserOptions
   const makeWorker = () =>
     new Worker(
       async (
@@ -37,7 +38,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         return terser.minify(code, options) as Terser.MinifyOutput
       },
       {
-        max: config.build.terserOptions?.maxWorkers,
+        max: maxWorkers,
       },
     )
 
@@ -70,7 +71,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       const terserPath = loadTerserPath(config.root)
       const res = await worker.run(terserPath, code, {
         safari10: true,
-        ...config.build.terserOptions,
+        ...terserOptions,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
         toplevel: outputOptions.format === 'cjs',
