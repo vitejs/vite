@@ -207,7 +207,7 @@ In addition to the terser options, it is also possible to provide the `terserOpt
 - **Type:** `number`
 - **Default:** `undefined`
 
-Amount of workers to spawn. Defaults to the number of CPUs minus 1.
+Max amount of workers to spawn. Defaults to the number of CPUs minus 1.
 
 ## build.write
 
