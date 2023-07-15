@@ -24,8 +24,7 @@ export class ModuleNode {
   info?: ModuleInfo
   meta?: Record<string, any>
   importers = new Set<ModuleNode>()
-  clientImportedModules = new Set<ModuleNode>()
-  ssrImportedModules = new Set<ModuleNode>()
+  importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
@@ -46,14 +45,6 @@ export class ModuleNode {
     if (setIsSelfAccepting) {
       this.isSelfAccepting = false
     }
-  }
-
-  get importedModules(): Set<ModuleNode> {
-    const importedModules = new Set(this.clientImportedModules)
-    for (const module of this.ssrImportedModules) {
-      importedModules.add(module)
-    }
-    return importedModules
   }
 }
 
@@ -130,7 +121,6 @@ export class ModuleGraph {
     seen: Set<ModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
-    hmrBoundaries: ModuleNode[] = [],
   ): void {
     if (seen.has(mod)) {
       return
@@ -149,11 +139,6 @@ export class ModuleGraph {
     mod.ssrTransformResult = null
     mod.ssrModule = null
     mod.ssrError = null
-
-    // Fix #3033
-    if (hmrBoundaries.includes(mod)) {
-      return
-    }
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
         this.invalidateModule(importer, seen, timestamp, isHmr)
@@ -184,7 +169,7 @@ export class ModuleGraph {
     ssr?: boolean,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
-    const prevImports = ssr ? mod.ssrImportedModules : mod.clientImportedModules
+    const prevImports = mod.importedModules
     let noLongerImported: Set<ModuleNode> | undefined
 
     let resolvePromises = []
@@ -210,19 +195,11 @@ export class ModuleGraph {
       await Promise.all(resolvePromises)
     }
 
-    const nextImports = new Set(resolveResults)
-    if (ssr) {
-      mod.ssrImportedModules = nextImports
-    } else {
-      mod.clientImportedModules = nextImports
-    }
+    const nextImports = (mod.importedModules = new Set(resolveResults))
 
     // remove the importer from deps that were imported but no longer are.
     prevImports.forEach((dep) => {
-      if (
-        !mod.clientImportedModules.has(dep) &&
-        !mod.ssrImportedModules.has(dep)
-      ) {
+      if (!nextImports.has(dep)) {
         dep.importers.delete(mod)
         if (!dep.importers.size) {
           // dependency no longer imported

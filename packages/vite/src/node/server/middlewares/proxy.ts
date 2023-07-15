@@ -4,6 +4,7 @@ import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
+import { HMR_HEADER } from '../ws'
 import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
@@ -91,17 +92,6 @@ export function proxyMiddleware(
       })
     })
 
-    // https://github.com/http-party/node-http-proxy/issues/1520#issue-877626125
-    // https://github.com/chimurai/http-proxy-middleware/blob/cd58f962aec22c925b7df5140502978da8f87d5f/src/plugins/default/debug-proxy-errors-plugin.ts#L25-L37
-    proxy.on('proxyRes', (proxyRes, req, res) => {
-      res.on('close', () => {
-        if (!res.writableEnded) {
-          debug?.('destroying proxyRes in proxyRes close event')
-          proxyRes.destroy()
-        }
-      })
-    })
-
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
   })
@@ -113,9 +103,10 @@ export function proxyMiddleware(
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
-            opts.ws ||
-            opts.target?.toString().startsWith('ws:') ||
-            opts.target?.toString().startsWith('wss:')
+            (opts.ws ||
+              opts.target?.toString().startsWith('ws:') ||
+              opts.target?.toString().startsWith('wss:')) &&
+            req.headers['sec-websocket-protocol'] !== HMR_HEADER
           ) {
             if (opts.rewrite) {
               req.url = opts.rewrite(url)

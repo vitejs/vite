@@ -41,7 +41,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     if (isBuild) {
       const match = key.match(metaEnvRe)
       if (match) {
-        userDefineEnv[match[1]] = `__vite__define__${key}__define__vite__`
+        userDefineEnv[match[1]] = `__vite__define__${userDefine[key]}`
       }
     }
   }
@@ -62,8 +62,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         SSR: '__vite__ssr__',
         ...userDefineEnv,
       }).replace(
-        /"__vite__define__(.+?)__define__vite__"/g,
-        (_, key) => userDefine[key],
+        /"__vite__define__(.+?)"([,}])/g,
+        (_, val, suffix) => `${val.replace(/(^\\")|(\\"$)/g, '"')}${suffix}`,
       ),
     })
   }

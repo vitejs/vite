@@ -160,7 +160,6 @@ function createNodeConfig(isProduction: boolean) {
     },
     external: [
       'fsevents',
-      'lightningcss',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],

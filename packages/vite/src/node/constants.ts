@@ -96,7 +96,6 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 //   looked up by mrmime.
 export const KNOWN_ASSET_TYPES = [
   // images
-  'apng',
   'png',
   'jpe?g',
   'jfif',

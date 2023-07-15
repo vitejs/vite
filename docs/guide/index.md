@@ -12,9 +12,7 @@ Vite (French word for "quick", pronounced `/vit/`<button style="border:none;padd
 
 - A build command that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
 
-Vite is opinionated and comes with sensible defaults out of the box. Read about what's possible in the [Features Guide](./features). Support for frameworks or integration with other tools is possible through [Plugins](./using-plugins). The [Config Section](../config/) explains how to adapt Vite to your project if needed.
-
-Vite is also highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
+Vite is opinionated and comes with sensible defaults out of the box, but is also highly extensible via its [Plugin API](./api-plugin) and [JavaScript API](./api-javascript) with full typing support.
 
 You can learn more about the rationale behind the project in the [Why Vite](./why) section.
 
@@ -36,8 +34,6 @@ The supported template presets are:
 |  [preact](https://vite.new/preact)  |  [preact-ts](https://vite.new/preact-ts)  |
 |     [lit](https://vite.new/lit)     |     [lit-ts](https://vite.new/lit-ts)     |
 |  [svelte](https://vite.new/svelte)  |  [svelte-ts](https://vite.new/svelte-ts)  |
-|   [solid](https://vite.new/solid)   |   [solid-ts](https://vite.new/solid-ts)   |
-|    [qwik](https://vite.new/qwik)    |    [qwik-ts](https://vite.new/qwik-ts)    |
 
 ## Scaffolding Your First Vite Project
 
@@ -81,7 +77,7 @@ yarn create vite my-vue-app --template vue
 pnpm create vite my-vue-app --template vue
 ```
 
-See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
+See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`.
 
 ## Community Templates
 
@@ -114,7 +110,6 @@ Vite also supports [multi-page apps](./build#multi-page-app) with multiple `.htm
 #### Specifying Alternative Root
 
 Running `vite` starts the dev server using the current working directory as root. You can specify an alternative root with `vite serve some/sub/dir`.
-Note that Vite will also resolve [its config file (i.e. `vite.config.js`)](/config/#configuring-vite) inside the project root, so you'll need to move it if the root is changed.
 
 ## Command Line Interface
 

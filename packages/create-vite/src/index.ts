@@ -8,7 +8,6 @@ import {
   blue,
   cyan,
   green,
-  lightBlue,
   lightGreen,
   lightRed,
   magenta,
@@ -171,46 +170,6 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
-    name: 'solid',
-    display: 'Solid',
-    color: blue,
-    variants: [
-      {
-        name: 'solid-ts',
-        display: 'TypeScript',
-        color: blue,
-      },
-      {
-        name: 'solid',
-        display: 'JavaScript',
-        color: yellow,
-      },
-    ],
-  },
-  {
-    name: 'qwik',
-    display: 'Qwik',
-    color: lightBlue,
-    variants: [
-      {
-        name: 'qwik-ts',
-        display: 'TypeScript',
-        color: lightBlue,
-      },
-      {
-        name: 'qwik',
-        display: 'JavaScript',
-        color: yellow,
-      },
-      {
-        name: 'custom-qwik-city',
-        display: 'QwikCity ↗',
-        color: lightBlue,
-        customCommand: 'npm create qwik@latest basic TARGET_DIR',
-      },
-    ],
-  },
-  {
     name: 'others',
     display: 'Others',
     color: reset,
@@ -365,26 +324,16 @@ async function init() {
 
   if (customCommand) {
     const fullCustomCommand = customCommand
-      .replace(/^npm create /, () => {
-        // `bun create` uses it's own set of templates,
-        // the closest alternative is using `bun x` directly on the package
-        if (pkgManager === 'bun') {
-          return 'bun x create-'
-        }
-        return `${pkgManager} create `
-      })
+      .replace(/^npm create/, `${pkgManager} create`)
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
       .replace(/^npm exec/, () => {
-        // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
+        // Prefer `pnpm dlx` or `yarn dlx`
         if (pkgManager === 'pnpm') {
           return 'pnpm dlx'
         }
         if (pkgManager === 'yarn' && !isYarn1) {
           return 'yarn dlx'
-        }
-        if (pkgManager === 'bun') {
-          return 'bun x'
         }
         // Use `npm exec` in all other cases,
         // including Yarn 1.x and other custom npm clients.
@@ -524,7 +473,7 @@ function setupReactSwc(root: string, isTs: boolean) {
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.3.2"`,
+      `"@vitejs/plugin-react-swc": "^3.0.0"`,
     )
   })
   editFile(

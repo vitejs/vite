@@ -42,8 +42,7 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE =
-  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(js|css)$/
+const htmlProxyRE = /\?html-proxy=?(?:&inline-css)?&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
@@ -97,7 +96,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
-        const result = htmlProxyMap.get(config)!.get(url)?.[index]
+        const result = htmlProxyMap.get(config)!.get(url)![index]
         if (result) {
           return result
         } else {
@@ -464,15 +463,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-          // <tag style="... url(...) or image-set(...) ..."></tag>
+          // <tag style="... url(...) ..."></tag>
           // extract inline styles as virtual css and add class attribute to tag for selecting
           const inlineStyle = node.attrs.find(
             (prop) =>
               prop.prefix === undefined &&
               prop.name === 'style' &&
-              // only url(...) or image-set(...) in css need to emit file
-              (prop.value.includes('url(') ||
-                prop.value.includes('image-set(')),
+              prop.value.includes('url('), // only url(...) in css need to emit file
           )
           if (inlineStyle) {
             inlineModuleIndex++
@@ -482,7 +479,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             const sourceCodeLocation = node.sourceCodeLocation!.attrs!['style']
@@ -606,7 +603,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(options, bundle) {
       const analyzedChunk: Map<OutputChunk, number> = new Map()
-      const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
         seen: Set<string> = new Set(),
@@ -827,7 +823,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         if (chunk && canInlineEntry) {
-          inlineEntryChunk.add(chunk.fileName)
+          // all imports from entry have been inlined to html, prevent rollup from outputting it
+          delete bundle[chunk.fileName]
         }
 
         const shortEmitName = normalizePath(path.relative(config.root, id))
@@ -836,11 +833,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           fileName: shortEmitName,
           source: result,
         })
-      }
-
-      for (const fileName of inlineEntryChunk) {
-        // all imports from entry have been inlined to html, prevent rollup from outputting it
-        delete bundle[fileName]
       }
     },
   }

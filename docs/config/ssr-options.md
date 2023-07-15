@@ -24,7 +24,6 @@ Build target for the SSR server.
 ## ssr.format
 
 - **Experimental**
-- **Deprecated** Only ESM output will be supported in Vite 5.
 - **Type:** `'esm' | 'cjs'`
 - **Default:** `esm`
 

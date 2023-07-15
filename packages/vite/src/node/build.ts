@@ -5,17 +5,16 @@ import type {
   ExternalOption,
   InputOption,
   InternalModuleFormat,
-  LoggingFunction,
   ModuleFormat,
   OutputOptions,
   Plugin,
   RollupBuild,
   RollupError,
-  RollupLog,
   RollupOptions,
   RollupOutput,
   RollupWarning,
   RollupWatcher,
+  WarningHandler,
   WatcherOptions,
 } from 'rollup'
 import type { Terser } from 'dep-types/terser'
@@ -131,9 +130,9 @@ export interface BuildOptions {
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
-   * @default 'esbuild'
+   * @default minify
    */
-  cssMinify?: boolean | 'esbuild' | 'lightningcss'
+  cssMinify?: boolean
   /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
@@ -690,7 +689,7 @@ export async function build(
       prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    const res: RollupOutput[] = []
+    const res = []
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
@@ -868,65 +867,49 @@ const dynamicImportWarningIgnoreList = [
 
 export function onRollupWarning(
   warning: RollupWarning,
-  warn: LoggingFunction,
+  warn: WarningHandler,
   config: ResolvedConfig,
 ): void {
-  const viteWarn: LoggingFunction = (warnLog) => {
-    let warning: string | RollupLog
-
-    if (typeof warnLog === 'function') {
-      warning = warnLog()
-    } else {
-      warning = warnLog
-    }
-
-    if (typeof warning === 'object') {
-      if (warning.code === 'UNRESOLVED_IMPORT') {
-        const id = warning.id
-        const exporter = warning.exporter
-        // throw unless it's commonjs external...
-        if (!id || !/\?commonjs-external$/.test(id)) {
-          throw new Error(
-            `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
-              `This is most likely unintended because it can break your application at runtime.\n` +
-              `If you do want to externalize this module explicitly add it to\n` +
-              `\`build.rollupOptions.external\``,
-          )
-        }
-      }
-
-      if (
-        warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-        dynamicImportWarningIgnoreList.some((msg) =>
-          // @ts-expect-error warning is RollupLog
-          warning.message.includes(msg),
+  function viteWarn(warning: RollupWarning) {
+    if (warning.code === 'UNRESOLVED_IMPORT') {
+      const id = warning.id
+      const exporter = warning.exporter
+      // throw unless it's commonjs external...
+      if (!id || !/\?commonjs-external$/.test(id)) {
+        throw new Error(
+          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+            `This is most likely unintended because it can break your application at runtime.\n` +
+            `If you do want to externalize this module explicitly add it to\n` +
+            `\`build.rollupOptions.external\``,
         )
-      ) {
-        return
-      }
-
-      if (warningIgnoreList.includes(warning.code!)) {
-        return
-      }
-
-      if (warning.code === 'PLUGIN_WARNING') {
-        config.logger.warn(
-          `${colors.bold(
-            colors.yellow(`[plugin:${warning.plugin}]`),
-          )} ${colors.yellow(warning.message)}`,
-        )
-        return
       }
     }
 
-    warn(warnLog)
+    if (
+      warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+      dynamicImportWarningIgnoreList.some((msg) =>
+        warning.message.includes(msg),
+      )
+    ) {
+      return
+    }
+
+    if (warningIgnoreList.includes(warning.code!)) {
+      return
+    }
+
+    if (warning.code === 'PLUGIN_WARNING') {
+      config.logger.warn(
+        `${colors.bold(
+          colors.yellow(`[plugin:${warning.plugin}]`),
+        )} ${colors.yellow(warning.message)}`,
+      )
+      return
+    }
+
+    warn(warning)
   }
 
-  const tty = process.stdout.isTTY && !process.env.CI
-  if (tty) {
-    process.stdout.clearLine(0)
-    process.stdout.cursorTo(0)
-  }
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)

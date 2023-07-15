@@ -33,7 +33,7 @@ test.runIf(isServe)('postcss config', async () => {
 
     blueApp = await startServer(blueAppDir)
 
-    await page.goto(`http://localhost:${port}`, { waitUntil: 'load' })
+    await page.goto(`http://localhost:${port}`)
     const blueA = await page.$('.postcss-a')
     expect(await getColor(blueA)).toBe('blue')
     const blueB = await page.$('.postcss-b')
@@ -44,9 +44,9 @@ test.runIf(isServe)('postcss config', async () => {
     await blueApp.close()
     blueApp = null
 
-    const loadPromise = page.waitForEvent('load') // wait for server restart auto reload
+    const navigationPromise = page.waitForNavigation() // wait for server restart auto reload
     greenApp = await startServer(greenAppDir)
-    await loadPromise
+    await navigationPromise
 
     const greenA = await page.$('.postcss-a')
     expect(await getColor(greenA)).toBe('black')

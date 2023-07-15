@@ -54,8 +54,7 @@ import {
   shouldExternalizeForSSR,
 } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
-import { checkPublicFile, urlRE } from './asset'
+import { checkPublicFile } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
@@ -256,10 +255,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
       if (!importerModule) {
-        // This request is no longer valid. It could happen for optimized deps
-        // requests. A full reload is going to request this id again.
-        // Throwing an outdated error so we properly finish the request with a
-        // 504 sent to the browser.
+        // When the server is restarted, the module graph is cleared, so we
+        // return without transforming. This request is no longer valid, a full reload
+        // is going to request this id again. Throwing an outdated error so we
+        // properly finish the request with a 504 sent to the browser.
         throwOutdatedRequest(importer)
       }
 
@@ -492,7 +491,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 ) {
                   return
                 }
-              } else if (shouldExternalizeForSSR(specifier, importer, config)) {
+              } else if (shouldExternalizeForSSR(specifier, config)) {
                 return
               }
               if (isBuiltin(specifier)) {
@@ -507,20 +506,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // warn imports to non-asset /public files
             if (
               specifier[0] === '/' &&
-              !(
-                config.assetsInclude(cleanUrl(specifier)) ||
-                urlRE.test(specifier)
-              ) &&
+              !config.assetsInclude(cleanUrl(specifier)) &&
+              !specifier.endsWith('.json') &&
               checkPublicFile(specifier, config)
             ) {
               throw new Error(
-                `Cannot import non-asset file ${specifier} which is inside /public. ` +
+                `Cannot import non-asset file ${specifier} which is inside /public.` +
                   `JS/CSS files inside /public are copied as-is on build and ` +
-                  `can only be referenced via <script src> or <link href> in html. ` +
-                  `If you want to get the URL of that file, use ${injectQuery(
-                    specifier,
-                    'url',
-                  )} instead.`,
+                  `can only be referenced via <script src> or <link href> in html.`,
               )
             }
 
@@ -657,15 +650,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
               server.transformRequest(url, { ssr }).catch((e) => {
-                if (
-                  e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-                  e?.code === ERR_CLOSED_SERVER
-                ) {
-                  // these are expected errors
+                if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+                  // This are expected errors
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
-                config.logger.error(e.message, { error: e })
+                config.logger.error(e.message)
               })
             }
           } else if (!importer.startsWith(clientDir)) {
