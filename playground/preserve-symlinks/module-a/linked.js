@@ -1,1 +1,0 @@
-./src/index.js

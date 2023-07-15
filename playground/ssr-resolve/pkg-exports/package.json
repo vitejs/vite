@@ -1,9 +1,0 @@
-{
-  "name": "@vitejs/test-resolve-pkg-exports",
-  "private": true,
-  "version": "0.0.0",
-  "exports": {
-    ".": "./index.js",
-    "./entry": "./entry.js"
-  }
-}

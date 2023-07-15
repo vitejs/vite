@@ -1,4 +1,0 @@
-<notjs>
-import { foo } from './foo'
-export const notjsValue = foo
-</notjs>

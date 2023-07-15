@@ -1,1 +1,0 @@
-self.constant = 'A classic'

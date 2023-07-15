@@ -1,9 +1,0 @@
-{
-  "name": "@vitejs/test-dep-cjs-browser-field-bare",
-  "private": true,
-  "version": "0.0.0",
-  "main": "index.js",
-  "browser": {
-    "events": "./events-shim.js"
-  }
-}

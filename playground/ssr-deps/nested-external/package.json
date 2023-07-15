@@ -1,7 +1,0 @@
-{
-  "name": "@vitejs/test-nested-external",
-  "private": true,
-  "version": "0.0.0",
-  "main": "index.js",
-  "type": "module"
-}

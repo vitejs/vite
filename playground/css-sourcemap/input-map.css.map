@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["input-map.src.css"],
-  "sourcesContent": [".input-map {\n  color: blue;\n}"],
-  "mappings": "AAAA,WACE",
-  "names": []
-}

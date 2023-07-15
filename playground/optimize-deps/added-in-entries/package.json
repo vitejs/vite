@@ -1,6 +1,0 @@
-{
-  "name": "@vitejs/test-added-in-entries",
-  "private": true,
-  "version": "1.0.0",
-  "main": "index.js"
-}
