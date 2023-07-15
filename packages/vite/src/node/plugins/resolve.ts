@@ -114,7 +114,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
-  shouldExternalize?: (id: string, importer?: string) => boolean | undefined
+  shouldExternalize?: (id: string) => boolean | undefined
 
   /**
    * Set by createResolver, we only care about the resolved id. moduleSideEffects
@@ -185,10 +185,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       )
       if (resolvedImports) {
         id = resolvedImports
-
-        if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
-          return id
-        }
       }
 
       if (importer) {
@@ -329,7 +325,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        const external = options.shouldExternalize?.(id, importer)
+        const external = options.shouldExternalize?.(id)
         if (
           !external &&
           asSrc &&
@@ -1105,6 +1101,8 @@ function resolveExportsOrImports(
         return options.isProduction
       case 'development':
         return !options.isProduction
+      case 'module':
+        return !options.isRequire
     }
     return true
   })

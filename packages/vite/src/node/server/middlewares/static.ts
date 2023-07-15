@@ -14,7 +14,6 @@ import {
   isImportRequest,
   isInternalRequest,
   isParentDirectory,
-  isSameFileUri,
   isWindows,
   removeLeadingSlash,
   shouldServeFile,
@@ -102,7 +101,7 @@ export function serveStaticMiddleware(
     }
 
     const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
-    const pathname = decodeURI(url.pathname)
+    const pathname = decodeURIComponent(url.pathname)
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -136,7 +135,7 @@ export function serveStaticMiddleware(
     }
 
     if (redirectedPathname) {
-      url.pathname = encodeURI(redirectedPathname)
+      url.pathname = encodeURIComponent(redirectedPathname)
       req.url = url.href.slice(url.origin.length)
     }
 
@@ -160,7 +159,7 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.pathname.startsWith(FS_PREFIX)) {
-      const pathname = decodeURI(url.pathname)
+      const pathname = decodeURIComponent(url.pathname)
       // restrict files outside of `fs.allow`
       if (
         !ensureServingAccess(
@@ -176,7 +175,7 @@ export function serveRawFsMiddleware(
       let newPathname = pathname.slice(FS_PREFIX.length)
       if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
 
-      url.pathname = encodeURI(newPathname)
+      url.pathname = encodeURIComponent(newPathname)
       req.url = url.href.slice(url.origin.length)
       serveFromRoot(req, res, next)
     } else {
@@ -200,11 +199,7 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (
-    server.config.server.fs.allow.some(
-      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
-    )
-  )
+  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
     return true
 
   return false

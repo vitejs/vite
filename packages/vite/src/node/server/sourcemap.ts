@@ -1,5 +1,5 @@
 import path from 'node:path'
-import fsp from 'node:fs/promises'
+import { promises as fs } from 'node:fs'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
@@ -27,34 +27,27 @@ export async function injectSourcesContent(
   let sourceRoot: string | undefined
   try {
     // The source root is undefined for virtual modules and permission errors.
-    sourceRoot = await fsp.realpath(
+    sourceRoot = await fs.realpath(
       path.resolve(path.dirname(file), map.sourceRoot || ''),
     )
   } catch {}
 
   const missingSources: string[] = []
-  const sourcesContent = map.sourcesContent || []
-  await Promise.all(
-    map.sources.map(async (sourcePath, index) => {
-      let content = null
+  map.sourcesContent = await Promise.all(
+    map.sources.map((sourcePath) => {
       if (sourcePath && !virtualSourceRE.test(sourcePath)) {
         sourcePath = decodeURI(sourcePath)
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
-        // inject content from source file when sourcesContent is null
-        content =
-          sourcesContent[index] ??
-          (await fsp.readFile(sourcePath, 'utf-8').catch(() => {
-            missingSources.push(sourcePath)
-            return null
-          }))
+        return fs.readFile(sourcePath, 'utf-8').catch(() => {
+          missingSources.push(sourcePath)
+          return null
+        })
       }
-      sourcesContent[index] = content
+      return null
     }),
   )
-
-  map.sourcesContent = sourcesContent
 
   // Use this command…
   //    DEBUG="vite:sourcemap" vite build

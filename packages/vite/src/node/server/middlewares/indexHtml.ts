@@ -36,8 +36,6 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
-import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../plugins/optimizedDeps'
 import { isCSSRequest } from '../../plugins/css'
 import { checkPublicFile } from '../../plugins/asset'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
@@ -150,7 +148,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
-  htmlPath = decodeURI(htmlPath)
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -283,7 +280,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       let content = ''
       if (result) {
         if (result.map) {
-          if (result.map.mappings) {
+          if (result.map.mappings && !result.map.sourcesContent) {
             await injectSourcesContent(
               result.map,
               proxyModulePath,
@@ -352,13 +349,6 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
 
   // transform all url as non-ssr as html includes client-side assets only
   server.transformRequest(url).catch((e) => {
-    if (
-      e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-      e?.code === ERR_CLOSED_SERVER
-    ) {
-      // these are expected errors
-      return
-    }
     // Unexpected error, log the issue but avoid an unhandled exception
     server.config.logger.error(e.message)
   })

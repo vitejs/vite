@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 import {
   browserErrors,
   browserLogs,
@@ -6,7 +6,6 @@ import {
   isBuild,
   isServe,
   page,
-  readDepOptimizationMetadata,
   serverLogs,
   viteTestUrl,
 } from '~utils'
@@ -215,31 +214,11 @@ test('pre bundle css require', async () => {
   }
 
   expect(await getColor('.css-require')).toBe('red')
-  expect(await getColor('.css-module-require')).toBe('red')
 })
 
 test.runIf(isBuild)('no missing deps during build', async () => {
   serverLogs.forEach((log) => {
     // no warning from esbuild css minifier
     expect(log).not.toMatch('Missing dependency found after crawling ended')
-  })
-})
-
-describe.runIf(isServe)('optimizeDeps config', () => {
-  test('supports include glob syntax', () => {
-    const metadata = readDepOptimizationMetadata()
-    expect(Object.keys(metadata.optimized)).to.include.members([
-      '@vitejs/test-dep-optimize-exports-with-glob',
-      '@vitejs/test-dep-optimize-exports-with-glob/named',
-      '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/foo',
-      '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/bar',
-      '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/nested/baz',
-      '@vitejs/test-dep-optimize-with-glob',
-      '@vitejs/test-dep-optimize-with-glob/index.js',
-      '@vitejs/test-dep-optimize-with-glob/named.js',
-      '@vitejs/test-dep-optimize-with-glob/glob/foo.js',
-      '@vitejs/test-dep-optimize-with-glob/glob/bar.js',
-      '@vitejs/test-dep-optimize-with-glob/glob/nested/baz.js',
-    ])
   })
 })

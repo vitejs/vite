@@ -87,18 +87,6 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
-
-  // convert the sourcemap option to a boolean if necessary
-  if ('sourcemap' in ret) {
-    const sourcemap = ret.sourcemap as `${boolean}` | 'inline' | 'hidden'
-    ret.sourcemap =
-      sourcemap === 'true'
-        ? true
-        : sourcemap === 'false'
-        ? false
-        : ret.sourcemap
-  }
-
   return ret
 }
 
@@ -303,7 +291,6 @@ cli
     },
   )
 
-// preview
 cli
   .command('preview [root]', 'locally preview production build')
   .option('--host [host]', `[string] specify hostname`)
@@ -345,7 +332,6 @@ cli
           },
         })
         server.printUrls()
-        bindShortcuts(server, { print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),

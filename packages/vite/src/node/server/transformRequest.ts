@@ -1,9 +1,9 @@
-import fsp from 'node:fs/promises'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
-import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
+import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
@@ -20,7 +20,6 @@ import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
-import { throwClosedServerError } from './pluginContainer'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -47,8 +46,6 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
-  if (server._restartPromise && !options.ssr) throwClosedServerError()
-
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
   // This module may get invalidated while we are processing it. For example
@@ -111,8 +108,9 @@ export function transformRequest(
     timestamp,
     abort: clearCache,
   })
+  request.then(clearCache, clearCache)
 
-  return request.finally(clearCache)
+  return request
 }
 
 async function doTransform(
@@ -143,22 +141,13 @@ async function doTransform(
     return cached
   }
 
-  const resolved = module
-    ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
-
   // resolve
-  const id = module?.id ?? resolved?.id ?? url
+  const id =
+    module?.id ??
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id ??
+    url
 
-  const result = loadAndTransform(
-    id,
-    url,
-    server,
-    options,
-    timestamp,
-    module,
-    resolved,
-  )
+  const result = loadAndTransform(id, url, server, options, timestamp)
 
   getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
 
@@ -171,8 +160,6 @@ async function loadAndTransform(
   server: ViteDevServer,
   options: TransformOptions,
   timestamp: number,
-  mod?: ModuleNode,
-  resolved?: PartialResolvedId,
 ) {
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
@@ -201,7 +188,7 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
-        code = await fsp.readFile(file, 'utf-8')
+        code = await fs.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
@@ -255,11 +242,8 @@ async function loadAndTransform(
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
   }
-
-  if (server._restartPromise && !ssr) throwClosedServerError()
-
   // ensure module in graph after successful load
-  mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
@@ -285,7 +269,7 @@ async function loadAndTransform(
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings) {
+    if (map.mappings && !map.sourcesContent) {
       await injectSourcesContent(map, mod.file, logger)
     }
 
@@ -319,8 +303,6 @@ async function loadAndTransform(
     }
   }
 
-  if (server._restartPromise && !ssr) throwClosedServerError()
-
   const result =
     ssr && !server.config.experimental.skipSsrTransform
       ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
@@ -342,7 +324,7 @@ async function loadAndTransform(
 
 function createConvertSourceMapReadMap(originalFileName: string) {
   return (filename: string) => {
-    return fsp.readFile(
+    return fs.readFile(
       path.resolve(path.dirname(originalFileName), filename),
       'utf-8',
     )

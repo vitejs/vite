@@ -69,7 +69,7 @@ export async function resolvePlugins(
       getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
       shouldExternalize:
         isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
-          ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
+          ? (id) => shouldExternalizeForSSR(id, config)
           : undefined,
     }),
     htmlInlineProxyPlugin(config),

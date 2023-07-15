@@ -1,38 +1,31 @@
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
 import { isDefined } from './utils'
-import type { PreviewServer } from './preview'
-import { openBrowser } from './server/openBrowser'
 
-export type BindShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
+export type BindShortcutsOptions = {
   /**
    * Print a one line hint to the terminal.
    */
   print?: boolean
-  customShortcuts?: (CLIShortcut<Server> | undefined | null)[]
+  customShortcuts?: (CLIShortcut | undefined | null)[]
 }
 
-export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
+export type CLIShortcut = {
   key: string
   description: string
-  action(server: Server): void | Promise<void>
+  action(server: ViteDevServer): void | Promise<void>
 }
 
-export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
-  server: Server,
-  opts?: BindShortcutsOptions<Server>,
+export function bindShortcuts(
+  server: ViteDevServer,
+  opts: BindShortcutsOptions,
 ): void {
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
   }
+  server._shortcutsOptions = opts
 
-  const isDev = isDevServer(server)
-
-  if (isDev) {
-    server._shortcutsOptions = opts
-  }
-
-  if (opts?.print) {
+  if (opts.print) {
     server.config.logger.info(
       colors.dim(colors.green('  ➜')) +
         colors.dim('  press ') +
@@ -41,25 +34,16 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? [])
+  const shortcuts = (opts.customShortcuts ?? [])
     .filter(isDefined)
-    // @ts-expect-error passing the right types, but typescript can't detect it
-    .concat(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS)
+    .concat(BASE_SHORTCUTS)
 
   let actionRunning = false
 
   const onInput = async (input: string) => {
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
-      try {
-        if (isDev) {
-          await server.close()
-        } else {
-          server.httpServer.close()
-        }
-      } finally {
-        process.exit(1)
-      }
+      await server.close().finally(() => process.exit(1))
       return
     }
 
@@ -97,13 +81,7 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
   })
 }
 
-function isDevServer(
-  server: ViteDevServer | PreviewServer,
-): server is ViteDevServer {
-  return 'pluginContainer' in server
-}
-
-const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
+const BASE_SHORTCUTS: CLIShortcut[] = [
   {
     key: 'r',
     description: 'restart the server',
@@ -138,28 +116,6 @@ const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
     description: 'quit',
     async action(server) {
       await server.close().finally(() => process.exit())
-    },
-  },
-]
-
-const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
-  {
-    key: 'o',
-    description: 'open in browser',
-    action(server) {
-      const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
-      openBrowser(url, true, server.config.logger)
-    },
-  },
-  {
-    key: 'q',
-    description: 'quit',
-    action(server) {
-      try {
-        server.httpServer.close()
-      } finally {
-        process.exit()
-      }
     },
   },
 ]
