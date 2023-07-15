@@ -37,7 +37,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         return terser.minify(code, options) as Terser.MinifyOutput
       },
       {
-        max: config?.build?.terserOptions?.workers,
+        max: config?.build?.terserOptions?.maxWorkers,
       }
     )
 
