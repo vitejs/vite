@@ -152,8 +152,8 @@ export interface BuildOptions {
    * Options for terser
    * https://terser.org/docs/api-reference#minify-options
    *
-   * In addition to the terser options, it is also possible to provide the `maxWorkers` option
-   * Max amount of workers to spawn. Defaults to the number of CPUs minus 1.
+   * In addition to the terser options, it is also possible to provide the `maxWorkers` option.
+   * Instructs the plugin to use a specific max amount of workers to spawn. Defaults to the number of CPUs minus 1.
    */
   terserOptions?: Terser.MinifyOptions & { maxWorkers?: number }
   /**
