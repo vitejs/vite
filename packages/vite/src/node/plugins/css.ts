@@ -2184,7 +2184,7 @@ async function compileLightningCSS(
               return src
             }
             // This happens with html-proxy (#13776)
-            if (!filePath?.endsWith('.css')) {
+            if (!filePath.endsWith('.css')) {
               return src
             }
             return fs.readFileSync(toAbsolute(filePath), 'utf-8')
