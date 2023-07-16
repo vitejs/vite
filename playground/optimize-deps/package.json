@@ -34,7 +34,7 @@
     "@vitejs/test-added-in-entries": "file:./added-in-entries",
     "lodash-es": "^4.17.21",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.7.6",
+    "phoenix": "^1.7.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",

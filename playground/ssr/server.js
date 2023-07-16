@@ -57,6 +57,7 @@ export async function createServer(
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
+      if (isTest) throw e
       console.log(e.stack)
       res.status(500).end(e.stack)
     }

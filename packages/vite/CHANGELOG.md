@@ -1,3 +1,20 @@
+## <small>4.4.4 (2023-07-14)</small>
+
+* chore: warning about ssr cjs format removal (#13827) ([4646e9f](https://github.com/vitejs/vite/commit/4646e9f)), closes [#13827](https://github.com/vitejs/vite/issues/13827)
+* fix(esbuild): enable experimentalDecorators by default (#13805) ([e8880f0](https://github.com/vitejs/vite/commit/e8880f0)), closes [#13805](https://github.com/vitejs/vite/issues/13805)
+* fix(scan): skip tsconfigRaw fallback if tsconfig is set (#13823) ([b6155a1](https://github.com/vitejs/vite/commit/b6155a1)), closes [#13823](https://github.com/vitejs/vite/issues/13823)
+* feat(client): close `vite-error-overlay` with Escape key (#13795) ([85bdcda](https://github.com/vitejs/vite/commit/85bdcda)), closes [#13795](https://github.com/vitejs/vite/issues/13795)
+
+
+
+## <small>4.4.3 (2023-07-11)</small>
+
+* fix: avoid early error when server is closed in ssr (#13787) ([89d01eb](https://github.com/vitejs/vite/commit/89d01eb)), closes [#13787](https://github.com/vitejs/vite/issues/13787)
+* fix(deps): update all non-major dependencies (#13758) ([8ead116](https://github.com/vitejs/vite/commit/8ead116)), closes [#13758](https://github.com/vitejs/vite/issues/13758)
+* fix(server): remove restart guard on restart (#13789) ([2a38ef7](https://github.com/vitejs/vite/commit/2a38ef7)), closes [#13789](https://github.com/vitejs/vite/issues/13789)
+
+
+
 ## <small>4.4.2 (2023-07-07)</small>
 
 * fix(css): use single postcss instance (#13738) ([c02fac4](https://github.com/vitejs/vite/commit/c02fac4)), closes [#13738](https://github.com/vitejs/vite/issues/13738)
@@ -18,7 +35,7 @@
 
 Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](https://main.vitejs.dev/config/shared-options.html#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dev dependency. If enabled, CSS files will be processed by Lightning CSS instead of PostCSS.
 
-Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](https://main.vitejs.dev/config/build-options.html#css-minify).
+Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](https://main.vitejs.dev/config/build-options.html#build-cssminify).
 
 See beta docs at the [Lighting CSS guide](https://main.vitejs.dev/guide/features.html#lightning-css).
 

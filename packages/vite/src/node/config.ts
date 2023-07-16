@@ -837,6 +837,19 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     }
   }
 
+  // Warn about removal of experimental features
+  if (
+    config.legacy?.buildSsrCjsExternalHeuristics ||
+    config.ssr?.format === 'cjs'
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
+  }
+
   return resolved
 }
 
