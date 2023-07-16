@@ -348,8 +348,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return {
         code: `export default function WorkerWrapper() {
           return new ${workerConstructor}(${JSON.stringify(
-          url,
-        )}${workerOptions})
+            url,
+          )}${workerOptions})
         }`,
         map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
       }
