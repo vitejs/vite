@@ -122,6 +122,10 @@ Note that for HTML files, Vite ignores the name given to the entry in the `rollu
 
 ## Library Mode
 
+::: warning
+Library Mode isn't a polished feature for Vite core, and we aren't that kin to extend it further. The issue is that libraries have different requirements from apps. Lib mode was done to be able to reuse the vite pipeline and I think it makes sense maybe when building a small components library. But even then, it may be better to let each framework decide which is the best setup (SvelteKit has a lib mode for example). For general libs, there are great options: [Rollup](https://rollupjs.org/), [esbuild](https://esbuild.github.io/), [tsup](https://tsup.egoist.dev/), [unbuild](https://github.com/unjs/unbuild). It is telling that the Vite ecosystem generally doesn't use Vite lib mode (check how plugins are build for example).
+:::
+
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
 
 When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
