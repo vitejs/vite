@@ -456,7 +456,6 @@ export async function transformGlobImport(
 
             const isCSS =
               !query && isCSSRequest(file) && !isModuleCSSRequest(file)
-
             includesCSS ||= isCSS
 
             const importKey =
