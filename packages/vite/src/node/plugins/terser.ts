@@ -24,7 +24,7 @@ const loadTerserPath = (root: string) => {
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
-  const { maxWorkers, ...terserOptions } = config.build.terserOptions
+  const { maxWorkers, ...terserOptions } = config.build.terserOptions || {}
   const makeWorker = () =>
     new Worker(
       async (
