@@ -551,8 +551,8 @@ importers:
         specifier: ^4.18.2
         version: 4.18.2
       lightningcss:
-        specifier: ^1.21.4
-        version: 1.21.4
+        specifier: ^1.21.5
+        version: 1.21.5
 
   playground/css-sourcemap:
     devDependencies:
