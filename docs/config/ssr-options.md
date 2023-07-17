@@ -23,7 +23,7 @@ Build target for the SSR server.
 
 ## ssr.format
 
-- **Experimental**
+- **Experimental:** [CJS support to be removed in Vite 5](https://github.com/vitejs/vite/discussions/13816)
 - **Deprecated** Only ESM output will be supported in Vite 5.
 - **Type:** `'esm' | 'cjs'`
 - **Default:** `esm`

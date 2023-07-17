@@ -260,7 +260,7 @@ export default defineConfig({
 
 ## css.devSourcemap
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
 - **Type:** `boolean`
 - **Default:** `false`
 
@@ -268,7 +268,7 @@ Whether to enable sourcemaps during dev.
 
 ## css.transformer
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
 - **Type:** `'postcss' | 'lightningcss'`
 - **Default:** `'postcss'`
 
@@ -276,7 +276,7 @@ Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/f
 
 ## css.lightningcss
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
 - **Type:**
 
 ```js
