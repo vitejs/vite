@@ -320,11 +320,8 @@ export interface ViteDevServer {
   _fsDenyGlob: Matcher
   /**
    * @internal
-   * Actually BindShortcutsOptions | undefined but api-extractor checks for
-   * export before trimming internal types :(
-   * And I don't want to add complexity to prePatchTypes for that
    */
-  _shortcutsOptions: any | undefined
+  _shortcutsOptions?: BindShortcutsOptions
 }
 
 export interface ResolvedServerUrls {
@@ -833,7 +830,7 @@ export function resolveServerOptions(
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
-  const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
+  const shortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
 
   let inlineConfig = server.config.inlineConfig
