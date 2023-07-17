@@ -30,7 +30,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
   await server.listen()
 
   server.printUrls()
-  server.bindShortcuts()
+  server.bindShortcuts({ print: true })
 })()
 ```
 
@@ -200,7 +200,7 @@ import { preview } from 'vite'
   })
 
   previewServer.printUrls()
-  previewServer.bindShortcuts()
+  previewServer.bindShortcuts({ print: true })
 })()
 ```
 
