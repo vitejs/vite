@@ -505,7 +505,7 @@ export function runOptimizeDeps(
     }
   }
 
-  const succesfulResult: DepOptimizationResult = {
+  const successfulResult: DepOptimizationResult = {
     metadata,
     cancel: cleanUp,
     commit: async () => {
@@ -556,7 +556,7 @@ export function runOptimizeDeps(
     // skip the scanner step if the lockfile hasn't changed
     return {
       cancel: async () => cleanUp(),
-      result: Promise.resolve(succesfulResult),
+      result: Promise.resolve(successfulResult),
     }
   }
 
@@ -654,7 +654,7 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        return succesfulResult
+        return successfulResult
       })
 
       .catch((e) => {
