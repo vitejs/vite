@@ -7,7 +7,7 @@ import { mergeConfig } from '../publicUtils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
-    const baseConfig: UserConfigExport = {
+    const baseConfig = defineConfig({
       resolve: {
         alias: [
           {
@@ -16,16 +16,16 @@ describe('mergeConfig', () => {
           },
         ],
       },
-    }
+    })
 
-    const newConfig: UserConfigExport = {
+    const newConfig = defineConfig({
       resolve: {
         alias: {
           bar: 'bar-value',
           baz: 'baz-value',
         },
       },
-    }
+    })
 
     const mergedConfig: UserConfigExport = {
       resolve: {
