@@ -142,7 +142,7 @@ interface ViteDevServer {
   /**
    * Bind shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions): void
+  bindShortcuts(options?: BindShortcutsOptions<ViteDevServer>): void
 }
 ```
 
@@ -244,7 +244,7 @@ interface PreviewServerForHook {
   /**
    * Bind shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions): void
+  bindShortcuts(options?: BindShortcutsOptions<PreviewServer>): void
 }
 ```
 

@@ -77,7 +77,7 @@ export interface PreviewServerForHook {
   /**
    * Bind shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions): void
+  bindShortcuts(options?: BindShortcutsOptions<PreviewServer>): void
 }
 
 export interface PreviewServer extends PreviewServerForHook {

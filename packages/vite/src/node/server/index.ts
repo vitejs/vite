@@ -274,7 +274,7 @@ export interface ViteDevServer {
   /**
    * Bind shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions): void
+  bindShortcuts(options?: BindShortcutsOptions<ViteDevServer>): void
   /**
    * Restart the server.
    *
@@ -321,7 +321,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _shortcutsOptions?: BindShortcutsOptions
+  _shortcutsOptions?: BindShortcutsOptions<ViteDevServer>
 }
 
 export interface ResolvedServerUrls {

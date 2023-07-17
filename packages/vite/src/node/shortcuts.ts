@@ -29,7 +29,7 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
   const isDev = isDevServer(server)
 
   if (isDev) {
-    server._shortcutsOptions = opts
+    server._shortcutsOptions = opts as BindShortcutsOptions<ViteDevServer>
   }
 
   if (opts?.print) {
