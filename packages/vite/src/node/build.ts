@@ -408,7 +408,7 @@ export function resolveBuildOptions(
   }
 
   // normalize false string into actual false
-  if ((resolved.minify as any) === 'false') {
+  if ((resolved.minify as string) === 'false') {
     resolved.minify = false
   }
 
