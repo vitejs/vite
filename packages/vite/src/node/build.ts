@@ -753,14 +753,12 @@ function prepareOutDir(
       config.publicDir &&
       fs.existsSync(config.publicDir)
     ) {
-      if (areSeparateFolders(outDir, config.publicDir)) {
-        copyDir(config.publicDir, outDir)
-      } else {
+      if (!areSeparateFolders(outDir, config.publicDir)) {
         config.logger.warn(
           colors.yellow(
             `\n${colors.bold(
               `(!)`,
-            )} The public directory feature is disabled. outDir ${colors.white(
+            )} The public directory feature may not work correctly. outDir ${colors.white(
               colors.dim(outDir),
             )} and publicDir ${colors.white(
               colors.dim(config.publicDir),
@@ -768,6 +766,7 @@ function prepareOutDir(
           ),
         )
       }
+      copyDir(config.publicDir, outDir)
     }
   }
 }
