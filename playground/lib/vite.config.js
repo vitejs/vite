@@ -2,8 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 
-/** @type {import('vite').UserConfig} */
-// @ts-expect-error typecast
 export default defineConfig({
   esbuild: {
     supported: {

@@ -100,8 +100,16 @@ export interface ConfigEnv {
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
 
+export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
+export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
-export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
+
+export type UserConfigExport =
+  | UserConfig
+  | Promise<UserConfig>
+  | UserConfigFnObject
+  | UserConfigFnPromise
+  | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -109,6 +117,9 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
+export function defineConfig(config: UserConfig): UserConfig
+export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
+export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
