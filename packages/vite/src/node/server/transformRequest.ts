@@ -205,7 +205,9 @@ async function loadAndTransform(
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
-          e.message = `${e.message} ${url}`
+          if (e.code === 'EISDIR') {
+            e.message = `${e.message} ${url}`
+          }
           throw e
         }
       }
