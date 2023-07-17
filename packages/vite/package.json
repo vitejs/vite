@@ -68,7 +68,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.18.10",
-    "postcss": "^8.4.25",
+    "postcss": "^8.4.26",
     "rollup": "^3.25.2"
   },
   "optionalDependencies": {
@@ -80,7 +80,7 @@
     "@babel/types": "^7.22.5",
     "@jridgewell/trace-mapping": "^0.3.18",
     "@rollup/plugin-alias": "^4.0.4",
-    "@rollup/plugin-commonjs": "^25.0.2",
+    "@rollup/plugin-commonjs": "^25.0.3",
     "@rollup/plugin-dynamic-import-vars": "^2.0.4",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "15.1.0",
@@ -129,7 +129,7 @@
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.1.0",
     "strip-literal": "^1.0.1",
-    "tsconfck": "^2.1.1",
+    "tsconfck": "^2.1.2",
     "tslib": "^2.6.0",
     "types": "link:./types",
     "ufo": "^1.1.2",
