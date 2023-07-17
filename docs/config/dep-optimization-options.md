@@ -64,7 +64,7 @@ Set to `true` to force dependency pre-bundling, ignoring previously cached optim
 
 ## optimizeDeps.disabled
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13839)
 - **Type:** `boolean | 'build' | 'dev'`
 - **Default:** `'build'`
 
