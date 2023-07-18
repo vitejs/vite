@@ -122,22 +122,22 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         // When a dynamic importer shares a chunk with the imported module,
         // warn that the dynamic imported module will not be moved to another chunk (#12850).
         if (hasStaticImport && hasDynamicImport) {
-          // Check if the module is imported by an external dependency, because
-          // warning ineffective dynamic import of an external dependency is not helpful.
-          const isExternalDependency = (module: string) =>
-            module.includes('/node_modules/')
-          const isInTheSameChunk = (module: string) =>
-            chunk.moduleIds.includes(module)
-          const detectedDirectIneffectiveDynamicImport =
-            module.dynamicImporters.some(
-              (m) => !isExternalDependency(m) && isInTheSameChunk(m),
-            )
+          const warningCondition = (module: string) => {
+            const isExternalDependency = module.includes('/node_modules/')
+            const isInSameChunk = chunk.moduleIds.includes(module)
+            if (!isInSameChunk) return false
+            if (!isExternalDependency) return true
+            return config.build.warnExternalChunkRender
+          }
+
+          const detectedIneffectiveDynamicImport =
+            module.dynamicImporters.some(warningCondition)
 
           // Filter out the intersection of dynamic importers and sibling modules in
           // the same chunk. The intersecting dynamic importers' dynamic import is not
           // expected to work. Note we're only detecting the direct ineffective
           // dynamic import here.
-          if (detectedDirectIneffectiveDynamicImport) {
+          if (detectedIneffectiveDynamicImport) {
             this.warn(
               `\n(!) ${
                 module.id

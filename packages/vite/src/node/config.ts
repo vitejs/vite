@@ -482,7 +482,7 @@ export async function resolveConfig(
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } },
     })
-    config.build ??= {}
+    config.build ??= {} as BuildOptions
     config.build.commonjsOptions = { include: [] }
   }
 
