@@ -249,7 +249,7 @@ export interface BuildOptions {
    * Ineffective dynamic imports are imports that do not split chunks (#12850).
    * @default false
    */
-  warnExternalChunkRender: boolean
+  warnExternalChunkRender?: boolean
 }
 
 export interface LibraryOptions {
