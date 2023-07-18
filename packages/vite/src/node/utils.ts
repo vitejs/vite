@@ -614,7 +614,7 @@ function optimizeSafeRealPathSync() {
   try {
     fs.realpathSync.native(path.resolve('./'))
   } catch (error) {
-    if (~error.message.indexOf('EISDIR: illegal operation on a directory')) {
+    if (error.message.includes('EISDIR: illegal operation on a directory')) {
       safeRealpathSync = fs.realpathSync
       return
     }
