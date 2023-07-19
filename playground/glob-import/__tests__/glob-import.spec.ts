@@ -48,7 +48,7 @@ const allResult = {
   '/dir/baz.json': json,
   '/dir/foo.css': isBuild
     ? {
-        default: '.foo{color:#00f}\n',
+        default: '.foo{color:#00f}',
       }
     : {
         default: '.foo {\n  color: blue;\n}\n',

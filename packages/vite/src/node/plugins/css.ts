@@ -1534,7 +1534,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
         colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
     }
-    return code
+    return code.trimEnd()
   } catch (e) {
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
