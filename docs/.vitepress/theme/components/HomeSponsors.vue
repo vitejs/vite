@@ -46,7 +46,10 @@ const { data } = useSponsor()
   text-align: center;
   font-weight: 600;
   white-space: nowrap;
-  transition: color 0.25s, border-color 0.25s, background-color 0.25s;
+  transition:
+    color 0.25s,
+    border-color 0.25s,
+    background-color 0.25s;
   /* .VPButton.medium */
   border-radius: 20px;
   padding: 0 20px;
