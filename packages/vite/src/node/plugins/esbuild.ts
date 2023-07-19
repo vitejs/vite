@@ -142,6 +142,14 @@ export async function transformWithEsbuild(
       compilerOptions.useDefineForClassFields = false
     }
 
+    // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
+    // To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
+    // `true` by default if it's unset.
+    // TODO: Remove this in Vite 5
+    if (compilerOptions.experimentalDecorators === undefined) {
+      compilerOptions.experimentalDecorators = true
+    }
+
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {

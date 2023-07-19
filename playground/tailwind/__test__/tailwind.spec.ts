@@ -28,7 +28,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/views/Page.vue',
       ],
-      true,
+      false,
     )
     await untilUpdated(() => el.textContent(), '|Page title updated|')
 
@@ -41,7 +41,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/components/HelloWorld.vue',
       ],
-      true,
+      false,
     )
     await untilUpdated(() => getColor(el2), 'rgb(10, 20, 30)')
   })
@@ -59,7 +59,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/App.vue',
       ],
-      true,
+      false,
     )
     await untilUpdated(() => getColor(el), 'rgb(11, 22, 33)')
   })
@@ -77,6 +77,7 @@ if (!isBuild) {
         '[vite] css hot updated: /index.css',
         '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js',
       ],
+      false,
     )
     await untilUpdated(() => getBgColor(el), 'rgb(220, 38, 38)')
   })

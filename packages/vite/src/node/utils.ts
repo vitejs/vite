@@ -608,7 +608,17 @@ function optimizeSafeRealPathSync() {
     safeRealpathSync = fs.realpathSync
     return
   }
-
+  // Check the availability `fs.realpathSync.native`
+  // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
+  // get the error EISDIR: illegal operation on a directory
+  try {
+    fs.realpathSync.native(path.resolve('./'))
+  } catch (error) {
+    if (error.message.includes('EISDIR: illegal operation on a directory')) {
+      safeRealpathSync = fs.realpathSync
+      return
+    }
+  }
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')

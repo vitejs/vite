@@ -225,7 +225,7 @@ In library mode, all `import.meta.env.*` usage are statically replaced when buil
 ## Advanced Base Options
 
 ::: warning
-This feature is experimental, the API may change in a future minor without following semver. Please always pin Vite's version to a minor when using it.
+This feature is experimental. [Give Feedback](https://github.com/vitejs/vite/discussions/13834).
 :::
 
 For advanced use cases, the deployed assets and public files may be in different paths, for example to use different cache strategies.
