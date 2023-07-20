@@ -474,14 +474,15 @@ export async function transformGlobImport(
               if (!isProduction && isCSS) {
                 // https://github.com/vitejs/vite/issues/12001
                 objectProps.push(
-                  `${JSON.stringify(filePath)}: new Proxy(${variableName}, {
-                    get: function(target, prop, receiver) {
-                      if (prop === 'default') {
-                        ${createCssDefaultImportWarning(globs, options)}
+                  `get ${JSON.stringify(filePath)}() {
+                      return {
+                        get default() {
+                          ${createCssDefaultImportWarning(globs, options)}
+                          return ${variableName}.default
+                        },
+                        [Symbol.toStringTag]: 'Module'
                       }
-                      return Reflect.get(target, prop, receiver);
-                    },
-                  })`,
+                  }`,
                 )
               } else {
                 objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
@@ -496,14 +497,13 @@ export async function transformGlobImport(
                 objectProps.push(
                   `${JSON.stringify(filePath)}: () => {
                       return ${importStatement}.then(m => {
-                        return new Proxy(m, {
-                          get: function(target, prop, receiver) {
-                            if (prop === 'default') {
-                              ${createCssDefaultImportWarning(globs, options)}
-                            }
-                            return Reflect.get(target, prop, receiver)
+                        return {
+                          get default() {
+                            ${createCssDefaultImportWarning(globs, options)}
+                            return m.default
                           },
-                        })
+                          [Symbol.toStringTag]: 'Module'
+                        }
                       })
                     }`,
                 )
