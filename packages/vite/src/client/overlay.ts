@@ -118,18 +118,18 @@ code {
   cursor: pointer;
 }
 
-.keyboard-key {
+.kbd {
   line-height: 1.5;
   font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.75rem;
   font-weight: 700;
-  background-color: rgb(66, 69 ,76);
-  color: rgb(193, 194, 197);
+  background-color: rgb(38, 40, 44);
+  color: rgb(166, 167, 171);
   padding: 0.15rem 0.3rem;
   border-radius: 0.25rem;
   border-width: 0.0625rem 0.0625rem 0.1875rem;
   border-style: solid;
-  border-color: rgb(70, 74, 83);
+  border-color: rgb(54, 57, 64);
   border-image: initial;
 }
 </style>
@@ -140,7 +140,7 @@ code {
     <pre class="frame" part="frame"></pre>
     <pre class="stack" part="stack"></pre>
     <div class="tip" part="tip">
-      Click outside, press <span class="keyboard-key">Esc</span> key or fix the code to dismiss.<br>
+      Click outside, press <span class="kbd">Esc</span> key or fix the code to dismiss.<br>
       You can also disable this overlay by setting
       <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.js.</code>
     </div>
