@@ -117,7 +117,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         if (!module) continue
         // When a dynamic importer shares a chunk with the imported module,
         // warn that the dynamic imported module will not be moved to another chunk (#12850).
-        if (module.importers.length > 0 && module.dynamicImporters.length > 0) {
+        if (module.importers.length && module.dynamicImporters.length) {
           // Filter out the intersection of dynamic importers and sibling modules in
           // the same chunk. The intersecting dynamic importers' dynamic import is not
           // expected to work. Note we're only detecting the direct ineffective
