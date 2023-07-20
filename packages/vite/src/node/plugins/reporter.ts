@@ -4,7 +4,7 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isDefined, normalizePath } from '../utils'
+import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -122,9 +122,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           // the same chunk. The intersecting dynamic importers' dynamic import is not
           // expected to work. Note we're only detecting the direct ineffective
           // dynamic import here.
-          if (
-            module.dynamicImporters.some((m) => chunk.moduleIds.includes(m))
-          ) {
+          const detectedIneffectiveDynamicImport = module.dynamicImporters.some(
+            (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
+          )
+          if (detectedIneffectiveDynamicImport) {
             this.warn(
               `\n(!) ${
                 module.id
