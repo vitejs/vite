@@ -250,13 +250,4 @@ Set to `{}` to enable rollup watcher. This is mostly used in cases that involve 
 There are cases that file system watching does not work with WSL2.
 See [`server.watch`](./server-options.md#server-watch) for more details.
 
-## build.warnExternalChunkRender
-
-- **Type:** `boolean`
-- **Default:** `false`
-
-Vite, by default, tries to split dynamic imports into separate chunks. However, when a dynamic import is both statically and dynamically imported in the same module, it can't be split into a separate chunk. We refer to this situation as an _Ineffective Dynamic Import_, and Vite issues a warning about it.
-
-This warning can be informative for an app's own module, but it can also be noisy when used with third-party libraries. Therefore, Vite skips the warning of ineffective dynamic imports produced by modules that exist in `node_modules`. Setting this option to `true` will enable the warning for all ineffective dynamic imports.
-
 :::

@@ -126,8 +126,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             const isExternalDependency = module.includes('/node_modules/')
             const isInSameChunk = chunk.moduleIds.includes(module)
             if (!isInSameChunk) return false
-            if (!isExternalDependency) return true
-            return config.build.warnExternalChunkRender
+            return !isExternalDependency
           }
 
           const detectedIneffectiveDynamicImport =

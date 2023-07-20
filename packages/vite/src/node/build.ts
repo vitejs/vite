@@ -244,12 +244,6 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
-  /**
-   * Whether to log warnings emitted by ineffective dynamic imports.
-   * Ineffective dynamic imports are imports that do not split chunks (#12850).
-   * @default false
-   */
-  warnExternalChunkRender?: boolean
 }
 
 export interface LibraryOptions {
@@ -356,7 +350,6 @@ export function resolveBuildOptions(
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
-    warnExternalChunkRender: false,
   }
 
   const userBuildOptions = raw
