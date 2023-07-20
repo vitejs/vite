@@ -12,6 +12,6 @@
     "lit": "^2.7.6"
   },
   "devDependencies": {
-    "vite": "^4.4.4"
+    "vite": "^4.4.5"
   }
 }
