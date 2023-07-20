@@ -4,7 +4,7 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isDefined, normalizePath } from '../utils'
+import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -115,27 +115,16 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       for (const id of chunk.moduleIds) {
         const module = this.getModuleInfo(id)
         if (!module) continue
-
-        const hasStaticImport = module.importers.length > 0
-        const hasDynamicImport = module.dynamicImporters.length > 0
-
         // When a dynamic importer shares a chunk with the imported module,
         // warn that the dynamic imported module will not be moved to another chunk (#12850).
-        if (hasStaticImport && hasDynamicImport) {
-          const warningCondition = (module: string) => {
-            const isExternalDependency = module.includes('/node_modules/')
-            const isInSameChunk = chunk.moduleIds.includes(module)
-            if (!isInSameChunk) return false
-            return !isExternalDependency
-          }
-
-          const detectedIneffectiveDynamicImport =
-            module.dynamicImporters.some(warningCondition)
-
+        if (module.importers.length > 0 && module.dynamicImporters.length > 0) {
           // Filter out the intersection of dynamic importers and sibling modules in
           // the same chunk. The intersecting dynamic importers' dynamic import is not
           // expected to work. Note we're only detecting the direct ineffective
           // dynamic import here.
+          const detectedIneffectiveDynamicImport = module.dynamicImporters.some(
+            (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
+          )
           if (detectedIneffectiveDynamicImport) {
             this.warn(
               `\n(!) ${
