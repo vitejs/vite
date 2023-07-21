@@ -250,7 +250,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (depsOptimizer?.isOptimizedDepFile(normalizedFsPath)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
-          if (!normalizedFsPath.match(DEP_VERSION_RE)) {
+          if (
+            !resolveOptions.isBuild &&
+            !normalizedFsPath.match(DEP_VERSION_RE)
+          ) {
             const browserHash = optimizedDepInfoFromFile(
               depsOptimizer.metadata,
               normalizedFsPath,
