@@ -472,16 +472,17 @@ export async function transformGlobImport(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
               if (!isProduction && isCSS) {
-                // https://github.com/vitejs/vite/issues/12001
+                // Log warning if CSS content is imported without ?inline.
+                // Only handle `.default` as `isCSS` covers plain CSS files.
                 objectProps.push(
                   `get ${JSON.stringify(filePath)}() {
-                      return {
-                        get default() {
-                          ${createCssDefaultImportWarning(globs, options)}
-                          return ${variableName}.default
-                        },
-                        [Symbol.toStringTag]: 'Module'
-                      }
+                    return {
+                      get default() {
+                        ${createCssDefaultImportWarning(globs, options)}
+                        return ${variableName}.default
+                      },
+                      [Symbol.toStringTag]: 'Module'
+                    }
                   }`,
                 )
               } else {
@@ -492,20 +493,20 @@ export async function transformGlobImport(
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               if (!isProduction && isCSS) {
-                // https://github.com/vitejs/vite/issues/12001
-                // there is filter module css (isCSS => !isModuleCSSRequest), so just handle default now
+                // Log warning if CSS content is imported without ?inline.
+                // Only handle `.default` as `isCSS` covers plain CSS files.
                 objectProps.push(
                   `${JSON.stringify(filePath)}: () => {
-                      return ${importStatement}.then(m => {
-                        return {
-                          get default() {
-                            ${createCssDefaultImportWarning(globs, options)}
-                            return m.default
-                          },
-                          [Symbol.toStringTag]: 'Module'
-                        }
-                      })
-                    }`,
+                    return ${importStatement}.then(m => {
+                      return {
+                        get default() {
+                          ${createCssDefaultImportWarning(globs, options)}
+                          return m.default
+                        },
+                        [Symbol.toStringTag]: 'Module'
+                      }
+                    })
+                  }`,
                 )
               } else {
                 objectProps.push(
