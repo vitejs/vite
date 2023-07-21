@@ -118,7 +118,7 @@ code {
   cursor: pointer;
 }
 
-.kbd {
+kbd {
   line-height: 1.5;
   font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.75rem;
@@ -140,7 +140,7 @@ code {
     <pre class="frame" part="frame"></pre>
     <pre class="stack" part="stack"></pre>
     <div class="tip" part="tip">
-      Click outside, press <span class="kbd">Esc</span> key, or fix the code to dismiss.<br>
+      Click outside, press <kbd>Esc</kbd> key, or fix the code to dismiss.<br>
       You can also disable this overlay by setting
       <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.js.</code>
     </div>
