@@ -1,3 +1,13 @@
+## <small>4.4.6 (2023-07-21)</small>
+
+* fix: constrain inject helpers for iife (#13909) ([c89f677](https://github.com/vitejs/vite/commit/c89f677)), closes [#13909](https://github.com/vitejs/vite/issues/13909)
+* fix: display manualChunks warning only when a function is not used (#13797) (#13798) ([51c271f](https://github.com/vitejs/vite/commit/51c271f)), closes [#13797](https://github.com/vitejs/vite/issues/13797) [#13798](https://github.com/vitejs/vite/issues/13798)
+* fix: do not append `browserHash` on optimized deps during build (#13906) ([0fb2340](https://github.com/vitejs/vite/commit/0fb2340)), closes [#13906](https://github.com/vitejs/vite/issues/13906)
+* fix: use Bun's implementation of `ws` instead of the bundled one (#13901) ([049404c](https://github.com/vitejs/vite/commit/049404c)), closes [#13901](https://github.com/vitejs/vite/issues/13901)
+* feat(client): add guide to press Esc for closing the overlay (#13896) ([da389cc](https://github.com/vitejs/vite/commit/da389cc)), closes [#13896](https://github.com/vitejs/vite/issues/13896)
+
+
+
 ## <small>4.4.5 (2023-07-20)</small>
 
 * fix: "EISDIR: illegal operation on a directory, realpath" error on RA… (#13655) ([6bd5434](https://github.com/vitejs/vite/commit/6bd5434)), closes [#13655](https://github.com/vitejs/vite/issues/13655)
