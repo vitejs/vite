@@ -341,3 +341,82 @@ Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref
 ## AWS Amplify Hosting
 
 Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)
+
+## Heroku
+
+You can deploy your Vite app as a Static Site on [Heroku](https://heroku.com/).
+
+1. Install [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)
+
+2. Create a Heroku account by [signing up](https://signup.heroku.com/)
+
+3. Run the following command (which opens a browser window) and fill in your Heroku credentials
+
+    ```bash
+    heroku login
+    ```
+
+4. Install the [serve package](https://www.npmjs.com/package/serve)
+
+    ```bash
+    npm install --save serve
+    ```
+
+    This will help you serve the static site created at `./dist` after the build.
+
+5. Add a `start` script to your `package.json`
+
+    ```json
+    "start": "serve -s build",
+    ```
+
+    Heroku will need the `start` and `build` scripts so ensure that the scripts section of your `package.json` has those two at the minimum:
+
+    ```json
+    {
+      ...
+      "scripts": {
+        ...
+        "start": "serve -s build",
+        "build": "vite build",
+        ...
+      },
+    ...
+    }
+    ```
+
+6. Set up your Heroku git remote
+
+    Initialize version control, in case you haven't, and commit your changes:
+
+    ```bash
+    git init
+    git add .
+    git commit -m "My site ready for deployment to Heroku"
+    ```
+
+    Create an app on Heroku:
+
+    ```bash
+    heroku apps:create
+    ```
+
+    Heroku will set the `heroku/nodejs` buildpack by default. However, in case that doesn't happen, set it by running this following command:
+
+    ```bash
+    heroku buildpacks:set heroku/nodejs
+    ```
+
+7. Deploy your site
+
+    **Note**: *Replace `main` with your current branch*
+
+    ```bash
+    git push heroku main
+    ```
+
+8. Open the deployed app on your browser
+
+    ```bash
+    heroku open
+    ```
