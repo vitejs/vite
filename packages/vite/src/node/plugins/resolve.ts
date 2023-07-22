@@ -21,6 +21,7 @@ import {
   createDebugger,
   deepImportRE,
   fsPathFromId,
+  getNpmPackageName,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -923,8 +924,10 @@ export async function tryOptimizedResolve(
 
     // lazily initialize idPkgDir
     if (idPkgDir == null) {
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) break
       idPkgDir = resolvePackageData(
-        id,
+        pkgName,
         importer,
         preserveSymlinks,
         packageCache,
