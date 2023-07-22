@@ -4,7 +4,6 @@ import { createRequire } from 'node:module'
 import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
 import type { Plugin } from './plugin'
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
   try {
