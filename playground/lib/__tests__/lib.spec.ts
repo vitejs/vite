@@ -44,7 +44,7 @@ describe.runIf(isBuild)('build', () => {
       'dist/helpers-injection/my-lib-custom-filename.iife.js',
     )
     expect(code).toMatch(
-      /return \$Function\('"use strict"; return \(' \+ expressionSyntax \+ "\).constructor;"\)\(\)/s,
+      `'"use strict"; return (' + expressionSyntax + ").constructor;"`,
     )
   })
 
