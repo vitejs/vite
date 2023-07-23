@@ -130,16 +130,18 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       if (info) {
         await info.processing
         debug?.(`load ${colors.cyan(file)}`)
-      } else {
-        throw new Error(
-          `Something unexpected happened while optimizing "${id}".`,
-        )
       }
 
       // Load the file from the cache instead of waiting for other plugin
       // load hooks to avoid race conditions, once processing is resolved,
       // we are sure that the file has been properly save to disk
-      return fsp.readFile(file, 'utf-8')
+      try {
+        return await fsp.readFile(file, 'utf-8')
+      } catch (e) {
+        throw new Error(
+          `Something unexpected happened while optimizing "${id}".`,
+        )
+      }
     },
   }
 }
