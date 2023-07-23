@@ -51,6 +51,10 @@ export function proxyMiddleware(
     }
 
     proxy.on('error', (err, req, originalRes) => {
+      // originalRes can be falsy if the proxy itself errored
+      if (!originalRes) {
+        httpServer?.emit('error', err)
+      }
       // When it is ws proxy, res is net.Socket
       const res = originalRes as http.ServerResponse | net.Socket
       if ('req' in res) {
