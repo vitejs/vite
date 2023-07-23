@@ -73,7 +73,7 @@ npm add -D terser
   - `browserslist` field in `package.json`
   - `.browserslistrc` file in cwd.
 
-  Set to `false` to ignore these sources.
+  Set to `true` to ignore these sources.
 
 ### `modernPolyfills`
 
