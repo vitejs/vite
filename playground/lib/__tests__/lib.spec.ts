@@ -39,6 +39,15 @@ describe.runIf(isBuild)('build', () => {
     )
   })
 
+  test('restrisct-helpers-injection', async () => {
+    const code = readFile(
+      'dist/helpers-injection/my-lib-custom-filename.iife.js',
+    )
+    expect(code).toMatch(
+      `'"use strict"; return (' + expressionSyntax + ").constructor;"`,
+    )
+  })
+
   test('Library mode does not include `preload`', async () => {
     await untilUpdated(
       () => page.textContent('.dynamic-import-message'),
