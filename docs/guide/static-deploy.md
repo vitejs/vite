@@ -337,3 +337,7 @@ You can also add a [custom domain](https://render.com/docs/custom-domains) to yo
 ## Flightcontrol
 
 Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite), by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite)
+
+## AWS Amplify Hosting
+
+Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)
