@@ -56,7 +56,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
       const modeReplacement = escapeReplacement(config.mode)
       const baseReplacement = escapeReplacement(devBase)
-      const definesReplacement = () => serializedDefines
+      const definesReplacement = serializedDefines
       const serverHostReplacement = escapeReplacement(serverHost)
       const hmrProtocolReplacement = escapeReplacement(protocol)
       const hmrHostnameReplacement = escapeReplacement(host)
