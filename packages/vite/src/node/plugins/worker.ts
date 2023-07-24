@@ -255,10 +255,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const workerType = query['type']! as WorkerType
         let injectEnv = ''
 
+        const scriptPath = JSON.stringify(
+          path.posix.join(config.base, ENV_PUBLIC_PATH),
+        )
+
         if (workerType === 'classic') {
-          injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+          injectEnv = `importScripts(${scriptPath})\n`
         } else if (workerType === 'module') {
-          injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
+          injectEnv = `import ${scriptPath}\n`
         } else if (workerType === 'ignore') {
           if (isBuild) {
             injectEnv = ''
