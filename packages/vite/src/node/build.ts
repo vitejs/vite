@@ -31,6 +31,7 @@ import { terserPlugin } from './plugins/terser'
 import {
   asyncFlatten,
   copyDir,
+  createDebugger,
   emptyDir,
   joinUrlSegments,
   normalizePath,
@@ -872,6 +873,7 @@ export function onRollupLog(
   logHandler: LogOrStringHandler,
   config: ResolvedConfig,
 ): void {
+  const debugLogger = createDebugger('vite:build')
   const viteLog: LogOrStringHandler = (logLeveling, logging) => {
     if (typeof logging === 'object') {
       if (logging.code === 'UNRESOLVED_IMPORT') {
@@ -930,10 +932,8 @@ export function onRollupLog(
             return
 
           case 'debug':
-            config.logger.info(
-              `${colors.bold(
-                colors.gray(`[plugin:${logging.plugin}]`),
-              )} ${colors.gray(logging.message)}`,
+            debugLogger?.(
+              `${`[plugin:${logging.plugin}]`} ${colors.dim(logging.message)}`,
             )
             return
 
