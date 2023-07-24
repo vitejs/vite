@@ -19,7 +19,6 @@ import {
   removeLeadingSlash,
   shouldServeFile,
   slash,
-  stripBase,
 } from '../../utils'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
@@ -195,10 +194,7 @@ export function isFileServingAllowed(
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
-  // When the base path is set, the safeModulesPath does not include the base prefix internally.
-  // Therefore, when retrieving a file from safeModulesPath, the base path should be stripped.
-  // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-  const file = fsPathFromUrl(stripBase(url, server.config.rawBase))
+  const file = fsPathFromUrl(url)
 
   if (server._fsDenyGlob(file)) return false
 
