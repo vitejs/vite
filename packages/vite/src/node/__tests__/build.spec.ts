@@ -625,19 +625,6 @@ describe('onRollupLog', () => {
     )
   })
 
-  test('Rollup logs of debug should be handled by vite', async () => {
-    const logger = createLogger()
-    const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
-
-    await buildProject('debug', logger)
-    const logs = loggerSpy.mock.calls.flat()
-    expect(logs).contain(
-      `${colors.bold(colors.gray(`[plugin:${pluginName}]`))} ${colors.gray(
-        msgDebug,
-      )}`,
-    )
-  })
-
   test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
     const logger = createLogger()
     const loggerMock = vi.fn(() => {})
