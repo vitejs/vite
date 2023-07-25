@@ -220,8 +220,7 @@ async function createDepsOptimizer(
     if (config.optimizeDeps.noDiscovery) {
       // We don't need to scan for dependencies or wait for the static crawl to end
       // Run the first optimization run immediately
-      const knownDeps = prepareKnownDeps()
-      optimizationResult = runOptimizeDeps(config, knownDeps)
+      runOptimizer()
     } else if (!isBuild) {
       // Important, the scanner is dev only
       depsOptimizer.scanProcessing = new Promise((resolve) => {
@@ -626,7 +625,7 @@ async function createDepsOptimizer(
     // It normally should be over by the time crawling of user code ended
     await depsOptimizer.scanProcessing
 
-    if (!isBuild && optimizationResult) {
+    if (!isBuild && optimizationResult && !config.optimizeDeps.noDiscovery) {
       const result = await optimizationResult.result
       optimizationResult = undefined
       currentlyProcessing = false
