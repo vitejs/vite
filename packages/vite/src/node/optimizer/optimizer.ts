@@ -625,7 +625,7 @@ async function createDepsOptimizer(
     // It normally should be over by the time crawling of user code ended
     await depsOptimizer.scanProcessing
 
-    if (!isBuild && optimizationResult) {
+    if (!isBuild && optimizationResult && !config.optimizeDeps.noDiscovery) {
       const result = await optimizationResult.result
       optimizationResult = undefined
       currentlyProcessing = false
