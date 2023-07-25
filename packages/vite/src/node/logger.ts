@@ -59,6 +59,11 @@ export function createLogger(
     return options.customLogger
   }
 
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
   const loggedErrors = new WeakSet<Error | RollupError>()
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
@@ -77,7 +82,7 @@ export function createLogger(
               : type === 'warn'
               ? colors.yellow(colors.bold(prefix))
               : colors.red(colors.bold(prefix))
-          return `${colors.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
+          return `${colors.dim(timeFormatter.format(new Date()))} ${tag} ${msg}`
         } else {
           return msg
         }
