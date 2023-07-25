@@ -26,6 +26,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
+  const numberFormatter = new Intl.NumberFormat('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  })
+  const displaySize = (bytes: number) => {
+    return `${numberFormatter.format(bytes / 1000)} kB`
+  }
+
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
   let hasTransformed = false
@@ -320,13 +328,6 @@ function throttle(fn: Function) {
       timerHandle = null
     }, 100)
   }
-}
-
-function displaySize(bytes: number) {
-  return `${(bytes / 1000).toLocaleString('en', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  })} kB`
 }
 
 function displayTime(time: number) {
