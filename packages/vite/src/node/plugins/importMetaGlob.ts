@@ -55,8 +55,8 @@ export function getAffectedGlobModules(
     if (
       allGlobs.some(
         ({ affirmed, negated }) =>
-          affirmed.some((glob) => isMatch(file, glob)) &&
-          negated.every((glob) => !isMatch(file, glob)),
+          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
+          (!negated.length || negated.every((glob) => isMatch(file, glob))),
       )
     )
       modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
