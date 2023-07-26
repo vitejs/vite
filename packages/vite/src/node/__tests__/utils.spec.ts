@@ -9,6 +9,7 @@ import {
   injectQuery,
   isFileReadable,
   isWindows,
+  normalizePath,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
@@ -258,5 +259,14 @@ describe('processSrcSetSync', () => {
         ({ url }) => path.posix.join(devBase, url),
       ),
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
+})
+
+describe('normalizePath', () => {
+  test('ignores paths in query parameters', async () => {
+    const importPath = '/base/file?param=../../../other/path'
+    expect(normalizePath(importPath)).toBe(
+      '/base/file?param=../../../other/path',
+    )
   })
 })
