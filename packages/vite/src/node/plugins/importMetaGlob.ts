@@ -363,7 +363,7 @@ export async function transformGlobImport(
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
-  const isVirtual = !isAbsolute(id)
+  const isVirtual = isVirtualModule(id)
   const dir = isVirtual ? undefined : dirname(id)
   const matches = await parseImportGlob(
     code,
@@ -652,4 +652,9 @@ export function getCommonBase(globsResolved: string[]): null | string {
   if (!commonAncestor) commonAncestor = '/'
 
   return commonAncestor
+}
+
+export function isVirtualModule(id: string): boolean {
+  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
+  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

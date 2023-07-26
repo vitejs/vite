@@ -963,11 +963,21 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   const pattern = /%(\S+?)%/g
   const envPrefix = resolveEnvPrefix({ envPrefix: config.envPrefix })
   const env: Record<string, any> = { ...config.env }
+
   // account for user env defines
   for (const key in config.define) {
     if (key.startsWith(`import.meta.env.`)) {
       const val = config.define[key]
-      env[key.slice(16)] = typeof val === 'string' ? val : JSON.stringify(val)
+      if (typeof val === 'string') {
+        try {
+          const parsed = JSON.parse(val)
+          env[key.slice(16)] = typeof parsed === 'string' ? parsed : val
+        } catch {
+          env[key.slice(16)] = val
+        }
+      } else {
+        env[key.slice(16)] = JSON.stringify(val)
+      }
     }
   }
   return (html, ctx) => {

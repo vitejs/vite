@@ -6,12 +6,20 @@ import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
-import { WebSocketServer as WebSocketServerRaw } from 'ws'
+import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+
+/* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
+ * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
+ */
+const WebSocketServerRaw = process.versions.bun
+  ? // @ts-expect-error: Bun defines `import.meta.require`
+    import.meta.require('ws').WebSocketServer
+  : WebSocketServerRaw_
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -87,7 +95,7 @@ export function createWebSocketServer(
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
-  let wss: WebSocketServerRaw
+  let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr

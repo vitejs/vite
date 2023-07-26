@@ -439,7 +439,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const getContentWithSourcemap = async (content: string) => {
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
-            if (sourcemap.mappings && !sourcemap.sourcesContent) {
+            if (sourcemap.mappings) {
               await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
             }
             return getCodeWithSourcemap('css', content, sourcemap)
@@ -682,11 +682,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `var ${style} = document.createElement('style');` +
             `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
+          let injectionPoint
           const wrapIdx = code.indexOf('System.register')
-          const executeFnStart =
-            code.indexOf('{', code.indexOf('execute:', wrapIdx)) + 1
+          if (wrapIdx >= 0) {
+            const executeFnStart = code.indexOf('execute:', wrapIdx)
+            injectionPoint = code.indexOf('{', executeFnStart) + 1
+          } else {
+            const insertMark = "'use strict';"
+            injectionPoint = code.indexOf(insertMark) + insertMark.length
+          }
           const s = new MagicString(code)
-          s.appendRight(executeFnStart, injectCode)
+          s.appendRight(injectionPoint, injectCode)
           if (config.build.sourcemap) {
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
@@ -858,6 +864,72 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+async function compileCSSPreprocessors(
+  id: string,
+  lang: PreprocessLang,
+  code: string,
+  config: ResolvedConfig,
+): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
+  const { preprocessorOptions, devSourcemap } = config.css ?? {}
+  const atImportResolvers = getAtImportResolvers(config)
+
+  const preProcessor = preProcessors[lang]
+  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
+  // support @import from node dependencies by default
+  switch (lang) {
+    case PreprocessLang.scss:
+    case PreprocessLang.sass:
+      opts = {
+        includePaths: ['node_modules'],
+        alias: config.resolve.alias,
+        ...opts,
+      }
+      break
+    case PreprocessLang.less:
+    case PreprocessLang.styl:
+    case PreprocessLang.stylus:
+      opts = {
+        paths: ['node_modules'],
+        alias: config.resolve.alias,
+        ...opts,
+      }
+  }
+  // important: set this for relative import resolving
+  opts.filename = cleanUrl(id)
+  opts.enableSourcemap = devSourcemap ?? false
+
+  const preprocessResult = await preProcessor(
+    code,
+    config.root,
+    opts,
+    atImportResolvers,
+  )
+  if (preprocessResult.error) {
+    throw preprocessResult.error
+  }
+
+  let deps: Set<string> | undefined
+  if (preprocessResult.deps) {
+    const normalizedFilename = normalizePath(opts.filename)
+    // sometimes sass registers the file itself as a dep
+    deps = new Set(
+      [...preprocessResult.deps].filter(
+        (dep) => normalizePath(dep) !== normalizedFilename,
+      ),
+    )
+  }
+
+  return {
+    code: preprocessResult.code,
+    map: combineSourcemapsIfExists(
+      opts.filename,
+      preprocessResult.map,
+      preprocessResult.additionalMap,
+    ),
+    deps,
+  }
+}
+
 const configToAtImportResolvers = new WeakMap<
   ResolvedConfig,
   CSSAtImportResolvers
@@ -887,11 +959,7 @@ async function compileCSS(
     return compileLightningCSS(id, code, config, urlReplacer)
   }
 
-  const {
-    modules: modulesOptions,
-    preprocessorOptions,
-    devSourcemap,
-  } = config.css || {}
+  const { modules: modulesOptions, devSourcemap } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -911,68 +979,25 @@ async function compileCSS(
     return { code, map: null }
   }
 
-  let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
-  const atImportResolvers = getAtImportResolvers(config)
-
   // 2. pre-processors: sass etc.
+  let preprocessorMap: ExistingRawSourceMap | undefined
   if (isPreProcessor(lang)) {
-    const preProcessor = preProcessors[lang]
-    let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
-    // support @import from node dependencies by default
-    switch (lang) {
-      case PreprocessLang.scss:
-      case PreprocessLang.sass:
-        opts = {
-          includePaths: ['node_modules'],
-          alias: config.resolve.alias,
-          ...opts,
-        }
-        break
-      case PreprocessLang.less:
-      case PreprocessLang.styl:
-      case PreprocessLang.stylus:
-        opts = {
-          paths: ['node_modules'],
-          alias: config.resolve.alias,
-          ...opts,
-        }
-    }
-    // important: set this for relative import resolving
-    opts.filename = cleanUrl(id)
-    opts.enableSourcemap = devSourcemap ?? false
-
-    const preprocessResult = await preProcessor(
+    const preprocessorResult = await compileCSSPreprocessors(
+      id,
+      lang,
       code,
-      config.root,
-      opts,
-      atImportResolvers,
+      config,
     )
-
-    if (preprocessResult.error) {
-      throw preprocessResult.error
-    }
-
-    code = preprocessResult.code
-    preprocessorMap = combineSourcemapsIfExists(
-      opts.filename,
-      preprocessResult.map,
-      preprocessResult.additionalMap,
-    )
-
-    if (preprocessResult.deps) {
-      preprocessResult.deps.forEach((dep) => {
-        // sometimes sass registers the file itself as a dep
-        if (normalizePath(dep) !== normalizePath(opts.filename)) {
-          deps.add(dep)
-        }
-      })
-    }
+    code = preprocessorResult.code
+    preprocessorMap = preprocessorResult.map
+    preprocessorResult.deps?.forEach((dep) => deps.add(dep))
   }
 
   // 3. postcss
+  const atImportResolvers = getAtImportResolvers(config)
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
 
   const postcssPlugins =
@@ -1010,10 +1035,15 @@ async function compileCSS(
           return id
         },
         async load(id) {
-          const code = fs.readFileSync(id, 'utf-8')
-          const result = await compileCSS(id, code, config)
-          result.deps?.forEach((dep) => deps.add(dep))
-          return result.code
+          const code = await fs.promises.readFile(id, 'utf-8')
+          const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
+          if (isPreProcessor(lang)) {
+            const result = await compileCSSPreprocessors(id, lang, code, config)
+            result.deps?.forEach((dep) => deps.add(dep))
+            // TODO: support source map
+            return result.code
+          }
+          return code
         },
         nameLayer(index) {
           return `vite--anon-layer-${getHash(id)}-${index}`
@@ -1420,6 +1450,14 @@ async function rewriteCssImageSet(
     return url
   })
 }
+function skipUrlReplacer(rawUrl: string) {
+  return (
+    isExternalUrl(rawUrl) ||
+    isDataUrl(rawUrl) ||
+    rawUrl[0] === '#' ||
+    varRE.test(rawUrl)
+  )
+}
 async function doUrlReplace(
   rawUrl: string,
   matched: string,
@@ -1433,12 +1471,7 @@ async function doUrlReplace(
     rawUrl = rawUrl.slice(1, -1)
   }
 
-  if (
-    isExternalUrl(rawUrl) ||
-    isDataUrl(rawUrl) ||
-    rawUrl[0] === '#' ||
-    varRE.test(rawUrl)
-  ) {
+  if (skipUrlReplacer(rawUrl)) {
     return matched
   }
 
@@ -1521,6 +1554,7 @@ function resolveMinifyCssEsbuildOptions(
     logLevel: options.logLevel,
     logLimit: options.logLimit,
     logOverride: options.logOverride,
+    legalComments: options.legalComments,
   }
 
   if (
@@ -2149,6 +2183,10 @@ async function compileLightningCSS(
             if (filePath === filename) {
               return src
             }
+            // This happens with html-proxy (#13776)
+            if (!filePath.endsWith('.css')) {
+              return src
+            }
             return fs.readFileSync(toAbsolute(filePath), 'utf-8')
           },
           async resolve(id, from) {
@@ -2183,6 +2221,10 @@ async function compileLightningCSS(
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
+        if (skipUrlReplacer(dep.url)) {
+          css = css.replace(dep.placeholder, dep.url)
+          break
+        }
         deps.add(dep.url)
         if (urlReplacer) {
           css = css.replace(dep.placeholder, await urlReplacer(dep.url, id))

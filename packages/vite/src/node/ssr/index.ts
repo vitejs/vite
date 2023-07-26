@@ -20,6 +20,7 @@ export interface SSROptions {
    * left marked as experimental to give users more time to update to ESM. CJS builds requires
    * complex externalization heuristics that aren't present in the ESM format.
    * @experimental
+   * @deprecated
    * @default 'esm'
    */
   format?: SSRFormat

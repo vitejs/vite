@@ -408,7 +408,7 @@ export function resolveBuildOptions(
   }
 
   // normalize false string into actual false
-  if ((resolved.minify as any) === 'false') {
+  if ((resolved.minify as string) === 'false') {
     resolved.minify = false
   }
 
@@ -753,6 +753,19 @@ function prepareOutDir(
       config.publicDir &&
       fs.existsSync(config.publicDir)
     ) {
+      if (!areSeparateFolders(outDir, config.publicDir)) {
+        config.logger.warn(
+          colors.yellow(
+            `\n${colors.bold(
+              `(!)`,
+            )} The public directory feature may not work correctly. outDir ${colors.white(
+              colors.dim(outDir),
+            )} and publicDir ${colors.white(
+              colors.dim(config.publicDir),
+            )} are not separate folders.\n`,
+          ),
+        )
+      }
       copyDir(config.publicDir, outDir)
     }
   }
@@ -1223,3 +1236,9 @@ export function toOutputFilePathWithoutRuntime(
 
 export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
 export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
+
+function areSeparateFolders(a: string, b: string) {
+  const na = normalizePath(a)
+  const nb = normalizePath(b)
+  return na !== nb && !na.startsWith(nb + '/') && !nb.startsWith(na + '/')
+}

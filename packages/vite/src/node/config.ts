@@ -100,8 +100,16 @@ export interface ConfigEnv {
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
 
+export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
+export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
-export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
+
+export type UserConfigExport =
+  | UserConfig
+  | Promise<UserConfig>
+  | UserConfigFnObject
+  | UserConfigFnPromise
+  | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -109,6 +117,9 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
+export function defineConfig(config: UserConfig): UserConfig
+export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
+export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
@@ -837,6 +848,19 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     }
   }
 
+  // Warn about removal of experimental features
+  if (
+    config.legacy?.buildSsrCjsExternalHeuristics ||
+    config.ssr?.format === 'cjs'
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
+  }
+
   return resolved
 }
 
@@ -1150,23 +1174,18 @@ async function loadConfigFromBundledFile(
 ): Promise<UserConfigExport> {
   // for esm, before we can register loaders without requiring users to run node
   // with --experimental-loader themselves, we have to do a hack here:
-  // convert to base64, load it with native Node ESM.
+  // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
+    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`
+    const fileNameTmp = `${fileBase}.mjs`
+    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
+    await fsp.writeFile(fileNameTmp, bundledCode)
     try {
-      // Postfix the bundled code with a timestamp to avoid Node's ESM loader cache
-      const configTimestamp = `${fileName}.timestamp:${Date.now()}-${Math.random()
-        .toString(16)
-        .slice(2)}`
-      return (
-        await dynamicImport(
-          'data:text/javascript;base64,' +
-            Buffer.from(`${bundledCode}\n//${configTimestamp}`).toString(
-              'base64',
-            ),
-        )
-      ).default
-    } catch (e) {
-      throw new Error(`${e.message} at ${fileName}`)
+      return (await dynamicImport(fileUrl)).default
+    } finally {
+      fs.unlink(fileNameTmp, () => {}) // Ignore errors
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`

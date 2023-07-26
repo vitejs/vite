@@ -8,6 +8,7 @@ import {
   blue,
   cyan,
   green,
+  lightBlue,
   lightGreen,
   lightRed,
   magenta,
@@ -166,6 +167,46 @@ const FRAMEWORKS: Framework[] = [
         display: 'SvelteKit ↗',
         color: red,
         customCommand: 'npm create svelte@latest TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'solid',
+    display: 'Solid',
+    color: blue,
+    variants: [
+      {
+        name: 'solid-ts',
+        display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'solid',
+        display: 'JavaScript',
+        color: yellow,
+      },
+    ],
+  },
+  {
+    name: 'qwik',
+    display: 'Qwik',
+    color: lightBlue,
+    variants: [
+      {
+        name: 'qwik-ts',
+        display: 'TypeScript',
+        color: lightBlue,
+      },
+      {
+        name: 'qwik',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'custom-qwik-city',
+        display: 'QwikCity ↗',
+        color: lightBlue,
+        customCommand: 'npm create qwik@latest basic TARGET_DIR',
       },
     ],
   },
@@ -483,7 +524,7 @@ function setupReactSwc(root: string, isTs: boolean) {
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.0.0"`,
+      `"@vitejs/plugin-react-swc": "^3.3.2"`,
     )
   })
   editFile(

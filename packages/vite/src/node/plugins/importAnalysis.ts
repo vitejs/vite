@@ -751,9 +751,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const isRelative = url[0] === '.'
         const [normalized] = await moduleGraph.resolveUrl(
-          isRelative ? toAbsoluteUrl(url) : url,
+          toAbsoluteUrl(url),
           ssr,
         )
         normalizedAcceptedUrls.add(normalized)

@@ -205,8 +205,12 @@ async function prepareEsbuildScanner(
 
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+  const {
+    plugins = [],
+    tsconfig,
+    tsconfigRaw,
+    ...esbuildOptions
+  } = config.optimizeDeps?.esbuildOptions ?? {}
 
   return await esbuild.context({
     absWorkingDir: process.cwd(),
@@ -219,6 +223,17 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    tsconfig,
+    tsconfigRaw:
+      tsconfig || typeof tsconfigRaw === 'string'
+        ? tsconfigRaw
+        : {
+            ...tsconfigRaw,
+            compilerOptions: {
+              experimentalDecorators: true,
+              ...tsconfigRaw?.compilerOptions,
+            },
+          },
     ...esbuildOptions,
   })
 }
