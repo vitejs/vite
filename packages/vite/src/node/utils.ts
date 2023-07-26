@@ -207,7 +207,12 @@ export const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? slash(id) : id)
+  const [importPath, params] = id.split('?')
+  const importSuffix = `${params ? `?${params}` : ''}`
+  const normalized = path.posix.normalize(
+    isWindows ? slash(importPath) : importPath,
+  )
+  return `${normalized}${importSuffix}`
 }
 
 export function fsPathFromId(id: string): string {
