@@ -247,7 +247,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           opts,
           true,
         )
-        if (polyfillChunk) {
+        if (genLegacy && polyfillChunk) {
           polyfillChunk.code = modernChunkLegacyGuard + polyfillChunk.code
         }
         return
