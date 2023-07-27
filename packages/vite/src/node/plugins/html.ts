@@ -600,7 +600,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
         }
 
-        return js
+        return { code: js, moduleSideEffects: 'no-treeshake' }
       }
     },
 
