@@ -537,7 +537,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (cssModuleRE.test(id)) {
             isPureCssChunk = false
           }
-        } else if (chunk.modules[id].code) {
+        } else {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
           // that are css gets added to the `styles` map.
