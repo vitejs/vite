@@ -119,15 +119,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       compressedCount = 0
     },
 
-    renderChunk(code, chunk) {
-      const rollupOptionsOutput = config.build.rollupOptions.output
-      const inlineDynamic = (
-        Array.isArray(rollupOptionsOutput)
-          ? rollupOptionsOutput[0]
-          : rollupOptionsOutput
-      )?.inlineDynamicImports
-
-      if (!inlineDynamic) {
+    renderChunk(code, chunk, options) {
+      if (!options.inlineDynamicImports) {
         for (const id of chunk.moduleIds) {
           const module = this.getModuleInfo(id)
           if (!module) continue
