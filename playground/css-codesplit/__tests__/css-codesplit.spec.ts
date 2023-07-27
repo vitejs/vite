@@ -43,6 +43,10 @@ describe.runIf(isBuild)('build', () => {
     expect(findAssetFile(/async.*\.js$/)).toBe('')
   })
 
+  test('should remove empty chunk, HTML without JS', async () => {
+    expect(findAssetFile('shared-css-with-js.*.js$')).toMatch(`/* empty css`)
+  })
+
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
     expect(manifest['index.html'].css.length).toBe(2)
