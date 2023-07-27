@@ -120,31 +120,43 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      for (const id of chunk.moduleIds) {
-        const module = this.getModuleInfo(id)
-        if (!module) continue
-        // When a dynamic importer shares a chunk with the imported module,
-        // warn that the dynamic imported module will not be moved to another chunk (#12850).
-        if (module.importers.length && module.dynamicImporters.length) {
-          // Filter out the intersection of dynamic importers and sibling modules in
-          // the same chunk. The intersecting dynamic importers' dynamic import is not
-          // expected to work. Note we're only detecting the direct ineffective
-          // dynamic import here.
-          const detectedIneffectiveDynamicImport = module.dynamicImporters.some(
-            (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
-          )
-          if (detectedIneffectiveDynamicImport) {
-            this.warn(
-              `\n(!) ${
-                module.id
-              } is dynamically imported by ${module.dynamicImporters
-                .map((m) => m)
-                .join(', ')} but also statically imported by ${module.importers
-                .map((m) => m)
-                .join(
-                  ', ',
-                )}, dynamic import will not move module into another chunk.\n`,
-            )
+      const rollupOptionsOutput = config.build.rollupOptions.output
+      const inlineDynamic = (
+        Array.isArray(rollupOptionsOutput)
+          ? rollupOptionsOutput[0]
+          : rollupOptionsOutput
+      )?.inlineDynamicImports
+
+      if (!inlineDynamic) {
+        for (const id of chunk.moduleIds) {
+          const module = this.getModuleInfo(id)
+          if (!module) continue
+          // When a dynamic importer shares a chunk with the imported module,
+          // warn that the dynamic imported module will not be moved to another chunk (#12850).
+          if (module.importers.length && module.dynamicImporters.length) {
+            // Filter out the intersection of dynamic importers and sibling modules in
+            // the same chunk. The intersecting dynamic importers' dynamic import is not
+            // expected to work. Note we're only detecting the direct ineffective
+            // dynamic import here.
+            const detectedIneffectiveDynamicImport =
+              module.dynamicImporters.some(
+                (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
+              )
+            if (detectedIneffectiveDynamicImport) {
+              this.warn(
+                `\n(!) ${
+                  module.id
+                } is dynamically imported by ${module.dynamicImporters
+                  .map((m) => m)
+                  .join(
+                    ', ',
+                  )} but also statically imported by ${module.importers
+                  .map((m) => m)
+                  .join(
+                    ', ',
+                  )}, dynamic import will not move module into another chunk.\n`,
+              )
+            }
           }
         }
       }
