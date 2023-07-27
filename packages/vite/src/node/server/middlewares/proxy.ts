@@ -15,6 +15,10 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
    */
   rewrite?: (path: string) => string
   /**
+   * dynamically set the target
+   */
+  router?: (req: http.IncomingMessage) => HttpProxy.ServerOptions['target']
+  /**
    * configure the proxy server (e.g. listen to events)
    */
   configure?: (proxy: HttpProxy.Server, options: ProxyOptions) => void
@@ -155,6 +159,13 @@ export function proxyMiddleware(
           } else if (bypassResult === false) {
             debug?.(`bypass: ${req.url} -> 404`)
             return res.end(404)
+          }
+        }
+
+        if (opts.router) {
+          const routerResult = opts.router(req)
+          if (routerResult) {
+            options.target = routerResult
           }
         }
 
