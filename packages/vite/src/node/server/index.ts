@@ -285,7 +285,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _importGlobMap: Map<string, string[][]>
+  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
    * Deps that are externalized
    * @internal

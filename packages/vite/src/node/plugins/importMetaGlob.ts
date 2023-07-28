@@ -51,7 +51,14 @@ export function getAffectedGlobModules(
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
   for (const [id, allGlobs] of server._importGlobMap!) {
-    if (allGlobs.some((glob) => isMatch(file, glob)))
+    // (glob1 || glob2) && !glob3 && !glob4...
+    if (
+      allGlobs.some(
+        ({ affirmed, negated }) =>
+          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
+          (!negated.length || negated.every((glob) => isMatch(file, glob))),
+      )
+    )
       modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
   }
   modules.forEach((i) => {
@@ -83,7 +90,18 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(id, allGlobs)
+          server._importGlobMap.set(
+            id,
+            allGlobs.map((globs) => {
+              const affirmed: string[] = []
+              const negated: string[] = []
+
+              for (const glob of globs) {
+                ;(glob[0] === '!' ? negated : affirmed).push(glob)
+              }
+              return { affirmed, negated }
+            }),
+          )
         }
         return transformStableResult(result.s, id, config)
       }
