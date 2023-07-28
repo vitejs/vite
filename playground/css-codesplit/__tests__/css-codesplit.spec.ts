@@ -43,6 +43,14 @@ describe.runIf(isBuild)('build', () => {
     expect(findAssetFile(/async.*\.js$/)).toBe('')
   })
 
+  test('should remove empty chunk, HTML without JS', async () => {
+    const sharedCSSWithJSChunk = findAssetFile('shared-css-with-js.*.js$')
+    expect(sharedCSSWithJSChunk).toMatch(`/* empty css`)
+    // there are functions and modules in the src code that should be tree-shaken
+    expect(sharedCSSWithJSChunk).not.toMatch('function')
+    expect(sharedCSSWithJSChunk).not.toMatch(/import(?!".\/modulepreload)/)
+  })
+
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
     expect(manifest['index.html'].css.length).toBe(2)
