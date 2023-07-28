@@ -44,7 +44,10 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should remove empty chunk, HTML without JS', async () => {
-    expect(findAssetFile('shared-css-with-js.*.js$')).toMatch(`/* empty css`)
+    const sharedCSSWithJSChunk = findAssetFile('shared-css-with-js.*.js$')
+    expect(sharedCSSWithJSChunk).toMatch(`/* empty css`)
+    // there is one function in the src code that should be tree-shaken
+    expect(sharedCSSWithJSChunk).not.toMatch('function')
   })
 
   test('should generate correct manifest', async () => {
