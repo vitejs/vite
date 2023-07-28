@@ -96,7 +96,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
 
       if (depsOptimizer.isOptimizedDepFile(id)) {
         return id
-      } else {
+      } else if (!options.ssr) {
         if (options?.custom?.['vite:pre-alias']) {
           // Skip registering the id if it is being resolved from the pre-alias plugin
           // When a optimized dep is aliased, we need to avoid waiting for it before optimizing
