@@ -38,7 +38,6 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
   arraify,
-  arrayEqual,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -71,6 +70,13 @@ import {
   renderAssetUrlInJS,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
+
+declare module 'rollup' {
+  export interface RenderedChunk {
+    /** @internal */
+    viteNonFinalizedFilename: string
+  }
+}
 
 // const debug = createDebugger('vite:css')
 
@@ -528,6 +534,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
+      chunk.viteNonFinalizedFilename = chunk.fileName // save non finalized
+
       let chunkCSS = ''
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
@@ -735,21 +743,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
-        // chunk. we check that by comparing the `moduleIds` as they have different
-        // filenames (rendered chunk has the !~{XXX}~ placeholder)
-        const pureCssChunkNames: string[] = []
-        for (const pureCssChunk of pureCssChunks) {
-          for (const key in bundle) {
-            const bundleChunk = bundle[key]
-            if (
-              bundleChunk.type === 'chunk' &&
-              arrayEqual(bundleChunk.moduleIds, pureCssChunk.moduleIds)
-            ) {
-              pureCssChunkNames.push(key)
-              break
-            }
-          }
-        }
+        // chunk. we check that by `viteNonFinalizedFilename` as they have different
+        // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
+        const finalizedFilenamesMap = Object.fromEntries(
+          Object.values(bundle)
+            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+            .map((chunk) => [chunk.viteNonFinalizedFilename, chunk.fileName]),
+        )
+
+        const pureCssChunkNames = [...pureCssChunks].map(
+          (pureCssChunk) => finalizedFilenamesMap[pureCssChunk.fileName],
+        )
 
         const emptyChunkFiles = pureCssChunkNames
           .map((file) => path.basename(file))
