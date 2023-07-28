@@ -154,12 +154,7 @@ function preload(
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const isWorker = config.isWorker
-  const insertPreload = !(
-    ssr ||
-    !!config.build.lib ||
-    isWorker ||
-    config.build.modulePreload === false
-  )
+  const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
   const resolveModulePreloadDependencies =
     config.build.modulePreload && config.build.modulePreload.resolveDependencies
@@ -446,12 +441,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (
-        format !== 'es' ||
-        ssr ||
-        isWorker ||
-        config.build.modulePreload === false
-      ) {
+      if (format !== 'es' || ssr || isWorker) {
         return
       }
 
@@ -562,14 +552,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   deps.size > 1 ||
                   // main chunk is removed
                   (hasRemovedPureCssChunk && deps.size > 0)
-                    ? [...deps]
+                    ? modulePreload === false
+                      ? [...deps].filter((d) => d.endsWith('.css'))
+                      : [...deps]
                     : []
 
                 let renderedDeps: string[]
                 if (normalizedFile && customModulePreloadPaths) {
                   const { modulePreload } = config.build
-                  const resolveDependencies =
-                    modulePreload && modulePreload.resolveDependencies
+                  const resolveDependencies = modulePreload
+                    ? modulePreload.resolveDependencies
+                    : undefined
                   let resolvedDeps: string[]
                   if (resolveDependencies) {
                     // We can't let the user remove css deps as these aren't really preloads, they are just using

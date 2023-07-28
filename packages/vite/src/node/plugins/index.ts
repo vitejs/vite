@@ -54,8 +54,7 @@ export async function resolvePlugins(
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
-    modulePreload === true ||
-    (typeof modulePreload === 'object' && modulePreload.polyfill)
+    modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
     resolvePlugin({
