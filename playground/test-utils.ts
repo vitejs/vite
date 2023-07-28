@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
 import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
-import type { Manifest } from 'vite'
+import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
@@ -30,9 +30,12 @@ export const ports = {
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,
+  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
+  'css/lightningcss-proxy': 5008,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -41,6 +44,7 @@ export const hmrPorts = {
   'ssr-html': 24683,
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
+  'css/lightningcss-proxy': 24686,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -150,6 +154,15 @@ export function findAssetFile(
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
     fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
+  )
+}
+
+export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      'utf-8',
+    ),
   )
 }
 

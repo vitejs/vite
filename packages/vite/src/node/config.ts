@@ -21,7 +21,11 @@ import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
-import type { CSSOptions } from './plugins/css'
+import {
+  type CSSOptions,
+  type ResolvedCSSOptions,
+  resolveCSSOptions,
+} from './plugins/css'
 import {
   asyncFlatten,
   createDebugger,
@@ -51,11 +55,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
-import type {
-  InternalResolveOptions,
-  InternalResolveOptionsWithOverrideConditions,
-  ResolveOptions,
-} from './plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -100,8 +100,16 @@ export interface ConfigEnv {
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
 
+export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
+export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
-export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
+
+export type UserConfigExport =
+  | UserConfig
+  | Promise<UserConfig>
+  | UserConfigFnObject
+  | UserConfigFnPromise
+  | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -109,6 +117,10 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
+export function defineConfig(config: UserConfig): UserConfig
+export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
+export function defineConfig(config: UserConfigFnObject): UserConfigFnObject
+export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
@@ -330,7 +342,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker'
+  > & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -353,6 +368,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    css: ResolvedCSSOptions | undefined
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
@@ -676,6 +692,7 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
+    css: resolveCSSOptions(config.css),
     esbuild:
       config.esbuild === false
         ? false
@@ -830,6 +847,19 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
         )
       }
     }
+  }
+
+  // Warn about removal of experimental features
+  if (
+    config.legacy?.buildSsrCjsExternalHeuristics ||
+    config.ssr?.format === 'cjs'
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
   }
 
   return resolved
@@ -1003,20 +1033,45 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptionsWithOverrideConditions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            overrideConditions: ['node'],
-            dedupe: [],
-            extensions: DEFAULT_EXTENSIONS,
-            preserveSymlinks: false,
-            packageCache: new Map(),
+          const packageCache = new Map()
+          const resolveByViteResolver = (
+            id: string,
+            importer: string,
+            isRequire: boolean,
+          ) => {
+            return tryNodeResolve(
+              id,
+              importer,
+              {
+                root: path.dirname(fileName),
+                isBuild: true,
+                isProduction: true,
+                preferRelative: false,
+                tryIndex: true,
+                mainFields: [],
+                browserField: false,
+                conditions: [],
+                overrideConditions: ['node'],
+                dedupe: [],
+                extensions: DEFAULT_EXTENSIONS,
+                preserveSymlinks: false,
+                packageCache,
+                isRequire,
+              },
+              false,
+            )?.id
+          }
+          const isESMFile = (id: string): boolean => {
+            if (id.endsWith('.mjs')) return true
+            if (id.endsWith('.cjs')) return false
+
+            const nearestPackageJson = findNearestPackageData(
+              path.dirname(id),
+              packageCache,
+            )
+            return (
+              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
+            )
           }
 
           // externalize bare imports
@@ -1036,15 +1091,39 @@ async function bundleConfigFile(
                 return { external: true }
               }
 
-              const isIdESM = isESM || kind === 'dynamic-import'
-              let idFsPath = tryNodeResolve(
-                id,
-                importer,
-                { ...options, isRequire: !isIdESM },
-                false,
-              )?.id
-              if (idFsPath && isIdESM) {
+              const isImport = isESM || kind === 'dynamic-import'
+              let idFsPath: string | undefined
+              try {
+                idFsPath = resolveByViteResolver(id, importer, !isImport)
+              } catch (e) {
+                if (!isImport) {
+                  let canResolveWithImport = false
+                  try {
+                    canResolveWithImport = !!resolveByViteResolver(
+                      id,
+                      importer,
+                      false,
+                    )
+                  } catch {}
+                  if (canResolveWithImport) {
+                    throw new Error(
+                      `Failed to resolve ${JSON.stringify(
+                        id,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                    )
+                  }
+                }
+                throw e
+              }
+              if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
+              }
+              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+                throw new Error(
+                  `${JSON.stringify(
+                    id,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                )
               }
               return {
                 path: idFsPath,
@@ -1058,7 +1137,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fs.promises.readFile(args.path, 'utf8')
+            const contents = await fsp.readFile(args.path, 'utf8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),

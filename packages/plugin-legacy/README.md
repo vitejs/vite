@@ -73,7 +73,7 @@ npm add -D terser
   - `browserslist` field in `package.json`
   - `.browserslistrc` file in cwd.
 
-  Set to `false` to ignore these sources.
+  Set to `true` to ignore these sources.
 
 ### `modernPolyfills`
 
@@ -116,6 +116,13 @@ npm add -D terser
 - **Default:** `false`
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
+
+### `renderModernChunks`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Set to `false` to only output the legacy bundles that support all target browsers.
 
 ## Browsers that supports ESM but does not support widely-available features
 

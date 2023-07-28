@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { Server } from 'node:http'
 import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
@@ -5,12 +6,20 @@ import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
-import { WebSocketServer as WebSocketServerRaw } from 'ws'
+import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+
+/* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
+ * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
+ */
+const WebSocketServerRaw = process.versions.bun
+  ? // @ts-expect-error: Bun defines `import.meta.require`
+    import.meta.require('ws').WebSocketServer
+  : WebSocketServerRaw_
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -86,7 +95,7 @@ export function createWebSocketServer(
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
-  let wss: WebSocketServerRaw
+  let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
@@ -101,9 +110,17 @@ export function createWebSocketServer(
   const host = (hmr && hmr.host) || undefined
 
   if (wsServer) {
+    let hmrBase = config.base
+    const hmrPath = hmr ? hmr.path : undefined
+    if (hmrPath) {
+      hmrBase = path.posix.join(hmrBase, hmrPath)
+    }
     wss = new WebSocketServerRaw({ noServer: true })
     wsServer.on('upgrade', (req, socket, head) => {
-      if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
+      if (
+        req.headers['sec-websocket-protocol'] === HMR_HEADER &&
+        req.url === hmrBase
+      ) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
           wss.emit('connection', ws, req)
         })

@@ -4,7 +4,7 @@ title: Configuring Vite
 
 # Configuring Vite
 
-When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root).
+When running `vite` from the command line, Vite will automatically try to resolve a config file named `vite.config.js` inside [project root](/guide/#index-html-and-project-root) (other JS and TS extensions are also supported).
 
 The most basic config file looks like this:
 
@@ -71,7 +71,7 @@ It is important to note that in Vite's API the `command` value is `serve` during
 
 ## Async Config
 
-If the config needs to call async function, it can export a async function instead:
+If the config needs to call async functions, it can export an async function instead. And this async function can also be passed through `defineConfig` for improved intellisense support:
 
 ```js
 export default defineConfig(async ({ command, mode }) => {
@@ -98,7 +98,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     // vite config
     define: {
-      __APP_ENV__: env.APP_ENV,
+      __APP_ENV__: JSON.stringify(env.APP_ENV),
     },
   }
 })

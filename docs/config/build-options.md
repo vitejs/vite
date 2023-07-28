@@ -34,7 +34,7 @@ The polyfill can be disabled using `{ polyfill: false }`.
 
 The list of chunks to preload for each dynamic import is computed by Vite. By default, an absolute path including the `base` will be used when loading these dependencies. If the `base` is relative (`''` or `'./'`), `import.meta.url` is used at runtime to avoid absolute paths that depend on the final deployed base.
 
-There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. It expects a function of type `ResolveModulePreloadDependenciesFn`:
+There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. [Give Feedback](https://github.com/vitejs/vite/discussions/13841). It expects a function of type `ResolveModulePreloadDependenciesFn`:
 
 ```ts
 type ResolveModulePreloadDependenciesFn = (
@@ -119,10 +119,10 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 
 ## build.cssMinify
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'esbuild' | 'lightningcss'`
 - **Default:** the same as [`build.minify`](#build-minify)
 
-This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` to minify CSS.
+This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` by default to minify CSS. Set the option to `'lightningcss'` to use [Lightning CSS](https://lightningcss.dev/minification.html) instead. If selected, it can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss).
 
 ## build.sourcemap
 
@@ -218,7 +218,7 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.copyPublicDir
 
-- **Experimental**
+- **Experimental:** [Give feedback](https://github.com/vitejs/vite/discussions/13807)
 - **Type:** `boolean`
 - **Default:** `true`
 

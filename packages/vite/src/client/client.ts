@@ -81,6 +81,7 @@ function setupWebSocket(
     'open',
     () => {
       isOpened = true
+      notifyListeners('vite:ws:connect', { webSocket: socket })
     },
     { once: true },
   )
@@ -98,6 +99,8 @@ function setupWebSocket(
       onCloseWithoutOpen()
       return
     }
+
+    notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     console.log(`[vite] server connection lost. polling for restart...`)
     await waitForSuccessfulPing(protocol, hostAndPath)
@@ -126,6 +129,20 @@ function cleanUrl(pathname: string): string {
 
 let isFirstUpdate = true
 const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
+
+const debounceReload = (time: number) => {
+  let timer: ReturnType<typeof setTimeout> | null
+  return () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    timer = setTimeout(() => {
+      location.reload()
+    }, time)
+  }
+}
+const pageReload = debounceReload(50)
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -219,11 +236,11 @@ async function handleMessage(payload: HMRPayload) {
           payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
-          location.reload()
+          pageReload()
         }
         return
       } else {
-        location.reload()
+        pageReload()
       }
       break
     case 'prune':

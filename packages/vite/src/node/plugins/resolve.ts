@@ -21,6 +21,7 @@ import {
   createDebugger,
   deepImportRE,
   fsPathFromId,
+  getNpmPackageName,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -114,7 +115,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
-  shouldExternalize?: (id: string) => boolean | undefined
+  shouldExternalize?: (id: string, importer?: string) => boolean | undefined
 
   /**
    * Set by createResolver, we only care about the resolved id. moduleSideEffects
@@ -185,6 +186,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       )
       if (resolvedImports) {
         id = resolvedImports
+
+        if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
+          return id
+        }
       }
 
       if (importer) {
@@ -246,7 +251,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (depsOptimizer?.isOptimizedDepFile(normalizedFsPath)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
-          if (!normalizedFsPath.match(DEP_VERSION_RE)) {
+          if (
+            !resolveOptions.isBuild &&
+            !normalizedFsPath.match(DEP_VERSION_RE)
+          ) {
             const browserHash = optimizedDepInfoFromFile(
               depsOptimizer.metadata,
               normalizedFsPath,
@@ -325,7 +333,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        const external = options.shouldExternalize?.(id)
+        const external = options.shouldExternalize?.(id, importer)
         if (
           !external &&
           asSrc &&
@@ -916,8 +924,10 @@ export async function tryOptimizedResolve(
 
     // lazily initialize idPkgDir
     if (idPkgDir == null) {
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) break
       idPkgDir = resolvePackageData(
-        id,
+        pkgName,
         importer,
         preserveSymlinks,
         packageCache,
@@ -1101,8 +1111,6 @@ function resolveExportsOrImports(
         return options.isProduction
       case 'development':
         return !options.isProduction
-      case 'module':
-        return !options.isRequire
     }
     return true
   })

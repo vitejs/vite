@@ -86,7 +86,7 @@ But a few libraries haven't transitioned to this new default yet, including [`li
 - [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 
-If migrating your codebase to `"isolatedModules": true` is an unsurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
+If migrating your codebase to `"isolatedModules": true` is an insurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
 
 ### Client Types
 
@@ -254,6 +254,24 @@ import otherStyles from './bar.css?inline' // will not be injected
 
 ::: tip NOTE
 Default and named imports from CSS files (e.g `import style from './foo.css'`) are deprecated since Vite 4. Use the `?inline` query instead.
+:::
+
+### Lightning CSS
+
+Starting from Vite 4.4, there is experimental support for [Lightning CSS](https://lightningcss.dev/). You can opt into it by adding [`css.transformer: 'lightningcss'`](../config/shared-options.md#css-transformer) to your config file and install the optional [`lightningcss`](https://www.npmjs.com/package/lightningcss) dependency:
+
+```bash
+npm add -D lightningcss
+```
+
+If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightning CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
+
+To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).
+
+By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
+
+::: tip NOTE
+[CSS Pre-processors](#css-pre-processors) aren't supported when using Lightning CSS.
 :::
 
 ## Static Assets
@@ -541,7 +559,7 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During dev this relies on [browser native support](https://caniuse.com/?search=module%20worker) (currently not supported in Firefox), but for the production build it is compiled away.
+The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During dev this relies on [browser native support](https://caniuse.com/?search=module%20worker), but for the production build it is compiled away.
 
 By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
 

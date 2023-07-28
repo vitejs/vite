@@ -13,7 +13,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
-Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
+Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
 Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills. The legacy chunks are conditionally loaded only in browsers that do not have native ESM support.
 
@@ -59,6 +59,10 @@ export default defineConfig({
 ```
 
 This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache })` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
+
+::: warning
+You should use `build.rollupOptions.output.manualChunks` function form when using this plugin. If the object form is used, the plugin won't have any effect.
+:::
 
 ## Rebuild on files changes
 
@@ -221,7 +225,7 @@ In library mode, all `import.meta.env.*` usage are statically replaced when buil
 ## Advanced Base Options
 
 ::: warning
-This feature is experimental, the API may change in a future minor without following semver. Please always pin Vite's version to a minor when using it.
+This feature is experimental. [Give Feedback](https://github.com/vitejs/vite/discussions/13834).
 :::
 
 For advanced use cases, the deployed assets and public files may be in different paths, for example to use different cache strategies.

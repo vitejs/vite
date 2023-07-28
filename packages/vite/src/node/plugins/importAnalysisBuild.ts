@@ -10,10 +10,12 @@ import {
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
+  generateCodeFrame,
   isDataUrl,
   isExternalUrl,
   isInNodeModules,
   moduleListContains,
+  numberToPos,
 } from '../utils'
 import type { Plugin } from '../plugin'
 import { getDepOptimizationConfig } from '../config'
@@ -69,7 +71,8 @@ function indexOfMatchInSlice(
  */
 
 function detectScriptRel() {
-  const relList = document.createElement('link').relList
+  const relList =
+    typeof document !== 'undefined' && document.createElement('link').relList
   return relList && relList.supports && relList.supports('modulepreload')
     ? 'modulepreload'
     : 'preload'
@@ -132,7 +135,17 @@ function preload(
         })
       }
     }),
-  ).then(() => baseModule())
+  )
+    .then(() => baseModule())
+    .catch((err) => {
+      const e = new Event('vite:preloadError', { cancelable: true })
+      // @ts-expect-error custom payload
+      e.payload = err
+      window.dispatchEvent(e)
+      if (!e.defaultPrevented) {
+        throw err
+      }
+    })
 }
 
 /**
@@ -452,7 +465,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e: any) {
-            this.error(e, e.idx)
+            const loc = numberToPos(code, e.idx)
+            this.error({
+              name: e.name,
+              message: e.message,
+              stack: e.stack,
+              cause: e.cause,
+              pos: e.idx,
+              loc: { ...loc, file: chunk.fileName },
+              frame: generateCodeFrame(code, loc),
+            })
           }
 
           const s = new MagicString(code)
@@ -631,11 +653,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 source: chunk.fileName,
                 hires: true,
               })
-              const map = combineSourcemaps(
-                chunk.fileName,
-                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
-                false,
-              ) as SourceMap
+              const map = combineSourcemaps(chunk.fileName, [
+                nextMap as RawSourceMap,
+                chunk.map as RawSourceMap,
+              ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
 
