@@ -137,13 +137,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             this.warn(
               `\n(!) ${
                 module.id
-              } is dynamically imported by ${module.dynamicImporters
-                .map((m) => m)
-                .join(', ')} but also statically imported by ${module.importers
-                .map((m) => m)
-                .join(
-                  ', ',
-                )}, dynamic import will not move module into another chunk.\n`,
+              } is dynamically imported by ${module.dynamicImporters.join(
+                ', ',
+              )} but also statically imported by ${module.importers.join(
+                ', ',
+              )}, dynamic import will not move module into another chunk.\n`,
             )
           }
         }
