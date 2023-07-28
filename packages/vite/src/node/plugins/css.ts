@@ -697,7 +697,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
-              map: s.generateMap({ hires: true }),
+              map: s.generateMap({ hires: 'boundary' }),
             }
           } else {
             return { code: s.toString() }
@@ -2130,7 +2130,7 @@ async function getSource(
   ms.appendLeft(0, sep)
   ms.appendLeft(0, additionalData)
 
-  const map = ms.generateMap({ hires: true })
+  const map = ms.generateMap({ hires: 'boundary' })
   map.file = filename
   map.sources = [filename]
 

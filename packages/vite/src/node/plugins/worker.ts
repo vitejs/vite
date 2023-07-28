@@ -365,7 +365,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return (
           s && {
             code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null,
+            map: config.build.sourcemap
+              ? s.generateMap({ hires: 'boundary' })
+              : null,
           }
         )
       }

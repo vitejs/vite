@@ -274,7 +274,7 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: true })
+  let map = s.generateMap({ hires: 'boundary' })
   if (inMap && inMap.mappings && inMap.sources.length > 0) {
     map = combineSourcemaps(url, [
       {
