@@ -1,4 +1,4 @@
-import './shared-css-empty-2.js'
+import shouldTreeshake from './shared-css-empty-2.js'
 document.querySelector('#app').innerHTML = `
   <div>
     <h1>Shared CSS, with JS</h1>
