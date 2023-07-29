@@ -189,7 +189,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null,
+          map: config.build.sourcemap
+            ? s.generateMap({ hires: 'boundary' })
+            : null,
         }
       } else {
         return null

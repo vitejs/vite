@@ -397,7 +397,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         if (config.build.sourcemap) {
           return {
             code: ms.toString(),
-            map: ms.generateMap({ hires: true }),
+            map: ms.generateMap({ hires: 'boundary' }),
           }
         }
         return {
