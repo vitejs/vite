@@ -101,7 +101,7 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
+    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
     const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
@@ -154,7 +154,7 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!.replace(/^\/+/, '/'), 'http://example.com')
+    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
