@@ -515,7 +515,7 @@ The init function can also take an imports object which is passed along to [`Web
 
 ```js
 init({
-  someModule: {
+  imports: {
     someFunc: () => {
       /* ... */
     },
@@ -531,6 +531,24 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 [ES Module Integration Proposal for WebAssembly](https://github.com/WebAssembly/esm-integration) is not currently supported.
 Use [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm) or other community plugins to handle this.
 :::
+
+### Accessing the WebAssembly Module
+
+If you need access to the `Module` object, e.g. to instantiate it multiple times, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset, and then perform the instantiation:
+
+```js
+import wasmUrl from 'foo.wasm?url'
+
+const main = async () => {
+  const responsePromise = fetch(wasmUrl)
+  const { module, instance } = await WebAssembly.instantiateStreaming(
+    responsePromise,
+  )
+  /* ... */
+}
+
+main()
+```
 
 ### Fetching the module in Node.js
 
@@ -549,24 +567,6 @@ const main = async () => {
   const { instance } = await WebAssembly.instantiate(buffer, {
     /* ... */
   })
-  /* ... */
-}
-
-main()
-```
-
-### Accessing the WebAssembly Module
-
-If you need access to the `Module` object, e.g. to instantiate it multiple times, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset, and then perform the instantiation:
-
-```js
-import wasmUrl from 'foo.wasm?url'
-
-const main = async () => {
-  const responsePromise = fetch(wasmUrl)
-  const { module, instance } = await WebAssembly.instantiateStreaming(
-    responsePromise,
-  )
   /* ... */
 }
 
