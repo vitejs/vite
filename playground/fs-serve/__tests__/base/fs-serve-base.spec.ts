@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import { beforeAll, describe, expect, test } from 'vitest'
-import testJSON from '../safe.json'
+import testJSON from '../../safe.json'
 import { isServe, page, viteTestUrl } from '~utils'
 
 const stringified = JSON.stringify(testJSON)
