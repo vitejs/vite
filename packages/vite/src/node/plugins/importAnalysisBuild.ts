@@ -418,7 +418,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null,
+          map: config.build.sourcemap
+            ? s.generateMap({ hires: 'boundary' })
+            : null,
         }
       }
     },
@@ -436,7 +438,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           return {
             code: s.toString(),
-            map: s.generateMap({ hires: true }),
+            map: s.generateMap({ hires: 'boundary' }),
           }
         } else {
           return code.replace(re, isModern)
@@ -651,7 +653,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (config.build.sourcemap && chunk.map) {
               const nextMap = s.generateMap({
                 source: chunk.fileName,
-                hires: true,
+                hires: 'boundary',
               })
               const map = combineSourcemaps(chunk.fileName, [
                 nextMap as RawSourceMap,

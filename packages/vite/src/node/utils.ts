@@ -1142,7 +1142,7 @@ export function transformStableResult(
     code: s.toString(),
     map:
       config.command === 'build' && config.build.sourcemap
-        ? s.generateMap({ hires: true, source: id })
+        ? s.generateMap({ hires: 'boundary', source: id })
         : null,
   }
 }

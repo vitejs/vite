@@ -574,7 +574,7 @@ export async function createPluginContainer(
         return createIfNull
           ? new MagicString(this.originalCode).generateMap({
               includeContent: true,
-              hires: true,
+              hires: 'boundary',
               source: cleanUrl(this.filename),
             })
           : null
