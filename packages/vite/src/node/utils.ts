@@ -1275,5 +1275,7 @@ export function getPackageManagerCommand(
       return packageManager === 'yarn'
         ? 'yarn upgrade'
         : `${packageManager} update`
+    default:
+      throw new TypeError(`Unknown command type: ${type}`)
   }
 }
