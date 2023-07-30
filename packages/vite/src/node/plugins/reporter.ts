@@ -26,13 +26,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
-  const numberFormatter = new Intl.NumberFormat('en', {
+  const formatBytes = Intl.NumberFormat('en', {
+    notation: 'compact',
+    style: 'unit',
+    unit: 'byte',
+    unitDisplay: 'narrow',
+    minimumFractionDigits: 1,
     maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  })
-  const displaySize = (bytes: number) => {
-    return `${numberFormatter.format(bytes / 1000)} kB`
-  }
+  }).format
 
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
@@ -220,9 +221,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const sizePad = displaySize(biggestSize).length
-        const mapPad = displaySize(biggestMap).length
-        const compressPad = displaySize(biggestCompressSize).length
+        const sizePad = formatBytes(biggestSize).length
+        const mapPad = formatBytes(biggestMap).length
+        const compressPad = formatBytes(biggestCompressSize).length
 
         const relativeOutDir = normalizePath(
           path.relative(
@@ -251,18 +252,18 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                   )
                 : group.color(entry.name.padEnd(longest + 2))
             log += colors.bold(
-              sizeColor(displaySize(entry.size).padStart(sizePad)),
+              sizeColor(formatBytes(entry.size).padStart(sizePad)),
             )
             if (entry.compressedSize) {
               log += colors.dim(
-                ` │ gzip: ${displaySize(entry.compressedSize).padStart(
+                ` │ gzip: ${formatBytes(entry.compressedSize).padStart(
                   compressPad,
                 )}`,
               )
             }
             if (entry.mapSize) {
               log += colors.dim(
-                ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
+                ` │ map: ${formatBytes(entry.mapSize).padStart(mapPad)}`,
               )
             }
             config.logger.info(log)
