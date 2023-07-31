@@ -7,6 +7,7 @@ import '@vite/env'
 // injected by the hmr plugin when served
 declare const __BASE__: string
 declare const __SERVER_HOST__: string
+declare const __HMR_ENABLE__: string
 declare const __HMR_PROTOCOL__: string | null
 declare const __HMR_HOSTNAME__: string | null
 declare const __HMR_PORT__: number | null
@@ -21,6 +22,7 @@ const importMetaUrl = new URL(import.meta.url)
 
 // use server configuration, then fallback to inference
 const serverHost = __SERVER_HOST__
+const serverEnable = __HMR_ENABLE__
 const socketProtocol =
   __HMR_PROTOCOL__ || (importMetaUrl.protocol === 'https:' ? 'wss' : 'ws')
 const hmrPort = __HMR_PORT__
@@ -32,41 +34,43 @@ const base = __BASE__ || '/'
 const messageBuffer: string[] = []
 
 let socket: WebSocket
-try {
-  let fallback: (() => void) | undefined
-  // only use fallback when port is inferred to prevent confusion
-  if (!hmrPort) {
-    fallback = () => {
-      // fallback to connecting directly to the hmr server
-      // for servers which does not support proxying websocket
-      socket = setupWebSocket(socketProtocol, directSocketHost, () => {
-        const currentScriptHostURL = new URL(import.meta.url)
-        const currentScriptHost =
-          currentScriptHostURL.host +
-          currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
-        console.error(
-          '[vite] failed to connect to websocket.\n' +
-            'your current setup:\n' +
-            `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
-            `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .',
-        )
-      })
-      socket.addEventListener(
-        'open',
-        () => {
-          console.info(
-            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+if (serverEnable) {
+  try {
+    let fallback: (() => void) | undefined
+    // only use fallback when port is inferred to prevent confusion
+    if (!hmrPort) {
+      fallback = () => {
+        // fallback to connecting directly to the hmr server
+        // for servers which does not support proxying websocket
+        socket = setupWebSocket(socketProtocol, directSocketHost, () => {
+          const currentScriptHostURL = new URL(import.meta.url)
+          const currentScriptHost =
+            currentScriptHostURL.host +
+            currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
+          console.error(
+            '[vite] failed to connect to websocket.\n' +
+              'your current setup:\n' +
+              `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
+              `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
+              'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .',
           )
-        },
-        { once: true },
-      )
+        })
+        socket.addEventListener(
+          'open',
+          () => {
+            console.info(
+              '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+            )
+          },
+          { once: true },
+        )
+      }
     }
-  }
 
-  socket = setupWebSocket(socketProtocol, socketHost, fallback)
-} catch (error) {
-  console.error(`[vite] failed to connect to websocket (${error}). `)
+    socket = setupWebSocket(socketProtocol, socketHost, fallback)
+  } catch (error) {
+    console.error(`[vite] failed to connect to websocket (${error}). `)
+  }
 }
 
 function setupWebSocket(

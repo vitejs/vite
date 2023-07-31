@@ -29,6 +29,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const serverHost = `${resolvedServerHostname}:${resolvedServerPort}${devBase}`
 
       let hmrConfig = config.server.hmr
+      const hmrEnable = hmrConfig !== false
       hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
       const host = hmrConfig?.host || null
       const protocol = hmrConfig?.protocol || null
@@ -58,6 +59,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const baseReplacement = escapeReplacement(devBase)
       const definesReplacement = () => serializedDefines
       const serverHostReplacement = escapeReplacement(serverHost)
+      const hmrEnableReplacement = escapeReplacement(hmrEnable)
       const hmrProtocolReplacement = escapeReplacement(protocol)
       const hmrHostnameReplacement = escapeReplacement(host)
       const hmrPortReplacement = escapeReplacement(port)
@@ -72,6 +74,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(/__BASE__/g, baseReplacement)
           .replace(`__DEFINES__`, definesReplacement)
           .replace(`__SERVER_HOST__`, serverHostReplacement)
+          .replace(`__HMR_ENABLE__`, hmrEnableReplacement)
           .replace(`__HMR_PROTOCOL__`, hmrProtocolReplacement)
           .replace(`__HMR_HOSTNAME__`, hmrHostnameReplacement)
           .replace(`__HMR_PORT__`, hmrPortReplacement)
