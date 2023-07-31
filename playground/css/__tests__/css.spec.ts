@@ -139,6 +139,14 @@ test('less', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('less with different options', async () => {
+  const divWitOpt1 = await page.$('.div-with-less-opt1')
+  const divWitOpt2 = await page.$('.div-with-less-opt2')
+
+  expect(await getColor(divWitOpt1)).toBe('red')
+  expect(await getColor(divWitOpt2)).toBe('green')
+})
+
 test('stylus', async () => {
   const imported = await page.$('.stylus')
   const additionalData = await page.$('.stylus-additional-data')

@@ -226,7 +226,7 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 ## css.preprocessorOptions
 
-- **Type:** `Record<string, object>`
+- **Type:** `Record<string, object|function>`
 
 Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
 
@@ -252,6 +252,31 @@ export default defineConfig({
         define: {
           $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
         },
+      },
+    },
+  },
+})
+```
+
+You can pass a function to specific different option for different files. Note it only works for file imported from javascript, or in other word —— the entry style file.
+
+Example:
+
+```js
+export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      less: function (id) {
+        if (id.match(/some-path-regex/)) {
+          return {
+            javascriptEnabled: true,
+            additionalData: `$injectedColor: orange;`,
+          }
+        } else {
+          return {
+            additionalData: `$injectedColor: blue;`,
+          }
+        }
       },
     },
   },

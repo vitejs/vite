@@ -6,6 +6,9 @@ import './sass.scss'
 import './less.less'
 import './stylus.styl'
 
+import './less/withOpt1.less'
+import './less/withOpt2.less'
+
 // eslint-disable-next-line import/no-duplicates
 import css from './imported.css'
 text('.imported-css', css) // deprecated, but leave this as-is to make sure it works

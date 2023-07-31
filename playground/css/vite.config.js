@@ -61,6 +61,21 @@ export default defineConfig({
           },
         ],
       },
+      less: function (id) {
+        if (id.match(/withOpt1.less/)) {
+          return {
+            additionalData: `@primaryColor: red;`,
+          }
+        } else if (id.match(/withOpt2.less/)) {
+          return {
+            additionalData: `@primaryColor: green;`,
+          }
+        } else {
+          return {
+            additionalData: `@primaryColor: gray;`,
+          }
+        }
+      },
       styl: {
         additionalData: `$injectedColor ?= orange`,
         imports: [

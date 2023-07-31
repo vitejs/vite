@@ -864,17 +864,31 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+function getPreProcessorOptions(
+  id: string,
+  lang: PreprocessLang,
+  code: string,
+  config: ResolvedConfig,
+) {
+  const { preprocessorOptions } = config.css ?? {}
+  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
+  if (typeof opts === 'function') {
+    opts = opts(id, lang, code) || {}
+  }
+  return opts
+}
+
 async function compileCSSPreprocessors(
   id: string,
   lang: PreprocessLang,
   code: string,
   config: ResolvedConfig,
 ): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
-  const { preprocessorOptions, devSourcemap } = config.css ?? {}
+  const { devSourcemap } = config.css ?? {}
   const atImportResolvers = getAtImportResolvers(config)
 
   const preProcessor = preProcessors[lang]
-  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
+  let opts = getPreProcessorOptions(id, lang, code, config)
   // support @import from node dependencies by default
   switch (lang) {
     case PreprocessLang.scss:
