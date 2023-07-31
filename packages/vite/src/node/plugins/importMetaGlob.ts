@@ -619,7 +619,7 @@ export async function toAbsoluteGlob(
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const isSubImportsPattern = glob.startsWith('#') && glob.includes('*')
+  const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
 
   const resolved = normalizePath(
     (await resolveId(glob, importer, {

@@ -122,9 +122,10 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               preferRelative: true,
             })
             file = await assetResolver(url, id)
-            file ??= url.startsWith('/')
-              ? slash(path.join(config.publicDir, url))
-              : slash(path.resolve(path.dirname(id), url))
+            file ??=
+              url[0] === '/'
+                ? slash(path.join(config.publicDir, url))
+                : slash(path.resolve(path.dirname(id), url))
           }
 
           // Get final asset URL. If the file does not exist,
