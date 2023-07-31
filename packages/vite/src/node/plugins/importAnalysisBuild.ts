@@ -553,7 +553,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // main chunk is removed
                   (hasRemovedPureCssChunk && deps.size > 0)
                     ? modulePreload === false
-                      ? [...deps].filter((d) => d.endsWith('.css'))
+                      ? // CSS deps use the same mechanism as module preloads, so even if disabled,
+                        // we still need to pass these deps to the preload helper in dynamic imports.
+                        [...deps].filter((d) => d.endsWith('.css'))
                       : [...deps]
                     : []
 
