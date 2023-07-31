@@ -26,14 +26,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
-  const formatBytes = Intl.NumberFormat('en', {
-    notation: 'compact',
+  const formatter = Intl.NumberFormat('en', {
     style: 'unit',
-    unit: 'byte',
-    unitDisplay: 'narrow',
-    minimumFractionDigits: 1,
+    unit: 'kilobyte',
+    notation: 'standard',
     maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
   }).format
+  const formatBytes = (bytes: number) => formatter(bytes / 1000)
 
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
