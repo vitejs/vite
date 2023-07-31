@@ -1,3 +1,24 @@
+## <small>4.4.8 (2023-07-31)</small>
+
+* fix: modulePreload false (#13973) ([488085d](https://github.com/vitejs/vite/commit/488085d)), closes [#13973](https://github.com/vitejs/vite/issues/13973)
+* fix: multiple entries with shared css and no JS (#13962) ([89a3db0](https://github.com/vitejs/vite/commit/89a3db0)), closes [#13962](https://github.com/vitejs/vite/issues/13962)
+* fix: use file extensions on type imports so they work with `moduleResolution: 'node16'` (#13947) ([aeef670](https://github.com/vitejs/vite/commit/aeef670)), closes [#13947](https://github.com/vitejs/vite/issues/13947)
+* fix(css): enhance error message for missing preprocessor dependency (#11485) ([65e5c22](https://github.com/vitejs/vite/commit/65e5c22)), closes [#11485](https://github.com/vitejs/vite/issues/11485)
+* fix(esbuild): fix static properties transpile when useDefineForClassFields false (#13992) ([4ca7c13](https://github.com/vitejs/vite/commit/4ca7c13)), closes [#13992](https://github.com/vitejs/vite/issues/13992)
+* fix(importAnalysis): strip url base before passing as safeModulePaths (#13712) ([1ab06a8](https://github.com/vitejs/vite/commit/1ab06a8)), closes [#13712](https://github.com/vitejs/vite/issues/13712)
+* fix(importMetaGlob): avoid unnecessary hmr of negative glob (#13646) ([844451c](https://github.com/vitejs/vite/commit/844451c)), closes [#13646](https://github.com/vitejs/vite/issues/13646)
+* fix(optimizer): avoid double-commit of optimized deps when discovery is disabled (#13865) ([df77991](https://github.com/vitejs/vite/commit/df77991)), closes [#13865](https://github.com/vitejs/vite/issues/13865)
+* fix(optimizer): enable experimentalDecorators by default (#13981) ([f8a5ffc](https://github.com/vitejs/vite/commit/f8a5ffc)), closes [#13981](https://github.com/vitejs/vite/issues/13981)
+* perf: replace startsWith with === (#13989) ([3aab14e](https://github.com/vitejs/vite/commit/3aab14e)), closes [#13989](https://github.com/vitejs/vite/issues/13989)
+* perf: single slash does not need to be replaced (#13980) ([66f522c](https://github.com/vitejs/vite/commit/66f522c)), closes [#13980](https://github.com/vitejs/vite/issues/13980)
+* perf: use Intl.DateTimeFormatter instead of toLocaleTimeString (#13951) ([af53a1d](https://github.com/vitejs/vite/commit/af53a1d)), closes [#13951](https://github.com/vitejs/vite/issues/13951)
+* perf: use Intl.NumberFormat instead of toLocaleString (#13949) ([a48bf88](https://github.com/vitejs/vite/commit/a48bf88)), closes [#13949](https://github.com/vitejs/vite/issues/13949)
+* perf: use magic-string hires boundary for sourcemaps (#13971) ([b9a8d65](https://github.com/vitejs/vite/commit/b9a8d65)), closes [#13971](https://github.com/vitejs/vite/issues/13971)
+* chore(reporter): remove unnecessary map (#13972) ([dd9d4c1](https://github.com/vitejs/vite/commit/dd9d4c1)), closes [#13972](https://github.com/vitejs/vite/issues/13972)
+* refactor: add new overload to the type of defineConfig (#13958) ([24c12fe](https://github.com/vitejs/vite/commit/24c12fe)), closes [#13958](https://github.com/vitejs/vite/issues/13958)
+
+
+
 ## <small>4.4.7 (2023-07-24)</small>
 
 * fix: `optimizeDeps.include` not working with paths inside packages (#13922) ([06e4f57](https://github.com/vitejs/vite/commit/06e4f57)), closes [#13922](https://github.com/vitejs/vite/issues/13922)
