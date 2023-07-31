@@ -1257,3 +1257,25 @@ const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
 }
+
+type CommandType = 'install' | 'uninstall' | 'update'
+export function getPackageManagerCommand(
+  type: CommandType = 'install',
+): string {
+  const packageManager =
+    process.env.npm_config_user_agent?.split(' ')[0].split('/')[0] || 'npm'
+  switch (type) {
+    case 'install':
+      return packageManager === 'npm' ? 'npm install' : `${packageManager} add`
+    case 'uninstall':
+      return packageManager === 'npm'
+        ? 'npm uninstall'
+        : `${packageManager} remove`
+    case 'update':
+      return packageManager === 'yarn'
+        ? 'yarn upgrade'
+        : `${packageManager} update`
+    default:
+      throw new TypeError(`Unknown command type: ${type}`)
+  }
+}

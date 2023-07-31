@@ -45,6 +45,7 @@ import {
   emptyCssComments,
   generateCodeFrame,
   getHash,
+  getPackageManagerCommand,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -1694,8 +1695,9 @@ function loadPreprocessor(
     return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
+      const installCommand = getPackageManagerCommand('install')
       throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it?`,
+        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
       )
     } else {
       const message = new Error(
