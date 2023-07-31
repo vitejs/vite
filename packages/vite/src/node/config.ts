@@ -344,7 +344,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker'
+    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker' | 'build'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
