@@ -183,7 +183,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     ? // If `experimental.renderBuiltUrl` or `build.modulePreload.resolveDependencies` are used
       // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
       // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
-      `function(dep, importerUrl) { return dep.startsWith('.') ? new URL(dep, importerUrl).href : dep }`
+      `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
     ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
       // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
