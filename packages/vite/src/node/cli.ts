@@ -167,7 +167,7 @@ cli
       )
 
       server.printUrls()
-      server.bindShortcuts({
+      server.bindCLIShortcuts({
         print: true,
         customShortcuts: [
           profileSession && {
@@ -344,7 +344,7 @@ cli
           },
         })
         server.printUrls()
-        server.bindShortcuts({ print: true })
+        server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),

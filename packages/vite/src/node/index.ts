@@ -100,7 +100,7 @@ export type {
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 
-export type { BindShortcutsOptions, CLIShortcut } from './shortcuts'
+export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
 export type {
   HMRPayload,

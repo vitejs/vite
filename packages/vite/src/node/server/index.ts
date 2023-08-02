@@ -40,8 +40,8 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
-import { bindShortcuts } from '../shortcuts'
-import type { BindShortcutsOptions } from '../shortcuts'
+import { bindCLIShortcuts } from '../shortcuts'
+import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -272,9 +272,9 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
-   * Bind shortcuts
+   * Bind CLI shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions<ViteDevServer>): void
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
   /**
    * Restart the server.
    *
@@ -321,7 +321,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _shortcutsOptions?: BindShortcutsOptions<ViteDevServer>
+  _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
 }
 
 export interface ResolvedServerUrls {
@@ -494,8 +494,8 @@ export async function _createServer(
         )
       }
     },
-    bindShortcuts(options) {
-      bindShortcuts(server, options)
+    bindCLIShortcuts(options) {
+      bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
@@ -883,7 +883,7 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindShortcuts(newServer, shortcutsOptions)
+    bindCLIShortcuts(newServer, shortcutsOptions)
   }
 }
 

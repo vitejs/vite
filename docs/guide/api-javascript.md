@@ -30,7 +30,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
   await server.listen()
 
   server.printUrls()
-  server.bindShortcuts({ print: true })
+  server.bindCLIShortcuts({ print: true })
 })()
 ```
 
@@ -140,9 +140,9 @@ interface ViteDevServer {
    */
   close(): Promise<void>
   /**
-   * Bind shortcuts
+   * Bind CLI shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions<ViteDevServer>): void
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
 }
 ```
 
@@ -200,7 +200,7 @@ import { preview } from 'vite'
   })
 
   previewServer.printUrls()
-  previewServer.bindShortcuts({ print: true })
+  previewServer.bindCLIShortcuts({ print: true })
 })()
 ```
 
@@ -242,9 +242,9 @@ interface PreviewServerForHook {
    */
   printUrls(): void
   /**
-   * Bind shortcuts
+   * Bind CLI shortcuts
    */
-  bindShortcuts(options?: BindShortcutsOptions<PreviewServer>): void
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
 }
 ```
 
