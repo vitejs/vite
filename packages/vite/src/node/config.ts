@@ -100,8 +100,16 @@ export interface ConfigEnv {
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
 
+export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
+export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
-export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
+
+export type UserConfigExport =
+  | UserConfig
+  | Promise<UserConfig>
+  | UserConfigFnObject
+  | UserConfigFnPromise
+  | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -109,6 +117,10 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
+export function defineConfig(config: UserConfig): UserConfig
+export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
+export function defineConfig(config: UserConfigFnObject): UserConfigFnObject
+export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
@@ -332,7 +344,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker'
+    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker' | 'build'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -835,6 +847,19 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
         )
       }
     }
+  }
+
+  // Warn about removal of experimental features
+  if (
+    config.legacy?.buildSsrCjsExternalHeuristics ||
+    config.ssr?.format === 'cjs'
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
   }
 
   return resolved

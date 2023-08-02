@@ -29,9 +29,9 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{.*?"use strict";)/s
+  /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{\s*"use strict";)/s
 const INJECT_HELPERS_UMD_RE =
-  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{.*?"use strict";)/s
+  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{\s*"use strict";)/s
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -96,6 +96,7 @@ export async function transformWithEsbuild(
   }
 
   let tsconfigRaw = options?.tsconfigRaw
+  const fallbackSupported: Record<string, boolean> = {}
 
   // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
@@ -142,6 +143,23 @@ export async function transformWithEsbuild(
       compilerOptions.useDefineForClassFields = false
     }
 
+    // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
+    // To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
+    // `true` by default if it's unset.
+    // TODO: Remove this in Vite 5
+    if (compilerOptions.experimentalDecorators === undefined) {
+      compilerOptions.experimentalDecorators = true
+    }
+
+    // Compat with esbuild 0.17 where static properties are transpiled to
+    // static blocks when `useDefineForClassFields` is false. Its support
+    // is not great yet, so temporarily disable it for now.
+    // TODO: Remove this in Vite 5, don't pass hardcoded `esnext` target
+    // to `transformWithEsbuild` in the esbuild plugin.
+    if (compilerOptions.useDefineForClassFields !== true) {
+      fallbackSupported['class-static-blocks'] = false
+    }
+
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
@@ -164,6 +182,10 @@ export async function transformWithEsbuild(
     ...options,
     loader,
     tsconfigRaw,
+    supported: {
+      ...fallbackSupported,
+      ...options?.supported,
+    },
   }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions

@@ -45,6 +45,7 @@ import {
   emptyCssComments,
   generateCodeFrame,
   getHash,
+  getPackageManagerCommand,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -682,16 +683,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `var ${style} = document.createElement('style');` +
             `${style}.textContent = ${cssString};` +
             `document.head.appendChild(${style});`
+          let injectionPoint
           const wrapIdx = code.indexOf('System.register')
-          const executeFnStart =
-            code.indexOf('{', code.indexOf('execute:', wrapIdx)) + 1
+          if (wrapIdx >= 0) {
+            const executeFnStart = code.indexOf('execute:', wrapIdx)
+            injectionPoint = code.indexOf('{', executeFnStart) + 1
+          } else {
+            const insertMark = "'use strict';"
+            injectionPoint = code.indexOf(insertMark) + insertMark.length
+          }
           const s = new MagicString(code)
-          s.appendRight(executeFnStart, injectCode)
+          s.appendRight(injectionPoint, injectCode)
           if (config.build.sourcemap) {
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
-              map: s.generateMap({ hires: true }),
+              map: s.generateMap({ hires: 'boundary' }),
             }
           } else {
             return { code: s.toString() }
@@ -1688,8 +1695,9 @@ function loadPreprocessor(
     return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
+      const installCommand = getPackageManagerCommand('install')
       throw new Error(
-        `Preprocessor dependency "${lang}" not found. Did you install it?`,
+        `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
       )
     } else {
       const message = new Error(
@@ -2124,7 +2132,7 @@ async function getSource(
   ms.appendLeft(0, sep)
   ms.appendLeft(0, additionalData)
 
-  const map = ms.generateMap({ hires: true })
+  const map = ms.generateMap({ hires: 'boundary' })
   map.file = filename
   map.sources = [filename]
 
@@ -2175,6 +2183,10 @@ async function compileLightningCSS(
         resolver: {
           read(filePath) {
             if (filePath === filename) {
+              return src
+            }
+            // This happens with html-proxy (#13776)
+            if (!filePath.endsWith('.css')) {
               return src
             }
             return fs.readFileSync(toAbsolute(filePath), 'utf-8')

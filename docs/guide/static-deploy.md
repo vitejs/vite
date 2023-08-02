@@ -333,3 +333,11 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
+
+## Flightcontrol
+
+Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite), by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite)
+
+## AWS Amplify Hosting
+
+Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)

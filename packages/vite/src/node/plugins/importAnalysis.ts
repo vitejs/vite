@@ -557,7 +557,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // record as safe modules
-            server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
+            // safeModulesPath should not include the base prefix.
+            // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
+            server?.moduleGraph.safeModulesPath.add(
+              fsPathFromUrl(stripBase(url, base)),
+            )
 
             if (url !== specifier) {
               let rewriteDone = false

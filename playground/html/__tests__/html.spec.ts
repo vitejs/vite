@@ -245,6 +245,26 @@ describe.runIf(isServe)('invalid', () => {
     expect(message).toMatch(/^Unable to parse HTML/)
   })
 
+  test('should close overlay when clicked away', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
+
+    await page.click('html')
+    const isVisbleOverlay = await errorOverlay.isVisible()
+    expect(isVisbleOverlay).toBeFalsy()
+  })
+
+  test('should close overlay when escape key is pressed', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
+
+    await page.keyboard.press('Escape')
+    const isVisbleOverlay = await errorOverlay.isVisible()
+    expect(isVisbleOverlay).toBeFalsy()
+  })
+
   test('should reload when fixed', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
@@ -274,6 +294,14 @@ describe('env', () => {
   test('env works', async () => {
     expect(await page.textContent('.env')).toBe('bar')
     expect(await page.textContent('.env-define')).toBe('5173')
+    expect(await page.textContent('.env-define-string')).toBe('string')
+    expect(await page.textContent('.env-define-object-string')).toBe(
+      '{ "foo": "bar" }',
+    )
+    expect(await page.textContent('.env-define-template-literal')).toBe(
+      '`template literal`', // only double quotes will be unquoted
+    )
+    expect(await page.textContent('.env-define-null-string')).toBe('null')
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
     expect(await page.textContent('.env-dev')).toBe(isServe + '')

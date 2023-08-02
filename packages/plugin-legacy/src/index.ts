@@ -36,7 +36,6 @@ import {
 } from './snippets'
 
 // lazy load babel since it's not used during dev
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let babel: typeof import('@babel/core') | undefined
 async function loadBabel() {
   if (!babel) {
@@ -398,7 +397,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         if (config.build.sourcemap) {
           return {
             code: ms.toString(),
-            map: ms.generateMap({ hires: true }),
+            map: ms.generateMap({ hires: 'boundary' }),
           }
         }
         return {

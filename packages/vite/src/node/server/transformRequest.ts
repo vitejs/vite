@@ -47,7 +47,7 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
-  if (server._restartPromise) throwClosedServerError()
+  if (server._restartPromise && !options.ssr) throwClosedServerError()
 
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
@@ -205,6 +205,9 @@ async function loadAndTransform(
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
+          if (e.code === 'EISDIR') {
+            e.message = `${e.message} ${file}`
+          }
           throw e
         }
       }
@@ -256,7 +259,7 @@ async function loadAndTransform(
     throw err
   }
 
-  if (server._restartPromise) throwClosedServerError()
+  if (server._restartPromise && !ssr) throwClosedServerError()
 
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
@@ -319,7 +322,7 @@ async function loadAndTransform(
     }
   }
 
-  if (server._restartPromise) throwClosedServerError()
+  if (server._restartPromise && !ssr) throwClosedServerError()
 
   const result =
     ssr && !server.config.experimental.skipSsrTransform

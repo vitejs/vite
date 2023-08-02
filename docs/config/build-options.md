@@ -34,7 +34,7 @@ The polyfill can be disabled using `{ polyfill: false }`.
 
 The list of chunks to preload for each dynamic import is computed by Vite. By default, an absolute path including the `base` will be used when loading these dependencies. If the `base` is relative (`''` or `'./'`), `import.meta.url` is used at runtime to avoid absolute paths that depend on the final deployed base.
 
-There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. It expects a function of type `ResolveModulePreloadDependenciesFn`:
+There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. [Give Feedback](https://github.com/vitejs/vite/discussions/13841). It expects a function of type `ResolveModulePreloadDependenciesFn`:
 
 ```ts
 type ResolveModulePreloadDependenciesFn = (
@@ -218,7 +218,7 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.copyPublicDir
 
-- **Experimental**
+- **Experimental:** [Give feedback](https://github.com/vitejs/vite/discussions/13807)
 - **Type:** `boolean`
 - **Default:** `true`
 

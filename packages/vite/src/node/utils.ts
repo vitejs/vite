@@ -608,7 +608,17 @@ function optimizeSafeRealPathSync() {
     safeRealpathSync = fs.realpathSync
     return
   }
-
+  // Check the availability `fs.realpathSync.native`
+  // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
+  // get the error EISDIR: illegal operation on a directory
+  try {
+    fs.realpathSync.native(path.resolve('./'))
+  } catch (error) {
+    if (error.message.includes('EISDIR: illegal operation on a directory')) {
+      safeRealpathSync = fs.realpathSync
+      return
+    }
+  }
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
@@ -1132,7 +1142,7 @@ export function transformStableResult(
     code: s.toString(),
     map:
       config.command === 'build' && config.build.sourcemap
-        ? s.generateMap({ hires: true, source: id })
+        ? s.generateMap({ hires: 'boundary', source: id })
         : null,
   }
 }
@@ -1246,4 +1256,26 @@ export function getNpmPackageName(importPath: string): string | null {
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
+}
+
+type CommandType = 'install' | 'uninstall' | 'update'
+export function getPackageManagerCommand(
+  type: CommandType = 'install',
+): string {
+  const packageManager =
+    process.env.npm_config_user_agent?.split(' ')[0].split('/')[0] || 'npm'
+  switch (type) {
+    case 'install':
+      return packageManager === 'npm' ? 'npm install' : `${packageManager} add`
+    case 'uninstall':
+      return packageManager === 'npm'
+        ? 'npm uninstall'
+        : `${packageManager} remove`
+    case 'update':
+      return packageManager === 'yarn'
+        ? 'yarn upgrade'
+        : `${packageManager} update`
+    default:
+      throw new TypeError(`Unknown command type: ${type}`)
+  }
 }

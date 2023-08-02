@@ -1,3 +1,12 @@
+## <small>4.4.1 (2023-07-20)</small>
+
+* chore(deps): update dependency prettier to v3 (#13759) ([5a56941](https://github.com/vitejs/vite/commit/5a56941)), closes [#13759](https://github.com/vitejs/vite/issues/13759)
+* fix(create-vite): fix eslint configuration for React templates (#13749) ([2ad78aa](https://github.com/vitejs/vite/commit/2ad78aa)), closes [#13749](https://github.com/vitejs/vite/issues/13749)
+* fix(deps): update all non-major dependencies (#13758) ([8ead116](https://github.com/vitejs/vite/commit/8ead116)), closes [#13758](https://github.com/vitejs/vite/issues/13758)
+* fix(deps): update all non-major dependencies (#13872) ([975a631](https://github.com/vitejs/vite/commit/975a631)), closes [#13872](https://github.com/vitejs/vite/issues/13872)
+
+
+
 ## 4.4.0 (2023-07-06)
 
 * feat: update eslint config in React templates (#13550) ([6fe1491](https://github.com/vitejs/vite/commit/6fe1491)), closes [#13550](https://github.com/vitejs/vite/issues/13550)

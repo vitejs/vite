@@ -113,13 +113,14 @@ export function splitVendorChunkPlugin(): Plugin {
                 output.manualChunks = (id: string, api: ManualChunkMeta) => {
                   return userManualChunks(id, api) ?? viteManualChunks(id, api)
                 }
+              } else {
+                // else, leave the object form of manualChunks untouched, as
+                // we can't safely replicate rollup handling.
+                // eslint-disable-next-line no-console
+                console.warn(
+                  "(!) the `splitVendorChunk` plugin doesn't have any effect when using the object form of `build.rollupOptions.output.manualChunks`. Consider using the function form instead.",
+                )
               }
-              // else, leave the object form of manualChunks untouched, as
-              // we can't safely replicate rollup handling.
-              // eslint-disable-next-line no-console
-              console.warn(
-                "(!) the `splitVendorChunk` plugin doesn't have any effect when using the object form of `build.rollupOptions.manualChunks`. Consider using the function form instead.",
-              )
             } else {
               output.manualChunks = viteManualChunks
             }
