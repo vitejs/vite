@@ -12,7 +12,7 @@ The path to your project folder may include `&`, which doesn't work with `npm` o
 
 You will need to either:
 
-- Switch to another package manager (e.g. `pnpm`, `yarn`)
+- Switch to another package manager (e.g. `pnpm`, `yarn`, `bun`)
 - Remove `&` from the path to your project
 
 ## Config
@@ -142,7 +142,7 @@ You will need to access the file with `http` protocol. The easiest way to achiev
 
 ### Outdated pre-bundled deps when linking to a local package
 
-The hash key used to invalidate optimized dependencies depend on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
+The hash key used to invalidate optimized dependencies depends on the `package-lock.json` contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of `node_modules`. This means Vite will detect when a dependency is overridden using a feature like [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides) and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by pnpm (see [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides)) and Yarn (see [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
 
 ## Performance bottlenecks
 
