@@ -226,7 +226,7 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 ## css.preprocessorOptions
 
-- **Type:** `Record<string, object|function>`
+- **Type:** `Record<string, object| (id: string) => object>`
 
 Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
 
@@ -258,7 +258,7 @@ export default defineConfig({
 })
 ```
 
-You can pass a function to specific different option for different files. Note it only works for file imported from javascript, or in other word —— the entry style file.
+You can pass a function to specific different option for different files. Note it only works for file imported from javascript, or in other word —— the entry style file. If a file imports other files, for example `@import './other.css'` in `entry.css`, vite will noly generate a new preprocessorOptions for the "entry.css", but not the "other.css". The "other.css" will get them same option as the "entry.css".
 
 Example:
 
