@@ -867,7 +867,11 @@ export async function resolveHostname(
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
   } else {
     // check if the host is valid
-    if (!net.isIP(optionsHost)) {
+    if (
+      optionsHost !== 'localhost' &&
+      !wildcardHosts.has(optionsHost) &&
+      !net.isIP(optionsHost)
+    ) {
       throw new Error(
         `The address passed to --host is not a valid IP address: ${optionsHost}`,
       )
