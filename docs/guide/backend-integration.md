@@ -47,12 +47,22 @@ If you need a custom integration, you can follow the steps in this guide to conf
    Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
 
    ```html
-   <script type="module">
-     import RefreshRuntime from 'http://localhost:5173/@react-refresh'
-     RefreshRuntime.injectIntoGlobalHook(window)
-     window.$RefreshReg$ = () => {}
-     window.$RefreshSig$ = () => (type) => type
-     window.__vite_plugin_react_preamble_installed__ = true
+     <script type="module">
+       async function loadRefreshRuntime() {
+         const protocol = window.location.protocol;
+         const hostname = window.location.hostname;
+         const port = "5173"; // Default vite port
+
+         const url = `${protocol}//${hostname}:${port}/@react-refresh`;
+         const RefreshRuntime = await import(url);
+
+         RefreshRuntime.injectIntoGlobalHook(window);
+         window.$RefreshReg$ = () => {};
+         window.$RefreshSig$ = () => type => type;
+         window.__vite_plugin_react_preamble_installed__ = true;
+      }
+
+      loadRefreshRuntime();
    </script>
    ```
 
