@@ -7,7 +7,7 @@ settings:
 overrides:
   vite: workspace:*
 
-packageExtensionsChecksum: 2a87e01b470616d3b7def19cc0830231
+packageExtensionsChecksum: 4c68f206c7a9d0dbf163a3f8ca45b751
 
 patchedDependencies:
   chokidar@3.5.3:

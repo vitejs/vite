@@ -109,20 +109,20 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.6.7",
+  "packageManager": "pnpm@8.6.11",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
     },
     "packageExtensions": {
-      "postcss-load-config": {
-        "peerDependencies": {
-          "postcss": "*"
-        }
-      },
       "acorn-walk": {
         "peerDependencies": {
           "acorn": "*"
+        }
+      },
+      "postcss-load-config": {
+        "peerDependencies": {
+          "postcss": "*"
         }
       }
     },
