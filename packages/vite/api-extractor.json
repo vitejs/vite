@@ -5,8 +5,6 @@
 
   "mainEntryPointFilePath": "./temp/node/index.d.ts",
 
-  "bundledPackages": ["lightningcss"],
-
   "dtsRollup": {
     "enabled": true,
     "untrimmedFilePath": "",
