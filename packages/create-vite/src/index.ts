@@ -426,9 +426,7 @@ async function init() {
     fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8'),
   )
 
-  pkg.name = packageName || getProjectName()
-
-  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
+  write('package.json', JSON.stringify({ ...pkg, name: packageName || getProjectName() }, null, 2) + '\n')
 
   if (isReactSwc) {
     setupReactSwc(root, template.endsWith('-ts'))
