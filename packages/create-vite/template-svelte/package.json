@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.4.2",
-    "svelte": "^4.0.5",
-    "vite": "^4.4.5"
+    "@sveltejs/vite-plugin-svelte": "^2.4.3",
+    "svelte": "^4.1.2",
+    "vite": "^4.4.8"
   }
 }

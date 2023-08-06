@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@babel/types": "^7.22.5",
-    "@microsoft/api-extractor": "^7.36.2",
+    "@microsoft/api-extractor": "^7.36.3",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/babel__core": "^7.20.1",
     "@types/babel__preset-env": "^7.9.2",
@@ -56,40 +56,40 @@
     "@types/json-stable-stringify": "^1.0.34",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
-    "@types/node": "^18.16.19",
+    "@types/node": "^18.17.2",
     "@types/picomatch": "^2.3.0",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.5",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.2.1",
+    "@typescript-eslint/parser": "^6.2.1",
     "@vitejs/release-scripts": "^1.2.1",
     "conventional-changelog-cli": "^2.2.2",
-    "eslint": "^8.45.0",
-    "eslint-define-config": "^1.21.0",
-    "eslint-plugin-import": "^2.27.5",
+    "eslint": "^8.46.0",
+    "eslint-define-config": "^1.22.0",
+    "eslint-plugin-import": "^2.28.0",
     "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-regexp": "^1.15.0",
-    "execa": "^7.1.1",
-    "fast-glob": "^3.3.0",
+    "execa": "^7.2.0",
+    "fast-glob": "^3.3.1",
     "fs-extra": "^11.1.1",
     "lint-staged": "^13.2.3",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.36.1",
-    "prettier": "3.0.0",
-    "resolve": "^1.22.2",
+    "playwright-chromium": "^1.36.2",
+    "prettier": "3.0.1",
+    "resolve": "^1.22.4",
     "rimraf": "^5.0.1",
     "rollup": "^3.27.1",
-    "simple-git-hooks": "^2.8.1",
-    "tslib": "^2.6.0",
+    "simple-git-hooks": "^2.9.0",
+    "tslib": "^2.6.1",
     "tsx": "^3.12.7",
     "typescript": "^5.0.2",
     "unbuild": "^1.2.1",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-beta.5",
-    "vitest": "^0.33.0",
+    "vitepress": "1.0.0-beta.7",
+    "vitest": "^0.34.1",
     "vue": "^3.3.4"
   },
   "simple-git-hooks": {
@@ -109,20 +109,20 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.6.7",
+  "packageManager": "pnpm@8.6.11",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
     },
     "packageExtensions": {
-      "postcss-load-config": {
-        "peerDependencies": {
-          "postcss": "*"
-        }
-      },
       "acorn-walk": {
         "peerDependencies": {
           "acorn": "*"
+        }
+      },
+      "postcss-load-config": {
+        "peerDependencies": {
+          "postcss": "*"
         }
       }
     },

@@ -44,8 +44,8 @@
   "dependencies": {
     "@babel/core": "^7.22.9",
     "@babel/preset-env": "^7.22.9",
-    "browserslist": "^4.21.9",
-    "core-js": "^3.31.1",
+    "browserslist": "^4.21.10",
+    "core-js": "^3.32.0",
     "magic-string": "^0.30.2",
     "regenerator-runtime": "^0.13.11",
     "systemjs": "^6.14.1"

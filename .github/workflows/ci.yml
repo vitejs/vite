@@ -58,7 +58,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@2a968ff601949c81b47d9c1fdb789b0d25ddeea2 # v37.1.2
+        uses: tj-actions/changed-files@85c8b8252fc9893e00b3633a16670e53040e6d71 # v37.5.2
         with:
           files: |
             docs/**
@@ -69,13 +69,13 @@ jobs:
 
       - name: Install pnpm (node 14, pnpm 7)
         if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version == 14
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v2.4.0
         with:
           version: 7
 
       - name: Install pnpm
         if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version != 14
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v2.4.0
 
       - name: Set node version to ${{ matrix.node_version }}
         if: steps.changed-files.outputs.only_changed != 'true'
@@ -140,7 +140,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v2.4.0
 
       - name: Set node version to 18
         uses: actions/setup-node@v3
