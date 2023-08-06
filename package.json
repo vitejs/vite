@@ -32,7 +32,7 @@
     "debug-serve": "VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
     "debug-build": "VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
     "docs": "vitepress dev docs",
-    "docs-build": "vitepress build docs",
+    "docs-build": "DEBUG=true vitepress build docs",
     "docs-serve": "vitepress serve docs",
     "build": "pnpm -r --filter='./packages/*' run build",
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
