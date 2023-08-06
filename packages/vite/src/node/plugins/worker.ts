@@ -295,7 +295,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           ? 'module'
           : 'classic'
         : 'module'
-      const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+      const workerTypeOption = workerType === 'classic' ? undefined : 'module'
+      const workerName = query.name || ''
 
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
@@ -310,21 +311,33 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             workerConstructor === 'Worker'
               ? `${encodedJs}
           const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper() {
+          export default function WorkerWrapper(options) {
             let objURL;
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL)
+              return new ${workerConstructor}(objURL, { name: options?.name || "${workerName}" })
             } catch(e) {
-              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+              return new ${workerConstructor}(
+                "data:application/javascript;base64," + encodedJs,
+                {
+                  ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+                  name: options?.name || "${workerName}"
+                }
+              );
             } finally {
               objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
             }
           }`
               : `${encodedJs}
-          export default function WorkerWrapper() {
-            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          export default function WorkerWrapper(options) {
+            return new ${workerConstructor}(
+              "data:application/javascript;base64," + encodedJs,
+              {
+                ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+                name: options?.name || "${workerName}"
+              }
+            );
           }
           `
 
@@ -350,10 +363,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       return {
-        code: `export default function WorkerWrapper() {
-          return new ${workerConstructor}(${JSON.stringify(
-            url,
-          )}${workerOptions})
+        code: `export default function WorkerWrapper(options) {
+          return new ${workerConstructor}(
+            ${JSON.stringify(url)},
+            {
+              ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+              name: options?.name || "${workerName}"
+            }
+          );
         }`,
         map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
       }
