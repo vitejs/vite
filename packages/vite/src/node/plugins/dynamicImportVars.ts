@@ -17,6 +17,7 @@ import {
   transformStableResult,
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
 
@@ -203,6 +204,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         } = imports[index]
 
         if (dynamicIndex === -1 || source[start] !== '`') {
+          continue
+        }
+
+        if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
           continue
         }
 

@@ -84,6 +84,11 @@ import(`../alias/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars', mod.hello())
 })
 
+import(/*@vite-ignore*/ `https://localhost`).catch((mod) => {
+  console.log(mod)
+  text('.dynamic-import-with-vars-ignored', 'hello')
+})
+
 // prettier-ignore
 import(
   /* this messes with */

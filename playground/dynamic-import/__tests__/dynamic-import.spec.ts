@@ -69,6 +69,20 @@ test('should load dynamic import with vars', async () => {
   )
 })
 
+test('should load dynamic import with vars ignored', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-ignored'),
+    'hello',
+    true,
+  )
+  // No warning should be logged as we are using @vite-ignore
+  expect(
+    serverLogs.some((log) =>
+      log.includes('"https" has been externalized for browser compatibility'),
+    ),
+  ).toBe(false)
+})
+
 test('should load dynamic import with vars multiline', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-multiline'),
