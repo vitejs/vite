@@ -20,10 +20,14 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
+import type {
+  BundleAsyncOptions,
+  CustomAtRules,
+  TransformAttributeOptions,
+} from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -139,6 +143,17 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
     targets: LightningCSSOptions['targets']
   }
 }
+
+// remove options set by Vite
+export type LightningCSSOptions = Omit<
+  BundleAsyncOptions<CustomAtRules> & TransformAttributeOptions,
+  | 'filename'
+  | 'code'
+  | 'resolver'
+  | 'minify'
+  | 'sourceMap'
+  | 'analyzeDependencies'
+>
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
