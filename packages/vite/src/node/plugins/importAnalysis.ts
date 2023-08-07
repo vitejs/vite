@@ -76,7 +76,7 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 const hasImportInQueryParamsRE = /[?&]import=?\b/
 
-const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
