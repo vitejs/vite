@@ -433,14 +433,11 @@ async function init() {
     // the --bun flag is required to override the node shebang
     // after Bun 1.0 this will no longer be necessary
     if (pkg.scripts) {
-      pkg.scripts = {
-        ...pkg.scripts,
-        dev: pkg.scripts.dev?.replace('vite', 'bunx --bun vite'),
-        build: pkg.scripts.build?.replace(
-          'vite build',
-          'bunx --bun vite build',
-        ),
-      }
+      pkg.scripts.dev = pkg.scripts.dev?.replace('vite', 'bunx --bun vite')
+      pkg.scripts.build = pkg.scripts.build?.replace(
+        'vite build',
+        'bunx --bun vite build',
+      )
     }
   }
 
