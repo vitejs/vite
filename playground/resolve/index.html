@@ -164,6 +164,9 @@
 <h2>resolve package that contains # in path</h2>
 <p class="path-contains-sharp-symbol"></p>
 
+<h2>No copy public dir</h2>
+<p class="no-copy-public-dir"></p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -378,6 +381,8 @@
     '.path-contains-sharp-symbol',
     `[success] ${contains.call('#', '#')} ${last.call('#')}`,
   )
+
+  text('.mjs-extension-with-query', tsMjsExtensionWithQueryMsg)
 </script>
 
 <style>
