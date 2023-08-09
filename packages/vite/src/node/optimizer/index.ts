@@ -897,9 +897,11 @@ export function newDepOptimizationProcessing(): DepOptimizationProcessing {
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>,
 ): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(depsInfo).map((d) => [d[0], d[1].src!]),
-  )
+  const obj: Record<string, string> = {}
+  for (const key in depsInfo) {
+    obj[key] = depsInfo[key].src!
+  }
+  return obj
 }
 
 export function getOptimizedDepPath(
