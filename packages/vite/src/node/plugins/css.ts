@@ -6,7 +6,6 @@ import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
-  NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
   RollupError,
@@ -378,8 +377,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
-  let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
+  let chunkCSSMap: Map<string, string>
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -409,8 +408,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<RenderedChunk>()
-      outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
+      chunkCSSMap = new Map()
       emitTasks = []
     },
 
@@ -708,10 +707,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
         // finalizeCss is called for the aggregated chunk in generateBundle
 
-        outputToExtractedCSSMap.set(
-          opts,
-          (outputToExtractedCSSMap.get(opts) || '') + chunkCSS,
-        )
+        chunkCSSMap.set(chunk.fileName, chunkCSS)
       }
       return null
     },
@@ -792,7 +788,30 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
       }
 
-      let extractedCss = outputToExtractedCSSMap.get(opts)
+      function extractCss() {
+        let css = ''
+        const collected = new Set<OutputChunk>()
+        const prelimaryNameToChunkMap = new Map(
+          Object.values(bundle)
+            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+            .map((chunk) => [chunk.preliminaryFileName, chunk]),
+        )
+
+        function collect(fileName: string) {
+          const chunk = bundle[fileName]
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
+          collected.add(chunk)
+
+          chunk.imports.forEach(collect)
+          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+        }
+
+        for (const chunkName of chunkCSSMap.keys())
+          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+
+        return css
+      }
+      let extractedCss = extractCss()
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
