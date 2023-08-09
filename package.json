@@ -81,7 +81,7 @@
     "prettier": "3.0.1",
     "resolve": "^1.22.4",
     "rimraf": "^5.0.1",
-    "rollup": "^3.27.1",
+    "rollup": "^3.28.0",
     "simple-git-hooks": "^2.9.0",
     "tslib": "^2.6.1",
     "tsx": "^3.12.7",
