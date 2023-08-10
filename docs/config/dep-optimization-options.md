@@ -47,7 +47,18 @@ export default defineConfig({
 
 ## optimizeDeps.esbuildOptions
 
-- **Type:** [`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)
+- **Type:** [`Omit<EsbuildBuildOptions,
+    | 'bundle'
+    | 'entryPoints'
+    | 'external'
+    | 'write'
+    | 'watch'
+    | 'outdir'
+    | 'outfile'
+    | 'outbase'
+    | 'outExtension'
+    | 'metafile'
+  >`](https://esbuild.github.io/api/#simple-options)
 
 Options to pass to esbuild during the dep scanning and optimization.
 
