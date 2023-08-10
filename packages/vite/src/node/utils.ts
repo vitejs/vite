@@ -191,14 +191,17 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export function isUrl(path: string): boolean {
-  try {
-    new URL(path)
-    return true
-  } catch {
-    return false
-  }
-}
+export const urlCanParse =
+  URL.canParse ??
+  // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
+  ((path: string, base?: string | undefined): boolean => {
+    try {
+      new URL(path, base)
+      return true
+    } catch {
+      return false
+    }
+  })
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
