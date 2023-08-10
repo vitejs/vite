@@ -71,13 +71,6 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 
-declare module 'rollup' {
-  export interface RenderedChunk {
-    /** @internal */
-    viteNonFinalizedFilename: string
-  }
-}
-
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
@@ -534,8 +527,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
-      chunk.viteNonFinalizedFilename = chunk.fileName // save non finalized
-
       let chunkCSS = ''
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
@@ -743,16 +734,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
-        // chunk. we check that by `viteNonFinalizedFilename` as they have different
+        // chunk. we check that by `preliminaryFileName` as they have different
         // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
-        const finalizedFilenamesMap = Object.fromEntries(
+        const prelimaryNameToChunkMap = Object.fromEntries(
           Object.values(bundle)
             .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
-            .map((chunk) => [chunk.viteNonFinalizedFilename, chunk.fileName]),
+            .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
         )
 
         const pureCssChunkNames = [...pureCssChunks].map(
-          (pureCssChunk) => finalizedFilenamesMap[pureCssChunk.fileName],
+          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
         )
 
         const emptyChunkFiles = pureCssChunkNames
