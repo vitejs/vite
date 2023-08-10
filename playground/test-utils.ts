@@ -102,12 +102,16 @@ export async function getColor(
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export async function getBg(el: string | ElementHandle): Promise<string> {
+export async function getBg(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
-export async function getBgColor(el: string | ElementHandle): Promise<string> {
+export async function getBgColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
 }
