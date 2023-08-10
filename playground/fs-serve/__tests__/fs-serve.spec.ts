@@ -7,7 +7,8 @@ const stringified = JSON.stringify(testJSON)
 
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
-    await page.goto(viteTestUrl + '/src/')
+    const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
+    await page.goto(viteTestUrl + srcPrefix + 'src/')
   })
 
   test('default import', async () => {
@@ -66,7 +67,9 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
       stringified,
     )
-    expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
+    expect(
+      await page.textContent('.safe-fs-fetch-special-characters-status'),
+    ).toBe('200')
   })
 
   test('unsafe fs fetch', async () => {
@@ -82,10 +85,6 @@ describe.runIf(isServe)('main', () => {
   test('unsafe fs fetch with special characters 2 (#8498)', async () => {
     expect(await page.textContent('.unsafe-fs-fetch-8498-2')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-8498-2-status')).toBe('404')
-  })
-
-  test('nested entry', async () => {
-    expect(await page.textContent('.nested-entry')).toBe('foobar')
   })
 
   test('nested entry', async () => {

@@ -195,7 +195,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           contentNode.sourceCodeLocation!.startOffset,
           contentNode.sourceCodeLocation!.endOffset,
         )
-        .generateMap({ hires: true })
+        .generateMap({ hires: 'boundary' })
       map.sources = [filename]
       map.file = filename
     }

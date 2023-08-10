@@ -26,6 +26,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
+  const numberFormatter = new Intl.NumberFormat('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  })
+  const displaySize = (bytes: number) => {
+    return `${numberFormatter.format(bytes / 1000)} kB`
+  }
+
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
   let hasTransformed = false
@@ -111,32 +119,33 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       compressedCount = 0
     },
 
-    renderChunk(code, chunk) {
-      for (const id of chunk.moduleIds) {
-        const module = this.getModuleInfo(id)
-        if (!module) continue
-        // When a dynamic importer shares a chunk with the imported module,
-        // warn that the dynamic imported module will not be moved to another chunk (#12850).
-        if (module.importers.length && module.dynamicImporters.length) {
-          // Filter out the intersection of dynamic importers and sibling modules in
-          // the same chunk. The intersecting dynamic importers' dynamic import is not
-          // expected to work. Note we're only detecting the direct ineffective
-          // dynamic import here.
-          const detectedIneffectiveDynamicImport = module.dynamicImporters.some(
-            (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
-          )
-          if (detectedIneffectiveDynamicImport) {
-            this.warn(
-              `\n(!) ${
-                module.id
-              } is dynamically imported by ${module.dynamicImporters
-                .map((m) => m)
-                .join(', ')} but also statically imported by ${module.importers
-                .map((m) => m)
-                .join(
+    renderChunk(code, chunk, options) {
+      if (!options.inlineDynamicImports) {
+        for (const id of chunk.moduleIds) {
+          const module = this.getModuleInfo(id)
+          if (!module) continue
+          // When a dynamic importer shares a chunk with the imported module,
+          // warn that the dynamic imported module will not be moved to another chunk (#12850).
+          if (module.importers.length && module.dynamicImporters.length) {
+            // Filter out the intersection of dynamic importers and sibling modules in
+            // the same chunk. The intersecting dynamic importers' dynamic import is not
+            // expected to work. Note we're only detecting the direct ineffective
+            // dynamic import here.
+            const detectedIneffectiveDynamicImport =
+              module.dynamicImporters.some(
+                (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
+              )
+            if (detectedIneffectiveDynamicImport) {
+              this.warn(
+                `\n(!) ${
+                  module.id
+                } is dynamically imported by ${module.dynamicImporters.join(
+                  ', ',
+                )} but also statically imported by ${module.importers.join(
                   ', ',
                 )}, dynamic import will not move module into another chunk.\n`,
-            )
+              )
+            }
           }
         }
       }
@@ -320,13 +329,6 @@ function throttle(fn: Function) {
       timerHandle = null
     }, 100)
   }
-}
-
-function displaySize(bytes: number) {
-  return `${(bytes / 1000).toLocaleString('en', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  })} kB`
 }
 
 function displayTime(time: number) {
