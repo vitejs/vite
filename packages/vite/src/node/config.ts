@@ -228,6 +228,13 @@ export interface UserConfig {
    */
   experimental?: ExperimentalOptions
   /**
+   * Legacy options
+   *
+   * Features under this field only follow semver for patches, they could be removed in a
+   * future minor version. Please always pin Vite's version to a minor when using them.
+   */
+  legacy?: LegacyOptions
+  /**
    * Log level.
    * @default 'info'
    */
@@ -310,6 +317,12 @@ export interface ExperimentalOptions {
    * @default false
    */
   skipSsrTransform?: boolean
+}
+
+export interface LegacyOptions {
+  /**
+   * No longer needed for now, but kept for backwards compatibility.
+   */
 }
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
