@@ -8,18 +8,16 @@
       {{ name }} style
     </div>
     <HelloWorld />
-    <PugTemplate />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import HelloWorld from '../components/HelloWorld.vue'
-import PugTemplate from '../components/PugTemplate.vue'
 import { NAME } from '../utils.ts'
 
 export default defineComponent({
-  components: { HelloWorld, PugTemplate },
+  components: { HelloWorld },
   setup() {
     const name = NAME
     const val = ref(0)
