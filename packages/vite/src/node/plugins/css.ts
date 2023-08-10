@@ -811,8 +811,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         return css
       }
-      let extractedCss = extractCss()
-      if (extractedCss && !hasEmitted) {
+      let extractedCss = !hasEmitted && extractCss()
+      if (extractedCss) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
         this.emitFile({
