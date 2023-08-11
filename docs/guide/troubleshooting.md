@@ -166,7 +166,7 @@ Once your application is opened in the browser, just await finish loading it and
 
 Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
 
-You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) plugin to inspect the intermediate state of Vite plugins, which can help you to identify the performance bottlenecks. The latest plugin version now has more performance-related features to help you identify which plugins or middlewares are the bottleneck for your applications. The plugin can be used in both dev and build modes, check the readme file for more details.
+You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect), which lets you inspect the intermediate state of Vite plugins and can also help you to identify which plugins or middlewares are the bottleneck in your applications. The plugin can be used in both dev and build modes. Check the readme file for more details.
 
 ## Others
 
