@@ -14,24 +14,25 @@ vite [root]
 
 #### Options
 
-| Options                  |                                                                   |
-| ------------------------ | ----------------------------------------------------------------- |
-| `--host [host]`          | Specify hostname (`string`)                                       |
-| `--port <port>`          | Specify port (`number`)                                           |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                                      |
-| `--open [path]`          | Open browser on startup (`boolean \| string`)                     |
-| `--cors`                 | Enable CORS (`boolean`)                                           |
-| `--strictPort`           | Exit if specified port is already in use (`boolean`)              |
-| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`) |
-| `-c, --config <file>`    | Use specified config file (`string`)                              |
-| `--base <path>`          | Public base path (default: `/`) (`string`)                        |
-| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                        |
-| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)               |
-| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                             |
-| `-f, --filter <filter>`  | Filter debug logs (`string`)                                      |
-| `-m, --mode <mode>`      | Set env mode (`string`)                                           |
-| `-h, --help`             | Display available CLI options                                     |
-| `-v, --version`          | Display version number                                            |
+| Options                  |                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `--host [host]`          | Specify hostname (`string`)                                                                                        |
+| `--port <port>`          | Specify port (`number`)                                                                                            |
+| `--https`                | Use TLS + HTTP/2 (`boolean`)                                                                                       |
+| `--open [path]`          | Open browser on startup (`boolean \| string`)                                                                      |
+| `--cors`                 | Enable CORS (`boolean`)                                                                                            |
+| `--strictPort`           | Exit if specified port is already in use (`boolean`)                                                               |
+| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                  |
+| `-c, --config <file>`    | Use specified config file (`string`)                                                                               |
+| `--base <path>`          | Public base path (default: `/`) (`string`)                                                                         |
+| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                                                                         |
+| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)                                                                |
+| `--profile`              | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) |
+| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                                                                              |
+| `-f, --filter <filter>`  | Filter debug logs (`string`)                                                                                       |
+| `-m, --mode <mode>`      | Set env mode (`string`)                                                                                            |
+| `-h, --help`             | Display available CLI options                                                                                      |
+| `-v, --version`          | Display version number                                                                                             |
 
 ## Build
 
@@ -65,6 +66,7 @@ vite build [root]
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                          |
 | `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                          |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                 |
+| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))  |
 | `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                               |
 | `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                        |
 | `-m, --mode <mode>`            | Set env mode (`string`)                                                                                             |
