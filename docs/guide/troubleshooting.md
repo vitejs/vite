@@ -146,7 +146,7 @@ The hash key used to invalidate optimized dependencies depend on the package loc
 
 ## Performance bottlenecks
 
-If you suffer any application performance bottlenecks resulting in slow load times, you can start built-in Node.js inspector with your Vite dev server or when building your application to create the CPU profile:
+If you suffer any application performance bottlenecks resulting in slow load times, you can start the built-in Node.js inspector with your Vite dev server or when building your application to create the CPU profile:
 
 ::: code-group
 
