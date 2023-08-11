@@ -32,9 +32,9 @@ on run argv
       -- then return
       set found to my lookupTabWithUrl(theURL)
       if found then
+        tell targetWindow to activate
         set targetWindow's active tab index to targetTabIndex
         tell targetTab to reload
-        tell targetWindow to activate
         set index of targetWindow to 1
         return
       end if
@@ -44,9 +44,9 @@ on run argv
       -- We try to find an empty tab instead
       set found to my lookupTabWithUrl("chrome://newtab/")
       if found then
+        tell targetWindow to activate
         set targetWindow's active tab index to targetTabIndex
         set URL of targetTab to theURL
-        tell targetWindow to activate
         return
       end if
 
