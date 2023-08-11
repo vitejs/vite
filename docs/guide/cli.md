@@ -14,36 +14,25 @@ vite [root]
 
 #### Options
 
-| Options                  |                                                                   |
-| ------------------------ | ----------------------------------------------------------------- |
-| `--host [host]`          | Specify hostname (`string`)                                       |
-| `--port <port>`          | Specify port (`number`)                                           |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                                      |
-| `--open [path]`          | Open browser on startup (`boolean \| string`)                     |
-| `--cors`                 | Enable CORS (`boolean`)                                           |
-| `--strictPort`           | Exit if specified port is already in use (`boolean`)              |
-| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`) |
-| `-c, --config <file>`    | Use specified config file (`string`)                              |
-| `--base <path>`          | Public base path (default: `/`) (`string`)                        |
-| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                        |
-| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)               |
-| `--profile`              | Start built-in Node.js inspector                                  |
-| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                             |
-| `-f, --filter <filter>`  | Filter debug logs (`string`)                                      |
-| `-m, --mode <mode>`      | Set env mode (`string`)                                           |
-| `-h, --help`             | Display available CLI options                                     |
-| `-v, --version`          | Display version number                                            |
-
-::: tip Start built-in Node.js inspector
-If you suffer any application performance bottlenecks resulting in slow load times, you can start built-in Node.js inspector with your Vite dev server to profile your application:
-
-```shell
-vite --profile --open
-```
-
-Once your application is opened in the browser, await finish loading and then go back to the terminal and press `p` key (will stop the Node.js inspector) then press `q` key to stop the dev server.
-Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/ and upload the cpu profile using the `BROWSE` button to inspector the result.
-:::
+| Options                  |                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `--host [host]`          | Specify hostname (`string`)                                                                                        |
+| `--port <port>`          | Specify port (`number`)                                                                                            |
+| `--https`                | Use TLS + HTTP/2 (`boolean`)                                                                                       |
+| `--open [path]`          | Open browser on startup (`boolean \| string`)                                                                      |
+| `--cors`                 | Enable CORS (`boolean`)                                                                                            |
+| `--strictPort`           | Exit if specified port is already in use (`boolean`)                                                               |
+| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                  |
+| `-c, --config <file>`    | Use specified config file (`string`)                                                                               |
+| `--base <path>`          | Public base path (default: `/`) (`string`)                                                                         |
+| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                                                                         |
+| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)                                                                |
+| `--profile`              | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) |
+| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                                                                              |
+| `-f, --filter <filter>`  | Filter debug logs (`string`)                                                                                       |
+| `-m, --mode <mode>`      | Set env mode (`string`)                                                                                            |
+| `-h, --help`             | Display available CLI options                                                                                      |
+| `-v, --version`          | Display version number                                                                                             |
 
 ## Build
 
@@ -77,6 +66,7 @@ vite build [root]
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                          |
 | `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                          |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                 |
+| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))  |
 | `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                               |
 | `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                        |
 | `-m, --mode <mode>`            | Set env mode (`string`)                                                                                             |
