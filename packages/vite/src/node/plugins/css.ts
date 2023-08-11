@@ -23,11 +23,7 @@ import type { Alias } from 'dep-types/alias'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import type {
-  BundleAsyncOptions,
-  CustomAtRules,
-  TransformAttributeOptions,
-} from 'lightningcss'
+import type { BundleAsyncOptions, CustomAtRules } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -146,7 +142,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
 
 // remove options set by Vite
 export type LightningCSSOptions = Omit<
-  BundleAsyncOptions<CustomAtRules> & TransformAttributeOptions,
+  BundleAsyncOptions<CustomAtRules>,
   | 'filename'
   | 'code'
   | 'resolver'
@@ -2185,11 +2181,12 @@ async function compileLightningCSS(
 
   const res = styleAttrRE.test(id)
     ? (await importLightningCSS()).transformStyleAttribute({
-        ...config.css?.lightningcss,
         filename,
         code: Buffer.from(src),
         minify: config.isProduction && !!config.build.cssMinify,
+        targets: config.css?.lightningcss?.targets,
         analyzeDependencies: true,
+        visitor: config.css?.lightningcss?.visitor,
       })
     : await (
         await importLightningCSS()
