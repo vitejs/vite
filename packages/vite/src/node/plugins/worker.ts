@@ -296,7 +296,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           : 'classic'
         : 'module'
       const workerTypeOption = workerType === 'classic' ? undefined : 'module'
-      const workerName = query.name || ''
 
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
@@ -316,13 +315,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL, { name: options?.name || "${workerName}" })
+              return new ${workerConstructor}(objURL, { name: options?.name })
             } catch(e) {
               return new ${workerConstructor}(
                 "data:application/javascript;base64," + encodedJs,
                 {
                   ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                  name: options?.name || "${workerName}"
+                  name: options?.name
                 }
               );
             } finally {
@@ -335,7 +334,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               "data:application/javascript;base64," + encodedJs,
               {
                 ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                name: options?.name || "${workerName}"
+                name: options?.name
               }
             );
           }
@@ -368,7 +367,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             ${JSON.stringify(url)},
             {
               ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-              name: options?.name || "${workerName}"
+              name: options?.name
             }
           );
         }`,
