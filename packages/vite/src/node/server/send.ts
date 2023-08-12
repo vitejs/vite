@@ -63,16 +63,14 @@ export function send(
       content = getCodeWithSourcemap(type, content.toString(), map)
     }
   } else {
-    if (type === 'js') {
+    if (type === 'js' && (!map || map.mappings !== '')) {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
-      if (req.url! !== urlWithoutTimestamp) {
-        const ms = new MagicString(content.toString())
-        content = getCodeWithSourcemap(
-          type,
-          content.toString(),
-          ms.generateMap({ source: urlWithoutTimestamp, hires: true }),
-        )
-      }
+      const ms = new MagicString(content.toString())
+      content = getCodeWithSourcemap(
+        type,
+        content.toString(),
+        ms.generateMap({ source: urlWithoutTimestamp, hires: 'boundary' }),
+      )
     }
   }
 
