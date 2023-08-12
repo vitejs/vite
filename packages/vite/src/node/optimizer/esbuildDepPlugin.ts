@@ -254,7 +254,8 @@ module.exports = Object.create(new Proxy({}, {
       key !== '__esModule' &&
       key !== '__proto__' &&
       key !== 'constructor' &&
-      key !== 'splice'
+      key !== 'splice' &&
+      typeof key === 'string'
     ) {
       console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code. See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
     }
