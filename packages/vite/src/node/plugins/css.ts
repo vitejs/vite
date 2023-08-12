@@ -143,12 +143,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
 // remove options set by Vite
 export type LightningCSSOptions = Omit<
   BundleAsyncOptions<CustomAtRules>,
-  | 'filename'
-  | 'code'
-  | 'resolver'
-  | 'minify'
-  | 'sourceMap'
-  | 'analyzeDependencies'
+  'filename' | 'resolver' | 'minify' | 'sourceMap' | 'analyzeDependencies'
 >
 
 export function resolveCSSOptions(
