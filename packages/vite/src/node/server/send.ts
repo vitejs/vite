@@ -20,7 +20,7 @@ export interface SendOptions {
   etag?: string
   cacheControl?: string
   headers?: OutgoingHttpHeaders
-  map?: SourceMap | null
+  map?: SourceMap | { mappings: '' } | null
 }
 
 export function send(
@@ -58,7 +58,7 @@ export function send(
   }
 
   // inject source map reference
-  if (map && map.mappings) {
+  if (map && 'version' in map && map.mappings) {
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
     }
