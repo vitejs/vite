@@ -13,7 +13,16 @@ if (!isBuild) {
   test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
-    expect(js).not.toContain('sourceMappingURL')
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
+        "sources": [
+          "/foo.js",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('ts', async () => {
