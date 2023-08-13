@@ -1824,7 +1824,8 @@ const makeScssWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
       async (
         sassPath: string,
         data: string,
-        options: SassStylePreprocessorOptions,
+        // additionalData can a function that is not cloneable but it won't be used
+        options: SassStylePreprocessorOptions & { additionalData: undefined },
       ) => {
         // eslint-disable-next-line no-restricted-globals
         const sass: typeof Sass = require(sassPath)
@@ -1915,8 +1916,16 @@ const scssProcessor = (): SassStylePreprocessor => {
         options.enableSourcemap,
       )
 
+      const optionsWithoutAdditionalData = {
+        ...options,
+        additionalData: undefined,
+      }
       try {
-        const result = await worker.run(sassPath, data, options)
+        const result = await worker.run(
+          sassPath,
+          data,
+          optionsWithoutAdditionalData,
+        )
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
         const map: ExistingRawSourceMap | undefined = result.map
           ? JSON.parse(result.map.toString())
@@ -2038,7 +2047,8 @@ const makeLessWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
         less: typeof Less,
         rootFile: string,
       ): Less.Plugin => {
-        ViteLessManager ??= class ViteManager extends less.FileManager {
+        const { FileManager } = less
+        ViteLessManager ??= class ViteManager extends FileManager {
           rootFile
           constructor(rootFile: string) {
             super()
@@ -2081,7 +2091,8 @@ const makeLessWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
       return async (
         lessPath: string,
         content: string,
-        options: StylePreprocessorOptions,
+        // additionalData can a function that is not cloneable but it won't be used
+        options: StylePreprocessorOptions & { additionalData: undefined },
       ) => {
         // eslint-disable-next-line no-restricted-globals
         const nodeLess: typeof Less = require(lessPath)
@@ -2139,8 +2150,16 @@ const lessProcessor = (): StylePreprocessor => {
       )
 
       let result: Less.RenderOutput | undefined
+      const optionsWithoutAdditionalData = {
+        ...options,
+        additionalData: undefined,
+      }
       try {
-        result = await worker.run(lessPath, content, options)
+        result = await worker.run(
+          lessPath,
+          content,
+          optionsWithoutAdditionalData,
+        )
       } catch (e) {
         const error = e as Less.RenderError
         // normalize error info
@@ -2178,7 +2197,8 @@ const makeStylWorker = () => {
         stylusPath: string,
         content: string,
         root: string,
-        options: StylePreprocessorOptions,
+        // additionalData can a function that is not cloneable but it won't be used
+        options: StylusStylePreprocessorOptions & { additionalData: undefined },
       ) => {
         // eslint-disable-next-line no-restricted-globals
         const nodeStylus: typeof Stylus = require(stylusPath)
@@ -2207,8 +2227,9 @@ const makeStylWorker = () => {
     },
     {
       shouldUseFake(_stylusPath, _content, _root, options) {
-        return Object.values(options.define).some(
-          (d) => typeof d === 'function',
+        return !!(
+          options.define &&
+          Object.values(options.define).some((d) => typeof d === 'function')
         )
       },
     },
@@ -2247,12 +2268,16 @@ const stylProcessor = (): StylusStylePreprocessor => {
       const importsDeps = (options.imports ?? []).map((dep: string) =>
         path.resolve(dep),
       )
+      const optionsWithoutAdditionalData = {
+        ...options,
+        additionalData: undefined,
+      }
       try {
         const { code, map, deps } = await worker.run(
           stylusPath,
           content,
           root,
-          options,
+          optionsWithoutAdditionalData,
         )
         return {
           code,
@@ -2262,7 +2287,9 @@ const stylProcessor = (): StylusStylePreprocessor => {
           deps: [...deps, ...importsDeps],
         }
       } catch (e) {
-        const wrapped = new Error(`[stylus] ${e.message}`, { cause: e })
+        const wrapped = new Error(`[stylus] ${e.message}`)
+        wrapped.name = e.name
+        wrapped.stack = e.stack
         return { code: '', error: wrapped, deps: [] }
       }
     },
@@ -2332,7 +2359,12 @@ const createPreprocessorWorkerController = () => {
     options,
     resolvers,
   ) => {
-    return scss.process(source, root, options, resolvers)
+    return scss.process(
+      source,
+      root,
+      { ...options, indentedSyntax: true },
+      resolvers,
+    )
   }
 
   const close = () => {
