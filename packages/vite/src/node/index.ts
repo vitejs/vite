@@ -6,7 +6,11 @@ export { createServer } from './server'
 export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
-export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
+export {
+  formatPostcssSourceMap,
+  createCSSPreprocessor,
+  preprocessCSS,
+} from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'

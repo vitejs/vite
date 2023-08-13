@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import { Worker as _Worker } from 'node:worker_threads'
 
@@ -20,7 +21,7 @@ export class Worker<Args extends any[], Ret = any> {
   private queue: [(worker: NodeWorker) => void, (err: Error) => void][]
 
   constructor(
-    fn: (...args: Args) => Promise<Ret> | Ret,
+    fn: () => (...args: Args) => Promise<Ret> | Ret,
     options: Options = {},
   ) {
     this.code = genWorkerCode(fn, options.parentFunctions ?? {})
@@ -158,7 +159,7 @@ const doWork = (() => {
   ${Object.keys(parentFunctions)
     .map((key) => `const ${key} = parentFunctionCall(${JSON.stringify(key)});`)
     .join('\n')}
-  return ${fn.toString()}
+  return (${fn.toString()})()
 })()
 
 const { parentPort } = require('worker_threads')
@@ -172,6 +173,7 @@ parentPort.on('message', async (args) => {
       parentPort.postMessage({ type: 'run', error: e })
     }
   } else if (args.type === 'parentFunction') {
+    const id = args.id
     if (parentFunctionResolvers.has(id)) {
       const { resolve, reject } = parentFunctionResolvers.get(id)
       parentFunctionResolvers.delete(id)
@@ -185,4 +187,69 @@ parentPort.on('message', async (args) => {
   }
 })
   `
+}
+
+class FakeWorker<Args extends any[], Ret = any> {
+  private fn: (...args: Args) => Promise<Ret>
+
+  constructor(
+    fn: () => (...args: Args) => Promise<Ret> | Ret,
+    options: Options = {},
+  ) {
+    const argsAndCode = genFakeWorkerArgsAndCode(
+      fn,
+      options.parentFunctions ?? {},
+    )
+    const require = createRequire(import.meta.url)
+    this.fn = new Function(...argsAndCode)(require, options.parentFunctions)
+  }
+
+  async run(...args: Args): Promise<Ret> {
+    return this.fn(...args)
+  }
+
+  stop(): void {
+    /* no-op */
+  }
+}
+
+function genFakeWorkerArgsAndCode(
+  fn: Function,
+  parentFunctions: Record<string, unknown>,
+) {
+  return [
+    'require',
+    'parentFunctions',
+    `
+${Object.keys(parentFunctions)
+  .map((key) => `const ${key} = parentFunctions[${JSON.stringify(key)}];`)
+  .join('\n')}
+return (${fn.toString()})()
+  `,
+  ]
+}
+
+export class WorkerWithFallback<Args extends any[], Ret = any> {
+  private _realWorker: Worker<Args, Ret>
+  private _fakeWorker: FakeWorker<Args, Ret>
+  private _shouldUseFake: (...args: Args) => boolean
+
+  constructor(
+    fn: () => (...args: Args) => Promise<Ret> | Ret,
+    options: Options & { shouldUseFake: (...args: Args) => boolean },
+  ) {
+    this._realWorker = new Worker(fn, options)
+    this._fakeWorker = new FakeWorker(fn, options)
+    this._shouldUseFake = options.shouldUseFake
+  }
+
+  async run(...args: Args): Promise<Ret> {
+    const useFake = this._shouldUseFake(...args)
+    return this[useFake ? '_fakeWorker' : '_realWorker'].run(...args)
+  }
+
+  stop(): void {
+    this._realWorker.stop()
+    this._fakeWorker.stop()
+  }
 }
