@@ -28,11 +28,6 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 
 const debug = createDebugger('vite:esbuild')
 
-const INJECT_HELPERS_IIFE_RE =
-  /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{\s*"use strict";)/s
-const INJECT_HELPERS_UMD_RE =
-  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{\s*"use strict";)/s
-
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
 
@@ -330,25 +325,6 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 
       const res = await transformWithEsbuild(code, chunk.fileName, options)
 
-      if (config.build.lib) {
-        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
-        // names are minified potentially causing collision with other globals.
-        // We use a regex to inject the helpers inside the wrappers.
-        // We don't need to create a MagicString here because both the helpers and
-        // the headers don't modify the sourcemap
-        const injectHelpers =
-          opts.format === 'umd'
-            ? INJECT_HELPERS_UMD_RE
-            : opts.format === 'iife'
-            ? INJECT_HELPERS_IIFE_RE
-            : undefined
-        if (injectHelpers) {
-          res.code = res.code.replace(
-            injectHelpers,
-            (_, helpers, header) => header + helpers,
-          )
-        }
-      }
       return res
     },
   }
