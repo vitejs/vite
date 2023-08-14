@@ -1,84 +1,82 @@
 import { expect, test } from 'vitest'
 import {
   editFile,
-  getBgColor,
   getColor,
-  isBuild,
+  isServe,
   page,
   untilBrowserLogAfter,
   untilUpdated,
 } from '~utils'
 
 test('should render', async () => {
-  expect(await page.textContent('#pagetitle')).toBe('|Page title|')
+  expect(await page.textContent('#pagetitle')).toBe('Page title')
 })
 
-if (!isBuild) {
-  test('regenerate CSS and HMR (glob pattern)', async () => {
-    const el = await page.$('#pagetitle')
-    const el2 = await page.$('#helloroot')
-    expect(await getColor(el)).toBe('rgb(11, 22, 33)')
+test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
+  const el = page.locator('#view1-text')
+  expect(await getColor(el)).toBe('rgb(22, 163, 74)')
 
+  await untilBrowserLogAfter(
+    () =>
+      editFile('src/views/view1.js', (code) =>
+        code.replace('|view1|', '|view1 updated|'),
+      ),
+    [
+      '[vite] css hot updated: /index.css',
+      '[vite] hot updated: /src/views/view1.js via /src/main.js',
+    ],
+    false,
+  )
+  await untilUpdated(() => el.textContent(), '|view1 updated|')
+
+  await untilBrowserLogAfter(
+    () =>
+      editFile('src/views/view1.js', (code) =>
+        code.replace('text-green-600', 'text-orange-600'),
+      ),
+    [
+      '[vite] css hot updated: /index.css',
+      '[vite] hot updated: /src/views/view1.js via /src/main.js',
+    ],
+    false,
+  )
+  // await new Promise(resolve => setTimeout(resolve, 10))
+  await untilUpdated(async () => getColor(el), 'rgb(234, 88, 12)')
+})
+
+test.runIf(isServe)(
+  'same file duplicated in module graph (#4267)',
+  async () => {
+    const el = page.locator('#component1')
+    expect(await getColor(el)).toBe('rgb(220, 38, 38)')
+
+    // when duplicated, page reload happens
     await untilBrowserLogAfter(
       () =>
-        editFile('src/views/Page.vue', (code) =>
-          code.replace('|Page title|', '|Page title updated|'),
+        editFile('src/components/component1.js', (code) =>
+          code.replace('text-red-600', 'text-blue-600'),
         ),
       [
         '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/views/Page.vue',
+        '[vite] hot updated: /src/components/component1.js',
       ],
       false,
     )
-    await untilUpdated(() => el.textContent(), '|Page title updated|')
+    await untilUpdated(() => getColor(el), 'rgb(37, 99, 235)')
+  },
+)
 
-    await untilBrowserLogAfter(
-      () =>
-        editFile('src/components/HelloWorld.vue', (code) =>
-          code.replace('text-gray-800', 'text-[rgb(10,20,30)]'),
-        ),
-      [
-        '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/components/HelloWorld.vue',
-      ],
-      false,
-    )
-    await untilUpdated(() => getColor(el2), 'rgb(10, 20, 30)')
-  })
+test.runIf(isServe)('regenerate CSS and HMR (relative path)', async () => {
+  const el = page.locator('#pagetitle')
+  expect(await getColor(el)).toBe('rgb(124, 58, 237)')
 
-  test('regenerate CSS and HMR (relative path)', async () => {
-    const el = await page.$('h1')
-    expect(await getColor(el)).toBe('black')
-
-    await untilBrowserLogAfter(
-      () =>
-        editFile('src/App.vue', (code) =>
-          code.replace('text-black', 'text-[rgb(11,22,33)]'),
-        ),
-      [
-        '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/App.vue',
-      ],
-      false,
-    )
-    await untilUpdated(() => getColor(el), 'rgb(11, 22, 33)')
-  })
-
-  test('regenerate CSS and HMR (pug template)', async () => {
-    const el = await page.$('.pug')
-    expect(await getBgColor(el)).toBe('rgb(248, 113, 113)')
-
-    await untilBrowserLogAfter(
-      () =>
-        editFile('src/components/PugTemplate.vue', (code) =>
-          code.replace('bg-red-400', 'bg-red-600'),
-        ),
-      [
-        '[vite] css hot updated: /index.css',
-        '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js',
-      ],
-      false,
-    )
-    await untilUpdated(() => getBgColor(el), 'rgb(220, 38, 38)')
-  })
-}
+  await untilBrowserLogAfter(
+    () =>
+      editFile('src/main.js', (code) =>
+        code.replace('text-violet-600', 'text-cyan-600'),
+      ),
+    ['[vite] css hot updated: /index.css', '[vite] hot updated: /src/main.js'],
+    false,
+  )
+  await untilUpdated(() => getColor(el), 'rgb(8, 145, 178)')
+})
