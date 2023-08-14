@@ -80,6 +80,7 @@ export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
+const templateStringHasVariableRE = /\$\{/;
 
 interface UrlPosition {
   url: string
@@ -470,7 +471,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             return
           }
 
-          const isDynamicImport = dynamicIndex > -1
+          const isDynamicImport = dynamicIndex > -1 && templateStringHasVariableRE.test(rawUrl)
 
           // strip import assertions as we can process them ourselves
           if (!isDynamicImport && assertIndex > -1) {
