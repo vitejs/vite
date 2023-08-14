@@ -67,12 +67,27 @@ test('Respect exports to take precedence over mainFields', async () => {
   expect(await page.textContent('.exports-with-module')).toMatch('[success]')
 })
 
+test('import and require resolve using module condition', async () => {
+  expect(await page.textContent('.exports-with-module-condition')).toMatch(
+    '[success]',
+  )
+  expect(
+    await page.textContent('.exports-with-module-condition-required'),
+  ).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })
 
 test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
+})
+
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
 })
 
 test('exact extension vs. duplicated (.js.js)', async () => {

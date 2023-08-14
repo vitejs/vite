@@ -73,7 +73,7 @@ npm add -D terser
   - `browserslist` field in `package.json`
   - `.browserslistrc` file in cwd.
 
-  Set to `false` to ignore these sources.
+  Set to `true` to ignore these sources.
 
 ### `modernPolyfills`
 
@@ -117,6 +117,13 @@ npm add -D terser
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
 
+### `renderModernChunks`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Set to `false` to only output the legacy bundles that support all target browsers.
+
 ## Browsers that supports ESM but does not support widely-available features
 
 The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
@@ -159,7 +166,7 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-p7PoC97FO+Lu90RNjGWxhbm13yALSR4xzV8vaDhaQBo=`
+- `sha256-4y/gEB2/KIwZFTfNqwXJq4olzvmQ0S214m9jwKgNXoc=`
 - `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--

@@ -50,6 +50,7 @@ import type {
   PartialResolvedId,
   ResolvedId,
   RollupError,
+  RollupLog,
   PluginContext as RollupPluginContext,
   SourceDescription,
   SourceMap,
@@ -76,12 +77,27 @@ import {
   numberToPos,
   prettifyUrl,
   timeFrom,
+  unwrapId,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
+
+const noop = () => {}
+
+export const ERR_CLOSED_SERVER = 'ERR_CLOSED_SERVER'
+
+export function throwClosedServerError(): never {
+  const err: any = new Error(
+    'The server is being restarted or closed. Request is outdated',
+  )
+  err.code = ERR_CLOSED_SERVER
+  // This error will be caught by the transform middleware that will
+  // send a 504 status code request timeout
+  throw err
+}
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -116,7 +132,7 @@ export interface PluginContainer {
       inMap?: SourceDescription['map']
       ssr?: boolean
     },
-  ): Promise<SourceDescription | null>
+  ): Promise<{ code: string; map: SourceMap | null }>
   load(
     id: string,
     options?: {
@@ -141,7 +157,6 @@ export async function createPluginContainer(
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
-  const isDebug = process.env.DEBUG
   const {
     plugins,
     logger,
@@ -159,10 +174,6 @@ export async function createPluginContainer(
   const debugPluginTransform = createDebugger('vite:plugin-transform', {
     onlyWhenFocused: 'vite:plugin',
   })
-  const debugSourcemapCombineFlag = 'vite:sourcemap-combine'
-  const isDebugSourcemapCombineFocused = process.env.DEBUG?.includes(
-    debugSourcemapCombineFlag,
-  )
   const debugSourcemapCombineFilter =
     process.env.DEBUG_VITE_SOURCEMAP_COMBINE_FILTER
   const debugSourcemapCombine = createDebugger('vite:sourcemap-combine', {
@@ -178,6 +189,11 @@ export async function createPluginContainer(
       rollupVersion,
       watchMode: true,
     },
+    debug: noop,
+    info: noop,
+    warn: noop,
+    // @ts-expect-error noop
+    error: noop,
   }
 
   function warnIncompatibleMethod(method: string, plugin: string) {
@@ -199,9 +215,11 @@ export async function createPluginContainer(
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of getSortedPlugins(hookName)) {
+      // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
       const hook = plugin[hookName]
       if (!hook) continue
-      // @ts-expect-error hook is not a primitive
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore hook is not a primitive
       const handler: Function = 'handler' in hook ? hook.handler : hook
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
@@ -317,7 +335,7 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await moduleGraph?.ensureEntryFromUrl(options.id)
+      await moduleGraph?.ensureEntryFromUrl(unwrapId(options.id), this.ssr)
       // Not all options passed to this function make sense in the context of loading individual files,
       // but we can at least update the module info properties we support
       updateModuleInfo(options.id, options)
@@ -367,10 +385,10 @@ export async function createPluginContainer(
     }
 
     warn(
-      e: string | RollupError,
+      e: string | RollupLog | (() => string | RollupLog),
       position?: number | { column: number; line: number },
     ) {
-      const err = formatError(e, position, this)
+      const err = formatError(typeof e === 'function' ? e() : e, position, this)
       const msg = buildErrorMessage(
         err,
         [colors.yellow(`warning: ${err.message}`)],
@@ -390,6 +408,9 @@ export async function createPluginContainer(
       // the the error middleware.
       throw formatError(e, position, this)
     }
+
+    debug = noop
+    info = noop
   }
 
   function formatError(
@@ -483,7 +504,7 @@ export async function createPluginContainer(
           }
         }
         if (code) {
-          err.frame = generateCodeFrame(code, err.loc)
+          err.frame = generateCodeFrame(`${code}`, err.loc)
         }
       }
     }
@@ -511,7 +532,7 @@ export async function createPluginContainer(
       this.filename = filename
       this.originalCode = code
       if (inMap) {
-        if (isDebugSourcemapCombineFocused) {
+        if (debugSourcemapCombine) {
           // @ts-expect-error inject name for debug purpose
           inMap.name = '$inMap'
         }
@@ -521,6 +542,7 @@ export async function createPluginContainer(
 
     _getCombinedSourcemap(createIfNull = false) {
       if (
+        debugSourcemapCombine &&
         debugSourcemapCombineFilter &&
         this.filename.includes(debugSourcemapCombineFilter)
       ) {
@@ -543,10 +565,7 @@ export async function createPluginContainer(
           combinedMap = m as SourceMap
         } else {
           combinedMap = combineSourcemaps(cleanUrl(this.filename), [
-            {
-              ...(m as RawSourceMap),
-              sourcesContent: combinedMap.sourcesContent,
-            },
+            m as RawSourceMap,
             combinedMap as RawSourceMap,
           ]) as SourceMap
         }
@@ -555,7 +574,7 @@ export async function createPluginContainer(
         return createIfNull
           ? new MagicString(this.originalCode).generateMap({
               includeContent: true,
-              hires: true,
+              hires: 'boundary',
               source: cleanUrl(this.filename),
             })
           : null
@@ -573,12 +592,26 @@ export async function createPluginContainer(
   }
 
   let closed = false
+  const processesing = new Set<Promise<any>>()
+  // keeps track of hook promises so that we can wait for them all to finish upon closing the server
+  function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
+    if (!(maybePromise as any)?.then) {
+      return maybePromise
+    }
+    const promise = maybePromise as Promise<T>
+    processesing.add(promise)
+    return promise.finally(() => processesing.delete(promise))
+  }
 
   const container: PluginContainer = {
     options: await (async () => {
       let options = rollupOptions
       for (const optionsHook of getSortedPluginHooks('options')) {
-        options = (await optionsHook.call(minimalContext, options)) || options
+        if (closed) throwClosedServerError()
+        options =
+          (await handleHookPromise(
+            optionsHook.call(minimalContext, options),
+          )) || options
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
@@ -595,10 +628,12 @@ export async function createPluginContainer(
     getModuleInfo,
 
     async buildStart() {
-      await hookParallel(
-        'buildStart',
-        (plugin) => new Context(plugin),
-        () => [container.options as NormalizedInputOptions],
+      await handleHookPromise(
+        hookParallel(
+          'buildStart',
+          (plugin) => new Context(plugin),
+          () => [container.options as NormalizedInputOptions],
+        ),
       )
     },
 
@@ -610,28 +645,30 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
-      const resolveStart = isDebug ? performance.now() : 0
-
+      const resolveStart = debugResolve ? performance.now() : 0
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of getSortedPlugins('resolveId')) {
+        if (closed && !ssr) throwClosedServerError()
         if (!plugin.resolveId) continue
         if (skip?.has(plugin)) continue
 
         ctx._activePlugin = plugin
 
-        const pluginResolveStart = isDebug ? performance.now() : 0
+        const pluginResolveStart = debugPluginResolve ? performance.now() : 0
         const handler =
           'handler' in plugin.resolveId
             ? plugin.resolveId.handler
             : plugin.resolveId
-        const result = await handler.call(ctx as any, rawId, importer, {
-          assertions: options?.assertions ?? {},
-          custom: options?.custom,
-          isEntry: !!options?.isEntry,
-          ssr,
-          scan,
-        })
+        const result = await handleHookPromise(
+          handler.call(ctx as any, rawId, importer, {
+            assertions: options?.assertions ?? {},
+            custom: options?.custom,
+            isEntry: !!options?.isEntry,
+            ssr,
+            scan,
+          }),
+        )
         if (!result) continue
 
         if (typeof result === 'string') {
@@ -641,18 +678,17 @@ export async function createPluginContainer(
           Object.assign(partial, result)
         }
 
-        isDebug &&
-          debugPluginResolve(
-            timeFrom(pluginResolveStart),
-            plugin.name,
-            prettifyUrl(id, root),
-          )
+        debugPluginResolve?.(
+          timeFrom(pluginResolveStart),
+          plugin.name,
+          prettifyUrl(id, root),
+        )
 
         // resolveId() is hookFirst - first non-null result is returned.
         break
       }
 
-      if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
+      if (debugResolve && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {
@@ -678,11 +714,14 @@ export async function createPluginContainer(
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('load')) {
+        if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler =
           'handler' in plugin.load ? plugin.load.handler : plugin.load
-        const result = await handler.call(ctx as any, id, { ssr })
+        const result = await handleHookPromise(
+          handler.call(ctx as any, id, { ssr }),
+        )
         if (result != null) {
           if (isObject(result)) {
             updateModuleInfo(id, result)
@@ -699,33 +738,35 @@ export async function createPluginContainer(
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('transform')) {
+        if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
-        const start = isDebug ? performance.now() : 0
+        const start = debugPluginTransform ? performance.now() : 0
         let result: TransformResult | string | undefined
         const handler =
           'handler' in plugin.transform
             ? plugin.transform.handler
             : plugin.transform
         try {
-          result = await handler.call(ctx as any, code, id, { ssr })
+          result = await handleHookPromise(
+            handler.call(ctx as any, code, id, { ssr }),
+          )
         } catch (e) {
           ctx.error(e)
         }
         if (!result) continue
-        isDebug &&
-          debugPluginTransform(
-            timeFrom(start),
-            plugin.name,
-            prettifyUrl(id, root),
-          )
+        debugPluginTransform?.(
+          timeFrom(start),
+          plugin.name,
+          prettifyUrl(id, root),
+        )
         if (isObject(result)) {
           if (result.code !== undefined) {
             code = result.code
             if (result.map) {
-              if (isDebugSourcemapCombineFocused) {
+              if (debugSourcemapCombine) {
                 // @ts-expect-error inject plugin name for debug purpose
                 result.map.name = plugin.name
               }
@@ -745,6 +786,8 @@ export async function createPluginContainer(
 
     async close() {
       if (closed) return
+      closed = true
+      await Promise.allSettled(Array.from(processesing))
       const ctx = new Context()
       await hookParallel(
         'buildEnd',
@@ -756,7 +799,6 @@ export async function createPluginContainer(
         () => ctx,
         () => [],
       )
-      closed = true
     },
   }
 

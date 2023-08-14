@@ -34,6 +34,7 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
+  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'
@@ -74,7 +75,9 @@ export type {
 export type {
   CSSOptions,
   CSSModulesOptions,
+  LightningCSSOptions,
   PreprocessCSSResult,
+  ResolvedCSSOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'

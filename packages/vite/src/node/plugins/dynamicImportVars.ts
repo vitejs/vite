@@ -7,6 +7,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
   normalizePath,
@@ -16,8 +17,15 @@ import {
   transformStableResult,
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
+
+const relativePathRE = /^\.{1,2}\//
+// fast path to check if source contains a dynamic import. we check for a
+// trailing slash too as a dynamic import statement can have comments between
+// the `import` and the `(`.
+const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
@@ -122,7 +130,7 @@ export async function transformDynamicImport(
     await toAbsoluteGlob(rawPattern, root, importer, resolve),
   )
 
-  if (!/^\.{1,2}\//.test(newRawPattern)) {
+  if (!relativePathRE.test(newRawPattern)) {
     newRawPattern = `./${newRawPattern}`
   }
 
@@ -161,7 +169,11 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (!filter(importer)) {
+      if (
+        !filter(importer) ||
+        importer === CLIENT_ENTRY ||
+        !hasDynamicImportRE.test(source)
+      ) {
         return
       }
 
@@ -192,6 +204,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         } = imports[index]
 
         if (dynamicIndex === -1 || source[start] !== '`') {
+          continue
+        }
+
+        if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
           continue
         }
 

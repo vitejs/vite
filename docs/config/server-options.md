@@ -34,6 +34,13 @@ The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is becaus
 
 :::
 
+::: tip Accessing the server on WSL2 from your LAN
+
+When running Vite on WSL2, it is not sufficient to set `host: true` to access the server from your LAN.
+See [the WSL document](https://learn.microsoft.com/en-us/windows/wsl/networking#accessing-a-wsl-2-distribution-from-your-local-area-network-lan) for more details.
+
+:::
+
 ## server.port
 
 - **Type:** `number`
@@ -240,12 +247,6 @@ async function createServer() {
 createServer()
 ```
 
-## server.base
-
-- **Type:** `string | undefined`
-
-Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start with the `/` character.
-
 ## server.fs.strict
 
 - **Type:** `boolean`
@@ -258,6 +259,8 @@ Restrict serving files outside of workspace root.
 - **Type:** `string[]`
 
 Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
+
+Both directories and files can be provided.
 
 Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fall back to the [project root](/guide/#index-html-and-project-root).
 
@@ -291,7 +294,8 @@ export default defineConfig({
         // search up for workspace root
         searchForWorkspaceRoot(process.cwd()),
         // your custom rules
-        '/path/to/custom/allow',
+        '/path/to/custom/allow_directory',
+        '/path/to/custom/allow_file.demo',
       ],
     },
   },
@@ -324,7 +328,7 @@ export default defineConfig({
 - **Type:** `false | (sourcePath: string, sourcemapPath: string) => boolean`
 - **Default:** `(sourcePath) => sourcePath.includes('node_modules')`
 
-Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/articles/x-google-ignore-list/).
 
 `server.sourcemapIgnoreList` is the equivalent of [`build.rollupOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
 

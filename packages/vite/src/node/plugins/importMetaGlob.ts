@@ -13,7 +13,7 @@ import type {
   TemplateLiteral,
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
-import type { RollupError } from 'rollup'
+import type { CustomPluginOptions, RollupError } from 'rollup'
 import { findNodeAt } from 'acorn-walk'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
@@ -51,7 +51,14 @@ export function getAffectedGlobModules(
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
   for (const [id, allGlobs] of server._importGlobMap!) {
-    if (allGlobs.some((glob) => isMatch(file, glob)))
+    // (glob1 || glob2) && !glob3 && !glob4...
+    if (
+      allGlobs.some(
+        ({ affirmed, negated }) =>
+          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
+          (!negated.length || negated.every((glob) => isMatch(file, glob))),
+      )
+    )
       modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
   }
   modules.forEach((i) => {
@@ -75,14 +82,26 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         code,
         id,
         config.root,
-        (im) => this.resolve(im, id).then((i) => i?.id || im),
+        (im, _, options) =>
+          this.resolve(im, id, options).then((i) => i?.id || im),
         config.isProduction,
         config.experimental.importGlobRestoreExtension,
       )
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(id, allGlobs)
+          server._importGlobMap.set(
+            id,
+            allGlobs.map((globs) => {
+              const affirmed: string[] = []
+              const negated: string[] = []
+
+              for (const glob of globs) {
+                ;(glob[0] === '!' ? negated : affirmed).push(glob)
+              }
+              return { affirmed, negated }
+            }),
+          )
         }
         return transformStableResult(result.s, id, config)
       }
@@ -412,7 +431,7 @@ export async function transformGlobImport(
             ? options.query
             : stringifyQuery(options.query as any)
 
-          if (query && !query.startsWith('?')) query = `?${query}`
+          if (query && query[0] !== '?') query = `?${query}`
 
           const resolvePaths = (file: string) => {
             if (!dir) {
@@ -425,14 +444,14 @@ export async function transformGlobImport(
             }
 
             let importPath = relative(dir, file)
-            if (!importPath.startsWith('.')) importPath = `./${importPath}`
+            if (importPath[0] !== '.') importPath = `./${importPath}`
 
             let filePath: string
             if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (!filePath.startsWith('.')) filePath = `/${filePath}`
+              if (filePath[0] !== '.') filePath = `/${filePath}`
             }
 
             return { filePath, importPath }
@@ -546,6 +565,12 @@ export async function transformGlobImport(
 type IdResolver = (
   id: string,
   importer?: string,
+  options?: {
+    assertions?: Record<string, string>
+    custom?: CustomPluginOptions
+    isEntry?: boolean
+    skipSelf?: boolean
+  },
 ) => Promise<string | undefined> | string | undefined
 
 function globSafePath(path: string) {
@@ -583,18 +608,27 @@ export async function toAbsoluteGlob(
   resolveId: IdResolver,
 ): Promise<string> {
   let pre = ''
-  if (glob.startsWith('!')) {
+  if (glob[0] === '!') {
     pre = '!'
     glob = glob.slice(1)
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
-  if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
+  if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const resolved = normalizePath((await resolveId(glob, importer)) || glob)
+  const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
+
+  const resolved = normalizePath(
+    (await resolveId(glob, importer, {
+      custom: { 'vite:import-glob': { isSubImportsPattern } },
+    })) || glob,
+  )
+  if (isSubImportsPattern) {
+    return join(root, resolved)
+  }
   if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
   }
@@ -606,7 +640,7 @@ export async function toAbsoluteGlob(
 
 export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
-    .filter((g) => !g.startsWith('!'))
+    .filter((g) => g[0] !== '!')
     .map((glob) => {
       let { base } = scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
@@ -632,5 +666,5 @@ export function getCommonBase(globsResolved: string[]): null | string {
 
 export function isVirtualModule(id: string): boolean {
   // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
-  return id.startsWith('virtual:') || id.startsWith('\0') || !id.includes('/')
+  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { transformStableResult } from '../utils'
+import { escapeRegex, transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -41,13 +41,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     if (isBuild) {
       const match = key.match(metaEnvRe)
       if (match) {
-        userDefineEnv[match[1]] =
-          // test if value is raw identifier to wrap with __vite__ so when
-          // stringified for `import.meta.env`, we can remove the quotes and
-          // retain being an identifier
-          typeof val === 'string' && /^[\p{L}_$]/u.test(val.trim())
-            ? `__vite__define__${val}`
-            : val
+        userDefineEnv[match[1]] = `__vite__define__${key}__define__vite__`
       }
     }
   }
@@ -67,7 +61,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         ...config.env,
         SSR: '__vite__ssr__',
         ...userDefineEnv,
-      }).replace(/"__vite__define__(.+?)"/g, (_, val) => val),
+      }).replace(
+        /"__vite__define__(.+?)__define__vite__"/g,
+        (_, key) => userDefine[key],
+      ),
     })
   }
 
@@ -113,11 +110,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           // Mustn't be preceded by a char that can be part of an identifier
           // or a '.' that isn't part of a spread operator
           '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
-            replacementsKeys
-              .map((str) => {
-                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-              })
-              .join('|') +
+            replacementsKeys.map(escapeRegex).join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
             ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',

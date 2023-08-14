@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import { findAssetFile, getColor, isBuild, page, readManifest } from '~utils'
+import {
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  readManifest,
+  untilUpdated,
+} from '~utils'
 
 test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
@@ -25,15 +32,23 @@ test('should load dynamic import with module', async () => {
 test('style order should be consistent when style tag is inserted by JS', async () => {
   expect(await getColor('.order-bulk')).toBe('orange')
   await page.click('.order-bulk-update')
-  expect(await getColor('.order-bulk')).toBe('green')
+  await untilUpdated(() => getColor('.order-bulk'), 'green')
 })
 
 describe.runIf(isBuild)('build', () => {
   test('should remove empty chunk', async () => {
-    expect(findAssetFile(/style.*\.js$/)).toBe('')
+    expect(findAssetFile(/style-.*\.js$/)).toBe('')
     expect(findAssetFile('main.*.js$')).toMatch(`/* empty css`)
     expect(findAssetFile('other.*.js$')).toMatch(`/* empty css`)
     expect(findAssetFile(/async.*\.js$/)).toBe('')
+  })
+
+  test('should remove empty chunk, HTML without JS', async () => {
+    const sharedCSSWithJSChunk = findAssetFile('shared-css-with-js.*.js$')
+    expect(sharedCSSWithJSChunk).toMatch(`/* empty css`)
+    // there are functions and modules in the src code that should be tree-shaken
+    expect(sharedCSSWithJSChunk).not.toMatch('function')
+    expect(sharedCSSWithJSChunk).not.toMatch(/import(?!".\/modulepreload)/)
   })
 
   test('should generate correct manifest', async () => {

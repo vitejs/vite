@@ -1,5 +1,7 @@
 import fs from 'node:fs'
+import module from 'node:module'
 import { defineConfig } from 'vite'
+const require = module.createRequire(import.meta.url)
 
 // Overriding the NODE_ENV set by vitest
 process.env.NODE_ENV = ''
@@ -21,6 +23,8 @@ export default defineConfig({
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
       // will throw if optimized (should log warning instead)
       '@vitejs/test-non-optimizable-include',
+      '@vitejs/test-dep-optimize-exports-with-glob/**/*',
+      '@vitejs/test-dep-optimize-with-glob/**/*.js',
     ],
     exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],
     esbuildOptions: {
@@ -120,6 +124,11 @@ export default defineComponent({
 })
 `.trim(),
         }
+      }
+
+      // fallback to empty module for other vue files
+      if (id.endsWith('.vue')) {
+        return { code: `export default {}` }
       }
     },
   }

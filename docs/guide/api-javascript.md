@@ -198,6 +198,46 @@ import { preview } from 'vite'
 })()
 ```
 
+## `PreviewServer`
+
+```ts
+interface PreviewServer extends PreviewServerForHook {
+  resolvedUrls: ResolvedServerUrls
+}
+```
+
+## `PreviewServerForHook`
+
+```ts
+interface PreviewServerForHook {
+  /**
+   * The resolved vite config object
+   */
+  config: ResolvedConfig
+  /**
+   * A connect app instance.
+   * - Can be used to attach custom middlewares to the preview server.
+   * - Can also be used as the handler function of a custom http server
+   *   or as a middleware in any connect-style Node.js frameworks
+   *
+   * https://github.com/senchalabs/connect#use-middleware
+   */
+  middlewares: Connect.Server
+  /**
+   * native Node http server instance
+   */
+  httpServer: http.Server
+  /**
+   * The resolved urls Vite prints on the CLI
+   */
+  resolvedUrls: ResolvedServerUrls | null
+  /**
+   * Print server urls
+   */
+  printUrls(): void
+}
+```
+
 ## `resolveConfig`
 
 **Type Signature:**
@@ -225,6 +265,10 @@ function mergeConfig(
 ```
 
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
+
+::: tip NOTE
+`mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
+:::
 
 ## `searchForWorkspaceRoot`
 

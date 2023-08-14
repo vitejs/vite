@@ -17,8 +17,9 @@ import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
-
-const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 interface WorkerOptions {
   type?: WorkerType
@@ -76,7 +77,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
     .substring(commaIndex + 1, endIndex)
     .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
 
-  const hasViteIgnore = ignoreFlagRE.test(workerOptString)
+  const hasViteIgnore = hasViteIgnoreRE.test(workerOptString)
   if (hasViteIgnore) {
     return 'ignore'
   }
@@ -98,6 +99,16 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let workerResolver: ResolveFn
+
+  const fsResolveOptions: InternalResolveOptions = {
+    ...config.resolve,
+    root: config.root,
+    isProduction: config.isProduction,
+    isBuild: config.command === 'build',
+    packageCache: config.packageCache,
+    ssrConfig: config.ssr,
+    asSrc: true,
+  }
 
   return {
     name: 'vite:worker-import-meta-url',
@@ -126,7 +137,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const rawUrl = code.slice(urlStart, urlEnd)
 
           // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
               urlIndex,
@@ -141,8 +152,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           )
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
-          if (url.startsWith('.')) {
+          if (url[0] === '.') {
             file = path.resolve(path.dirname(id), url)
+            file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
             workerResolver ??= config.createResolver({
               extensions: [],
@@ -150,9 +162,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               preferRelative: true,
             })
             file = await workerResolver(url, id)
-            file ??= url.startsWith('/')
-              ? slash(path.join(config.publicDir, url))
-              : slash(path.resolve(path.dirname(id), url))
+            file ??=
+              url[0] === '/'
+                ? slash(path.join(config.publicDir, url))
+                : slash(path.resolve(path.dirname(id), url))
           }
 
           let builtUrl: string

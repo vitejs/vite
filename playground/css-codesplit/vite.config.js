@@ -8,6 +8,9 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, './index.html'),
         other: resolve(__dirname, './other.js'),
+        style2: resolve(__dirname, './style2.js'),
+        'shared-css-with-js': resolve(__dirname, 'shared-css-with-js.html'),
+        'shared-css-no-js': resolve(__dirname, 'shared-css-no-js.html'),
       },
       output: {
         manualChunks(id) {

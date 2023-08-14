@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { defineConfig, normalizePath } from 'vite'
-import { a } from './config-dep'
+import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
@@ -102,6 +102,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     include: [
+      '@vitejs/test-resolve-exports-with-module-condition-required',
       '@vitejs/test-require-pkg-with-module-field',
       '@vitejs/test-resolve-sharp-dir',
     ],

@@ -98,6 +98,10 @@ declare module '*.sss' {
 // see `src/node/constants.ts`
 
 // images
+declare module '*.apng' {
+  const src: string
+  export default src
+}
 declare module '*.png' {
   const src: string
   export default src
@@ -169,6 +173,11 @@ declare module '*.flac' {
   export default src
 }
 declare module '*.aac' {
+  const src: string
+  export default src
+}
+
+declare module '*.opus' {
   const src: string
   export default src
 }

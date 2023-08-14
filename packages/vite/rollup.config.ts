@@ -120,6 +120,13 @@ function createNodePlugins(
           pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
           replacement: 'var json = JSON',
         },
+        // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
+        // However, we always pass the `resolve` option. Remove this import to avoid
+        // bundling the `resolve` dep.
+        'postcss-import/index.js': {
+          src: 'const resolveId = require("./lib/resolve-id")',
+          replacement: 'const resolveId = (id) => id',
+        },
       }),
 
     commonjs({
@@ -153,6 +160,7 @@ function createNodeConfig(isProduction: boolean) {
     },
     external: [
       'fsevents',
+      'lightningcss',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
@@ -252,7 +260,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
 
           return {
             code: magicString.toString(),
-            map: magicString.generateMap({ hires: true }),
+            map: magicString.generateMap({ hires: 'boundary' }),
           }
         }
       }
@@ -300,7 +308,7 @@ const __require = require;
 
       return {
         code: s.toString(),
-        map: s.generateMap(),
+        map: s.generateMap({ hires: 'boundary' }),
       }
     },
   }
