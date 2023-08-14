@@ -57,7 +57,7 @@
     "build-types": "run-s build-types-temp build-types-pre-patch build-types-roll build-types-post-patch build-types-check",
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "build-types-pre-patch": "tsx scripts/prePatchTypes.ts",
-    "build-types-roll": "tsx scripts/api-extractor.ts run && rimraf temp",
+    "build-types-roll": "api-extractor run && rimraf temp",
     "build-types-post-patch": "tsx scripts/postPatchTypes.ts",
     "build-types-check": "tsx scripts/checkBuiltTypes.ts && tsc --project tsconfig.check.json",
     "typecheck": "tsc --noEmit",
