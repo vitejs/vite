@@ -69,6 +69,17 @@ test('should load dynamic import with vars', async () => {
   )
 })
 
+test('should load dynamic import with no vars', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-no-vars'),
+    'extra',
+    true,
+  )
+  expect(
+    serverLogs.some((log) => log.includes('cannot be analyzed by Vite')),
+  ).toBe(false)
+})
+
 test('should load dynamic import with vars ignored', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-ignored'),

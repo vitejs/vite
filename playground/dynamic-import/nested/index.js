@@ -84,6 +84,10 @@ import(`../alias/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars', mod.hello())
 })
 
+import(`../alias/extra.js`).then((mod) => {
+  text('.dynamic-import-with-no-vars', mod.extra())
+})
+
 import(/*@vite-ignore*/ `https://localhost`).catch((mod) => {
   console.log(mod)
   text('.dynamic-import-with-vars-ignored', 'hello')

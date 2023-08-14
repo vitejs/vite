@@ -80,7 +80,17 @@ export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
-const templateStringHasVariableRE = /\$\{/;
+const templateStringHasVariableRE = /\$\{/
+const strIsTemplateLiteralRE = /^`.*`$/
+
+const stringIsTemplateLiteralWithNoVars = (str: string): boolean => {
+  if (typeof str !== 'string') {
+    return false
+  }
+  return (
+    strIsTemplateLiteralRE.test(str) && !templateStringHasVariableRE.test(str)
+  )
+}
 
 interface UrlPosition {
   url: string
@@ -471,7 +481,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             return
           }
 
-          const isDynamicImport = dynamicIndex > -1 && templateStringHasVariableRE.test(rawUrl)
+          const isDynamicImport = dynamicIndex > -1
 
           // strip import assertions as we can process them ourselves
           if (!isDynamicImport && assertIndex > -1) {
@@ -680,7 +690,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // complete expression inside parens
                 source.slice(dynamicIndex + 1, end),
               )
-              if (!hasViteIgnore) {
+              if (
+                !hasViteIgnore &&
+                !stringIsTemplateLiteralWithNoVars(rawUrl)
+              ) {
                 this.warn(
                   `\n` +
                     colors.cyan(importerModule.file) +
