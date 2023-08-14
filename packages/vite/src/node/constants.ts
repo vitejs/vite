@@ -25,15 +25,23 @@ export const ESBUILD_MODULES_TARGET = [
   'safari14',
 ]
 
-export const DEFAULT_EXTENSIONS = ['.ts', '.js', '.mts', '.mjs', '.json']
+export const DEFAULT_EXTENSIONS = [
+  '.js',
+  '.ts',
+  '.mjs',
+  '.mts',
+  '.jsx',
+  '.tsx',
+  '.json',
+]
 
 export const DEFAULT_CONFIG_FILES = [
-  'vite.config.ts',
   'vite.config.js',
-  'vite.config.mts',
+  'vite.config.ts',
   'vite.config.mjs',
-  'vite.config.cts',
+  'vite.config.mts',
   'vite.config.cjs',
+  'vite.config.cts',
 ]
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
