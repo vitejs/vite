@@ -45,23 +45,21 @@ The supported template presets are:
 Vite requires [Node.js](https://nodejs.org/en/) version 14.18+, 16+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 :::
 
-With NPM:
+::: code-group
 
-```bash
+```bash [NPM]
 $ npm create vite@latest
 ```
 
-With Yarn:
-
-```bash
+```bash [Yarn]
 $ yarn create vite
 ```
 
-With PNPM:
-
-```bash
+```bash [PNPM]
 $ pnpm create vite
 ```
+
+:::
 
 Then follow the prompts!
 

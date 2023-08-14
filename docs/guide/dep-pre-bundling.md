@@ -1,3 +1,7 @@
+---
+outline: [2, 3]
+---
+
 # Dependency Pre-Bundling
 
 When you run `vite` for the first time, Vite prebundles your project dependencies before loading your site locally. It is done automatically and transparently by default.
