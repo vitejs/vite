@@ -12,4 +12,4 @@ export default function myLib(sel) {
 }
 
 // For triggering unhandled global esbuild helpers in previous regex-based implementation for injection
-myLib()?.foo
+;(function () {})()?.foo

@@ -29,7 +29,8 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 const debug = createDebugger('vite:esbuild')
 
 // IIFE content looks like `var MyLib = function() {`. Spaces are removed when minified
-const IIFE_BEGIN_RE = /(const|var)(.*)=\s*function\(\)\s*\{\s*"use strict";/
+const IIFE_BEGIN_RE =
+  /(const|var)\s+\S+\s*=\s*function\(\)\s*\{.*"use strict";/s
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
