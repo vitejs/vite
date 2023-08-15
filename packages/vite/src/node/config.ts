@@ -270,7 +270,7 @@ export interface UserConfig {
     /**
      * Vite plugins that apply to worker bundle
      */
-    plugins?: PluginOption[]
+    plugins?: PluginOption[] | (() => PluginOption[])
     /**
      * Rollup options to build worker bundle
      */
@@ -332,7 +332,7 @@ export interface LegacyOptions {
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
-  plugins: Plugin[]
+  plugins: Plugin[] | (() => Promise<Plugin[]>)
   rollupOptions: RollupOptions
 }
 
@@ -454,12 +454,6 @@ export async function resolveConfig(
       return p.apply === command
     }
   }
-  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
-  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
-  // So we need to separate the worker plugin from the plugin that vite needs to run.
-  const rawWorkerUserPlugins = (
-    (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
-  ).filter(filterPlugin)
 
   // resolve plugins
   const rawUserPlugins = (
@@ -653,18 +647,39 @@ export async function resolveConfig(
 
   const BASE_URL = resolvedBase
 
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
+  const rawWorkerUserPlugins = config.worker?.plugins
+  const supportsUserPluginsFunction =
+    typeof rawWorkerUserPlugins === 'function' || !rawWorkerUserPlugins
+  const getSortedWorkerUserPlugins = async (
+    userPlugins?: PluginOption[] | (() => PluginOption[]),
+  ) => {
+    const plugins =
+      typeof userPlugins === 'function' ? userPlugins() : userPlugins
+    const pluginsFlattened = (
+      (await asyncFlatten(plugins || [])) as Plugin[]
+    ).filter(filterPlugin)
+    return sortUserPlugins(pluginsFlattened)
+  }
+
   // resolve worker
   let workerConfig = mergeConfig({}, config)
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(rawWorkerUserPlugins)
+    await getSortedWorkerUserPlugins(rawWorkerUserPlugins)
 
   // run config hooks
-  const workerUserPlugins = [
+  const workerUserPluginsForHooks = [
     ...workerPrePlugins,
     ...workerNormalPlugins,
     ...workerPostPlugins,
   ]
-  workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
+  workerConfig = await runConfigHook(
+    workerConfig,
+    workerUserPluginsForHooks,
+    configEnv,
+  )
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
@@ -754,15 +769,17 @@ export async function resolveConfig(
     isWorker: true,
     mainConfig: resolved,
   }
-  resolvedConfig.worker.plugins = await resolvePlugins(
-    workerResolved,
-    workerPrePlugins,
-    workerNormalPlugins,
-    workerPostPlugins,
-  )
+
+  const getResolvedWorkerPlugins = async () => {
+    return resolvePlugins(
+      workerResolved,
+      ...(await getSortedWorkerUserPlugins(rawWorkerUserPlugins)),
+    )
+  }
+
   Object.assign(
     resolvedConfig.worker,
-    createPluginHookUtils(resolvedConfig.worker.plugins),
+    createPluginHookUtils(await getResolvedWorkerPlugins()),
   )
 
   // call configResolved hooks
@@ -774,6 +791,10 @@ export async function resolveConfig(
       .getSortedPluginHooks('configResolved')
       .map((hook) => hook(workerResolved)),
   ])
+
+  resolvedConfig.worker.plugins = supportsUserPluginsFunction
+    ? () => getResolvedWorkerPlugins()
+    : await getResolvedWorkerPlugins()
 
   // validate config
 
@@ -812,7 +833,10 @@ export async function resolveConfig(
     plugins: resolved.plugins.map((p) => p.name),
     worker: {
       ...resolved.worker,
-      plugins: resolved.worker.plugins.map((p) => p.name),
+      plugins:
+        typeof resolved.worker.plugins === 'function'
+          ? await resolved.worker.plugins()
+          : resolved.worker.plugins.map((p) => p.name),
     },
   })
 
@@ -856,7 +880,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5.
     Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
 `),
     )

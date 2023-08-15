@@ -42,29 +42,36 @@ function saveEmitWorkerAsset(
 }
 
 // Ensure that only one rollup build is called at the same time to avoid
-// leaking state in plugins between worker builds.
-// TODO: Review if we can parallelize the bundling of workers.
+// leaking state in plugins between worker builds when running sequentially.
 const workerConfigSemaphore = new WeakMap<
   ResolvedConfig,
   Promise<OutputChunk>
 >()
-export async function bundleWorkerEntry(
+export async function handleBundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
 ): Promise<OutputChunk> {
+  // When plugins are a function we can assume that plugins are instantiated separately
+  // and have a separate state. This means that we can run the worker builds in parallel.
+  const canRunParallel = typeof config.worker.plugins === 'function'
+
+  if (canRunParallel) {
+    return bundleWorkerEntry(config, id, query)
+  }
+
   const processing = workerConfigSemaphore.get(config)
   if (processing) {
     await processing
     return bundleWorkerEntry(config, id, query)
   }
-  const promise = serialBundleWorkerEntry(config, id, query)
+  const promise = bundleWorkerEntry(config, id, query)
   workerConfigSemaphore.set(config, promise)
   promise.then(() => workerConfigSemaphore.delete(config))
   return promise
 }
 
-async function serialBundleWorkerEntry(
+async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
@@ -75,7 +82,7 @@ async function serialBundleWorkerEntry(
   const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
-    plugins,
+    plugins: typeof plugins === 'function' ? await plugins() : plugins,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -173,7 +180,7 @@ export async function workerFileToUrl(
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(config, id, query)
+    const outputChunk = await handleBundleWorkerEntry(config, id, query)
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
