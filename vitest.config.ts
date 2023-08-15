@@ -10,10 +10,8 @@ export default defineConfig({
       './playground-temp/**/*.*',
     ],
     testTimeout: 20000,
-    // node14 segfaults often with threads
-    threads: !process.versions.node.startsWith('14'),
   },
   esbuild: {
-    target: 'node14',
+    target: 'node18',
   },
 })

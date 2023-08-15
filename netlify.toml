@@ -1,5 +1,5 @@
 [build.environment]
-  NODE_VERSION = "16"
+  NODE_VERSION = "18"
   # don't need playwright for docs build
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
 [build]
