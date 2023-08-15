@@ -1297,7 +1297,7 @@ async function finalizeCss(
 }
 
 interface PostCSSConfigResult {
-  options: PostCSS.ProcessOptions & { exclude?: (fileName: string)=> boolean }
+  options: PostCSS.ProcessOptions & { exclude?: (fileName: string) => boolean }
   plugins: PostCSS.AcceptedPlugin[]
 }
 
