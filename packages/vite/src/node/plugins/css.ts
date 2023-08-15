@@ -1267,7 +1267,7 @@ export async function preprocessCSS(
 ): Promise<PreprocessCSSResult> {
   const p = createCSSPreprocessor()
   try {
-    return p.process(code, filename, config)
+    return await p.process(code, filename, config)
   } finally {
     p.close()
   }
