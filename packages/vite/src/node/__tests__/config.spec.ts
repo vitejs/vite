@@ -336,7 +336,7 @@ describe('resolveConfig', () => {
   })
 })
 
-describe.only('worker config', () => {
+describe('worker config', () => {
   const userPlugin = (): PluginOption => {
     return {
       name: 'vite-plugin-worker-user-plugin',
