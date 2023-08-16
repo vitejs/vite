@@ -23,6 +23,8 @@
 <pre class="escape-alias"></pre>
 <h2>Sub imports</h2>
 <pre class="sub-imports"></pre>
+<h2>In package</h2>
+<pre class="in-package"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -149,6 +151,10 @@
   document.querySelector('.sub-imports').textContent = Object.values(subImports)
     .map((mod) => mod.default)
     .join(' ')
+</script>
+
+<script type="module">
+  import '@vitejs/test-import-meta-glob-pkg'
 </script>
 
 <script type="module">
