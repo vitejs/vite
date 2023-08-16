@@ -53,7 +53,12 @@ export function transformMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteTransformMiddleware(req, res, next) {
-    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
+    const acceptHeader = req.headers['accept']
+    if (
+      req.method !== 'GET' ||
+      knownIgnoreList.has(req.url!) ||
+      acceptHeader?.includes('text/html')
+    ) {
       return next()
     }
 
