@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import net from 'node:net'
 import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { URL, URLSearchParams, fileURLToPath } from 'node:url'
@@ -866,16 +865,6 @@ export async function resolveHostname(
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
   } else {
-    // check if the host is valid
-    if (
-      optionsHost !== 'localhost' &&
-      !wildcardHosts.has(optionsHost) &&
-      !net.isIP(optionsHost)
-    ) {
-      throw new Error(
-        `The address passed to --host is not a valid IP address: ${optionsHost}`,
-      )
-    }
     host = optionsHost
   }
 
