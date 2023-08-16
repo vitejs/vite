@@ -1017,7 +1017,7 @@ async function bundleConfigFile(
     entryPoints: [fileName],
     outfile: 'out.js',
     write: false,
-    target: ['node14.18', 'node16'],
+    target: ['node18'],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',

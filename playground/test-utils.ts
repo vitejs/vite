@@ -4,7 +4,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
-import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
+import type {
+  ConsoleMessage,
+  ElementHandle,
+  Locator,
+} from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
@@ -74,7 +78,9 @@ function rgbToHex(rgb: string): string {
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
-async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
+async function toEl(
+  el: string | ElementHandle | Locator,
+): Promise<ElementHandle> {
   if (typeof el === 'string') {
     const realEl = await page.$(el)
     if (realEl == null) {
@@ -82,21 +88,30 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
     }
     return realEl
   }
+  if ('elementHandle' in el) {
+    return el.elementHandle()
+  }
   return el
 }
 
-export async function getColor(el: string | ElementHandle): Promise<string> {
+export async function getColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export async function getBg(el: string | ElementHandle): Promise<string> {
+export async function getBg(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
-export async function getBgColor(el: string | ElementHandle): Promise<string> {
+export async function getBgColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
 }

@@ -17,7 +17,9 @@ const distDir = resolve(dir, '../dist')
 const pkgJson = JSON.parse(
   readFileSync(resolve(dir, '../package.json'), 'utf-8'),
 )
-const deps = new Set(Object.keys(pkgJson.dependencies))
+const deps = new Set(
+  Object.keys(Object.assign(pkgJson.dependencies, pkgJson.peerDependencies)),
+)
 
 type SpecifierError = {
   loc: SourceLocation | null | undefined
