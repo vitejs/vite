@@ -535,7 +535,6 @@ export async function build(
   }
 
   const rollupOptions: RollupOptions = {
-    context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
