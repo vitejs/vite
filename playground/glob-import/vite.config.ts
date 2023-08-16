@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
 
 const escapeAliases = fs

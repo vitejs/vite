@@ -58,8 +58,10 @@ export function getAffectedGlobModules(
           (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
           (!negated.length || negated.every((glob) => isMatch(file, glob))),
       )
-    )
-      modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
+    ) {
+      const mod = server.moduleGraph.getModuleById(id)
+      if (mod) modules.push(mod)
+    }
   }
   modules.forEach((i) => {
     if (i?.file) server.moduleGraph.onFileChange(i.file)
