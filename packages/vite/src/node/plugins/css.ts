@@ -164,7 +164,6 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
-const usedRE = /[?&]used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -467,10 +466,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           `const __vite__css = ${JSON.stringify(cssContent)}`,
           `__vite__updateStyle(__vite__id, __vite__css)`,
           // css modules exports change on edit so it can't self accept
-          `${
-            modulesCode ||
-            `import.meta.hot.accept()\nexport default __vite__css`
-          }`,
+          `${modulesCode || 'import.meta.hot.accept()'}`,
           `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`,
         ].join('\n')
         return { code, map: { mappings: '' } }
@@ -499,22 +495,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (usedRE.test(id)) {
-        if (modulesCode) {
-          code = modulesCode
-        } else {
-          let content = css
-          if (config.build.cssMinify) {
-            content = await minifyCSS(content, config, true)
-          }
-          code = `export default ${JSON.stringify(content)}`
+      if (modulesCode) {
+        code = modulesCode
+      } else if (inlined) {
+        let content = css
+        if (config.build.cssMinify) {
+          content = await minifyCSS(content, config, true)
         }
+        code = `export default ${JSON.stringify(content)}`
       } else {
-        // if moduleCode exists return it **even if** it does not have `?used`
-        // this will disable tree-shake to work with `import './foo.module.css'` but this usually does not happen
-        // this is a limitation of the current approach by `?used` to make tree-shake work
-        // See #8936 for more details
-        code = modulesCode || `export default ''`
+        // empty module when it's not a CSS module nor `?inline`
+        code = 'export {}'
       }
 
       return {
