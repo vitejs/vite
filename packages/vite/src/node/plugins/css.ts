@@ -1003,7 +1003,7 @@ async function compileCSS(
   const atImportResolvers = getAtImportResolvers(config)
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
 
-  const isExcldue = !!postcssOptions?.exclude?.(id)
+  const isExcldue = !!postcssConfig?.exclude?.(id)
   if (isExcldue) {
     return {
       code,
@@ -1297,8 +1297,9 @@ async function finalizeCss(
 }
 
 interface PostCSSConfigResult {
-  options: PostCSS.ProcessOptions & { exclude?: (fileName: string) => boolean }
+  options: PostCSS.ProcessOptions
   plugins: PostCSS.AcceptedPlugin[]
+  exclude?: (fileName: string) => boolean
 }
 
 async function resolvePostcssConfig(
@@ -1315,13 +1316,11 @@ async function resolvePostcssConfig(
     const options = { ...inlineOptions }
 
     delete options.plugins
+    delete options.exclude
     result = {
       options,
       plugins: inlineOptions.plugins || [],
-    }
-    if (inlineOptions.exclude) {
-      Object.assign(result, { exclude: inlineOptions.exclude })
-      delete options.exclude
+      exclude: inlineOptions.exclude,
     }
   } else {
     const searchPath =
