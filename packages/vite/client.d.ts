@@ -38,60 +38,28 @@ declare module '*.module.sss' {
 
 // CSS
 declare module '*.css' {
-  /**
-   * @deprecated Use `import style from './style.css?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.scss' {
-  /**
-   * @deprecated Use `import style from './style.scss?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.sass' {
-  /**
-   * @deprecated Use `import style from './style.sass?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.less' {
-  /**
-   * @deprecated Use `import style from './style.less?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.styl' {
-  /**
-   * @deprecated Use `import style from './style.styl?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.stylus' {
-  /**
-   * @deprecated Use `import style from './style.stylus?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.pcss' {
-  /**
-   * @deprecated Use `import style from './style.pcss?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 declare module '*.sss' {
-  /**
-   * @deprecated Use `import style from './style.sss?inline'` instead.
-   */
-  const css: string
-  export default css
+  export {}
 }
 
 // Built-in asset types

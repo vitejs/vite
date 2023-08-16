@@ -1,12 +1,11 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
-  isServe,
   page,
   removeFile,
   serverLogs,
@@ -22,14 +21,6 @@ test('imported css', async () => {
   expect(glob).toContain('.dir-import')
   const globEager = await page.textContent('.imported-css-globEager')
   expect(globEager).toContain('.dir-import')
-})
-
-test('inline imported css', async () => {
-  const css = await page.textContent('.imported-css')
-  expect(css).toMatch(/\.imported ?\{/)
-  if (isBuild) {
-    expect(css.trim()).not.toContain('\n') // check minified
-  }
 })
 
 test('linked css', async () => {
@@ -463,26 +454,9 @@ test('PostCSS source.input.from includes query', async () => {
   // should resolve assets
   expect(code).toContain(
     isBuild
-      ? '/postcss-source-input.css?used&query=foo'
-      : '/postcss-source-input.css?query=foo',
+      ? '/postcss-source-input.css?used&inline&query=foo'
+      : '/postcss-source-input.css?inline&query=foo',
   )
-})
-
-describe.runIf(isServe)('deprecate default/named imports from CSS', () => {
-  test('css file', () => {
-    const actual = serverLogs.some((log) =>
-      /Use the \?inline query instead.+imported\.css/.test(log),
-    )
-    expect(actual).toBe(true)
-  })
-
-  test('js file ending with .css.js', async () => {
-    const message = await page.textContent('.jsfile-css-js')
-    expect(message).toMatch('from jsfile.css.js')
-    serverLogs.forEach((log) => {
-      expect(log).not.toMatch(/Use the \?inline query instead.+jsfile\.css/)
-    })
-  })
 })
 
 test('aliased css has content', async () => {
