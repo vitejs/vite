@@ -61,7 +61,7 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
 } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
+import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
 const debug = createDebugger('vite:import-analysis')
@@ -527,35 +527,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             // normalize
             const [url, resolvedId] = await normalizeUrl(specifier, start)
-
-            if (
-              !isDynamicImport &&
-              specifier &&
-              !specifier.includes('?') && // ignore custom queries
-              isCSSRequest(resolvedId) &&
-              !isModuleCSSRequest(resolvedId)
-            ) {
-              const sourceExp = source.slice(expStart, start)
-              if (
-                sourceExp.includes('from') && // check default and named imports
-                !sourceExp.includes('__vite_glob_') // glob handles deprecation message itself
-              ) {
-                const newImport =
-                  sourceExp + specifier + `?inline` + source.slice(end, expEnd)
-                this.warn(
-                  `\n` +
-                    colors.cyan(importerModule.file) +
-                    `\n` +
-                    colors.reset(generateCodeFrame(source, start)) +
-                    `\n` +
-                    colors.yellow(
-                      `Default and named imports from CSS files are deprecated. ` +
-                        `Use the ?inline query instead. ` +
-                        `For example: ${newImport}`,
-                    ),
-                )
-              }
-            }
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.

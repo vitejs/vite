@@ -29,7 +29,6 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
-import { isCSSRequest, isModuleCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -84,7 +83,6 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.root,
         (im, _, options) =>
           this.resolve(im, id, options).then((i) => i?.id || im),
-        config.isProduction,
         config.experimental.importGlobRestoreExtension,
       )
       if (result) {
@@ -332,24 +330,6 @@ const importPrefix = '__vite_glob_'
 
 const { basename, dirname, relative, join } = posix
 
-const warnedCSSDefaultImportVarName = '__vite_warned_css_default_import'
-const jsonStringifyInOneline = (input: any) =>
-  JSON.stringify(input).replace(/[{,:]/g, '$& ').replace(/\}/g, ' }')
-const createCssDefaultImportWarning = (
-  globs: string[],
-  options: GeneralImportGlobOptions,
-) =>
-  `if (!${warnedCSSDefaultImportVarName}) {` +
-  `${warnedCSSDefaultImportVarName} = true;` +
-  `console.warn(${JSON.stringify(
-    'Default import of CSS without `?inline` is deprecated. ' +
-      "Add the `{ query: '?inline' }` glob option to fix this.\n" +
-      `For example: \`import.meta.glob(${jsonStringifyInOneline(
-        globs.length === 1 ? globs[0] : globs,
-      )}, ${jsonStringifyInOneline({ ...options, query: '?inline' })})\``,
-  )});` +
-  `}`
-
 export interface TransformGlobImportResult {
   s: MagicString
   matches: ParsedImportGlob[]
@@ -364,7 +344,6 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
-  isProduction: boolean,
   restoreQueryExtension = false,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
@@ -386,15 +365,7 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({
-          globs,
-          globsResolved,
-          isRelative,
-          options,
-          index,
-          start,
-          end,
-        }) => {
+        async ({ globsResolved, isRelative, options, index, start, end }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await fg(globsResolved, {
@@ -444,7 +415,6 @@ export async function transformGlobImport(
             return { filePath, importPath }
           }
 
-          let includesCSS = false
           files.forEach((file, i) => {
             const paths = resolvePaths(file)
             const filePath = paths.filePath
@@ -459,10 +429,6 @@ export async function transformGlobImport(
 
             importPath = `${importPath}${importQuery}`
 
-            const isCSS =
-              !query && isCSSRequest(file) && !isModuleCSSRequest(file)
-            includesCSS ||= isCSS
-
             const importKey =
               options.import && options.import !== '*'
                 ? options.import
@@ -476,36 +442,14 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
-              if (!isProduction && isCSS) {
-                objectProps.push(
-                  `get ${JSON.stringify(
-                    filePath,
-                  )}() { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${variableName} }`,
-                )
-              } else {
-                objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
-              }
+              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
-              if (!isProduction && isCSS) {
-                objectProps.push(
-                  `${JSON.stringify(
-                    filePath,
-                  )}: () => { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${importStatement}}`,
-                )
-              } else {
-                objectProps.push(
-                  `${JSON.stringify(filePath)}: () => ${importStatement}`,
-                )
-              }
+              objectProps.push(
+                `${JSON.stringify(filePath)}: () => ${importStatement}`,
+              )
             }
           })
 
@@ -518,20 +462,9 @@ export async function transformGlobImport(
               ? '\n'.repeat(originalLineBreakCount)
               : ''
 
-          let replacement: string
-          if (!isProduction && includesCSS) {
-            replacement =
-              '/* #__PURE__ */ Object.assign(' +
-              '(() => {' +
-              `let ${warnedCSSDefaultImportVarName} = false;` +
-              `return {${objectProps.join(',')}${lineBreaks}};` +
-              '})()' +
-              ')'
-          } else {
-            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-              ',',
-            )}${lineBreaks}})`
-          }
+          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+            ',',
+          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports

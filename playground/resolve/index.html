@@ -349,7 +349,7 @@
   import '@vitejs/test-resolve-browser-field/multiple.dot.path'
 
   // css entry
-  import css from 'normalize.css'
+  import css from 'normalize.css/normalize.css?inline'
   if (typeof css === 'string') {
     text('.css', '[success] resolve package with css entry file')
   }

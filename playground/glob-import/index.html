@@ -121,8 +121,11 @@
 </script>
 
 <script type="module">
-  import.meta.glob('/tree-shake.css', { eager: true })
-  const results = import.meta.glob('/no-tree-shake.css', { eager: true })
+  import.meta.glob('/tree-shake.css', { eager: true, query: { inline: true } })
+  const results = import.meta.glob('/no-tree-shake.css', {
+    eager: true,
+    query: { inline: true },
+  })
   document.querySelector('.no-tree-shake-eager-css-result').textContent =
     results['/no-tree-shake.css'].default
 </script>
@@ -155,8 +158,4 @@
 
 <script type="module">
   import '@vitejs/test-import-meta-glob-pkg'
-</script>
-
-<script type="module">
-  console.log('Ran scripts')
 </script>
