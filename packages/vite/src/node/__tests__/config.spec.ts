@@ -335,3 +335,36 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 })
+
+describe.only('worker config', () => {
+  const userPlugin = (): PluginOption => {
+    return {
+      name: 'vite-plugin-worker-user-plugin',
+    }
+  }
+
+  test('resolves to default plugins function', async () => {
+    const results = await resolveConfig({}, 'build')
+    expect(typeof results.worker.plugins).toBe('function')
+  })
+
+  test('resolves to plugins function when user defined function given', async () => {
+    const config: InlineConfig = {
+      worker: {
+        plugins: () => [userPlugin()],
+      },
+    }
+    const results = await resolveConfig(config, 'build')
+    expect(typeof results.worker.plugins).toBe('function')
+  })
+
+  test('resolves to a plugins array when user defined array given', async () => {
+    const config: InlineConfig = {
+      worker: {
+        plugins: [userPlugin()],
+      },
+    }
+    const results = await resolveConfig(config, 'build')
+    expect(Array.isArray(results.worker.plugins)).toBe(true)
+  })
+})
