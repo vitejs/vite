@@ -833,10 +833,10 @@ export async function resolveConfig(
     plugins: resolved.plugins.map((p) => p.name),
     worker: {
       ...resolved.worker,
-      plugins:
-        typeof resolved.worker.plugins === 'function'
-          ? await resolved.worker.plugins()
-          : resolved.worker.plugins.map((p) => p.name),
+      plugins: (typeof resolved.worker.plugins === 'function'
+        ? await resolved.worker.plugins()
+        : resolved.worker.plugins
+      ).map((p) => p.name),
     },
   })
 
