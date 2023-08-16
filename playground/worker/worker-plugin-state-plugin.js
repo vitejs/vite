@@ -3,7 +3,6 @@ export default () => {
   return {
     name: 'plugin-for-plugin-state',
     transform(code, id) {
-      count++
       if (id.includes('worker/modules/test-state.js')) {
         count++
         return {
