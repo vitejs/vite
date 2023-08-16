@@ -11,5 +11,8 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-import-meta-glob-pkg": "file:./import-meta-glob-pkg"
   }
 }
