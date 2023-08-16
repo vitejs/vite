@@ -1,5 +1,11 @@
 import ImportMetaGlobEagerWorker from './importMetaGlobEager.worker?worker'
 import SubWorker from './sub-worker?worker'
+import { state } from './modules/test-state.js'
+
+self.postMessage({
+  type: 'plugin-state',
+  data: state,
+})
 
 const subWorker = new SubWorker()
 
@@ -12,10 +18,7 @@ self.onmessage = (event) => {
 self.postMessage(self.location.href)
 
 subWorker.onmessage = (ev) => {
-  self.postMessage({
-    type: 'module',
-    data: ev.data,
-  })
+  self.postMessage(ev.data)
 }
 
 const classicWorker = new Worker(new URL('./url-worker.js', import.meta.url), {
