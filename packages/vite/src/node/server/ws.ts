@@ -1,9 +1,10 @@
 import path from 'node:path'
-import type { Server } from 'node:http'
+import type { IncomingMessage, Server } from 'node:http'
 import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
+import type { Duplex } from 'node:stream'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
@@ -104,6 +105,11 @@ export function createWebSocketServer(
   // TODO: the main server port may not have been chosen yet as it may use the next available
   const portsAreCompatible = !hmrPort || hmrPort === config.server.port
   const wsServer = hmrServer || (portsAreCompatible && server)
+  let hmrServerWsListener: (
+    req: InstanceType<typeof IncomingMessage>,
+    socket: Duplex,
+    head: Buffer,
+  ) => void
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
   const port = hmrPort || 24678
@@ -116,7 +122,7 @@ export function createWebSocketServer(
       hmrBase = path.posix.join(hmrBase, hmrPath)
     }
     wss = new WebSocketServerRaw({ noServer: true })
-    wsServer.on('upgrade', (req, socket, head) => {
+    hmrServerWsListener = (req, socket, head) => {
       if (
         req.headers['sec-websocket-protocol'] === HMR_HEADER &&
         req.url === hmrBase
@@ -125,7 +131,8 @@ export function createWebSocketServer(
           wss.emit('connection', ws, req)
         })
       }
-    })
+    }
+    wsServer.on('upgrade', hmrServerWsListener)
   } else {
     // http server request handler keeps the same with
     // https://github.com/websockets/ws/blob/45e17acea791d865df6b255a55182e9c42e5877a/lib/websocket-server.js#L88-L96
@@ -273,6 +280,11 @@ export function createWebSocketServer(
     },
 
     close() {
+      // should remove listener if hmr.server is set
+      // otherwise the old listener swallows all WebSocket connections
+      if (hmrServerWsListener && wsServer) {
+        wsServer.off('upgrade', hmrServerWsListener)
+      }
       return new Promise((resolve, reject) => {
         wss.clients.forEach((client) => {
           client.terminate()
