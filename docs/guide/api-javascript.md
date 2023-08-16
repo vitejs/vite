@@ -151,6 +151,10 @@ async function build(
 ): Promise<RollupOutput | RollupOutput[]>
 ```
 
+::: warning
+When using `build` programmatically, Vite will copy [publicDir](/config/shared-options#publicdir) to the [build.outDir](/config/build-options#build-outdir). If you're using `build` in a secondary process or inside a plugin, you should disable [publicDir](/config/shared-options#publicdir) or [build.copyPublicDir](/config/build-options#build-copypublicdir) flag to avoid copying the public directory multiple times, that can lead in unexpected side effects.
+:::
+
 **Example Usage:**
 
 ```js
