@@ -381,7 +381,8 @@ export function lexAcceptedHmrDeps(
     currentDep = ''
   }
 
-  for (let i = start; i < code.length; i++) {
+  const codeLength = code.length
+  for (let i = start; i < codeLength; i++) {
     const char = code.charAt(i)
     switch (state) {
       case LexerState.inCall:
