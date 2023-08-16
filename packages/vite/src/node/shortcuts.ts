@@ -147,8 +147,13 @@ const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
     key: 'o',
     description: 'open in browser',
     action(server) {
-      const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
-      openBrowser(url, true, server.config.logger)
+      const url =
+        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      if (url) {
+        openBrowser(url, true, server.config.logger)
+      } else {
+        server.config.logger.warn('No URL available to open in browser')
+      }
     },
   },
   {
