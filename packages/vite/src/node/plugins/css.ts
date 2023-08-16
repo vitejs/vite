@@ -511,7 +511,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           let content = css
           if (config.build.cssMinify) {
-            content = await minifyCSS(content, config)
+            content = await minifyCSS(content, config, true)
           }
           code = `export default ${JSON.stringify(content)}`
         }
@@ -1281,7 +1281,7 @@ async function finalizeCss(
     css = await hoistAtRules(css)
   }
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config)
+    css = await minifyCSS(css, config, false)
   }
   return css
 }
@@ -1503,7 +1503,15 @@ async function doImportCSSReplace(
   return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
-async function minifyCSS(css: string, config: ResolvedConfig) {
+async function minifyCSS(
+  css: string,
+  config: ResolvedConfig,
+  inlined: boolean,
+) {
+  // We want inlined CSS to not end with a linebreak, while ensuring that
+  // regular CSS assets do end with a linebreak.
+  // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
+
   if (config.build.cssMinify === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
       ...config.css?.lightningcss,
@@ -1522,7 +1530,8 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
         ),
       )
     }
-    return code.toString()
+    // LightningCSS output does not return a linebreak at the end
+    return code.toString() + (inlined ? '' : '\n')
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -1536,7 +1545,8 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
         colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
     }
-    return code
+    // esbuild output does return a linebreak at the end
+    return inlined ? code.trimEnd() : code
   } catch (e) {
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
