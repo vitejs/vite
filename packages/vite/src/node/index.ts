@@ -34,7 +34,6 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
-  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'
