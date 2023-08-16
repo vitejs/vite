@@ -7,7 +7,6 @@ import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
-  bareImportRE,
   cleanUrl,
   combineSourcemaps,
   generateCodeFrame,
@@ -24,8 +23,7 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { SPECIAL_QUERY_RE } from '../constants'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
+import { removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
 /**
@@ -379,27 +377,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-        }
-
-        // Differentiate CSS imports that use the default export from those that
-        // do not by injecting a ?used query - this allows us to avoid including
-        // the CSS string when unnecessary (esbuild has trouble tree-shaking
-        // them)
-        if (
-          specifier &&
-          isCSSRequest(specifier) &&
-          // always inject ?used query when it is a dynamic import
-          // because there is no way to check whether the default export is used
-          (source.slice(expStart, start).includes('from') || isDynamicImport) &&
-          // already has ?used query (by import.meta.glob)
-          !specifier.match(/\?used(&|$)/) &&
-          // don't append ?used when SPECIAL_QUERY_RE exists
-          !specifier.match(SPECIAL_QUERY_RE) &&
-          // edge case for package names ending with .css (e.g normalize.css)
-          !(bareImportRE.test(specifier) && !specifier.includes('/'))
-        ) {
-          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().update(start, end, isDynamicImport ? `'${url}'` : url)
         }
       }
 
