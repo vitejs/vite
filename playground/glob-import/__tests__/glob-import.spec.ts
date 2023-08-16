@@ -11,6 +11,7 @@ import {
   page,
   removeFile,
   untilBrowserLogAfter,
+  untilUpdated,
   viteTestUrl,
   withRetry,
 } from '~utils'
@@ -131,6 +132,12 @@ test('unassigned import processes', async () => {
   )
 })
 
+test('import glob in package', async () => {
+  expect(await page.textContent('.in-package')).toBe(
+    JSON.stringify(['/pkg-pages/foo.js']),
+  )
+})
+
 if (!isBuild) {
   test('hmr for adding/removing files', async () => {
     const resultElement = page.locator('.result')
@@ -189,6 +196,22 @@ if (!isBuild) {
     removeFile('nohmr.js')
     response = await request.catch(() => ({ status: () => -1 }))
     expect(response.status()).toBe(-1)
+  })
+
+  test('hmr for adding/removing files in package', async () => {
+    const resultElement = page.locator('.in-package')
+
+    addFile('pkg-pages/bar.js', '// empty')
+    await untilUpdated(
+      () => resultElement.textContent(),
+      JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
+    )
+
+    removeFile('pkg-pages/bar.js')
+    await untilUpdated(
+      () => resultElement.textContent(),
+      JSON.stringify(['/pkg-pages/foo.js']),
+    )
   })
 }
 
