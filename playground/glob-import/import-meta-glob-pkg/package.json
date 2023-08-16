@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-import-meta-glob-pkg",
+  "type": "module",
+  "main": "./index.js"
+}

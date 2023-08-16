@@ -670,7 +670,13 @@ importers:
 
   playground/fs-serve: {}
 
-  playground/glob-import: {}
+  playground/glob-import:
+    dependencies:
+      '@vitejs/test-import-meta-glob-pkg':
+        specifier: file:./import-meta-glob-pkg
+        version: file:playground/glob-import/import-meta-glob-pkg
+
+  playground/glob-import/import-meta-glob-pkg: {}
 
   playground/hmr: {}
 
@@ -10799,6 +10805,11 @@ packages:
       slash3: /slash@3.0.0
       slash5: /slash@5.1.0
       vue: 3.3.4
+    dev: false
+
+  file:playground/glob-import/import-meta-glob-pkg:
+    resolution: {directory: playground/glob-import/import-meta-glob-pkg, type: directory}
+    name: '@vitejs/test-import-meta-glob-pkg'
     dev: false
 
   file:playground/import-assertion/import-assertion-dep:
