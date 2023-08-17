@@ -9,6 +9,7 @@ export function htmlFallbackMiddleware(
   spaFallback: boolean,
 ): Connect.NextHandleFunction {
   const historyHtmlFallbackMiddleware = history({
+    disableDotRule: true,
     logger: createDebugger('vite:html-fallback'),
     // support /dir/ without explicit index.html
     rewrites: [
