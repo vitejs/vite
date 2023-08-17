@@ -428,19 +428,6 @@ async function init() {
 
   pkg.name = packageName || getProjectName()
 
-  if (pkgManager === 'bun') {
-    // run `vite` CLI with Bun runtime
-    // the --bun flag is required to override the node shebang
-    // after Bun 1.0 this will no longer be necessary
-    if (pkg.scripts) {
-      pkg.scripts.dev = pkg.scripts.dev?.replace('vite', 'bunx --bun vite')
-      pkg.scripts.build = pkg.scripts.build?.replace(
-        'vite build',
-        'bunx --bun vite build',
-      )
-    }
-  }
-
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
   if (isReactSwc) {
