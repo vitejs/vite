@@ -11,8 +11,8 @@ export function htmlFallbackMiddleware(
   const historyHtmlFallbackMiddleware = history({
     disableDotRule: true,
     logger: createDebugger('vite:html-fallback'),
-    // support /dir/ without explicit index.html
     rewrites: [
+      // support /dir/ without explicit index.html
       {
         from: /\/$/,
         to({ parsedUrl, request }: any) {
@@ -24,6 +24,13 @@ export function htmlFallbackMiddleware(
           }
 
           return spaFallback ? `/index.html` : request.url
+        },
+      },
+      // don't rewrite paths ending with .html
+      {
+        from: /\.html$/,
+        to({ request }: any) {
+          return request.url
         },
       },
     ],
