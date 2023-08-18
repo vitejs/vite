@@ -289,15 +289,12 @@ function notifyListeners(event: string, data: any): void {
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
 function createErrorOverlay(err: ErrorPayload['err']) {
-  if (!enableOverlay) return
   clearErrorOverlay()
   document.body.appendChild(new ErrorOverlay(err))
 }
 
 function clearErrorOverlay() {
-  document
-    .querySelectorAll(overlayId)
-    .forEach((n) => (n as ErrorOverlay).close())
+  document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
 }
 
 function hasErrorOverlay() {
@@ -388,9 +385,11 @@ const sheetsMap = new Map<string, HTMLStyleElement>()
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
 if ('document' in globalThis) {
-  document.querySelectorAll('style[data-vite-dev-id]').forEach((el) => {
-    sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el as HTMLStyleElement)
-  })
+  document
+    .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')
+    .forEach((el) => {
+      sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
+    })
 }
 
 // all css imports should be inserted at the same position
