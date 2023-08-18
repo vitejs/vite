@@ -28,6 +28,7 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
+import type { FilterPattern } from './utils'
 import {
   asyncFlatten,
   copyDir,
@@ -181,7 +182,7 @@ export interface BuildOptions {
    * @default true
    * @experimental
    */
-  copyPublicDir?: boolean
+  copyPublicDir?: boolean | { exclude: FilterPattern }
   /**
    * Whether to emit a manifest.json under assets dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
@@ -765,7 +766,13 @@ function prepareOutDir(
           ),
         )
       }
-      copyDir(config.publicDir, outDir)
+      copyDir(
+        config.publicDir,
+        outDir,
+        config.build.copyPublicDir === true
+          ? undefined
+          : config.build.copyPublicDir.exclude,
+      )
     }
   }
 }

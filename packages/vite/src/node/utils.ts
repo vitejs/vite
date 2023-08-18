@@ -557,11 +557,17 @@ export function emptyDir(dir: string, skip?: string[]): void {
   }
 }
 
-export function copyDir(srcDir: string, destDir: string): void {
+export function copyDir(
+  srcDir: string,
+  destDir: string,
+  exclude?: FilterPattern,
+): void {
   fs.mkdirSync(destDir, { recursive: true })
+  const filter = createFilter(undefined, exclude)
+  const _exclude = Array.isArray(exclude) ? exclude : [exclude]
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
-    if (srcFile === destDir) {
+    if (srcFile === destDir || !filter(file) || _exclude.includes(file)) {
       continue
     }
     const destFile = path.resolve(destDir, file)
