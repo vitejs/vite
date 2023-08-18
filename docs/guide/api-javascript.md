@@ -261,6 +261,15 @@ Deeply merge two Vite configs. `isRoot` represents the level within the Vite con
 
 ::: tip NOTE
 `mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
+
+You can use the `defineConfig` helper to merge a config in callback form with another config:
+
+```ts
+export default defineConfig((configEnv) =>
+  mergeConfig(configAsCallback(configEnv), configAsObject),
+)
+```
+
 :::
 
 ## `searchForWorkspaceRoot`
