@@ -19,7 +19,7 @@ function BackendIntegrationExample() {
         .map((filename) => [path.relative(root, filename), filename])
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
-      entrypoints.push(['foo.css', path.resolve(__dirname, './dir/foo.css')])
+      entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
 
       return {
         build: {
