@@ -2,7 +2,9 @@ import type { ErrorPayload } from 'types/hmrPayload'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
+declare const __HMR_IS_TS_CONFIG__: boolean
 
+const isHmrTsConfig = __HMR_IS_TS_CONFIG__
 const base = __BASE__ || '/'
 
 // set :host styles to make playwright detect the element as visible
@@ -142,7 +144,9 @@ kbd {
     <div class="tip" part="tip">
       Click outside, press <kbd>Esc</kbd> key, or fix the code to dismiss.<br>
       You can also disable this overlay by setting
-      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.js.</code>
+      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">vite.config.${
+        isHmrTsConfig ? 'ts' : 'js'
+      }.</code>
     </div>
   </div>
 </div>
