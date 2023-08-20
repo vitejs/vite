@@ -5,12 +5,12 @@ describe.runIf(isBuild)('build', () => {
   test('expect the plugin state to be polluted and not match across worker builds', async () => {
     await untilUpdated(
       () => page.textContent('.nested-worker-plugin-state'),
-      '"type":"plugin-state"',
+      '"type":"workerPluginState"',
       true,
     )
     await untilUpdated(
       () => page.textContent('.sub-worker-plugin-state'),
-      '"type":"plugin-state-sub"',
+      '"type":"subWorkerPluginState"',
       true,
     )
 
