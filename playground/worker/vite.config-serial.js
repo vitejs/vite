@@ -31,5 +31,5 @@ export default defineConfig({
     },
   },
   plugins: [workerPluginTestPlugin()],
-  cacheDir: 'node_modules/.vite-es',
+  cacheDir: 'node_modules/.vite-serial',
 })

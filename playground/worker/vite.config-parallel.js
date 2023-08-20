@@ -3,7 +3,7 @@ import workerPluginTestPlugin from './worker-plugin-test-plugin'
 import workerPluginStatePlugin from './worker-plugin-state-plugin'
 
 export default defineConfig({
-  base: '/serial/',
+  base: '/parallel/',
   resolve: {
     alias: {
       '@': __dirname,
@@ -31,5 +31,5 @@ export default defineConfig({
     },
   },
   plugins: [workerPluginTestPlugin()],
-  cacheDir: 'node_modules/.vite-es',
+  cacheDir: 'node_modules/.vite-parallel',
 })
