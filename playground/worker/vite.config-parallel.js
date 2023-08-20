@@ -30,6 +30,20 @@ export default defineConfig({
       },
     },
   },
-  plugins: [workerPluginTestPlugin()],
+  plugins: [
+    workerPluginTestPlugin(),
+    {
+      name: 'resolve-deeply-nested',
+
+      transform(code, id) {
+        if (id.includes('main.js')) {
+          return code.replace(
+            `/* flag: will replace in vite config import("./main-deeply-nested") */`,
+            `import("./main-deeply-nested")`,
+          )
+        }
+      },
+    },
+  ],
   cacheDir: 'node_modules/.vite-parallel',
 })
