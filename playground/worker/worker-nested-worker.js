@@ -3,7 +3,7 @@ import SubWorker from './sub-worker?worker'
 import { state } from './modules/test-state.js'
 
 self.postMessage({
-  type: 'plugin-state',
+  type: 'workerPluginState',
   data: state,
 })
 

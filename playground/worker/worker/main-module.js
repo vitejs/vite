@@ -64,10 +64,10 @@ nestedWorker.addEventListener('message', (ev) => {
       text('.nested-worker-module', JSON.stringify(ev.data))
     } else if (data.type === 'constructor') {
       text('.nested-worker-constructor', JSON.stringify(ev.data))
-    } else if (data.type === 'plugin-state') {
+    } else if (data.type === 'workerPluginState') {
       console.log('got plugin state', ev.data)
       text('.nested-worker-plugin-state', JSON.stringify(ev.data))
-    } else if (data.type === 'plugin-state-sub') {
+    } else if (data.type === 'subWorkerPluginState') {
       console.log('got sub plugin state', ev.data)
       text('.sub-worker-plugin-state', JSON.stringify(ev.data))
     } else if (data.type === 'importMetaGlobEager') {

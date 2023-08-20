@@ -1,6 +1,6 @@
 import { state } from './modules/test-state.js'
 
-self.postMessage({ type: 'plugin-state-sub', data: state })
+self.postMessage({ type: 'subWorkerPluginState', data: state })
 
 self.onmessage = (event) => {
   if (event.data === 'ping') {
