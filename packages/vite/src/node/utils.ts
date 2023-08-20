@@ -563,11 +563,10 @@ export function copyDir(
   exclude?: FilterPattern,
 ): void {
   fs.mkdirSync(destDir, { recursive: true })
-  const filter = createFilter(undefined, exclude)
-  const _exclude = Array.isArray(exclude) ? exclude : [exclude]
+  const filter = createFilter(undefined, exclude, { resolve: false })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
-    if (srcFile === destDir || !filter(file) || _exclude.includes(file)) {
+    if (srcFile === destDir || !filter(file)) {
       continue
     }
     const destFile = path.resolve(destDir, file)
