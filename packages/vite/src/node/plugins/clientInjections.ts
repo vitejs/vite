@@ -35,7 +35,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const timeout = hmrConfig?.timeout || 30000
       const overlay = hmrConfig?.overlay !== false
       const isHmrServerSpecified = !!hmrConfig?.server
-      const hmrConfigName = path.basename(config.configFile || 'vite.config.ts')
+      const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
       // hmr.clientPort -> hmr.port
       // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
