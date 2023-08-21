@@ -69,7 +69,7 @@
     "eslint": "^8.46.0",
     "eslint-define-config": "^1.23.0",
     "eslint-plugin-import": "^2.28.0",
-    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-n": "^16.0.1",
     "eslint-plugin-regexp": "^1.15.0",
     "execa": "^7.2.0",
     "fast-glob": "^3.3.1",
