@@ -19,8 +19,4 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 
   glob: import('./importGlob').ImportGlobFunction
-  /**
-   * @deprecated Use `import.meta.glob('*', { eager: true })` instead
-   */
-  globEager: import('./importGlob').ImportGlobEagerFunction
 }
