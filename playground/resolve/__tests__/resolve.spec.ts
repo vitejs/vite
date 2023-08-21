@@ -1,5 +1,7 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { expect, test } from 'vitest'
-import { isBuild, isWindows, page } from '~utils'
+import { isBuild, isWindows, page, testDir } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -198,4 +200,10 @@ test('Resolving slash with imports filed', async () => {
 
 test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
+})
+
+test.runIf(isBuild)('public dir is not copied', async () => {
+  expect(
+    fs.existsSync(path.resolve(testDir, 'dist/should-not-be-copied')),
+  ).toBe(false)
 })

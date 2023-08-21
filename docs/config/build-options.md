@@ -218,7 +218,6 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.copyPublicDir
 
-- **Experimental:** [Give feedback](https://github.com/vitejs/vite/discussions/13807)
 - **Type:** `boolean`
 - **Default:** `true`
 
