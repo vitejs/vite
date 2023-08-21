@@ -12,7 +12,7 @@ export default defineConfig({
   assetsInclude: ['**/*.unknown'],
   build: {
     outDir: 'dist/foo',
-    assetsInlineLimit: 8192, // 8kb
+    assetsInlineLimit: 8000, // 8 kB
     manifest: true,
     watch: {},
   },
