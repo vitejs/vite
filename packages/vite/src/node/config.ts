@@ -513,12 +513,17 @@ export async function resolveConfig(
   const resolvedAlias = normalizeAlias(
     mergeAlias(clientAlias, config.resolve?.alias || []),
   )
-
+  let extensions = DEFAULT_EXTENSIONS
+  if (config.resolve?.extensions) {
+    extensions = [
+      ...new Set([...DEFAULT_EXTENSIONS, ...config.resolve.extensions]),
+    ]
+  }
   const resolveOptions: ResolvedConfig['resolve'] = {
     mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
     browserField: config.resolve?.browserField ?? true,
     conditions: config.resolve?.conditions ?? [],
-    extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
+    extensions,
     dedupe: config.resolve?.dedupe ?? [],
     preserveSymlinks: config.resolve?.preserveSymlinks ?? false,
     alias: resolvedAlias,
@@ -856,7 +861,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5.
     Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
 `),
     )
@@ -939,7 +944,6 @@ export async function loadConfigFromFile(
 } | null> {
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
-
   let resolvedPath: string | undefined
 
   if (configFile) {
