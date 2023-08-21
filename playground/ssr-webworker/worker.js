@@ -6,20 +6,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = !!process.env.TEST
 
-export async function createServer() {
+export async function createServer(port) {
   const mf = new Miniflare({
     scriptPath: path.resolve(__dirname, 'dist/worker/entry-worker.js'),
+    port,
   })
-
-  const app = mf.createServer()
-
-  return { app }
+  await mf.ready
+  return { mf }
 }
 
 if (!isTest) {
-  createServer().then(({ app }) =>
-    app.listen(5173, () => {
-      console.log('http://localhost:5173')
-    }),
-  )
+  createServer(5173).then(() => console.log('http://localhost:5173'))
 }
