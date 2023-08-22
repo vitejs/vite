@@ -505,7 +505,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         code = `export default ${JSON.stringify(content)}`
       } else {
         // empty module when it's not a CSS module nor `?inline`
-        code = 'export {}'
+        code = ''
       }
 
       return {
