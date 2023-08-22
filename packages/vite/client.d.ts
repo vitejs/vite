@@ -37,30 +37,14 @@ declare module '*.module.sss' {
 }
 
 // CSS
-declare module '*.css' {
-  export {}
-}
-declare module '*.scss' {
-  export {}
-}
-declare module '*.sass' {
-  export {}
-}
-declare module '*.less' {
-  export {}
-}
-declare module '*.styl' {
-  export {}
-}
-declare module '*.stylus' {
-  export {}
-}
-declare module '*.pcss' {
-  export {}
-}
-declare module '*.sss' {
-  export {}
-}
+declare module '*.css' {}
+declare module '*.scss' {}
+declare module '*.sass' {}
+declare module '*.less' {}
+declare module '*.styl' {}
+declare module '*.stylus' {}
+declare module '*.pcss' {}
+declare module '*.sss' {}
 
 // Built-in asset types
 // see `src/node/constants.ts`
