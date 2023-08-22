@@ -572,7 +572,7 @@ export function copyDir(
     const destFile = path.resolve(destDir, file)
     const stat = fs.statSync(srcFile)
     if (stat.isDirectory()) {
-      copyDir(srcFile, destFile)
+      copyDir(srcFile, destFile, exclude)
     } else {
       fs.copyFileSync(srcFile, destFile)
     }
