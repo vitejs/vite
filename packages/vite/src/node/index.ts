@@ -34,7 +34,6 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
-  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'
@@ -75,6 +74,7 @@ export type {
 export type {
   CSSOptions,
   CSSModulesOptions,
+  LightningCSSOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
 } from './plugins/css'
@@ -117,7 +117,6 @@ export type {
 } from 'types/customEvent'
 export type {
   ImportGlobFunction,
-  ImportGlobEagerFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
@@ -144,4 +143,3 @@ export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type { LightningCSSOptions } from 'dep-types/lightningcss'

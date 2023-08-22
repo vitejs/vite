@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [14, 16, 18, 20]
+        node_version: [18, 20]
         include:
           # Active LTS + other OS
           - os: macos-latest
@@ -67,14 +67,8 @@ jobs:
             packages/create-vite/template**
             **.md
 
-      - name: Install pnpm (node 14, pnpm 7)
-        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version == 14
-        uses: pnpm/action-setup@v2.4.0
-        with:
-          version: 7
-
       - name: Install pnpm
-        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version != 14
+        if: steps.changed-files.outputs.only_changed != 'true'
         uses: pnpm/action-setup@v2.4.0
 
       - name: Set node version to ${{ matrix.node_version }}

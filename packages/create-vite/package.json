@@ -20,7 +20,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "^14.18.0 || >=16.0.0"
+    "node": "^18.0.0 || >=20.0.0"
   },
   "repository": {
     "type": "git",

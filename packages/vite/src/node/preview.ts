@@ -45,8 +45,7 @@ export function resolvePreviewOptions(
   }
 }
 
-// TODO: merge with PreviewServer in Vite 5
-export interface PreviewServerForHook {
+export interface PreviewServer {
   /**
    * The resolved vite config object
    */
@@ -65,7 +64,8 @@ export interface PreviewServerForHook {
    */
   httpServer: http.Server
   /**
-   * The resolved urls Vite prints on the CLI
+   * The resolved urls Vite prints on the CLI.
+   * null before server is listening.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -74,13 +74,9 @@ export interface PreviewServerForHook {
   printUrls(): void
 }
 
-export interface PreviewServer extends PreviewServerForHook {
-  resolvedUrls: ResolvedServerUrls
-}
-
 export type PreviewServerHook = (
   this: void,
-  server: PreviewServerForHook,
+  server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
@@ -122,7 +118,7 @@ export async function preview(
   const options = config.preview
   const logger = config.logger
 
-  const server: PreviewServerForHook = {
+  const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,

@@ -201,15 +201,7 @@ import { preview } from 'vite'
 ## `PreviewServer`
 
 ```ts
-interface PreviewServer extends PreviewServerForHook {
-  resolvedUrls: ResolvedServerUrls
-}
-```
-
-## `PreviewServerForHook`
-
-```ts
-interface PreviewServerForHook {
+interface PreviewServer {
   /**
    * The resolved vite config object
    */
@@ -228,7 +220,8 @@ interface PreviewServerForHook {
    */
   httpServer: http.Server
   /**
-   * The resolved urls Vite prints on the CLI
+   * The resolved urls Vite prints on the CLI.
+   * null before server is listening.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -268,6 +261,15 @@ Deeply merge two Vite configs. `isRoot` represents the level within the Vite con
 
 ::: tip NOTE
 `mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
+
+You can use the `defineConfig` helper to merge a config in callback form with another config:
+
+```ts
+export default defineConfig((configEnv) =>
+  mergeConfig(configAsCallback(configEnv), configAsObject),
+)
+```
+
 :::
 
 ## `searchForWorkspaceRoot`

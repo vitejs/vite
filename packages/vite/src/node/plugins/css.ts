@@ -20,10 +20,10 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
+import type { BundleAsyncOptions, CustomAtRules } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -138,6 +138,12 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
     targets: LightningCSSOptions['targets']
   }
 }
+
+// remove options set by Vite
+export type LightningCSSOptions = Omit<
+  BundleAsyncOptions<CustomAtRules>,
+  'filename' | 'resolver' | 'minify' | 'sourceMap' | 'analyzeDependencies'
+>
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
@@ -505,7 +511,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           let content = css
           if (config.build.cssMinify) {
-            content = await minifyCSS(content, config)
+            content = await minifyCSS(content, config, true)
           }
           code = `export default ${JSON.stringify(content)}`
         }
@@ -616,9 +622,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
-          const cssAssetName = chunk.facadeModuleId
-            ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-            : chunk.name
+          const isEntry = chunk.isEntry && isPureCssChunk
+          const cssAssetName = normalizePath(
+            !isEntry && chunk.facadeModuleId
+              ? path.relative(config.root, chunk.facadeModuleId)
+              : chunk.name,
+          )
 
           const lang = path.extname(cssAssetName).slice(1)
           const cssFileName = ensureFileExt(cssAssetName, '.css')
@@ -648,7 +657,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             source: chunkCSS,
           })
           const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
-          const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
             .get(config)!
             .set(referenceId, { originalName, isEntry })
@@ -1275,7 +1283,7 @@ async function finalizeCss(
     css = await hoistAtRules(css)
   }
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config)
+    css = await minifyCSS(css, config, false)
   }
   return css
 }
@@ -1497,7 +1505,15 @@ async function doImportCSSReplace(
   return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
-async function minifyCSS(css: string, config: ResolvedConfig) {
+async function minifyCSS(
+  css: string,
+  config: ResolvedConfig,
+  inlined: boolean,
+) {
+  // We want inlined CSS to not end with a linebreak, while ensuring that
+  // regular CSS assets do end with a linebreak.
+  // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
+
   if (config.build.cssMinify === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
       ...config.css?.lightningcss,
@@ -1516,7 +1532,8 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
         ),
       )
     }
-    return code.toString()
+    // LightningCSS output does not return a linebreak at the end
+    return code.toString() + (inlined ? '' : '\n')
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -1530,7 +1547,8 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
         colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
     }
-    return code
+    // esbuild output does return a linebreak at the end
+    return inlined ? code.trimEnd() : code
   } catch (e) {
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
@@ -2167,13 +2185,15 @@ async function compileLightningCSS(
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
-        targets: config.css?.lightningcss?.targets,
         minify: config.isProduction && !!config.build.cssMinify,
+        targets: config.css?.lightningcss?.targets,
         analyzeDependencies: true,
+        visitor: config.css?.lightningcss?.visitor,
       })
     : await (
         await importLightningCSS()
       ).bundleAsync({
+        ...config.css?.lightningcss,
         filename,
         resolver: {
           read(filePath) {
@@ -2204,14 +2224,12 @@ async function compileLightningCSS(
             return id
           },
         },
-        targets: config.css?.lightningcss?.targets,
         minify: config.isProduction && !!config.build.cssMinify,
         sourceMap: config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
           ? config.css?.lightningcss?.cssModules ?? true
           : undefined,
-        drafts: config.css?.lightningcss?.drafts,
       })
 
   let css = res.code.toString()
