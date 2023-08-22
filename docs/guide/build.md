@@ -170,8 +170,8 @@ Running `vite build` with this config uses a Rollup preset that is oriented towa
 ```
 $ vite build
 building for production...
-dist/my-lib.js      0.08 KiB / gzip: 0.07 KiB
-dist/my-lib.umd.cjs 0.30 KiB / gzip: 0.16 KiB
+dist/my-lib.js      0.08 kB / gzip: 0.07 kB
+dist/my-lib.umd.cjs 0.30 kB / gzip: 0.16 kB
 ```
 
 Recommended `package.json` for your lib:
