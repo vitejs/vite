@@ -71,7 +71,7 @@
     "eslint-plugin-import": "^2.28.0",
     "eslint-plugin-n": "^16.0.1",
     "eslint-plugin-regexp": "^1.15.0",
-    "execa": "^7.2.0",
+    "execa": "^8.0.1",
     "fast-glob": "^3.3.1",
     "fs-extra": "^11.1.1",
     "lint-staged": "^14.0.1",
