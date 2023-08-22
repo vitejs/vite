@@ -8,8 +8,8 @@ import fs from 'fs-extra'
 export async function run(
   bin: string,
   args: string[],
-  opts: ExecaOptions<string> = {},
-): Promise<ExecaReturnValue<string>> {
+  opts: ExecaOptions = {},
+): Promise<ExecaReturnValue> {
   return execa(bin, args, { stdio: 'inherit', ...opts })
 }
 
