@@ -235,7 +235,7 @@ export interface ViteDevServer {
    */
   ssrTransform(
     code: string,
-    inMap: SourceMap | null,
+    inMap: SourceMap | { mappings: '' } | null,
     url: string,
     originalCode?: string,
   ): Promise<TransformResult | null>
@@ -385,7 +385,7 @@ export async function _createServer(
     resolvedUrls: null, // will be set on listen
     ssrTransform(
       code: string,
-      inMap: SourceMap | null,
+      inMap: SourceMap | { mappings: '' } | null,
       url: string,
       originalCode = code,
     ) {
