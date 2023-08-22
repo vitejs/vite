@@ -102,8 +102,8 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   return ret
 }
 
-/***
- * host may be a number(like 0), should convert to string
+/**
+ * host may be a number (like 0), should convert to string
  */
 const convertHost = (v: any) => {
   if (typeof v === 'number') {
