@@ -31,7 +31,7 @@ const debugCache = createDebugger('vite:cache')
 
 export interface TransformResult {
   code: string
-  map: SourceMap | null
+  map: SourceMap | { mappings: '' } | null
   etag?: string
   deps?: string[]
   dynamicDeps?: string[]
@@ -286,15 +286,23 @@ async function loadAndTransform(
     map = transformResult.map
   }
 
-  if (map && mod.file) {
-    map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings) {
-      await injectSourcesContent(map, mod.file, logger)
+  let normalizedMap: SourceMap | { mappings: '' } | null
+  if (typeof map === 'string') {
+    normalizedMap = JSON.parse(map)
+  } else if (map) {
+    normalizedMap = map as SourceMap | { mappings: '' }
+  } else {
+    normalizedMap = null
+  }
+
+  if (normalizedMap && 'version' in normalizedMap && mod.file) {
+    if (normalizedMap.mappings) {
+      await injectSourcesContent(normalizedMap, mod.file, logger)
     }
 
     const sourcemapPath = `${mod.file}.map`
     applySourcemapIgnoreList(
-      map,
+      normalizedMap,
       sourcemapPath,
       config.server.sourcemapIgnoreList,
       logger,
@@ -303,16 +311,16 @@ async function loadAndTransform(
     if (path.isAbsolute(mod.file)) {
       for (
         let sourcesIndex = 0;
-        sourcesIndex < map.sources.length;
+        sourcesIndex < normalizedMap.sources.length;
         ++sourcesIndex
       ) {
-        const sourcePath = map.sources[sourcesIndex]
+        const sourcePath = normalizedMap.sources[sourcesIndex]
         if (sourcePath) {
           // Rewrite sources to relative paths to give debuggers the chance
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
           if (path.isAbsolute(sourcePath)) {
-            map.sources[sourcesIndex] = path.relative(
+            normalizedMap.sources[sourcesIndex] = path.relative(
               path.dirname(mod.file),
               sourcePath,
             )
@@ -326,12 +334,12 @@ async function loadAndTransform(
 
   const result =
     ssr && !server.config.experimental.skipSsrTransform
-      ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
+      ? await server.ssrTransform(code, normalizedMap, url, originalCode)
       : ({
           code,
-          map,
+          map: normalizedMap,
           etag: getEtag(code, { weak: true }),
-        } as TransformResult)
+        } satisfies TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale

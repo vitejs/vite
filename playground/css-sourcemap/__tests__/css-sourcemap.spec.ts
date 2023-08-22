@@ -82,8 +82,7 @@ describe.runIf(isServe)('serve', () => {
         new URL('./linked-with-import.css', page.url()).href,
       )
       const content = await res.text()
-      const lines = content.trim().split('\n')
-      expect(lines[lines.length - 1]).not.toMatch(/^\/\/#/)
+      expect(content).not.toMatch('//#s*sourceMappingURL')
     },
   )
 

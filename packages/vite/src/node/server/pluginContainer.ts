@@ -132,7 +132,7 @@ export interface PluginContainer {
       inMap?: SourceDescription['map']
       ssr?: boolean
     },
-  ): Promise<{ code: string; map: SourceMap | null }>
+  ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
@@ -481,7 +481,7 @@ export async function createPluginContainer(
         typeof err.loc?.column === 'number'
       ) {
         const rawSourceMap = ctx._getCombinedSourcemap()
-        if (rawSourceMap) {
+        if (rawSourceMap && 'version' in rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
           const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
@@ -525,7 +525,7 @@ export async function createPluginContainer(
     originalCode: string
     originalSourcemap: SourceMap | null = null
     sourcemapChain: NonNullable<SourceDescription['map']>[] = []
-    combinedMap: SourceMap | null = null
+    combinedMap: SourceMap | { mappings: '' } | null = null
 
     constructor(filename: string, code: string, inMap?: SourceMap | string) {
       super()
@@ -540,7 +540,7 @@ export async function createPluginContainer(
       }
     }
 
-    _getCombinedSourcemap(createIfNull = false) {
+    _getCombinedSourcemap() {
       if (
         debugSourcemapCombine &&
         debugSourcemapCombineFilter &&
@@ -553,12 +553,26 @@ export async function createPluginContainer(
       }
 
       let combinedMap = this.combinedMap
+      // { mappings: '' }
+      if (
+        combinedMap &&
+        !('version' in combinedMap) &&
+        combinedMap.mappings === ''
+      ) {
+        this.sourcemapChain.length = 0
+        return combinedMap
+      }
+
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
         if (!('version' in (m as SourceMap))) {
+          // { mappings: '' }
+          if ((m as SourceMap).mappings === '') {
+            combinedMap = { mappings: '' }
+            break
+          }
           // empty, nullified source map
-          combinedMap = this.combinedMap = null
-          this.sourcemapChain.length = 0
+          combinedMap = null
           break
         }
         if (!combinedMap) {
@@ -570,15 +584,6 @@ export async function createPluginContainer(
           ]) as SourceMap
         }
       }
-      if (!combinedMap) {
-        return createIfNull
-          ? new MagicString(this.originalCode).generateMap({
-              includeContent: true,
-              hires: 'boundary',
-              source: cleanUrl(this.filename),
-            })
-          : null
-      }
       if (combinedMap !== this.combinedMap) {
         this.combinedMap = combinedMap
         this.sourcemapChain.length = 0
@@ -587,7 +592,15 @@ export async function createPluginContainer(
     }
 
     getCombinedSourcemap() {
-      return this._getCombinedSourcemap(true) as SourceMap
+      const map = this._getCombinedSourcemap()
+      if (!map || (!('version' in map) && map.mappings === '')) {
+        return new MagicString(this.originalCode).generateMap({
+          includeContent: true,
+          hires: 'boundary',
+          source: cleanUrl(this.filename),
+        })
+      }
+      return map
     }
   }
 
