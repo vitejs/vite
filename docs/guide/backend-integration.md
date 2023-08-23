@@ -44,7 +44,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    This is needed for assets such as images to load properly.
 
-   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
+   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving (substitute `http://localhost:5173` with the local URL Vite is running at):
 
    ```html
    <script type="module">
