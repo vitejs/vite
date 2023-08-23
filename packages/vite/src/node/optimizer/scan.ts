@@ -95,7 +95,7 @@ export function scanImports(config: ResolvedConfig): {
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
-    return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
+    return prepareEsbuildScanner(config, entries, deps, missing)
   })
 
   const result = esbuildContext
@@ -203,11 +203,8 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext?: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
   const container = await createPluginContainer(config)
-
-  if (scanContext?.cancelled) return
 
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
