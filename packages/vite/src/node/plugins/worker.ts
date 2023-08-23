@@ -89,7 +89,7 @@ async function serialBundleWorkerEntry(
         ? workerOutputConfig[0] || {}
         : workerOutputConfig
       : {}
-    const workerName = path.posix.basename(id)
+    const workerName = path.posix.basename(cleanUrl(id))
     const {
       output: [outputChunk, ...outputChunks],
     } = await bundle.generate({
