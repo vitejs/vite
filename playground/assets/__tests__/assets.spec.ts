@@ -37,15 +37,19 @@ test('should have no 404s', () => {
 })
 
 test('should get a 404 when using incorrect case', async () => {
-  expect((await fetchPath('icon.png')).status).toBe(200)
-  // won't be wrote to index.html because the url includes `.`
-  expect((await fetchPath('ICON.png')).status).toBe(404)
-
-  expect((await fetchPath('bar')).status).toBe(200)
+  expect((await fetchPath('icon.png')).headers.get('Content-Type')).toBe(
+    'image/png',
+  )
   // fallback to index.html
-  const incorrectBarFetch = await fetchPath('BAR')
-  expect(incorrectBarFetch.status).toBe(200)
-  expect(incorrectBarFetch.headers.get('Content-Type')).toContain('text/html')
+  expect((await fetchPath('ICON.png')).headers.get('Content-Type')).toBe(
+    isBuild ? 'text/html; charset=utf-8' : 'text/html',
+  )
+
+  expect((await fetchPath('bar')).headers.get('Content-Type')).toBe('')
+  // fallback to index.html
+  expect((await fetchPath('BAR')).headers.get('Content-Type')).toContain(
+    isBuild ? 'text/html;charset=utf-8' : 'text/html',
+  )
 })
 
 describe('injected scripts', () => {
