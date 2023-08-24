@@ -28,7 +28,6 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import type { FilterPattern } from './utils'
 import {
   asyncFlatten,
   copyDir,
@@ -181,7 +180,7 @@ export interface BuildOptions {
    * Copy the public directory to outDir on write.
    * @default true
    */
-  copyPublicDir?: boolean | { exclude: FilterPattern }
+  copyPublicDir?: boolean
   /**
    * Whether to emit a manifest.json under assets dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
