@@ -765,13 +765,7 @@ function prepareOutDir(
           ),
         )
       }
-      copyDir(
-        config.publicDir,
-        outDir,
-        config.build.copyPublicDir === true
-          ? undefined
-          : config.build.copyPublicDir.exclude,
-      )
+      copyDir(config.publicDir, outDir)
     }
   }
 }

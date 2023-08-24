@@ -557,22 +557,17 @@ export function emptyDir(dir: string, skip?: string[]): void {
   }
 }
 
-export function copyDir(
-  srcDir: string,
-  destDir: string,
-  exclude?: FilterPattern,
-): void {
+export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
-  const filter = createFilter(undefined, exclude, { resolve: false })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
-    if (srcFile === destDir || !filter(file)) {
+    if (srcFile === destDir || file === '.gitkeep') {
       continue
     }
     const destFile = path.resolve(destDir, file)
     const stat = fs.statSync(srcFile)
     if (stat.isDirectory()) {
-      copyDir(srcFile, destFile, exclude)
+      copyDir(srcFile, destFile)
     } else {
       fs.copyFileSync(srcFile, destFile)
     }
