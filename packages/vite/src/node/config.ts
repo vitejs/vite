@@ -497,6 +497,13 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
+  if (resolvedRoot.includes('#')) {
+    logger.warn(
+      colors.yellow(
+        `There is a "#" in the path "${resolvedRoot}", which may hurt the performance or even break the build, please consider rename the folder name or remove the "#" in it.`,
+      ),
+    )
+  }
 
   const clientAlias = [
     {
