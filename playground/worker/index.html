@@ -21,10 +21,26 @@
 </div>
 
 <p>
+  import myWorker from '../my-worker?worker'
+  <span>new myWorker({ name: "named-worker" })</span>
+  <span class="classname">.pong-named</span>
+</p>
+<div>
+  <div>Response from worker: <span class="pong-named"></span></div>
+</div>
+
+<p>
   import InlineWorker from '../my-worker?worker&inline'
   <span class="classname">.pong-inline</span>
 </p>
 <code class="pong-inline"></code>
+
+<p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span>new InlineWorker({ name: "named-inline-worker" })</span>
+  <span class="classname">.pong-inline-named</span>
+</p>
+<code class="pong-inline-named"></code>
 
 <p>
   import TSOutputWorker from '../possible-ts-output-worker?worker'
@@ -37,6 +53,13 @@
   <span class="classname">.tick-count</span>
 </p>
 <code class="tick-count"></code>
+
+<p>
+  import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
+  <span>new mySharedWorker({ name: "namedSharedWorker" })</span>
+  <span class="classname">.tick-count-named</span>
+</p>
+<code class="tick-count-named"></code>
 
 <p>
   import InlineSharedWorker from '../my-shared-worker?sharedworker&inline'
