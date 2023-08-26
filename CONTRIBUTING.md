@@ -252,7 +252,7 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 ## Release
 
-If you have publish access, the steps below explains how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
+If you have publish access, the steps below explain how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
 
 "Release" is done locally to generate the changelogs and git tags:
 
