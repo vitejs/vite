@@ -36,7 +36,7 @@ import {
 } from '../utils'
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
-import { transformGlobImport } from '../plugins/importMetaGlob'
+import { isVirtualModule, transformGlobImport } from '../plugins/importMetaGlob'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
@@ -385,7 +385,10 @@ function esbuildScanPlugin(
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'html' },
         async ({ path }) => {
-          let raw = await fsp.readFile(path, 'utf-8')
+          let raw = isVirtualModule(path)
+            ? await container.load(path)
+            : await fsp.readFile(path, 'utf-8')
+          raw = typeof raw === 'string' ? raw : raw?.code || ''
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')

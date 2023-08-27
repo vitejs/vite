@@ -102,6 +102,9 @@
 <h2>Pre bundle css modules require</h2>
 <div class="css-module-require">This should be red</div>
 
+<h2>Optimized Virtual Module</h2>
+<div class="virtual-module"></div>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -244,4 +247,9 @@
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
   text('.clonedeep-dot', cloneDeepDot({ name: 'clonedeep-dot' }).name)
+</script>
+
+<script type="module">
+  import Foo from 'virtual:Foo.vue'
+  text('.virtual-module', Foo.render())
 </script>

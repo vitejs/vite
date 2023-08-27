@@ -243,3 +243,9 @@ describe.runIf(isServe)('optimizeDeps config', () => {
     ])
   })
 })
+
+test('optimized virtual module', async () => {
+  expect(await page.textContent('.virtual-module')).toBe(
+    '[success] virtual module rendered from Vue',
+  )
+})

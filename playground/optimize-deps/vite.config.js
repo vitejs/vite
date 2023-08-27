@@ -103,6 +103,20 @@ export default defineConfig({
         }
       },
     },
+    {
+      name: 'virtual-file',
+      enforce: 'pre',
+      resolveId(id) {
+        if (id === 'virtual:Foo.vue') {
+          return 'virtual:Foo.vue'
+        }
+      },
+      load(id) {
+        if (id === 'virtual:Foo.vue') {
+          return ''
+        }
+      },
+    },
   ],
 })
 
@@ -124,6 +138,19 @@ export default defineComponent({
 })
 `.trim(),
         }
+      }
+
+      if (id.includes('virtual:Foo.vue')) {
+        return `
+          import { defineComponent } from 'vue'
+
+export default defineComponent({
+  name: 'Foo',
+  render() {
+    return '[success] virtual module rendered from Vue'
+  }
+})
+          `
       }
 
       // fallback to empty module for other vue files
