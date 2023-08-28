@@ -47,7 +47,7 @@ const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 const dynamicImportTreeshakenRE =
-  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\.then\([^{]*\{([^}]+)\})/g
+  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\.then\([^{]*?\(\s*\{([^}.]+)\})/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
@@ -356,9 +356,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             const name = chains.match(/\.([^.?]+)/)?.[1] || ''
             str().prependLeft(
               expStart,
-              `${preloadMethod}(async () => { const ${name} = (await `,
+              `${preloadMethod}(async () => { const __vite_temp__ = (await `,
             )
-            str().appendRight(expEnd, `).${name}; return { ${name} }}`)
+            str().appendRight(
+              expEnd,
+              `).${name}; return { ${name}: __vite_temp__ }}`,
+            )
           } else {
             str().prependLeft(expStart, `${preloadMethod}(() => `)
           }
