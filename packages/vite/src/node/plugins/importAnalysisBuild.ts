@@ -46,6 +46,9 @@ const dynamicImportPrefixRE = /import\s*\(/
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
+const dynamicImportTreeshakenRE =
+  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\.then\([^{]*\{([^}]+)\})/g
+
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
@@ -285,6 +288,39 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return [url, resolved.id]
       }
 
+      const dynamicImports: Record<
+        number,
+        { declaration?: string; names?: string; chains?: string }
+      > = {}
+
+      if (insertPreload) {
+        let match
+        while ((match = dynamicImportTreeshakenRE.exec(source))) {
+          // handle `const {foo} = await import('foo')`
+          if (match[1]) {
+            dynamicImports[dynamicImportTreeshakenRE.lastIndex] = {
+              declaration: `${match[2]} ${match[3]}`,
+              names: match[3]?.trim(),
+            }
+            continue
+          }
+
+          // handle `(await import('foo')).foo`
+          if (match[4]) {
+            dynamicImports[
+              dynamicImportTreeshakenRE.lastIndex - match[5]?.length - 1
+            ] = { chains: match[5] }
+            continue
+          }
+
+          // handle `import('foo').then(({foo})=>{})`
+          const names = match[7]?.trim()
+          dynamicImports[
+            dynamicImportTreeshakenRE.lastIndex - match[6]?.length
+          ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
+        }
+      }
+
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
@@ -309,7 +345,24 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
-          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          const { declaration, names, chains } = dynamicImports[expEnd] || {}
+          if (names) {
+            str().prependLeft(
+              expStart,
+              `${preloadMethod}(async () => { ${declaration} = await `,
+            )
+            str().appendRight(expEnd, `;return ${names}}`)
+          } else if (chains) {
+            const name = chains.match(/\.([^.?]+)/)?.[1] || ''
+            str().prependLeft(
+              expStart,
+              `${preloadMethod}(async () => { const ${name} = (await `,
+            )
+            str().appendRight(expEnd, `).${name}; return { ${name} }}`)
+          } else {
+            str().prependLeft(expStart, `${preloadMethod}(() => `)
+          }
+
           str().appendRight(
             expEnd,
             `,${isModernFlag}?"${preloadMarker}":void 0${

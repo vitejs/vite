@@ -1,5 +1,13 @@
 import { expect, test } from 'vitest'
-import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
+import {
+  browserLogs,
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  serverLogs,
+  untilUpdated,
+} from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -162,3 +170,21 @@ test.runIf(isBuild)(
     )
   },
 )
+
+test('dynamic import treeshaken log', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken foo')
+  expect(log).toContain('treeshaken bar')
+  expect(log).toContain('treeshaken baz1')
+  expect(log).toContain('treeshaken baz2')
+  expect(log).toContain('treeshaken baz3')
+  expect(log).toContain('treeshaken baz4')
+  expect(log).toContain('treeshaken baz5')
+  expect(log).toContain('treeshaken default')
+
+  expect(log).not.toContain('treeshaken removed')
+})
+
+test.runIf(isBuild)('dynamic import treeshaken file', async () => {
+  expect(findAssetFile(/treeshaken.+\.js$/)).not.toContain('treeshaken removed')
+})
