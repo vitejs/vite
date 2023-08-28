@@ -1,1 +1,1 @@
-export const test = 'new text'
+export const test = 'initial text'
