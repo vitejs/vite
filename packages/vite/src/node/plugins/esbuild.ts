@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import type {
   Loader,
@@ -11,7 +10,7 @@ import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseOptions } from 'tsconfck'
-import { TSConfckParseError, findAll, parse } from 'tsconfck'
+import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
 import {
   cleanUrl,
   combineSourcemaps,
@@ -19,12 +18,10 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
-  timeFrom,
 } from '../utils'
 import type { ViteDevServer } from '../server'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { searchForWorkspaceRoot } from '../server/searchRoot'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -116,6 +113,7 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
+      initTSConfck()
       const loadedTsconfig = await loadTsconfigJsonForFile(filename)
       const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
@@ -257,7 +255,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     keepNames: false,
   }
 
-  initTSConfck(config.root)
+  initTSConfck()
 
   return {
     name: 'vite:esbuild',
@@ -311,7 +309,7 @@ const rollupToEsbuildFormatMap: Record<
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
-  initTSConfck(config.root)
+  initTSConfck()
 
   return {
     name: 'vite:esbuild-transpile',
@@ -469,51 +467,20 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckRoot: string | undefined
-let tsconfckParseOptions: TSConfckParseOptions | Promise<TSConfckParseOptions> =
-  { resolveWithEmptyIfConfigNotFound: true }
-
-function initTSConfck(root: string, force = false) {
-  // bail if already cached
-  if (!force && root === tsconfckRoot) return
-
-  const workspaceRoot = searchForWorkspaceRoot(root)
-
-  tsconfckRoot = root
-  tsconfckParseOptions = initTSConfckParseOptions(workspaceRoot)
-
-  // cached as the options value itself when promise is resolved
-  tsconfckParseOptions.then((options) => {
-    if (root === tsconfckRoot) {
-      tsconfckParseOptions = options
+let tsconfckParseOptions: TSConfckParseOptions
+function initTSConfck(force?: boolean) {
+  if (force || !tsconfckParseOptions)
+    tsconfckParseOptions = {
+      cache: new TSConfckCache(),
+      resolveWithEmptyIfConfigNotFound: true,
     }
-  })
-}
-
-async function initTSConfckParseOptions(workspaceRoot: string) {
-  const start = debug ? performance.now() : 0
-
-  const options: TSConfckParseOptions = {
-    cache: new Map(),
-    root: workspaceRoot,
-    tsConfigPaths: new Set(
-      await findAll(workspaceRoot, {
-        skip: (dir) => dir === 'node_modules' || dir === '.git',
-      }),
-    ),
-    resolveWithEmptyIfConfigNotFound: true,
-  }
-
-  debug?.(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
-
-  return options
 }
 
 async function loadTsconfigJsonForFile(
   filename: string,
 ): Promise<TSConfigJSON> {
   try {
-    const result = await parse(filename, await tsconfckParseOptions)
+    const result = await parse(filename, tsconfckParseOptions)
     // tsconfig could be out of root, make sure it is watched on dev
     if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
@@ -538,7 +505,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
     (changedFile.endsWith('.json') &&
-      (await tsconfckParseOptions)?.cache?.has(changedFile))
+      tsconfckParseOptions?.cache?.hasParseResult(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
@@ -549,7 +516,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    initTSConfck(server.config.root, true)
+    initTSConfck(true)
 
     // server may not be available if vite config is updated at the same time
     if (server) {
