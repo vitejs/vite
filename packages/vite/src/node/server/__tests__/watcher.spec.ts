@@ -53,6 +53,6 @@ describe.skipIf(process.platform === 'darwin' || process.platform === 'win32')(
           writeFileSync(filename, 'export const test = "new text"')
         })
       })
-    }, 5_000)
+    })
   },
 )
