@@ -359,10 +359,8 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const watchEnabled =
-    !!serverConfig.watch ||
-    serverConfig.watch === undefined ||
-    serverConfig.hmr !== false
+  // eslint-disable-next-line eqeqeq
+  const watchEnabled = serverConfig.watch !== null
   const watcher = watchEnabled
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
