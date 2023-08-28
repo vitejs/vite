@@ -47,7 +47,7 @@ const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 const dynamicImportTreeshakenRE =
-  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\.then\([^{]*?\(\s*\{([^}.]+)\})/g
+  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\s*\.then\([^{]*?\(\s*\{([^}.]+)\})/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.relative(path.dirname(importer), filename)
