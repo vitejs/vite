@@ -44,6 +44,32 @@ if (!isBuild) {
     `)
   })
 
+  test('multiline import', async () => {
+    const res = await page.request.get(
+      new URL('./with-multiline-import.ts', page.url()).href,
+    )
+    const multi = await res.text()
+    const map = extractSourcemap(multi)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AACA;AAAA,EACE;AAAA,OACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG;",
+        "sources": [
+          "with-multiline-import.ts",
+        ],
+        "sourcesContent": [
+          "// prettier-ignore
+      import {
+        foo
+      } from '@vitejs/test-importee-pkg'
+
+      console.log('with-multiline-import', foo)
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
   test('should not output missing source file warning', () => {
     serverLogs.forEach((log) => {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
