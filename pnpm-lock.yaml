@@ -692,7 +692,13 @@ importers:
 
   playground/import-assertion/import-assertion-dep: {}
 
-  playground/js-sourcemap: {}
+  playground/js-sourcemap:
+    dependencies:
+      '@vitejs/test-importee-pkg':
+        specifier: file:importee-pkg
+        version: file:playground/js-sourcemap/importee-pkg
+
+  playground/js-sourcemap/importee-pkg: {}
 
   playground/json:
     devDependencies:
@@ -10669,6 +10675,11 @@ packages:
   file:playground/import-assertion/import-assertion-dep:
     resolution: {directory: playground/import-assertion/import-assertion-dep, type: directory}
     name: '@vitejs/test-import-assertion-dep'
+    dev: false
+
+  file:playground/js-sourcemap/importee-pkg:
+    resolution: {directory: playground/js-sourcemap/importee-pkg, type: directory}
+    name: '@vitejs/test-importee-pkg'
     dev: false
 
   file:playground/json/json-module:
