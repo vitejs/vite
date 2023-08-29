@@ -168,7 +168,10 @@ export function findAssetFile(
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
+    fs.readFileSync(
+      path.join(testDir, 'dist', base, '.vite/manifest.json'),
+      'utf-8',
+    ),
   )
 }
 
