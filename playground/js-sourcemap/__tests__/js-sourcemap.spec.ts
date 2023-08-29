@@ -57,7 +57,7 @@ if (!isBuild) {
           "with-multiline-import.ts",
         ],
         "sourcesContent": [
-          "// prettier-ignore test multiline
+          "// prettier-ignore
       import {
         foo
       } from '@vitejs/test-importee-pkg'
