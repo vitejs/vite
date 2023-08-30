@@ -36,6 +36,7 @@ import {
   safeRealpathSync,
   slash,
   tryStatSync,
+  withTrailingSlash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
@@ -231,7 +232,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (
         asSrc &&
         id[0] === '/' &&
-        (rootInRoot || !id.startsWith(root + '/'))
+        (rootInRoot || !id.startsWith(withTrailingSlash(root)))
       ) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
@@ -943,7 +944,7 @@ export async function tryOptimizedResolve(
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src.startsWith(idPkgDir + '/')) {
+    if (optimizedData.src.startsWith(withTrailingSlash(idPkgDir))) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }

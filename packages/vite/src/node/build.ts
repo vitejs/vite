@@ -35,6 +35,7 @@ import {
   joinUrlSegments,
   normalizePath,
   requireResolveFromRootWithFallback,
+  withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
@@ -712,7 +713,7 @@ function prepareOutDir(
     for (const outDir of nonDuplicateDirs) {
       if (
         fs.existsSync(outDir) &&
-        !normalizePath(outDir).startsWith(config.root + '/')
+        !normalizePath(outDir).startsWith(withTrailingSlash(config.root))
       ) {
         // warn if outDir is outside of root
         config.logger.warn(
@@ -1238,5 +1239,9 @@ export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
 function areSeparateFolders(a: string, b: string) {
   const na = normalizePath(a)
   const nb = normalizePath(b)
-  return na !== nb && !na.startsWith(nb + '/') && !nb.startsWith(na + '/')
+  return (
+    na !== nb &&
+    !na.startsWith(withTrailingSlash(nb)) &&
+    !nb.startsWith(withTrailingSlash(na))
+  )
 }

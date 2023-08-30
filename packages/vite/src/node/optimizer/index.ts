@@ -23,6 +23,7 @@ import {
   normalizePath,
   removeLeadingSlash,
   tryStatSync,
+  withTrailingSlash,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
@@ -960,7 +961,7 @@ export function createIsOptimizedDepFile(
   config: ResolvedConfig,
 ): (id: string) => boolean {
   const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
-  return (id) => id.startsWith(depsCacheDirPrefix + '/')
+  return (id) => id.startsWith(withTrailingSlash(depsCacheDirPrefix))
 }
 
 export function createIsOptimizedDepUrl(
