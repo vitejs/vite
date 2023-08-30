@@ -960,7 +960,7 @@ export function createIsOptimizedDepFile(
   config: ResolvedConfig,
 ): (id: string) => boolean {
   const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
-  return (id) => id.startsWith(depsCacheDirPrefix)
+  return (id) => id.startsWith(depsCacheDirPrefix + '/')
 }
 
 export function createIsOptimizedDepUrl(

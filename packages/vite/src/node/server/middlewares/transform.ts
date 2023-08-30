@@ -129,10 +129,10 @@ export function transformMiddleware(
       // check if public dir is inside root dir
       const publicDir = normalizePath(server.config.publicDir)
       const rootDir = normalizePath(server.config.root)
-      if (publicDir.startsWith(rootDir)) {
+      if (publicDir.startsWith(rootDir + '/')) {
         const publicPath = `${publicDir.slice(rootDir.length)}/`
         // warn explicit public paths
-        if (url.startsWith(publicPath)) {
+        if (url.startsWith(publicPath + '/')) {
           let warning: string
 
           if (isImportRequest(url)) {

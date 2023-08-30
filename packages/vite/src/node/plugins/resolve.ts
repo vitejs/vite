@@ -228,7 +228,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
+      if (
+        asSrc &&
+        id[0] === '/' &&
+        (rootInRoot || !id.startsWith(root + '/'))
+      ) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
@@ -939,7 +943,7 @@ export async function tryOptimizedResolve(
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src.startsWith(idPkgDir)) {
+    if (optimizedData.src.startsWith(idPkgDir + '/')) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }

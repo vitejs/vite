@@ -118,7 +118,7 @@ export function serveStaticMiddleware(
     }
     if (redirectedPathname) {
       // dir is pre-normalized to posix style
-      if (redirectedPathname.startsWith(dir)) {
+      if (redirectedPathname.startsWith(dir + '/')) {
         redirectedPathname = redirectedPathname.slice(dir.length)
       }
     }

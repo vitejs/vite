@@ -81,7 +81,7 @@ export async function handleHMRUpdate(
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
-  if (file.startsWith(normalizedClientDir)) {
+  if (file.startsWith(normalizedClientDir + '/')) {
     ws.send({
       type: 'full-reload',
       path: '*',

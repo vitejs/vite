@@ -672,7 +672,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 config.logger.error(e.message, { error: e })
               })
             }
-          } else if (!importer.startsWith(clientDir)) {
+          } else if (!importer.startsWith(clientDir + '/')) {
             if (!isInNodeModules(importer)) {
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(

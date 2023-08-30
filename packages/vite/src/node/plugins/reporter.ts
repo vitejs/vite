@@ -245,7 +245,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             const sizeColor = isLarge ? colors.yellow : colors.dim
             let log = colors.dim(relativeOutDir + '/')
             log +=
-              !config.build.lib && entry.name.startsWith(assetsDir)
+              !config.build.lib && entry.name.startsWith(assetsDir + '/')
                 ? colors.dim(assetsDir) +
                   group.color(
                     entry.name
