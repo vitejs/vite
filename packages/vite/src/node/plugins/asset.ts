@@ -240,7 +240,11 @@ export function checkPublicFile(
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
-  if (!publicFile.startsWith(withTrailingSlash(publicDir))) {
+  if (
+    !normalizePath(publicFile).startsWith(
+      withTrailingSlash(normalizePath(publicDir)),
+    )
+  ) {
     // can happen if URL starts with '../'
     return
   }
