@@ -1232,7 +1232,7 @@ export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base[base.length - 1] === '/' ? base : withTrailingSlash(base)
+  const devBase = withTrailingSlash(base)
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
