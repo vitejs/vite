@@ -20,6 +20,10 @@ if (!isBuild) {
         "sources": [
           "foo.js",
         ],
+        "sourcesContent": [
+          "export const foo = 'foo'
+      ",
+        ],
         "version": 3,
       }
     `)

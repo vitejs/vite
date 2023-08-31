@@ -73,6 +73,7 @@ export function send(
         ms.generateMap({
           source: path.basename(urlWithoutTimestamp),
           hires: 'boundary',
+          includeContent: true,
         }),
       )
     }
