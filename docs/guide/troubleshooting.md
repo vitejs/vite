@@ -12,7 +12,7 @@ The path to your project folder may include `&`, which doesn't work with `npm` o
 
 You will need to either:
 
-- Switch to another package manager (e.g. `pnpm`, `yarn`, `bun`)
+- Switch to another package manager (e.g. `pnpm`, `yarn`)
 - Remove `&` from the path to your project
 
 ## Config
