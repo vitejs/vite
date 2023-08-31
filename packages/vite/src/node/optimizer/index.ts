@@ -803,7 +803,6 @@ async function prepareEsbuildOptimizerRun(
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
     external,
     logLevel: 'error',
-    splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
     ignoreAnnotations: !isBuild,
