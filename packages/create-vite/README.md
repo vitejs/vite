@@ -1,4 +1,4 @@
-# create-vite
+# create-vite <a href="https://npmjs.com/package/create-vite"><img src="https://img.shields.io/npm/v/create-vite" alt="npm package"></a>
 
 ## Scaffolding Your First Vite Project
 
