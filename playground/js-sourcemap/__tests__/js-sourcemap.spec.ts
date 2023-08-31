@@ -18,7 +18,7 @@ if (!isBuild) {
       {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
         "sources": [
-          "/foo.js",
+          "foo.js",
         ],
         "version": 3,
       }
