@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
@@ -740,6 +740,48 @@ export async function resolveConfig(
       esbuildOptions: {
         preserveSymlinks: resolveOptions.preserveSymlinks,
         ...optimizeDeps.esbuildOptions,
+        plugins: [
+          {
+            /**
+             * Transform `new URL('./foo.png', import.meta.url)` syntaxes to its absolute path
+             * So that it's still correct when the file content is optimized and its path changed
+             */
+            name: 'esbuid:asset-import-meta-url',
+            setup({ onLoad }) {
+              onLoad({ filter: /.*\.js/, namespace: 'file' }, async (args) => {
+                const code = fs.readFileSync(args.path, 'utf8')
+
+                const assetImportMetaUrlRE =
+                  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
+                let i = 0
+                let newCode = ''
+                for (
+                  let match = assetImportMetaUrlRE.exec(code);
+                  match != null;
+                  match = assetImportMetaUrlRE.exec(code)
+                ) {
+                  newCode += code.slice(i, match.index)
+
+                  const path = match[1].slice(1, -1)
+                  const resolved = await import.meta.resolve!(
+                    path,
+                    pathToFileURL(args.path),
+                  )
+
+                  newCode += `new URL(${JSON.stringify(
+                    fileURLToPath(resolved),
+                  )}, import.meta.url)`
+
+                  i = assetImportMetaUrlRE.lastIndex
+                }
+                newCode += code.slice(i)
+
+                return { contents: newCode }
+              })
+            },
+          },
+          ...(optimizeDeps.esbuildOptions?.plugins ?? []),
+        ],
       },
     },
     worker: resolvedWorkerOptions,
