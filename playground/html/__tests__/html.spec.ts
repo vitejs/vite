@@ -326,11 +326,29 @@ describe('importmap', () => {
   })
 })
 
+describe.runIf(isServe)('url with pathname', () => {
+  test('pathname conflicts with folder at same level as base, should load index.html', async () => {
+    await page.goto(viteTestUrl + '/side-effects')
+    expect(browserLogs).toContain('pathname:/side-effects')
+  })
+  test('pathname conflicts with folder at same level as base, should load index.html', async () => {
+    await page.goto(viteTestUrl + '/vite')
+    expect(browserLogs).toContain('pathname:/vite')
+  })
+  test('pathname conflicts with other js file in base directory, should load index.html', async () => {
+    await page.goto(viteTestUrl + '/main')
+    expect(browserLogs).toContain('pathname:/main')
+  })
+  test('pathname did not match any files or folders, should load index.html', async () => {
+    await page.goto(viteTestUrl + '/anypath')
+    expect(browserLogs).toContain('pathname:/anypath')
+  })
+})
+
 describe('side-effects', () => {
   beforeAll(async () => {
     await page.goto(viteTestUrl + '/side-effects/')
   })
-
   test('console.log is not tree-shaken', async () => {
     expect(browserLogs).toContain('message from sideEffects script')
   })
