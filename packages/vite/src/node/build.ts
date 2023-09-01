@@ -107,7 +107,7 @@ export interface BuildOptions {
   assetsDir?: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
-   * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
+   * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
   assetsInlineLimit?: number
@@ -179,7 +179,6 @@ export interface BuildOptions {
   /**
    * Copy the public directory to outDir on write.
    * @default true
-   * @experimental
    */
   copyPublicDir?: boolean
   /**
@@ -234,7 +233,7 @@ export interface BuildOptions {
    */
   reportCompressedSize?: boolean
   /**
-   * Adjust chunk size warning limit (in kbs).
+   * Adjust chunk size warning limit (in kB).
    * @default 500
    */
   chunkSizeWarningLimit?: number

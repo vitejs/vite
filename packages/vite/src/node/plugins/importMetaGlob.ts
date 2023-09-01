@@ -34,13 +34,11 @@ import { isCSSRequest, isModuleCSSRequest } from './css'
 const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
-  match: RegExpMatchArray
   index: number
   globs: string[]
   globsResolved: string[]
   isRelative: boolean
   options: GeneralImportGlobOptions
-  type: string
   start: number
   end: number
 }
@@ -111,8 +109,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-const importGlobRE =
-  /\bimport\.meta\.(glob|globEager|globEagerDefault)(?:<\w+>)?\s*\(/g
+const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
 
 const knownOptions = {
   as: ['string'],
@@ -212,7 +209,6 @@ export async function parseImportGlob(
   const matches = Array.from(cleanCode.matchAll(importGlobRE))
 
   const tasks = matches.map(async (match, index) => {
-    const type = match[1]
     const start = match.index!
 
     const err = (msg: string) => {
@@ -319,13 +315,11 @@ export async function parseImportGlob(
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
 
     return {
-      match,
       index,
       globs,
       globsResolved,
       isRelative,
       options,
-      type,
       start,
       end,
     }
@@ -384,15 +378,6 @@ export async function transformGlobImport(
     resolveId,
   )
   const matchedFiles = new Set<string>()
-
-  // TODO: backwards compatibility
-  matches.forEach((i) => {
-    if (i.type === 'globEager') i.options.eager = true
-    if (i.type === 'globEagerDefault') {
-      i.options.eager = true
-      i.options.import = 'default'
-    }
-  })
 
   if (!matches.length) return null
 
