@@ -409,8 +409,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       tsconfck:
-        specifier: ^3.0.0-next.3
-        version: 3.0.0-next.3(typescript@5.0.2)
+        specifier: ^3.0.0-next.4
+        version: 3.0.0-next.4(typescript@5.0.2)
       tslib:
         specifier: ^2.6.1
         version: 2.6.1
@@ -4085,7 +4085,7 @@ packages:
     resolution: {integrity: sha512-R6JDUfiZbJA9cMiguQ7jxALsgiprjBeHL5ikpXfJCH62pPHtI+JdJ5xWj6Ev73yXSlYl86+blXn1kZHQ7uElxw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
-      vite: ^4.0.0
+      vite: workspace:*
       vue: ^3.2.25
     dependencies:
       vite: link:packages/vite
@@ -9919,8 +9919,8 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  /tsconfck@3.0.0-next.3(typescript@5.0.2):
-    resolution: {integrity: sha512-hJYNl6vHJ6fovGXLmWhVznMAkap2Yt93h+MrVJd9sJkhAAaC/JpFTr/faI9iip9m0RAHsjN1jg+oz9uvqWGCoQ==}
+  /tsconfck@3.0.0-next.4(typescript@5.0.2):
+    resolution: {integrity: sha512-m7vs176zWv0JPh1FvkY+XsMJPfznG5/IoXSuXXvTG0VwaFzc3eN86n3tZoS4BnAFIPA995vbEmx6zc3o6XVnVw==}
     engines: {node: ^18 || >=20}
     hasBin: true
     peerDependencies:

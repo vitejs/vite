@@ -472,7 +472,6 @@ function initTSConfck(force?: boolean) {
   if (force || !tsconfckParseOptions)
     tsconfckParseOptions = {
       cache: new TSConfckCache(),
-      resolveWithEmptyIfConfigNotFound: true,
     }
 }
 
@@ -482,7 +481,7 @@ async function loadTsconfigJsonForFile(
   try {
     const result = await parse(filename, tsconfckParseOptions)
     // tsconfig could be out of root, make sure it is watched on dev
-    if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
+    if (server && result.tsconfigFile) {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
     }
     return result.tsconfig
