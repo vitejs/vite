@@ -44,6 +44,7 @@ import {
   timeFrom,
   transformStableResult,
   unwrapId,
+  withTrailingSlash,
   wrapId,
 } from '../utils'
 import { getDepOptimizationConfig } from '../config'
@@ -335,7 +336,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(root + '/')) {
+        if (resolved.id.startsWith(withTrailingSlash(root))) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
@@ -672,7 +673,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 config.logger.error(e.message, { error: e })
               })
             }
-          } else if (!importer.startsWith(clientDir)) {
+          } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(
