@@ -274,9 +274,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-        return {
-          code: injectEnv + raw,
+        if (injectEnv) {
+          const s = new MagicString(raw)
+          s.prepend(injectEnv)
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary' }),
+          }
         }
+        return
       }
       if (
         query == null ||
