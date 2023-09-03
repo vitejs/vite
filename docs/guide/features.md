@@ -398,7 +398,7 @@ const modules = {
 `{ as: 'path' }` gives you the relative path of the matched files.
 
 ```js
-const modules = import.meta.glob('./*.svg', { as: 'url' })
+const modules = import.meta.glob('./*.svg', { as: 'path', eager: true })
 
 /**
 const modules = {
