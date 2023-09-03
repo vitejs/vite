@@ -13,6 +13,7 @@ import {
   isInNodeModules,
   lookupFile,
   normalizePath,
+  withTrailingSlash,
 } from '../utils'
 import type { Logger, ResolvedConfig } from '..'
 import { resolvePackageData } from '../packages'
@@ -340,7 +341,10 @@ export function cjsShouldExternalizeForSSR(
     }
     // deep imports, check ext before externalizing - only externalize
     // extension-less imports and explicit .js imports
-    if (id.startsWith(e + '/') && (!path.extname(id) || id.endsWith('.js'))) {
+    if (
+      id.startsWith(withTrailingSlash(e)) &&
+      (!path.extname(id) || id.endsWith('.js'))
+    ) {
       return true
     }
   })

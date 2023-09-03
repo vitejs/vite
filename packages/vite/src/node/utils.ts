@@ -123,7 +123,9 @@ export function moduleListContains(
   moduleList: string[] | undefined,
   id: string,
 ): boolean | undefined {
-  return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+  return moduleList?.some(
+    (m) => m === id || id.startsWith(withTrailingSlash(m)),
+  )
 }
 
 export function isOptimizable(
@@ -224,6 +226,13 @@ export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
 }
 
+export function withTrailingSlash(path: string): string {
+  if (path[path.length - 1] !== '/') {
+    return `${path}/`
+  }
+  return path
+}
+
 /**
  * Check if dir is a parent of file
  *
@@ -234,9 +243,7 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  if (dir[dir.length - 1] !== '/') {
-    dir = `${dir}/`
-  }
+  dir = withTrailingSlash(dir)
   return (
     file.startsWith(dir) ||
     (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
@@ -647,7 +654,7 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(root + '/') &&
+    !file.startsWith(withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
@@ -1225,7 +1232,7 @@ export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base[base.length - 1] === '/' ? base : base + '/'
+  const devBase = withTrailingSlash(base)
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 

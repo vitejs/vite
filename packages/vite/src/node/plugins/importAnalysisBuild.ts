@@ -16,6 +16,7 @@ import {
   isInNodeModules,
   moduleListContains,
   numberToPos,
+  withTrailingSlash,
 } from '../utils'
 import type { Plugin } from '../plugin'
 import { getDepOptimizationConfig } from '../config'
@@ -271,7 +272,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(root + '/')) {
+        if (resolved.id.startsWith(withTrailingSlash(root))) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else {

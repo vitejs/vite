@@ -19,6 +19,7 @@ import {
   removeLeadingSlash,
   shouldServeFile,
   slash,
+  withTrailingSlash,
 } from '../../utils'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
@@ -118,7 +119,7 @@ export function serveStaticMiddleware(
     }
     if (redirectedPathname) {
       // dir is pre-normalized to posix style
-      if (redirectedPathname.startsWith(dir)) {
+      if (redirectedPathname.startsWith(withTrailingSlash(dir))) {
         redirectedPathname = redirectedPathname.slice(dir.length)
       }
     }
@@ -129,7 +130,7 @@ export function serveStaticMiddleware(
       resolvedPathname[resolvedPathname.length - 1] === '/' &&
       fileUrl[fileUrl.length - 1] !== '/'
     ) {
-      fileUrl = fileUrl + '/'
+      fileUrl = withTrailingSlash(fileUrl)
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {
       return
