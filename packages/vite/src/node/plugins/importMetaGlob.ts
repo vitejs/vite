@@ -119,7 +119,7 @@ const knownOptions = {
   query: ['object', 'string'],
 }
 
-const forceDefaultAs = ['raw', 'url']
+const forceDefaultAs = ['raw', 'url', 'path']
 
 function err(e: string, pos: number) {
   const error = new Error(e) as RollupError
@@ -188,7 +188,7 @@ function parseGlobOptions(
       optsStartIndex,
     )
 
-  if (opts.as) opts.query = opts.as
+  if (opts.as && opts.as !== 'path') opts.query = opts.as
 
   return opts
 }
@@ -469,42 +469,60 @@ export async function transformGlobImport(
                 : undefined
 
             if (options.eager) {
-              const variableName = `${importPrefix}${index}_${i}`
-              const expression = importKey
-                ? `{ ${importKey} as ${variableName} }`
-                : `* as ${variableName}`
-              staticImports.push(
-                `import ${expression} from ${JSON.stringify(importPath)}`,
-              )
-              if (!isProduction && isCSS) {
+              if (options.as === 'path') {
                 objectProps.push(
-                  `get ${JSON.stringify(
-                    filePath,
-                  )}() { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${variableName} }`,
+                  `${JSON.stringify(filePath)}: ${JSON.stringify(importPath)}`,
                 )
               } else {
-                objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+                const variableName = `${importPrefix}${index}_${i}`
+                const expression = importKey
+                  ? `{ ${importKey} as ${variableName} }`
+                  : `* as ${variableName}`
+                staticImports.push(
+                  `import ${expression} from ${JSON.stringify(importPath)}`,
+                )
+                if (!isProduction && isCSS) {
+                  objectProps.push(
+                    `get ${JSON.stringify(
+                      filePath,
+                    )}() { ${createCssDefaultImportWarning(
+                      globs,
+                      options,
+                    )} return ${variableName} }`,
+                  )
+                } else {
+                  objectProps.push(
+                    `${JSON.stringify(filePath)}: ${variableName}`,
+                  )
+                }
               }
             } else {
-              let importStatement = `import(${JSON.stringify(importPath)})`
-              if (importKey)
-                importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
-              if (!isProduction && isCSS) {
+              if (options.as === 'path') {
                 objectProps.push(
-                  `${JSON.stringify(
-                    filePath,
-                  )}: () => { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${importStatement}}`,
+                  `${JSON.stringify(filePath)}: async () => ${JSON.stringify(
+                    importPath,
+                  )}`,
                 )
               } else {
-                objectProps.push(
-                  `${JSON.stringify(filePath)}: () => ${importStatement}`,
-                )
+                let importStatement = `import(${JSON.stringify(importPath)})`
+                if (importKey)
+                  importStatement += `.then(m => m[${JSON.stringify(
+                    importKey,
+                  )}])`
+                if (!isProduction && isCSS) {
+                  objectProps.push(
+                    `${JSON.stringify(
+                      filePath,
+                    )}: () => { ${createCssDefaultImportWarning(
+                      globs,
+                      options,
+                    )} return ${importStatement}}`,
+                  )
+                } else {
+                  objectProps.push(
+                    `${JSON.stringify(filePath)}: () => ${importStatement}`,
+                  )
+                }
               }
             }
           })

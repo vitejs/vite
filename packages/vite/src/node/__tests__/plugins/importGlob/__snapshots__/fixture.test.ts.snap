@@ -51,6 +51,8 @@ export const cleverCwd2 = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\\": (
 
 
 });
+export const importAsPathEager = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\\": \\"./modules/a.ts\\",\\"./modules/b.ts\\": \\"./modules/b.ts\\",\\"./modules/index.ts\\": \\"./modules/index.ts\\"});
+export const importAsPath = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\\": async () => \\"./modules/a.ts\\",\\"./modules/b.ts\\": async () => \\"./modules/b.ts\\",\\"./modules/index.ts\\": async () => \\"./modules/index.ts\\"});
 "
 `;
 
@@ -105,6 +107,8 @@ export const cleverCwd2 = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\\": (
 
 
 });
+export const importAsPathEager = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\\": \\"./modules/a.ts\\",\\"./modules/b.ts\\": \\"./modules/b.ts\\",\\"./modules/index.ts\\": \\"./modules/index.ts\\"});
+export const importAsPath = /* #__PURE__ */ Object.assign({\\"./modules/a.ts\\": async () => \\"./modules/a.ts\\",\\"./modules/b.ts\\": async () => \\"./modules/b.ts\\",\\"./modules/index.ts\\": async () => \\"./modules/index.ts\\"});
 "
 `;
 

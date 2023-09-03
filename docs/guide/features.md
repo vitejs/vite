@@ -382,7 +382,31 @@ const modules = {
 }
 ```
 
-`{ as: 'url' }` is also supported for loading assets as URLs.
+`{ as: 'url' }` can be used for loading assets as URLs.
+
+```js
+const modules = import.meta.glob('./*.png', { as: 'url' })
+
+/**
+const modules = {
+  './foo.png': () => import('./foo.png?url'),
+  './bar.png': () => import('./bar.png?url'),
+}
+*/
+```
+
+`{ as: 'path' }` gives you the relative path of the matched files.
+
+```js
+const modules = import.meta.glob('./*.svg', { as: 'url' })
+
+/**
+const modules = {
+  './foo.svg': './foo.svg',
+  './bar.svg': './bar.svg',
+}
+*/
+```
 
 ### Multiple Patterns
 

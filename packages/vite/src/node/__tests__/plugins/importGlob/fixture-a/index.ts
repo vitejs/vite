@@ -66,3 +66,10 @@ export const cleverCwd2 = import.meta.glob([
   '../fixture-b/*.ts',
   '!**/index.ts',
 ])
+
+export const importAsPathEager = import.meta.glob('./modules/*.ts', {
+  as: 'path',
+  eager: true,
+})
+
+export const importAsPath = import.meta.glob('./modules/*.ts', { as: 'path' })

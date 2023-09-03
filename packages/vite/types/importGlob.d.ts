@@ -34,6 +34,7 @@ export interface KnownAsTypeMap {
   raw: string
   url: string
   worker: Worker
+  path: string
 }
 
 export interface ImportGlobFunction {
