@@ -568,7 +568,7 @@ export function copyDir(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
-    if (srcFile === destDir) {
+    if (srcFile === destDir || file === '.gitkeep') {
       continue
     }
     const destFile = path.resolve(destDir, file)
