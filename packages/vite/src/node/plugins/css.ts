@@ -167,7 +167,7 @@ const styleAttrRE = /[?&]style-attr\b/
 const usedRE = /[?&]used\b/
 const varRE = /^var\(/i
 
-const cssBundleName = 'style.css'
+export const cssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',

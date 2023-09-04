@@ -5,6 +5,7 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { generatedAssets } from './asset'
+import { cssBundleName } from './css'
 import type { GeneratedAssetMeta } from './asset'
 
 export type Manifest = Record<string, ManifestChunk>
@@ -19,6 +20,8 @@ export interface ManifestChunk {
   imports?: string[]
   dynamicImports?: string[]
 }
+
+const cssRE = /\.css$/
 
 export function manifestPlugin(config: ResolvedConfig): Plugin {
   const manifest: Manifest = {}
@@ -148,6 +151,19 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
       })
+
+      if (!config.build.cssCodeSplit) {
+        for (const file in manifest) {
+          const { isEntry, isDynamicEntry } = manifest[file]
+          if (
+            file !== cssBundleName &&
+            cssRE.test(file) &&
+            (isEntry || isDynamicEntry)
+          ) {
+            manifest[file].file = manifest[cssBundleName].file
+          }
+        }
+      }
 
       outputCount++
       const output = config.build.rollupOptions?.output
