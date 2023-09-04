@@ -111,9 +111,21 @@ const convertHost = (v: any) => {
   return v
 }
 
+/**
+ * base may be a number (like 0), should convert to empty string
+ */
+const convertBase = (v: any) => {
+  if (v === 0) {
+    return ''
+  }
+  return v
+}
+
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('--base <path>', `[string] public base path (default: /)`)
+  .option('--base <path>', `[string] public base path (default: /)`, {
+    type: [convertBase],
+  })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
