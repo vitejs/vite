@@ -1,13 +1,12 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { startsWith } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper'
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
-  if (startsWith(url, 'data:')) {
+  if (url.startsWith('data:')) {
     const urlContent = url.replace(/^data:.*?base64,/, '')
     let bytes
     if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
@@ -34,7 +33,7 @@ const wasmHelper = async (opts = {}, url: string) => {
     const contentType = response.headers.get('Content-Type') || ''
     if (
       'instantiateStreaming' in WebAssembly &&
-      startsWith(contentType, 'application/wasm')
+      contentType.startsWith('application/wasm')
     ) {
       result = await WebAssembly.instantiateStreaming(response, opts)
     } else {
