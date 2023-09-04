@@ -409,8 +409,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       tsconfck:
-        specifier: ^3.0.0-next.5
-        version: 3.0.0-next.5(typescript@5.0.2)
+        specifier: ^3.0.0-next.7
+        version: 3.0.0-next.7(typescript@5.0.2)
       tslib:
         specifier: ^2.6.1
         version: 2.6.1
@@ -9919,8 +9919,8 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  /tsconfck@3.0.0-next.5(typescript@5.0.2):
-    resolution: {integrity: sha512-JG2DcnGaBb3nYb7Nenvm4xOf76MduAT75um1EWPvWXB+qZkR3PM1XhMGnDqGThohMqnzUCnoU8hRab9TUg2MOw==}
+  /tsconfck@3.0.0-next.7(typescript@5.0.2):
+    resolution: {integrity: sha512-UPPXypsZ/a8Y6gfNBSCpc+eSJizU+IXHTqTI7x0rV3iWRxw2tEDFWXkX5L7+gOTjmlr6AUXfWhsQevsbOc4HwA==}
     engines: {node: ^18 || >=20}
     hasBin: true
     peerDependencies:

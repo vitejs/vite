@@ -9,7 +9,7 @@ import type {
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
-import type { TSConfckParseOptions } from 'tsconfck'
+import type { TSConfckParseResult } from 'tsconfck'
 import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
 import {
   cleanUrl,
@@ -113,7 +113,6 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      initTSConfck()
       const loadedTsconfig = await loadTsconfigJsonForFile(filename)
       const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
@@ -255,8 +254,6 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     keepNames: false,
   }
 
-  initTSConfck()
-
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
@@ -309,8 +306,6 @@ const rollupToEsbuildFormatMap: Record<
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
-  initTSConfck()
-
   return {
     name: 'vite:esbuild-transpile',
     async renderChunk(code, chunk, opts) {
@@ -467,19 +462,23 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckParseOptions: TSConfckParseOptions
-function initTSConfck(force?: boolean) {
-  if (force || !tsconfckParseOptions)
-    tsconfckParseOptions = {
-      cache: new TSConfckCache(),
-    }
-}
+let tsconfckCache: TSConfckCache<TSConfckParseResult>
 
 async function loadTsconfigJsonForFile(
   filename: string,
 ): Promise<TSConfigJSON> {
   try {
-    const result = await parse(filename, tsconfckParseOptions)
+    if (tsconfckCache) {
+      // shortcut, the cache stores resolved TSConfckParseResult
+      // so getting it from the cache directly we bypass aysnc fn call wrapping it in a promise again
+      if (tsconfckCache.hasParseResult(filename)) {
+        const result = await tsconfckCache.getParseResult(filename)
+        return result.tsconfig
+      }
+    } else {
+      tsconfckCache = new TSConfckCache<TSConfckParseResult>()
+    }
+    const result = await parse(filename, { cache: tsconfckCache })
     // tsconfig could be out of root, make sure it is watched on dev
     if (server && result.tsconfigFile) {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
@@ -504,7 +503,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
     (changedFile.endsWith('.json') &&
-      tsconfckParseOptions?.cache?.hasParseResult(changedFile))
+      tsconfckCache?.hasParseResult(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
@@ -515,7 +514,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    initTSConfck(true)
+    tsconfckCache.clear()
 
     // server may not be available if vite config is updated at the same time
     if (server) {
