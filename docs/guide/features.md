@@ -1,3 +1,7 @@
+---
+outline: deep
+---
+
 # Features
 
 At the very basic level, developing using Vite is not that much different from using a static file server. However, Vite provides many enhancements over native ESM imports to support various features that are typically seen in bundler-based setups.
