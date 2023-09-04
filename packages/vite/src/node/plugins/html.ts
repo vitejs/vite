@@ -324,7 +324,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             publicToRelative,
           )
         const nodeStartWithLeadingWhitespace = (
-          node: DefaultTreeAdapterMap,
+          node: DefaultTreeAdapterMap['node'],
         ) => {
           const lineStartOffset =
             node.sourceCodeLocation!.startOffset -
