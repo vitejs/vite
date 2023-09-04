@@ -163,10 +163,11 @@ test.runIf(isServe)('sourcemap boundary', async () => {
 
 function decodeSourceMapUrl(content: string) {
   return JSON.parse(
-    atob(
+    Buffer.from(
       content.match(
         /\/\/[#@]\ssourceMappingURL=\s*data:application\/json;base64,(\S+)/,
       )?.[1],
-    ),
+      'base64',
+    ).toString(),
   )
 }
