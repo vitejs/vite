@@ -1,5 +1,5 @@
 ---
-outline: deep
+outline: [2, 3]
 ---
 
 # Features
