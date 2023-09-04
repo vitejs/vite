@@ -4,7 +4,7 @@ import { isDefined } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
-export type BindShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
+export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Print a one line hint to the terminal.
    */
@@ -18,9 +18,9 @@ export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   action(server: Server): void | Promise<void>
 }
 
-export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
+export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server: Server,
-  opts?: BindShortcutsOptions<Server>,
+  opts?: BindCLIShortcutsOptions<Server>,
 ): void {
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
@@ -29,7 +29,7 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
   const isDev = isDevServer(server)
 
   if (isDev) {
-    server._shortcutsOptions = opts
+    server._shortcutsOptions = opts as BindCLIShortcutsOptions<ViteDevServer>
   }
 
   if (opts?.print) {
