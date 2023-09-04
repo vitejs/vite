@@ -1,5 +1,7 @@
 /* eslint-disable no-restricted-globals */
 
+warnCjsUsage()
+
 // type utils
 module.exports.defineConfig = (config) => config
 
@@ -32,3 +34,13 @@ unsupportedCJS.forEach((name) => {
     )
   }
 })
+
+function warnCjsUsage() {
+  const yellow = (str) => `\u001b[33m${str}\u001b[39m`
+  const log = process.env.VITE_CJS_TRACE ? console.trace : console.warn
+  log(
+    yellow(
+      `The CJS build of Vite's Node API is deprecated. See https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.`,
+    ),
+  )
+}
