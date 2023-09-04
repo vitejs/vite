@@ -588,7 +588,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        processedHtml.set(id, s.toString())
+        processedHtml.set(id, s.toString().replace(/(^\s*\n\s*|\s*\n\s*$)/gm, ''))
 
         // inject module preload polyfill only when configured and needed
         const { modulePreload } = config.build
