@@ -54,6 +54,7 @@ import {
   processSrcSet,
   removeDirectQuery,
   requireResolveFromRootWithFallback,
+  startsWith,
   stripBase,
   stripBomTag,
 } from '../utils'
@@ -1879,11 +1880,11 @@ async function rebaseUrls(
   const rebaseFn = (url: string) => {
     if (url[0] === '/') return url
     // ignore url's starting with variable
-    if (url.startsWith(variablePrefix)) return url
+    if (startsWith(url, variablePrefix)) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
       const matches =
-        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+        typeof find === 'string' ? startsWith(url, find) : find.test(url)
       if (matches) {
         return url
       }

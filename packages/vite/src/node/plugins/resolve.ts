@@ -35,6 +35,7 @@ import {
   normalizePath,
   safeRealpathSync,
   slash,
+  startsWith,
   tryStatSync,
   withTrailingSlash,
 } from '../utils'
@@ -150,9 +151,9 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
     async resolveId(id, importer, resolveOpts) {
       if (
         id[0] === '\0' ||
-        id.startsWith('virtual:') ||
+        startsWith(id, 'virtual:') ||
         // When injected directly in html/client code
-        id.startsWith('/virtual:')
+        startsWith(id, '/virtual:')
       ) {
         return
       }
@@ -163,7 +164,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // the resolvePlugin because the optimizer is created on server listen during dev
       const depsOptimizer = resolveOptions.getDepsOptimizer?.(ssr)
 
-      if (id.startsWith(browserExternalId)) {
+      if (startsWith(id, browserExternalId)) {
         return id
       }
 
@@ -196,7 +197,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (importer) {
         if (
           isTsRequest(importer) ||
-          resolveOpts.custom?.depScan?.loader?.startsWith('ts')
+          startsWith(resolveOpts.custom?.depScan?.loader, 'ts')
         ) {
           options.isFromTsImporter = true
         } else {
@@ -211,14 +212,14 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // tryFileResolve or /fs/ resolution but these files may not yet
       // exists if we are in the middle of a deps re-processing
       if (asSrc && depsOptimizer?.isOptimizedDepUrl(id)) {
-        const optimizedPath = id.startsWith(FS_PREFIX)
+        const optimizedPath = startsWith(id, FS_PREFIX)
           ? fsPathFromId(id)
           : normalizePath(path.resolve(root, id.slice(1)))
         return optimizedPath
       }
 
       // explicit fs paths that starts with /@fs/*
-      if (asSrc && id.startsWith(FS_PREFIX)) {
+      if (asSrc && startsWith(id, FS_PREFIX)) {
         res = fsPathFromId(id)
         // We don't need to resolve these paths since they are already resolved
         // always return here even if res doesn't exist since /@fs/ is explicit
@@ -232,7 +233,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       if (
         asSrc &&
         id[0] === '/' &&
-        (rootInRoot || !id.startsWith(withTrailingSlash(root)))
+        (rootInRoot || !startsWith(id, withTrailingSlash(root)))
       ) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
@@ -423,7 +424,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
     },
 
     load(id) {
-      if (id.startsWith(browserExternalId)) {
+      if (startsWith(id, browserExternalId)) {
         if (isProduction) {
           return `export default {}`
         } else {
@@ -436,7 +437,7 @@ export default new Proxy({}, {
 })`
         }
       }
-      if (id.startsWith(optionalPeerDepId)) {
+      if (startsWith(id, optionalPeerDepId)) {
         if (isProduction) {
           return `export default {}`
         } else {
@@ -454,7 +455,7 @@ function resolveSubpathImports(
   options: InternalResolveOptions,
   targetWeb: boolean,
 ) {
-  if (!importer || !id.startsWith(subpathImportsPrefix)) return
+  if (!importer || !startsWith(id, subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
@@ -944,7 +945,7 @@ export async function tryOptimizedResolve(
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src.startsWith(withTrailingSlash(idPkgDir))) {
+    if (startsWith(optimizedData.src, withTrailingSlash(idPkgDir))) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }

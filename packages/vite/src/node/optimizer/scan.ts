@@ -31,6 +31,7 @@ import {
   multilineCommentsRE,
   normalizePath,
   singlelineCommentsRE,
+  startsWith,
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
@@ -437,7 +438,7 @@ function esbuildScanPlugin(
               // since they may be used in the template
               const contents =
                 content +
-                (loader.startsWith('ts') ? extractImportPaths(content) : '')
+                (startsWith(loader, 'ts') ? extractImportPaths(content) : '')
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {

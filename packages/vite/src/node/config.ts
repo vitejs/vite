@@ -39,6 +39,7 @@ import {
   mergeConfig,
   normalizeAlias,
   normalizePath,
+  startsWith,
   withTrailingSlash,
 } from './utils'
 import {
@@ -1088,7 +1089,7 @@ async function bundleConfigFile(
               }
 
               // partial deno support as `npm:` does not work with esbuild
-              if (id.startsWith('npm:')) {
+              if (startsWith(id, 'npm:')) {
                 return { external: true }
               }
 

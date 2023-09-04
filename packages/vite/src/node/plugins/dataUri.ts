@@ -3,6 +3,7 @@
 // ref https://github.com/vitejs/vite/issues/1428#issuecomment-757033808
 import { URL } from 'node:url'
 import type { Plugin } from '../plugin'
+import { startsWith } from '../utils'
 
 const dataUriRE = /^([^/]+\/[^;,]+)(;base64)?,([\s\S]*)$/
 const base64RE = /base64/i
@@ -53,7 +54,7 @@ export function dataURIPlugin(): Plugin {
     },
 
     load(id) {
-      if (id.startsWith(dataUriPrefix)) {
+      if (startsWith(id, dataUriPrefix)) {
         return resolved.get(id.slice(dataUriPrefix.length))
       }
     },

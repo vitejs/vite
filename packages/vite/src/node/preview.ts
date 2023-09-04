@@ -16,7 +16,12 @@ import {
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
+import {
+  resolveHostname,
+  resolveServerUrls,
+  shouldServeFile,
+  startsWith,
+} from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
@@ -208,7 +213,7 @@ export async function preview(
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : previewBase
     openBrowser(
-      path.startsWith('http')
+      startsWith(path, 'http')
         ? path
         : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
       true,

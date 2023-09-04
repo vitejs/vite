@@ -76,6 +76,7 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  startsWith,
   timeFrom,
   unwrapId,
 } from '../utils'
@@ -701,7 +702,7 @@ export async function createPluginContainer(
         break
       }
 
-      if (debugResolve && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
+      if (debugResolve && rawId !== id && !startsWith(rawId, FS_PREFIX)) {
         const key = rawId + id
         // avoid spamming
         if (!seenResolves[key]) {

@@ -8,6 +8,7 @@ import {
   isDefined,
   isInNodeModules,
   normalizePath,
+  startsWith,
   withTrailingSlash,
 } from '../utils'
 import { LogLevels } from '../logger'
@@ -251,7 +252,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             let log = colors.dim(withTrailingSlash(relativeOutDir))
             log +=
               !config.build.lib &&
-              entry.name.startsWith(withTrailingSlash(assetsDir))
+              startsWith(entry.name, withTrailingSlash(assetsDir))
                 ? colors.dim(assetsDir) +
                   group.color(
                     entry.name

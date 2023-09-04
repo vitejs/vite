@@ -23,6 +23,7 @@ import {
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
+  startsWith,
   withTrailingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
@@ -166,7 +167,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      if (id.startsWith(viteBuildPublicIdPrefix)) {
+      if (startsWith(id, viteBuildPublicIdPrefix)) {
         id = id.slice(viteBuildPublicIdPrefix.length)
       }
 
@@ -241,7 +242,8 @@ export function checkPublicFile(
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
   if (
-    !normalizePath(publicFile).startsWith(
+    !startsWith(
+      normalizePath(publicFile),
       withTrailingSlash(normalizePath(publicDir)),
     )
   ) {
@@ -272,7 +274,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
     rtn = id
-  } else if (id.startsWith(withTrailingSlash(config.root))) {
+  } else if (startsWith(id, withTrailingSlash(config.root))) {
     // in project root, infer short public path
     rtn = '/' + path.posix.relative(config.root, id)
   } else {

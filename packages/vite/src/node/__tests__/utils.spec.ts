@@ -12,6 +12,7 @@ import {
   posToNumber,
   processSrcSetSync,
   resolveHostname,
+  startsWith,
 } from '../utils'
 
 describe('bareImportRE', () => {
@@ -258,5 +259,24 @@ describe('processSrcSetSync', () => {
         ({ url }) => path.posix.join(devBase, url),
       ),
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
+})
+
+describe('startsWith', () => {
+  test('same with String.prototype.startsWith', () => {
+    const str = 'hello world'
+    expect(startsWith(str, 'he') === str.startsWith('he')).toBeTruthy()
+    expect(startsWith(str, 'world') === str.startsWith('world')).toBeTruthy()
+    expect(
+      startsWith(str, 'hello world!') === str.startsWith('hello world!'),
+    ).toBeTruthy()
+  })
+
+  test('string is undefined', () => {
+    let str: undefined | string
+    expect(
+      Boolean(startsWith(undefined, 'hello world!')) ===
+        Boolean(str?.startsWith('hello world!')),
+    ).toBeTruthy()
   })
 })

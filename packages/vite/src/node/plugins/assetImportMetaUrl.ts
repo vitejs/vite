@@ -9,6 +9,7 @@ import {
   isParentDirectory,
   normalizePath,
   slash,
+  startsWith,
   transformStableResult,
 } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
@@ -80,7 +81,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('**')) {
+              if (startsWith(pattern, '**')) {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue

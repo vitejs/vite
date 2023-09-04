@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
-import { arraify, tryStatSync } from './utils'
+import { arraify, startsWith, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
 export function loadEnv(
@@ -52,7 +52,7 @@ export function loadEnv(
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+    if (prefixes.some((prefix) => startsWith(key, prefix))) {
       env[key] = value
     }
   }
@@ -60,7 +60,7 @@ export function loadEnv(
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+    if (prefixes.some((prefix) => startsWith(key, prefix))) {
       env[key] = process.env[key] as string
     }
   }

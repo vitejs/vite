@@ -6,6 +6,7 @@ import {
   normalizePath,
   removeImportQuery,
   removeTimestampQuery,
+  startsWith,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
@@ -396,7 +397,7 @@ export class ModuleGraph {
     if (
       url !== resolvedId &&
       !url.includes('\0') &&
-      !url.startsWith(`virtual:`)
+      !startsWith(url, `virtual:`)
     ) {
       const ext = extname(cleanUrl(resolvedId))
       if (ext) {

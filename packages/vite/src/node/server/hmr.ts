@@ -8,6 +8,7 @@ import { CLIENT_DIR } from '../constants'
 import {
   createDebugger,
   normalizePath,
+  startsWith,
   unique,
   withTrailingSlash,
   wrapId,
@@ -44,7 +45,7 @@ export interface HmrContext {
 }
 
 export function getShortName(file: string, root: string): string {
-  return file.startsWith(withTrailingSlash(root))
+  return startsWith(file, withTrailingSlash(root))
     ? path.posix.relative(root, file)
     : file
 }
@@ -64,7 +65,7 @@ export async function handleHMRUpdate(
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (fileName === '.env' || fileName.startsWith('.env.'))
+    (fileName === '.env' || startsWith(fileName, '.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
@@ -89,7 +90,7 @@ export async function handleHMRUpdate(
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
-  if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
+  if (startsWith(file, withTrailingSlash(normalizedClientDir))) {
     ws.send({
       type: 'full-reload',
       path: '*',

@@ -15,6 +15,7 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
+  startsWith,
   unwrapId,
   withTrailingSlash,
 } from '../../utils'
@@ -78,7 +79,7 @@ export function transformMiddleware(
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
-          const sourcemapPath = url.startsWith(FS_PREFIX)
+          const sourcemapPath = startsWith(url, FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(path.resolve(root, url.slice(1)))
           try {
@@ -130,10 +131,10 @@ export function transformMiddleware(
       // check if public dir is inside root dir
       const publicDir = normalizePath(server.config.publicDir)
       const rootDir = normalizePath(server.config.root)
-      if (publicDir.startsWith(withTrailingSlash(rootDir))) {
+      if (startsWith(publicDir, withTrailingSlash(rootDir))) {
         const publicPath = `${publicDir.slice(rootDir.length)}/`
         // warn explicit public paths
-        if (url.startsWith(withTrailingSlash(publicPath))) {
+        if (startsWith(url, withTrailingSlash(publicPath))) {
           let warning: string
 
           if (isImportRequest(url)) {

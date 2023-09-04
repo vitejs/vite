@@ -19,6 +19,7 @@ import {
   removeLeadingSlash,
   shouldServeFile,
   slash,
+  startsWith,
   withTrailingSlash,
 } from '../../utils'
 
@@ -110,7 +111,7 @@ export function serveStaticMiddleware(
     for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
         typeof find === 'string'
-          ? pathname.startsWith(find)
+          ? startsWith(pathname, find)
           : find.test(pathname)
       if (matches) {
         redirectedPathname = pathname.replace(find, replacement)
@@ -119,7 +120,7 @@ export function serveStaticMiddleware(
     }
     if (redirectedPathname) {
       // dir is pre-normalized to posix style
-      if (redirectedPathname.startsWith(withTrailingSlash(dir))) {
+      if (startsWith(redirectedPathname, withTrailingSlash(dir))) {
         redirectedPathname = redirectedPathname.slice(dir.length)
       }
     }
@@ -160,7 +161,7 @@ export function serveRawFsMiddleware(
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.pathname.startsWith(FS_PREFIX)) {
+    if (startsWith(url.pathname, FS_PREFIX)) {
       const pathname = decodeURI(url.pathname)
       // restrict files outside of `fs.allow`
       if (

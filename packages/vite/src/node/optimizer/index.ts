@@ -22,6 +22,7 @@ import {
   normalizeId,
   normalizePath,
   removeLeadingSlash,
+  startsWith,
   tryStatSync,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
@@ -960,7 +961,7 @@ export function createIsOptimizedDepFile(
   config: ResolvedConfig,
 ): (id: string) => boolean {
   const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
-  return (id) => id.startsWith(depsCacheDirPrefix)
+  return (id) => startsWith(id, depsCacheDirPrefix)
 }
 
 export function createIsOptimizedDepUrl(
@@ -971,7 +972,7 @@ export function createIsOptimizedDepUrl(
 
   // determine the url prefix of files inside cache directory
   const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
-  const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
+  const depsCacheDirPrefix = startsWith(depsCacheDirRelative, '../')
     ? // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
       `/@fs/${removeLeadingSlash(normalizePath(depsCacheDir))}`
@@ -980,7 +981,7 @@ export function createIsOptimizedDepUrl(
       `/${depsCacheDirRelative}`
 
   return function isOptimizedDepUrl(url: string): boolean {
-    return url.startsWith(depsCacheDirPrefix)
+    return startsWith(url, depsCacheDirPrefix)
   }
 }
 
@@ -1196,7 +1197,7 @@ const lockfileFormats = [
   { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
   { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
 ].sort((_, { manager }) => {
-  return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
+  return startsWith(process.env.npm_config_user_agent, manager) ? 1 : -1
 })
 const lockfileNames = lockfileFormats.map((l) => l.name)
 

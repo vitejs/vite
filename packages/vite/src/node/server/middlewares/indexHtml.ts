@@ -32,6 +32,7 @@ import {
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
+  startsWith,
   stripBase,
   unwrapId,
   wrapId,
@@ -77,7 +78,7 @@ export function createDevHtmlTransformFn(
 }
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
-  if (url.startsWith(FS_PREFIX)) {
+  if (startsWith(url, FS_PREFIX)) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
     return decodeURIComponent(

@@ -21,6 +21,7 @@ import {
   normalizePath,
   processSrcSet,
   removeLeadingSlash,
+  startsWith,
   urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -968,7 +969,7 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
 
   // account for user env defines
   for (const key in config.define) {
-    if (key.startsWith(`import.meta.env.`)) {
+    if (startsWith(key, `import.meta.env.`)) {
       const val = config.define[key]
       if (typeof val === 'string') {
         try {
@@ -987,7 +988,7 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       if (key in env) {
         return env[key]
       } else {
-        if (envPrefix.some((prefix) => key.startsWith(prefix))) {
+        if (envPrefix.some((prefix) => startsWith(key, prefix))) {
           const relativeHtml = normalizePath(
             path.relative(config.root, ctx.filename),
           )

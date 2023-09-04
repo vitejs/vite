@@ -10,6 +10,7 @@ import {
   isExternalUrl,
   moduleListContains,
   normalizePath,
+  startsWith,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
@@ -94,18 +95,18 @@ export function esbuildDepPlugin(
       // map importer ids to file paths for correct resolution
       _importer = importer in qualified ? qualified[importer] : importer
     }
-    const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
+    const resolver = startsWith(kind, 'require') ? _resolveRequire : _resolve
     return resolver(id, _importer, undefined, ssr)
   }
 
   const resolveResult = (id: string, resolved: string) => {
-    if (resolved.startsWith(browserExternalId)) {
+    if (startsWith(resolved, browserExternalId)) {
       return {
         path: id,
         namespace: 'browser-external',
       }
     }
-    if (resolved.startsWith(optionalPeerDepId)) {
+    if (startsWith(resolved, optionalPeerDepId)) {
       return {
         path: resolved,
         namespace: 'optional-peer-dep',
@@ -144,7 +145,7 @@ export function esbuildDepPlugin(
         },
         async ({ path: id, importer, kind }) => {
           // if the prefix exist, it is already converted to `import`, so set `external: true`
-          if (id.startsWith(convertedExternalPrefix)) {
+          if (startsWith(id, convertedExternalPrefix)) {
             return {
               path: id.slice(convertedExternalPrefix.length),
               external: true,

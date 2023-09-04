@@ -2,7 +2,7 @@ import { Worker } from 'okie'
 import type { Terser } from 'dep-types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { requireResolveFromRootWithFallback } from '../utils'
+import { requireResolveFromRootWithFallback, startsWith } from '../utils'
 
 let terserPath: string | undefined
 const loadTerserPath = (root: string) => {
@@ -69,7 +69,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         safari10: true,
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,
-        module: outputOptions.format.startsWith('es'),
+        module: startsWith(outputOptions.format, 'es'),
         toplevel: outputOptions.format === 'cjs',
       })
       return {

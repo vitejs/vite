@@ -4,7 +4,7 @@ import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
-import { createDebugger } from '../../utils'
+import { createDebugger, startsWith } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
@@ -123,8 +123,8 @@ export function proxyMiddleware(
           const [proxy, opts] = proxies[context]
           if (
             opts.ws ||
-            opts.target?.toString().startsWith('ws:') ||
-            opts.target?.toString().startsWith('wss:')
+            startsWith(opts.target?.toString(), 'ws:') ||
+            startsWith(opts.target?.toString(), 'wss:')
           ) {
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
@@ -173,6 +173,6 @@ export function proxyMiddleware(
 function doesProxyContextMatchUrl(context: string, url: string): boolean {
   return (
     (context[0] === '^' && new RegExp(context).test(url)) ||
-    url.startsWith(context)
+    startsWith(url, context)
   )
 }

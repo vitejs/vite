@@ -60,7 +60,7 @@ export function slash(p: string): string {
  * import specifiers by the importAnalysis plugin.
  */
 export function wrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
+  return startsWith(id, VALID_ID_PREFIX)
     ? id
     : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
 }
@@ -69,7 +69,7 @@ export function wrapId(id: string): string {
  * Undo {@link wrapId}'s `/@id/` and null byte replacements.
  */
 export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
+  return startsWith(id, VALID_ID_PREFIX)
     ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
     : id
 }
@@ -109,7 +109,7 @@ const builtins = new Set([
 const NODE_BUILTIN_NAMESPACE = 'node:'
 export function isBuiltin(id: string): boolean {
   return builtins.has(
-    id.startsWith(NODE_BUILTIN_NAMESPACE)
+    startsWith(id, NODE_BUILTIN_NAMESPACE)
       ? id.slice(NODE_BUILTIN_NAMESPACE.length)
       : id,
   )
@@ -124,7 +124,7 @@ export function moduleListContains(
   id: string,
 ): boolean | undefined {
   return moduleList?.some(
-    (m) => m === id || id.startsWith(withTrailingSlash(m)),
+    (m) => m === id || startsWith(id, withTrailingSlash(m)),
   )
 }
 
@@ -178,6 +178,12 @@ export function createDebugger(
   }
 }
 
+export function startsWith(str: string | undefined, startStr: string): boolean {
+  if (str === undefined) return false
+  if (startStr.length > str.length) return false
+  return str?.slice(0, startStr.length) === startStr
+}
+
 function testCaseInsensitiveFS() {
   if (!CLIENT_ENTRY.endsWith('client.mjs')) {
     throw new Error(
@@ -217,7 +223,7 @@ export function normalizePath(id: string): string {
 
 export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
-    id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
+    startsWith(id, FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
   return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
 }
@@ -245,8 +251,8 @@ export function withTrailingSlash(path: string): string {
 export function isParentDirectory(dir: string, file: string): boolean {
   dir = withTrailingSlash(dir)
   return (
-    file.startsWith(dir) ||
-    (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+    startsWith(file, dir) ||
+    (isCaseInsensitiveFS && startsWith(file.toLowerCase(), dir.toLowerCase()))
   )
 }
 
@@ -373,8 +379,8 @@ export function timeFrom(start: number, subtract = 0): string {
  */
 export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
-  const isAbsoluteFile = url.startsWith(root)
-  if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
+  const isAbsoluteFile = startsWith(url, root)
+  if (isAbsoluteFile || startsWith(url, FS_PREFIX)) {
     const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     return colors.dim(file)
   } else {
@@ -593,9 +599,10 @@ export let safeRealpathSync = isWindows
 const windowsNetworkMap = new Map()
 function windowsMappedRealpathSync(path: string) {
   const realPath = fs.realpathSync.native(path)
-  if (realPath.startsWith('\\\\')) {
+  if (startsWith(realPath, '\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
-      if (realPath.startsWith(network)) return realPath.replace(network, volume)
+      if (startsWith(realPath, network))
+        return realPath.replace(network, volume)
     }
   }
   return realPath
@@ -654,7 +661,7 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(withTrailingSlash(root)) &&
+    !startsWith(file, withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
@@ -749,10 +756,10 @@ function escapeToLinuxLikePath(path: string) {
 
 const revertWindowsDriveRE = /^\/windows\/([A-Z])\//
 function unescapeToLinuxLikePath(path: string) {
-  if (path.startsWith('/linux/')) {
+  if (startsWith(path, '/linux/')) {
     return path.slice('/linux'.length)
   }
-  if (path.startsWith('/windows/')) {
+  if (startsWith(path, '/windows/')) {
     return path.replace(revertWindowsDriveRE, '$1:/')
   }
   return path
@@ -1233,7 +1240,7 @@ export function stripBase(path: string, base: string): string {
     return '/'
   }
   const devBase = withTrailingSlash(base)
-  return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
+  return startsWith(path, devBase) ? path.slice(devBase.length - 1) : path
 }
 
 export function arrayEqual(a: any[], b: any[]): boolean {

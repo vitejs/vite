@@ -39,6 +39,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  startsWith,
   stripBase,
   stripBomTag,
   timeFrom,
@@ -185,7 +186,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       })};`
       // account for user env defines
       for (const key in config.define) {
-        if (key.startsWith(`import.meta.env.`)) {
+        if (startsWith(key, `import.meta.env.`)) {
           const val = config.define[key]
           _env += `${key} = ${
             typeof val === 'string' ? val : JSON.stringify(val)
@@ -336,7 +337,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(withTrailingSlash(root))) {
+        if (startsWith(resolved.id, withTrailingSlash(root))) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
@@ -673,7 +674,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 config.logger.error(e.message, { error: e })
               })
             }
-          } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
+          } else if (!startsWith(importer, withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(

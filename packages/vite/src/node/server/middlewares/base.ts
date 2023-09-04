@@ -1,6 +1,11 @@
 import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '..'
-import { joinUrlSegments, stripBase, withTrailingSlash } from '../../utils'
+import {
+  joinUrlSegments,
+  startsWith,
+  stripBase,
+  withTrailingSlash,
+} from '../../utils'
 
 // this middleware is only active when (base !== '/')
 
@@ -14,7 +19,7 @@ export function baseMiddleware({
     const path = parsed.pathname || '/'
     const base = config.rawBase
 
-    if (path.startsWith(base)) {
+    if (startsWith(path, base)) {
       // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
       req.url = stripBase(url, base)

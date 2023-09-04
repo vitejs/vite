@@ -27,6 +27,7 @@ import {
   evalValue,
   normalizePath,
   slash,
+  startsWith,
   transformStableResult,
 } from '../utils'
 import { isCSSRequest, isModuleCSSRequest } from './css'
@@ -231,7 +232,7 @@ export async function parseImportGlob(
       }) as any
     } catch (e) {
       const _e = e as any
-      if (_e.message && _e.message.startsWith('Unterminated string constant'))
+      if (_e.message && startsWith(_e.message, 'Unterminated string constant'))
         return undefined!
       if (lastTokenPos == null || lastTokenPos <= start) throw _e
 
@@ -602,9 +603,9 @@ export async function toAbsoluteGlob(
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
-  if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
-  if (glob.startsWith('../')) return pre + posix.join(dir, glob)
-  if (glob.startsWith('**')) return pre + glob
+  if (startsWith(glob, './')) return pre + posix.join(dir, glob.slice(2))
+  if (startsWith(glob, '../')) return pre + posix.join(dir, glob)
+  if (startsWith(glob, '**')) return pre + glob
 
   const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
 
@@ -642,7 +643,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const dirS = bases[0].split('/')
   for (let i = 0; i < dirS.length; i++) {
     const candidate = dirS.slice(0, i + 1).join('/')
-    if (bases.every((base) => base.startsWith(candidate)))
+    if (bases.every((base) => startsWith(base, candidate)))
       commonAncestor = candidate
     else break
   }
@@ -653,5 +654,5 @@ export function getCommonBase(globsResolved: string[]): null | string {
 
 export function isVirtualModule(id: string): boolean {
   // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
-  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
+  return startsWith(id, 'virtual:') || id[0] === '\0' || !id.includes('/')
 }
