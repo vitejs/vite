@@ -323,6 +323,20 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config,
             publicToRelative,
           )
+        const nodeStartWithLeadingWhitespace = (
+          node: DefaultTreeAdapterMap,
+        ) => {
+          const lineStartOffset =
+            node.sourceCodeLocation!.startOffset -
+            node.sourceCodeLocation!.startCol
+          const line = s.slice(
+            lineStartOffset,
+            node.sourceCodeLocation!.startOffset,
+          )
+          return /\S/.test(line)
+            ? node.sourceCodeLocation!.startOffset
+            : lineStartOffset
+        }
 
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
@@ -444,7 +458,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
                       url,
-                      start: node.sourceCodeLocation!.startOffset,
+                      start: nodeStartWithLeadingWhitespace(node),
                       end: node.sourceCodeLocation!.endOffset,
                     })
                     js += importExpression
@@ -516,7 +530,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             // remove the script tag from the html. we are going to inject new
             // ones in the end.
             s.remove(
-              node.sourceCodeLocation!.startOffset,
+              nodeStartWithLeadingWhitespace(node),
               node.sourceCodeLocation!.endOffset,
             )
           }
