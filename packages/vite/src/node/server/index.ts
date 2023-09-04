@@ -12,7 +12,7 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
-import type { InvalidatePayload } from 'types/customEvent'
+import type { InvalidatePayload } from 'types/custom-event'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,

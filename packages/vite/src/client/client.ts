@@ -1,6 +1,6 @@
-import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
+import type { ErrorPayload, HMRPayload, Update } from 'types/hmr-payload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
-import type { InferCustomEventPayload } from 'types/customEvent'
+import type { InferCustomEventPayload } from 'types/custom-event'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 

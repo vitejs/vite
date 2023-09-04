@@ -18,5 +18,5 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob: import('./importGlob').ImportGlobFunction
+  glob: import('./import-glob').ImportGlobFunction
 }

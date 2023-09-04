@@ -605,9 +605,9 @@ It is possible to type custom events by extending the `CustomEventMap` interface
 
 ```ts
 // events.d.ts
-import 'vite/types/customEvent'
+import 'vite/types/custom-event'
 
-declare module 'vite/types/customEvent' {
+declare module 'vite/types/custom-event' {
   interface CustomEventMap {
     'custom:foo': { msg: string }
     // 'event-key': payload

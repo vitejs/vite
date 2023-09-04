@@ -110,18 +110,18 @@ export type {
   CustomPayload,
   PrunePayload,
   ErrorPayload,
-} from 'types/hmrPayload'
+} from 'types/hmr-payload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,
   InvalidatePayload,
-} from 'types/customEvent'
+} from 'types/custom-event'
 export type {
   ImportGlobFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
-} from 'types/importGlob'
+} from 'types/import-glob'
 export type { ChunkMetadata } from 'types/metadata'
 
 // dep types

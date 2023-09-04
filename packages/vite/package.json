@@ -35,7 +35,7 @@
     "dist",
     "client.d.ts",
     "index.cjs",
-    "types"
+    "types/*.d.ts"
   ],
   "engines": {
     "node": "^18.0.0 || >=20.0.0"

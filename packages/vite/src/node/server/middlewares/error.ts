@@ -2,7 +2,7 @@ import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { Connect } from 'dep-types/connect'
 import strip from 'strip-ansi'
-import type { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmr-payload'
 import { pad } from '../../utils'
 import type { ViteDevServer } from '../..'
 

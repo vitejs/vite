@@ -2,7 +2,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
-import type { Update } from 'types/hmrPayload'
+import type { Update } from 'types/hmr-payload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import {
