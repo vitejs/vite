@@ -6,6 +6,7 @@ import {
   isBuild,
   isServe,
   page,
+  viteServer,
   viteTestUrl,
 } from '~utils'
 
@@ -343,5 +344,12 @@ describe('special character', () => {
 
   test('should fetch html proxy', async () => {
     expect(browserLogs).toContain('special character')
+  })
+})
+
+describe.runIf(isServe)('warmup', () => {
+  test('should warmup /warmup/warm.js', async () => {
+    const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+    expect(mod).toBeTruthy()
   })
 })
