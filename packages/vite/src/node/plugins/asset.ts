@@ -42,6 +42,8 @@ const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 export interface GeneratedAssetMeta {
   originalName: string
   isEntry?: boolean
+  // for pure css chunk's assets, e.g: fonts
+  importedAssets?: Set<string>
 }
 export const generatedAssets = new WeakMap<
   ResolvedConfig,
