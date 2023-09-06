@@ -7,7 +7,7 @@ settings:
 overrides:
   vite: workspace:*
 
-packageExtensionsChecksum: 4c68f206c7a9d0dbf163a3f8ca45b751
+packageExtensionsChecksum: de16c2a1a6a6350aaa9e478e59cca00e
 
 patchedDependencies:
   chokidar@3.5.3:
@@ -1460,6 +1460,9 @@ packages:
     resolution: {integrity: sha512-a/yTUkcO/Vyy+JffmAnTWbr4/90cLzw+CC3bRbhnULr/EM0fGNvM13oQQ14f2moLMcVDyAx/leczLlAOovhSZg==}
     peerDependencies:
       search-insights: '>= 1 < 3'
+    peerDependenciesMeta:
+      search-insights:
+        optional: true
     dependencies:
       '@algolia/autocomplete-shared': 1.9.3(algoliasearch@4.13.1)
     transitivePeerDependencies:
@@ -1472,6 +1475,9 @@ packages:
     peerDependencies:
       '@algolia/client-search': '>= 4.9.1 < 6'
       algoliasearch: '>= 4.9.1 < 6'
+    peerDependenciesMeta:
+      '@algolia/client-search':
+        optional: true
     dependencies:
       '@algolia/autocomplete-shared': 1.9.3(algoliasearch@4.13.1)
       algoliasearch: 4.13.1
@@ -1482,6 +1488,9 @@ packages:
     peerDependencies:
       '@algolia/client-search': '>= 4.9.1 < 6'
       algoliasearch: '>= 4.9.1 < 6'
+    peerDependenciesMeta:
+      '@algolia/client-search':
+        optional: true
     dependencies:
       algoliasearch: 4.13.1
     dev: true
@@ -4085,7 +4094,7 @@ packages:
     resolution: {integrity: sha512-R6JDUfiZbJA9cMiguQ7jxALsgiprjBeHL5ikpXfJCH62pPHtI+JdJ5xWj6Ev73yXSlYl86+blXn1kZHQ7uElxw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
-      vite: ^4.0.0
+      vite: '*'
       vue: ^3.2.25
     dependencies:
       vite: link:packages/vite
@@ -4571,6 +4580,9 @@ packages:
     hasBin: true
     peerDependencies:
       postcss: ^8.1.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       browserslist: 4.21.10
       caniuse-lite: 1.0.30001468
@@ -6897,6 +6909,9 @@ packages:
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       postcss: 8.4.27
     dev: true
@@ -8510,6 +8525,9 @@ packages:
     engines: {node: '>=14.0.0'}
     peerDependencies:
       postcss: ^8.0.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       postcss: 8.4.27
       postcss-value-parser: 4.2.0
@@ -8521,6 +8539,9 @@ packages:
     engines: {node: ^12 || ^14 || >= 16}
     peerDependencies:
       postcss: ^8.4.21
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       camelcase-css: 2.0.1
       postcss: 8.4.27
@@ -8547,6 +8568,9 @@ packages:
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       postcss: 8.4.27
     dev: true
@@ -8556,6 +8580,9 @@ packages:
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.27)
       postcss: 8.4.27
@@ -8568,6 +8595,9 @@ packages:
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       postcss: 8.4.27
       postcss-selector-parser: 6.0.11
@@ -8578,6 +8608,9 @@ packages:
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.27)
       postcss: 8.4.27
@@ -8587,6 +8620,9 @@ packages:
     resolution: {integrity: sha512-7DGfnlyi/ju82BRzTIjWS5C4Tafmzl3R79YP/PASiocj+aa6yYphHhhKUOEoXQToId5rgyFgJ88+ccOUydjBXQ==}
     peerDependencies:
       postcss: ^8.0.0
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       generic-names: 4.0.0
       icss-utils: 5.1.0(postcss@8.4.27)
@@ -8604,6 +8640,9 @@ packages:
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.2.14
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dependencies:
       postcss: 8.4.27
       postcss-selector-parser: 6.0.11
@@ -9683,6 +9722,9 @@ packages:
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.3.3
+    peerDependenciesMeta:
+      postcss:
+        optional: true
     dev: true
 
   /supports-color@5.5.0:
