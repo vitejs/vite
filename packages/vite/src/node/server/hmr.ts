@@ -218,8 +218,17 @@ export function updateModules(
 export async function handleFileAddUnlink(
   file: string,
   server: ViteDevServer,
+  isUnlink: boolean,
 ): Promise<void> {
   const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+
+  if (isUnlink) {
+    for (const deletedMod of modules) {
+      server.moduleGraph.idToModuleMap.forEach((mod) => {
+        mod.importers.delete(deletedMod)
+      })
+    }
+  }
 
   modules.push(...getAffectedGlobModules(file, server))
 

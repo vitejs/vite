@@ -4,6 +4,7 @@ import './importing-updated'
 import './invalidation/parent'
 import './file-delete-restore'
 import './optional-chaining/parent'
+import './intermediate-file-delete'
 import logo from './logo.svg'
 
 export const foo = 1
