@@ -326,8 +326,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const nodeStartWithLeadingWhitespace = (
           node: DefaultTreeAdapterMap['node'],
         ) => {
-          if (node.sourceCodeLocation!.startOffset == 0)
+          if (node.sourceCodeLocation!.startOffset === 0)
             return node.sourceCodeLocation!.startOffset
+
+          // Gets the offset for the start of the line that the node is on
           const lineStartOffset =
             node.sourceCodeLocation!.startOffset -
             node.sourceCodeLocation!.startCol
