@@ -1,5 +1,6 @@
-// Intentionally empty so the CJS exports is untyped. We can't share the ESM types
-// as it causes an incorrect error message on TypeScript side. More context:
-// https://github.com/vitejs/vite/issues/11552#issuecomment-1564789056
+/**
+ * @deprecated The CJS build of Vite's Node API is deprecated. See https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+ */
+declare const module: any
 
-export {}
+export = module
