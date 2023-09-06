@@ -315,13 +315,22 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
               ? `${encodedJs}
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([${
+            workerType === 'classic'
+              ? ''
+              : // `URL` is always available, in `Worker[type="module"]`
+                `'URL.revokeObjectURL(import.meta.url);'+`
+          }atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
             try {
+
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL, { name: options?.name })
+              return new ${workerConstructor}(objURL, {
+                ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+                name: options?.name
+              })
             } catch(e) {
               return new ${workerConstructor}(
                 "data:application/javascript;base64," + encodedJs,
@@ -330,8 +339,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                   name: options?.name
                 }
               );
-            } finally {
+            }${
+              workerType === 'classic'
+                ? ` finally {
               objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }`
+                : ''
             }
           }`
               : `${encodedJs}
