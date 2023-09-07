@@ -324,13 +324,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           export default function WorkerWrapper(options) {
             let objURL;
             try {
-
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL, {
+              const worker = new ${workerConstructor}(objURL, {
                 ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
                 name: options?.name
-              })
+              });
+              worker.addEventListener("error", () => {
+                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              });
+              return worker;
             } catch(e) {
               return new ${workerConstructor}(
                 "data:application/javascript;base64," + encodedJs,
