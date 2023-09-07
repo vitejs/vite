@@ -766,10 +766,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const { importedCss } = (bundle[file] as OutputChunk)
-                  .viteMetadata!
+                const { importedCss, importedAssets } = (
+                  bundle[file] as OutputChunk
+                ).viteMetadata!
                 importedCss.forEach((file) =>
                   chunk.viteMetadata!.importedCss.add(file),
+                )
+                importedAssets.forEach((file) =>
+                  chunk.viteMetadata!.importedAssets.add(file),
                 )
                 return false
               }
