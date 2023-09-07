@@ -653,13 +653,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
           generatedAssets
             .get(config)!
-            .set(referenceId, {
-              originalName,
-              isEntry,
-              importedAssets: isPureCssChunk
-                ? chunk.viteMetadata?.importedAssets
-                : undefined,
-            })
+            .set(referenceId, { originalName, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
 
           if (emitTasksLength === emitTasks.length) {

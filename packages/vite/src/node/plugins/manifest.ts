@@ -63,10 +63,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         return filteredImports
       }
 
-      function createChunk(
-        chunk: OutputChunk,
-        fileNameToAssetMeta: Map<string, GeneratedAssetMeta>,
-      ): ManifestChunk {
+      function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
         }
@@ -95,19 +92,11 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (chunk.viteMetadata?.importedAssets.size) {
-          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
-        }
-
         if (chunk.viteMetadata?.importedCss.size) {
           manifestChunk.css = [...chunk.viteMetadata.importedCss]
-          manifestChunk.css.forEach((cssFile) => {
-            const asset = fileNameToAssetMeta.get(cssFile)
-            if (asset?.importedAssets) {
-              manifestChunk.assets ||= []
-              manifestChunk.assets.push(...asset.importedAssets)
-            }
-          })
+        }
+        if (chunk.viteMetadata?.importedAssets.size) {
+          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
         }
 
         return manifestChunk
@@ -138,10 +127,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
-          manifest[getChunkName(chunk)] = createChunk(
-            chunk,
-            fileNameToAssetMeta,
-          )
+          manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
           // Add every unique asset to the manifest, keyed by its original name
           const assetMeta = fileNameToAssetMeta.get(chunk.fileName)
