@@ -95,10 +95,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        let assetSet: Set<string> | null = null
-
         if (chunk.viteMetadata?.importedAssets.size) {
-          assetSet = chunk.viteMetadata.importedAssets
+          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
         }
 
         if (chunk.viteMetadata?.importedCss.size) {
@@ -106,13 +104,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           manifestChunk.css.forEach((cssFile) => {
             const asset = fileNameToAssetMeta.get(cssFile)
             if (asset?.importedAssets) {
-              assetSet = new Set([...(assetSet || []), ...asset.importedAssets])
+              manifestChunk.assets ||= []
+              manifestChunk.assets.push(...asset.importedAssets)
             }
           })
-        }
-
-        if (assetSet?.size) {
-          manifestChunk.assets = [...assetSet]
         }
 
         return manifestChunk
