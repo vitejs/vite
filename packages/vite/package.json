@@ -28,6 +28,9 @@
       "types": "./client.d.ts"
     },
     "./dist/client/*": "./dist/client/*",
+    "./types/*": {
+      "types": "./types/*"
+    },
     "./package.json": "./package.json"
   },
   "files": [

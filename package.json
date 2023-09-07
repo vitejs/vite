@@ -119,17 +119,22 @@
         "peerDependencies": {
           "acorn": "*"
         }
-      },
-      "postcss-load-config": {
-        "peerDependencies": {
-          "postcss": "*"
-        }
       }
     },
     "patchedDependencies": {
       "dotenv-expand@9.0.0": "patches/dotenv-expand@9.0.0.patch",
       "chokidar@3.5.3": "patches/chokidar@3.5.3.patch",
       "sirv@2.0.3": "patches/sirv@2.0.3.patch"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "vite": "*"
+      },
+      "ignoreMissing": [
+        "@algolia/client-search",
+        "postcss",
+        "search-insights"
+      ]
     }
   },
   "stackblitz": {
