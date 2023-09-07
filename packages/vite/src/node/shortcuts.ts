@@ -58,9 +58,8 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
           server.httpServer.close()
         }
       } finally {
-        process.exit(1)
+        process.exit()
       }
-      return
     }
 
     if (actionRunning) return
