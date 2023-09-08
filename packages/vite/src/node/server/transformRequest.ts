@@ -317,13 +317,15 @@ async function loadAndTransform(
   // transform
   let result: TransformResult | null = null
 
-  const transformCacheKey = pluginContainer.serveTransformCacheGetKey({
-    id,
-    file,
-    url,
-    code,
-    ssr,
-  })
+  const transformCacheKey = isIncludedInLoadCache
+    ? pluginContainer.serveTransformCacheGetKey({
+        id,
+        file,
+        url,
+        code,
+        ssr,
+      })
+    : null
   const isIncludedInTransformCache = transformCacheKey != null
 
   if (isIncludedInTransformCache) {
