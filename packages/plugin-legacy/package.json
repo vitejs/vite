@@ -42,7 +42,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.22.9",
+    "@babel/core": "^7.22.17",
     "@babel/preset-env": "^7.22.9",
     "browserslist": "^4.21.10",
     "core-js": "^3.32.0",
