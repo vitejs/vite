@@ -6,7 +6,12 @@ export type SSRFormat = 'esm' | 'cjs'
 export type SsrDepOptimizationOptions = DepOptimizationConfig
 
 export interface SSROptions {
-  noExternal?: string | RegExp | (string | RegExp)[] | true
+  noExternal?:
+    | string
+    | ((id: string) => boolean)
+    | RegExp
+    | (string | RegExp)[]
+    | true
   external?: string[]
   /**
    * Define the target for the ssr build. The browser field in package.json

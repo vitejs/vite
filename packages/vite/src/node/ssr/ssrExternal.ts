@@ -78,9 +78,13 @@ export function cjsSsrResolveExternals(
 
   let externals = [...ssrExternals]
   if (ssrConfig?.noExternal) {
-    externals = externals.filter(
-      createFilter(undefined, ssrConfig.noExternal, { resolve: false }),
-    )
+    if (typeof ssrConfig.noExternal === 'function') {
+      externals = externals.filter(ssrConfig.noExternal)
+    } else {
+      externals = externals.filter(
+        createFilter(undefined, ssrConfig.noExternal, { resolve: false }),
+      )
+    }
   }
   return externals
 }
@@ -114,11 +118,13 @@ export function createIsConfiguredAsSsrExternal(
 ): (id: string, importer?: string) => boolean {
   const { ssr, root } = config
   const noExternal = ssr?.noExternal
-  const noExternalFilter =
-    noExternal !== 'undefined' &&
-    typeof noExternal !== 'boolean' &&
-    createFilter(undefined, noExternal, { resolve: false })
 
+  let noExternalFilter: (id: any) => boolean | undefined
+  if (typeof noExternal === 'function') {
+    noExternalFilter = noExternal
+  } else if (noExternal !== 'undefined' && typeof noExternal !== 'boolean') {
+    noExternalFilter = createFilter(undefined, noExternal, { resolve: false })
+  }
   const resolveOptions: InternalResolveOptions = {
     ...config.resolve,
     root,

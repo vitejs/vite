@@ -283,12 +283,18 @@ export async function optimizeServerSsrDeps(
     alsoInclude = arraify(noExternal).filter(
       (ne) => typeof ne === 'string',
     ) as string[]
-    noExternalFilter =
-      noExternal === true
-        ? (dep: unknown) => true
-        : createFilter(undefined, exclude, {
-            resolve: false,
-          })
+    if (noExternal === true) {
+      noExternalFilter = (dep: unknown) => true
+    } else {
+      const excludeFilter = createFilter(undefined, exclude, {
+        resolve: false,
+      })
+      if (typeof noExternal === 'function') {
+        noExternalFilter = (dep: any) => excludeFilter(dep) && noExternal(dep)
+      } else {
+        noExternalFilter = excludeFilter
+      }
+    }
   }
 
   const deps: Record<string, string> = {}
