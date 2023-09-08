@@ -124,6 +124,13 @@ export type {
 } from 'types/importGlob'
 export type { ChunkMetadata } from 'types/metadata'
 
+export type {
+  CacheLoadReadResult,
+  CacheLoadWriteData,
+  CacheTransformReadResult,
+  CacheTransformWriteData,
+} from './server/cache'
+
 // dep types
 export type {
   AliasOptions,

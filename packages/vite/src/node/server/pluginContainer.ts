@@ -82,8 +82,15 @@ import {
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
+import type { DepOptimizationMetadata } from '../optimizer'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
+import type {
+  CacheLoadReadResult,
+  CacheLoadWriteData,
+  CacheTransformReadResult,
+  CacheTransformWriteData,
+} from './cache'
 
 const noop = () => {}
 
@@ -139,6 +146,36 @@ export interface PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null>
+  depsOptimized(metadata: DepOptimizationMetadata): void
+  serveLoadCacheGetKey(options: {
+    id: string
+    file: string
+    url: string
+    ssr: boolean
+  }): string | null
+  serveLoadCacheRead(options: {
+    cacheKey: string
+    id: string
+    file: string
+    url: string
+    ssr: boolean
+  }): Promise<CacheLoadReadResult | null>
+  serveLoadCacheWrite(data: CacheLoadWriteData): Promise<void>
+  serveTransformCacheGetKey(options: {
+    id: string
+    file: string
+    url: string
+    code: string
+    ssr: boolean
+  }): string | null
+  serveTransformCacheRead(options: {
+    cacheKey: string
+    id: string
+    file: string
+    url: string
+    ssr: boolean
+  }): Promise<CacheTransformReadResult | null>
+  serveTransformCacheWrite(data: CacheTransformWriteData): Promise<void>
   close(): Promise<void>
 }
 
@@ -648,6 +685,119 @@ export async function createPluginContainer(
           () => [container.options as NormalizedInputOptions],
         ),
       )
+    },
+
+    depsOptimized(metadata) {
+      for (const plugin of getSortedPlugins('depsOptimized')) {
+        if (!plugin.depsOptimized) continue
+        const handler =
+          'handler' in plugin.depsOptimized
+            ? plugin.depsOptimized.handler
+            : plugin.depsOptimized
+        handler(metadata)
+      }
+    },
+
+    serveLoadCacheGetKey(options) {
+      const { id, file, url, ssr } = options
+      const ctx = new Context()
+      ctx.ssr = !!ssr
+      for (const plugin of getSortedPlugins('serveLoadCacheGetKey')) {
+        if (!plugin.serveLoadCacheGetKey) continue
+        const handler =
+          'handler' in plugin.serveLoadCacheGetKey
+            ? plugin.serveLoadCacheGetKey.handler
+            : plugin.serveLoadCacheGetKey
+        const result = handler.call(ctx as any, id, { file, ssr, url })
+        if (result != null) {
+          return result
+        }
+      }
+      return null
+    },
+
+    async serveLoadCacheRead(options) {
+      const { cacheKey, id, file, url, ssr } = options
+      const ctx = new Context()
+      ctx.ssr = !!ssr
+      for (const plugin of getSortedPlugins('serveLoadCacheRead')) {
+        if (!plugin.serveLoadCacheRead) continue
+        const handler =
+          'handler' in plugin.serveLoadCacheRead
+            ? plugin.serveLoadCacheRead.handler
+            : plugin.serveLoadCacheRead
+        const result = await handleHookPromise(
+          handler.call(ctx as any, cacheKey, { id, file, ssr, url }),
+        )
+        if (result != null) {
+          return result
+        }
+      }
+      return null
+    },
+
+    async serveLoadCacheWrite(data) {
+      const ctx = new Context()
+      ctx.ssr = !!data.ssr
+      for (const plugin of getSortedPlugins('serveLoadCacheWrite')) {
+        if (!plugin.serveLoadCacheWrite) continue
+        const handler =
+          'handler' in plugin.serveLoadCacheWrite
+            ? plugin.serveLoadCacheWrite.handler
+            : plugin.serveLoadCacheWrite
+        await handleHookPromise(handler.call(ctx as any, data))
+      }
+    },
+
+    serveTransformCacheGetKey(options) {
+      const { id, file, url, code, ssr } = options
+      const ctx = new Context()
+      ctx.ssr = !!ssr
+      for (const plugin of getSortedPlugins('serveTransformCacheGetKey')) {
+        if (!plugin.serveTransformCacheGetKey) continue
+        const handler =
+          'handler' in plugin.serveTransformCacheGetKey
+            ? plugin.serveTransformCacheGetKey.handler
+            : plugin.serveTransformCacheGetKey
+        const result = handler.call(ctx as any, id, { file, ssr, url, code })
+        if (result != null) {
+          return result
+        }
+      }
+      return null
+    },
+
+    async serveTransformCacheRead(options) {
+      const { cacheKey, id, file, url, ssr } = options
+      const ctx = new Context()
+      ctx.ssr = !!ssr
+      for (const plugin of getSortedPlugins('serveTransformCacheRead')) {
+        if (!plugin.serveTransformCacheRead) continue
+        const handler =
+          'handler' in plugin.serveTransformCacheRead
+            ? plugin.serveTransformCacheRead.handler
+            : plugin.serveTransformCacheRead
+        const result = await handleHookPromise(
+          handler.call(ctx as any, cacheKey, { id, file, ssr, url }),
+        )
+        if (result != null) {
+          return result
+        }
+      }
+      return null
+    },
+
+    async serveTransformCacheWrite(data) {
+      const ctx = new Context()
+      ctx.ssr = !!data.ssr
+      for (const plugin of getSortedPlugins('serveTransformCacheWrite')) {
+        if (!plugin.serveTransformCacheWrite) continue
+        const handler =
+          'handler' in plugin.serveTransformCacheWrite
+            ? plugin.serveTransformCacheWrite.handler
+            : plugin.serveTransformCacheWrite
+        await handleHookPromise(handler.call(ctx as any, data))
+      }
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
