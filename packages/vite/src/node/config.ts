@@ -786,8 +786,7 @@ export async function resolveConfig(
         } instead`,
       ),
     )
-  }
-  if (middlewareMode === 'html') {
+  } else if (middlewareMode === 'html') {
     logger.warn(
       colors.yellow(
         `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`,
