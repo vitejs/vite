@@ -410,9 +410,7 @@ export function resolveBuildOptions(
   // normalize false string into actual false
   if ((resolved.minify as string) === 'false') {
     resolved.minify = false
-  }
-
-  if (resolved.minify === true) {
+  } else if (resolved.minify === true) {
     resolved.minify = 'esbuild'
   }
 
