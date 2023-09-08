@@ -33,6 +33,9 @@
       "types": "./client.d.ts"
     },
     "./dist/client/*": "./dist/client/*",
+    "./types/*": {
+      "types": "./types/*"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -142,7 +145,7 @@
     "ws": "^8.13.0"
   },
   "peerDependencies": {
-    "@types/node": ">= 14",
+    "@types/node": "^18.0.0 || >=20.0.0",
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",
