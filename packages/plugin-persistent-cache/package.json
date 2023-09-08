@@ -46,6 +46,7 @@
     "vite": "^4.0.0"
   },
   "devDependencies": {
+    "debug": "^4.3.4",
     "picocolors": "^1.0.0",
     "vite": "workspace:*"
   }
