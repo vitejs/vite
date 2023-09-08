@@ -27,6 +27,12 @@ If you're unsure where the warning is coming from, you can run your script with 
 VITE_CJS_TRACE=true vite dev
 ```
 
+If you'd like to temporarily ignore the warning, you can run your script with the `VITE_CJS_IGNORE_WARNING=true` flag:
+
+```bash
+VITE_CJS_IGNORE_WARNING=true vite dev
+```
+
 ## CLI
 
 ### `Error: Cannot find module 'C:\foo\bar&baz\vite\bin\vite.js'`

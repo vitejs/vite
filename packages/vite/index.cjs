@@ -36,6 +36,7 @@ unsupportedCJS.forEach((name) => {
 })
 
 function warnCjsUsage() {
+  if (process.env.VITE_CJS_IGNORE_WARNING) return
   const yellow = (str) => `\u001b[33m${str}\u001b[39m`
   const log = process.env.VITE_CJS_TRACE ? console.trace : console.warn
   log(
