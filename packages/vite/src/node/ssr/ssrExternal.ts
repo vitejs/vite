@@ -138,7 +138,7 @@ export function createIsConfiguredAsSsrExternal(
       return !!tryNodeResolve(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
-        // unresolveable from root (which would be unresolvable from output bundles also)
+        // unresolvable from root (which would be unresolvable from output bundles also)
         config.command === 'build' ? undefined : importer,
         resolveOptions,
         ssr?.target === 'webworker',
