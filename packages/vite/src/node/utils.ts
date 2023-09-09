@@ -1186,7 +1186,7 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
 
 /**
  * Determine if a file is being requested with the correct case, to ensure
- * consistent behaviour between dev and prod and across operating systems.
+ * consistent behavior between dev and prod and across operating systems.
  */
 export function shouldServeFile(filePath: string, root: string): boolean {
   // can skip case check on Linux
