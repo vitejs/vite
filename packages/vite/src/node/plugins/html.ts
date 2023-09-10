@@ -329,7 +329,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (node.sourceCodeLocation!.startOffset === 0)
             return node.sourceCodeLocation!.startOffset
 
-          // Gets the offset for the start of the line that the node is on
+          // Gets the offset for the start of the line including the
+          // newline trailing the previous node
           const lineStartOffset =
             node.sourceCodeLocation!.startOffset -
             node.sourceCodeLocation!.startCol
