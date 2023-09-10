@@ -19,15 +19,11 @@ import type {
   WatcherOptions,
 } from 'rollup'
 import type { Terser } from 'dep-types/terser'
-import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
-import { buildReporterPlugin } from './plugins/reporter'
-import { buildEsbuildPlugin } from './plugins/esbuild'
-import { terserPlugin } from './plugins/terser'
 import {
   asyncFlatten,
   copyDir,
@@ -37,7 +33,6 @@ import {
   requireResolveFromRootWithFallback,
   withTrailingSlash,
 } from './utils'
-import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
@@ -45,22 +40,18 @@ import {
   cjsShouldExternalizeForSSR,
   cjsSsrResolveExternals,
 } from './ssr/ssrExternal'
-import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
 import {
   findKnownImports,
   getDepsCacheDir,
   initDepsOptimizer,
 } from './optimizer'
-import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
-import { webWorkerPostPlugin } from './plugins/worker'
 
 export interface BuildOptions {
   /**
@@ -434,8 +425,16 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      ...(options.watch ? [ensureWatchPlugin()] : []),
-      ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
+      ...(options.watch
+        ? [(await import('./plugins/ensureWatch')).ensureWatchPlugin()]
+        : []),
+      ...(usePluginCommonjs
+        ? [
+            (await import('@rollup/plugin-commonjs')).default(
+              options.commonjsOptions,
+            ),
+          ]
+        : []),
       dataURIPlugin(),
       ...((
         await asyncFlatten(
@@ -444,20 +443,34 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             : [rollupOptionsPlugins],
         )
       ).filter(Boolean) as Plugin[]),
-      ...(config.isWorker ? [webWorkerPostPlugin()] : []),
+      ...(config.isWorker
+        ? [(await import('./plugins/worker')).webWorkerPostPlugin()]
+        : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),
-      ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
-      ...(options.minify ? [terserPlugin(config)] : []),
+      ...(config.esbuild !== false
+        ? [(await import('./plugins/esbuild')).buildEsbuildPlugin(config)]
+        : []),
+      ...(options.minify
+        ? [(await import('./plugins/terser')).terserPlugin(config)]
+        : []),
       ...(!config.isWorker
         ? [
-            ...(options.manifest ? [manifestPlugin(config)] : []),
-            ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-            buildReporterPlugin(config),
+            ...(options.manifest
+              ? [(await import('./plugins/manifest')).manifestPlugin(config)]
+              : []),
+            ...(options.ssrManifest
+              ? [
+                  (await import('./ssr/ssrManifestPlugin')).ssrManifestPlugin(
+                    config,
+                  ),
+                ]
+              : []),
+            (await import('./plugins/reporter')).buildReporterPlugin(config),
           ]
         : []),
-      loadFallbackPlugin(),
+      (await import('./plugins/loadFallback')).loadFallbackPlugin(),
     ],
   }
 }
