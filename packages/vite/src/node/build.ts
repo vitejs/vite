@@ -41,6 +41,7 @@ import {
   cjsSsrResolveExternals,
 } from './ssr/ssrExternal'
 import type { DepOptimizationMetadata } from './optimizer'
+import { loadFallbackPlugin } from './plugins/loadFallback'
 import {
   findKnownImports,
   getDepsCacheDir,
@@ -470,7 +471,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             (await import('./plugins/reporter')).buildReporterPlugin(config),
           ]
         : []),
-      (await import('./plugins/loadFallback')).loadFallbackPlugin(),
+      loadFallbackPlugin(),
     ],
   }
 }
