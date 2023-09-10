@@ -1,3 +1,7 @@
+---
+outline: [2, 3]
+---
+
 # Plugin API
 
 Vite plugins extends Rollup's well-designed plugin interface with a few extra Vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
