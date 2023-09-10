@@ -16,7 +16,7 @@ Check out [Using Plugins](../guide/using-plugins) for information on how to use 
 
 - Provides Vue 3 JSX support (via [dedicated Babel transform](https://github.com/vuejs/jsx-next)).
 
-### [@vitejs/plugin-react](https://github.com/vitejs/vite/tree/main/packages/plugin-react)
+### [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react)
 
 - Provides all-in-one React Support.
 
