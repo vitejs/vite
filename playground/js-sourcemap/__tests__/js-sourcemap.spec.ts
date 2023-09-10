@@ -18,7 +18,11 @@ if (!isBuild) {
       {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
         "sources": [
-          "/foo.js",
+          "foo.js",
+        ],
+        "sourcesContent": [
+          "export const foo = 'foo'
+      ",
         ],
         "version": 3,
       }
