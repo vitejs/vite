@@ -1,4 +1,8 @@
-import type { CacheTransformReadResult, Plugin } from 'vite'
+import type {
+  CacheTransformReadResult,
+  DepOptimizationMetadata,
+  Plugin,
+} from 'vite'
 import type {
   DepsMetadataManager,
   ManifestManager,
@@ -57,6 +61,8 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
         !file.includes(resolvedOptions.cacheDir) &&
         // Don't cache vite client
         !file.includes('vite/dist/client') &&
+        // Don't cache optimized deps
+        !id.includes('.vite/deps') &&
         (!resolvedOptions?.exclude || !resolvedOptions.exclude(url))
 
       if (isIncluded) {
@@ -147,7 +153,16 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
     },
 
     async depsOptimized(metadata) {
-      await depsMetadataManager.updateDepsMetadata(metadata)
+      // Clone the metadata to prevent it being mutated directly by vite
+      // (example: reload-less deps optimization)
+      const optimized: DepOptimizationMetadata['optimized'] = {}
+      for (const id in metadata.optimized) {
+        const dep = metadata.optimized[id]
+        optimized[id] = {
+          ...dep,
+        }
+      }
+      await depsMetadataManager.updateDepsMetadata(optimized)
     },
   }
 }

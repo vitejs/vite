@@ -14,9 +14,11 @@ export function useDepsMetadata({
 }: UseDepsMetadataOptions): DepsMetadataManager {
   // Optimized deps
 
-  let depsMetadata: DepOptimizationMetadata | null = null
+  let depsMetadata: DepOptimizationMetadata['optimized'] | null = null
 
-  async function updateDepsMetadata(metadata: DepOptimizationMetadata) {
+  async function updateDepsMetadata(
+    metadata: DepOptimizationMetadata['optimized'],
+  ) {
     depsMetadata = metadata
 
     // Update existing cache files
@@ -27,13 +29,15 @@ export function useDepsMetadata({
           // Gather code changes
           const optimizedDeps: [string, string][] = []
           for (const m of entry.fullData.importedModules) {
-            for (const depId in metadata.optimized) {
-              const dep = metadata.optimized[depId]
+            for (const depId in metadata) {
+              const dep = metadata[depId]
               if (dep.file === m.file) {
                 optimizedDeps.push([
                   m.url,
-                  m.url.replace(/v=\w+/, `v=${metadata.browserHash}`),
+                  m.url.replace(/v=\w+/, `v=${dep.browserHash}`),
                 ])
+                m.id = m.id.replace(/v=\w+/, `v=${dep.browserHash}`)
+                m.url = m.url.replace(/v=\w+/, `v=${dep.browserHash}`)
                 break
               }
             }

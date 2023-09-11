@@ -41,7 +41,7 @@ export async function write({
       'c-' + data.cacheKey,
     )
     const fileMap = data.map ? fileCode + '-map' : undefined
-    debugLog(`write ${data.cacheKey} to ${fileCode}`)
+    debugLog(`write ${data.cacheKey} (${data.id}) to ${fileCode}`)
 
     let wasPatched = false
 
@@ -55,12 +55,12 @@ export async function write({
     if (depsMetadata && data.mod) {
       for (const m of data.mod.importedModules) {
         if (m.file) {
-          for (const depId in depsMetadata.optimized) {
-            const dep = depsMetadata.optimized[depId]
+          for (const depId in depsMetadata) {
+            const dep = depsMetadata[depId]
             if (dep.file === m.file) {
               code = code.replaceAll(
                 m.url,
-                m.url.replace(/v=\w+/, `v=${depsMetadata.browserHash}`),
+                m.url.replace(/v=\w+/, `v=${dep.browserHash}`),
               )
               wasPatched = true
               break

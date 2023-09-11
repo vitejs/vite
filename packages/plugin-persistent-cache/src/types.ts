@@ -64,6 +64,8 @@ export interface ManifestManager {
 }
 
 export interface DepsMetadataManager {
-  getDepsMetadata: () => DepOptimizationMetadata | null
-  updateDepsMetadata: (metadata: DepOptimizationMetadata) => Promise<void>
+  getDepsMetadata: () => DepOptimizationMetadata['optimized'] | null
+  updateDepsMetadata: (
+    metadata: DepOptimizationMetadata['optimized'],
+  ) => Promise<void>
 }

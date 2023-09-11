@@ -31,7 +31,7 @@ export async function read({
       return null
     }
 
-    debugLog(`read ${key} from ${entry.fileCode}`)
+    debugLog(`read ${key} (${entry.id}) from ${entry.fileCode}`)
     const code = await fs.promises.readFile(entry.fileCode, 'utf8')
     const map =
       entry.fileMap && fs.existsSync(entry.fileMap)
