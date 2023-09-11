@@ -145,6 +145,10 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
         patchedDuringCurrentSession,
       })
     },
+
+    async depsOptimized(metadata) {
+      await depsMetadataManager.updateDepsMetadata(metadata)
+    },
   }
 }
 
