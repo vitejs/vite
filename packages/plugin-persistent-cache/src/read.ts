@@ -27,11 +27,16 @@ export async function read({
   }
 
   try {
+    if (!fs.existsSync(entry.fileCode)) {
+      return null
+    }
+
     debugLog(`read ${key} from ${entry.fileCode}`)
     const code = await fs.promises.readFile(entry.fileCode, 'utf8')
-    const map = entry.fileMap
-      ? JSON.parse(await fs.promises.readFile(entry.fileMap, 'utf8'))
-      : undefined
+    const map =
+      entry.fileMap && fs.existsSync(entry.fileMap)
+        ? JSON.parse(await fs.promises.readFile(entry.fileMap, 'utf8'))
+        : undefined
 
     return {
       code,
