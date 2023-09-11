@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "5.0.0-beta.0",
+  "version": "5.0.0-beta.1",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -80,7 +80,7 @@
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
     "@babel/parser": "^7.22.7",
-    "@babel/types": "^7.22.5",
+    "@babel/types": "^7.22.17",
     "@jridgewell/trace-mapping": "^0.3.18",
     "@rollup/plugin-alias": "^4.0.4",
     "@rollup/plugin-commonjs": "^25.0.3",
