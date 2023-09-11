@@ -11,6 +11,7 @@ import {
   page,
   removeFile,
   untilBrowserLogAfter,
+  untilUpdated,
   viteTestUrl,
   withRetry,
 } from '~utils'
@@ -48,7 +49,7 @@ const allResult = {
   '/dir/baz.json': json,
   '/dir/foo.css': isBuild
     ? {
-        default: '.foo{color:#00f}\n',
+        default: '.foo{color:#00f}',
       }
     : {
         default: '.foo {\n  color: blue;\n}\n',
@@ -131,6 +132,12 @@ test('unassigned import processes', async () => {
   )
 })
 
+test('import glob in package', async () => {
+  expect(await page.textContent('.in-package')).toBe(
+    JSON.stringify(['/pkg-pages/foo.js']),
+  )
+})
+
 if (!isBuild) {
   test('hmr for adding/removing files', async () => {
     const resultElement = page.locator('.result')
@@ -177,6 +184,34 @@ if (!isBuild) {
       const actualRemove = await resultElement.textContent()
       expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
     })
+  })
+
+  test('no hmr for adding/removing files', async () => {
+    let request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
+    addFile('nohmr.js', '')
+    let response = await request.catch(() => ({ status: () => -1 }))
+    expect(response.status()).toBe(-1)
+
+    request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
+    removeFile('nohmr.js')
+    response = await request.catch(() => ({ status: () => -1 }))
+    expect(response.status()).toBe(-1)
+  })
+
+  test('hmr for adding/removing files in package', async () => {
+    const resultElement = page.locator('.in-package')
+
+    addFile('pkg-pages/bar.js', '// empty')
+    await untilUpdated(
+      () => resultElement.textContent(),
+      JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
+    )
+
+    removeFile('pkg-pages/bar.js')
+    await untilUpdated(
+      () => resultElement.textContent(),
+      JSON.stringify(['/pkg-pages/foo.js']),
+    )
   })
 }
 

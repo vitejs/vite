@@ -132,7 +132,7 @@ export interface PluginContainer {
       inMap?: SourceDescription['map']
       ssr?: boolean
     },
-  ): Promise<{ code: string; map: SourceMap | null }>
+  ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
@@ -481,7 +481,7 @@ export async function createPluginContainer(
         typeof err.loc?.column === 'number'
       ) {
         const rawSourceMap = ctx._getCombinedSourcemap()
-        if (rawSourceMap) {
+        if (rawSourceMap && 'version' in rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
           const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
@@ -525,7 +525,7 @@ export async function createPluginContainer(
     originalCode: string
     originalSourcemap: SourceMap | null = null
     sourcemapChain: NonNullable<SourceDescription['map']>[] = []
-    combinedMap: SourceMap | null = null
+    combinedMap: SourceMap | { mappings: '' } | null = null
 
     constructor(filename: string, code: string, inMap?: SourceMap | string) {
       super()
@@ -540,7 +540,7 @@ export async function createPluginContainer(
       }
     }
 
-    _getCombinedSourcemap(createIfNull = false) {
+    _getCombinedSourcemap() {
       if (
         debugSourcemapCombine &&
         debugSourcemapCombineFilter &&
@@ -553,34 +553,36 @@ export async function createPluginContainer(
       }
 
       let combinedMap = this.combinedMap
+      // { mappings: '' }
+      if (
+        combinedMap &&
+        !('version' in combinedMap) &&
+        combinedMap.mappings === ''
+      ) {
+        this.sourcemapChain.length = 0
+        return combinedMap
+      }
+
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
         if (!('version' in (m as SourceMap))) {
+          // { mappings: '' }
+          if ((m as SourceMap).mappings === '') {
+            combinedMap = { mappings: '' }
+            break
+          }
           // empty, nullified source map
-          combinedMap = this.combinedMap = null
-          this.sourcemapChain.length = 0
+          combinedMap = null
           break
         }
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
           combinedMap = combineSourcemaps(cleanUrl(this.filename), [
-            {
-              ...(m as RawSourceMap),
-              sourcesContent: combinedMap.sourcesContent,
-            },
+            m as RawSourceMap,
             combinedMap as RawSourceMap,
           ]) as SourceMap
         }
-      }
-      if (!combinedMap) {
-        return createIfNull
-          ? new MagicString(this.originalCode).generateMap({
-              includeContent: true,
-              hires: true,
-              source: cleanUrl(this.filename),
-            })
-          : null
       }
       if (combinedMap !== this.combinedMap) {
         this.combinedMap = combinedMap
@@ -590,7 +592,15 @@ export async function createPluginContainer(
     }
 
     getCombinedSourcemap() {
-      return this._getCombinedSourcemap(true) as SourceMap
+      const map = this._getCombinedSourcemap()
+      if (!map || (!('version' in map) && map.mappings === '')) {
+        return new MagicString(this.originalCode).generateMap({
+          includeContent: true,
+          hires: 'boundary',
+          source: cleanUrl(this.filename),
+        })
+      }
+      return map
     }
   }
 
@@ -652,7 +662,7 @@ export async function createPluginContainer(
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of getSortedPlugins('resolveId')) {
-        if (closed) throwClosedServerError()
+        if (closed && !ssr) throwClosedServerError()
         if (!plugin.resolveId) continue
         if (skip?.has(plugin)) continue
 
@@ -717,7 +727,7 @@ export async function createPluginContainer(
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('load')) {
-        if (closed) throwClosedServerError()
+        if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler =
@@ -741,7 +751,7 @@ export async function createPluginContainer(
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('transform')) {
-        if (closed) throwClosedServerError()
+        if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id

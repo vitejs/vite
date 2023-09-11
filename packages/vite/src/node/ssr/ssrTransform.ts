@@ -38,7 +38,7 @@ const hashbangRE = /^#!.*\n/
 
 export async function ssrTransform(
   code: string,
-  inMap: SourceMap | null,
+  inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
   options?: TransformOptions,
@@ -51,7 +51,7 @@ export async function ssrTransform(
 
 async function ssrTransformJSON(
   code: string,
-  inMap: SourceMap | null,
+  inMap: SourceMap | { mappings: '' } | null,
 ): Promise<TransformResult> {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
@@ -63,7 +63,7 @@ async function ssrTransformJSON(
 
 async function ssrTransformScript(
   code: string,
-  inMap: SourceMap | null,
+  inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
 ): Promise<TransformResult | null> {
@@ -274,20 +274,21 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: true })
-  if (inMap && inMap.mappings && inMap.sources.length > 0) {
-    map = combineSourcemaps(
-      url,
-      [
-        {
-          ...map,
-          sources: inMap.sources,
-          sourcesContent: inMap.sourcesContent,
-        } as RawSourceMap,
-        inMap as RawSourceMap,
-      ],
-      false,
-    ) as SourceMap
+  let map = s.generateMap({ hires: 'boundary' })
+  if (
+    inMap &&
+    inMap.mappings &&
+    'sources' in inMap &&
+    inMap.sources.length > 0
+  ) {
+    map = combineSourcemaps(url, [
+      {
+        ...map,
+        sources: inMap.sources,
+        sourcesContent: inMap.sourcesContent,
+      } as RawSourceMap,
+      inMap as RawSourceMap,
+    ]) as SourceMap
   } else {
     map.sources = [path.basename(url)]
     // needs to use originalCode instead of code

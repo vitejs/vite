@@ -255,10 +255,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const workerType = query['type']! as WorkerType
         let injectEnv = ''
 
+        const scriptPath = JSON.stringify(
+          path.posix.join(config.base, ENV_PUBLIC_PATH),
+        )
+
         if (workerType === 'classic') {
-          injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+          injectEnv = `importScripts(${scriptPath})\n`
         } else if (workerType === 'module') {
-          injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
+          injectEnv = `import ${scriptPath}\n`
         } else if (workerType === 'ignore') {
           if (isBuild) {
             injectEnv = ''
@@ -270,9 +274,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-        return {
-          code: injectEnv + raw,
+        if (injectEnv) {
+          const s = new MagicString(raw)
+          s.prepend(injectEnv)
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary' }),
+          }
         }
+        return
       }
       if (
         query == null ||
@@ -291,7 +301,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           ? 'module'
           : 'classic'
         : 'module'
-      const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+      const workerTypeOption = workerType === 'classic' ? undefined : 'module'
 
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
@@ -306,21 +316,33 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             workerConstructor === 'Worker'
               ? `${encodedJs}
           const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper() {
+          export default function WorkerWrapper(options) {
             let objURL;
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL)
+              return new ${workerConstructor}(objURL, { name: options?.name })
             } catch(e) {
-              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+              return new ${workerConstructor}(
+                "data:application/javascript;base64," + encodedJs,
+                {
+                  ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+                  name: options?.name
+                }
+              );
             } finally {
               objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
             }
           }`
               : `${encodedJs}
-          export default function WorkerWrapper() {
-            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          export default function WorkerWrapper(options) {
+            return new ${workerConstructor}(
+              "data:application/javascript;base64," + encodedJs,
+              {
+                ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+                name: options?.name
+              }
+            );
           }
           `
 
@@ -346,10 +368,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       return {
-        code: `export default function WorkerWrapper() {
-          return new ${workerConstructor}(${JSON.stringify(
-          url,
-        )}${workerOptions})
+        code: `export default function WorkerWrapper(options) {
+          return new ${workerConstructor}(
+            ${JSON.stringify(url)},
+            {
+              ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+              name: options?.name
+            }
+          );
         }`,
         map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
       }
@@ -361,7 +387,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return (
           s && {
             code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null,
+            map: config.build.sourcemap
+              ? s.generateMap({ hires: 'boundary' })
+              : null,
           }
         )
       }

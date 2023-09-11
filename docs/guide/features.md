@@ -1,3 +1,7 @@
+---
+outline: [2, 3]
+---
+
 # Features
 
 At the very basic level, developing using Vite is not that much different from using a static file server. However, Vite provides many enhancements over native ESM imports to support various features that are typically seen in bundler-based setups.
@@ -86,7 +90,7 @@ But a few libraries haven't transitioned to this new default yet, including [`li
 - [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 
-If migrating your codebase to `"isolatedModules": true` is an unsurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
+If migrating your codebase to `"isolatedModules": true` is an insurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
 
 ### Client Types
 
@@ -264,11 +268,11 @@ Starting from Vite 4.4, there is experimental support for [Lightning CSS](https:
 npm add -D lightningcss
 ```
 
-If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightining CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
+If enabled, CSS files will be processed by Lightning CSS instead of PostCSS. To configure it, you can pass Lightning CSS options to the [`css.lightingcss`](../config/shared-options.md#css-lightningcss) config option.
 
 To configure CSS Modules, you'll use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).
 
-By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#css-minify).
+By default, Vite uses esbuild to minify CSS. Lightning CSS can also be used as the CSS minifier with [`build.cssMinify: 'lightningcss'`](../config/build-options.md#build-cssminify).
 
 ::: tip NOTE
 [CSS Pre-processors](#css-pre-processors) aren't supported when using Lightning CSS.
@@ -500,7 +504,8 @@ Note that variables only represent file names one level deep. If `file` is `'foo
 
 ## WebAssembly
 
-Pre-compiled `.wasm` files can be imported with `?init` - the default export will be an initialization function that returns a Promise of the wasm instance:
+Pre-compiled `.wasm` files can be imported with `?init`.
+The default export will be an initialization function that returns a Promise of the [`WebAssembly.Instance`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Instance):
 
 ```js
 import init from './example.wasm?init'
@@ -510,7 +515,7 @@ init().then((instance) => {
 })
 ```
 
-The init function can also take the `imports` object which is passed along to `WebAssembly.instantiate` as its second argument:
+The init function can also take an importObject which is passed along to [`WebAssembly.instantiate`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/instantiate) as its second argument:
 
 ```js
 init({
@@ -524,12 +529,53 @@ init({
 })
 ```
 
-In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be copied to the dist directory as an asset and fetched on-demand.
+In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be treated as a [static asset](./assets) and fetched on-demand.
 
-::: warning
+::: tip NOTE
 [ES Module Integration Proposal for WebAssembly](https://github.com/WebAssembly/esm-integration) is not currently supported.
 Use [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm) or other community plugins to handle this.
 :::
+
+### Accessing the WebAssembly Module
+
+If you need access to the `Module` object, e.g. to instantiate it multiple times, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset, and then perform the instantiation:
+
+```js
+import wasmUrl from 'foo.wasm?url'
+
+const main = async () => {
+  const responsePromise = fetch(wasmUrl)
+  const { module, instance } = await WebAssembly.instantiateStreaming(
+    responsePromise,
+  )
+  /* ... */
+}
+
+main()
+```
+
+### Fetching the module in Node.js
+
+In SSR, the `fetch()` happening as part of the `?init` import, may fail with `TypeError: Invalid URL`.
+See the issue [Support wasm in SSR](https://github.com/vitejs/vite/issues/8882).
+
+Here is an alternative, assuming the project base is the current directory:
+
+```js
+import wasmUrl from 'foo.wasm?url'
+import { readFile } from 'node:fs/promises'
+
+const main = async () => {
+  const resolvedUrl = (await import('./test/boot.test.wasm?url')).default
+  const buffer = await readFile('.' + resolvedUrl)
+  const { instance } = await WebAssembly.instantiate(buffer, {
+    /* ... */
+  })
+  /* ... */
+}
+
+main()
+```
 
 ## Web Workers
 
@@ -559,7 +605,7 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During dev this relies on [browser native support](https://caniuse.com/?search=module%20worker) (currently not supported in Firefox), but for the production build it is compiled away.
+The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During dev this relies on [browser native support](https://caniuse.com/?search=module%20worker), but for the production build it is compiled away.
 
 By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
 

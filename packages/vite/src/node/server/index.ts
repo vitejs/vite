@@ -40,8 +40,8 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
-import { bindShortcuts } from '../shortcuts'
-import type { BindShortcutsOptions } from '../shortcuts'
+import { bindCLIShortcuts } from '../shortcuts'
+import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -235,7 +235,7 @@ export interface ViteDevServer {
    */
   ssrTransform(
     code: string,
-    inMap: SourceMap | null,
+    inMap: SourceMap | { mappings: '' } | null,
     url: string,
     originalCode?: string,
   ): Promise<TransformResult | null>
@@ -272,6 +272,10 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
+   * Bind CLI shortcuts
+   */
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
+  /**
    * Restart the server.
    *
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
@@ -285,7 +289,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _importGlobMap: Map<string, string[][]>
+  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
    * Deps that are externalized
    * @internal
@@ -316,11 +320,8 @@ export interface ViteDevServer {
   _fsDenyGlob: Matcher
   /**
    * @internal
-   * Actually BindShortcutsOptions | undefined but api-extractor checks for
-   * export before trimming internal types :(
-   * And I don't want to add complexity to prePatchTypes for that
    */
-  _shortcutsOptions: any | undefined
+  _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
 }
 
 export interface ResolvedServerUrls {
@@ -385,7 +386,7 @@ export async function _createServer(
     resolvedUrls: null, // will be set on listen
     ssrTransform(
       code: string,
-      inMap: SourceMap | null,
+      inMap: SourceMap | { mappings: '' } | null,
       url: string,
       originalCode = code,
     ) {
@@ -464,9 +465,11 @@ export async function _createServer(
         closeHttpServer(),
       ])
       // Await pending requests. We throw early in transformRequest
-      // and in hooks if the server is closing, so the import analysis
-      // plugin stops pre-transforming static imports and this block
-      // is resolved sooner.
+      // and in hooks if the server is closing for non-ssr requests,
+      // so the import analysis plugin stops pre-transforming static
+      // imports and this block is resolved sooner.
+      // During SSR, we let pending requests finish to avoid exposing
+      // the server closed error to the users.
       while (server._pendingRequests.size > 0) {
         await Promise.allSettled(
           [...server._pendingRequests.values()].map(
@@ -490,6 +493,9 @@ export async function _createServer(
           'cannot print server URLs before server.listen is called.',
         )
       }
+    },
+    bindCLIShortcuts(options) {
+      bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
@@ -826,7 +832,7 @@ export function resolveServerOptions(
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
-  const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
+  const shortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
 
   let inlineConfig = server.config.inlineConfig
@@ -852,9 +858,7 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
-  // prevent new server `restart` function from calling
-  newServer._restartPromise = server._restartPromise
-
+  // Assign new server props to existing server instance
   Object.assign(server, newServer)
 
   const {
@@ -879,11 +883,8 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindShortcuts(newServer, shortcutsOptions)
+    bindCLIShortcuts(newServer, shortcutsOptions)
   }
-
-  // new server (the current server) can restart now
-  newServer._restartPromise = null
 }
 
 async function updateCjsSsrExternals(server: ViteDevServer) {

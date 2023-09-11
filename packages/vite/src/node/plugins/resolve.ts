@@ -21,6 +21,7 @@ import {
   createDebugger,
   deepImportRE,
   fsPathFromId,
+  getNpmPackageName,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -35,6 +36,7 @@ import {
   safeRealpathSync,
   slash,
   tryStatSync,
+  withTrailingSlash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
@@ -227,7 +229,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
+      if (
+        asSrc &&
+        id[0] === '/' &&
+        (rootInRoot || !id.startsWith(withTrailingSlash(root)))
+      ) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
@@ -250,7 +256,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (depsOptimizer?.isOptimizedDepFile(normalizedFsPath)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
-          if (!normalizedFsPath.match(DEP_VERSION_RE)) {
+          if (
+            !resolveOptions.isBuild &&
+            !normalizedFsPath.match(DEP_VERSION_RE)
+          ) {
             const browserHash = optimizedDepInfoFromFile(
               depsOptimizer.metadata,
               normalizedFsPath,
@@ -920,8 +929,10 @@ export async function tryOptimizedResolve(
 
     // lazily initialize idPkgDir
     if (idPkgDir == null) {
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) break
       idPkgDir = resolvePackageData(
-        id,
+        pkgName,
         importer,
         preserveSymlinks,
         packageCache,
@@ -933,7 +944,7 @@ export async function tryOptimizedResolve(
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src.startsWith(idPkgDir)) {
+    if (optimizedData.src.startsWith(withTrailingSlash(idPkgDir))) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }

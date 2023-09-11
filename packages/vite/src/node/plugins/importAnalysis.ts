@@ -44,6 +44,7 @@ import {
   timeFrom,
   transformStableResult,
   unwrapId,
+  withTrailingSlash,
   wrapId,
 } from '../utils'
 import { getDepOptimizationConfig } from '../config'
@@ -76,7 +77,7 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 const hasImportInQueryParamsRE = /[?&]import=?\b/
 
-const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
@@ -335,7 +336,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(root + '/')) {
+        if (resolved.id.startsWith(withTrailingSlash(root))) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
@@ -557,7 +558,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // record as safe modules
-            server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
+            // safeModulesPath should not include the base prefix.
+            // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
+            server?.moduleGraph.safeModulesPath.add(
+              fsPathFromUrl(stripBase(url, base)),
+            )
 
             if (url !== specifier) {
               let rewriteDone = false
@@ -668,7 +673,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 config.logger.error(e.message, { error: e })
               })
             }
-          } else if (!importer.startsWith(clientDir)) {
+          } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(
@@ -751,9 +756,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const isRelative = url[0] === '.'
         const [normalized] = await moduleGraph.resolveUrl(
-          isRelative ? toAbsoluteUrl(url) : url,
+          toAbsoluteUrl(url),
           ssr,
         )
         normalizedAcceptedUrls.add(normalized)
@@ -847,16 +851,17 @@ export function interopNamedImports(
     se: expEnd,
     d: dynamicIndex,
   } = importSpecifier
+  const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))` +
+        getLineBreaks(exp),
       { contentOnly: true },
     )
   } else {
-    const exp = source.slice(expStart, expEnd)
     const rawUrl = source.slice(start, end)
     const rewritten = transformCjsImport(
       exp,
@@ -867,12 +872,26 @@ export function interopNamedImports(
       config,
     )
     if (rewritten) {
-      str.overwrite(expStart, expEnd, rewritten, { contentOnly: true })
+      str.overwrite(expStart, expEnd, rewritten + getLineBreaks(exp), {
+        contentOnly: true,
+      })
     } else {
       // #1439 export * from '...'
-      str.overwrite(start, end, rewrittenUrl, { contentOnly: true })
+      str.overwrite(
+        start,
+        end,
+        rewrittenUrl + getLineBreaks(source.slice(start, end)),
+        {
+          contentOnly: true,
+        },
+      )
     }
   }
+}
+
+// get line breaks to preserve line count for not breaking source maps
+function getLineBreaks(str: string) {
+  return str.includes('\n') ? '\n'.repeat(str.split('\n').length - 1) : ''
 }
 
 type ImportNameSpecifier = { importedName: string; localName: string }

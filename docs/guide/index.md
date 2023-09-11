@@ -36,39 +36,40 @@ The supported template presets are:
 |  [preact](https://vite.new/preact)  |  [preact-ts](https://vite.new/preact-ts)  |
 |     [lit](https://vite.new/lit)     |     [lit-ts](https://vite.new/lit-ts)     |
 |  [svelte](https://vite.new/svelte)  |  [svelte-ts](https://vite.new/svelte-ts)  |
+|   [solid](https://vite.new/solid)   |   [solid-ts](https://vite.new/solid-ts)   |
+|    [qwik](https://vite.new/qwik)    |    [qwik-ts](https://vite.new/qwik-ts)    |
 
 ## Scaffolding Your First Vite Project
 
 ::: tip Compatibility Note
-Vite requires [Node.js](https://nodejs.org/en/) version 14.18+, 16+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
+Vite requires [Node.js](https://nodejs.org/en/) version 18+. 20+. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 :::
 
-With NPM:
+::: code-group
 
-```bash
+```bash [NPM]
 $ npm create vite@latest
 ```
 
-With Yarn:
-
-```bash
+```bash [Yarn]
 $ yarn create vite
 ```
 
-With PNPM:
-
-```bash
+```bash [PNPM]
 $ pnpm create vite
 ```
+
+```bash [Bun]
+$ bunx create-vite
+```
+
+:::
 
 Then follow the prompts!
 
 You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
 
 ```bash
-# npm 6.x
-npm create vite@latest my-vue-app --template vue
-
 # npm 7+, extra double-dash is needed:
 npm create vite@latest my-vue-app -- --template vue
 
@@ -77,9 +78,12 @@ yarn create vite my-vue-app --template vue
 
 # pnpm
 pnpm create vite my-vue-app --template vue
+
+# bun
+bunx create-vite my-vue-app --template vue
 ```
 
-See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`.
+See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
 
 ## Community Templates
 

@@ -35,6 +35,7 @@ import {
   joinUrlSegments,
   normalizePath,
   requireResolveFromRootWithFallback,
+  withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
@@ -107,7 +108,7 @@ export interface BuildOptions {
   assetsDir?: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
-   * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
+   * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
   assetsInlineLimit?: number
@@ -186,7 +187,6 @@ export interface BuildOptions {
   /**
    * Copy the public directory to outDir on write.
    * @default true
-   * @experimental
    */
   copyPublicDir?: boolean
   /**
@@ -241,7 +241,7 @@ export interface BuildOptions {
    */
   reportCompressedSize?: boolean
   /**
-   * Adjust chunk size warning limit (in kbs).
+   * Adjust chunk size warning limit (in kB).
    * @default 500
    */
   chunkSizeWarningLimit?: number
@@ -416,11 +416,9 @@ export function resolveBuildOptions(
   }
 
   // normalize false string into actual false
-  if ((resolved.minify as any) === 'false') {
+  if ((resolved.minify as string) === 'false') {
     resolved.minify = false
-  }
-
-  if (resolved.minify === true) {
+  } else if (resolved.minify === true) {
     resolved.minify = 'esbuild'
   }
 
@@ -543,7 +541,6 @@ export async function build(
   }
 
   const rollupOptions: RollupOptions = {
-    context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
@@ -722,7 +719,7 @@ function prepareOutDir(
     for (const outDir of nonDuplicateDirs) {
       if (
         fs.existsSync(outDir) &&
-        !normalizePath(outDir).startsWith(config.root + '/')
+        !normalizePath(outDir).startsWith(withTrailingSlash(config.root))
       ) {
         // warn if outDir is outside of root
         config.logger.warn(
@@ -761,6 +758,19 @@ function prepareOutDir(
       config.publicDir &&
       fs.existsSync(config.publicDir)
     ) {
+      if (!areSeparateFolders(outDir, config.publicDir)) {
+        config.logger.warn(
+          colors.yellow(
+            `\n${colors.bold(
+              `(!)`,
+            )} The public directory feature may not work correctly. outDir ${colors.white(
+              colors.dim(outDir),
+            )} and publicDir ${colors.white(
+              colors.dim(config.publicDir),
+            )} are not separate folders.\n`,
+          ),
+        )
+      }
       copyDir(config.publicDir, outDir)
     }
   }
@@ -1231,3 +1241,13 @@ export function toOutputFilePathWithoutRuntime(
 
 export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
 export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime
+
+function areSeparateFolders(a: string, b: string) {
+  const na = normalizePath(a)
+  const nb = normalizePath(b)
+  return (
+    na !== nb &&
+    !na.startsWith(withTrailingSlash(nb)) &&
+    !nb.startsWith(withTrailingSlash(na))
+  )
+}

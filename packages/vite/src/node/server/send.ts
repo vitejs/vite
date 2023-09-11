@@ -3,8 +3,11 @@ import type {
   OutgoingHttpHeaders,
   ServerResponse,
 } from 'node:http'
+import path from 'node:path'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
+import MagicString from 'magic-string'
+import { removeTimestampQuery } from '../utils'
 import { getCodeWithSourcemap } from './sourcemap'
 
 const alias: Record<string, string | undefined> = {
@@ -18,7 +21,7 @@ export interface SendOptions {
   etag?: string
   cacheControl?: string
   headers?: OutgoingHttpHeaders
-  map?: SourceMap | null
+  map?: SourceMap | { mappings: '' } | null
 }
 
 export function send(
@@ -56,9 +59,23 @@ export function send(
   }
 
   // inject source map reference
-  if (map && map.mappings) {
+  if (map && 'version' in map && map.mappings) {
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
+    }
+  } else {
+    if (type === 'js' && (!map || map.mappings !== '')) {
+      const urlWithoutTimestamp = removeTimestampQuery(req.url!)
+      const ms = new MagicString(content.toString())
+      content = getCodeWithSourcemap(
+        type,
+        content.toString(),
+        ms.generateMap({
+          source: path.basename(urlWithoutTimestamp),
+          hires: 'boundary',
+          includeContent: true,
+        }),
+      )
     }
   }
 

@@ -4,7 +4,12 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isDefined, normalizePath } from '../utils'
+import {
+  isDefined,
+  isInNodeModules,
+  normalizePath,
+  withTrailingSlash,
+} from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -25,6 +30,14 @@ const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
+
+  const numberFormatter = new Intl.NumberFormat('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  })
+  const displaySize = (bytes: number) => {
+    return `${numberFormatter.format(bytes / 1000)} kB`
+  }
 
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
@@ -111,31 +124,33 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       compressedCount = 0
     },
 
-    renderChunk(code, chunk) {
-      for (const id of chunk.moduleIds) {
-        const module = this.getModuleInfo(id)
-        if (!module) continue
-        // When a dynamic importer shares a chunk with the imported module,
-        // warn that the dynamic imported module will not be moved to another chunk (#12850).
-        if (module.importers.length && module.dynamicImporters.length) {
-          // Filter out the intersection of dynamic importers and sibling modules in
-          // the same chunk. The intersecting dynamic importers' dynamic import is not
-          // expected to work. Note we're only detecting the direct ineffective
-          // dynamic import here.
-          if (
-            module.dynamicImporters.some((m) => chunk.moduleIds.includes(m))
-          ) {
-            this.warn(
-              `\n(!) ${
-                module.id
-              } is dynamically imported by ${module.dynamicImporters
-                .map((m) => m)
-                .join(', ')} but also statically imported by ${module.importers
-                .map((m) => m)
-                .join(
+    renderChunk(code, chunk, options) {
+      if (!options.inlineDynamicImports) {
+        for (const id of chunk.moduleIds) {
+          const module = this.getModuleInfo(id)
+          if (!module) continue
+          // When a dynamic importer shares a chunk with the imported module,
+          // warn that the dynamic imported module will not be moved to another chunk (#12850).
+          if (module.importers.length && module.dynamicImporters.length) {
+            // Filter out the intersection of dynamic importers and sibling modules in
+            // the same chunk. The intersecting dynamic importers' dynamic import is not
+            // expected to work. Note we're only detecting the direct ineffective
+            // dynamic import here.
+            const detectedIneffectiveDynamicImport =
+              module.dynamicImporters.some(
+                (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
+              )
+            if (detectedIneffectiveDynamicImport) {
+              this.warn(
+                `\n(!) ${
+                  module.id
+                } is dynamically imported by ${module.dynamicImporters.join(
+                  ', ',
+                )} but also statically imported by ${module.importers.join(
                   ', ',
                 )}, dynamic import will not move module into another chunk.\n`,
-            )
+              )
+            }
           }
         }
       }
@@ -233,9 +248,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               group.name === 'JS' && entry.size / 1000 > chunkLimit
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
-            let log = colors.dim(relativeOutDir + '/')
+            let log = colors.dim(withTrailingSlash(relativeOutDir))
             log +=
-              !config.build.lib && entry.name.startsWith(assetsDir)
+              !config.build.lib &&
+              entry.name.startsWith(withTrailingSlash(assetsDir))
                 ? colors.dim(assetsDir) +
                   group.color(
                     entry.name
@@ -275,7 +291,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       ) {
         config.logger.warn(
           colors.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit} kBs after minification. Consider:\n` +
+            `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n` +
               `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,
@@ -319,13 +335,6 @@ function throttle(fn: Function) {
       timerHandle = null
     }, 100)
   }
-}
-
-function displaySize(bytes: number) {
-  return `${(bytes / 1000).toLocaleString('en', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  })} kB`
 }
 
 function displayTime(time: number) {

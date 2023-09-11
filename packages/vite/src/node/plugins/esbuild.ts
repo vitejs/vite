@@ -28,10 +28,9 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 
 const debug = createDebugger('vite:esbuild')
 
-const INJECT_HELPERS_IIFE_RE =
-  /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{.*?"use strict";)/s
-const INJECT_HELPERS_UMD_RE =
-  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{.*?"use strict";)/s
+// IIFE content looks like `var MyLib = function() {`. Spaces are removed when minified
+const IIFE_BEGIN_RE =
+  /(const|var)\s+\S+\s*=\s*function\(\)\s*\{.*"use strict";/s
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -96,6 +95,7 @@ export async function transformWithEsbuild(
   }
 
   let tsconfigRaw = options?.tsconfigRaw
+  const fallbackSupported: Record<string, boolean> = {}
 
   // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
@@ -132,6 +132,33 @@ export async function transformWithEsbuild(
       ...tsconfigRaw?.compilerOptions,
     }
 
+    // esbuild uses `useDefineForClassFields: true` when `tsconfig.compilerOptions.target` isn't declared
+    // but we want `useDefineForClassFields: false` when `tsconfig.compilerOptions.target` isn't declared
+    // to align with the TypeScript's behavior
+    if (
+      compilerOptions.useDefineForClassFields === undefined &&
+      compilerOptions.target === undefined
+    ) {
+      compilerOptions.useDefineForClassFields = false
+    }
+
+    // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
+    // To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
+    // `true` by default if it's unset.
+    // TODO: Remove this in Vite 5
+    if (compilerOptions.experimentalDecorators === undefined) {
+      compilerOptions.experimentalDecorators = true
+    }
+
+    // Compat with esbuild 0.17 where static properties are transpiled to
+    // static blocks when `useDefineForClassFields` is false. Its support
+    // is not great yet, so temporarily disable it for now.
+    // TODO: Remove this in Vite 5, don't pass hardcoded `esnext` target
+    // to `transformWithEsbuild` in the esbuild plugin.
+    if (compilerOptions.useDefineForClassFields !== true) {
+      fallbackSupported['class-static-blocks'] = false
+    }
+
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
@@ -154,6 +181,10 @@ export async function transformWithEsbuild(
     ...options,
     loader,
     tsconfigRaw,
+    supported: {
+      ...fallbackSupported,
+      ...options?.supported,
+    },
   }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions
@@ -301,22 +332,30 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
         // names are minified potentially causing collision with other globals.
-        // We use a regex to inject the helpers inside the wrappers.
+        // We inject the helpers inside the wrappers.
+        // e.g. turn:
+        //    <esbuild helpers> (function(){ /*actual content/* })()
+        // into:
+        //    (function(){ <esbuild helpers> /*actual content/* })()
+        // Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
+        // Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
         // We don't need to create a MagicString here because both the helpers and
         // the headers don't modify the sourcemap
-        const injectHelpers =
-          opts.format === 'umd'
-            ? INJECT_HELPERS_UMD_RE
-            : opts.format === 'iife'
-            ? INJECT_HELPERS_IIFE_RE
-            : undefined
-        if (injectHelpers) {
-          res.code = res.code.replace(
-            injectHelpers,
-            (_, helpers, header) => header + helpers,
-          )
+        const esbuildCode = res.code
+        const contentIndex =
+          opts.format === 'iife'
+            ? esbuildCode.match(IIFE_BEGIN_RE)?.index || 0
+            : opts.format === 'umd'
+            ? esbuildCode.indexOf(`(function(`) // same for minified or not
+            : 0
+        if (contentIndex > 0) {
+          const esbuildHelpers = esbuildCode.slice(0, contentIndex)
+          res.code = esbuildCode
+            .slice(contentIndex)
+            .replace(`"use strict";`, `"use strict";` + esbuildHelpers)
         }
       }
+
       return res
     },
   }

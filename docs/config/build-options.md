@@ -34,7 +34,7 @@ The polyfill can be disabled using `{ polyfill: false }`.
 
 The list of chunks to preload for each dynamic import is computed by Vite. By default, an absolute path including the `base` will be used when loading these dependencies. If the `base` is relative (`''` or `'./'`), `import.meta.url` is used at runtime to avoid absolute paths that depend on the final deployed base.
 
-There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. It expects a function of type `ResolveModulePreloadDependenciesFn`:
+There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. [Give Feedback](https://github.com/vitejs/vite/discussions/13841). It expects a function of type `ResolveModulePreloadDependenciesFn`:
 
 ```ts
 type ResolveModulePreloadDependenciesFn = (
@@ -83,7 +83,7 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 ## build.assetsInlineLimit
 
 - **Type:** `number`
-- **Default:** `4096` (4kb)
+- **Default:** `4096` (4 KiB)
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
 
@@ -218,7 +218,6 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.copyPublicDir
 
-- **Experimental**
 - **Type:** `boolean`
 - **Default:** `true`
 
@@ -236,7 +235,7 @@ Enable/disable gzip-compressed size reporting. Compressing large output files ca
 - **Type:** `number`
 - **Default:** `500`
 
-Limit for chunk size warnings (in kbs). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
+Limit for chunk size warnings (in kB). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
 
 ## build.watch
 

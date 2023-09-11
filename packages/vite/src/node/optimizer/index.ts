@@ -27,7 +27,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { scanImports } from './scan'
+import { resolveTsconfigRaw, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
@@ -505,7 +505,7 @@ export function runOptimizeDeps(
     }
   }
 
-  const succesfulResult: DepOptimizationResult = {
+  const successfulResult: DepOptimizationResult = {
     metadata,
     cancel: cleanUp,
     commit: async () => {
@@ -556,7 +556,7 @@ export function runOptimizeDeps(
     // skip the scanner step if the lockfile hasn't changed
     return {
       cancel: async () => cleanUp(),
-      result: Promise.resolve(succesfulResult),
+      result: Promise.resolve(successfulResult),
     }
   }
 
@@ -654,7 +654,7 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        return succesfulResult
+        return successfulResult
       })
 
       .catch((e) => {
@@ -713,8 +713,12 @@ async function prepareEsbuildOptimizerRun(
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps?.esbuildOptions ?? {}
+  const {
+    plugins: pluginsFromConfig = [],
+    tsconfig,
+    tsconfigRaw,
+    ...esbuildOptions
+  } = optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -806,6 +810,8 @@ async function prepareEsbuildOptimizerRun(
     metafile: true,
     plugins,
     charset: 'utf8',
+    tsconfig,
+    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
@@ -891,9 +897,11 @@ export function newDepOptimizationProcessing(): DepOptimizationProcessing {
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>,
 ): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(depsInfo).map((d) => [d[0], d[1].src!]),
-  )
+  const obj: Record<string, string> = {}
+  for (const key in depsInfo) {
+    obj[key] = depsInfo[key].src!
+  }
+  return obj
 }
 
 export function getOptimizedDepPath(

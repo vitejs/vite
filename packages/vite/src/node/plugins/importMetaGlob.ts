@@ -34,13 +34,11 @@ import { isCSSRequest, isModuleCSSRequest } from './css'
 const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
-  match: RegExpMatchArray
   index: number
   globs: string[]
   globsResolved: string[]
   isRelative: boolean
   options: GeneralImportGlobOptions
-  type: string
   start: number
   end: number
 }
@@ -51,8 +49,17 @@ export function getAffectedGlobModules(
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
   for (const [id, allGlobs] of server._importGlobMap!) {
-    if (allGlobs.some((glob) => isMatch(file, glob)))
-      modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
+    // (glob1 || glob2) && !glob3 && !glob4...
+    if (
+      allGlobs.some(
+        ({ affirmed, negated }) =>
+          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
+          (!negated.length || negated.every((glob) => isMatch(file, glob))),
+      )
+    ) {
+      const mod = server.moduleGraph.getModuleById(id)
+      if (mod) modules.push(mod)
+    }
   }
   modules.forEach((i) => {
     if (i?.file) server.moduleGraph.onFileChange(i.file)
@@ -83,7 +90,18 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(id, allGlobs)
+          server._importGlobMap.set(
+            id,
+            allGlobs.map((globs) => {
+              const affirmed: string[] = []
+              const negated: string[] = []
+
+              for (const glob of globs) {
+                ;(glob[0] === '!' ? negated : affirmed).push(glob)
+              }
+              return { affirmed, negated }
+            }),
+          )
         }
         return transformStableResult(result.s, id, config)
       }
@@ -91,8 +109,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-const importGlobRE =
-  /\bimport\.meta\.(glob|globEager|globEagerDefault)(?:<\w+>)?\s*\(/g
+const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
 
 const knownOptions = {
   as: ['string'],
@@ -192,7 +209,6 @@ export async function parseImportGlob(
   const matches = Array.from(cleanCode.matchAll(importGlobRE))
 
   const tasks = matches.map(async (match, index) => {
-    const type = match[1]
     const start = match.index!
 
     const err = (msg: string) => {
@@ -299,13 +315,11 @@ export async function parseImportGlob(
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
 
     return {
-      match,
       index,
       globs,
       globsResolved,
       isRelative,
       options,
-      type,
       start,
       end,
     }
@@ -355,7 +369,7 @@ export async function transformGlobImport(
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
-  const isVirtual = !isAbsolute(id)
+  const isVirtual = isVirtualModule(id)
   const dir = isVirtual ? undefined : dirname(id)
   const matches = await parseImportGlob(
     code,
@@ -364,15 +378,6 @@ export async function transformGlobImport(
     resolveId,
   )
   const matchedFiles = new Set<string>()
-
-  // TODO: backwards compatibility
-  matches.forEach((i) => {
-    if (i.type === 'globEager') i.options.eager = true
-    if (i.type === 'globEagerDefault') {
-      i.options.eager = true
-      i.options.import = 'default'
-    }
-  })
 
   if (!matches.length) return null
 
@@ -601,7 +606,7 @@ export async function toAbsoluteGlob(
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const isSubImportsPattern = glob.startsWith('#') && glob.includes('*')
+  const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
 
   const resolved = normalizePath(
     (await resolveId(glob, importer, {
@@ -644,4 +649,9 @@ export function getCommonBase(globsResolved: string[]): null | string {
   if (!commonAncestor) commonAncestor = '/'
 
   return commonAncestor
+}
+
+export function isVirtualModule(id: string): boolean {
+  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
+  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

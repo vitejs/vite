@@ -3,7 +3,13 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
-import type { BuildContext, Loader, OnLoadResult, Plugin } from 'esbuild'
+import type {
+  BuildContext,
+  BuildOptions,
+  Loader,
+  OnLoadResult,
+  Plugin,
+} from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
@@ -205,8 +211,12 @@ async function prepareEsbuildScanner(
 
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+  const {
+    plugins = [],
+    tsconfig,
+    tsconfigRaw,
+    ...esbuildOptions
+  } = config.optimizeDeps?.esbuildOptions ?? {}
 
   return await esbuild.context({
     absWorkingDir: process.cwd(),
@@ -219,6 +229,8 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    tsconfig,
+    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
   })
 }
@@ -650,4 +662,23 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
 
 function isScannable(id: string): boolean {
   return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
+}
+
+// esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
+// To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
+// `true` by default if it's unset.
+// TODO: Remove this in Vite 5 and check https://github.com/vitejs/vite/pull/13805#issuecomment-1633612320
+export function resolveTsconfigRaw(
+  tsconfig: string | undefined,
+  tsconfigRaw: BuildOptions['tsconfigRaw'],
+): BuildOptions['tsconfigRaw'] {
+  return tsconfig || typeof tsconfigRaw === 'string'
+    ? tsconfigRaw
+    : {
+        ...tsconfigRaw,
+        compilerOptions: {
+          experimentalDecorators: true,
+          ...tsconfigRaw?.compilerOptions,
+        },
+      }
 }

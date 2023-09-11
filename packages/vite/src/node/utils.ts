@@ -123,7 +123,9 @@ export function moduleListContains(
   moduleList: string[] | undefined,
   id: string,
 ): boolean | undefined {
-  return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+  return moduleList?.some(
+    (m) => m === id || id.startsWith(withTrailingSlash(m)),
+  )
 }
 
 export function isOptimizable(
@@ -191,14 +193,17 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export function isUrl(path: string): boolean {
-  try {
-    new URL(path)
-    return true
-  } catch {
-    return false
-  }
-}
+export const urlCanParse =
+  URL.canParse ??
+  // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
+  ((path: string, base?: string | undefined): boolean => {
+    try {
+      new URL(path, base)
+      return true
+    } catch {
+      return false
+    }
+  })
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
@@ -221,6 +226,13 @@ export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
 }
 
+export function withTrailingSlash(path: string): string {
+  if (path[path.length - 1] !== '/') {
+    return `${path}/`
+  }
+  return path
+}
+
 /**
  * Check if dir is a parent of file
  *
@@ -231,9 +243,7 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  if (dir[dir.length - 1] !== '/') {
-    dir = `${dir}/`
-  }
+  dir = withTrailingSlash(dir)
   return (
     file.startsWith(dir) ||
     (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
@@ -608,7 +618,17 @@ function optimizeSafeRealPathSync() {
     safeRealpathSync = fs.realpathSync
     return
   }
-
+  // Check the availability `fs.realpathSync.native`
+  // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
+  // get the error EISDIR: illegal operation on a directory
+  try {
+    fs.realpathSync.native(path.resolve('./'))
+  } catch (error) {
+    if (error.message.includes('EISDIR: illegal operation on a directory')) {
+      safeRealpathSync = fs.realpathSync
+      return
+    }
+  }
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
@@ -634,7 +654,7 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(root + '/') &&
+    !file.startsWith(withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
@@ -748,7 +768,6 @@ const nullSourceMap: RawSourceMap = {
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
-  excludeContent = true,
 ): RawSourceMap {
   if (
     sourcemapList.length === 0 ||
@@ -778,19 +797,15 @@ export function combineSourcemaps(
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, excludeContent)
+    map = remapping(sourcemapList, () => null)
   } else {
-    map = remapping(
-      sourcemapList[0],
-      function loader(sourcefile) {
-        if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
-          return sourcemapList[mapIndex++]
-        } else {
-          return null
-        }
-      },
-      excludeContent,
-    )
+    map = remapping(sourcemapList[0], function loader(sourcefile) {
+      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
+      }
+    })
   }
   if (!map.file) {
     delete map.file
@@ -1137,7 +1152,7 @@ export function transformStableResult(
     code: s.toString(),
     map:
       config.command === 'build' && config.build.sourcemap
-        ? s.generateMap({ hires: true, source: id })
+        ? s.generateMap({ hires: 'boundary', source: id })
         : null,
   }
 }
@@ -1171,7 +1186,7 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
 
 /**
  * Determine if a file is being requested with the correct case, to ensure
- * consistent behaviour between dev and prod and across operating systems.
+ * consistent behavior between dev and prod and across operating systems.
  */
 export function shouldServeFile(filePath: string, root: string): boolean {
   // can skip case check on Linux
@@ -1217,7 +1232,7 @@ export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base[base.length - 1] === '/' ? base : base + '/'
+  const devBase = withTrailingSlash(base)
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
@@ -1251,4 +1266,26 @@ export function getNpmPackageName(importPath: string): string | null {
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
+}
+
+type CommandType = 'install' | 'uninstall' | 'update'
+export function getPackageManagerCommand(
+  type: CommandType = 'install',
+): string {
+  const packageManager =
+    process.env.npm_config_user_agent?.split(' ')[0].split('/')[0] || 'npm'
+  switch (type) {
+    case 'install':
+      return packageManager === 'npm' ? 'npm install' : `${packageManager} add`
+    case 'uninstall':
+      return packageManager === 'npm'
+        ? 'npm uninstall'
+        : `${packageManager} remove`
+    case 'update':
+      return packageManager === 'yarn'
+        ? 'yarn upgrade'
+        : `${packageManager} update`
+    default:
+      throw new TypeError(`Unknown command type: ${type}`)
+  }
 }
