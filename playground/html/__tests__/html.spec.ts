@@ -8,6 +8,7 @@ import {
   page,
   viteServer,
   viteTestUrl,
+  withRetry,
 } from '~utils'
 
 function testPage(isNested: boolean) {
@@ -349,7 +350,11 @@ describe('special character', () => {
 
 describe.runIf(isServe)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
-    const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
-    expect(mod).toBeTruthy()
+    // warmup transform files async during server startup, so the module check
+    // here might take a while to load
+    await withRetry(async () => {
+      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      expect(mod).toBeTruthy()
+    })
   })
 })
