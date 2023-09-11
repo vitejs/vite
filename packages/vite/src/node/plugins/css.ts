@@ -20,10 +20,10 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
+import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import type { BundleAsyncOptions, CustomAtRules } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -138,12 +138,6 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
     targets: LightningCSSOptions['targets']
   }
 }
-
-// remove options set by Vite
-export type LightningCSSOptions = Omit<
-  BundleAsyncOptions<CustomAtRules>,
-  'filename' | 'resolver' | 'minify' | 'sourceMap' | 'analyzeDependencies'
->
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
@@ -411,7 +405,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-post',
 
-    buildStart() {
+    renderStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
@@ -772,10 +766,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const { importedCss } = (bundle[file] as OutputChunk)
-                  .viteMetadata!
+                const { importedCss, importedAssets } = (
+                  bundle[file] as OutputChunk
+                ).viteMetadata!
                 importedCss.forEach((file) =>
                   chunk.viteMetadata!.importedCss.add(file),
+                )
+                importedAssets.forEach((file) =>
+                  chunk.viteMetadata!.importedAssets.add(file),
                 )
                 return false
               }
@@ -792,6 +790,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
+          delete bundle[`${fileName}.map`]
         })
       }
 
@@ -2185,10 +2184,9 @@ async function compileLightningCSS(
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
-        minify: config.isProduction && !!config.build.cssMinify,
         targets: config.css?.lightningcss?.targets,
+        minify: config.isProduction && !!config.build.cssMinify,
         analyzeDependencies: true,
-        visitor: config.css?.lightningcss?.visitor,
       })
     : await (
         await importLightningCSS()
