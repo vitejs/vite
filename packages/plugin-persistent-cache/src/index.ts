@@ -56,7 +56,7 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
       })
     },
 
-    serveLoadCacheGetKey(id, { file, url, ssr }) {
+    async serveLoadCacheRead({ id, file, url, ssr }) {
       const isIncluded =
         !file.includes(resolvedOptions.cacheDir) &&
         // Don't cache vite client
@@ -65,19 +65,21 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
         !id.includes('.vite/deps') &&
         (!resolvedOptions?.exclude || !resolvedOptions.exclude(url))
 
-      if (isIncluded) {
-        return getCodeHash(id.replace(DEP_VERSION_RE, '')) + (ssr ? '-ssr' : '')
+      if (!isIncluded) {
+        return null
       }
 
-      return null
-    },
+      const cacheKey =
+        getCodeHash(id.replace(DEP_VERSION_RE, '')) + (ssr ? '-ssr' : '')
 
-    async serveLoadCacheRead(cacheKey, options) {
-      return read({
-        key: cacheKey,
-        manifest: manifestManager.manifest,
-        patchedDuringCurrentSession,
-      })
+      return {
+        cacheKey,
+        result: await read({
+          key: cacheKey,
+          manifest: manifestManager.manifest,
+          patchedDuringCurrentSession,
+        }),
+      }
     },
 
     async serveLoadCacheWrite(data) {
@@ -91,28 +93,28 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
       manifestManager.queueManifestWrite()
     },
 
-    serveTransformCacheGetKey(id, { code, ssr }) {
+    async serveTransformCacheRead({ id, code, ssr }) {
       const isIncluded =
         // Exclude glob matching so it's always re-evaluated
         !code.includes('import.meta.glob')
 
-      if (isIncluded) {
-        return getCodeHash(id + code) + (ssr ? '-ssr' : '')
+      if (!isIncluded) {
+        return null
       }
 
-      return null
-    },
+      const cacheKey = getCodeHash(id + code) + (ssr ? '-ssr' : '')
+      let result: CacheTransformReadResult['result'] | null = null
 
-    async serveTransformCacheRead(cacheKey, options) {
       const cached = await read({
         key: cacheKey,
         manifest: manifestManager.manifest,
         patchedDuringCurrentSession,
       })
       if (cached) {
-        let result: CacheTransformReadResult = {
+        result = {
           code: cached.code,
           map: cached.map,
+          hmr: undefined,
         }
 
         // Restore module graph node info for HMR
@@ -125,21 +127,22 @@ function vitePersistentCachePlugin(pluginOptions: Options = {}): Plugin {
             importedBindings.set(key, new Set(value))
           }
 
-          result = {
-            ...result,
+          result.hmr = {
             importedModules: new Set(
               entry.fullData.importedModules.map(({ url }) => url),
             ),
             importedBindings,
             acceptedModules: new Set(entry.fullData.acceptedHmrDeps),
             acceptedExports: new Set(entry.fullData.acceptedHmrExports),
-            isSelfAccepting: entry.fullData.isSelfAccepting,
+            isSelfAccepting: !!entry.fullData.isSelfAccepting,
           }
         }
-
-        return result
       }
-      return null
+
+      return {
+        cacheKey,
+        result,
+      }
     },
 
     async serveTransformCacheWrite(data) {

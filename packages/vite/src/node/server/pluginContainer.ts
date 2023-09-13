@@ -87,9 +87,9 @@ import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 import type {
   CacheLoadReadResult,
-  CacheLoadWriteData,
+  CacheLoadWriteOptions,
   CacheTransformReadResult,
-  CacheTransformWriteData,
+  CacheTransformWriteOptions,
 } from './cache'
 
 const noop = () => {}
@@ -147,35 +147,21 @@ export interface PluginContainer {
     },
   ): Promise<LoadResult | null>
   depsOptimized(metadata: DepOptimizationMetadata): void
-  serveLoadCacheGetKey(options: {
-    id: string
-    file: string
-    url: string
-    ssr: boolean
-  }): string | null
   serveLoadCacheRead(options: {
-    cacheKey: string
     id: string
     file: string
     url: string
     ssr: boolean
   }): Promise<CacheLoadReadResult | null>
-  serveLoadCacheWrite(data: CacheLoadWriteData): Promise<void>
-  serveTransformCacheGetKey(options: {
-    id: string
-    file: string
-    url: string
-    code: string
-    ssr: boolean
-  }): string | null
+  serveLoadCacheWrite(data: CacheLoadWriteOptions): Promise<void>
   serveTransformCacheRead(options: {
-    cacheKey: string
     id: string
     file: string
     url: string
     ssr: boolean
+    code: string
   }): Promise<CacheTransformReadResult | null>
-  serveTransformCacheWrite(data: CacheTransformWriteData): Promise<void>
+  serveTransformCacheWrite(data: CacheTransformWriteOptions): Promise<void>
   close(): Promise<void>
 }
 
@@ -698,26 +684,7 @@ export async function createPluginContainer(
       }
     },
 
-    serveLoadCacheGetKey(options) {
-      const { id, file, url, ssr } = options
-      const ctx = new Context()
-      ctx.ssr = !!ssr
-      for (const plugin of getSortedPlugins('serveLoadCacheGetKey')) {
-        if (!plugin.serveLoadCacheGetKey) continue
-        const handler =
-          'handler' in plugin.serveLoadCacheGetKey
-            ? plugin.serveLoadCacheGetKey.handler
-            : plugin.serveLoadCacheGetKey
-        const result = handler.call(ctx as any, id, { file, ssr, url })
-        if (result != null) {
-          return result
-        }
-      }
-      return null
-    },
-
-    async serveLoadCacheRead(options) {
-      const { cacheKey, id, file, url, ssr } = options
+    async serveLoadCacheRead({ id, file, url, ssr }) {
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('serveLoadCacheRead')) {
@@ -727,7 +694,7 @@ export async function createPluginContainer(
             ? plugin.serveLoadCacheRead.handler
             : plugin.serveLoadCacheRead
         const result = await handleHookPromise(
-          handler.call(ctx as any, cacheKey, { id, file, ssr, url }),
+          handler.call(ctx as any, { id, file, ssr, url }),
         )
         if (result != null) {
           return result
@@ -749,26 +716,7 @@ export async function createPluginContainer(
       }
     },
 
-    serveTransformCacheGetKey(options) {
-      const { id, file, url, code, ssr } = options
-      const ctx = new Context()
-      ctx.ssr = !!ssr
-      for (const plugin of getSortedPlugins('serveTransformCacheGetKey')) {
-        if (!plugin.serveTransformCacheGetKey) continue
-        const handler =
-          'handler' in plugin.serveTransformCacheGetKey
-            ? plugin.serveTransformCacheGetKey.handler
-            : plugin.serveTransformCacheGetKey
-        const result = handler.call(ctx as any, id, { file, ssr, url, code })
-        if (result != null) {
-          return result
-        }
-      }
-      return null
-    },
-
-    async serveTransformCacheRead(options) {
-      const { cacheKey, id, file, url, ssr } = options
+    async serveTransformCacheRead({ id, file, url, ssr, code }) {
       const ctx = new Context()
       ctx.ssr = !!ssr
       for (const plugin of getSortedPlugins('serveTransformCacheRead')) {
@@ -778,7 +726,7 @@ export async function createPluginContainer(
             ? plugin.serveTransformCacheRead.handler
             : plugin.serveTransformCacheRead
         const result = await handleHookPromise(
-          handler.call(ctx as any, cacheKey, { id, file, ssr, url }),
+          handler.call(ctx as any, { id, file, ssr, url, code }),
         )
         if (result != null) {
           return result

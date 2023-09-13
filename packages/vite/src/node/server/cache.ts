@@ -1,11 +1,20 @@
 import type { ModuleNode } from './moduleGraph.js'
 
 export interface CacheLoadReadResult {
-  code: string
-  map?: any
+  /**
+   * Set to `null` to prevent the file from being cached.
+   */
+  cacheKey: string | null
+  /**
+   * The result of the cached load. `null` if not cached yet.
+   */
+  result: {
+    code: string
+    map?: any
+  } | null
 }
 
-export interface CacheLoadWriteData {
+export interface CacheLoadWriteOptions {
   cacheKey: string
   id: string
   file: string
@@ -17,16 +26,27 @@ export interface CacheLoadWriteData {
 }
 
 export interface CacheTransformReadResult {
-  code: string
-  map?: any
-  importedModules?: Set<string>
-  importedBindings?: Map<string, Set<string>> | null
-  acceptedModules?: Set<string>
-  acceptedExports?: Set<string>
-  isSelfAccepting?: boolean
+  /**
+   * Set to `null` to prevent the file from being cached.
+   */
+  cacheKey: string | null
+  /**
+   * The result of the cached load. `null` if not cached yet.
+   */
+  result: {
+    code: string
+    map?: any
+    hmr?: {
+      importedModules: Set<string>
+      importedBindings: Map<string, Set<string>> | null
+      acceptedModules: Set<string>
+      acceptedExports: Set<string>
+      isSelfAccepting: boolean
+    }
+  } | null
 }
 
-export interface CacheTransformWriteData {
+export interface CacheTransformWriteOptions {
   cacheKey: string
   id: string
   file: string

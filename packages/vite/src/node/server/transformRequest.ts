@@ -194,28 +194,22 @@ async function loadAndTransform(
   const loadStart = debugLoad ? performance.now() : 0
   let loadResult: LoadResult
 
-  const loadCacheKey = pluginContainer.serveLoadCacheGetKey({
+  const cacheLoadResult = await pluginContainer.serveLoadCacheRead({
     id,
     file,
     url,
     ssr,
   })
-  const isIncludedInLoadCache = loadCacheKey != null
+  const isIncludedInLoadCache = cacheLoadResult?.cacheKey != null
 
-  if (isIncludedInLoadCache) {
-    loadResult = await pluginContainer.serveLoadCacheRead({
-      cacheKey: loadCacheKey,
-      id,
-      file,
-      url,
-      ssr,
-    })
+  if (cacheLoadResult?.result) {
+    loadResult = cacheLoadResult.result
   }
 
   if (!loadResult) {
     loadResult = await pluginContainer.load(id, { ssr })
 
-    if (isIncludedInLoadCache && loadResult) {
+    if (cacheLoadResult?.cacheKey && loadResult) {
       let code: string
       let map: any | null
       if (typeof loadResult === 'string') {
@@ -225,7 +219,7 @@ async function loadAndTransform(
         map = loadResult.map
       }
       await pluginContainer.serveLoadCacheWrite({
-        cacheKey: loadCacheKey,
+        cacheKey: cacheLoadResult.cacheKey,
         id,
         file,
         url,
@@ -317,50 +311,34 @@ async function loadAndTransform(
   // transform
   let result: TransformResult | null = null
 
-  const transformCacheKey = isIncludedInLoadCache
-    ? pluginContainer.serveTransformCacheGetKey({
+  const cacheTransformResult = isIncludedInLoadCache
+    ? await pluginContainer.serveTransformCacheRead({
         id,
         file,
         url,
-        code,
         ssr,
+        code,
       })
     : null
-  const isIncludedInTransformCache = transformCacheKey != null
 
-  if (isIncludedInTransformCache) {
-    const cachedResult = await pluginContainer.serveTransformCacheRead({
-      cacheKey: transformCacheKey,
-      id,
-      file,
-      url,
-      ssr,
-    })
-    if (cachedResult) {
-      if (
-        cachedResult.importedModules &&
-        cachedResult.importedBindings &&
-        cachedResult.acceptedModules &&
-        cachedResult.acceptedExports &&
-        cachedResult.isSelfAccepting != null
-      ) {
-        // Restore module graph node info for HMR
-        await moduleGraph.updateModuleInfo(
-          mod,
-          cachedResult.importedModules,
-          cachedResult.importedBindings,
-          cachedResult.acceptedModules,
-          cachedResult.acceptedExports,
-          cachedResult.isSelfAccepting,
-          ssr,
-        )
-      }
+  if (cacheTransformResult?.result) {
+    if (cacheTransformResult.result.hmr) {
+      // Restore module graph node info for HMR
+      await moduleGraph.updateModuleInfo(
+        mod,
+        cacheTransformResult.result.hmr.importedModules,
+        cacheTransformResult.result.hmr.importedBindings,
+        cacheTransformResult.result.hmr.acceptedModules,
+        cacheTransformResult.result.hmr.acceptedExports,
+        cacheTransformResult.result.hmr.isSelfAccepting,
+        ssr,
+      )
+    }
 
-      result = {
-        code: cachedResult.code,
-        map: cachedResult.map,
-        etag: getEtag(cachedResult.code, { weak: true }),
-      }
+    result = {
+      code: cacheTransformResult.result.code,
+      map: cacheTransformResult.result.map,
+      etag: getEtag(cacheTransformResult.result.code, { weak: true }),
     }
   }
 
@@ -440,9 +418,9 @@ async function loadAndTransform(
             etag: getEtag(code, { weak: true }),
           } satisfies TransformResult)
 
-    if (isIncludedInTransformCache && result) {
+    if (cacheTransformResult?.cacheKey && result) {
       await pluginContainer.serveTransformCacheWrite({
-        cacheKey: transformCacheKey,
+        cacheKey: cacheTransformResult.cacheKey,
         id,
         file,
         url,

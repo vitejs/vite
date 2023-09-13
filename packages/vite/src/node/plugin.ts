@@ -17,9 +17,9 @@ import type { HmrContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
 import type {
   CacheLoadReadResult,
-  CacheLoadWriteData,
+  CacheLoadWriteOptions,
   CacheTransformReadResult,
-  CacheTransformWriteData,
+  CacheTransformWriteOptions,
 } from './server/cache'
 import type { DepOptimizationMetadata } from './optimizer'
 
@@ -150,27 +150,12 @@ export interface Plugin extends RollupPlugin {
     (this: void, metadata: DepOptimizationMetadata) => void | Promise<void>
   >
   /**
-   * During module load: Compute the persistent cache key for a given file. Return `null` if the
+   * During module load: Read the data from the persistent cache. Return `null` if the
    * file should not be cached.
-   */
-  serveLoadCacheGetKey?: ObjectHook<
-    (
-      this: PluginContext,
-      id: string,
-      options: {
-        file: string
-        url: string
-        ssr: boolean
-      },
-    ) => string | null
-  >
-  /**
-   * During module load: Read the data from the persistent cache.
    */
   serveLoadCacheRead?: ObjectHook<
     (
       this: PluginContext,
-      cacheKey: string,
       options: {
         id: string
         file: string
@@ -183,35 +168,23 @@ export interface Plugin extends RollupPlugin {
    * During module load: Write the data to the persistent cache.
    */
   serveLoadCacheWrite?: ObjectHook<
-    (this: PluginContext, data: CacheLoadWriteData) => Promise<void> | void
-  >
-  /**
-   * During module transform: Compute the persistent cache key for a given file. Return `null` if the
-   * file should not be cached. A module that was not cached during load will not be cached during transform either.
-   */
-  serveTransformCacheGetKey?: ObjectHook<
     (
       this: PluginContext,
-      id: string,
-      options: {
-        file: string
-        url: string
-        code: string
-        ssr: boolean
-      },
-    ) => string | null
+      options: CacheLoadWriteOptions,
+    ) => Promise<void> | void
   >
   /**
-   * During module transform: Read the data from the persistent cache. A module that was not cached during load will not be cached during transform either.
+   * During module transform: Read the data from the persistent cache. Return `null` if the
+   * file should not be cached. A module that was not cached during load will not be cached during transform either.
    */
   serveTransformCacheRead?: ObjectHook<
     (
       this: PluginContext,
-      cacheKey: string,
       options: {
         id: string
         file: string
         url: string
+        code: string
         ssr: boolean
       },
     ) => Promise<CacheTransformReadResult | null>
@@ -220,7 +193,10 @@ export interface Plugin extends RollupPlugin {
    * During module transform: Write the data to the persistent cache. A module that was not cached during load will not be cached during transform either.
    */
   serveTransformCacheWrite?: ObjectHook<
-    (this: PluginContext, data: CacheTransformWriteData) => Promise<void> | void
+    (
+      this: PluginContext,
+      options: CacheTransformWriteOptions,
+    ) => Promise<void> | void
   >
 
   /**

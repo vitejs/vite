@@ -126,9 +126,9 @@ export type { ChunkMetadata } from 'types/metadata'
 
 export type {
   CacheLoadReadResult,
-  CacheLoadWriteData,
+  CacheLoadWriteOptions as CacheLoadWriteData,
   CacheTransformReadResult,
-  CacheTransformWriteData,
+  CacheTransformWriteOptions as CacheTransformWriteData,
 } from './server/cache'
 
 // dep types
