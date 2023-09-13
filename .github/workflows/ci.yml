@@ -51,7 +51,7 @@ jobs:
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
@@ -131,7 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Lint: node-18, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2.4.0
