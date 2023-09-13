@@ -297,45 +297,47 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
 
+      // object url is a special case
+      // can not do any think about url (such as: fetch / import nested worker / new worker with constructor)
+      // We should sacrifice some HMR performance to ensure consistency between dev and prod
+      if (query.inline != null) {
+        const chunk = await bundleWorkerEntry(config, cleanUrl(id), query)
+        const encodedJs = `const encodedJs = "${Buffer.from(
+          chunk.code,
+        ).toString('base64')}";`
+
+        const code =
+          // Using blob URL for SharedWorker results in multiple instances of a same worker
+          workerConstructor === 'Worker'
+            ? `${encodedJs}
+        const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+        export default function WorkerWrapper() {
+          let objURL;
+          try {
+            objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+            if (!objURL) throw ''
+            return new ${workerConstructor}(objURL)
+          } catch(e) {
+            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          } finally {
+            objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+          }
+        }`
+            : `${encodedJs}
+        export default function WorkerWrapper() {
+          return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+        }
+        `
+        return {
+          code,
+          // Empty sourcemap to suppress Rollup warning
+          map: { mappings: '' },
+        }
+      }
+
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-        if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(config, id, query)
-          const encodedJs = `const encodedJs = "${Buffer.from(
-            chunk.code,
-          ).toString('base64')}";`
-
-          const code =
-            // Using blob URL for SharedWorker results in multiple instances of a same worker
-            workerConstructor === 'Worker'
-              ? `${encodedJs}
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper() {
-            let objURL;
-            try {
-              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              if (!objURL) throw ''
-              return new ${workerConstructor}(objURL)
-            } catch(e) {
-              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-            } finally {
-              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-            }
-          }`
-              : `${encodedJs}
-          export default function WorkerWrapper() {
-            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-          }
-          `
-
-          return {
-            code,
-            // Empty sourcemap to suppress Rollup warning
-            map: { mappings: '' },
-          }
-        } else {
-          url = await workerFileToUrl(config, id, query)
-        }
+        url = await workerFileToUrl(config, id, query)
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WORKER_FILE_ID)
