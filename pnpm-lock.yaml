@@ -361,8 +361,8 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       periscopic:
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^4.0.2
+        version: 4.0.2
       picocolors:
         specifier: ^1.0.0
         version: 1.0.0
@@ -7200,8 +7200,8 @@ packages:
       '@types/estree': 1.0.1
     dev: true
 
-  /is-reference@3.0.0:
-    resolution: {integrity: sha512-Eo1W3wUoHWoCoVM4GVl/a+K0IgiqE5aIo4kJABFyMum1ZORlPkC+UC357sSQUL5w5QCE5kCC9upl75b7+7CY/Q==}
+  /is-reference@3.0.2:
+    resolution: {integrity: sha512-v3rht/LgVcsdZa3O2Nqs+NMowLOxeOm7Ay9+/ARQ2F+qEoANRcqrjAZKGN0v8ymUetZGgkp26LTnGT7H0Qo9Pg==}
     dependencies:
       '@types/estree': 1.0.1
     dev: true
@@ -7386,7 +7386,7 @@ packages:
     dependencies:
       universalify: 2.0.0
     optionalDependencies:
-      graceful-fs: 4.2.10
+      graceful-fs: 4.2.11
     dev: true
 
   /jsonify@0.0.1:
@@ -8497,12 +8497,12 @@ packages:
     resolution: {integrity: sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==}
     dev: true
 
-  /periscopic@3.1.0:
-    resolution: {integrity: sha512-vKiQ8RRtkl9P+r/+oefh25C3fhybptkHKCZSPlcXiJux2tJF55GnEj3BVn4A5gKfq9NWWXXrxkHBwVPUfH0opw==}
+  /periscopic@4.0.2:
+    resolution: {integrity: sha512-sqpQDUy8vgB7ycLkendSKS6HnVz1Rneoc3Rc+ZBUCe2pbqlVuCC5vF52l0NJ1aiMg/r1qfYF9/myz8CZeI2rjA==}
     dependencies:
-      '@types/estree': 1.0.0
-      estree-walker: 3.0.3
-      is-reference: 3.0.0
+      '@types/estree': 1.0.1
+      is-reference: 3.0.2
+      zimmerframe: 1.0.0
     dev: true
 
   /phoenix@1.7.7:
@@ -10713,6 +10713,10 @@ packages:
       validator: 13.7.0
     optionalDependencies:
       commander: 2.20.3
+    dev: true
+
+  /zimmerframe@1.0.0:
+    resolution: {integrity: sha512-H6qQ6LtjP+kDQwDgol18fPi4OCo7F+73ZBYt2U9c1D3V74bIMKxXvyrN0x+1I7/RYh5YsausflQxQR/qwDLHPQ==}
     dev: true
 
   /zod@3.21.4:
