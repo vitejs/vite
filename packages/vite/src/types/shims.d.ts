@@ -41,7 +41,7 @@ declare module 'postcss-import' {
 // so we have to shim it
 declare interface HTMLLinkElement {}
 
-// eslint-disable-next-line no-var, @typescript-eslint/consistent-type-imports
+// eslint-disable-next-line no-var
 declare var __vite_profile_session: import('node:inspector').Session | undefined
 // eslint-disable-next-line no-var
 declare var __vite_start_time: number | undefined

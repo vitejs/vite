@@ -4,7 +4,12 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isDefined, isInNodeModules, normalizePath } from '../utils'
+import {
+  isDefined,
+  isInNodeModules,
+  normalizePath,
+  withTrailingSlash,
+} from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -243,9 +248,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               group.name === 'JS' && entry.size / 1000 > chunkLimit
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
-            let log = colors.dim(relativeOutDir + '/')
+            let log = colors.dim(withTrailingSlash(relativeOutDir))
             log +=
-              !config.build.lib && entry.name.startsWith(assetsDir)
+              !config.build.lib &&
+              entry.name.startsWith(withTrailingSlash(assetsDir))
                 ? colors.dim(assetsDir) +
                   group.color(
                     entry.name
@@ -285,7 +291,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       ) {
         config.logger.warn(
           colors.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit} kBs after minification. Consider:\n` +
+            `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
               `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n` +
               `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,

@@ -23,6 +23,7 @@ import {
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
+  withTrailingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 
@@ -132,6 +133,10 @@ export function renderAssetUrlInJS(
   return s
 }
 
+// During build, if we don't use a virtual file for public assets, rollup will
+// watch for these ids resulting in watching the root of the file system in Windows,
+const viteBuildPublicIdPrefix = '\0vite:asset:public'
+
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
@@ -154,11 +159,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // will fail to resolve in the main resolver. handle them here.
       const publicFile = checkPublicFile(id, config)
       if (publicFile) {
-        return id
+        return config.command === 'build'
+          ? `${viteBuildPublicIdPrefix}${id}`
+          : id
       }
     },
 
     async load(id) {
+      if (id.startsWith(viteBuildPublicIdPrefix)) {
+        id = id.slice(viteBuildPublicIdPrefix.length)
+      }
+
       if (id[0] === '\0') {
         // Rollup convention, this id should be handled by the
         // plugin that marked it with \0
@@ -229,7 +240,11 @@ export function checkPublicFile(
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
-  if (!publicFile.startsWith(publicDir)) {
+  if (
+    !normalizePath(publicFile).startsWith(
+      withTrailingSlash(normalizePath(publicDir)),
+    )
+  ) {
     // can happen if URL starts with '../'
     return
   }
@@ -255,9 +270,9 @@ export async function fileToUrl(
 function fileToDevUrl(id: string, config: ResolvedConfig) {
   let rtn: string
   if (checkPublicFile(id, config)) {
-    // in public dir, keep the url as-is
+    // in public dir during dev, keep the url as-is
     rtn = id
-  } else if (id.startsWith(config.root)) {
+  } else if (id.startsWith(withTrailingSlash(config.root))) {
     // in project root, infer short public path
     rtn = '/' + path.posix.relative(config.root, id)
   } else {

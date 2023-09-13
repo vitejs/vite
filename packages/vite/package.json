@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "4.4.8",
+  "version": "5.0.0-beta.1",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -28,6 +28,9 @@
       "types": "./client.d.ts"
     },
     "./dist/client/*": "./dist/client/*",
+    "./types/*": {
+      "types": "./types/*"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -38,7 +41,7 @@
     "types"
   ],
   "engines": {
-    "node": "^14.18.0 || >=16.0.0"
+    "node": "^18.0.0 || >=20.0.0"
   },
   "repository": {
     "type": "git",
@@ -68,8 +71,8 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.18.10",
-    "postcss": "^8.4.26",
-    "rollup": "^3.25.2"
+    "postcss": "^8.4.27",
+    "rollup": "^3.28.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
@@ -77,7 +80,7 @@
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
     "@babel/parser": "^7.22.7",
-    "@babel/types": "^7.22.5",
+    "@babel/types": "^7.22.17",
     "@jridgewell/trace-mapping": "^0.3.18",
     "@rollup/plugin-alias": "^4.0.4",
     "@rollup/plugin-commonjs": "^25.0.3",
@@ -105,7 +108,7 @@
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
-    "fast-glob": "^3.3.0",
+    "fast-glob": "^3.3.1",
     "http-proxy": "^1.18.1",
     "json-stable-stringify": "^1.0.2",
     "launch-editor-middleware": "^2.6.0",
@@ -117,7 +120,7 @@
     "okie": "^1.0.1",
     "open": "^8.4.2",
     "parse5": "^7.1.2",
-    "periscopic": "^3.1.0",
+    "periscopic": "^4.0.2",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
     "postcss-import": "^15.1.0",
@@ -128,15 +131,15 @@
     "sirv": "^2.0.3",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.1.0",
-    "strip-literal": "^1.0.1",
+    "strip-literal": "^1.3.0",
     "tsconfck": "^2.1.2",
-    "tslib": "^2.6.0",
+    "tslib": "^2.6.1",
     "types": "link:./types",
-    "ufo": "^1.1.2",
+    "ufo": "^1.2.0",
     "ws": "^8.13.0"
   },
   "peerDependencies": {
-    "@types/node": ">= 14",
+    "@types/node": "^18.0.0 || >=20.0.0",
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",

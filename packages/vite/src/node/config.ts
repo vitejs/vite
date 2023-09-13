@@ -39,6 +39,7 @@ import {
   mergeConfig,
   normalizeAlias,
   normalizePath,
+  withTrailingSlash,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -680,7 +681,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    base: withTrailingSlash(resolvedBase),
     rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
@@ -785,8 +786,7 @@ export async function resolveConfig(
         } instead`,
       ),
     )
-  }
-  if (middlewareMode === 'html') {
+  } else if (middlewareMode === 'html') {
     logger.warn(
       colors.yellow(
         `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`,
@@ -856,7 +856,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5.
     Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
 `),
     )
@@ -1017,7 +1017,7 @@ async function bundleConfigFile(
     entryPoints: [fileName],
     outfile: 'out.js',
     write: false,
-    target: ['node14.18', 'node16'],
+    target: ['node18'],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',

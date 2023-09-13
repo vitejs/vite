@@ -1,3 +1,7 @@
+---
+outline: [2, 3]
+---
+
 # Plugin API
 
 Vite plugins extends Rollup's well-designed plugin interface with a few extra Vite-specific options. As a result, you can write a Vite plugin once and have it work for both dev and build.
@@ -311,9 +315,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `configurePreviewServer`
 
-- **Type:** `(server: PreviewServerForHook) => (() => void) | void | Promise<(() => void) | void>`
+- **Type:** `(server: PreviewServer) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
-- **See also:** [PreviewServerForHook](./api-javascript#previewserverforhook)
+- **See also:** [PreviewServer](./api-javascript#previewserver)
 
   Same as [`configureServer`](/guide/api-plugin.html#configureserver) but for the preview server. Similarly to `configureServer`, the `configurePreviewServer` hook is called before other middlewares are installed. If you want to inject a middleware **after** other middlewares, you can return a function from `configurePreviewServer`, which will be called after internal middlewares are installed:
 

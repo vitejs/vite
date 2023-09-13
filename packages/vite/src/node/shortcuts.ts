@@ -4,7 +4,7 @@ import { isDefined } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
-export type BindShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
+export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Print a one line hint to the terminal.
    */
@@ -18,9 +18,9 @@ export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   action(server: Server): void | Promise<void>
 }
 
-export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
+export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server: Server,
-  opts?: BindShortcutsOptions<Server>,
+  opts?: BindCLIShortcutsOptions<Server>,
 ): void {
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
@@ -29,7 +29,7 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
   const isDev = isDevServer(server)
 
   if (isDev) {
-    server._shortcutsOptions = opts
+    server._shortcutsOptions = opts as BindCLIShortcutsOptions<ViteDevServer>
   }
 
   if (opts?.print) {
@@ -147,8 +147,13 @@ const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
     key: 'o',
     description: 'open in browser',
     action(server) {
-      const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
-      openBrowser(url, true, server.config.logger)
+      const url =
+        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      if (url) {
+        openBrowser(url, true, server.config.logger)
+      } else {
+        server.config.logger.warn('No URL available to open in browser')
+      }
     },
   },
   {
