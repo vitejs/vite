@@ -173,7 +173,7 @@ declare module '*.txt' {
 // wasm?init
 declare module '*.wasm?init' {
   const initWasm: (
-    options: WebAssembly.Imports,
+    options?: WebAssembly.Imports,
   ) => Promise<WebAssembly.Instance>
   export default initWasm
 }
@@ -181,14 +181,14 @@ declare module '*.wasm?init' {
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
 
 declare module '*?worker&inline' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
@@ -200,14 +200,14 @@ declare module '*?worker&url' {
 
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
 }
 
 declare module '*?sharedworker&inline' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
 }

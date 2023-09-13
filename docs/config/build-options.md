@@ -83,7 +83,7 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 ## build.assetsInlineLimit
 
 - **Type:** `number`
-- **Default:** `4096` (4kb)
+- **Default:** `4096` (4 KiB)
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
 
@@ -218,7 +218,6 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.copyPublicDir
 
-- **Experimental:** [Give feedback](https://github.com/vitejs/vite/discussions/13807)
 - **Type:** `boolean`
 - **Default:** `true`
 
@@ -236,7 +235,7 @@ Enable/disable gzip-compressed size reporting. Compressing large output files ca
 - **Type:** `number`
 - **Default:** `500`
 
-Limit for chunk size warnings (in kbs). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
+Limit for chunk size warnings (in kB). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
 
 ## build.watch
 

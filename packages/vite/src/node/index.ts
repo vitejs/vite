@@ -74,7 +74,6 @@ export type {
 export type {
   CSSOptions,
   CSSModulesOptions,
-  LightningCSSOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
 } from './plugins/css'
@@ -100,6 +99,8 @@ export type {
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 
+export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
+
 export type {
   HMRPayload,
   ConnectedPayload,
@@ -117,7 +118,6 @@ export type {
 } from 'types/customEvent'
 export type {
   ImportGlobFunction,
-  ImportGlobEagerFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
@@ -144,3 +144,4 @@ export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
+export type { LightningCSSOptions } from 'dep-types/lightningcss'

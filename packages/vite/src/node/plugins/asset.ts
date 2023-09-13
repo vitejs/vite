@@ -23,6 +23,7 @@ import {
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
+  withTrailingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 
@@ -239,7 +240,11 @@ export function checkPublicFile(
     return
   }
   const publicFile = path.join(publicDir, cleanUrl(url))
-  if (!publicFile.startsWith(publicDir)) {
+  if (
+    !normalizePath(publicFile).startsWith(
+      withTrailingSlash(normalizePath(publicDir)),
+    )
+  ) {
     // can happen if URL starts with '../'
     return
   }
@@ -267,7 +272,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
     rtn = id
-  } else if (id.startsWith(config.root)) {
+  } else if (id.startsWith(withTrailingSlash(config.root))) {
     // in project root, infer short public path
     rtn = '/' + path.posix.relative(config.root, id)
   } else {

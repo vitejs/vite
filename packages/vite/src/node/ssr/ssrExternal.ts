@@ -13,6 +13,7 @@ import {
   isInNodeModules,
   lookupFile,
   normalizePath,
+  withTrailingSlash,
 } from '../utils'
 import type { Logger, ResolvedConfig } from '..'
 import { resolvePackageData } from '../packages'
@@ -137,7 +138,7 @@ export function createIsConfiguredAsSsrExternal(
       return !!tryNodeResolve(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
-        // unresolveable from root (which would be unresolvable from output bundles also)
+        // unresolvable from root (which would be unresolvable from output bundles also)
         config.command === 'build' ? undefined : importer,
         resolveOptions,
         ssr?.target === 'webworker',
@@ -340,7 +341,10 @@ export function cjsShouldExternalizeForSSR(
     }
     // deep imports, check ext before externalizing - only externalize
     // extension-less imports and explicit .js imports
-    if (id.startsWith(e + '/') && (!path.extname(id) || id.endsWith('.js'))) {
+    if (
+      id.startsWith(withTrailingSlash(e)) &&
+      (!path.extname(id) || id.endsWith('.js'))
+    ) {
       return true
     }
   })
