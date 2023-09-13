@@ -1079,7 +1079,7 @@ export function resolvePackageEntry(
         debug?.(
           `[package entry] ${colors.cyan(idWithoutPostfix)} -> ${colors.dim(
             resolvedEntryPoint,
-          )} (postfix: ${postfix})`,
+          )}${postfix !== '' ? ` (postfix: ${postfix})` : ''}`,
         )
         setResolvedCache('.', resolvedEntryPoint, targetWeb)
         return resolvedEntryPoint + postfix
