@@ -66,6 +66,8 @@ nestedWorker.addEventListener('message', (ev) => {
       text('.nested-worker-constructor', JSON.stringify(ev.data))
     } else if (data.type === 'importMetaGlobEager') {
       text('.importMetaGlobEager-worker', JSON.stringify(ev.data))
+    } else if (data.type === 'inline') {
+      text('.nested-worker-inline', JSON.stringify(ev.data))
     }
   }
 })
