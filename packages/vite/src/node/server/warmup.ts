@@ -55,19 +55,18 @@ function htmlFileToUrl(file: string, root: string) {
   const url = path.relative(root, file)
   // out of root, ignore file
   if (url[0] === '.') return
-  // create root-relative url
+  // file within root, create root-relative url
   return '/' + normalizePath(url)
 }
 
 function fileToUrl(file: string, root: string) {
-  // if file within root, create root-relative url
-  if (file.startsWith(root + path.sep)) {
-    return normalizePath(file.slice(root.length))
-  }
-  // out or root, use /@fs/ prefix
-  else {
+  const url = path.relative(root, file)
+  // out of root, use /@fs/ prefix
+  if (url[0] === '.') {
     return path.posix.join(FS_PREFIX, normalizePath(file))
   }
+  // file within root, create root-relative url
+  return '/' + normalizePath(url)
 }
 
 function mapFiles(files: string[], root: string) {
