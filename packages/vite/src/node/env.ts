@@ -14,7 +14,7 @@ export function loadEnv(
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
-        `the .local postfix for .env files.`
+        `the .local postfix for .env files.`,
     )
   }
   prefixes = arraify(prefixes)
@@ -27,7 +27,7 @@ export function loadEnv(
   ]
 
   const parsed = Object.fromEntries(
-    envFiles.flatMap(file => {
+    envFiles.flatMap((file) => {
       const filePath = path.join(envDir, file)
       if (!tryStatSync(filePath)?.isFile()) return []
 
@@ -53,21 +53,25 @@ export function loadEnv(
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
-    if (prefixes.some(prefix => key.startsWith(prefix))) {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = value
     }
-  }
-
-  if (!includeProcessEnv) {
-    return env
   }
 
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
-    if (prefixes.some(prefix => key.startsWith(prefix))) {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = process.env[key] as string
     }
+  }
+
+  if (!includeProcessEnv) {
+    const parsedKeys = Object.keys(parsed)
+    
+    Object.keys(process.env)
+      .filter(key => !parseKeys.includes(key) && key in env)
+      .forEach(unwantedKey => delete env[key])
   }
 
   return env
