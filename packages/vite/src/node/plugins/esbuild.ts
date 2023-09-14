@@ -478,7 +478,10 @@ async function loadTsconfigJsonForFile(
     } else {
       tsconfckCache = new TSConfckCache<TSConfckParseResult>()
     }
-    const result = await parse(filename, { cache: tsconfckCache })
+    const result = await parse(filename, {
+      cache: tsconfckCache,
+      ignoreNodeModules: true,
+    })
     // tsconfig could be out of root, make sure it is watched on dev
     if (server && result.tsconfigFile) {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
