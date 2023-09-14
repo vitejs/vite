@@ -2,11 +2,6 @@ import type { DepOptimizationConfig } from '../optimizer'
 
 export type SSRTarget = 'node' | 'webworker'
 
-/**
- * @deprecated SSR build output is now always ESM
- */
-export type SSRFormat = 'esm' | 'cjs'
-
 export type SsrDepOptimizationOptions = DepOptimizationConfig
 
 export interface SSROptions {
@@ -18,13 +13,6 @@ export interface SSROptions {
    * @default 'node'
    */
   target?: SSRTarget
-  /**
-   * Define the format for the ssr build. Since Vite v5 this option is ignored.
-   * @experimental
-   * @deprecated SSR build output is now always ESM
-   * @default 'esm'
-   */
-  format?: SSRFormat
   /**
    * Control over which dependencies are optimized during SSR and esbuild options
    * During build:

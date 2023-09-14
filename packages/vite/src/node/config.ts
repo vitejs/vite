@@ -322,13 +322,8 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
-   * Since Vite 5, this option is ignored.
-   * @experimental
-   * @deprecated SSR build output is now always ESM
-   * @default false
+   * No longer needed for now, but kept for backwards compatibility.
    */
-  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
@@ -847,7 +842,9 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 
   // Warn about removal of experimental features
   if (
+    // @ts-expect-error Option removed
     config.legacy?.buildSsrCjsExternalHeuristics ||
+    // @ts-expect-error Option removed
     config.ssr?.format === 'cjs'
   ) {
     resolved.logger.warn(
