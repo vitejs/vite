@@ -70,8 +70,8 @@ export function loadEnv(
     const parsedKeys = Object.keys(parsed)
     
     Object.keys(process.env)
-      .filter(key => !parseKeys.includes(key) && key in env)
-      .forEach(unwantedKey => delete env[key])
+      .filter(processEnvKey => processEnvKey in env && !parseKeys.includes(processEnvKey))
+      .forEach(unwantedKey => delete env[unwantedKey])
   }
 
   return env
