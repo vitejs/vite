@@ -32,7 +32,7 @@ export function loadEnv(
       if (!tryStatSync(filePath)?.isFile()) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
-    })
+    }),
   )
 
   // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
