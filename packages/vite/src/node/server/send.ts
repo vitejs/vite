@@ -17,6 +17,8 @@ const alias: Record<string, string | undefined> = {
   json: 'application/json',
 }
 
+const sourcemapRe = /^\/\/# sourceMappingURL=.+/m
+
 export interface SendOptions {
   etag?: string
   cacheControl?: string
@@ -63,13 +65,18 @@ export function send(
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
     }
-  } else {
-    if (type === 'js' && (!map || map.mappings !== '')) {
+  }
+  // inject fallback sourcemap for js for improved debugging
+  // https://github.com/vitejs/vite/pull/13514#issuecomment-1592431496
+  else if (type === 'js' && (!map || map.mappings !== '')) {
+    const code = content.toString()
+    // if the code has existing inline sourcemap, assume it's correct and skip
+    if (!sourcemapRe.test(code)) {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
-      const ms = new MagicString(content.toString())
+      const ms = new MagicString(code)
       content = getCodeWithSourcemap(
         type,
-        content.toString(),
+        code,
         ms.generateMap({
           source: path.basename(urlWithoutTimestamp),
           hires: 'boundary',

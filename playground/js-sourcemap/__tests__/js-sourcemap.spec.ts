@@ -29,6 +29,30 @@ if (!isBuild) {
     `)
   })
 
+  test('js with existing inline sourcemap', async () => {
+    const res = await page.request.get(
+      new URL('./foo-with-sourcemap.js', page.url()).href,
+    )
+    const js = await res.text()
+
+    const sourcemapComments = js.match(/\/\/# sourceMappingURL=.+/g).length
+    expect(sourcemapComments).toBe(1)
+
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
+        "sources": [
+          "",
+        ],
+        "sourcesContent": [
+          null,
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
   test('ts', async () => {
     const res = await page.request.get(new URL('./bar.ts', page.url()).href)
     const js = await res.text()
