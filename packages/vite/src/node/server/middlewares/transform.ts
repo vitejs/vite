@@ -16,6 +16,7 @@ import {
   removeImportQuery,
   removeTimestampQuery,
   unwrapId,
+  withTrailingSlash,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
@@ -129,10 +130,10 @@ export function transformMiddleware(
       // check if public dir is inside root dir
       const publicDir = normalizePath(server.config.publicDir)
       const rootDir = normalizePath(server.config.root)
-      if (publicDir.startsWith(rootDir)) {
+      if (publicDir.startsWith(withTrailingSlash(rootDir))) {
         const publicPath = `${publicDir.slice(rootDir.length)}/`
         // warn explicit public paths
-        if (url.startsWith(publicPath)) {
+        if (url.startsWith(withTrailingSlash(publicPath))) {
           let warning: string
 
           if (isImportRequest(url)) {

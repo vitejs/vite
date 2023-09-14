@@ -18,7 +18,11 @@ if (!isBuild) {
       {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
         "sources": [
-          "/foo.js",
+          "foo.js",
+        ],
+        "sourcesContent": [
+          "export const foo = 'foo'
+      ",
         ],
         "version": 3,
       }
@@ -37,6 +41,32 @@ if (!isBuild) {
         ],
         "sourcesContent": [
           "export const bar = 'bar'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('multiline import', async () => {
+    const res = await page.request.get(
+      new URL('./with-multiline-import.ts', page.url()).href,
+    )
+    const multi = await res.text()
+    const map = extractSourcemap(multi)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AACA;AAAA,EACE;AAAA,OACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG;",
+        "sources": [
+          "with-multiline-import.ts",
+        ],
+        "sourcesContent": [
+          "// prettier-ignore
+      import {
+        foo
+      } from '@vitejs/test-importee-pkg'
+
+      console.log('with-multiline-import', foo)
       ",
         ],
         "version": 3,

@@ -3,6 +3,7 @@ import type {
   OutgoingHttpHeaders,
   ServerResponse,
 } from 'node:http'
+import path from 'node:path'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
 import MagicString from 'magic-string'
@@ -69,7 +70,11 @@ export function send(
       content = getCodeWithSourcemap(
         type,
         content.toString(),
-        ms.generateMap({ source: urlWithoutTimestamp, hires: 'boundary' }),
+        ms.generateMap({
+          source: path.basename(urlWithoutTimestamp),
+          hires: 'boundary',
+          includeContent: true,
+        }),
       )
     }
   }

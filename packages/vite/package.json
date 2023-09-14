@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "5.0.0-beta.0",
+  "version": "5.0.0-beta.1",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -28,6 +28,9 @@
       "types": "./client.d.ts"
     },
     "./dist/client/*": "./dist/client/*",
+    "./types/*": {
+      "types": "./types/*"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -57,7 +60,7 @@
     "build-types": "run-s build-types-temp build-types-pre-patch build-types-roll build-types-post-patch build-types-check",
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "build-types-pre-patch": "tsx scripts/prePatchTypes.ts",
-    "build-types-roll": "api-extractor run && rimraf temp",
+    "build-types-roll": "tsx scripts/api-extractor.ts run && rimraf temp",
     "build-types-post-patch": "tsx scripts/postPatchTypes.ts",
     "build-types-check": "tsx scripts/checkBuiltTypes.ts && tsc --project tsconfig.check.json",
     "typecheck": "tsc --noEmit",
@@ -77,7 +80,7 @@
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
     "@babel/parser": "^7.22.7",
-    "@babel/types": "^7.22.5",
+    "@babel/types": "^7.22.17",
     "@jridgewell/trace-mapping": "^0.3.18",
     "@rollup/plugin-alias": "^4.0.4",
     "@rollup/plugin-commonjs": "^25.0.3",
@@ -136,7 +139,7 @@
     "ws": "^8.13.0"
   },
   "peerDependencies": {
-    "@types/node": ">= 14",
+    "@types/node": "^18.0.0 || >=20.0.0",
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",

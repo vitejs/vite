@@ -80,7 +80,7 @@ npm add -D terser
 - **Type:** `boolean | string[]`
 - **Default:** `false`
 
-  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting browsers with [native ESM support](https://caniuse.com/es6-module)).
+  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting [browsers that support widely-available features](#browsers-that-supports-esm-but-does-not-support-widely-available-features)).
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
