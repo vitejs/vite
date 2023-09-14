@@ -326,7 +326,7 @@ Enabling this disables named imports.
 
 - **Type:** `ESBuildOptions | false`
 
-`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform). The most common use case is customizing JSX:
 
 ```js
 export default defineConfig({

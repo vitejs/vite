@@ -1,3 +1,7 @@
+---
+outline: [2, 3]
+---
+
 # Why Vite
 
 ## The Problems

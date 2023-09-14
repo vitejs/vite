@@ -202,7 +202,7 @@ async function instantiateModule(
   }
 
   let sourceMapSuffix = ''
-  if (result.map) {
+  if (result.map && 'version' in result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
       // currently we need to offset the line
       // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
