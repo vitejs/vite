@@ -9,11 +9,12 @@ export function loadEnv(
   mode: string,
   envDir: string,
   prefixes: string | string[] = 'VITE_',
+  includeProcessEnv = true
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
-        `the .local postfix for .env files.`,
+        `the .local postfix for .env files.`
     )
   }
   prefixes = arraify(prefixes)
@@ -26,12 +27,12 @@ export function loadEnv(
   ]
 
   const parsed = Object.fromEntries(
-    envFiles.flatMap((file) => {
+    envFiles.flatMap(file => {
       const filePath = path.join(envDir, file)
       if (!tryStatSync(filePath)?.isFile()) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
-    }),
+    })
   )
 
   // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
@@ -52,15 +53,19 @@ export function loadEnv(
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+    if (prefixes.some(prefix => key.startsWith(prefix))) {
       env[key] = value
     }
+  }
+
+  if (!includeProcessEnv) {
+    return env
   }
 
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+    if (prefixes.some(prefix => key.startsWith(prefix))) {
       env[key] = process.env[key] as string
     }
   }
