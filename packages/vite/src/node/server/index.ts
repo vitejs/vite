@@ -290,11 +290,6 @@ export interface ViteDevServer {
    */
   _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
-   * Deps that are externalized
-   * @internal
-   */
-  _ssrExternals: string[] | null
-  /**
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -504,7 +499,6 @@ export async function _createServer(
       return server._restartPromise
     },
 
-    _ssrExternals: null,
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
