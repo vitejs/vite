@@ -24,7 +24,7 @@ worker.addEventListener('message', (e) => {
 const namedWorker = new myWorker({ name: 'namedWorker' })
 namedWorker.postMessage('ping')
 namedWorker.addEventListener('message', (e) => {
-  text('.pong-named', e.data.msg)
+  text('.pong-named', e.data.name)
 })
 
 const inlineWorker = new InlineWorker()
@@ -36,7 +36,13 @@ inlineWorker.addEventListener('message', (e) => {
 const namedInlineWorker = new InlineWorker({ name: 'namedInlineWorker' })
 namedInlineWorker.postMessage('ping')
 namedInlineWorker.addEventListener('message', (e) => {
-  text('.pong-inline-named', e.data.msg)
+  text('.pong-inline-named', e.data.name)
+})
+
+const inlineWorkerUrl = new InlineWorker()
+inlineWorkerUrl.postMessage('ping')
+inlineWorkerUrl.addEventListener('message', (e) => {
+  text('.pong-inline-url', e.data.metaUrl)
 })
 
 const startSharedWorker = () => {

@@ -301,7 +301,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           ? 'module'
           : 'classic'
         : 'module'
-      const workerTypeOption = workerType === 'classic' ? undefined : 'module'
+      const workerTypeOption = `{
+        ${workerType === 'module' ? `type: "module",` : ''}
+        name: options?.name
+      }`
 
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
@@ -315,33 +318,42 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
               ? `${encodedJs}
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([${
+            workerType === 'classic'
+              ? ''
+              : // `URL` is always available, in `Worker[type="module"]`
+                `'URL.revokeObjectURL(import.meta.url);'+`
+          }atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL, { name: options?.name })
+              const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
+              worker.addEventListener("error", () => {
+                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              });
+              return worker;
             } catch(e) {
               return new ${workerConstructor}(
                 "data:application/javascript;base64," + encodedJs,
-                {
-                  ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                  name: options?.name
-                }
+                ${workerTypeOption}
               );
-            } finally {
-              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+            }${
+              // For module workers, we should not revoke the URL until the worker runs,
+              // otherwise the worker fails to run
+              workerType === 'classic'
+                ? ` finally {
+                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                  }`
+                : ''
             }
           }`
               : `${encodedJs}
           export default function WorkerWrapper(options) {
             return new ${workerConstructor}(
               "data:application/javascript;base64," + encodedJs,
-              {
-                ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                name: options?.name
-              }
+              ${workerTypeOption}
             );
           }
           `
@@ -371,10 +383,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         code: `export default function WorkerWrapper(options) {
           return new ${workerConstructor}(
             ${JSON.stringify(url)},
-            {
-              ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-              name: options?.name
-            }
+            ${workerTypeOption}
           );
         }`,
         map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
