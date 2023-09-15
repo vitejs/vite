@@ -38,7 +38,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
-export const preloadHelperId = '\0vite/preload-helper'
+export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
 
 const dynamicImportPrefixRE = /import\s*\(/

@@ -19,7 +19,7 @@ import {
 import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
 
-export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
+export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
 
 const relativePathRE = /^\.{1,2}\//
 // fast path to check if source contains a dynamic import. we check for a
