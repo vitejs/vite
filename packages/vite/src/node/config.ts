@@ -501,7 +501,9 @@ export async function resolveConfig(
   if (resolvedRoot.includes('#')) {
     logger.warn(
       colors.yellow(
-        `The project root contains the "#" character (${colors.cyan(resolvedRoot)}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
+        `The project root contains the "#" character (${colors.cyan(
+          resolvedRoot,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
       ),
     )
   }
