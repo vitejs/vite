@@ -92,10 +92,6 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 // A hack to allow 'as' & 'query' exist at the same time
                 query: injectQuery(queryString, 'url'),
               }
-              // Note: native import.meta.url is not supported in the baseline
-              // target so we use the global location here. It can be
-              // window.location or self.location in case it is used in a Web Worker.
-              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
               s.update(
                 index,
                 index + exp.length,
@@ -103,7 +99,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                   pattern,
                 )}, ${JSON.stringify(
                   globOptions,
-                )}))[${pureUrl}], self.location)`,
+                )}))[${pureUrl}], import.meta.url)`,
               )
               continue
             }
@@ -154,7 +150,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }
         if (s) {
