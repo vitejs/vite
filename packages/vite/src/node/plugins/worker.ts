@@ -303,39 +303,27 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerTypeOption = workerType === 'classic' ? undefined : 'module'
 
-      if (isBuild) {
-        getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-        if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(config, id, query)
-          const encodedJs = `const encodedJs = "${Buffer.from(
-            chunk.code,
-          ).toString('base64')}";`
+      // object url is a special case
+      // can not do any think about url (such as: fetch / import nested worker / new worker with constructor)
+      // We should sacrifice some HMR performance to ensure consistency between dev and prod
+      if (query.inline != null) {
+        const chunk = await bundleWorkerEntry(config, id, query)
+        const encodedJs = `const encodedJs = "${Buffer.from(
+          chunk.code,
+        ).toString('base64')}";`
 
-          const code =
-            // Using blob URL for SharedWorker results in multiple instances of a same worker
-            workerConstructor === 'Worker'
-              ? `${encodedJs}
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper(options) {
-            let objURL;
-            try {
-              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              if (!objURL) throw ''
-              return new ${workerConstructor}(objURL, { name: options?.name })
-            } catch(e) {
-              return new ${workerConstructor}(
-                "data:application/javascript;base64," + encodedJs,
-                {
-                  ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                  name: options?.name
-                }
-              );
-            } finally {
-              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-            }
-          }`
-              : `${encodedJs}
-          export default function WorkerWrapper(options) {
+        const code =
+          // Using blob URL for SharedWorker results in multiple instances of a same worker
+          workerConstructor === 'Worker'
+            ? `${encodedJs}
+        const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+        export default function WorkerWrapper(options) {
+          let objURL;
+          try {
+            objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+            if (!objURL) throw ''
+            return new ${workerConstructor}(objURL, { name: options?.name })
+          } catch(e) {
             return new ${workerConstructor}(
               "data:application/javascript;base64," + encodedJs,
               {
@@ -343,17 +331,31 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 name: options?.name
               }
             );
+          } finally {
+            objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
           }
-          `
-
-          return {
-            code,
-            // Empty sourcemap to suppress Rollup warning
-            map: { mappings: '' },
-          }
-        } else {
-          url = await workerFileToUrl(config, id, query)
+        }`
+            : `${encodedJs}
+        export default function WorkerWrapper(options) {
+          return new ${workerConstructor}(
+            "data:application/javascript;base64," + encodedJs,
+            {
+              ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
+              name: options?.name
+            }
+          );
         }
+        `
+        return {
+          code,
+          // Empty sourcemap to suppress Rollup warning
+          map: { mappings: '' },
+        }
+      }
+
+      if (isBuild) {
+        getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
+        url = await workerFileToUrl(config, id, query)
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WORKER_FILE_ID)

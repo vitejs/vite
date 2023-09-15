@@ -58,8 +58,12 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   )
   await untilUpdated(
     () => page.textContent('.nested-worker-module'),
-    'sub-worker',
+    '"type":"module"',
     true,
+  )
+  await untilUpdated(
+    () => page.textContent('.nested-worker-inline'),
+    '"type":"inline"',
   )
   await untilUpdated(
     () => page.textContent('.nested-worker-constructor'),
