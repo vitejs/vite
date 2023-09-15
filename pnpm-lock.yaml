@@ -397,8 +397,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       tsconfck:
-        specifier: ^2.1.2
-        version: 2.1.2(typescript@5.0.2)
+        specifier: ^3.0.0-next.8
+        version: 3.0.0-next.8(typescript@5.0.2)
       tslib:
         specifier: ^2.6.1
         version: 2.6.1
@@ -10020,12 +10020,12 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  /tsconfck@2.1.2(typescript@5.0.2):
-    resolution: {integrity: sha512-ghqN1b0puy3MhhviwO2kGF8SeMDNhEbnKxjK7h6+fvY9JAxqvXi8y5NAHSQv687OVboS2uZIByzGd45/YxrRHg==}
-    engines: {node: ^14.13.1 || ^16 || >=18}
+  /tsconfck@3.0.0-next.8(typescript@5.0.2):
+    resolution: {integrity: sha512-lg4uK51cWF+Ciqj+1c+/LH9GVa866AsV0xEUlbtKaXuMlyr6rTMQm8t/vCOaSr8jfl1HC5oL6Jc+LTAEILNddg==}
+    engines: {node: ^18 || >=20}
     hasBin: true
     peerDependencies:
-      typescript: ^4.3.5 || ^5.0.0
+      typescript: ^5.0.0
     peerDependenciesMeta:
       typescript:
         optional: true
