@@ -301,7 +301,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           ? 'module'
           : 'classic'
         : 'module'
-      const workerTypeOption = workerType === 'classic' ? undefined : 'module'
+      const workerTypeOption = `{
+        ${workerType === 'module' ? `type: "module",` : ''}
+        name: options?.name
+      }`
 
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
@@ -326,10 +329,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              const worker = new ${workerConstructor}(objURL, {
-                ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                name: options?.name
-              });
+              const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
               worker.addEventListener("error", () => {
                 (window.URL || window.webkitURL).revokeObjectURL(objURL);
               });
@@ -337,16 +337,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             } catch(e) {
               return new ${workerConstructor}(
                 "data:application/javascript;base64," + encodedJs,
-                {
-                  ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                  name: options?.name
-                }
+                ${workerTypeOption}
               );
             }${
               workerType === 'classic'
                 ? ` finally {
-              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-            }`
+                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                  }`
                 : ''
             }
           }`
@@ -354,10 +351,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           export default function WorkerWrapper(options) {
             return new ${workerConstructor}(
               "data:application/javascript;base64," + encodedJs,
-              {
-                ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-                name: options?.name
-              }
+              ${workerTypeOption}
             );
           }
           `
@@ -387,10 +381,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         code: `export default function WorkerWrapper(options) {
           return new ${workerConstructor}(
             ${JSON.stringify(url)},
-            {
-              ${workerTypeOption ? `type: "${workerTypeOption}",` : ''}
-              name: options?.name
-            }
+            ${workerTypeOption}
           );
         }`,
         map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
