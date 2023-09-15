@@ -405,7 +405,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-post',
 
-    buildStart() {
+    renderStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<RenderedChunk>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
@@ -766,10 +766,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const { importedCss } = (bundle[file] as OutputChunk)
-                  .viteMetadata!
+                const { importedCss, importedAssets } = (
+                  bundle[file] as OutputChunk
+                ).viteMetadata!
                 importedCss.forEach((file) =>
                   chunk.viteMetadata!.importedCss.add(file),
+                )
+                importedAssets.forEach((file) =>
+                  chunk.viteMetadata!.importedAssets.add(file),
                 )
                 return false
               }
@@ -786,6 +790,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
+          delete bundle[`${fileName}.map`]
         })
       }
 
@@ -2186,6 +2191,7 @@ async function compileLightningCSS(
     : await (
         await importLightningCSS()
       ).bundleAsync({
+        ...config.css?.lightningcss,
         filename,
         resolver: {
           read(filePath) {
@@ -2216,14 +2222,12 @@ async function compileLightningCSS(
             return id
           },
         },
-        targets: config.css?.lightningcss?.targets,
         minify: config.isProduction && !!config.build.cssMinify,
         sourceMap: config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
           ? config.css?.lightningcss?.cssModules ?? true
           : undefined,
-        drafts: config.css?.lightningcss?.drafts,
       })
 
   let css = res.code.toString()
