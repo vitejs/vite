@@ -92,6 +92,7 @@
     "@types/escape-html": "^1.0.2",
     "@types/pnpapi": "^0.0.2",
     "acorn": "^8.10.0",
+    "acorn-import-assertions": "^1.9.0",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
