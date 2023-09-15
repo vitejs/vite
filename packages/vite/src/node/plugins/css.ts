@@ -1946,7 +1946,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     ) as RollupError
     normalizedError.loc = {
       file: error.filename || options.filename,
-      line: error.line,
+      line: error.line + 1,
       column: error.column,
     }
     return { code: '', error: normalizedError, deps: [] }
