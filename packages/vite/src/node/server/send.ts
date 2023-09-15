@@ -4,11 +4,16 @@ import type {
   ServerResponse,
 } from 'node:http'
 import path from 'node:path'
+import convertSourceMap from 'convert-source-map'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
 import MagicString from 'magic-string'
-import { removeTimestampQuery } from '../utils'
+import { createDebugger, removeTimestampQuery } from '../utils'
 import { getCodeWithSourcemap } from './sourcemap'
+
+const debug = createDebugger('vite:send', {
+  onlyWhenFocused: true,
+})
 
 const alias: Record<string, string | undefined> = {
   js: 'application/javascript',
@@ -63,13 +68,20 @@ export function send(
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
     }
-  } else {
-    if (type === 'js' && (!map || map.mappings !== '')) {
+  }
+  // inject fallback sourcemap for js for improved debugging
+  // https://github.com/vitejs/vite/pull/13514#issuecomment-1592431496
+  else if (type === 'js' && (!map || map.mappings !== '')) {
+    const code = content.toString()
+    // if the code has existing inline sourcemap, assume it's correct and skip
+    if (convertSourceMap.mapFileCommentRegex.test(code)) {
+      debug?.(`Skipped injecting fallback sourcemap for ${req.url}`)
+    } else {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
-      const ms = new MagicString(content.toString())
+      const ms = new MagicString(code)
       content = getCodeWithSourcemap(
         type,
-        content.toString(),
+        code,
         ms.generateMap({
           source: path.basename(urlWithoutTimestamp),
           hires: 'boundary',
