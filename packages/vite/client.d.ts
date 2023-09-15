@@ -37,62 +37,14 @@ declare module '*.module.sss' {
 }
 
 // CSS
-declare module '*.css' {
-  /**
-   * @deprecated Use `import style from './style.css?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.scss' {
-  /**
-   * @deprecated Use `import style from './style.scss?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.sass' {
-  /**
-   * @deprecated Use `import style from './style.sass?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.less' {
-  /**
-   * @deprecated Use `import style from './style.less?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.styl' {
-  /**
-   * @deprecated Use `import style from './style.styl?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.stylus' {
-  /**
-   * @deprecated Use `import style from './style.stylus?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.pcss' {
-  /**
-   * @deprecated Use `import style from './style.pcss?inline'` instead.
-   */
-  const css: string
-  export default css
-}
-declare module '*.sss' {
-  /**
-   * @deprecated Use `import style from './style.sss?inline'` instead.
-   */
-  const css: string
-  export default css
-}
+declare module '*.css' {}
+declare module '*.scss' {}
+declare module '*.sass' {}
+declare module '*.less' {}
+declare module '*.styl' {}
+declare module '*.stylus' {}
+declare module '*.pcss' {}
+declare module '*.sss' {}
 
 // Built-in asset types
 // see `src/node/constants.ts`
@@ -229,14 +181,14 @@ declare module '*.wasm?init' {
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
 
 declare module '*?worker&inline' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
@@ -248,14 +200,14 @@ declare module '*?worker&url' {
 
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
 }
 
 declare module '*?sharedworker&inline' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
 }

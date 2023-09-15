@@ -1,5 +1,6 @@
 import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
+import { mapFileCommentRegex } from 'convert-source-map'
 import {
   extractSourcemap,
   findAssetFile,
@@ -18,7 +19,35 @@ if (!isBuild) {
       {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
         "sources": [
-          "/foo.js",
+          "foo.js",
+        ],
+        "sourcesContent": [
+          "export const foo = 'foo'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('js with existing inline sourcemap', async () => {
+    const res = await page.request.get(
+      new URL('./foo-with-sourcemap.js', page.url()).href,
+    )
+    const js = await res.text()
+
+    const sourcemapComments = js.match(mapFileCommentRegex).length
+    expect(sourcemapComments).toBe(1)
+
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
+        "sources": [
+          "",
+        ],
+        "sourcesContent": [
+          null,
         ],
         "version": 3,
       }
@@ -37,6 +66,32 @@ if (!isBuild) {
         ],
         "sourcesContent": [
           "export const bar = 'bar'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('multiline import', async () => {
+    const res = await page.request.get(
+      new URL('./with-multiline-import.ts', page.url()).href,
+    )
+    const multi = await res.text()
+    const map = extractSourcemap(multi)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AACA;AAAA,EACE;AAAA,OACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG;",
+        "sources": [
+          "with-multiline-import.ts",
+        ],
+        "sourcesContent": [
+          "// prettier-ignore
+      import {
+        foo
+      } from '@vitejs/test-importee-pkg'
+
+      console.log('with-multiline-import', foo)
       ",
         ],
         "version": 3,

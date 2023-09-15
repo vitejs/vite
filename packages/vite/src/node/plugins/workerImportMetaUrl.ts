@@ -180,7 +180,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             urlIndex,
             urlIndex + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            // add `'' +` to skip vite:asset-import-meta-url plugin
+            `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }
 
