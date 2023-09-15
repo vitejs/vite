@@ -1,7 +1,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, page, readManifest, testDir, untilUpdated } from '~utils'
+import {
+  isBuild,
+  isServe,
+  page,
+  readManifest,
+  testDir,
+  untilUpdated,
+  viteTestUrl,
+} from '~utils'
 
 test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong')
@@ -17,6 +25,10 @@ test('normal', async () => {
   )
 })
 
+test('named', async () => {
+  await untilUpdated(() => page.textContent('.pong-named'), 'pong', true)
+})
+
 test('TS output', async () => {
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
 })
@@ -25,8 +37,16 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
+test('named inlined', async () => {
+  await untilUpdated(() => page.textContent('.pong-inline-named'), 'pong', true)
+})
+
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong')
+})
+
+test('named shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
 })
 
 test('inline shared worker', async () => {
@@ -131,3 +151,23 @@ test('import.meta.glob eager in worker', async () => {
     '["',
   )
 })
+
+test.runIf(isServe)('sourcemap boundary', async () => {
+  const response = page.waitForResponse(/my-worker.ts\?type=module&worker_file/)
+  await page.goto(viteTestUrl)
+  const content = await (await response).text()
+  const { mappings } = decodeSourceMapUrl(content)
+  expect(mappings.startsWith(';')).toBeTruthy()
+  expect(mappings.endsWith(';')).toBeFalsy()
+})
+
+function decodeSourceMapUrl(content: string) {
+  return JSON.parse(
+    Buffer.from(
+      content.match(
+        /\/\/[#@]\ssourceMappingURL=\s*data:application\/json;base64,(\S+)/,
+      )?.[1],
+      'base64',
+    ).toString(),
+  )
+}

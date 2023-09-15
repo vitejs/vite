@@ -164,6 +164,10 @@ export default defineConfig({
                 text: 'Changelog',
                 link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
               },
+              {
+                text: 'Contributing',
+                link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
+              },
             ],
           },
         ],
@@ -306,6 +310,10 @@ export default defineConfig({
           ],
         },
       ],
+    },
+
+    outline: {
+      level: [2, 3],
     },
   },
 })

@@ -40,8 +40,8 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
 } from '../optimizer'
-import { bindShortcuts } from '../shortcuts'
-import type { BindShortcutsOptions } from '../shortcuts'
+import { bindCLIShortcuts } from '../shortcuts'
+import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
@@ -235,7 +235,7 @@ export interface ViteDevServer {
    */
   ssrTransform(
     code: string,
-    inMap: SourceMap | null,
+    inMap: SourceMap | { mappings: '' } | null,
     url: string,
     originalCode?: string,
   ): Promise<TransformResult | null>
@@ -271,6 +271,10 @@ export interface ViteDevServer {
    * Print server urls
    */
   printUrls(): void
+  /**
+   * Bind CLI shortcuts
+   */
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
   /**
    * Restart the server.
    *
@@ -316,11 +320,8 @@ export interface ViteDevServer {
   _fsDenyGlob: Matcher
   /**
    * @internal
-   * Actually BindShortcutsOptions | undefined but api-extractor checks for
-   * export before trimming internal types :(
-   * And I don't want to add complexity to prePatchTypes for that
    */
-  _shortcutsOptions: any | undefined
+  _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
 }
 
 export interface ResolvedServerUrls {
@@ -385,7 +386,7 @@ export async function _createServer(
     resolvedUrls: null, // will be set on listen
     ssrTransform(
       code: string,
-      inMap: SourceMap | null,
+      inMap: SourceMap | { mappings: '' } | null,
       url: string,
       originalCode = code,
     ) {
@@ -492,6 +493,9 @@ export async function _createServer(
           'cannot print server URLs before server.listen is called.',
         )
       }
+    },
+    bindCLIShortcuts(options) {
+      bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
@@ -828,7 +832,7 @@ export function resolveServerOptions(
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
-  const shortcutsOptions: BindShortcutsOptions = server._shortcutsOptions
+  const shortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
 
   let inlineConfig = server.config.inlineConfig
@@ -879,7 +883,7 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindShortcuts(newServer, shortcutsOptions)
+    bindCLIShortcuts(newServer, shortcutsOptions)
   }
 }
 

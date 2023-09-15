@@ -18,10 +18,10 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
-  isUrl,
   normalizePath,
   processSrcSet,
   removeLeadingSlash,
+  urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
@@ -823,7 +823,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             getPublicAssetFilename(fileHash, config)!,
           )
 
-          return isUrl(publicAssetPath)
+          return urlCanParse(publicAssetPath)
             ? publicAssetPath
             : normalizePath(publicAssetPath)
         })
