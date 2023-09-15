@@ -276,6 +276,9 @@ importers:
       acorn:
         specifier: ^8.10.0
         version: 8.10.0
+      acorn-import-assertions:
+        specifier: ^1.9.0
+        version: 1.9.0(acorn@8.10.0)
       acorn-walk:
         specifier: ^8.2.0
         version: 8.2.0(acorn@8.10.0)
@@ -4360,6 +4363,14 @@ packages:
     dependencies:
       mime-types: 2.1.35
       negotiator: 0.6.3
+
+  /acorn-import-assertions@1.9.0(acorn@8.10.0):
+    resolution: {integrity: sha512-cmMwop9x+8KFhxvKrKfPYmN6/pKTYYHBqLa0DfvVZcKMJWNyWLnaqND7dx/qn66R7ewM1UX5XMaDVP5wlVTaVA==}
+    peerDependencies:
+      acorn: ^8
+    dependencies:
+      acorn: 8.10.0
+    dev: true
 
   /acorn-jsx@5.3.2(acorn@8.10.0):
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
