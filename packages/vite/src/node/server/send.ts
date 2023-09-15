@@ -4,11 +4,16 @@ import type {
   ServerResponse,
 } from 'node:http'
 import path from 'node:path'
+import convertSourceMap from 'convert-source-map'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
 import MagicString from 'magic-string'
-import { removeTimestampQuery } from '../utils'
+import { createDebugger, removeTimestampQuery } from '../utils'
 import { getCodeWithSourcemap } from './sourcemap'
+
+const debug = createDebugger('vite:send', {
+  onlyWhenFocused: true,
+})
 
 const alias: Record<string, string | undefined> = {
   js: 'application/javascript',
@@ -16,8 +21,6 @@ const alias: Record<string, string | undefined> = {
   html: 'text/html',
   json: 'application/json',
 }
-
-const sourcemapRe = /^\/\/# sourceMappingURL=.+/m
 
 export interface SendOptions {
   etag?: string
@@ -71,7 +74,9 @@ export function send(
   else if (type === 'js' && (!map || map.mappings !== '')) {
     const code = content.toString()
     // if the code has existing inline sourcemap, assume it's correct and skip
-    if (!sourcemapRe.test(code)) {
+    if (convertSourceMap.mapFileCommentRegex.test(code)) {
+      debug?.(`Skipped injecting fallback sourcemap for ${req.url}`)
+    } else {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
       const ms = new MagicString(code)
       content = getCodeWithSourcemap(

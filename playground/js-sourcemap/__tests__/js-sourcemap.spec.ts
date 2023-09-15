@@ -1,5 +1,6 @@
 import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
+import { mapFileCommentRegex } from 'convert-source-map'
 import {
   extractSourcemap,
   findAssetFile,
@@ -35,7 +36,7 @@ if (!isBuild) {
     )
     const js = await res.text()
 
-    const sourcemapComments = js.match(/\/\/# sourceMappingURL=.+/g).length
+    const sourcemapComments = js.match(mapFileCommentRegex).length
     expect(sourcemapComments).toBe(1)
 
     const map = extractSourcemap(js)
