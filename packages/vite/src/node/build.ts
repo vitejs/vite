@@ -223,7 +223,6 @@ export interface BuildOptions {
   ssrManifest?: boolean | string
   /**
    * Emit assets during SSR.
-   * @experimental
    * @default false
    */
   ssrEmitAssets?: boolean
