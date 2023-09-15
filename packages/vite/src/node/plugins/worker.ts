@@ -340,6 +340,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 ${workerTypeOption}
               );
             }${
+              // For module workers, we should not revoke the URL until the worker runs,
+              // otherwise the worker fails to run
               workerType === 'classic'
                 ? ` finally {
                     objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
