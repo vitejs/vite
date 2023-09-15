@@ -418,7 +418,7 @@
   document.querySelector('.import-meta-url-dep-img').src = metaUrlDep
 
   // testing URLs for public assets served at the public base path
-  // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, self.location)
+  // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, import.meta.url)
   const metaUrlBasePath = new URL('/icon.png', import.meta.url)
   text('.import-meta-url-base-path', metaUrlBasePath)
   document.querySelector('.import-meta-url-base-path-img').src = metaUrlBasePath
