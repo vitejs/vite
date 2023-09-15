@@ -39,7 +39,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
         id !== '@vite/client' &&
         id !== '@vite/env'
       ) {
-        if (findPatterns.find((pattern) => matches(pattern, id))) {
+        if (findPatterns.find(({ find }) => matches(find, id))) {
           const optimizedId = await tryOptimizedResolve(
             depsOptimizer,
             id,
@@ -105,7 +105,7 @@ function optimizeAliasReplacementForSSR(
 }
 
 // In sync with rollup plugin alias logic
-function matches(pattern: string | RegExp, importee: string) {
+export function matches(pattern: string | RegExp, importee: string): boolean {
   if (pattern instanceof RegExp) {
     return pattern.test(importee)
   }
@@ -118,14 +118,17 @@ function matches(pattern: string | RegExp, importee: string) {
   return importee.startsWith(withTrailingSlash(pattern))
 }
 
-function getAliasPatterns(
+export function getAliasPatterns(
   entries: (AliasOptions | undefined) & Alias[],
-): (string | RegExp)[] {
+): Alias[] {
   if (!entries) {
     return []
   }
   if (Array.isArray(entries)) {
-    return entries.map((entry) => entry.find)
+    return entries
   }
-  return Object.entries(entries).map(([find]) => find)
+  return Object.entries(entries as AliasOptions).map(([find, replacement]) => ({
+    find,
+    replacement,
+  }))
 }

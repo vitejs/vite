@@ -29,7 +29,9 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
+import type { Alias, AliasOptions } from '..'
 import { isCSSRequest, isModuleCSSRequest } from './css'
+import { getAliasPatterns, matches as matchesAlias } from './preAlias'
 
 const { isMatch, scan } = micromatch
 
@@ -86,6 +88,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
           this.resolve(im, id, options).then((i) => i?.id || im),
         config.isProduction,
         config.experimental.importGlobRestoreExtension,
+        config.resolve.alias,
       )
       if (result) {
         if (server) {
@@ -366,6 +369,7 @@ export async function transformGlobImport(
   resolveId: IdResolver,
   isProduction: boolean,
   restoreQueryExtension = false,
+  alias?: (AliasOptions | undefined) & Alias[],
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -395,6 +399,11 @@ export async function transformGlobImport(
           start,
           end,
         }) => {
+          const aliasPattern =
+            alias &&
+            getAliasPatterns(alias).find(({ find }) =>
+              matchesAlias(find, globs[0]),
+            )
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await fg(globsResolved, {
@@ -445,9 +454,22 @@ export async function transformGlobImport(
           }
 
           let includesCSS = false
+          const importKey =
+            options.import && options.import !== '*'
+              ? options.import
+              : undefined
           files.forEach((file, i) => {
             const paths = resolvePaths(file)
             const filePath = paths.filePath
+            const safeFile = globSafePath(file)
+            const aliasPath =
+              aliasPattern &&
+              typeof aliasPattern.find === 'string' &&
+              safeFile.replace(
+                globSafePath(aliasPattern.replacement),
+                aliasPattern.find,
+              )
+            const aliasMatched = aliasPath && aliasPath !== safeFile
             let importPath = paths.importPath
             let importQuery = query
 
@@ -463,11 +485,6 @@ export async function transformGlobImport(
               !query && isCSSRequest(file) && !isModuleCSSRequest(file)
             includesCSS ||= isCSS
 
-            const importKey =
-              options.import && options.import !== '*'
-                ? options.import
-                : undefined
-
             if (options.eager) {
               const variableName = `${importPrefix}${index}_${i}`
               const expression = importKey
@@ -477,34 +494,50 @@ export async function transformGlobImport(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
               if (!isProduction && isCSS) {
-                objectProps.push(
-                  `get ${JSON.stringify(
-                    filePath,
-                  )}() { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${variableName} }`,
-                )
+                const injectModule = (filePath: string) =>
+                  objectProps.push(
+                    `get ${JSON.stringify(
+                      filePath,
+                    )}() { ${createCssDefaultImportWarning(
+                      globs,
+                      options,
+                    )} return ${variableName} }`,
+                  )
+
+                injectModule(filePath)
+                aliasMatched && injectModule(aliasPath)
               } else {
-                objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+                const injectModule = (filePath: string) =>
+                  objectProps.push(
+                    `${JSON.stringify(filePath)}: ${variableName}`,
+                  )
+                injectModule(filePath)
+                aliasMatched && injectModule(aliasPath)
               }
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               if (!isProduction && isCSS) {
-                objectProps.push(
-                  `${JSON.stringify(
-                    filePath,
-                  )}: () => { ${createCssDefaultImportWarning(
-                    globs,
-                    options,
-                  )} return ${importStatement}}`,
-                )
+                const injectModule = (filePath: string) =>
+                  objectProps.push(
+                    `${JSON.stringify(
+                      filePath,
+                    )}: () => { ${createCssDefaultImportWarning(
+                      globs,
+                      options,
+                    )} return ${importStatement}}`,
+                  )
+
+                injectModule(filePath)
+                aliasMatched && injectModule(aliasPath)
               } else {
-                objectProps.push(
-                  `${JSON.stringify(filePath)}: () => ${importStatement}`,
-                )
+                const injectModule = (filePath: string) =>
+                  objectProps.push(
+                    `${JSON.stringify(filePath)}: () => ${importStatement}`,
+                  )
+                injectModule(filePath)
+                aliasMatched && injectModule(aliasPath)
               }
             }
           })
