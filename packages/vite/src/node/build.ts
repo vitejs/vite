@@ -5,7 +5,8 @@ import type {
   ExternalOption,
   InputOption,
   InternalModuleFormat,
-  LoggingFunction,
+  LogLevel,
+  LogOrStringHandler,
   ModuleFormat,
   OutputOptions,
   Plugin,
@@ -14,7 +15,6 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
-  RollupWarning,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
@@ -31,6 +31,7 @@ import { terserPlugin } from './plugins/terser'
 import {
   asyncFlatten,
   copyDir,
+  createDebugger,
   emptyDir,
   joinUrlSegments,
   normalizePath,
@@ -542,8 +543,8 @@ export async function build(
     input,
     plugins,
     external,
-    onwarn(warning, warn) {
-      onRollupWarning(warning, warn, config)
+    onLog(level, log, defaultHandler) {
+      onRollupLog(level, log, defaultHandler, config)
     },
   }
 
@@ -875,24 +876,18 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`,
 ]
 
-export function onRollupWarning(
-  warning: RollupWarning,
-  warn: LoggingFunction,
+export function onRollupLog(
+  level: LogLevel,
+  log: RollupLog,
+  logHandler: LogOrStringHandler,
   config: ResolvedConfig,
 ): void {
-  const viteWarn: LoggingFunction = (warnLog) => {
-    let warning: string | RollupLog
-
-    if (typeof warnLog === 'function') {
-      warning = warnLog()
-    } else {
-      warning = warnLog
-    }
-
-    if (typeof warning === 'object') {
-      if (warning.code === 'UNRESOLVED_IMPORT') {
-        const id = warning.id
-        const exporter = warning.exporter
+  const debugLogger = createDebugger('vite:build')
+  const viteLog: LogOrStringHandler = (logLeveling, logging) => {
+    if (typeof logging === 'object') {
+      if (logging.code === 'UNRESOLVED_IMPORT') {
+        const id = logging.id
+        const exporter = logging.exporter
         // throw unless it's commonjs external...
         if (!id || !/\?commonjs-external$/.test(id)) {
           throw new Error(
@@ -904,31 +899,60 @@ export function onRollupWarning(
         }
       }
 
-      if (
-        warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
-        dynamicImportWarningIgnoreList.some((msg) =>
-          // @ts-expect-error warning is RollupLog
-          warning.message.includes(msg),
-        )
-      ) {
-        return
+      if (logLeveling === 'warn') {
+        if (
+          logging.plugin === 'rollup-plugin-dynamic-import-variables' &&
+          dynamicImportWarningIgnoreList.some((msg) =>
+            logging.message.includes(msg),
+          )
+        ) {
+          return
+        }
+
+        if (warningIgnoreList.includes(logging.code!)) {
+          return
+        }
       }
 
-      if (warningIgnoreList.includes(warning.code!)) {
-        return
-      }
+      if (logging.code?.startsWith('PLUGIN_')) {
+        switch (logLeveling) {
+          case 'info':
+            config.logger.info(
+              `${colors.bold(
+                colors.green(`[plugin:${logging.plugin}]`),
+              )} ${colors.green(logging.message)}`,
+            )
+            return
 
-      if (warning.code === 'PLUGIN_WARNING') {
-        config.logger.warn(
-          `${colors.bold(
-            colors.yellow(`[plugin:${warning.plugin}]`),
-          )} ${colors.yellow(warning.message)}`,
-        )
-        return
+          case 'warn':
+            config.logger.warn(
+              `${colors.bold(
+                colors.yellow(`[plugin:${logging.plugin}]`),
+              )} ${colors.yellow(logging.message)}`,
+            )
+            return
+
+          case 'error':
+            config.logger.error(
+              `${colors.bold(
+                colors.red(`[plugin:${logging.plugin}]`),
+              )} ${colors.red(logging.message)}`,
+            )
+            return
+
+          case 'debug':
+            debugLogger?.(
+              `${`[plugin:${logging.plugin}]`} ${colors.dim(logging.message)}`,
+            )
+            return
+
+          default:
+            break
+        }
       }
     }
 
-    warn(warnLog)
+    logHandler(logLeveling, logging)
   }
 
   const tty = process.stdout.isTTY && !process.env.CI
@@ -936,11 +960,11 @@ export function onRollupWarning(
     process.stdout.clearLine(0)
     process.stdout.cursorTo(0)
   }
-  const userOnWarn = config.build.rollupOptions?.onwarn
-  if (userOnWarn) {
-    userOnWarn(warning, viteWarn)
+  const userOnLog = config.build.rollupOptions?.onLog
+  if (userOnLog) {
+    userOnLog(level, log, viteLog)
   } else {
-    viteWarn(warning)
+    viteLog(level, log)
   }
 }
 

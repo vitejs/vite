@@ -8,7 +8,7 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
-  onRollupWarning,
+  onRollupLog,
   toOutputFilePathInJS,
 } from '../build'
 import { getDepsOptimizer } from '../optimizer'
@@ -76,8 +76,8 @@ async function serialBundleWorkerEntry(
     ...rollupOptions,
     input: cleanUrl(id),
     plugins,
-    onwarn(warning, warn) {
-      onRollupWarning(warning, warn, config)
+    onLog(level, log, defaultHandler) {
+      onRollupLog(level, log, defaultHandler, config)
     },
     preserveEntrySignatures: false,
   })
