@@ -59,6 +59,8 @@ import type {
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+// @ts-expect-error untyped
+import { importAssertions } from 'acorn-import-assertions'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
@@ -150,7 +152,7 @@ type PluginContext = Omit<
   | 'moduleIds'
 >
 
-export let parser = acorn.Parser
+export let parser = acorn.Parser.extend(importAssertions)
 
 export async function createPluginContainer(
   config: ResolvedConfig,
@@ -628,6 +630,7 @@ export async function createPluginContainer(
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
+          importAssertions,
           ...(arraify(options.acornInjectPlugins) as any),
         )
       }
