@@ -585,7 +585,9 @@ function tryCleanFsResolve(
   const { tryPrefix, extensions, preserveSymlinks } = options
 
   let fileStat = tryStatSync(file)
-  if (!isWindows && fileStat === void 0 && (file = findRealPath(file))) {
+  if (!isWindows && fileStat === void 0) {
+    const newPath = findRealPath(file)
+    if (newPath) file = newPath
     fileStat = tryStatSync(file)
   }
 
