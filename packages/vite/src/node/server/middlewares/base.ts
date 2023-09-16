@@ -47,7 +47,7 @@ export function baseMiddleware({
       return
     } else {
       // not found for resources
-      res.writeHead(404);
+      res.writeHead(404)
       res.end()
       return
     }
