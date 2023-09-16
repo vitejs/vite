@@ -551,7 +551,30 @@ export function tryFsResolve(
 
 const knownTsOutputRE = /\.(?:js|mjs|cjs|jsx)$/
 const isPossibleTsOutput = (url: string): boolean => knownTsOutputRE.test(url)
+function findRealPath(inputPath: string) {
+  const projectPath = process.cwd()
+  const parts = inputPath.replace(projectPath, '').split(path.sep)
+  parts.shift()
+  let currentPath = projectPath
+  let flag = true
 
+  for (const part of parts) {
+    const dirContents = fs.readdirSync(currentPath)
+    // Ignore case of paths
+    const normalizedPart = part.toLowerCase()
+    const matchingDir = dirContents.find(
+      (item) => item.toLowerCase() === normalizedPart,
+    )
+    if (matchingDir) {
+      currentPath = path.join(currentPath, matchingDir)
+    } else {
+      // No matching directory found, ending the loop early
+      flag = false
+      break
+    }
+  }
+  return flag ? currentPath : ''
+}
 function tryCleanFsResolve(
   file: string,
   options: InternalResolveOptions,
@@ -561,7 +584,10 @@ function tryCleanFsResolve(
 ): string | undefined {
   const { tryPrefix, extensions, preserveSymlinks } = options
 
-  const fileStat = tryStatSync(file)
+  let fileStat = tryStatSync(file)
+  if (!isWindows && fileStat === void 0 && (file = findRealPath(file))) {
+    fileStat = tryStatSync(file)
+  }
 
   // Try direct match first
   if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
