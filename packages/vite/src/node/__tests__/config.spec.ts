@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
 import type { PluginOption, UserConfig, UserConfigExport } from '../config'
-import { resolveConfig } from '../config'
+import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { mergeConfig } from '../publicUtils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
-    const baseConfig: UserConfigExport = {
+    const baseConfig = defineConfig({
       resolve: {
         alias: [
           {
@@ -16,16 +16,16 @@ describe('mergeConfig', () => {
           },
         ],
       },
-    }
+    })
 
-    const newConfig: UserConfigExport = {
+    const newConfig = defineConfig({
       resolve: {
         alias: {
           bar: 'bar-value',
           baz: 'baz-value',
         },
       },
-    }
+    })
 
     const mergedConfig: UserConfigExport = {
       resolve: {
@@ -183,6 +183,27 @@ describe('mergeConfig', () => {
     // merging either ways, `ssr.noExternal: true` should take highest priority
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+  })
+
+  test('throws error with functions', () => {
+    const baseConfig = defineConfig(() => ({ base: 'base' }))
+    const newConfig = defineConfig(() => ({ base: 'new' }))
+
+    expect(() =>
+      mergeConfig(
+        // @ts-expect-error TypeScript shouldn't give you to pass a function as argument
+        baseConfig,
+        newConfig,
+      ),
+    ).toThrowError('Cannot merge config in form of callback')
+
+    expect(() =>
+      mergeConfig(
+        {},
+        // @ts-expect-error TypeScript shouldn't give you to pass a function as argument
+        newConfig,
+      ),
+    ).toThrowError('Cannot merge config in form of callback')
   })
 })
 

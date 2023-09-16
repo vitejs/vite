@@ -1,7 +1,7 @@
-import vite from 'vite'
+import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-export default vite.defineConfig({
+export default defineConfig({
   base: '/es/',
   resolve: {
     alias: {
@@ -44,4 +44,5 @@ export default vite.defineConfig({
       },
     },
   ],
+  cacheDir: 'node_modules/.vite-es',
 })

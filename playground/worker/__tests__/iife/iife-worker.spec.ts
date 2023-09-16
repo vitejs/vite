@@ -1,7 +1,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, page, testDir, untilUpdated } from '~utils'
+import {
+  isBuild,
+  isServe,
+  page,
+  readManifest,
+  testDir,
+  untilUpdated,
+  viteTestUrl,
+} from '~utils'
 
 test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong')
@@ -17,6 +25,10 @@ test('normal', async () => {
   )
 })
 
+test('named', async () => {
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+})
+
 test('TS output', async () => {
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
 })
@@ -25,8 +37,24 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
+test('named inlined', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-named'),
+    'namedInlineWorker',
+    true,
+  )
+})
+
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong')
+})
+
+test('named shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+})
+
+test('inline shared worker', async () => {
+  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
@@ -76,20 +104,33 @@ describe.runIf(isBuild)('build', () => {
       '"type":"constructor"',
     )
   })
+
+  test('should not emit worker manifest', async () => {
+    const manifest = readManifest('iife')
+    expect(manifest['index.html']).toBeDefined()
+  })
 })
 
 test('module worker', async () => {
   await untilUpdated(
-    () => page.textContent('.worker-import-meta-url'),
-    'A string',
+    async () => page.textContent('.worker-import-meta-url'),
+    /A\sstring.*\/iife\/.+url-worker\.js/,
+    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
+    /A\sstring.*\/iife\/.+url-worker\.js/,
+    true,
+  )
+  await untilUpdated(
+    () => page.textContent('.worker-import-meta-url-without-extension'),
     'A string',
+    true,
   )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
+    true,
   )
 })
 
@@ -114,3 +155,23 @@ test('import.meta.glob eager in worker', async () => {
     '["',
   )
 })
+
+test.runIf(isServe)('sourcemap boundary', async () => {
+  const response = page.waitForResponse(/my-worker.ts\?type=module&worker_file/)
+  await page.goto(viteTestUrl)
+  const content = await (await response).text()
+  const { mappings } = decodeSourceMapUrl(content)
+  expect(mappings.startsWith(';')).toBeTruthy()
+  expect(mappings.endsWith(';')).toBeFalsy()
+})
+
+function decodeSourceMapUrl(content: string) {
+  return JSON.parse(
+    Buffer.from(
+      content.match(
+        /\/\/[#@]\ssourceMappingURL=\s*data:application\/json;base64,(\S+)/,
+      )?.[1],
+      'base64',
+    ).toString(),
+  )
+}

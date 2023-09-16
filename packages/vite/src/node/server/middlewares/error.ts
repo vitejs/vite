@@ -15,7 +15,7 @@ export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
     id: (err as RollupError).id,
     frame: strip((err as RollupError).frame || ''),
     plugin: (err as RollupError).plugin,
-    pluginCode: (err as RollupError).pluginCode,
+    pluginCode: (err as RollupError).pluginCode?.toString(),
     loc: (err as RollupError).loc,
   }
 }

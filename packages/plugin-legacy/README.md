@@ -73,14 +73,14 @@ npm add -D terser
   - `browserslist` field in `package.json`
   - `.browserslistrc` file in cwd.
 
-  Set to `false` to ignore these sources.
+  Set to `true` to ignore these sources.
 
 ### `modernPolyfills`
 
 - **Type:** `boolean | string[]`
 - **Default:** `false`
 
-  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting browsers with [native ESM support](https://caniuse.com/es6-module)).
+  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting [browsers that support widely-available features](#browsers-that-supports-esm-but-does-not-support-widely-available-features)).
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
@@ -116,6 +116,13 @@ npm add -D terser
 - **Default:** `false`
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
+
+### `renderModernChunks`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Set to `false` to only output the legacy bundles that support all target browsers.
 
 ## Browsers that supports ESM but does not support widely-available features
 
@@ -159,7 +166,7 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-p7PoC97FO+Lu90RNjGWxhbm13yALSR4xzV8vaDhaQBo=`
+- `sha256-4y/gEB2/KIwZFTfNqwXJq4olzvmQ0S214m9jwKgNXoc=`
 - `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--

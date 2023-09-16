@@ -3,9 +3,9 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
+  bareImportRE,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
-  getPotentialTsSrcPaths,
   injectQuery,
   isFileReadable,
   isWindows,
@@ -13,6 +13,25 @@ import {
   processSrcSetSync,
   resolveHostname,
 } from '../utils'
+
+describe('bareImportRE', () => {
+  test('should work with normal package name', () => {
+    expect(bareImportRE.test('vite')).toBe(true)
+  })
+  test('should work with scoped package name', () => {
+    expect(bareImportRE.test('@vitejs/plugin-vue')).toBe(true)
+  })
+
+  test('should work with absolute paths', () => {
+    expect(bareImportRE.test('/foo')).toBe(false)
+    expect(bareImportRE.test('C:/foo')).toBe(false)
+    expect(bareImportRE.test('C:\\foo')).toBe(false)
+  })
+  test('should work with relative path', () => {
+    expect(bareImportRE.test('./foo')).toBe(false)
+    expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
 
 describe('injectQuery', () => {
   if (isWindows) {
@@ -135,42 +154,6 @@ describe('resolveHostname', () => {
       name: 'localhost',
     })
   })
-})
-
-test('ts import of file with .js extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.js')).toEqual([
-    'test-file.ts',
-    'test-file.tsx',
-  ])
-})
-
-test('ts import of file with .jsx extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.jsx')).toEqual(['test-file.tsx'])
-})
-
-test('ts import of file .mjs,.cjs extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.cjs')).toEqual([
-    'test-file.cts',
-    'test-file.ctsx',
-  ])
-  expect(getPotentialTsSrcPaths('test-file.mjs')).toEqual([
-    'test-file.mts',
-    'test-file.mtsx',
-  ])
-})
-
-test('ts import of file with .js before extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.js.js')).toEqual([
-    'test-file.js.ts',
-    'test-file.js.tsx',
-  ])
-})
-
-test('ts import of file with .js and query param', () => {
-  expect(getPotentialTsSrcPaths('test-file.js.js?lee=123')).toEqual([
-    'test-file.js.ts?lee=123',
-    'test-file.js.tsx?lee=123',
-  ])
 })
 
 describe('posToNumber', () => {

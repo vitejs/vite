@@ -221,7 +221,7 @@ Repository: git+https://github.com/ampproject/remapping.git
 >       same "printed page" as the copyright notice for easier
 >       identification within third-party archives.
 > 
->    Copyright 2019 Google LLC
+>    Copyright [yyyy] [name of copyright owner]
 > 
 >    Licensed under the Apache License, Version 2.0 (the "License");
 >    you may not use this file except in compliance with the License.
@@ -563,6 +563,13 @@ Repository: https://github.com/acornjs/acorn.git
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 > THE SOFTWARE.
+
+---------------------------------------
+
+## acorn-import-assertions
+License: MIT
+By: Sven Sauleau
+Repository: https://github.com/xtuc/acorn-import-assertions
 
 ---------------------------------------
 

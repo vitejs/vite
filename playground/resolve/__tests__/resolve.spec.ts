@@ -1,5 +1,7 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { expect, test } from 'vitest'
-import { isBuild, isWindows, page } from '~utils'
+import { isBuild, isWindows, page, testDir } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -67,12 +69,27 @@ test('Respect exports to take precedence over mainFields', async () => {
   expect(await page.textContent('.exports-with-module')).toMatch('[success]')
 })
 
+test('import and require resolve using module condition', async () => {
+  expect(await page.textContent('.exports-with-module-condition')).toMatch(
+    '[success]',
+  )
+  expect(
+    await page.textContent('.exports-with-module-condition-required'),
+  ).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })
 
 test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
+})
+
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
 })
 
 test('exact extension vs. duplicated (.js.js)', async () => {
@@ -155,12 +172,18 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success]',
+    '[success] true #',
   )
 })
 
 test('Resolving top level with imports field', async () => {
   expect(await page.textContent('.imports-top-level')).toMatch('[success]')
+})
+
+test('Resolving same level with imports field', async () => {
+  expect(await page.textContent('.imports-same-level')).toMatch(
+    await page.textContent('.imports-top-level'),
+  )
 })
 
 test('Resolving nested path with imports field', async () => {
@@ -177,4 +200,10 @@ test('Resolving slash with imports filed', async () => {
 
 test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
+})
+
+test.runIf(isBuild)('public dir is not copied', async () => {
+  expect(
+    fs.existsSync(path.resolve(testDir, 'dist/should-not-be-copied')),
+  ).toBe(false)
 })

@@ -92,10 +92,7 @@ export default defineConfig({
     ja: { label: '日本語', link: 'https://ja.vitejs.dev' },
     es: { label: 'Español', link: 'https://es.vitejs.dev' },
     pt: { label: 'Português', link: 'https://pt.vitejs.dev' },
-  },
-
-  vue: {
-    reactivityTransform: true,
+    ko: { label: '한국어', link: 'https://ko.vitejs.dev' },
   },
 
   themeConfig: {
@@ -140,6 +137,7 @@ export default defineConfig({
         text: 'Resources',
         items: [
           { text: 'Team', link: '/team' },
+          { text: 'Releases', link: '/releases' },
           {
             items: [
               {
@@ -165,6 +163,10 @@ export default defineConfig({
               {
                 text: 'Changelog',
                 link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
+              },
+              {
+                text: 'Contributing',
+                link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
               },
             ],
           },
@@ -238,6 +240,10 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
+              text: 'Philosophy',
+              link: '/guide/philosophy',
+            },
+            {
               text: 'Migration from v3',
               link: '/guide/migration',
             },
@@ -304,6 +310,10 @@ export default defineConfig({
           ],
         },
       ],
+    },
+
+    outline: {
+      level: [2, 3],
     },
   },
 })

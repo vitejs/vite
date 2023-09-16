@@ -4,6 +4,7 @@ import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
@@ -39,15 +40,6 @@ export async function resolvePlugins(
   const { modulePreload } = config.build
 
   return [
-    isWatch ? ensureWatchPlugin() : null,
-    isBuild ? metadataPlugin() : null,
-    preAliasPlugin(config),
-    aliasPlugin({ entries: config.resolve.alias }),
-    ...prePlugins,
-    modulePreload === true ||
-    (typeof modulePreload === 'object' && modulePreload.polyfill)
-      ? modulePreloadPolyfillPlugin(config)
-      : null,
     ...(isDepsOptimizerEnabled(config, false) ||
     isDepsOptimizerEnabled(config, true)
       ? [
@@ -56,6 +48,15 @@ export async function resolvePlugins(
             : optimizedDepsPlugin(config),
         ]
       : []),
+    isWatch ? ensureWatchPlugin() : null,
+    isBuild ? metadataPlugin() : null,
+    watchPackageDataPlugin(config.packageCache),
+    preAliasPlugin(config),
+    aliasPlugin({ entries: config.resolve.alias }),
+    ...prePlugins,
+    modulePreload !== false && modulePreload.polyfill
+      ? modulePreloadPolyfillPlugin(config)
+      : null,
     resolvePlugin({
       ...config.resolve,
       root: config.root,
@@ -67,12 +68,12 @@ export async function resolvePlugins(
       getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
       shouldExternalize:
         isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
-          ? (id) => shouldExternalizeForSSR(id, config)
+          ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
           : undefined,
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
-    config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
+    config.esbuild !== false ? esbuildPlugin(config) : null,
     jsonPlugin(
       {
         namedExports: true,

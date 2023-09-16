@@ -22,6 +22,10 @@ test('normal', async () => {
   )
 })
 
+test('named', async () => {
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+})
+
 test('TS output', async () => {
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong', true)
 })
@@ -30,8 +34,32 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong', true)
 })
 
+test('named inlined', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-named'),
+    'namedInlineWorker',
+    true,
+  )
+})
+
+test('import meta url', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-url'),
+    /^(blob|http):/,
+    true,
+  )
+})
+
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
+})
+
+test('named shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+})
+
+test('inline shared worker', async () => {
+  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
@@ -67,14 +95,21 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(`import`)
+    expect(workerContent).not.toMatch(/import[^.]/)
     expect(workerContent).not.toMatch(`export`)
     // chunk
     expect(content).toMatch(`new Worker("/es/assets`)
     expect(content).toMatch(`new SharedWorker("/es/assets`)
-    // inlined
+    // inlined worker
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(
+      /try\{if\(\w+=\w+&&\(window\.URL\|\|window\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
+    )
+    // inlined shared worker
+    expect(content).toMatch(
+      `return new SharedWorker("data:application/javascript;base64,"+`,
+    )
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
@@ -99,6 +134,11 @@ test('module worker', async () => {
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
+    'A string',
+    true,
+  )
+  await untilUpdated(
+    () => page.textContent('.worker-import-meta-url-without-extension'),
     'A string',
     true,
   )

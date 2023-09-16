@@ -1,3 +1,4 @@
+import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
 import type {
@@ -9,8 +10,6 @@ import type {
   Node as _Node,
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
-// `eslint-plugin-node` doesn't support package without main
-// eslint-disable-next-line node/no-missing-import
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { TransformResult } from '../server/transformRequest'
@@ -35,9 +34,11 @@ export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
+const hashbangRE = /^#!.*\n/
+
 export async function ssrTransform(
   code: string,
-  inMap: SourceMap | null,
+  inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
   options?: TransformOptions,
@@ -50,7 +51,7 @@ export async function ssrTransform(
 
 async function ssrTransformJSON(
   code: string,
-  inMap: SourceMap | null,
+  inMap: SourceMap | { mappings: '' } | null,
 ): Promise<TransformResult> {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
@@ -62,7 +63,7 @@ async function ssrTransformJSON(
 
 async function ssrTransformScript(
   code: string,
-  inMap: SourceMap | null,
+  inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
 ): Promise<TransformResult | null> {
@@ -94,11 +95,16 @@ async function ssrTransformScript(
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
-  function defineImport(node: Node, source: string) {
+  // hoist at the start of the file, after the hashbang
+  const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
+
+  function defineImport(source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
-    s.appendRight(
-      node.start,
+    // There will be an error if the module is called before it is imported,
+    // so the module import statement is hoisted to the top
+    s.appendLeft(
+      hoistIndex,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`,
     )
     return importId
@@ -118,8 +124,8 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
+      const importId = defineImport(node.source.value as string)
       s.remove(node.start, node.end)
-      const importId = defineImport(node, node.source.value as string)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
           idToImportMap.set(
@@ -161,10 +167,11 @@ async function ssrTransformScript(
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(node, node.source.value as string)
+          const importId = defineImport(node.source.value as string)
+          // hoist re-exports near the defined import so they are immediately exported
           for (const spec of node.specifiers) {
             defineExport(
-              node.end,
+              hoistIndex,
               spec.exported.name,
               `${importId}.${spec.local.name}`,
             )
@@ -210,11 +217,12 @@ async function ssrTransformScript(
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
       s.remove(node.start, node.end)
-      const importId = defineImport(node, node.source.value as string)
+      const importId = defineImport(node.source.value as string)
+      // hoist re-exports near the defined import so they are immediately exported
       if (node.exported) {
-        defineExport(node.end, node.exported.name, `${importId}`)
+        defineExport(hoistIndex, node.exported.name, `${importId}`)
       } else {
-        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
+        s.appendLeft(hoistIndex, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
@@ -248,7 +256,10 @@ async function ssrTransformScript(
           const topNode = parentStack[parentStack.length - 2]
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
-      } else {
+      } else if (
+        // don't transform class name identifier
+        !(parent.type === 'ClassExpression' && id === parent.id)
+      ) {
         s.update(id.start, id.end, binding)
       }
     },
@@ -263,22 +274,23 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: true })
-  if (inMap && inMap.mappings && inMap.sources.length > 0) {
-    map = combineSourcemaps(
-      url,
-      [
-        {
-          ...map,
-          sources: inMap.sources,
-          sourcesContent: inMap.sourcesContent,
-        } as RawSourceMap,
-        inMap as RawSourceMap,
-      ],
-      false,
-    ) as SourceMap
+  let map = s.generateMap({ hires: 'boundary' })
+  if (
+    inMap &&
+    inMap.mappings &&
+    'sources' in inMap &&
+    inMap.sources.length > 0
+  ) {
+    map = combineSourcemaps(url, [
+      {
+        ...map,
+        sources: inMap.sources,
+        sourcesContent: inMap.sourcesContent,
+      } as RawSourceMap,
+      inMap as RawSourceMap,
+    ]) as SourceMap
   } else {
-    map.sources = [url]
+    map.sources = [path.basename(url)]
     // needs to use originalCode instead of code
     // because code might be already transformed even if map is null
     map.sourcesContent = [originalCode]
@@ -554,14 +566,16 @@ function isFunction(node: _Node): node is FunctionNode {
   return functionNodeTypeRE.test(node.type)
 }
 
+const blockNodeTypeRE = /^BlockStatement$|^For(?:In|Of)?Statement$/
+function isBlock(node: _Node) {
+  return blockNodeTypeRE.test(node.type)
+}
+
 function findParentScope(
   parentStack: _Node[],
   isVar = false,
 ): _Node | undefined {
-  const predicate = isVar
-    ? isFunction
-    : (node: _Node) => node.type === 'BlockStatement'
-  return parentStack.find(predicate)
+  return parentStack.find(isVar ? isFunction : isBlock)
 }
 
 function isInDestructuringAssignment(

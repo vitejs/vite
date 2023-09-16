@@ -2,7 +2,6 @@ import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-// eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -82,6 +81,7 @@ function setupWebSocket(
     'open',
     () => {
       isOpened = true
+      notifyListeners('vite:ws:connect', { webSocket: socket })
     },
     { once: true },
   )
@@ -99,6 +99,8 @@ function setupWebSocket(
       onCloseWithoutOpen()
       return
     }
+
+    notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     console.log(`[vite] server connection lost. polling for restart...`)
     await waitForSuccessfulPing(protocol, hostAndPath)
@@ -127,6 +129,20 @@ function cleanUrl(pathname: string): string {
 
 let isFirstUpdate = true
 const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
+
+const debounceReload = (time: number) => {
+  let timer: ReturnType<typeof setTimeout> | null
+  return () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    timer = setTimeout(() => {
+      location.reload()
+    }, time)
+  }
+}
+const pageReload = debounceReload(50)
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -220,11 +236,11 @@ async function handleMessage(payload: HMRPayload) {
           payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
-          location.reload()
+          pageReload()
         }
         return
       } else {
-        location.reload()
+        pageReload()
       }
       break
     case 'prune':
@@ -273,15 +289,12 @@ function notifyListeners(event: string, data: any): void {
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
 function createErrorOverlay(err: ErrorPayload['err']) {
-  if (!enableOverlay) return
   clearErrorOverlay()
   document.body.appendChild(new ErrorOverlay(err))
 }
 
 function clearErrorOverlay() {
-  document
-    .querySelectorAll(overlayId)
-    .forEach((n) => (n as ErrorOverlay).close())
+  document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
 }
 
 function hasErrorOverlay() {
@@ -315,24 +328,70 @@ async function waitForSuccessfulPing(
 ) {
   const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  const ping = async () => {
+    // A fetch on a websocket URL will return a successful promise with status 400,
+    // but will reject a networking error.
+    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
     try {
-      // A fetch on a websocket URL will return a successful promise with status 400,
-      // but will reject a networking error.
-      // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
       await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
+        headers: {
+          // Custom headers won't be included in a request with no-cors so (ab)use one of the
+          // safelisted headers to identify the ping request
+          Accept: 'text/x-vite-ping',
+        },
       })
-      break
-    } catch (e) {
-      // wait ms before attempting to ping again
-      await new Promise((resolve) => setTimeout(resolve, ms))
+      return true
+    } catch {}
+    return false
+  }
+
+  if (await ping()) {
+    return
+  }
+  await wait(ms)
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    if (document.visibilityState === 'visible') {
+      if (await ping()) {
+        break
+      }
+      await wait(ms)
+    } else {
+      await waitForWindowShow()
     }
   }
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function waitForWindowShow() {
+  return new Promise<void>((resolve) => {
+    const onChange = async () => {
+      if (document.visibilityState === 'visible') {
+        resolve()
+        document.removeEventListener('visibilitychange', onChange)
+      }
+    }
+    document.addEventListener('visibilitychange', onChange)
+  })
+}
+
 const sheetsMap = new Map<string, HTMLStyleElement>()
+
+// collect existing style elements that may have been inserted during SSR
+// to avoid FOUC or duplicate styles
+if ('document' in globalThis) {
+  document
+    .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')
+    .forEach((el) => {
+      sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
+    })
+}
+
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
@@ -560,7 +619,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
  */
 export function injectQuery(url: string, queryToInject: string): string {
   // skip urls that won't be handled by vite
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     return url
   }
 
