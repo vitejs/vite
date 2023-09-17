@@ -322,13 +322,8 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
-   *
-   * @experimental
-   * @deprecated
-   * @default false
+   * No longer needed for now, but kept for backwards compatibility.
    */
-  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
@@ -651,11 +646,7 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(
-    config.ssr,
-    resolveOptions.preserveSymlinks,
-    config.legacy?.buildSsrCjsExternalHeuristics,
-  )
+  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
 
   const middlewareMode = config?.server?.middlewareMode
 
@@ -860,13 +851,15 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 
   // Warn about removal of experimental features
   if (
+    // @ts-expect-error Option removed
     config.legacy?.buildSsrCjsExternalHeuristics ||
+    // @ts-expect-error Option removed
     config.ssr?.format === 'cjs'
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5.
-    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
+    The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
 `),
     )
   }

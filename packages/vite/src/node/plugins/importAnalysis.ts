@@ -50,10 +50,7 @@ import {
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cjsShouldExternalizeForSSR,
-  shouldExternalizeForSSR,
-} from '../ssr/ssrExternal'
+import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { checkPublicFile, urlRE } from './asset'
@@ -487,13 +484,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr) {
-              if (config.legacy?.buildSsrCjsExternalHeuristics) {
-                if (
-                  cjsShouldExternalizeForSSR(specifier, server._ssrExternals)
-                ) {
-                  return
-                }
-              } else if (shouldExternalizeForSSR(specifier, importer, config)) {
+              if (shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
               if (isBuiltin(specifier)) {

@@ -41,17 +41,8 @@ import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
-import {
-  cjsShouldExternalizeForSSR,
-  cjsSsrResolveExternals,
-} from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import type { DepOptimizationMetadata } from './optimizer'
-import {
-  findKnownImports,
-  getDepsCacheDir,
-  initDepsOptimizer,
-} from './optimizer'
+import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
@@ -517,16 +508,6 @@ export async function build(
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
 
-  const userExternal = options.rollupOptions?.external
-  let external = userExternal
-
-  // In CJS, we can pass the externals to rollup as is. In ESM, we need to
-  // do it in the resolve plugin so we can add the resolved extension for
-  // deep node_modules imports
-  if (ssr && config.legacy?.buildSsrCjsExternalHeuristics) {
-    external = await cjsSsrResolveExternal(config, userExternal)
-  }
-
   if (isDepsOptimizerEnabled(config, ssr)) {
     await initDepsOptimizer(config)
   }
@@ -541,7 +522,7 @@ export async function build(
     ...options.rollupOptions,
     input,
     plugins,
-    external,
+    external: options.rollupOptions?.external,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -574,9 +555,8 @@ export async function build(
 
       const ssrNodeBuild = ssr && config.ssr.target === 'node'
       const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
-      const cjsSsrBuild = ssr && config.ssr.format === 'cjs'
 
-      const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
+      const format = output.format || 'es'
       const jsExt =
         ssrNodeBuild || libOptions
           ? resolveOutputJsExtension(
@@ -589,7 +569,7 @@ export async function build(
         dir: outDir,
         // Default format is 'es' for regular and for SSR builds
         format,
-        exports: cjsSsrBuild ? 'named' : 'auto',
+        exports: 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         // es2015 enables `generatedCode.symbols`
@@ -941,36 +921,6 @@ export function onRollupWarning(
     userOnWarn(warning, viteWarn)
   } else {
     viteWarn(warning)
-  }
-}
-
-async function cjsSsrResolveExternal(
-  config: ResolvedConfig,
-  user: ExternalOption | undefined,
-): Promise<ExternalOption> {
-  // see if we have cached deps data available
-  let knownImports: string[] | undefined
-  const dataPath = path.join(getDepsCacheDir(config, false), '_metadata.json')
-  try {
-    const data = JSON.parse(
-      fs.readFileSync(dataPath, 'utf-8'),
-    ) as DepOptimizationMetadata
-    knownImports = Object.keys(data.optimized)
-  } catch (e) {}
-  if (!knownImports) {
-    // no dev deps optimization data, do a fresh scan
-    knownImports = await findKnownImports(config, false) // needs to use non-ssr
-  }
-  const ssrExternals = cjsSsrResolveExternals(config, knownImports)
-
-  return (id, parentId, isResolved) => {
-    const isExternal = cjsShouldExternalizeForSSR(id, ssrExternals)
-    if (isExternal) {
-      return true
-    }
-    if (user) {
-      return resolveUserExternal(user, id, parentId, isResolved)
-    }
   }
 }
 
