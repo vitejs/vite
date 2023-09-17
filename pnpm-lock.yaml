@@ -247,8 +247,8 @@ importers:
         specifier: ^0.3.18
         version: 0.3.18
       '@rollup/plugin-alias':
-        specifier: ^4.0.4
-        version: 4.0.4(rollup@3.28.0)
+        specifier: ^5.0.0
+        version: 5.0.0(rollup@3.28.0)
       '@rollup/plugin-commonjs':
         specifier: ^25.0.3
         version: 25.0.3(rollup@3.28.0)
@@ -3604,19 +3604,6 @@ packages:
 
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
-    dev: true
-
-  /@rollup/plugin-alias@4.0.4(rollup@3.28.0):
-    resolution: {integrity: sha512-0CaAY238SMtYAWEXXptWSR8iz8NYZnH7zNBKuJ14xFJSGwLtPgjvXYsoApAHfzYXXH1ejxpVw7WlHss3zhh9SQ==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0||^3.0.0
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-    dependencies:
-      rollup: 3.28.0
-      slash: 4.0.0
     dev: true
 
   /@rollup/plugin-alias@5.0.0(rollup@3.28.0):
