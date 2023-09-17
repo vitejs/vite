@@ -82,7 +82,7 @@
     "@babel/parser": "^7.22.7",
     "@babel/types": "^7.22.17",
     "@jridgewell/trace-mapping": "^0.3.18",
-    "@rollup/plugin-alias": "^4.0.4",
+    "@rollup/plugin-alias": "^5.0.0",
     "@rollup/plugin-commonjs": "^25.0.3",
     "@rollup/plugin-dynamic-import-vars": "^2.0.4",
     "@rollup/plugin-json": "^6.0.0",
