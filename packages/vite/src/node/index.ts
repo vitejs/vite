@@ -51,7 +51,6 @@ export type {
   ResolvedSSROptions,
   SsrDepOptimizationOptions,
   SSROptions,
-  SSRFormat,
   SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
