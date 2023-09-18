@@ -88,31 +88,25 @@ export const flattenId = (id: string): string =>
 export const normalizeId = (id: string): string =>
   id.replace(replaceNestedIdRE, ' > ')
 
-//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
-const builtins = new Set([
-  ...builtinModules,
-  'assert/strict',
-  'diagnostics_channel',
-  'dns/promises',
-  'fs/promises',
-  'path/posix',
-  'path/win32',
-  'readline/promises',
-  'stream/consumers',
-  'stream/promises',
-  'stream/web',
-  'timers/promises',
-  'util/types',
-  'wasi',
-])
-
+// Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
+// Supported by Deno
+const NPM_BUILTIN_NAMESPACE = 'npm:'
+// Supported by Bun
+const BUN_BUILTIN_NAMESPACE = 'bun:'
+// Some runtimes like Bun injects namespaced modules here, which is not a node builtin
+const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
+
+// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
 export function isBuiltin(id: string): boolean {
-  return builtins.has(
-    id.startsWith(NODE_BUILTIN_NAMESPACE)
-      ? id.slice(NODE_BUILTIN_NAMESPACE.length)
-      : id,
-  )
+  if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
+  if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
+  return isNodeBuiltin(id)
+}
+
+export function isNodeBuiltin(id: string): boolean {
+  if (id.startsWith(NODE_BUILTIN_NAMESPACE)) return true
+  return nodeBuiltins.includes(id)
 }
 
 export function isInNodeModules(id: string): boolean {
