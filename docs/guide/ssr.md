@@ -181,14 +181,14 @@ Refer to the [Vue](https://github.com/vitejs/vite-plugin-vue/tree/main/playgroun
 
 ## Generating Preload Directives
 
-`vite build` supports the `--ssrManifest` flag which will generate `ssr-manifest.json` in build output directory:
+`vite build` supports the `--ssrManifest` flag which will generate `.vite/ssr-manifest.json` in build output directory:
 
 ```diff
 - "build:client": "vite build --outDir dist/client",
 + "build:client": "vite build --outDir dist/client --ssrManifest",
 ```
 
-The above script will now generate `dist/client/ssr-manifest.json` for the client build (Yes, the SSR manifest is generated from the client build because we want to map module IDs to client files). The manifest contains mappings of module IDs to their associated chunks and asset files.
+The above script will now generate `dist/client/.vite/ssr-manifest.json` for the client build (Yes, the SSR manifest is generated from the client build because we want to map module IDs to client files). The manifest contains mappings of module IDs to their associated chunks and asset files.
 
 To leverage the manifest, frameworks need to provide a way to collect the module IDs of the components that were used during a server render call.
 

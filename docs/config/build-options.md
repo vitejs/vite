@@ -163,7 +163,7 @@ Build as a library. `entry` is required since the library cannot use HTML as ent
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
+When set to `true`, the build will also generate a `.vite/manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
 
 ## build.ssrManifest
 
