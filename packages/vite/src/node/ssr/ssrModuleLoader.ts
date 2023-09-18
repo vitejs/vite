@@ -268,7 +268,7 @@ async function nodeImport(
   resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
-  if (id.startsWith('node:') || id.startsWith('data:') || isBuiltin(id)) {
+  if (id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(

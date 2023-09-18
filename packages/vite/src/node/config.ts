@@ -33,6 +33,7 @@ import {
   dynamicImport,
   isBuiltin,
   isExternalUrl,
+  isNodeBuiltin,
   isObject,
   lookupFile,
   mergeAlias,
@@ -1083,13 +1084,15 @@ async function bundleConfigFile(
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
-                isBuiltin(id)
+                isNodeBuiltin(id)
               ) {
                 return
               }
 
-              // partial deno support as `npm:` does not work with esbuild
-              if (id.startsWith('npm:')) {
+              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
+              // externalize it so the non-node runtime handles it instead.
+              if (isBuiltin(id)) {
                 return { external: true }
               }
 
