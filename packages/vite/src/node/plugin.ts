@@ -37,7 +37,7 @@ import type { PreviewServerHook } from './preview'
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
  */
-export interface Plugin extends RollupPlugin {
+export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
