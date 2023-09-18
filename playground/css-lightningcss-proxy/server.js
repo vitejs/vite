@@ -29,9 +29,6 @@ export async function createServer(root = process.cwd(), hmrPort) {
     logLevel: isTest ? 'error' : 'info',
     css: {
       transformer: 'lightningcss',
-      lightningcss: {
-        drafts: { nesting: true },
-      },
     },
     server: {
       middlewareMode: true,
