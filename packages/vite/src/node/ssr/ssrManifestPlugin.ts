@@ -94,7 +94,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
         fileName:
           typeof config.build.ssrManifest === 'string'
             ? config.build.ssrManifest
-            : 'ssr-manifest.json',
+            : '.vite/ssr-manifest.json',
         type: 'asset',
         source: jsonStableStringify(ssrManifest, { space: 2 }),
       })
