@@ -566,6 +566,13 @@ Repository: https://github.com/acornjs/acorn.git
 
 ---------------------------------------
 
+## acorn-import-assertions
+License: MIT
+By: Sven Sauleau
+Repository: https://github.com/xtuc/acorn-import-assertions
+
+---------------------------------------
+
 ## acorn-walk
 License: MIT
 By: Marijn Haverbeke, Ingvar Stepanyan, Adrian Heine
