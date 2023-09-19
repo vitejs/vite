@@ -1018,7 +1018,6 @@ async function bundleConfigFile(
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
-    outfile: 'out.js',
     write: false,
     target: ['node18'],
     platform: 'node',
