@@ -44,7 +44,7 @@ import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { resolveChokidarOptions } from '../watch'
+import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -84,10 +84,10 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
-   * chokidar watch options
+   * chokidar watch options or null to disable FS watching
    * https://github.com/paulmillr/chokidar#api
    */
-  watch?: WatchOptions
+  watch?: WatchOptions | null
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    * @default false
@@ -354,11 +354,15 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const watcher = chokidar.watch(
-    // config file dependencies and env file might be outside of root
-    [root, ...config.configFileDependencies, config.envDir],
-    resolvedWatchOptions,
-  ) as FSWatcher
+  // eslint-disable-next-line eqeqeq
+  const watchEnabled = serverConfig.watch !== null
+  const watcher = watchEnabled
+    ? (chokidar.watch(
+        // config file dependencies and env file might be outside of root
+        [root, ...config.configFileDependencies, config.envDir],
+        resolvedWatchOptions,
+      ) as FSWatcher)
+    : createNoopWatcher(resolvedWatchOptions)
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr }),

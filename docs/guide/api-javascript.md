@@ -75,7 +75,8 @@ interface ViteDevServer {
    */
   httpServer: http.Server | null
   /**
-   * Chokidar watcher instance.
+   * Chokidar watcher instance. If `config.server.watch` is set to `null`,
+   * returns a noop event emitter.
    * https://github.com/paulmillr/chokidar#api
    */
   watcher: FSWatcher
