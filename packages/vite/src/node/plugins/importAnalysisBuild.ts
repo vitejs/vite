@@ -322,7 +322,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
            *                                  ^
            */
           if (match[4]) {
-            const names = match[5].match(/\.([^.?]+)/)?.[1] || ''
+            let names = match[5].match(/\.([^.?]+)/)?.[1] || ''
+            // avoid `default` keyword error
+            if (names === 'default') {
+              names = 'default: __vite_default__'
+            }
             dynamicImports[
               dynamicImportTreeshakenRE.lastIndex - match[5]?.length - 1
             ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
