@@ -176,7 +176,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 ## server.watch
 
-- **Type:** `object`
+- **Type:** `object | null`
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
@@ -196,6 +196,8 @@ export default defineConfig({
   },
 })
 ```
+
+If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
