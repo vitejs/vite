@@ -289,7 +289,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const dynamicImports: Record<
         number,
-        { declaration?: string; names?: string; chains?: string }
+        { declaration?: string; names?: string }
       > = {}
 
       if (insertPreload) {
@@ -319,9 +319,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
            *                                  ^
            */
           if (match[4]) {
+            const names = match[5].match(/\.([^.?]+)/)?.[1] || ''
             dynamicImports[
               dynamicImportTreeshakenRE.lastIndex - match[5]?.length - 1
-            ] = { chains: match[5] }
+            ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
             continue
           }
 
@@ -363,32 +364,22 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
-          const { declaration, names, chains } = dynamicImports[expEnd] || {}
+          const { declaration, names } = dynamicImports[expEnd] || {}
           if (names) {
             /* transform `const {foo} = await import('foo')`
              * to `const {foo} = await __vitePreload(async () => { const {foo} = await import('foo');return {foo}}, ...)`
              *
              * transform `import('foo').then(({foo})=>{})`
              * to `__vitePreload(async () => { const {foo} = await import('foo');return { foo }},...).then(({foo})=>{})`
+             *
+             * transform `(await import('foo')).foo`
+             * to `__vitePreload(async () => { const {foo} = (await import('foo')).foo; return { foo }},...)).foo`
              */
             str().prependLeft(
               expStart,
               `${preloadMethod}(async () => { ${declaration} = await `,
             )
             str().appendRight(expEnd, `;return ${names}}`)
-          } else if (chains) {
-            /* transform `(await import('foo')).foo`
-             * to `__vitePreload(async () => { const __vite_temp__ = (await import('foo')).foo; return { foo: __vite_temp__ }},...)).foo`
-             */
-            const name = chains.match(/\.([^.?]+)/)?.[1] || ''
-            str().prependLeft(
-              expStart,
-              `${preloadMethod}(async () => { const __vite_temp__ = (await `,
-            )
-            str().appendRight(
-              expEnd,
-              `).${name}; return { ${name}: __vite_temp__ }}`,
-            )
           } else {
             str().prependLeft(expStart, `${preloadMethod}(() => `)
           }
