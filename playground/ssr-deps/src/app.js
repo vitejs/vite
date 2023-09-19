@@ -29,6 +29,7 @@ import optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nest
 import { setMessage } from '@vitejs/test-external-entry/entry'
 setMessage('Hello World!')
 import externalUsingExternalEntry from '@vitejs/test-external-using-external-entry'
+import isomorphicModuleMessage from 'virtual:isomorphic-module'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -89,6 +90,10 @@ export async function render(url, rootDir) {
   html += `\n<p class="css-lib">I should be blue</p>`
 
   html += `\n<p class="module-condition">${moduleConditionMessage}</p>`
+
+  html += `\n<p class="isomorphic-module-server">${isomorphicModuleMessage}</p>`
+
+  html += `\n<p class="isomorphic-module-browser"></p>`
 
   return html + '\n'
 }

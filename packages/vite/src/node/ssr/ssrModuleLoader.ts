@@ -189,7 +189,7 @@ async function instantiateModule(
 
   function ssrExportAll(sourceModule: any) {
     for (const key in sourceModule) {
-      if (key !== 'default') {
+      if (key !== 'default' && key !== '__esModule') {
         Object.defineProperty(ssrModule, key, {
           enumerable: true,
           configurable: true,
@@ -202,7 +202,7 @@ async function instantiateModule(
   }
 
   let sourceMapSuffix = ''
-  if (result.map) {
+  if (result.map && 'version' in result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
       // currently we need to offset the line
       // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
@@ -222,7 +222,7 @@ async function instantiateModule(
       ssrExportAllKey,
       '"use strict";' +
         result.code +
-        `\n//# sourceURL=${mod.url}${sourceMapSuffix}`,
+        `\n//# sourceURL=${mod.id}${sourceMapSuffix}`,
     )
     await initModule(
       context.global,
@@ -268,7 +268,7 @@ async function nodeImport(
   resolveOptions: InternalResolveOptionsWithOverrideConditions,
 ) {
   let url: string
-  if (id.startsWith('node:') || id.startsWith('data:') || isBuiltin(id)) {
+  if (id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(

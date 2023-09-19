@@ -2,13 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 
-/** @type {import('vite').UserConfig} */
-// @ts-expect-error typecast
 export default defineConfig({
   esbuild: {
     supported: {
       // Force esbuild inject helpers to test regex
       'object-rest-spread': false,
+      'optional-chain': false,
     },
   },
   build: {

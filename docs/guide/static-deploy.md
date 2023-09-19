@@ -220,7 +220,7 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
 3. Run your build command.
-4. Deploy using `npx wrangler pages publish dist`.
+4. Deploy using `npx wrangler pages deploy dist`.
 
 ```bash
 # Install Wrangler CLI
@@ -333,3 +333,11 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
+
+## Flightcontrol
+
+Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite), by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite)
+
+## AWS Amplify Hosting
+
+Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)

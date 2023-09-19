@@ -3,7 +3,13 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
-import type { BuildContext, Loader, OnLoadResult, Plugin } from 'esbuild'
+import type {
+  BuildContext,
+  BuildOptions,
+  Loader,
+  OnLoadResult,
+  Plugin,
+} from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
@@ -205,8 +211,12 @@ async function prepareEsbuildScanner(
 
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+  const {
+    plugins = [],
+    tsconfig,
+    tsconfigRaw,
+    ...esbuildOptions
+  } = config.optimizeDeps?.esbuildOptions ?? {}
 
   return await esbuild.context({
     absWorkingDir: process.cwd(),
@@ -219,6 +229,8 @@ async function prepareEsbuildScanner(
     format: 'esm',
     logLevel: 'silent',
     plugins: [...plugins, plugin],
+    tsconfig,
+    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
   })
 }
@@ -246,9 +258,8 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
   })
 }
 
-const scriptModuleRE =
-  /(<script\b[^>]+type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gis
-export const scriptRE = /(<script(?:\s[^>]*>|>))(.*?)<\/script>/gis
+export const scriptRE =
+  /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
 export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
@@ -316,7 +327,6 @@ function esbuildScanPlugin(
       id,
       config.root,
       resolve,
-      config.isProduction,
     )
 
     return result?.s.toString() || transpiledContents
@@ -378,12 +388,11 @@ function esbuildScanPlugin(
           // Avoid matching the content of the comment
           raw = raw.replace(commentRE, '<!---->')
           const isHtml = path.endsWith('.html')
-          const regex = isHtml ? scriptModuleRE : scriptRE
-          regex.lastIndex = 0
+          scriptRE.lastIndex = 0
           let js = ''
           let scriptId = 0
           let match: RegExpExecArray | null
-          while ((match = regex.exec(raw))) {
+          while ((match = scriptRE.exec(raw))) {
             const [, openTag, content] = match
             const typeMatch = openTag.match(typeRE)
             const type =
@@ -391,6 +400,10 @@ function esbuildScanPlugin(
             const langMatch = openTag.match(langRE)
             const lang =
               langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+            // skip non type module script
+            if (isHtml && type !== 'module') {
+              continue
+            }
             // skip type="application/ld+json" and other non-JS types
             if (
               type &&
@@ -648,4 +661,23 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
 
 function isScannable(id: string): boolean {
   return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
+}
+
+// esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
+// To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
+// `true` by default if it's unset.
+// TODO: Remove this in Vite 5 and check https://github.com/vitejs/vite/pull/13805#issuecomment-1633612320
+export function resolveTsconfigRaw(
+  tsconfig: string | undefined,
+  tsconfigRaw: BuildOptions['tsconfigRaw'],
+): BuildOptions['tsconfigRaw'] {
+  return tsconfig || typeof tsconfigRaw === 'string'
+    ? tsconfigRaw
+    : {
+        ...tsconfigRaw,
+        compilerOptions: {
+          experimentalDecorators: true,
+          ...tsconfigRaw?.compilerOptions,
+        },
+      }
 }

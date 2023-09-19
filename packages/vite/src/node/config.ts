@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
@@ -20,7 +21,11 @@ import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
-import type { CSSOptions } from './plugins/css'
+import {
+  type CSSOptions,
+  type ResolvedCSSOptions,
+  resolveCSSOptions,
+} from './plugins/css'
 import {
   asyncFlatten,
   createDebugger,
@@ -28,12 +33,14 @@ import {
   dynamicImport,
   isBuiltin,
   isExternalUrl,
+  isNodeBuiltin,
   isObject,
   lookupFile,
   mergeAlias,
   mergeConfig,
   normalizeAlias,
   normalizePath,
+  withTrailingSlash,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -50,11 +57,7 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
-import type {
-  InternalResolveOptions,
-  InternalResolveOptionsWithOverrideConditions,
-  ResolveOptions,
-} from './plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -69,6 +72,7 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
+const promisifiedRealpath = promisify(fs.realpath)
 
 export type {
   RenderBuiltAssetUrl,
@@ -98,8 +102,16 @@ export interface ConfigEnv {
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
 
+export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
+export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
-export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
+
+export type UserConfigExport =
+  | UserConfig
+  | Promise<UserConfig>
+  | UserConfigFnObject
+  | UserConfigFnPromise
+  | UserConfigFn
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -107,6 +119,10 @@ export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
  * The function receives a {@link ConfigEnv} object that exposes two properties:
  * `command` (either `'build'` or `'serve'`), and `mode`.
  */
+export function defineConfig(config: UserConfig): UserConfig
+export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
+export function defineConfig(config: UserConfigFnObject): UserConfigFnObject
+export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
@@ -307,13 +323,8 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
-   *
-   * @experimental
-   * @deprecated
-   * @default false
+   * No longer needed for now, but kept for backwards compatibility.
    */
-  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
@@ -328,7 +339,10 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
+  Omit<
+    UserConfig,
+    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker' | 'build'
+  > & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -351,6 +365,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    css: ResolvedCSSOptions | undefined
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
@@ -455,7 +470,12 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
-  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+  // If there are custom commonjsOptions, don't force optimized deps for this test
+  // even if the env var is set as it would interfere with the playground specs.
+  if (
+    !config.build?.commonjsOptions &&
+    process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS
+  ) {
     config = mergeConfig(config, {
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } },
@@ -474,6 +494,15 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
+  if (resolvedRoot.includes('#')) {
+    logger.warn(
+      colors.yellow(
+        `The project root contains the "#" character (${colors.cyan(
+          resolvedRoot,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
+      ),
+    )
+  }
 
   const clientAlias = [
     {
@@ -618,11 +647,7 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(
-    config.ssr,
-    resolveOptions.preserveSymlinks,
-    config.legacy?.buildSsrCjsExternalHeuristics,
-  )
+  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
 
   const middlewareMode = config?.server?.middlewareMode
 
@@ -657,7 +682,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    base: withTrailingSlash(resolvedBase),
     rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
@@ -669,6 +694,7 @@ export async function resolveConfig(
     mainConfig: null,
     isProduction,
     plugins: userPlugins,
+    css: resolveCSSOptions(config.css),
     esbuild:
       config.esbuild === false
         ? false
@@ -761,8 +787,7 @@ export async function resolveConfig(
         } instead`,
       ),
     )
-  }
-  if (middlewareMode === 'html') {
+  } else if (middlewareMode === 'html') {
     logger.warn(
       colors.yellow(
         `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`,
@@ -823,6 +848,21 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
         )
       }
     }
+  }
+
+  // Warn about removal of experimental features
+  if (
+    // @ts-expect-error Option removed
+    config.legacy?.buildSsrCjsExternalHeuristics ||
+    // @ts-expect-error Option removed
+    config.ssr?.format === 'cjs'
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
+    The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
   }
 
   return resolved
@@ -978,9 +1018,8 @@ async function bundleConfigFile(
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
-    outfile: 'out.js',
     write: false,
-    target: ['node14.18', 'node16'],
+    target: ['node18'],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
@@ -996,20 +1035,45 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptionsWithOverrideConditions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            overrideConditions: ['node'],
-            dedupe: [],
-            extensions: DEFAULT_EXTENSIONS,
-            preserveSymlinks: false,
-            packageCache: new Map(),
+          const packageCache = new Map()
+          const resolveByViteResolver = (
+            id: string,
+            importer: string,
+            isRequire: boolean,
+          ) => {
+            return tryNodeResolve(
+              id,
+              importer,
+              {
+                root: path.dirname(fileName),
+                isBuild: true,
+                isProduction: true,
+                preferRelative: false,
+                tryIndex: true,
+                mainFields: [],
+                browserField: false,
+                conditions: [],
+                overrideConditions: ['node'],
+                dedupe: [],
+                extensions: DEFAULT_EXTENSIONS,
+                preserveSymlinks: false,
+                packageCache,
+                isRequire,
+              },
+              false,
+            )?.id
+          }
+          const isESMFile = (id: string): boolean => {
+            if (id.endsWith('.mjs')) return true
+            if (id.endsWith('.cjs')) return false
+
+            const nearestPackageJson = findNearestPackageData(
+              path.dirname(id),
+              packageCache,
+            )
+            return (
+              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
+            )
           }
 
           // externalize bare imports
@@ -1019,25 +1083,51 @@ async function bundleConfigFile(
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
-                isBuiltin(id)
+                isNodeBuiltin(id)
               ) {
                 return
               }
 
-              // partial deno support as `npm:` does not work with esbuild
-              if (id.startsWith('npm:')) {
+              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
+              // externalize it so the non-node runtime handles it instead.
+              if (isBuiltin(id)) {
                 return { external: true }
               }
 
-              const isIdESM = isESM || kind === 'dynamic-import'
-              let idFsPath = tryNodeResolve(
-                id,
-                importer,
-                { ...options, isRequire: !isIdESM },
-                false,
-              )?.id
-              if (idFsPath && isIdESM) {
+              const isImport = isESM || kind === 'dynamic-import'
+              let idFsPath: string | undefined
+              try {
+                idFsPath = resolveByViteResolver(id, importer, !isImport)
+              } catch (e) {
+                if (!isImport) {
+                  let canResolveWithImport = false
+                  try {
+                    canResolveWithImport = !!resolveByViteResolver(
+                      id,
+                      importer,
+                      false,
+                    )
+                  } catch {}
+                  if (canResolveWithImport) {
+                    throw new Error(
+                      `Failed to resolve ${JSON.stringify(
+                        id,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                    )
+                  }
+                }
+                throw e
+              }
+              if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
+              }
+              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+                throw new Error(
+                  `${JSON.stringify(
+                    id,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                )
               }
               return {
                 path: idFsPath,
@@ -1051,7 +1141,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fs.promises.readFile(args.path, 'utf8')
+            const contents = await fsp.readFile(args.path, 'utf8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),
@@ -1106,7 +1196,11 @@ async function loadConfigFromBundledFile(
   // for cjs, we can register a custom loader via `_require.extensions`
   else {
     const extension = path.extname(fileName)
-    const realFileName = await fsp.realpath(fileName)
+    // We don't use fsp.realpath() here because it has the same behaviour as
+    // fs.realpath.native. On some Windows systems, it returns uppercase volume
+    // letters (e.g. "C:\") while the Node.js loader uses lowercase volume letters.
+    // See https://github.com/vitejs/vite/issues/12923
+    const realFileName = await promisifiedRealpath(fileName)
     const loaderExt = extension in _require.extensions ? extension : '.js'
     const defaultLoader = _require.extensions[loaderExt]!
     _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {

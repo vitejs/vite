@@ -7,10 +7,12 @@ import { rewriteImports, walkDir } from './util'
 const dir = dirname(fileURLToPath(import.meta.url))
 const nodeDts = resolve(dir, '../dist/node/index.d.ts')
 
-// rewrite `types/*` import to relative import
+// rewrite `types/*` import to relative import with file extension
 rewriteImports(nodeDts, (importPath) => {
   if (importPath.startsWith('types/')) {
-    return '../../' + importPath
+    return (
+      '../../' + (importPath.endsWith('.js') ? importPath : importPath + '.js')
+    )
   }
 })
 

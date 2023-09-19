@@ -1,6 +1,6 @@
 # Vite Contributing Guide
 
-Hi! We're really excited that you're interested in contributing to Vite! Before submitting your contribution, please read through the following guide.
+Hi! We're really excited that you're interested in contributing to Vite! Before submitting your contribution, please read through the following guide. We also suggest you read the [Project Philosophy](https://vitejs.dev/guide/philosophy) in our documentation.
 
 You can use [StackBlitz Codeflow](https://stackblitz.com/codeflow) to fix bugs or implement features. You'll see a Codeflow button on issues to start a PR to fix them. A button will also appear on PRs to review them without needing to check out the branch locally. When using Codeflow, the Vite repository will be cloned for you in an online editor, with the Vite package built in watch mode ready to test your changes. If you'd like to learn more, check out the [Codeflow docs](https://developer.stackblitz.com/codeflow/what-is-codeflow).
 
@@ -85,6 +85,8 @@ And re-run `pnpm install` to link the package.
 ### Integration Tests
 
 Each package under `playground/` contains a `__tests__` directory. The tests are run using [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `vitest.config.e2e.js` and `playground/vitest*` files.
+
+Some playgrounds define variants to run the same app using different config setups. By convention, when running a test spec file in a nested folder in `__tests__`, the setup will try to use a config file named `vite.config-{folderName}.js` at the playground's root. You can see an example of variants in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets).
 
 Before running the tests, make sure that [Vite has been built](#repo-setup). On Windows, you may want to [activate Developer Mode](https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) to resolve [issues with symlink creation for non-admins](https://github.com/vitejs/vite/issues/7390). Also, you may want to [set git `core.symlinks` to `true` to resolve issues with symlinks in git](https://github.com/vitejs/vite/issues/5242).
 
@@ -247,6 +249,26 @@ We already have many config options, and we should avoid fixing an issue by addi
 - can be fixed with a smarter default
 - has workaround using existing options
 - can be addressed with a plugin instead
+
+## Release
+
+If you have publish access, the steps below explain how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
+
+"Release" is done locally to generate the changelogs and git tags:
+
+1. Make sure the git remote for https://github.com/vitejs/vite is set as `origin`.
+2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date.
+3. Run `pnpm release` and follow the prompts to cut a release for a package. It will generate the changelog, a git release tag, and push them to `origin`. You can run with the `--dry` flag to test it out.
+4. When the command finishes, it will provide a link to https://github.com/vitejs/vite/actions/workflows/publish.yml.
+5. Click the link to visit the page, and follow the next steps below.
+
+"Publish" is done on GitHub Actions to publish the package to npm:
+
+1. Shortly in the workflows page, a new workflow will appear for the released package and is waiting for approval to publish to npm.
+2. Click on the workflow to open its page.
+3. Click on the "Review deployments" button in the yellow box, a popup will appear.
+4. Check "Release" and click "Approve and deploy".
+5. The package will start publishing to npm.
 
 ## Docs Translation Contribution
 

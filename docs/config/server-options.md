@@ -34,6 +34,13 @@ The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is becaus
 
 :::
 
+::: tip Accessing the server on WSL2 from your LAN
+
+When running Vite on WSL2, it is not sufficient to set `host: true` to access the server from your LAN.
+See [the WSL document](https://learn.microsoft.com/en-us/windows/wsl/networking#accessing-a-wsl-2-distribution-from-your-local-area-network-lan) for more details.
+
+:::
+
 ## server.port
 
 - **Type:** `number`
@@ -83,7 +90,7 @@ Configure custom proxy rules for the dev server. Expects an object of `{ key: op
 
 Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
 
-Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). Additional options are [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts#L13).
+Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). Additional options are [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts#L12).
 
 In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
 
@@ -169,7 +176,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 ## server.watch
 
-- **Type:** `object`
+- **Type:** `object | null`
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
@@ -189,6 +196,8 @@ export default defineConfig({
   },
 })
 ```
+
+If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
@@ -240,12 +249,6 @@ async function createServer() {
 createServer()
 ```
 
-## server.base
-
-- **Type:** `string | undefined`
-
-Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start with the `/` character.
-
 ## server.fs.strict
 
 - **Type:** `boolean`
@@ -258,6 +261,8 @@ Restrict serving files outside of workspace root.
 - **Type:** `string[]`
 
 Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
+
+Both directories and files can be provided.
 
 Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fall back to the [project root](/guide/#index-html-and-project-root).
 
@@ -291,7 +296,8 @@ export default defineConfig({
         // search up for workspace root
         searchForWorkspaceRoot(process.cwd()),
         // your custom rules
-        '/path/to/custom/allow',
+        '/path/to/custom/allow_directory',
+        '/path/to/custom/allow_file.demo',
       ],
     },
   },

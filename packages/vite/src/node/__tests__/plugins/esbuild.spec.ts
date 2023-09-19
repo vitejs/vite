@@ -378,6 +378,26 @@ describe('transformWithEsbuild', () => {
       })
       expect(actual).toBe(defineForClassFieldsTrueTransformedCode)
     })
+
+    test('target: es2022 and tsconfig.target: undefined => false', async () => {
+      const actual = await transformClassCode('es2022', {})
+      expect(actual).toBe(defineForClassFieldsFalseTransformedCode)
+    })
+
+    test('useDefineForClassFields: false and static property should not be transpile to static block', async () => {
+      const result = await transformWithEsbuild(
+        `
+          class foo {
+            static bar = 'bar'
+          }
+        `,
+        'bar.ts',
+        {
+          target: 'esnext',
+        },
+      )
+      expect(result?.code).not.toContain('static {')
+    })
   })
 })
 

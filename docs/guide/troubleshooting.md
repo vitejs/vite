@@ -15,6 +15,23 @@ You will need to either:
 - Switch to another package manager (e.g. `pnpm`, `yarn`)
 - Remove `&` from the path to your project
 
+## Config
+
+### This package is ESM only
+
+When importing a ESM only package by `require`, the following error happens.
+
+> Failed to resolve "foo". This package is ESM only but it was tried to load by `require`.
+
+> "foo" resolved to an ESM file. ESM file cannot be loaded by `require`.
+
+ESM files cannot be loaded by [`require`](<https://nodejs.org/docs/latest-v18.x/api/esm.html#require:~:text=Using%20require%20to%20load%20an%20ES%20module%20is%20not%20supported%20because%20ES%20modules%20have%20asynchronous%20execution.%20Instead%2C%20use%20import()%20to%20load%20an%20ES%20module%20from%20a%20CommonJS%20module.>).
+
+We recommend converting your config to ESM by either:
+
+- adding `"type": "module"` to the nearest `package.json`
+- renaming `vite.config.js`/`vite.config.ts` to `vite.config.mjs`/`vite.config.mts`
+
 ## Dev Server
 
 ### Requests are stalled forever
@@ -127,6 +144,30 @@ You will need to access the file with `http` protocol. The easiest way to achiev
 
 The hash key used to invalidate optimized dependencies depend on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
 
+## Performance bottlenecks
+
+If you suffer any application performance bottlenecks resulting in slow load times, you can start the built-in Node.js inspector with your Vite dev server or when building your application to create the CPU profile:
+
+::: code-group
+
+```bash [dev server]
+vite --profile --open
+```
+
+```bash [build]
+vite build --profile
+```
+
+:::
+
+::: tip Vite Dev Server
+Once your application is opened in the browser, just await finish loading it and then go back to the terminal and press `p` key (will stop the Node.js inspector) then press `q` key to stop the dev server.
+:::
+
+Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
+
+You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect), which lets you inspect the intermediate state of Vite plugins and can also help you to identify which plugins or middlewares are the bottleneck in your applications. The plugin can be used in both dev and build modes. Check the readme file for more details.
+
 ## Others
 
 ### Module externalized for browser compatibility
@@ -154,3 +195,14 @@ If these code are used inside dependencies, you could use [`patch-package`](http
 ### Browser extensions
 
 Some browser extensions (like ad-blockers) may prevent the Vite client from sending requests to the Vite dev server. You may see a white screen without logged errors in this case. Try disabling extensions if you have this issue.
+
+### Cross drive links on Windows
+
+If there's a cross drive links in your project on Windows, Vite may not work.
+
+An example of cross drive links are:
+
+- a virtual drive linked to a folder by `subst` command
+- a symlink/junction to a different drive by `mklink` command (e.g. Yarn global cache)
+
+Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)

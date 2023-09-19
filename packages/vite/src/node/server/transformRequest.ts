@@ -1,9 +1,9 @@
-import { promises as fs } from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
-import type { SourceDescription, SourceMap } from 'rollup'
+import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
@@ -20,6 +20,7 @@ import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+import { throwClosedServerError } from './pluginContainer'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -30,7 +31,7 @@ const debugCache = createDebugger('vite:cache')
 
 export interface TransformResult {
   code: string
-  map: SourceMap | null
+  map: SourceMap | { mappings: '' } | null
   etag?: string
   deps?: string[]
   dynamicDeps?: string[]
@@ -46,6 +47,8 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
+  if (server._restartPromise && !options.ssr) throwClosedServerError()
+
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
   // This module may get invalidated while we are processing it. For example
@@ -108,9 +111,8 @@ export function transformRequest(
     timestamp,
     abort: clearCache,
   })
-  request.then(clearCache, clearCache)
 
-  return request
+  return request.finally(clearCache)
 }
 
 async function doTransform(
@@ -141,13 +143,22 @@ async function doTransform(
     return cached
   }
 
-  // resolve
-  const id =
-    module?.id ??
-    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id ??
-    url
+  const resolved = module
+    ? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
 
-  const result = loadAndTransform(id, url, server, options, timestamp)
+  // resolve
+  const id = module?.id ?? resolved?.id ?? url
+
+  const result = loadAndTransform(
+    id,
+    url,
+    server,
+    options,
+    timestamp,
+    module,
+    resolved,
+  )
 
   getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
 
@@ -160,6 +171,8 @@ async function loadAndTransform(
   server: ViteDevServer,
   options: TransformOptions,
   timestamp: number,
+  mod?: ModuleNode,
+  resolved?: PartialResolvedId,
 ) {
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
@@ -171,11 +184,6 @@ async function loadAndTransform(
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
-
-  // Ensure that the module is in the graph before it is loaded and the file is checked.
-  // This prevents errors from occurring during the load process and interrupting the watching process at its inception.
-  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
-  ensureWatchedFile(watcher, mod.file, root)
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
@@ -193,10 +201,13 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
-        code = await fs.readFile(file, 'utf-8')
+        code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
+          if (e.code === 'EISDIR') {
+            e.message = `${e.message} ${file}`
+          }
           throw e
         }
       }
@@ -248,6 +259,12 @@ async function loadAndTransform(
     throw err
   }
 
+  if (server._restartPromise && !ssr) throwClosedServerError()
+
+  // ensure module in graph after successful load
+  mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+  ensureWatchedFile(watcher, mod.file, root)
+
   // transform
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
@@ -269,15 +286,23 @@ async function loadAndTransform(
     map = transformResult.map
   }
 
-  if (map && mod.file) {
-    map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
+  let normalizedMap: SourceMap | { mappings: '' } | null
+  if (typeof map === 'string') {
+    normalizedMap = JSON.parse(map)
+  } else if (map) {
+    normalizedMap = map as SourceMap | { mappings: '' }
+  } else {
+    normalizedMap = null
+  }
+
+  if (normalizedMap && 'version' in normalizedMap && mod.file) {
+    if (normalizedMap.mappings) {
+      await injectSourcesContent(normalizedMap, mod.file, logger)
     }
 
     const sourcemapPath = `${mod.file}.map`
     applySourcemapIgnoreList(
-      map,
+      normalizedMap,
       sourcemapPath,
       config.server.sourcemapIgnoreList,
       logger,
@@ -286,16 +311,16 @@ async function loadAndTransform(
     if (path.isAbsolute(mod.file)) {
       for (
         let sourcesIndex = 0;
-        sourcesIndex < map.sources.length;
+        sourcesIndex < normalizedMap.sources.length;
         ++sourcesIndex
       ) {
-        const sourcePath = map.sources[sourcesIndex]
+        const sourcePath = normalizedMap.sources[sourcesIndex]
         if (sourcePath) {
           // Rewrite sources to relative paths to give debuggers the chance
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
           if (path.isAbsolute(sourcePath)) {
-            map.sources[sourcesIndex] = path.relative(
+            normalizedMap.sources[sourcesIndex] = path.relative(
               path.dirname(mod.file),
               sourcePath,
             )
@@ -305,14 +330,16 @@ async function loadAndTransform(
     }
   }
 
+  if (server._restartPromise && !ssr) throwClosedServerError()
+
   const result =
     ssr && !server.config.experimental.skipSsrTransform
-      ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
+      ? await server.ssrTransform(code, normalizedMap, url, originalCode)
       : ({
           code,
-          map,
+          map: normalizedMap,
           etag: getEtag(code, { weak: true }),
-        } as TransformResult)
+        } satisfies TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
@@ -326,7 +353,7 @@ async function loadAndTransform(
 
 function createConvertSourceMapReadMap(originalFileName: string) {
   return (filename: string) => {
-    return fs.readFile(
+    return fsp.readFile(
       path.resolve(path.dirname(originalFileName), filename),
       'utf-8',
     )

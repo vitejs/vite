@@ -157,7 +157,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           fileName:
             typeof config.build.manifest === 'string'
               ? config.build.manifest
-              : 'manifest.json',
+              : '.vite/manifest.json',
           type: 'asset',
           source: jsonStableStringify(manifest, { space: 2 }),
         })

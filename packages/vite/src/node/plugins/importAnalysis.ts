@@ -44,22 +44,21 @@ import {
   timeFrom,
   transformStableResult,
   unwrapId,
+  withTrailingSlash,
   wrapId,
 } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cjsShouldExternalizeForSSR,
-  shouldExternalizeForSSR,
-} from '../ssr/ssrExternal'
+import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { checkPublicFile } from './asset'
+import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
+import { checkPublicFile, urlRE } from './asset'
 import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
 } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
+import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
 const debug = createDebugger('vite:import-analysis')
@@ -75,7 +74,7 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 const hasImportInQueryParamsRE = /[?&]import=?\b/
 
-const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
+export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
@@ -254,11 +253,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
-      if (!importerModule && depsOptimizer?.isOptimizedDepFile(importer)) {
-        // Ids of optimized deps could be invalidated and removed from the graph
-        // Return without transforming, this request is no longer valid, a full reload
-        // is going to request this id again. Throwing an outdated error so we
-        // properly finish the request with a 504 sent to the browser.
+      if (!importerModule) {
+        // This request is no longer valid. It could happen for optimized deps
+        // requests. A full reload is going to request this id again.
+        // Throwing an outdated error so we properly finish the request with a
+        // 504 sent to the browser.
         throwOutdatedRequest(importer)
       }
 
@@ -334,7 +333,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(root + '/')) {
+        if (resolved.id.startsWith(withTrailingSlash(root))) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
@@ -485,13 +484,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr) {
-              if (config.legacy?.buildSsrCjsExternalHeuristics) {
-                if (
-                  cjsShouldExternalizeForSSR(specifier, server._ssrExternals)
-                ) {
-                  return
-                }
-              } else if (shouldExternalizeForSSR(specifier, config)) {
+              if (shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
               if (isBuiltin(specifier)) {
@@ -506,51 +499,32 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // warn imports to non-asset /public files
             if (
               specifier[0] === '/' &&
-              !config.assetsInclude(cleanUrl(specifier)) &&
-              !specifier.endsWith('.json') &&
+              !(
+                config.assetsInclude(cleanUrl(specifier)) ||
+                urlRE.test(specifier)
+              ) &&
               checkPublicFile(specifier, config)
             ) {
               throw new Error(
-                `Cannot import non-asset file ${specifier} which is inside /public.` +
+                `Cannot import non-asset file ${specifier} which is inside /public. ` +
                   `JS/CSS files inside /public are copied as-is on build and ` +
-                  `can only be referenced via <script src> or <link href> in html.`,
+                  `can only be referenced via <script src> or <link href> in html. ` +
+                  `If you want to get the URL of that file, use ${injectQuery(
+                    specifier,
+                    'url',
+                  )} instead.`,
               )
             }
 
             // normalize
             const [url, resolvedId] = await normalizeUrl(specifier, start)
 
-            if (
-              !isDynamicImport &&
-              specifier &&
-              !specifier.includes('?') && // ignore custom queries
-              isCSSRequest(resolvedId) &&
-              !isModuleCSSRequest(resolvedId)
-            ) {
-              const sourceExp = source.slice(expStart, start)
-              if (
-                sourceExp.includes('from') && // check default and named imports
-                !sourceExp.includes('__vite_glob_') // glob handles deprecation message itself
-              ) {
-                const newImport =
-                  sourceExp + specifier + `?inline` + source.slice(end, expEnd)
-                this.warn(
-                  `\n` +
-                    colors.cyan(importerModule.file) +
-                    `\n` +
-                    colors.reset(generateCodeFrame(source, start)) +
-                    `\n` +
-                    colors.yellow(
-                      `Default and named imports from CSS files are deprecated. ` +
-                        `Use the ?inline query instead. ` +
-                        `For example: ${newImport}`,
-                    ),
-                )
-              }
-            }
-
             // record as safe modules
-            server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
+            // safeModulesPath should not include the base prefix.
+            // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
+            server?.moduleGraph.safeModulesPath.add(
+              fsPathFromUrl(stripBase(url, base)),
+            )
 
             if (url !== specifier) {
               let rewriteDone = false
@@ -650,15 +624,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
               server.transformRequest(url, { ssr }).catch((e) => {
-                if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
-                  // This are expected errors
+                if (
+                  e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+                  e?.code === ERR_CLOSED_SERVER
+                ) {
+                  // these are expected errors
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
-                config.logger.error(e.message)
+                config.logger.error(e.message, { error: e })
               })
             }
-          } else if (!importer.startsWith(clientDir)) {
+          } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(
@@ -836,16 +813,17 @@ export function interopNamedImports(
     se: expEnd,
     d: dynamicIndex,
   } = importSpecifier
+  const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))` +
+        getLineBreaks(exp),
       { contentOnly: true },
     )
   } else {
-    const exp = source.slice(expStart, expEnd)
     const rawUrl = source.slice(start, end)
     const rewritten = transformCjsImport(
       exp,
@@ -856,12 +834,26 @@ export function interopNamedImports(
       config,
     )
     if (rewritten) {
-      str.overwrite(expStart, expEnd, rewritten, { contentOnly: true })
+      str.overwrite(expStart, expEnd, rewritten + getLineBreaks(exp), {
+        contentOnly: true,
+      })
     } else {
       // #1439 export * from '...'
-      str.overwrite(start, end, rewrittenUrl, { contentOnly: true })
+      str.overwrite(
+        start,
+        end,
+        rewrittenUrl + getLineBreaks(source.slice(start, end)),
+        {
+          contentOnly: true,
+        },
+      )
     }
   }
+}
+
+// get line breaks to preserve line count for not breaking source maps
+function getLineBreaks(str: string) {
+  return str.includes('\n') ? '\n'.repeat(str.split('\n').length - 1) : ''
 }
 
 type ImportNameSpecifier = { importedName: string; localName: string }

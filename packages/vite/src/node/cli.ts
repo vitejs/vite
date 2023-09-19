@@ -8,7 +8,6 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
-import { bindShortcuts } from './shortcuts'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -87,12 +86,46 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+
+  // convert the sourcemap option to a boolean if necessary
+  if ('sourcemap' in ret) {
+    const sourcemap = ret.sourcemap as `${boolean}` | 'inline' | 'hidden'
+    ret.sourcemap =
+      sourcemap === 'true'
+        ? true
+        : sourcemap === 'false'
+        ? false
+        : ret.sourcemap
+  }
+
   return ret
+}
+
+/**
+ * host may be a number (like 0), should convert to string
+ */
+const convertHost = (v: any) => {
+  if (typeof v === 'number') {
+    return String(v)
+  }
+  return v
+}
+
+/**
+ * base may be a number (like 0), should convert to empty string
+ */
+const convertBase = (v: any) => {
+  if (v === 0) {
+    return ''
+  }
+  return v
 }
 
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('--base <path>', `[string] public base path (default: /)`)
+  .option('--base <path>', `[string] public base path (default: /)`, {
+    type: [convertBase],
+  })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
@@ -104,7 +137,7 @@ cli
   .command('[root]', 'start dev server') // default command
   .alias('serve') // the command is called 'serve' in Vite's API
   .alias('dev') // alias to align with the script name
-  .option('--host [host]', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
@@ -156,7 +189,7 @@ cli
       )
 
       server.printUrls()
-      bindShortcuts(server, {
+      server.bindCLIShortcuts({
         print: true,
         customShortcuts: [
           profileSession && {
@@ -291,9 +324,10 @@ cli
     },
   )
 
+// preview
 cli
   .command('preview [root]', 'locally preview production build')
-  .option('--host [host]', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
@@ -332,6 +366,7 @@ cli
           },
         })
         server.printUrls()
+        server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),

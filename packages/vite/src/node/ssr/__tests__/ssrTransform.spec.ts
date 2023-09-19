@@ -743,6 +743,19 @@ console.log("it can parse the hashbang")`,
   `)
 })
 
+test('import hoisted after hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `#!/usr/bin/env node
+import "foo"`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "
+  `)
+})
+
 // #10289
 test('track scope by class, function, condition blocks', async () => {
   const code = `
@@ -855,4 +868,81 @@ function test() {
       return __vite_ssr_import_0__.bar;
     }"
   `)
+})
+
+test('track scope in for loops', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { test } from './test.js'
+
+for (const test of tests) {
+  console.log(test)
+}
+
+for (let test = 0; test < 10; test++) {
+  console.log(test)
+}
+
+for (const test in tests) {
+  console.log(test)
+}`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./test.js\\");
+
+
+
+    for (const test of tests) {
+      console.log(test)
+    }
+
+    for (let test = 0; test < 10; test++) {
+      console.log(test)
+    }
+
+    for (const test in tests) {
+      console.log(test)
+    }"
+  `)
+})
+
+test('avoid binding ClassExpression', async () => {
+  const result = await ssrTransformSimple(
+    `
+import Foo, { Bar } from './foo';
+
+console.log(Foo, Bar);
+const obj = {
+  foo: class Foo {},
+  bar: class Bar {}
+}
+const Baz = class extends Foo {}
+`,
+  )
+  expect(result?.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\");
+
+
+
+    console.log(__vite_ssr_import_0__.default, __vite_ssr_import_0__.Bar);
+    const obj = {
+      foo: class Foo {},
+      bar: class Bar {}
+    }
+    const Baz = class extends __vite_ssr_import_0__.default {}
+    "
+  `)
+})
+
+test('import assertion attribute', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+  import * as foo from './foo.json' assert { type: 'json' };
+  import('./bar.json', { assert: { type: 'json' } });
+  `),
+  ).toMatchInlineSnapshot(`
+  "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo.json\\");
+  
+    
+    __vite_ssr_dynamic_import__('./bar.json', { assert: { type: 'json' } });
+    "`)
 })

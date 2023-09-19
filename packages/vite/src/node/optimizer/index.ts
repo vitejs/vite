@@ -7,13 +7,13 @@ import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
+import glob from 'fast-glob'
 import { createFilter } from '@rollup/pluginutils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import {
   arraify,
   createDebugger,
-  emptyDir,
   flattenId,
   getHash,
   isOptimizable,
@@ -26,9 +26,9 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import { resolvePackageData } from '../packages'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { scanImports } from './scan'
+import { resolveTsconfigRaw, scanImports } from './scan'
+import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -79,7 +79,7 @@ export interface DepOptimizationConfig {
    */
   exclude?: string[]
   /**
-   * Force ESM interop when importing for these dependencies. Some legacy
+   * Forces ESM interop when importing these dependencies. Some legacy
    * packages advertise themselves as ESM but use `require` internally
    * @experimental
    */
@@ -126,6 +126,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+  /**
+   * Automatic dependency discovery. When `noDiscovery` is true, only dependencies
+   * listed in `include` will be optimized. The scanner isn't run for cold start
+   * in this case. CJS-only dependencies must be present in `include` during dev.
+   * @default false
+   * @experimental
+   */
+  noDiscovery?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -328,6 +336,8 @@ export function addOptimizedDepInfo(
   return depInfo
 }
 
+let firstLoadCachedDepOptimizationMetadata = true
+
 /**
  * Creates the initial dep optimization metadata, loading it from the deps cache
  * if it exists and pre-bundling isn't forced
@@ -340,16 +350,11 @@ export async function loadCachedDepOptimizationMetadata(
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
-  setTimeout(() => {
-    // Before Vite 2.9, dependencies were cached in the root of the cacheDir
-    // For compat, we remove the cache if we find the old structure
-    if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
-      emptyDir(config.cacheDir)
-    }
-    // Fire a clean up of stale cache dirs, in case old processes didn't
-    // terminate correctly
-    cleanupDepsCacheStaleDirs(config)
-  }, 100)
+  if (firstLoadCachedDepOptimizationMetadata) {
+    firstLoadCachedDepOptimizationMetadata = false
+    // Fire up a clean up of stale processing deps dirs if older process exited early
+    setTimeout(() => cleanupDepsCacheStaleDirs(config), 0)
+  }
 
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
@@ -503,10 +508,15 @@ export function runOptimizeDeps(
     }
   }
 
-  const succesfulResult: DepOptimizationResult = {
+  const successfulResult: DepOptimizationResult = {
     metadata,
     cancel: cleanUp,
     commit: async () => {
+      if (cleaned) {
+        throw new Error(
+          'Can not commit a Deps Optimization run as it was cancelled',
+        )
+      }
       // Ignore clean up requests after this point so the temp folder isn't deleted before
       // we finish commiting the new deps cache files to the deps folder
       committed = true
@@ -564,7 +574,7 @@ export function runOptimizeDeps(
     // skip the scanner step if the lockfile hasn't changed
     return {
       cancel: async () => cleanUp(),
-      result: Promise.resolve(succesfulResult),
+      result: Promise.resolve(successfulResult),
     }
   }
 
@@ -662,7 +672,7 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        return succesfulResult
+        return successfulResult
       })
 
       .catch((e) => {
@@ -721,26 +731,32 @@ async function prepareEsbuildOptimizerRun(
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps?.esbuildOptions ?? {}
+  const {
+    plugins: pluginsFromConfig = [],
+    tsconfig,
+    tsconfigRaw,
+    ...esbuildOptions
+  } = optimizeDeps?.esbuildOptions ?? {}
 
-  for (const id in depsInfo) {
-    const src = depsInfo[id].src!
-    const exportsData = await (depsInfo[id].exportsData ??
-      extractExportsData(src, config, ssr))
-    if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader,
+  await Promise.all(
+    Object.keys(depsInfo).map(async (id) => {
+      const src = depsInfo[id].src!
+      const exportsData = await (depsInfo[id].exportsData ??
+        extractExportsData(src, config, ssr))
+      if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
+        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+        // This is useful for packages such as Gatsby.
+        esbuildOptions.loader = {
+          '.js': 'jsx',
+          ...esbuildOptions.loader,
+        }
       }
-    }
-    const flatId = flattenId(id)
-    flatIdDeps[flatId] = src
-    idToExports[id] = exportsData
-    flatIdToExports[flatId] = exportsData
-  }
+      const flatId = flattenId(id)
+      flatIdDeps[flatId] = src
+      idToExports[id] = exportsData
+      flatIdToExports[flatId] = exportsData
+    }),
+  )
 
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
@@ -812,6 +828,8 @@ async function prepareEsbuildOptimizerRun(
     metafile: true,
     plugins,
     charset: 'utf8',
+    tsconfig,
+    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
@@ -820,15 +838,6 @@ async function prepareEsbuildOptimizerRun(
     },
   })
   return { context, idToExports }
-}
-
-export async function findKnownImports(
-  config: ResolvedConfig,
-  ssr: boolean,
-): Promise<string[]> {
-  const { deps } = await scanImports(config).result
-  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
-  return Object.keys(deps)
 }
 
 export async function addManuallyIncludedOptimizeDeps(
@@ -851,8 +860,19 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
+
+    const includes = [...optimizeDepsInclude, ...extra]
+    for (let i = 0; i < includes.length; i++) {
+      const id = includes[i]
+      if (glob.isDynamicPattern(id)) {
+        const globIds = expandGlobIds(id, config)
+        includes.splice(i, 1, ...globIds)
+        i += globIds.length - 1
+      }
+    }
+
     const resolve = createOptimizeDepsIncludeResolver(config, ssr)
-    for (const id of [...optimizeDepsInclude, ...extra]) {
+    for (const id of includes) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
@@ -874,50 +894,6 @@ export async function addManuallyIncludedOptimizeDeps(
   }
 }
 
-function createOptimizeDepsIncludeResolver(
-  config: ResolvedConfig,
-  ssr: boolean,
-) {
-  const resolve = config.createResolver({
-    asSrc: false,
-    scan: true,
-    ssrOptimizeCheck: ssr,
-    ssrConfig: config.ssr,
-    packageCache: new Map(),
-  })
-  return async (id: string) => {
-    const lastArrowIndex = id.lastIndexOf('>')
-    if (lastArrowIndex === -1) {
-      return await resolve(id, undefined, undefined, ssr)
-    }
-    // split nested selected id by last '>', for example:
-    // 'foo > bar > baz' => 'foo > bar' & 'baz'
-    const nestedRoot = id.substring(0, lastArrowIndex).trim()
-    const nestedPath = id.substring(lastArrowIndex + 1).trim()
-    const basedir = nestedResolveBasedir(
-      nestedRoot,
-      config.root,
-      config.resolve.preserveSymlinks,
-    )
-    return await resolve(nestedPath, basedir, undefined, ssr)
-  }
-}
-
-/**
- * Continously resolve the basedir of packages separated by '>'
- */
-function nestedResolveBasedir(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false,
-) {
-  const pkgs = id.split('>').map((pkg) => pkg.trim())
-  for (const pkg of pkgs) {
-    basedir = resolvePackageData(pkg, basedir, preserveSymlinks)?.dir || basedir
-  }
-  return basedir
-}
-
 export function newDepOptimizationProcessing(): DepOptimizationProcessing {
   let resolve: () => void
   const promise = new Promise((_resolve) => {
@@ -930,9 +906,11 @@ export function newDepOptimizationProcessing(): DepOptimizationProcessing {
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>,
 ): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(depsInfo).map((d) => [d[0], d[1].src!]),
-  )
+  const obj: Record<string, string> = {}
+  for (const key in depsInfo) {
+    obj[key] = depsInfo[key].src!
+  }
+  return obj
 }
 
 export function getOptimizedDepPath(

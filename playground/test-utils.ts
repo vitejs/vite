@@ -4,8 +4,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
-import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
-import type { Manifest } from 'vite'
+import type {
+  ConsoleMessage,
+  ElementHandle,
+  Locator,
+} from 'playwright-chromium'
+import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
@@ -18,6 +22,7 @@ export * from './vitestSetup'
 export const ports = {
   cli: 9510,
   'cli-module': 9511,
+  json: 9512,
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,
@@ -29,9 +34,12 @@ export const ports = {
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,
+  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
+  'css/lightningcss-proxy': 5008,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -40,6 +48,7 @@ export const hmrPorts = {
   'ssr-html': 24683,
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
+  'css/lightningcss-proxy': 24686,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -69,7 +78,9 @@ function rgbToHex(rgb: string): string {
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
-async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
+async function toEl(
+  el: string | ElementHandle | Locator,
+): Promise<ElementHandle> {
   if (typeof el === 'string') {
     const realEl = await page.$(el)
     if (realEl == null) {
@@ -77,21 +88,30 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
     }
     return realEl
   }
+  if ('elementHandle' in el) {
+    return el.elementHandle()
+  }
   return el
 }
 
-export async function getColor(el: string | ElementHandle): Promise<string> {
+export async function getColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export async function getBg(el: string | ElementHandle): Promise<string> {
+export async function getBg(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
-export async function getBgColor(el: string | ElementHandle): Promise<string> {
+export async function getBgColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
 }
@@ -148,7 +168,19 @@ export function findAssetFile(
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
+    fs.readFileSync(
+      path.join(testDir, 'dist', base, '.vite/manifest.json'),
+      'utf-8',
+    ),
+  )
+}
+
+export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      'utf-8',
+    ),
   )
 }
 
@@ -307,6 +339,9 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   delete m.file
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  if (m.sourceRoot) {
+    m.sourceRoot = m.sourceRoot.replace(root, '/root')
+  }
   return m
 }
 

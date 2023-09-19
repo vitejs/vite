@@ -18,6 +18,8 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
+import { bindCLIShortcuts } from './shortcuts'
+import type { BindCLIShortcutsOptions } from './shortcuts'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
@@ -45,8 +47,7 @@ export function resolvePreviewOptions(
   }
 }
 
-// TODO: merge with PreviewServer in Vite 5
-export interface PreviewServerForHook {
+export interface PreviewServer {
   /**
    * The resolved vite config object
    */
@@ -65,22 +66,23 @@ export interface PreviewServerForHook {
    */
   httpServer: http.Server
   /**
-   * The resolved urls Vite prints on the CLI
+   * The resolved urls Vite prints on the CLI.
+   * null before server is listening.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
    * Print server urls
    */
   printUrls(): void
-}
-
-export interface PreviewServer extends PreviewServerForHook {
-  resolvedUrls: ResolvedServerUrls
+  /**
+   * Bind CLI shortcuts
+   */
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
 }
 
 export type PreviewServerHook = (
   this: void,
-  server: PreviewServerForHook,
+  server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
 /**
@@ -122,7 +124,7 @@ export async function preview(
   const options = config.preview
   const logger = config.logger
 
-  const server: PreviewServerForHook = {
+  const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
@@ -133,6 +135,9 @@ export async function preview(
       } else {
         throw new Error('cannot print server URLs before server is listening.')
       }
+    },
+    bindCLIShortcuts(options) {
+      bindCLIShortcuts(server as PreviewServer, options)
     },
   }
 
@@ -161,22 +166,24 @@ export async function preview(
 
   // static assets
   const headers = config.preview.headers
-  const assetServer = sirv(distDir, {
-    etag: true,
-    dev: true,
-    single: config.appType === 'spa',
-    setHeaders(res) {
-      if (headers) {
-        for (const name in headers) {
-          res.setHeader(name, headers[name]!)
+  const viteAssetMiddleware = (...args: readonly [any, any?, any?]) =>
+    sirv(distDir, {
+      etag: true,
+      dev: true,
+      single: config.appType === 'spa',
+      setHeaders(res) {
+        if (headers) {
+          for (const name in headers) {
+            res.setHeader(name, headers[name]!)
+          }
         }
-      }
-    },
-    shouldServe(filePath) {
-      return shouldServeFile(filePath, distDir)
-    },
-  })
-  app.use(previewBase, assetServer)
+      },
+      shouldServe(filePath) {
+        return shouldServeFile(filePath, distDir)
+      },
+    })(...args)
+
+  app.use(previewBase, viteAssetMiddleware)
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())

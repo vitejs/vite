@@ -1,7 +1,6 @@
 import type { DepOptimizationConfig } from '../optimizer'
 
 export type SSRTarget = 'node' | 'webworker'
-export type SSRFormat = 'esm' | 'cjs'
 
 export type SsrDepOptimizationOptions = DepOptimizationConfig
 
@@ -15,15 +14,6 @@ export interface SSROptions {
    */
   target?: SSRTarget
   /**
-   * Define the format for the ssr build. Since Vite v3 the SSR build generates ESM by default.
-   * `'cjs'` can be selected to generate a CJS build, but it isn't recommended. This option is
-   * left marked as experimental to give users more time to update to ESM. CJS builds requires
-   * complex externalization heuristics that aren't present in the ESM format.
-   * @experimental
-   * @default 'esm'
-   */
-  format?: SSRFormat
-  /**
    * Control over which dependencies are optimized during SSR and esbuild options
    * During build:
    *   no external CJS dependencies are optimized by default
@@ -36,29 +26,17 @@ export interface SSROptions {
 
 export interface ResolvedSSROptions extends SSROptions {
   target: SSRTarget
-  format: SSRFormat
   optimizeDeps: SsrDepOptimizationOptions
 }
 
 export function resolveSSROptions(
   ssr: SSROptions | undefined,
   preserveSymlinks: boolean,
-  buildSsrCjsExternalHeuristics?: boolean,
 ): ResolvedSSROptions {
   ssr ??= {}
   const optimizeDeps = ssr.optimizeDeps ?? {}
-  let format: SSRFormat = 'esm'
-  let target: SSRTarget = 'node'
-  if (buildSsrCjsExternalHeuristics) {
-    if (ssr) {
-      format = 'cjs'
-    } else {
-      target = 'node'
-      format = 'cjs'
-    }
-  }
+  const target: SSRTarget = 'node'
   return {
-    format,
     target,
     ...ssr,
     optimizeDeps: {

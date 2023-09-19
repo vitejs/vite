@@ -210,6 +210,8 @@ Enabling this setting causes vite to determine file identity by the original fil
 
 Configure CSS modules behavior. The options are passed on to [postcss-modules](https://github.com/css-modules/postcss-modules).
 
+This option doesn't have any effect when using [Lightning CSS](../guide/features.md#lightning-css). If enabled, [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) should be used instead.
+
 ## css.postcss
 
 - **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.AcceptedPlugin[] })`
@@ -258,11 +260,51 @@ export default defineConfig({
 
 ## css.devSourcemap
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
 - **Type:** `boolean`
 - **Default:** `false`
 
 Whether to enable sourcemaps during dev.
+
+## css.transformer
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
+- **Type:** `'postcss' | 'lightningcss'`
+- **Default:** `'postcss'`
+
+Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/features.md#lightning-css) for more information.
+
+## css.lightningcss
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
+- **Type:**
+
+```js
+import type {
+  CSSModulesConfig,
+  Drafts,
+  Features,
+  NonStandard,
+  PseudoClasses,
+  Targets,
+} from 'lightningcss'
+```
+
+```js
+{
+  targets?: Targets
+  include?: Features
+  exclude?: Features
+  drafts?: Drafts
+  nonStandard?: NonStandard
+  pseudoClasses?: PseudoClasses
+  unusedSymbols?: string[]
+  cssModules?: CSSModulesConfig,
+  // ...
+}
+```
+
+Configures Lightning CSS. Full transform options can be found in [the Lightning CSS repo](https://github.com/parcel-bundler/lightningcss/blob/master/node/index.d.ts).
 
 ## json.namedExports
 
@@ -284,7 +326,7 @@ Enabling this disables named imports.
 
 - **Type:** `ESBuildOptions | false`
 
-`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform). The most common use case is customizing JSX:
 
 ```js
 export default defineConfig({

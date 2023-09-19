@@ -6,7 +6,11 @@ import express from 'express'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
-export async function createServer(root = process.cwd(), hmrPort) {
+export async function createServer(
+  root = process.cwd(),
+  hmrPort,
+  customLogger,
+) {
   const resolve = (p) => path.resolve(__dirname, p)
 
   const app = express()
@@ -32,6 +36,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
       },
     },
     appType: 'custom',
+    customLogger,
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -52,6 +57,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
+      if (isTest) throw e
       console.log(e.stack)
       res.status(500).end(e.stack)
     }

@@ -4,7 +4,6 @@ import { createRequire } from 'node:module'
 import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
 import type { Plugin } from './plugin'
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
   try {
@@ -58,18 +57,18 @@ export function resolvePackageData(
     const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
     if (packageCache?.has(cacheKey)) return packageCache.get(cacheKey)!
 
-    let pkg: string | null
     try {
-      pkg = pnp.resolveToUnqualified(pkgName, basedir)
+      const pkg = pnp.resolveToUnqualified(pkgName, basedir, {
+        considerBuiltins: false,
+      })
+      if (!pkg) return null
+
+      const pkgData = loadPackageData(path.join(pkg, 'package.json'))
+      packageCache?.set(cacheKey, pkgData)
+      return pkgData
     } catch {
       return null
     }
-    if (!pkg) return null
-
-    const pkgData = loadPackageData(path.join(pkg, 'package.json'))
-    packageCache?.set(cacheKey, pkgData)
-
-    return pkgData
   }
 
   const originalBasedir = basedir

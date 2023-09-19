@@ -5,7 +5,13 @@ import colors from 'picocolors'
 import type { Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath, unique, wrapId } from '../utils'
+import {
+  createDebugger,
+  normalizePath,
+  unique,
+  withTrailingSlash,
+  wrapId,
+} from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
@@ -38,7 +44,9 @@ export interface HmrContext {
 }
 
 export function getShortName(file: string, root: string): string {
-  return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
+  return file.startsWith(withTrailingSlash(root))
+    ? path.posix.relative(root, file)
+    : file
 }
 
 export async function handleHMRUpdate(
@@ -81,7 +89,7 @@ export async function handleHMRUpdate(
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
-  if (file.startsWith(normalizedClientDir)) {
+  if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
     ws.send({
       type: 'full-reload',
       path: '*',
@@ -144,13 +152,21 @@ export function updateModules(
   let needFullReload = false
 
   for (const mod of modules) {
-    moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
+    const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
+    const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
+
+    moduleGraph.invalidateModule(
+      mod,
+      invalidatedModules,
+      timestamp,
+      true,
+      boundaries.map((b) => b.boundary),
+    )
+
     if (needFullReload) {
       continue
     }
 
-    const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
-    const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
     if (hasDeadEnd) {
       needFullReload = true
       continue

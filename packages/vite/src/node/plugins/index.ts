@@ -40,16 +40,6 @@ export async function resolvePlugins(
   const { modulePreload } = config.build
 
   return [
-    isWatch ? ensureWatchPlugin() : null,
-    isBuild ? metadataPlugin() : null,
-    watchPackageDataPlugin(config.packageCache),
-    preAliasPlugin(config),
-    aliasPlugin({ entries: config.resolve.alias }),
-    ...prePlugins,
-    modulePreload === true ||
-    (typeof modulePreload === 'object' && modulePreload.polyfill)
-      ? modulePreloadPolyfillPlugin(config)
-      : null,
     ...(isDepsOptimizerEnabled(config, false) ||
     isDepsOptimizerEnabled(config, true)
       ? [
@@ -58,6 +48,15 @@ export async function resolvePlugins(
             : optimizedDepsPlugin(config),
         ]
       : []),
+    isWatch ? ensureWatchPlugin() : null,
+    isBuild ? metadataPlugin() : null,
+    watchPackageDataPlugin(config.packageCache),
+    preAliasPlugin(config),
+    aliasPlugin({ entries: config.resolve.alias }),
+    ...prePlugins,
+    modulePreload !== false && modulePreload.polyfill
+      ? modulePreloadPolyfillPlugin(config)
+      : null,
     resolvePlugin({
       ...config.resolve,
       root: config.root,
@@ -68,8 +67,8 @@ export async function resolvePlugins(
       asSrc: true,
       getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
       shouldExternalize:
-        isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
-          ? (id) => shouldExternalizeForSSR(id, config)
+        isBuild && config.build.ssr
+          ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
           : undefined,
     }),
     htmlInlineProxyPlugin(config),

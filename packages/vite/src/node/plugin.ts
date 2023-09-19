@@ -9,13 +9,12 @@ import type {
   TransformResult,
 } from 'rollup'
 export type { PluginContext } from 'rollup'
-import type { UserConfig } from './config'
+import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
 import type { HmrContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
-import type { ConfigEnv, ResolvedConfig } from './'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -38,7 +37,7 @@ import type { ConfigEnv, ResolvedConfig } from './'
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
  */
-export interface Plugin extends RollupPlugin {
+export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
@@ -72,7 +71,11 @@ export interface Plugin extends RollupPlugin {
       this: void,
       config: UserConfig,
       env: ConfigEnv,
-    ) => UserConfig | null | void | Promise<UserConfig | null | void>
+    ) =>
+      | Omit<UserConfig, 'plugins'>
+      | null
+      | void
+      | Promise<Omit<UserConfig, 'plugins'> | null | void>
   >
   /**
    * Use this hook to read and store the final resolved vite config.
@@ -91,7 +94,7 @@ export interface Plugin extends RollupPlugin {
    */
   configureServer?: ObjectHook<ServerHook>
   /**
-   * Configure the preview server. The hook receives the {@link PreviewServerForHook}
+   * Configure the preview server. The hook receives the {@link PreviewServer}
    * instance. This can also be used to store a reference to the server
    * for use in other hooks.
    *

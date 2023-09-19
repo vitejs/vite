@@ -36,6 +36,13 @@
 <h2>Exports with module</h2>
 <p class="exports-with-module">fail</p>
 
+<h2>
+  Both import and require resolve using module condition (avoids dual package
+  hazard)
+</h2>
+<p class="exports-with-module-condition">fail</p>
+<p class="exports-with-module-condition-required">fail</p>
+
 <h2>Resolving top level with imports field</h2>
 <p class="imports-top-level">fail</p>
 
@@ -214,6 +221,14 @@
   import { msg as exportsWithModule } from '@vitejs/test-resolve-exports-with-module'
   text('.exports-with-module', exportsWithModule)
 
+  import { msg as exportsWithModuleCondition } from '@vitejs/test-resolve-exports-with-module-condition'
+  import { msg as exportsWithModuleConditionRequired } from '@vitejs/test-resolve-exports-with-module-condition-required'
+  text('.exports-with-module-condition', exportsWithModuleCondition)
+  text(
+    '.exports-with-module-condition-required',
+    exportsWithModuleConditionRequired,
+  )
+
   // imports field
   import { msg as importsTopLevel } from '#top-level'
   text('.imports-top-level', importsTopLevel)
@@ -334,7 +349,7 @@
   import '@vitejs/test-resolve-browser-field/multiple.dot.path'
 
   // css entry
-  import css from 'normalize.css'
+  import css from 'normalize.css?inline'
   if (typeof css === 'string') {
     text('.css', '[success] resolve package with css entry file')
   }

@@ -34,7 +34,6 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
-  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'
@@ -52,7 +51,6 @@ export type {
   ResolvedSSROptions,
   SsrDepOptimizationOptions,
   SSROptions,
-  SSRFormat,
   SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
@@ -76,6 +74,7 @@ export type {
   CSSOptions,
   CSSModulesOptions,
   PreprocessCSSResult,
+  ResolvedCSSOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
@@ -99,6 +98,8 @@ export type {
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 
+export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
+
 export type {
   HMRPayload,
   ConnectedPayload,
@@ -116,7 +117,6 @@ export type {
 } from 'types/customEvent'
 export type {
   ImportGlobFunction,
-  ImportGlobEagerFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,
@@ -143,3 +143,4 @@ export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
+export type { LightningCSSOptions } from 'dep-types/lightningcss'
