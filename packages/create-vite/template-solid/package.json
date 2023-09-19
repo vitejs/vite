@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "solid-js": "^1.7.9"
+    "solid-js": "^1.7.11"
   },
   "devDependencies": {
     "vite": "^4.4.9",

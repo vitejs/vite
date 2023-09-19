@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@vitejs/test-css-lib": "file:./css-lib",
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "@vitejs/test-define-properties-exports": "file:./define-properties-exports",
     "@vitejs/test-define-property-exports": "file:./define-property-exports",
     "@vitejs/test-forwarded-export": "file:./forwarded-export",

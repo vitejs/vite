@@ -4,6 +4,6 @@
   "version": "1.0.0",
   "main": "./index.cjs",
   "dependencies": {
-    "bignumber.js": "9.1.1"
+    "bignumber.js": "9.1.2"
   }
 }

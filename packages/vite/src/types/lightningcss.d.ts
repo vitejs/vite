@@ -1,7 +1,6 @@
 import type {
   CSSModulesConfig,
   Drafts,
-  Features,
   NonStandard,
   PseudoClasses,
   Targets,
@@ -13,8 +12,8 @@ import type {
  */
 export type LightningCSSOptions = {
   targets?: Targets
-  include?: Features
-  exclude?: Features
+  include?: number
+  exclude?: number
   drafts?: Drafts
   nonStandard?: NonStandard
   pseudoClasses?: PseudoClasses
