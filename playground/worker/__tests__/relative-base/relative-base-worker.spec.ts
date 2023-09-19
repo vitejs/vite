@@ -23,7 +23,7 @@ test('normal', async () => {
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
 })
 
 test('TS output', async () => {

@@ -311,5 +311,9 @@ export default defineConfig({
         },
       ],
     },
+
+    outline: {
+      level: [2, 3],
+    },
   },
 })

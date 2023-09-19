@@ -822,15 +822,6 @@ async function prepareEsbuildOptimizerRun(
   return { context, idToExports }
 }
 
-export async function findKnownImports(
-  config: ResolvedConfig,
-  ssr: boolean,
-): Promise<string[]> {
-  const { deps } = await scanImports(config).result
-  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
-  return Object.keys(deps)
-}
-
 export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,

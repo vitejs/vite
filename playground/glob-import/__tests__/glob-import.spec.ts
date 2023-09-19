@@ -5,14 +5,10 @@ import {
   addFile,
   editFile,
   findAssetFile,
-  getColor,
   isBuild,
-  isServe,
   page,
   removeFile,
-  untilBrowserLogAfter,
   untilUpdated,
-  viteTestUrl,
   withRetry,
 } from '~utils'
 
@@ -47,13 +43,7 @@ const allResult = {
     default: 'hi',
   },
   '/dir/baz.json': json,
-  '/dir/foo.css': isBuild
-    ? {
-        default: '.foo{color:#00f}',
-      }
-    : {
-        default: '.foo {\n  color: blue;\n}\n',
-      },
+  '/dir/foo.css': {},
   '/dir/foo.js': {
     msg: 'foo',
   },
@@ -216,8 +206,6 @@ if (!isBuild) {
 }
 
 test('tree-shake eager css', async () => {
-  expect(await getColor('.tree-shake-eager-css')).toBe('orange')
-  expect(await getColor('.no-tree-shake-eager-css')).toBe('orange')
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
     '.no-tree-shake-eager-css',
   )
@@ -226,30 +214,6 @@ test('tree-shake eager css', async () => {
     const content = findAssetFile(/index-\w+\.js/)
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
-})
-
-test('warn CSS default import', async () => {
-  const logs = await untilBrowserLogAfter(
-    () => page.goto(viteTestUrl),
-    'Ran scripts',
-  )
-  const noTreeshakeCSSMessage =
-    'For example: `import.meta.glob("/no-tree-shake.css", { "eager": true, "query": "?inline" })`'
-  const treeshakeCSSMessage =
-    'For example: `import.meta.glob("/tree-shake.css", { "eager": true, "query": "?inline" })`'
-
-  expect(
-    logs.some((log) => log.includes(noTreeshakeCSSMessage)),
-    `expected logs to include a message including ${JSON.stringify(
-      noTreeshakeCSSMessage,
-    )}`,
-  ).toBe(isServe)
-  expect(
-    logs.every((log) => !log.includes(treeshakeCSSMessage)),
-    `expected logs not to include a message including ${JSON.stringify(
-      treeshakeCSSMessage,
-    )}`,
-  ).toBe(true)
 })
 
 test('escapes special chars in globs without mangling user supplied glob suffix', async () => {

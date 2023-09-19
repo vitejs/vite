@@ -33,12 +33,14 @@ import {
   dynamicImport,
   isBuiltin,
   isExternalUrl,
+  isNodeBuiltin,
   isObject,
   lookupFile,
   mergeAlias,
   mergeConfig,
   normalizeAlias,
   normalizePath,
+  withTrailingSlash,
 } from './utils'
 import {
   createPluginHookUtils,
@@ -321,13 +323,8 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
-   *
-   * @experimental
-   * @deprecated
-   * @default false
+   * No longer needed for now, but kept for backwards compatibility.
    */
-  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions extends PluginHookUtils {
@@ -497,6 +494,15 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
+  if (resolvedRoot.includes('#')) {
+    logger.warn(
+      colors.yellow(
+        `The project root contains the "#" character (${colors.cyan(
+          resolvedRoot,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
+      ),
+    )
+  }
 
   const clientAlias = [
     {
@@ -641,11 +647,7 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(
-    config.ssr,
-    resolveOptions.preserveSymlinks,
-    config.legacy?.buildSsrCjsExternalHeuristics,
-  )
+  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
 
   const middlewareMode = config?.server?.middlewareMode
 
@@ -680,7 +682,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: resolvedBase.endsWith('/') ? resolvedBase : resolvedBase + '/',
+    base: withTrailingSlash(resolvedBase),
     rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
@@ -785,8 +787,7 @@ export async function resolveConfig(
         } instead`,
       ),
     )
-  }
-  if (middlewareMode === 'html') {
+  } else if (middlewareMode === 'html') {
     logger.warn(
       colors.yellow(
         `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`,
@@ -851,13 +852,15 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 
   // Warn about removal of experimental features
   if (
+    // @ts-expect-error Option removed
     config.legacy?.buildSsrCjsExternalHeuristics ||
+    // @ts-expect-error Option removed
     config.ssr?.format === 'cjs'
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5. 
-    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
+    The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
 `),
     )
   }
@@ -1081,13 +1084,15 @@ async function bundleConfigFile(
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
-                isBuiltin(id)
+                isNodeBuiltin(id)
               ) {
                 return
               }
 
-              // partial deno support as `npm:` does not work with esbuild
-              if (id.startsWith('npm:')) {
+              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
+              // externalize it so the non-node runtime handles it instead.
+              if (isBuiltin(id)) {
                 return { external: true }
               }
 
