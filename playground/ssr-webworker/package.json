@@ -11,7 +11,7 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "miniflare": "^3.20230807.0",
+    "miniflare": "^3.20230904.0",
     "@vitejs/test-resolve-linked": "workspace:*"
   }
 }
