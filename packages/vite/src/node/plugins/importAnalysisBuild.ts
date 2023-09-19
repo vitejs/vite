@@ -287,6 +287,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return [url, resolved.id]
       }
 
+      // when wrapping dynamic imports with a preload helper, Rollup is unable to analyze the
+      // accessed variables for treeshaking. This below tries to match common accessed syntax
+      // to "copy" it over to the dynamic import wrapped by the preload helper.
       const dynamicImports: Record<
         number,
         { declaration?: string; names?: string; chains?: string }
