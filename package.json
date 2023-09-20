@@ -82,7 +82,7 @@
     "tslib": "^2.6.2",
     "tsx": "^3.12.10",
     "typescript": "^5.0.2",
-    "unbuild": "^1.2.1",
+    "unbuild": "^2.0.0",
     "vite": "workspace:*",
     "vitepress": "1.0.0-rc.14",
     "vitest": "^0.34.4",
