@@ -237,7 +237,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             `[@vitejs/plugin-legacy] modern polyfills:`,
             modernPolyfills,
           )
-        await buildPolyfillChunk(
+        const polyfillChunk = await buildPolyfillChunk(
           config.mode,
           modernPolyfills,
           bundle,
@@ -247,6 +247,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           opts,
           true,
         )
+        if (genLegacy && polyfillChunk) {
+          polyfillChunk.code = modernChunkLegacyGuard + polyfillChunk.code
+        }
         return
       }
 
@@ -734,6 +737,8 @@ async function buildPolyfillChunk(
 
   // add the chunk to the bundle
   bundle[polyfillChunk.fileName] = polyfillChunk
+
+  return polyfillChunk
 }
 
 const polyfillId = '\0vite/legacy-polyfills'
