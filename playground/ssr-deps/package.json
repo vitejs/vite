@@ -17,6 +17,7 @@
     "@vitejs/test-object-assigned-exports": "file:./object-assigned-exports",
     "@vitejs/test-only-object-assigned-exports": "file:./only-object-assigned-exports",
     "@vitejs/test-primitive-export": "file:./primitive-export",
+    "@vitejs/test-react-server": "file:./react-server",
     "@vitejs/test-read-file-content": "file:./read-file-content",
     "@vitejs/test-require-absolute": "file:./require-absolute",
     "@vitejs/test-ts-transpiled-exports": "file:./ts-transpiled-exports",

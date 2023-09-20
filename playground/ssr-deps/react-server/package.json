@@ -1,0 +1,21 @@
+{
+  "name": "@vitejs/test-react-server",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    "./server": {
+      "react-server": {
+        "workerd": "./server.edge.js",
+        "deno": "./server.browser.js",
+        "node": {
+          "webpack": "./server.node.js",
+          "default": "./server.node.unbundled.js"
+        },
+        "edge-light": "./server.edge.js",
+        "browser": "./server.browser.js"
+      },
+      "default": "./server.js"
+    }
+  }
+}

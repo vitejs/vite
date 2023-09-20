@@ -21,6 +21,9 @@ export async function createServer(root = process.cwd(), hmrPort) {
   ).createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
+    resolve: {
+      conditions: ['react-server'],
+    },
     server: {
       middlewareMode: true,
       watch: {

@@ -122,6 +122,13 @@ test('import css library', async () => {
   expect(await page.textContent('.module-condition')).toMatch('[success]')
 })
 
+test('import react/server/server.node.unbundled.js', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.react-server')).toMatch(
+    'server.node.unbundled.js',
+  )
+})
+
 describe.runIf(isServe)('hmr', () => {
   test('handle isomorphic module updates', async () => {
     await page.goto(url)

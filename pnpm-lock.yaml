@@ -1222,6 +1222,9 @@ importers:
       '@vitejs/test-primitive-export':
         specifier: file:./primitive-export
         version: file:playground/ssr-deps/primitive-export
+      '@vitejs/test-react-server':
+        specifier: file:./react-server
+        version: file:playground/ssr-deps/react-server
       '@vitejs/test-read-file-content':
         specifier: file:./read-file-content
         version: file:playground/ssr-deps/read-file-content
@@ -1301,6 +1304,8 @@ importers:
   playground/ssr-deps/pkg-exports: {}
 
   playground/ssr-deps/primitive-export: {}
+
+  playground/ssr-deps/react-server: {}
 
   playground/ssr-deps/read-file-content: {}
 
@@ -10915,6 +10920,11 @@ packages:
   file:playground/ssr-deps/primitive-export:
     resolution: {directory: playground/ssr-deps/primitive-export, type: directory}
     name: '@vitejs/test-primitive-export'
+    dev: false
+
+  file:playground/ssr-deps/react-server:
+    resolution: {directory: playground/ssr-deps/react-server, type: directory}
+    name: '@vitejs/test-react-server'
     dev: false
 
   file:playground/ssr-deps/read-file-content:
