@@ -70,7 +70,7 @@
 
 <script type="module">
   const rawModules = import.meta.glob('/dir/*.json', {
-    as: 'raw',
+    query: '?raw',
     eager: true,
   })
   const globraw = {}
@@ -86,7 +86,7 @@
 
 <script type="module">
   const bazJson = import.meta.glob('/dir/*.json', {
-    as: 'raw',
+    query: '?raw',
     eager: true,
   })['/dir/baz.json']
   document.querySelector('.property-access').textContent = JSON.stringify(
@@ -98,7 +98,7 @@
 
 <script type="module">
   const relativeRawModules = import.meta.glob('../glob-import/dir/*.json', {
-    as: 'raw',
+    query: '?raw',
     eager: true,
   })
   const relativeGlobRaw = {}

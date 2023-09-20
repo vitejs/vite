@@ -1,6 +1,7 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
+import colors from 'picocolors'
 import type {
   ArrayExpression,
   CallExpression,
@@ -29,6 +30,8 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
+import type { Logger } from '../logger'
+import { rawRE, urlRE } from './asset'
 
 const { isMatch, scan } = micromatch
 
@@ -37,9 +40,13 @@ export interface ParsedImportGlob {
   globs: string[]
   globsResolved: string[]
   isRelative: boolean
-  options: GeneralImportGlobOptions
+  options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+}
+
+interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
+  query?: string
 }
 
 export function getAffectedGlobModules(
@@ -84,6 +91,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         (im, _, options) =>
           this.resolve(im, id, options).then((i) => i?.id || im),
         config.experimental.importGlobRestoreExtension,
+        config.logger,
       )
       if (result) {
         if (server) {
@@ -128,7 +136,8 @@ function err(e: string, pos: number) {
 function parseGlobOptions(
   rawOpts: string,
   optsStartIndex: number,
-): GeneralImportGlobOptions {
+  logger?: Logger,
+): ParsedGeneralImportGlobOptions {
   let opts: GeneralImportGlobOptions = {}
   try {
     opts = evalValue(rawOpts)
@@ -169,8 +178,19 @@ function parseGlobOptions(
         )
       }
     }
+    // normalize query as string so it's easier to handle later
+    opts.query = stringifyQuery(opts.query)
   }
 
+  if (opts.as && logger) {
+    logger.warn(
+      colors.yellow(
+        `The glob option "as" has been deprecated in favour of "query". Please update \`as: '${opts.as}'\` to \`query: '?${opts.as}'\`.`,
+      ),
+    )
+  }
+
+  // validate `import` option based on `as` option
   if (opts.as && forceDefaultAs.includes(opts.as)) {
     if (opts.import && opts.import !== 'default' && opts.import !== '*')
       throw err(
@@ -188,7 +208,33 @@ function parseGlobOptions(
 
   if (opts.as) opts.query = opts.as
 
-  return opts
+  if (opts.query && opts.query[0] !== '?') opts.query = `?${opts.query}`
+
+  // validate `import` option based on `query` option (`as` is already handled above)
+  if (!opts.as && opts.query) {
+    if (urlRE.test(opts.query)) {
+      errorIfImportIsNotDefault(opts.import, '?url', optsStartIndex)
+      opts.import = opts.import || 'default'
+    }
+    if (rawRE.test(opts.query)) {
+      errorIfImportIsNotDefault(opts.import, '?raw', optsStartIndex)
+      opts.import = opts.import || 'default'
+    }
+  }
+
+  return opts as ParsedGeneralImportGlobOptions
+}
+
+function errorIfImportIsNotDefault(
+  importOpt: string | undefined,
+  querySyntax: string,
+  optsStartIndex: number,
+) {
+  if (importOpt && importOpt !== 'default' && importOpt !== '*')
+    throw err(
+      `Option "import" can only be "default" or "*" when "query" contains "${querySyntax}", but got "${importOpt}"`,
+      optsStartIndex,
+    )
 }
 
 export async function parseImportGlob(
@@ -196,6 +242,7 @@ export async function parseImportGlob(
   importer: string | undefined,
   root: string,
   resolveId: IdResolver,
+  logger?: Logger,
 ): Promise<ParsedImportGlob[]> {
   let cleanCode
   try {
@@ -292,7 +339,7 @@ export async function parseImportGlob(
     }
 
     // arg2
-    let options: GeneralImportGlobOptions = {}
+    let options: ParsedGeneralImportGlobOptions = {}
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
@@ -302,6 +349,7 @@ export async function parseImportGlob(
       options = parseGlobOptions(
         code.slice(arg2.range![0], arg2.range![1]),
         arg2.range![0],
+        logger,
       )
     }
 
@@ -345,6 +393,7 @@ export async function transformGlobImport(
   root: string,
   resolveId: IdResolver,
   restoreQueryExtension = false,
+  logger?: Logger,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -355,6 +404,7 @@ export async function transformGlobImport(
     isVirtual ? undefined : id,
     root,
     resolveId,
+    logger,
   )
   const matchedFiles = new Set<string>()
 
@@ -382,14 +432,6 @@ export async function transformGlobImport(
 
           const objectProps: string[] = []
           const staticImports: string[] = []
-
-          let query = !options.query
-            ? ''
-            : typeof options.query === 'string'
-            ? options.query
-            : stringifyQuery(options.query as any)
-
-          if (query && query[0] !== '?') query = `?${query}`
 
           const resolvePaths = (file: string) => {
             if (!dir) {
@@ -419,7 +461,7 @@ export async function transformGlobImport(
             const paths = resolvePaths(file)
             const filePath = paths.filePath
             let importPath = paths.importPath
-            let importQuery = query
+            let importQuery = options.query ?? ''
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]

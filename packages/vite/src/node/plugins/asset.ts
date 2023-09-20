@@ -29,7 +29,7 @@ import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
 
-const rawRE = /(?:\?|&)raw(?:&|$)/
+export const rawRE = /(?:\?|&)raw(?:&|$)/
 export const urlRE = /(\?|&)url(?:&|$)/
 const jsSourceMapRE = /\.[cm]?js\.map$/
 const unnededFinalQueryCharRE = /[?&]$/

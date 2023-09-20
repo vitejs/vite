@@ -4,7 +4,6 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -28,7 +27,7 @@ const relativePathRE = /^\.{1,2}\//
 const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
-  as?: keyof KnownAsTypeMap
+  query?: string
 }
 
 interface DynamicImportPattern {
@@ -71,15 +70,15 @@ function parseDynamicImportPattern(
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
   if (rawQuery?.raw !== undefined) {
-    globParams = { as: 'raw' }
+    globParams = { query: '?raw' }
   }
 
   if (rawQuery?.url !== undefined) {
-    globParams = { as: 'url' }
+    globParams = { query: '?url' }
   }
 
   if (rawQuery?.worker !== undefined) {
-    globParams = { as: 'worker' }
+    globParams = { query: '?worker' }
   }
 
   return {

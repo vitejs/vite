@@ -23,12 +23,12 @@ export const namedDefault = import.meta.glob<string>('./modules/*.ts', {
 
 export const eagerAs = import.meta.glob<ModuleType>(
   ['./modules/*.ts', '!**/index.ts'],
-  { eager: true, as: 'raw' },
+  { eager: true, query: '?raw' },
 )
 
 export const rawImportModule = import.meta.glob(
   ['./modules/*.ts', '!**/index.ts'],
-  { as: 'raw', import: '*' },
+  { query: '?raw', import: '*' },
 )
 
 export const excludeSelf = import.meta.glob(
@@ -49,12 +49,12 @@ export const customQueryObject = import.meta.glob('./*.ts', {
 })
 
 export const parent = import.meta.glob('../../playground/src/*.ts', {
-  as: 'url',
+  query: '?url',
 })
 
 export const rootMixedRelative = import.meta.glob(
   ['/*.ts', '../fixture-b/*.ts'],
-  { as: 'url' },
+  { query: '?url' },
 )
 
 export const cleverCwd1 = import.meta.glob(
