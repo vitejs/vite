@@ -713,6 +713,7 @@ export async function _createServer(
   return server
 }
 
+let _currentServerPort: number | undefined
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
@@ -726,12 +727,14 @@ async function startServer(
   const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
 
-  await httpServerStart(httpServer, {
+  const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger: server.config.logger,
   })
+  // the port may have been used by another server, so we need to update it to avoid changing the port when restarting
+  _currentServerPort = serverPort
 }
 
 function createServerCloseFn(server: http.Server | null) {
@@ -829,7 +832,11 @@ async function restartServer(server: ViteDevServer) {
   const shortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
 
-  let inlineConfig = server.config.inlineConfig
+  let inlineConfig = mergeConfig(server.config.inlineConfig, {
+    server: {
+      port: _currentServerPort,
+    },
+  })
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
       optimizeDeps: {
