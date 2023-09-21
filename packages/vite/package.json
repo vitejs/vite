@@ -20,9 +20,14 @@
   "types": "./dist/node/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/node/index.d.ts",
-      "import": "./dist/node/index.js",
-      "require": "./index.cjs"
+      "import": {
+        "types": "./dist/node/index.d.ts",
+        "default": "./dist/node/index.js"
+      },
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      }
     },
     "./client": {
       "types": "./client.d.ts"
@@ -38,6 +43,7 @@
     "dist",
     "client.d.ts",
     "index.cjs",
+    "index.d.cts",
     "types"
   ],
   "engines": {
