@@ -625,13 +625,15 @@ export function injectQuery(url: string, queryToInject: string): string {
 
   // can't use pathname from URL since it may be relative like ../
   const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
-  const { search, searchParams, hash } = new URL(url, 'http://vitejs.dev')
+  const { searchParams, hash } = new URL(url, 'http://vitejs.dev')
 
-  return searchParams.get(queryToInject) === ''
-    ? `${pathname}${search}${hash || ''}`
-    : `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-        hash || ''
-      }`
+  // clean up existing query to avoid ?import&import etc.
+  searchParams.delete(queryToInject)
+  const search = searchParams.toString()
+
+  return `${pathname}?${queryToInject}${search ? `&` + search : ''}${
+    hash || ''
+  }`
 }
 
 export { ErrorOverlay }

@@ -320,15 +320,17 @@ export function injectQuery(url: string, queryToInject: string): string {
     url.replace(replacePercentageRE, '%25'),
     'relative:///',
   )
-  const { search, searchParams, hash } = resolvedUrl
+  const { searchParams, hash } = resolvedUrl
   let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
 
-  return searchParams.get(queryToInject) === ''
-    ? `${pathname}${search}${hash ?? ''}`
-    : `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-        hash ?? ''
-      }`
+  // clean up existing query to avoid ?import&import etc.
+  searchParams.delete(queryToInject)
+  const search = searchParams.toString()
+
+  return `${pathname}?${queryToInject}${search ? `&` + search : ''}${
+    hash ?? ''
+  }`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/

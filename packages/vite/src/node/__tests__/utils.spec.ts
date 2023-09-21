@@ -111,6 +111,48 @@ describe('injectQuery', () => {
       '/usr/vite/東京 %20 hello?direct',
     )
   })
+
+  test('path with injected query already present', () => {
+    expect(injectQuery('/usr/vite/query?direct', 'direct')).toEqual(
+      '/usr/vite/query?direct',
+    )
+  })
+
+  test('path with injected query already present multiple times', () => {
+    expect(injectQuery('/usr/vite/query?direct&direct', 'direct')).toEqual(
+      '/usr/vite/query?direct',
+    )
+  })
+
+  test('path with injected query already present, along with other query params at the start', () => {
+    expect(
+      injectQuery('/usr/vite/query?something=else&direct', 'direct'),
+    ).toEqual('/usr/vite/query?direct&something=else')
+  })
+
+  test('path with injected query already present, along with other query params at the end', () => {
+    expect(
+      injectQuery('/usr/vite/query?direct&something=else', 'direct'),
+    ).toEqual('/usr/vite/query?direct&something=else')
+  })
+
+  test('path with injected query already present with a value', () => {
+    expect(injectQuery('/usr/vite/query?direct=value', 'direct')).toEqual(
+      '/usr/vite/query?direct',
+    )
+  })
+
+  test('path with injected query already present with a value defined, along with other query params at the start', () => {
+    expect(
+      injectQuery('/usr/vite/query?something=else&direct=value', 'direct'),
+    ).toEqual('/usr/vite/query?direct&something=else')
+  })
+
+  test('path with injected query already present with a value defined, along with other query params at the end', () => {
+    expect(
+      injectQuery('/usr/vite/query?direct=value&something=else', 'direct'),
+    ).toEqual('/usr/vite/query?direct&something=else')
+  })
 })
 
 describe('resolveHostname', () => {
