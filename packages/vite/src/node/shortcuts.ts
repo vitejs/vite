@@ -1,3 +1,4 @@
+import readline from 'node:readline'
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
 import { isDefined } from './utils'
@@ -36,7 +37,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     server.config.logger.info(
       colors.dim(colors.green('  ➜')) +
         colors.dim('  press ') +
-        colors.bold('h') +
+        colors.bold('h + enter') +
         colors.dim(' to show help'),
     )
   }
@@ -49,20 +50,6 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   let actionRunning = false
 
   const onInput = async (input: string) => {
-    // ctrl+c or ctrl+d
-    if (input === '\x03' || input === '\x04') {
-      try {
-        if (isDev) {
-          await server.close()
-        } else {
-          server.httpServer.close()
-        }
-      } finally {
-        process.exit(1)
-      }
-      return
-    }
-
     if (actionRunning) return
 
     if (input === 'h') {
@@ -73,7 +60,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
           ...shortcuts.map(
             (shortcut) =>
               colors.dim('  press ') +
-              colors.bold(shortcut.key) +
+              colors.bold(`${shortcut.key} + enter`) +
               colors.dim(` to ${shortcut.description}`),
           ),
         ].join('\n'),
@@ -88,13 +75,9 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     actionRunning = false
   }
 
-  process.stdin.setRawMode(true)
-
-  process.stdin.on('data', onInput).setEncoding('utf8').resume()
-
-  server.httpServer.on('close', () => {
-    process.stdin.off('data', onInput).pause()
-  })
+  const rl = readline.createInterface({ input: process.stdin })
+  rl.on('line', onInput)
+  server.httpServer.on('close', () => rl.close())
 }
 
 function isDevServer(
