@@ -210,7 +210,7 @@ test('pre bundle css require', async () => {
     await page.goto(viteTestUrl)
     const content = await (await response).text()
     expect(content).toMatch(
-      /import\s"\/@fs.+@vitejs\/test-dep-css-require\/style\.css"/,
+      /import\s"\/node_modules\/.vite\/deps\/@vitejs_test-dep-css-require.css\?v=[\da-fA-F]{8}"/,
     )
   }
 

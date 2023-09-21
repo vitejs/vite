@@ -22,7 +22,6 @@ const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
 const nonFacadePrefix = 'vite-cjs-external-facade:'
 
 const externalTypes = [
-  'css',
   // supported pre-processor types
   'less',
   'sass',
