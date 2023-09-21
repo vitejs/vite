@@ -630,6 +630,7 @@ export async function detectPolyfills(
     ast: true,
     babelrc: false,
     configFile: false,
+    compact: false,
     presets: [
       [
         (await import('@babel/preset-env')).default,
