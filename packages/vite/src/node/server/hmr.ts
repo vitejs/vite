@@ -62,9 +62,14 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === name,
   )
+  const isDev = config.mode === 'development'
+  const isChangedProductionEnv =
+    isDev &&
+    (fileName === '.env.production' || fileName === '.env.production.local')
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (fileName === '.env' || fileName.startsWith('.env.'))
+    (fileName === '.env' ||
+      (fileName.startsWith('.env.') && !isChangedProductionEnv))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
