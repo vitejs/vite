@@ -36,7 +36,6 @@ import {
 } from './snippets'
 
 // lazy load babel since it's not used during dev
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let babel: typeof import('@babel/core') | undefined
 async function loadBabel() {
   if (!babel) {
@@ -238,7 +237,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             `[@vitejs/plugin-legacy] modern polyfills:`,
             modernPolyfills,
           )
-        await buildPolyfillChunk(
+        const polyfillChunk = await buildPolyfillChunk(
           config.mode,
           modernPolyfills,
           bundle,
@@ -248,6 +247,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           opts,
           true,
         )
+        if (genLegacy && polyfillChunk) {
+          polyfillChunk.code = modernChunkLegacyGuard + polyfillChunk.code
+        }
         return
       }
 
@@ -398,7 +400,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         if (config.build.sourcemap) {
           return {
             code: ms.toString(),
-            map: ms.generateMap({ hires: true }),
+            map: ms.generateMap({ hires: 'boundary' }),
           }
         }
         return {
@@ -628,6 +630,7 @@ export async function detectPolyfills(
     ast: true,
     babelrc: false,
     configFile: false,
+    compact: false,
     presets: [
       [
         (await import('@babel/preset-env')).default,
@@ -735,6 +738,8 @@ async function buildPolyfillChunk(
 
   // add the chunk to the bundle
   bundle[polyfillChunk.fileName] = polyfillChunk
+
+  return polyfillChunk
 }
 
 const polyfillId = '\0vite/legacy-polyfills'

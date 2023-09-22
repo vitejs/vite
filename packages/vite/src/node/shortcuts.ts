@@ -1,10 +1,11 @@
+import readline from 'node:readline'
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
 import { isDefined } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
-export type BindShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
+export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Print a one line hint to the terminal.
    */
@@ -18,9 +19,9 @@ export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   action(server: Server): void | Promise<void>
 }
 
-export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
+export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server: Server,
-  opts?: BindShortcutsOptions<Server>,
+  opts?: BindCLIShortcutsOptions<Server>,
 ): void {
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
@@ -29,14 +30,14 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
   const isDev = isDevServer(server)
 
   if (isDev) {
-    server._shortcutsOptions = opts
+    server._shortcutsOptions = opts as BindCLIShortcutsOptions<ViteDevServer>
   }
 
   if (opts?.print) {
     server.config.logger.info(
       colors.dim(colors.green('  ➜')) +
         colors.dim('  press ') +
-        colors.bold('h') +
+        colors.bold('h + enter') +
         colors.dim(' to show help'),
     )
   }
@@ -49,20 +50,6 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
   let actionRunning = false
 
   const onInput = async (input: string) => {
-    // ctrl+c or ctrl+d
-    if (input === '\x03' || input === '\x04') {
-      try {
-        if (isDev) {
-          await server.close()
-        } else {
-          server.httpServer.close()
-        }
-      } finally {
-        process.exit(1)
-      }
-      return
-    }
-
     if (actionRunning) return
 
     if (input === 'h') {
@@ -73,7 +60,7 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
           ...shortcuts.map(
             (shortcut) =>
               colors.dim('  press ') +
-              colors.bold(shortcut.key) +
+              colors.bold(`${shortcut.key} + enter`) +
               colors.dim(` to ${shortcut.description}`),
           ),
         ].join('\n'),
@@ -88,13 +75,9 @@ export function bindShortcuts<Server extends ViteDevServer | PreviewServer>(
     actionRunning = false
   }
 
-  process.stdin.setRawMode(true)
-
-  process.stdin.on('data', onInput).setEncoding('utf8').resume()
-
-  server.httpServer.on('close', () => {
-    process.stdin.off('data', onInput).pause()
-  })
+  const rl = readline.createInterface({ input: process.stdin })
+  rl.on('line', onInput)
+  server.httpServer.on('close', () => rl.close())
 }
 
 function isDevServer(
@@ -147,8 +130,13 @@ const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
     key: 'o',
     description: 'open in browser',
     action(server) {
-      const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
-      openBrowser(url, true, server.config.logger)
+      const url =
+        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      if (url) {
+        openBrowser(url, true, server.config.logger)
+      } else {
+        server.config.logger.warn('No URL available to open in browser')
+      }
     },
   },
   {

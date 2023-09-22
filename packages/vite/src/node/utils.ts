@@ -88,31 +88,25 @@ export const flattenId = (id: string): string =>
 export const normalizeId = (id: string): string =>
   id.replace(replaceNestedIdRE, ' > ')
 
-//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
-const builtins = new Set([
-  ...builtinModules,
-  'assert/strict',
-  'diagnostics_channel',
-  'dns/promises',
-  'fs/promises',
-  'path/posix',
-  'path/win32',
-  'readline/promises',
-  'stream/consumers',
-  'stream/promises',
-  'stream/web',
-  'timers/promises',
-  'util/types',
-  'wasi',
-])
-
+// Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
+// Supported by Deno
+const NPM_BUILTIN_NAMESPACE = 'npm:'
+// Supported by Bun
+const BUN_BUILTIN_NAMESPACE = 'bun:'
+// Some runtimes like Bun injects namespaced modules here, which is not a node builtin
+const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
+
+// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
 export function isBuiltin(id: string): boolean {
-  return builtins.has(
-    id.startsWith(NODE_BUILTIN_NAMESPACE)
-      ? id.slice(NODE_BUILTIN_NAMESPACE.length)
-      : id,
-  )
+  if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
+  if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
+  return isNodeBuiltin(id)
+}
+
+export function isNodeBuiltin(id: string): boolean {
+  if (id.startsWith(NODE_BUILTIN_NAMESPACE)) return true
+  return nodeBuiltins.includes(id)
 }
 
 export function isInNodeModules(id: string): boolean {
@@ -123,7 +117,9 @@ export function moduleListContains(
   moduleList: string[] | undefined,
   id: string,
 ): boolean | undefined {
-  return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+  return moduleList?.some(
+    (m) => m === id || id.startsWith(withTrailingSlash(m)),
+  )
 }
 
 export function isOptimizable(
@@ -191,14 +187,17 @@ function testCaseInsensitiveFS() {
   return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
 }
 
-export function isUrl(path: string): boolean {
-  try {
-    new URL(path)
-    return true
-  } catch {
-    return false
-  }
-}
+export const urlCanParse =
+  URL.canParse ??
+  // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
+  ((path: string, base?: string | undefined): boolean => {
+    try {
+      new URL(path, base)
+      return true
+    } catch {
+      return false
+    }
+  })
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
@@ -221,6 +220,13 @@ export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
 }
 
+export function withTrailingSlash(path: string): string {
+  if (path[path.length - 1] !== '/') {
+    return `${path}/`
+  }
+  return path
+}
+
 /**
  * Check if dir is a parent of file
  *
@@ -231,9 +237,7 @@ export function fsPathFromUrl(url: string): string {
  * @returns true if dir is a parent of file
  */
 export function isParentDirectory(dir: string, file: string): boolean {
-  if (dir[dir.length - 1] !== '/') {
-    dir = `${dir}/`
-  }
+  dir = withTrailingSlash(dir)
   return (
     file.startsWith(dir) ||
     (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
@@ -608,7 +612,17 @@ function optimizeSafeRealPathSync() {
     safeRealpathSync = fs.realpathSync
     return
   }
-
+  // Check the availability `fs.realpathSync.native`
+  // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
+  // get the error EISDIR: illegal operation on a directory
+  try {
+    fs.realpathSync.native(path.resolve('./'))
+  } catch (error) {
+    if (error.message.includes('EISDIR: illegal operation on a directory')) {
+      safeRealpathSync = fs.realpathSync
+      return
+    }
+  }
   exec('net use', (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
@@ -634,7 +648,7 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(root + '/') &&
+    !file.startsWith(withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
@@ -1132,7 +1146,7 @@ export function transformStableResult(
     code: s.toString(),
     map:
       config.command === 'build' && config.build.sourcemap
-        ? s.generateMap({ hires: true, source: id })
+        ? s.generateMap({ hires: 'boundary', source: id })
         : null,
   }
 }
@@ -1166,7 +1180,7 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
 
 /**
  * Determine if a file is being requested with the correct case, to ensure
- * consistent behaviour between dev and prod and across operating systems.
+ * consistent behavior between dev and prod and across operating systems.
  */
 export function shouldServeFile(filePath: string, root: string): boolean {
   // can skip case check on Linux
@@ -1212,7 +1226,7 @@ export function stripBase(path: string, base: string): string {
   if (path === base) {
     return '/'
   }
-  const devBase = base[base.length - 1] === '/' ? base : base + '/'
+  const devBase = withTrailingSlash(base)
   return path.startsWith(devBase) ? path.slice(devBase.length - 1) : path
 }
 
@@ -1246,4 +1260,26 @@ export function getNpmPackageName(importPath: string): string | null {
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
+}
+
+type CommandType = 'install' | 'uninstall' | 'update'
+export function getPackageManagerCommand(
+  type: CommandType = 'install',
+): string {
+  const packageManager =
+    process.env.npm_config_user_agent?.split(' ')[0].split('/')[0] || 'npm'
+  switch (type) {
+    case 'install':
+      return packageManager === 'npm' ? 'npm install' : `${packageManager} add`
+    case 'uninstall':
+      return packageManager === 'npm'
+        ? 'npm uninstall'
+        : `${packageManager} remove`
+    case 'update':
+      return packageManager === 'yarn'
+        ? 'yarn upgrade'
+        : `${packageManager} update`
+    default:
+      throw new TypeError(`Unknown command type: ${type}`)
+  }
 }

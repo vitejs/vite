@@ -22,6 +22,10 @@ test('normal', async () => {
   )
 })
 
+test('named', async () => {
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+})
+
 test('TS output', async () => {
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong', true)
 })
@@ -30,8 +34,28 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong', true)
 })
 
+test('named inlined', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-named'),
+    'namedInlineWorker',
+    true,
+  )
+})
+
+test('import meta url', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-url'),
+    /^(blob|http):/,
+    true,
+  )
+})
+
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
+})
+
+test('named shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
 })
 
 test('inline shared worker', async () => {
@@ -71,7 +95,7 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(`import`)
+    expect(workerContent).not.toMatch(/import[^.]/)
     expect(workerContent).not.toMatch(`export`)
     // chunk
     expect(content).toMatch(`new Worker("/es/assets`)

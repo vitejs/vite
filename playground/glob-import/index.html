@@ -23,6 +23,8 @@
 <pre class="escape-alias"></pre>
 <h2>Sub imports</h2>
 <pre class="sub-imports"></pre>
+<h2>In package</h2>
+<pre class="in-package"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -119,8 +121,11 @@
 </script>
 
 <script type="module">
-  import.meta.glob('/tree-shake.css', { eager: true })
-  const results = import.meta.glob('/no-tree-shake.css', { eager: true })
+  import.meta.glob('/tree-shake.css', { eager: true, query: { inline: true } })
+  const results = import.meta.glob('/no-tree-shake.css', {
+    eager: true,
+    query: { inline: true },
+  })
   document.querySelector('.no-tree-shake-eager-css-result').textContent =
     results['/no-tree-shake.css'].default
 </script>
@@ -152,5 +157,5 @@
 </script>
 
 <script type="module">
-  console.log('Ran scripts')
+  import '@vitejs/test-import-meta-glob-pkg'
 </script>

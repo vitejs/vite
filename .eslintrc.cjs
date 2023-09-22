@@ -1,6 +1,7 @@
 // @ts-check
 const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
+const pkg = require('./package.json')
 
 module.exports = defineConfig({
   root: true,
@@ -16,7 +17,7 @@ module.exports = defineConfig({
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 2021,
+    ecmaVersion: 2022,
   },
   rules: {
     eqeqeq: ['warn', 'always', { null: 'never' }],
@@ -77,7 +78,7 @@ module.exports = defineConfig({
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/consistent-type-imports': [
       'error',
-      { prefer: 'type-imports' },
+      { prefer: 'type-imports', disallowTypeAnnotations: false },
     ],
     // disable rules set in @typescript-eslint/stylistic v6 that wasn't set in @typescript-eslint/recommended v5 and which conflict with current code
     // maybe we should turn them on in a new PR
@@ -173,13 +174,13 @@ module.exports = defineConfig({
         'n/no-unsupported-features/es-builtins': [
           'error',
           {
-            version: '^14.18.0 || >=16.0.0',
+            version: pkg.engines.node,
           },
         ],
         'n/no-unsupported-features/node-builtins': [
           'error',
           {
-            version: '^14.18.0 || >=16.0.0',
+            version: pkg.engines.node,
           },
         ],
         '@typescript-eslint/explicit-module-boundary-types': 'off',

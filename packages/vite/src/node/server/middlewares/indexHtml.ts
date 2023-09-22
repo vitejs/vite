@@ -195,7 +195,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           contentNode.sourceCodeLocation!.startOffset,
           contentNode.sourceCodeLocation!.endOffset,
         )
-        .generateMap({ hires: true })
+        .generateMap({ hires: 'boundary' })
       map.sources = [filename]
       map.file = filename
     }
@@ -282,7 +282,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const result = await server!.pluginContainer.transform(code, mod.id!)
       let content = ''
       if (result) {
-        if (result.map) {
+        if (result.map && 'version' in result.map) {
           if (result.map.mappings) {
             await injectSourcesContent(
               result.map,

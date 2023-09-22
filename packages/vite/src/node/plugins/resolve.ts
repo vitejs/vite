@@ -21,6 +21,7 @@ import {
   createDebugger,
   deepImportRE,
   fsPathFromId,
+  getNpmPackageName,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -35,6 +36,7 @@ import {
   safeRealpathSync,
   slash,
   tryStatSync,
+  withTrailingSlash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
@@ -227,7 +229,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // URL
       // /foo -> /fs-root/foo
-      if (asSrc && id[0] === '/' && (rootInRoot || !id.startsWith(root))) {
+      if (
+        asSrc &&
+        id[0] === '/' &&
+        (rootInRoot || !id.startsWith(withTrailingSlash(root)))
+      ) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
@@ -250,7 +256,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (depsOptimizer?.isOptimizedDepFile(normalizedFsPath)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
-          if (!normalizedFsPath.match(DEP_VERSION_RE)) {
+          if (
+            !resolveOptions.isBuild &&
+            !normalizedFsPath.match(DEP_VERSION_RE)
+          ) {
             const browserHash = optimizedDepInfoFromFile(
               depsOptimizer.metadata,
               normalizedFsPath,
@@ -693,7 +702,9 @@ export function tryNodeResolve(
 
   // check for deep import, e.g. "my-lib/foo"
   const deepMatch = id.match(deepImportRE)
-  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : id
+  // package name doesn't include postfixes
+  // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
+  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
 
   let basedir: string
   if (dedupe?.includes(pkgId)) {
@@ -735,7 +746,7 @@ export function tryNodeResolve(
   }
 
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
-  const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : pkgId
+  const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
   let resolved: string | undefined
   try {
@@ -920,8 +931,10 @@ export async function tryOptimizedResolve(
 
     // lazily initialize idPkgDir
     if (idPkgDir == null) {
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) break
       idPkgDir = resolvePackageData(
-        id,
+        pkgName,
         importer,
         preserveSymlinks,
         packageCache,
@@ -933,7 +946,7 @@ export async function tryOptimizedResolve(
     }
 
     // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src.startsWith(idPkgDir)) {
+    if (optimizedData.src.startsWith(withTrailingSlash(idPkgDir))) {
       return depsOptimizer.getOptimizedDepId(optimizedData)
     }
   }
@@ -945,10 +958,13 @@ export function resolvePackageEntry(
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
+  const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
+
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
-    return cached
+    return cached + postfix
   }
+
   try {
     let entryPoint: string | undefined
 
@@ -1061,12 +1077,12 @@ export function resolvePackageEntry(
       )
       if (resolvedEntryPoint) {
         debug?.(
-          `[package entry] ${colors.cyan(id)} -> ${colors.dim(
+          `[package entry] ${colors.cyan(idWithoutPostfix)} -> ${colors.dim(
             resolvedEntryPoint,
-          )}`,
+          )}${postfix !== '' ? ` (postfix: ${postfix})` : ''}`,
         )
         setResolvedCache('.', resolvedEntryPoint, targetWeb)
-        return resolvedEntryPoint
+        return resolvedEntryPoint + postfix
       }
     }
   } catch (e) {

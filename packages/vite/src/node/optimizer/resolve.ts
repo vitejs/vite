@@ -66,7 +66,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
 
     const possibleExportPaths: string[] = []
     for (const key in exports) {
-      if (key.startsWith('.')) {
+      if (key[0] === '.') {
         if (key.includes('*')) {
           // "./glob/*": {
           //   "browser": "./dist/glob/*-browser/*.js", <-- get this one

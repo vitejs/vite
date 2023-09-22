@@ -18,17 +18,13 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (
-        await transformGlobImport(code, id, root, resolveId, true)
-      )?.s.toString(),
+      (await transformGlobImport(code, id, root, resolveId))?.s.toString(),
     ).toMatchSnapshot()
   })
 
   it('preserve line count', async () => {
     const getTransformedLineCount = async (code: string) =>
-      (
-        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
-      )?.s
+      (await transformGlobImport(code, 'virtual:module', root, resolveId))?.s
         .toString()
         .split('\n').length
 
@@ -52,7 +48,7 @@ describe('fixture', async () => {
     ].join('\n')
     expect(
       (
-        await transformGlobImport(code, 'virtual:module', root, resolveId, true)
+        await transformGlobImport(code, 'virtual:module', root, resolveId)
       )?.s.toString(),
     ).toMatchSnapshot()
 
@@ -62,7 +58,6 @@ describe('fixture', async () => {
         'virtual:module',
         root,
         resolveId,
-        true,
       )
       expect('no error').toBe('should throw an error')
     } catch (err) {
@@ -80,7 +75,7 @@ describe('fixture', async () => {
 
     expect(
       (
-        await transformGlobImport(code, id, root, resolveId, true, true)
+        await transformGlobImport(code, id, root, resolveId, true)
       )?.s.toString(),
     ).toMatchSnapshot()
   })

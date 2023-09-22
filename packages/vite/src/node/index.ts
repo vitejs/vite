@@ -34,7 +34,6 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
-  PreviewServerForHook,
   PreviewServerHook,
   ResolvedPreviewOptions,
 } from './preview'
@@ -52,7 +51,6 @@ export type {
   ResolvedSSROptions,
   SsrDepOptimizationOptions,
   SSROptions,
-  SSRFormat,
   SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
@@ -100,6 +98,8 @@ export type {
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
 
+export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
+
 export type {
   HMRPayload,
   ConnectedPayload,
@@ -117,7 +117,6 @@ export type {
 } from 'types/customEvent'
 export type {
   ImportGlobFunction,
-  ImportGlobEagerFunction,
   ImportGlobOptions,
   GeneralImportGlobOptions,
   KnownAsTypeMap,

@@ -12,7 +12,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    // vite.config.js
    export default defineConfig({
      build: {
-       // generate manifest.json in outDir
+       // generate .vite/manifest.json in outDir
        manifest: true,
        rollupOptions: {
          // overwrite default .html entry
@@ -44,7 +44,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    This is needed for assets such as images to load properly.
 
-   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
+   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving (substitute `http://localhost:5173` with the local URL Vite is running at):
 
    ```html
    <script type="module">
@@ -56,7 +56,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    </script>
    ```
 
-3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
+3. For production: after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
    ```json
    {

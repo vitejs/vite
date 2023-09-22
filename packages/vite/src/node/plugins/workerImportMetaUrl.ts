@@ -19,8 +19,7 @@ import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
-
-const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
+import { hasViteIgnoreRE } from './importAnalysis'
 
 interface WorkerOptions {
   type?: WorkerType
@@ -78,7 +77,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
     .substring(commaIndex + 1, endIndex)
     .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
 
-  const hasViteIgnore = ignoreFlagRE.test(workerOptString)
+  const hasViteIgnore = hasViteIgnoreRE.test(workerOptString)
   if (hasViteIgnore) {
     return 'ignore'
   }
@@ -181,7 +180,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.update(
             urlIndex,
             urlIndex + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            // add `'' +` to skip vite:asset-import-meta-url plugin
+            `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }
 

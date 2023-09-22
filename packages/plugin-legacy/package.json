@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "4.1.0",
+  "version": "5.0.0-beta.0",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -17,7 +17,6 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     }
@@ -29,7 +28,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "^14.18.0 || >=16.0.0"
+    "node": "^18.0.0 || >=20.0.0"
   },
   "repository": {
     "type": "git",
@@ -42,13 +41,13 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.22.8",
-    "@babel/preset-env": "^7.22.7",
-    "browserslist": "^4.21.9",
-    "core-js": "^3.31.1",
-    "magic-string": "^0.30.1",
-    "regenerator-runtime": "^0.13.11",
-    "systemjs": "^6.14.1"
+    "@babel/core": "^7.22.20",
+    "@babel/preset-env": "^7.22.20",
+    "browserslist": "^4.21.10",
+    "core-js": "^3.32.2",
+    "magic-string": "^0.30.3",
+    "regenerator-runtime": "^0.14.0",
+    "systemjs": "^6.14.2"
   },
   "peerDependencies": {
     "terser": "^5.4.0",

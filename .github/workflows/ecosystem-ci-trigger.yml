@@ -61,11 +61,11 @@ jobs:
               repo: pr.head.repo.full_name
             }
       - id: generate-token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
+          installation_retrieval_payload: "${{ github.repository_owner }}/vite-ecosystem-ci"
           private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
-          repository: "${{ github.repository_owner }}/vite-ecosystem-ci"
       - uses: actions/github-script@v6
         id: trigger
         env:

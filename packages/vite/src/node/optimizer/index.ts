@@ -27,7 +27,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { scanImports } from './scan'
+import { resolveTsconfigRaw, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
@@ -379,6 +379,7 @@ export async function loadCachedDepOptimizationMetadata(
   }
 
   // Start with a fresh cache
+  debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
@@ -473,6 +474,7 @@ export function runOptimizeDeps(
 
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
+  debug?.(colors.green(`creating package.json in ${processingCacheDir}`))
   fs.writeFileSync(
     path.resolve(processingCacheDir, 'package.json'),
     `{\n  "type": "module"\n}\n`,
@@ -499,13 +501,14 @@ export function runOptimizeDeps(
       cleaned = true
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
+      debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
       fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
         // Ignore errors
       })
     }
   }
 
-  const succesfulResult: DepOptimizationResult = {
+  const successfulResult: DepOptimizationResult = {
     metadata,
     cancel: cleanUp,
     commit: async () => {
@@ -521,6 +524,7 @@ export function runOptimizeDeps(
       // Write metadata file, then commit the processing folder to the global deps cache
       // Rewire the file paths from the temporal processing dir to the final deps cache dir
       const dataPath = path.join(processingCacheDir, '_metadata.json')
+      debug?.(colors.green(`creating _metadata.json in ${processingCacheDir}`))
       fs.writeFileSync(
         dataPath,
         stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
@@ -537,16 +541,30 @@ export function runOptimizeDeps(
       const temporalPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
       if (isWindows) {
-        if (depsCacheDirPresent) await safeRename(depsCacheDir, temporalPath)
+        if (depsCacheDirPresent) {
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
+          await safeRename(depsCacheDir, temporalPath)
+        }
+        debug?.(
+          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
+        )
         await safeRename(processingCacheDir, depsCacheDir)
       } else {
-        if (depsCacheDirPresent) fs.renameSync(depsCacheDir, temporalPath)
+        if (depsCacheDirPresent) {
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
+          fs.renameSync(depsCacheDir, temporalPath)
+        }
+        debug?.(
+          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
+        )
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
       // Delete temporal path in the background
-      if (depsCacheDirPresent)
+      if (depsCacheDirPresent) {
+        debug?.(colors.green(`removing cache temp dir ${temporalPath}`))
         fsp.rm(temporalPath, { recursive: true, force: true })
+      }
     },
   }
 
@@ -556,7 +574,7 @@ export function runOptimizeDeps(
     // skip the scanner step if the lockfile hasn't changed
     return {
       cancel: async () => cleanUp(),
-      result: Promise.resolve(succesfulResult),
+      result: Promise.resolve(successfulResult),
     }
   }
 
@@ -654,7 +672,7 @@ export function runOptimizeDeps(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
         )
 
-        return succesfulResult
+        return successfulResult
       })
 
       .catch((e) => {
@@ -713,8 +731,12 @@ async function prepareEsbuildOptimizerRun(
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps?.esbuildOptions ?? {}
+  const {
+    plugins: pluginsFromConfig = [],
+    tsconfig,
+    tsconfigRaw,
+    ...esbuildOptions
+  } = optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -806,6 +828,8 @@ async function prepareEsbuildOptimizerRun(
     metafile: true,
     plugins,
     charset: 'utf8',
+    tsconfig,
+    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
@@ -814,15 +838,6 @@ async function prepareEsbuildOptimizerRun(
     },
   })
   return { context, idToExports }
-}
-
-export async function findKnownImports(
-  config: ResolvedConfig,
-  ssr: boolean,
-): Promise<string[]> {
-  const { deps } = await scanImports(config).result
-  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
-  return Object.keys(deps)
 }
 
 export async function addManuallyIncludedOptimizeDeps(
@@ -891,9 +906,11 @@ export function newDepOptimizationProcessing(): DepOptimizationProcessing {
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>,
 ): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(depsInfo).map((d) => [d[0], d[1].src!]),
-  )
+  const obj: Record<string, string> = {}
+  for (const key in depsInfo) {
+    obj[key] = depsInfo[key].src!
+  }
+  return obj
 }
 
 export function getOptimizedDepPath(
@@ -1310,6 +1327,7 @@ export async function cleanupDepsCacheStaleDirs(
             stats?.mtime &&
             Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
           ) {
+            debug?.(`removing stale cache temp dir ${tempDirPath}`)
             await fsp.rm(tempDirPath, { recursive: true, force: true })
           }
         }
