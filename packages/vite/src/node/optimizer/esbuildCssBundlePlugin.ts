@@ -12,7 +12,10 @@ export function esbuildCssBundlePlugin(): Plugin {
         )
       }
 
-      // clear package cache when esbuild is finished
+      // append a css import to the end of any js file that has an associated cssBundle
+      // esbuild strips the css imports as part of extracting and bundling css, but to
+      // maintain compatibility we need to ensure that if the js file gets imported, the
+      // css bundle will also get imported.
       build.onEnd(async (result) => {
         await Promise.all(
           Object.keys(result.metafile!.outputs).map(async (path) => {

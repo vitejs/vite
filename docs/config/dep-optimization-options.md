@@ -82,3 +82,12 @@ If you want to try this build strategy, you can use `optimizeDeps.disabled: fals
 - **Type:** `string[]`
 
 Forces ESM interop when importing these dependencies. Vite is able to properly detect when a dependency needs interop, so this option isn't generally needed. However, different combinations of dependencies could cause some of them to be prebundled differently. Adding these packages to `needsInterop` can speed up cold start by avoiding full-page reloads. You'll receive a warning if this is the case for one of your dependencies, suggesting to add the package name to this array in your config.
+
+## optimizeDeps.cssBundle
+
+- **Type:** `boolean`
+- **Default:** `false` for 'build', `true` otherwise
+
+When set to `true`, optimized dependencies that contain .css imports will have the css extracted and bundled in a separate file. This is useful for reducingthe number of small css requests coming from component-libraries, etc, replacing it instead with a single large css bundle request per dependency.
+
+Since the css bundle produced is not able to be tree-shaken for production builds, this default behavior if this option is not overrided is enabled for 'dev', and disabled for 'build'. That way, an optimized 'build' will externalize the css requests from dependencies so that the individual css imports may be tree-shaken away during the build.

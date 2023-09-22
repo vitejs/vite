@@ -135,6 +135,22 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   noDiscovery?: boolean
+  /**
+   * When set to `true`, optimized dependencies that contain .css imports will
+   * have the css extracted and bundled in a separate file. This is useful for
+   * reducingthe number of small css requests coming from component-libraries,
+   * etc, replacing it instead with a single large css bundle request per
+   * dependency.
+   *
+   * Since the css bundle produced is not able to be tree-shaken for production
+   * builds, this default behavior if this option is not overrided is enabled
+   * for 'dev', and disabled for 'build'. That way, an optimized 'build' will
+   * externalize the css requests from dependencies so that the individual css
+   * imports may be tree-shaken away during the build.
+   *
+   * @default true for 'dev', false for 'build'
+   */
+  cssBundle?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -618,17 +634,12 @@ export function runOptimizeDeps(
           processingCacheDir,
         )
 
-        const extractCssBundleId = (output: {
-          cssBundle?: string
-        }): string | undefined => {
-          if (!output.cssBundle) {
-            return undefined
-          }
-
-          return flattenId(
-            path.relative(processingCacheDirOutputPath, output.cssBundle),
-          )
-        }
+        const extractCssBundleId = (output: { cssBundle?: string }) =>
+          output.cssBundle
+            ? flattenId(
+                path.relative(processingCacheDirOutputPath, output.cssBundle),
+              )
+            : undefined
 
         for (const id in depsInfo) {
           const output = esbuildOutputFromId(
@@ -752,6 +763,8 @@ async function prepareEsbuildOptimizerRun(
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
+  const cssBundle = optimizeDeps?.cssBundle ?? (isBuild ? false : true)
+
   const {
     plugins: pluginsFromConfig = [],
     tsconfig,
@@ -820,8 +833,10 @@ async function prepareEsbuildOptimizerRun(
   if (external.length) {
     plugins.push(esbuildCjsExternalPlugin(external, platform))
   }
-  plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
-  plugins.push(esbuildCssBundlePlugin())
+  plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr, cssBundle))
+  if (cssBundle) {
+    plugins.push(esbuildCssBundlePlugin())
+  }
 
   const context = await esbuild.context({
     absWorkingDir: process.cwd(),

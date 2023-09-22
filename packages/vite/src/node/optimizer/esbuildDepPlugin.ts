@@ -50,6 +50,7 @@ export function esbuildDepPlugin(
   external: string[],
   config: ResolvedConfig,
   ssr: boolean,
+  cssBundle: boolean,
 ): Plugin {
   const { extensions } = getDepOptimizationConfig(config, ssr)
 
@@ -57,6 +58,10 @@ export function esbuildDepPlugin(
   const allExternalTypes = extensions
     ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
+
+  if (!cssBundle) {
+    allExternalTypes.unshift('css')
+  }
 
   // use separate package cache for optimizer as it caches paths around node_modules
   // and it's unlikely for the core Vite process to traverse into node_modules again
