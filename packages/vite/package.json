@@ -76,9 +76,9 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.18.10",
+    "esbuild": "^0.19.3",
     "postcss": "^8.4.29",
-    "rollup": "^3.29.0"
+    "rollup": "^3.29.2"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
