@@ -125,19 +125,6 @@ async function instantiateModule(
     root,
   } = server.config
 
-  const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
-    mainFields: ['main'],
-    browserField: true,
-    conditions: [],
-    overrideConditions: ['production', 'development'],
-    extensions: ['.js', '.cjs', '.json'],
-    dedupe,
-    preserveSymlinks,
-    isBuild: false,
-    isProduction,
-    root,
-  }
-
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
@@ -145,7 +132,18 @@ async function instantiateModule(
   const ssrImport = async (dep: string) => {
     try {
       if (dep[0] !== '.' && dep[0] !== '/') {
-        return await nodeImport(dep, mod.file!, resolveOptions)
+        return await nodeImport(dep, mod.file!, {
+          mainFields: ['main'],
+          browserField: true,
+          conditions: [],
+          overrideConditions: ['production', 'development'],
+          extensions: ['.js', '.cjs', '.json'],
+          dedupe,
+          preserveSymlinks,
+          isBuild: false,
+          isProduction,
+          root,
+        })
       }
       // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
       dep = unwrapId(dep)
