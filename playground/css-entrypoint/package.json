@@ -1,0 +1,16 @@
+{
+  "name": "@vitejs/test-css-entrypoint",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --debug css-entrypoint",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-legacy": "workspace:*",
+    "terser": "^5.19.4"
+  }
+}
