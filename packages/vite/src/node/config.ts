@@ -489,6 +489,21 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
+  let foundDiscouragedVariableName
+  if (
+    (foundDiscouragedVariableName = Object.keys(config.define ?? {}).find((k) =>
+      ['process', 'global'].includes(k),
+    ))
+  ) {
+    logger.warn(
+      colors.yellow(
+        `Putting ${colors.bold(
+          foundDiscouragedVariableName,
+        )} to define option is discoraged. See https://vitejs.dev/config/shared-options.html#define for more details.`,
+      ),
+    )
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
