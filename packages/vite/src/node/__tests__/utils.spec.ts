@@ -124,34 +124,46 @@ describe('injectQuery', () => {
     )
   })
 
-  test('path with injected query already present, along with other query params at the start', () => {
-    expect(
-      injectQuery('/usr/vite/query?something=else&direct', 'direct'),
-    ).toEqual('/usr/vite/query?direct&something=else')
-  })
-
-  test('path with injected query already present, along with other query params at the end', () => {
-    expect(
-      injectQuery('/usr/vite/query?direct&something=else', 'direct'),
-    ).toEqual('/usr/vite/query?direct&something=else')
-  })
-
   test('path with injected query already present with a value', () => {
     expect(injectQuery('/usr/vite/query?direct=value', 'direct')).toEqual(
       '/usr/vite/query?direct',
     )
   })
 
+  test('path with injected query already present, along with other query params at the start', () => {
+    expect(
+      injectQuery(
+        '/usr/vite/file.vue?vue&type=template&lang.js&direct',
+        'direct',
+      ),
+    ).toEqual('/usr/vite/file.vue?direct&vue&type=template&lang.js')
+  })
+
+  test('path with injected query already present, along with other query params at the end', () => {
+    expect(
+      injectQuery(
+        '/usr/vite/file.vue?direct&vue&type=template&lang.js',
+        'direct',
+      ),
+    ).toEqual('/usr/vite/file.vue?direct&vue&type=template&lang.js')
+  })
+
   test('path with injected query already present with a value defined, along with other query params at the start', () => {
     expect(
-      injectQuery('/usr/vite/query?something=else&direct=value', 'direct'),
-    ).toEqual('/usr/vite/query?direct&something=else')
+      injectQuery(
+        '/usr/vite/file.vue?vue&type=template&lang.js&direct=value',
+        'direct',
+      ),
+    ).toEqual('/usr/vite/file.vue?direct&vue&type=template&lang.js')
   })
 
   test('path with injected query already present with a value defined, along with other query params at the end', () => {
     expect(
-      injectQuery('/usr/vite/query?direct=value&something=else', 'direct'),
-    ).toEqual('/usr/vite/query?direct&something=else')
+      injectQuery(
+        '/usr/vite/file.vue?direct=value&vue&type=template&lang.js',
+        'direct',
+      ),
+    ).toEqual('/usr/vite/file.vue?direct&vue&type=template&lang.js')
   })
 })
 

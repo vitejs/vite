@@ -326,7 +326,10 @@ export function injectQuery(url: string, queryToInject: string): string {
 
   // clean up existing query to avoid ?import&import etc.
   searchParams.delete(queryToInject)
-  const search = searchParams.toString()
+  const search = searchParams
+    .toString()
+    // clean up blank string values (e.g. ?vue= becomes ?vue)
+    .replace(/=(&|$)/g, '$1')
 
   return `${pathname}?${queryToInject}${search ? `&` + search : ''}${
     hash ?? ''
