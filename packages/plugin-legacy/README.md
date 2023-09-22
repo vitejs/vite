@@ -44,7 +44,7 @@ npm add -D terser
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
-  If it's not set, plugin-legacy will load [the browserslit config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
+  If it's not set, plugin-legacy will load [the browserslist config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
 
 ### `polyfills`
 
