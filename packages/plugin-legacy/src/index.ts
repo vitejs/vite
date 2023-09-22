@@ -461,10 +461,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, {
-              needPolyfills,
-              ignoreBrowserslistConfig: options.ignoreBrowserslistConfig,
-            }),
+            createBabelPresetEnvOptions(targets, { needPolyfills }),
           ],
         ],
       })
@@ -641,9 +638,7 @@ export async function detectPolyfills(
     presets: [
       [
         (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, {
-          ignoreBrowserslistConfig: true,
-        }),
+        createBabelPresetEnvOptions(targets, {}),
       ],
     ],
   })
@@ -662,10 +657,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
-  {
-    needPolyfills = true,
-    ignoreBrowserslistConfig,
-  }: { needPolyfills?: boolean; ignoreBrowserslistConfig?: boolean },
+  { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
     targets,
@@ -680,7 +672,7 @@ function createBabelPresetEnvOptions(
         }
       : undefined,
     shippedProposals: true,
-    ignoreBrowserslistConfig,
+    ignoreBrowserslistConfig: true,
   }
 }
 
