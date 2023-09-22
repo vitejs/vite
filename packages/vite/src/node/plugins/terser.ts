@@ -4,6 +4,16 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
 
+export interface TerserOptions extends Terser.MinifyOptions {
+  /**
+   * Vite-specific option to specify the max number of workers to spawn
+   * when minifying files with terser.
+   *
+   * @default number of CPUs minus 1
+   */
+  maxWorkers?: number
+}
+
 let terserPath: string | undefined
 const loadTerserPath = (root: string) => {
   if (terserPath) return terserPath
@@ -24,7 +34,8 @@ const loadTerserPath = (root: string) => {
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
-  const { maxWorkers, ...terserOptions } = config.build.terserOptions || {}
+  const { maxWorkers, ...terserOptions } = config.build.terserOptions
+
   const makeWorker = () =>
     new Worker(
       async (
