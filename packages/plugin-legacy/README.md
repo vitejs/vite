@@ -44,6 +44,8 @@ npm add -D terser
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
+  If it's not set, plugin-legacy will load [the browserslist config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
+
 ### `polyfills`
 
 - **Type:** `boolean | string[]`
@@ -62,18 +64,6 @@ npm add -D terser
   Add custom imports to the legacy polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
   Note: if additional polyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
-
-### `ignoreBrowserslistConfig`
-
-- **Type:** `boolean`
-- **Default:** `false`
-
-  `@babel/preset-env` automatically detects [`browserslist` config sources](https://github.com/browserslist/browserslist#browserslist-):
-
-  - `browserslist` field in `package.json`
-  - `.browserslistrc` file in cwd.
-
-  Set to `true` to ignore these sources.
 
 ### `modernPolyfills`
 
