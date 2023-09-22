@@ -747,11 +747,13 @@ test('import hoisted after hashbang', async () => {
   expect(
     await ssrTransformSimpleCode(
       `#!/usr/bin/env node
-import "foo"`,
+console.log(foo);
+import foo from "foo"`,
     ),
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node
     const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    console.log(__vite_ssr_import_0__.default);
     "
   `)
 })
