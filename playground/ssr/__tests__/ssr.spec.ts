@@ -12,6 +12,12 @@ test(`circular dependencies modules doesn't throw`, async () => {
   )
 })
 
+test.only(`circular import doesn't throw`, async () => {
+  await page.goto(`${url}/circular-import`)
+
+  expect(await page.textContent('.circ-import')).toMatchInlineSnapshot()
+})
+
 test(`deadlock doesn't happen`, async () => {
   await page.goto(`${url}/forked-deadlock`)
 
