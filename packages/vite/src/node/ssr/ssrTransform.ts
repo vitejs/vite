@@ -34,6 +34,8 @@ export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
+const hashbangRE = /^#!.*\n/
+
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
@@ -93,6 +95,9 @@ async function ssrTransformScript(
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
+  // hoist at the start of the file, after the hashbang
+  const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
+
   function defineImport(index = 0, source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
@@ -117,7 +122,7 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
-      const importId = defineImport(node.start, node.source.value as string)
+      const importId = defineImport(hoistIndex, node.source.value as string)
       s.remove(node.start, node.end)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
