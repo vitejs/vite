@@ -132,7 +132,8 @@ test('export then import minified', async () => {
       `export * from 'vue';import {createApp} from 'vue';`,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
     __vite_ssr_exportAll__(__vite_ssr_import_1__);
     "
   `)
@@ -144,8 +145,8 @@ test('hoist import to top', async () => {
       `path.resolve('server.js');import path from 'node:path';`,
     ),
   ).toMatchInlineSnapshot(`
-    "__vite_ssr_import_0__.default.resolve('server.js');const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"node:path\\");
-    "
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"node:path\\");
+    __vite_ssr_import_0__.default.resolve('server.js');"
   `)
 })
 
@@ -382,8 +383,8 @@ function c({ _ = bar() + foo() }) {}
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
     const a = ({ _ = __vite_ssr_import_0__.foo() }) => {}
     function b({ _ = __vite_ssr_import_0__.bar() }) {}
@@ -404,8 +405,8 @@ const a = () => {
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
     const a = () => {
       const { type: n = 'bar' } = {}
@@ -427,8 +428,8 @@ const foo = {}
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
     const foo = {}
 
@@ -470,8 +471,8 @@ objRest()
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
 
 
     function a() {
@@ -520,8 +521,8 @@ const obj = {
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
 
     const bar = 'bar'
@@ -552,8 +553,8 @@ class A {
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
 
 
     const add = __vite_ssr_import_0__.add;
@@ -584,8 +585,8 @@ class A {
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
 
 
     const bar = 'bar'
@@ -630,8 +631,8 @@ bbb()
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
 
 
     function foobar() {
@@ -676,8 +677,8 @@ test('jsx', async () => {
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
       "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"react\\");
-
       const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"foo\\");
+
 
       function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_1__.Foo, null) }) {
         return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
@@ -827,8 +828,8 @@ function test() {
   return [foo, bar]
 }`),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
 
     function test() {
       if (true) {
@@ -854,8 +855,8 @@ function test() {
   return bar;
 }`),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
 
     function test() {
       [__vite_ssr_import_0__.foo];
@@ -886,8 +887,8 @@ for (const test in tests) {
   console.log(test)
 }`),
   ).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./test.js\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./test.js\\");
+
 
 
     for (const test of tests) {
@@ -918,8 +919,8 @@ const Baz = class extends Foo {}
 `,
   )
   expect(result?.code).toMatchInlineSnapshot(`
-    "
-    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\");
+
 
 
     console.log(__vite_ssr_import_0__.default, __vite_ssr_import_0__.Bar);
@@ -939,9 +940,9 @@ test('import assertion attribute', async () => {
   import('./bar.json', { assert: { type: 'json' } });
   `),
   ).toMatchInlineSnapshot(`
-    "
-      const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo.json\\");
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo.json\\");
 
+      
       __vite_ssr_dynamic_import__('./bar.json', { assert: { type: 'json' } });
       "
   `)
