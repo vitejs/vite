@@ -425,10 +425,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             ss: expStart,
             se: expEnd,
             d: dynamicIndex,
-            // #2083 User may use escape path,
-            // so use imports[index].n to get the unescaped string
             a: assertIndex,
           } = importSpecifier
+
+          // #2083 User may use escape path,
+          // so use imports[index].n to get the unescaped string
           let specifier = importSpecifier.n
 
           const rawUrl = source.slice(start, end)
