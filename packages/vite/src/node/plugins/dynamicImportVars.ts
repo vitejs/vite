@@ -30,6 +30,7 @@ const hasDynamicImportRE = /\bimport\s*[(/]/
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
   query?: Record<string, string>
+  import?: string
 }
 
 interface DynamicImportPattern {
@@ -80,7 +81,11 @@ function parseDynamicImportPattern(
     (key) => rawQuery && key in rawQuery,
   )
   if (as) {
-    globParams!.as = as
+    globParams = {
+      ...globParams,
+      as,
+      import: '*',
+    }
   }
 
   return {
@@ -122,9 +127,7 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams
-    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
-    : ''
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
 
   let newRawPattern = posix.relative(
     posix.dirname(importer),
