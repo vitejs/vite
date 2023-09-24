@@ -79,6 +79,8 @@ export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
+const templateLiteralRE = /^\s*`(.*)`\s*$/
+
 interface UrlPosition {
   url: string
   start: number
@@ -425,9 +427,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             d: dynamicIndex,
             // #2083 User may use escape path,
             // so use imports[index].n to get the unescaped string
-            n: specifier,
             a: assertIndex,
           } = importSpecifier
+          let specifier = importSpecifier.n
 
           const rawUrl = source.slice(start, end)
 
@@ -466,6 +468,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               hasEnv = true
             }
             return
+          } else if (templateLiteralRE.test(rawUrl)) {
+            specifier = rawUrl.replace(templateLiteralRE, '$1')
           }
 
           const isDynamicImport = dynamicIndex > -1

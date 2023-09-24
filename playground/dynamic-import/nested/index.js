@@ -131,4 +131,8 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   text('.dynamic-import-nested-self', mod.self)
 })
 
+import(`../nested/static.js`).then((mod) => {
+  text('.dynamic-import-static', mod.self)
+})
+
 console.log('index.js')
