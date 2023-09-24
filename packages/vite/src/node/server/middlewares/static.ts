@@ -42,7 +42,7 @@ const sirvOptions = ({
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
       if (knownJavascriptExtensionRE.test(pathname)) {
-        res.setHeader('Content-Type', 'application/javascript')
+        res.setHeader('Content-Type', 'application/javascript;charset=utf-8')
       }
       if (headers) {
         for (const name in headers) {

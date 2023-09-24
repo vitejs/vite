@@ -53,7 +53,7 @@ export function send(
     return
   }
 
-  res.setHeader('Content-Type', alias[type] || type)
+  res.setHeader('Content-Type', (alias[type] || type) + ';charset=utf-8')
   res.setHeader('Cache-Control', cacheControl)
   res.setHeader('Etag', etag)
 
