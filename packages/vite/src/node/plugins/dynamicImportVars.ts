@@ -29,6 +29,7 @@ const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
+  query?: Record<string, string>
 }
 
 interface DynamicImportPattern {
@@ -55,6 +56,11 @@ function parseDynamicImportPattern(
   const filename = strings.slice(1, -1)
   const rawQuery = parseRequest(filename)
   let globParams: DynamicImportRequest | null = null
+
+  if (rawQuery) {
+    globParams = { query: rawQuery }
+  }
+
   const ast = (
     parseJS(strings, {
       ecmaVersion: 'latest',
@@ -70,16 +76,9 @@ function parseDynamicImportPattern(
   const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  if (rawQuery?.raw !== undefined) {
-    globParams = { as: 'raw' }
-  }
-
-  if (rawQuery?.url !== undefined) {
-    globParams = { as: 'url' }
-  }
-
-  if (rawQuery?.worker !== undefined) {
-    globParams = { as: 'worker' }
+  const as = (['worker', 'url', 'raw'] as const).find((key) => rawQuery?.[key])
+  if (as) {
+    globParams!.as = as
   }
 
   return {
