@@ -76,7 +76,9 @@ function parseDynamicImportPattern(
   const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  const as = (['worker', 'url', 'raw'] as const).find((key) => rawQuery?.[key])
+  const as = (['worker', 'url', 'raw'] as const).find(
+    (key) => rawQuery && key in rawQuery,
+  )
   if (as) {
     globParams!.as = as
   }
