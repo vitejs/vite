@@ -67,7 +67,7 @@ test('export named', async () => {
   expect(
     await ssrTransformSimpleCode(`const a = 1, b = 2; export { a, b as c }`),
   ).toMatchInlineSnapshot(`
-    "const a = 1, b = 2;
+    "const a = 1, b = 2; 
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, configurable: true, get(){ return a }});
     Object.defineProperty(__vite_ssr_exports__, \\"c\\", { enumerable: true, configurable: true, get(){ return b }});"
   `)
@@ -956,7 +956,7 @@ test('import assertion attribute', async () => {
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo.json\\");
 
-
+      
       __vite_ssr_dynamic_import__('./bar.json', { assert: { type: 'json' } });
       "
   `)
