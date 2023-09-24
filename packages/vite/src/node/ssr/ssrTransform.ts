@@ -93,6 +93,7 @@ async function ssrTransformScript(
   const deps = new Set<string>()
   const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
+  const importIdMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
@@ -125,6 +126,7 @@ async function ssrTransformScript(
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
       const importId = defineImport(node.source.value as string)
+      importIdMap.set(node.source.value as string, importId)
       s.remove(node.start, node.end)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
@@ -167,7 +169,9 @@ async function ssrTransformScript(
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(node.source.value as string)
+          const importId =
+            importIdMap.get(node.source.value as string) ||
+            defineImport(node.source.value as string)
           // hoist re-exports near the defined import so they are immediately exported
           for (const spec of node.specifiers) {
             defineExport(
@@ -217,7 +221,9 @@ async function ssrTransformScript(
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
       s.remove(node.start, node.end)
-      const importId = defineImport(node.source.value as string)
+      const importId =
+        importIdMap.get(node.source.value as string) ||
+        defineImport(node.source.value as string)
       // hoist re-exports near the defined import so they are immediately exported
       if (node.exported) {
         defineExport(hoistIndex, node.exported.name, `${importId}`)
