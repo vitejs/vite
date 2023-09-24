@@ -42,7 +42,7 @@ test('should get a 404 when using incorrect case', async () => {
   )
   // fallback to index.html
   expect((await fetchPath('ICON.png')).headers.get('Content-Type')).toBe(
-    isBuild ? 'text/html; charset=utf-8' : 'text/html',
+    'text/html;charset=utf-8',
   )
 
   expect((await fetchPath('bar')).headers.get('Content-Type')).toBe('')

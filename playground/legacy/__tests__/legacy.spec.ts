@@ -61,13 +61,13 @@ test('generates assets', async () => {
           'polyfills-legacy: text/html; charset=utf-8',
         ].join('\n')
       : [
-          'index: text/html',
-          'index-legacy: text/html',
-          'chunk-async: text/html',
-          'chunk-async-legacy: text/html',
-          'immutable-chunk: text/html',
-          'immutable-chunk-legacy: text/html',
-          'polyfills-legacy: text/html',
+          'index: text/html;charset=utf-8',
+          'index-legacy: text/html;charset=utf-8',
+          'chunk-async: text/html;charset=utf-8',
+          'chunk-async-legacy: text/html;charset=utf-8',
+          'immutable-chunk: text/html;charset=utf-8',
+          'immutable-chunk-legacy: text/html;charset=utf-8',
+          'polyfills-legacy: text/html;charset=utf-8',
         ].join('\n'),
     true,
   )
