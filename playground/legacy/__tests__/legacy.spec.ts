@@ -50,25 +50,15 @@ test('wraps with iife', async () => {
 test('generates assets', async () => {
   await untilUpdated(
     () => page.textContent('#assets'),
-    isBuild
-      ? [
-          'index: text/html; charset=utf-8',
-          'index-legacy: text/html; charset=utf-8',
-          'chunk-async: text/html; charset=utf-8',
-          'chunk-async-legacy: text/html; charset=utf-8',
-          'immutable-chunk: application/javascript',
-          'immutable-chunk-legacy: application/javascript',
-          'polyfills-legacy: text/html; charset=utf-8',
-        ].join('\n')
-      : [
-          'index: text/html;charset=utf-8',
-          'index-legacy: text/html;charset=utf-8',
-          'chunk-async: text/html;charset=utf-8',
-          'chunk-async-legacy: text/html;charset=utf-8',
-          'immutable-chunk: text/html;charset=utf-8',
-          'immutable-chunk-legacy: text/html;charset=utf-8',
-          'polyfills-legacy: text/html;charset=utf-8',
-        ].join('\n'),
+    [
+      'index: text/html; charset=utf-8',
+      'index-legacy: text/html; charset=utf-8',
+      'chunk-async: text/html; charset=utf-8',
+      'chunk-async-legacy: text/html; charset=utf-8',
+      'immutable-chunk: application/javascript',
+      'immutable-chunk-legacy: application/javascript',
+      'polyfills-legacy: text/html; charset=utf-8',
+    ].join('\n'),
     true,
   )
 })
