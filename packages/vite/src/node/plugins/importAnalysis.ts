@@ -469,6 +469,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             return
           } else if (templateLiteralRE.test(rawUrl)) {
+            // Only static template literal will into this branch.
+            // It has variables will processed in importMetaGlob.ts
             specifier = rawUrl.replace(templateLiteralRE, '$1')
           }
 
