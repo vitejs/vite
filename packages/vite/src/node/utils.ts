@@ -502,11 +502,11 @@ export function generateCodeFrame(
 }
 
 export function isFileReadable(filename: string): boolean {
-  try {
-    if (!tryStatSync(filename)) {
-      return false
-    }
+  if (!tryStatSync(filename)) {
+    return false
+  }
 
+  try {
     // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
 
