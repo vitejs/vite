@@ -26,11 +26,16 @@ export function htmlFallbackMiddleware(
           return spaFallback ? `/index.html` : request.url
         },
       },
-      // don't rewrite paths ending with .html
       {
         from: /\.html$/,
-        to({ request }: any) {
-          return request.url
+        to({ parsedUrl, request }: any) {
+          // .html files are not handled by serveStaticMiddleware
+          // so we need to check if the file exists
+          const pathname = decodeURIComponent(parsedUrl.pathname)
+          if (fs.existsSync(path.join(root, pathname))) {
+            return request.url
+          }
+          return '/index.html'
         },
       },
     ],
