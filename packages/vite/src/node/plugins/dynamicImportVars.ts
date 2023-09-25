@@ -58,10 +58,6 @@ function parseDynamicImportPattern(
   const rawQuery = parseRequest(filename)
   let globParams: DynamicImportRequest | null = null
 
-  if (rawQuery) {
-    globParams = { query: rawQuery }
-  }
-
   const ast = (
     parseJS(strings, {
       ecmaVersion: 'latest',
@@ -80,11 +76,15 @@ function parseDynamicImportPattern(
   const as = (['worker', 'url', 'raw'] as const).find(
     (key) => rawQuery && key in rawQuery,
   )
+
   if (as) {
     globParams = {
-      ...globParams,
       as,
       import: '*',
+    }
+  } else if (rawQuery) {
+    globParams = {
+      query: rawQuery,
     }
   }
 
