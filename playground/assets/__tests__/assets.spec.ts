@@ -52,6 +52,10 @@ test('should get a 404 when using incorrect case', async () => {
   )
 })
 
+test('should fallback to index.html when accessing non-existant html file', async () => {
+  expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
+})
+
 describe('injected scripts', () => {
   test('@vite/client', async () => {
     const hasClient = await page.$(
