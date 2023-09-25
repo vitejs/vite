@@ -948,3 +948,31 @@ test('import assertion attribute', async () => {
     __vite_ssr_dynamic_import__('./bar.json', { assert: { type: 'json' } });
     "`)
 })
+
+test('import and export ordering', async () => {
+  // Given all imported modules logs `mod ${mod}` on execution,
+  // and `foo` is `bar`, the logging order should be:
+  // "mod a", "mod foo", "mod b", "bar1", "bar2"
+  expect(
+    await ssrTransformSimpleCode(`
+console.log(foo + 1)
+export * from './a'
+import { foo } from './foo'
+export * from './b'
+console.log(foo + 2)
+  `),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\");
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"./a\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);
+    const __vite_ssr_import_2__ = await __vite_ssr_import__(\\"./b\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_2__);
+
+    console.log(__vite_ssr_import_0__.foo + 1)
+
+
+
+    console.log(__vite_ssr_import_0__.foo + 2)
+      "
+  `)
+})
