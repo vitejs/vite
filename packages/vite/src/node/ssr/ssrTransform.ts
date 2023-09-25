@@ -92,19 +92,19 @@ async function ssrTransformScript(
   let uid = 0
   const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
-  const importIdMap = new Map<string, string>()
+  const depToImportIdMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
   const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
 
   function defineImport(source: string) {
-    let importId = importIdMap.get(source)
+    let importId = depToImportIdMap.get(source)
     if (importId) {
       return importId
     } else {
       importId = `__vite_ssr_import_${uid++}__`
-      importIdMap.set(source, importId)
+      depToImportIdMap.set(source, importId)
     }
     // There will be an error if the module is called before it is imported,
     // so the module import statement is hoisted to the top
@@ -304,7 +304,7 @@ async function ssrTransformScript(
   return {
     code: s.toString(),
     map,
-    deps: [...importIdMap.keys()],
+    deps: [...depToImportIdMap.keys()],
     dynamicDeps: [...dynamicDeps],
   }
 }
