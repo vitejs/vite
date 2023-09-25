@@ -325,7 +325,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   pathname = isWindows ? slash(pathname) : pathname
 
   // clean up existing query to avoid ?import&import etc.
-  searchParams.delete(queryToInject)
+  searchParams.delete(queryToInject.split('=')[0])
   const search = searchParams
     .toString()
     // clean up blank string values (e.g. ?vue= becomes ?vue)

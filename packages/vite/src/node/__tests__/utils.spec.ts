@@ -124,9 +124,21 @@ describe('injectQuery', () => {
     )
   })
 
+  test('path with injected query already present when providing a key-vale pair for the injected query', () => {
+    expect(injectQuery('/usr/vite/query?foo', 'foo=bar')).toEqual(
+      '/usr/vite/query?foo=bar',
+    )
+  })
+
   test('path with injected query already present with a value', () => {
     expect(injectQuery('/usr/vite/query?direct=value', 'direct')).toEqual(
       '/usr/vite/query?direct',
+    )
+  })
+
+  test('path with injected query already present with a value when providing a key-vale pair for the injected query', () => {
+    expect(injectQuery('/usr/vite/query?foo=oldValue', 'foo=newValue')).toEqual(
+      '/usr/vite/query?foo=newValue',
     )
   })
 
