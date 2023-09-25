@@ -734,6 +734,8 @@ importers:
 
   playground/minify/dir/module: {}
 
+  playground/module-graph: {}
+
   playground/multiple-entrypoints:
     devDependencies:
       sass:
