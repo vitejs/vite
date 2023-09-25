@@ -180,24 +180,15 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
-The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
-
-```js
-export default defineConfig({
-  server: {
-    watch: {
-      ignored: ['!**/node_modules/your-package-name/**'],
-    },
-  },
-  // The watched package must be excluded from optimization,
-  // so that it can appear in the dependency graph and trigger hot reload.
-  optimizeDeps: {
-    exclude: ['your-package-name'],
-  },
-})
-```
+The Vite server watcher watches the `root` and skips the `.git/` and `node_modules/` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
 If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
+
+::: warning Watching files in `node_modules`
+
+It's currently not possible to watch files and packages in `node_modules`. For further progress and workarounds, you can follow [issue #8619](https://github.com/vitejs/vite/issues/8619).
+
+:::
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
