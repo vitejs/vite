@@ -41,15 +41,19 @@ test('should get a 404 when using incorrect case', async () => {
     'image/png',
   )
   // fallback to index.html
-  expect((await fetchPath('ICON.png')).headers.get('Content-Type')).toBe(
-    isBuild ? 'text/html; charset=utf-8' : 'text/html',
+  const iconPngResult = await fetchPath('ICON.png')
+  expect(iconPngResult.headers.get('Content-Type')).toBe(
+    isBuild ? 'text/html;charset=utf-8' : 'text/html',
   )
+  expect(iconPngResult.status).toBe(200)
 
   expect((await fetchPath('bar')).headers.get('Content-Type')).toBe('')
   // fallback to index.html
-  expect((await fetchPath('BAR')).headers.get('Content-Type')).toContain(
+  const barResult = await fetchPath('BAR')
+  expect(barResult.headers.get('Content-Type')).toContain(
     isBuild ? 'text/html;charset=utf-8' : 'text/html',
   )
+  expect(barResult.status).toBe(200)
 })
 
 test('should fallback to index.html when accessing non-existant html file', async () => {
