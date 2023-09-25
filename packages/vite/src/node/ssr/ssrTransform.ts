@@ -90,7 +90,6 @@ async function ssrTransformScript(
   }
 
   let uid = 0
-  const deps = new Set<string>()
   const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
   const importIdMap = new Map<string, string>()
@@ -100,8 +99,13 @@ async function ssrTransformScript(
   const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
 
   function defineImport(source: string) {
-    deps.add(source)
-    const importId = `__vite_ssr_import_${uid++}__`
+    let importId = importIdMap.get(source)
+    if (importId) {
+      return importId
+    } else {
+      importId = `__vite_ssr_import_${uid++}__`
+      importIdMap.set(source, importId)
+    }
     // There will be an error if the module is called before it is imported,
     // so the module import statement is hoisted to the top
     s.appendLeft(
@@ -126,7 +130,6 @@ async function ssrTransformScript(
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
       const importId = defineImport(node.source.value as string)
-      importIdMap.set(node.source.value as string, importId)
       s.remove(node.start, node.end)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
@@ -169,9 +172,7 @@ async function ssrTransformScript(
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId =
-            importIdMap.get(node.source.value as string) ||
-            defineImport(node.source.value as string)
+          const importId = defineImport(node.source.value as string)
           // hoist re-exports near the defined import so they are immediately exported
           for (const spec of node.specifiers) {
             defineExport(
@@ -221,9 +222,7 @@ async function ssrTransformScript(
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
       s.remove(node.start, node.end)
-      const importId =
-        importIdMap.get(node.source.value as string) ||
-        defineImport(node.source.value as string)
+      const importId = defineImport(node.source.value as string)
       // hoist re-exports near the defined import so they are immediately exported
       if (node.exported) {
         defineExport(hoistIndex, node.exported.name, `${importId}`)
@@ -305,7 +304,7 @@ async function ssrTransformScript(
   return {
     code: s.toString(),
     map,
-    deps: [...deps],
+    deps: [...importIdMap.keys()],
     dynamicDeps: [...dynamicDeps],
   }
 }
