@@ -131,13 +131,15 @@ export function findNearestPackageData(
 
     const pkgPath = path.join(basedir, 'package.json')
     if (tryStatSync(pkgPath)?.isFile()) {
-      const pkgData = loadPackageData(pkgPath)
+      try {
+        const pkgData = loadPackageData(pkgPath)
 
-      if (packageCache) {
-        setFnpdCache(packageCache, pkgData, basedir, originalBasedir)
-      }
+        if (packageCache) {
+          setFnpdCache(packageCache, pkgData, basedir, originalBasedir)
+        }
 
-      return pkgData
+        return pkgData
+      } catch {}
     }
 
     const nextBasedir = path.dirname(basedir)
