@@ -33,11 +33,9 @@ describe.runIf(isBuild)('build', () => {
       'dist/nominify/my-lib-custom-filename.iife.js',
     )
     // esbuild helpers are injected inside of the IIFE wrapper
-    // esbuild has a bug that injects some statements before `"use strict"`: https://github.com/evanw/esbuild/issues/3322
-    // remove the `.*?` part once it's fixed
-    expect(code).toMatch(/^var MyLib=function\(\)\{.*?"use strict";/)
+    expect(code).toMatch(/^var MyLib=function\(\)\{\s*"use strict";/)
     expect(noMinifyCode).toMatch(
-      /^var MyLib\s*=\s*function\(\)\s*\{.*?"use strict";/s,
+      /^var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
     )
   })
 
