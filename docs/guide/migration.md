@@ -4,9 +4,22 @@
 
 Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.js 18 / 20+ is now required.
 
-## Deprecate CJS node API
+## Deprecate CJS Node API
 
-TODO: add some description https://github.com/vitejs/vite/pull/14278
+The CJS Node API of Vite is deprecated. When calling `require('vite')`, a deprecation warning is now logged. You should update your files or frameworks to import the ESM build of Vite instead.
+
+In a basic Vite project, make sure:
+
+1. The `vite.config.js` file content is using the ESM syntax.
+2. The closest `package.json` file has `"type": "module"`, or use the `.mjs` extension, e.g. `vite.config.mjs`.
+
+For other projects, there are a few general approaches:
+
+- **Configure ESM as default, opt-in to CJS if needed:** Add `"type": "module"` in the project `package.json`. All `*.js` files are now interpreted as ESM and needs to use the ESM syntax. You can rename a file with the `.cjs` extension to keep using CJS instead.
+- **Keep CJS as default, opt-in to ESM if needed:** If the project `package.json` does not have `"type": "module"`, all `*.js` files are interpreted as CJS. You can rename a file with the `.mjs` extension to use ESM instead.
+- **Dynamically import Vite:** If you need to keep using CJS, you can dynamically import Vite using `import('vite')` instead. This requires your code to be written in an `async` context, but should still be manageable as Vite's API is mostly asynchronous.
+
+See the [troubleshooting guide](https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated) for more information.
 
 ## General Changes
 
@@ -19,11 +32,13 @@ From Vite 5, it will fallback to index.html.
 
 In Vite 4, the manifest files (`build.manifest`, `build.ssrManifest`) was generated in the root of `build.outDir` by default. From Vite 5, those will be generated in the `.vite` directory in the `build.outDir` by default.
 
-### Every shotcuts need to be followed with an `Enter` press
+### CLI shortcuts require an additional `Enter` press
 
-TODO: add some description https://github.com/vitejs/vite/pull/14342
+CLI shortcuts, like `r` to restart the dev server, now require an additional `Enter` press to trigger the shortcut. For example, `r + Enter` to restart the dev server.
 
-## Removed deprecated things
+This change prevents Vite from swallowing and controlling OS-specific shortcuts, allowing better compatibility when combining the Vite dev server with other processes, and avoids the [previous caveats](https://github.com/vitejs/vite/pull/14342).
+
+## Removed Deprecated APIs
 
 - Default exports of CSS files (e.g `import style from './foo.css'`): Use the `?inline` query instead
 - `import.meta.globEager`: Use `import.meta.glob('*', { eager: true })` instead
