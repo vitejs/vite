@@ -28,6 +28,8 @@ See the [troubleshooting guide](https://vitejs.dev/guide/troubleshooting.html#vi
 In Vite 4, accessing a path containing `.` did not fallback to index.html even if `appType` is set to `'SPA'` (default).
 From Vite 5, it will fallback to index.html.
 
+Note that the browser will no longer show the 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
+
 ### Manifest files are now generated in `.vite` directory by default
 
 In Vite 4, the manifest files (`build.manifest`, `build.ssrManifest`) was generated in the root of `build.outDir` by default. From Vite 5, those will be generated in the `.vite` directory in the `build.outDir` by default.
