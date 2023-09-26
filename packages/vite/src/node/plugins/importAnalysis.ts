@@ -278,7 +278,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      const importedUrls = new Set<string>()
       let isPartiallySelfAccepting = false
       const importedBindings = enablePartialAccept
         ? new Map<string, Set<string>>()
@@ -411,6 +410,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return [url, resolved.id]
       }
 
+      const orderedImportedUrls = new Array<string | undefined>(imports.length)
       const orderedAcceptedUrls = new Array<Set<UrlPosition> | undefined>(
         imports.length,
       )
@@ -640,7 +640,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             const hmrUrl = unwrapId(stripBase(url, base))
             const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
             if (isLocalImport) {
-              importedUrls.add(hmrUrl)
+              orderedImportedUrls[index] = hmrUrl
             }
 
             if (enablePartialAccept && importedBindings) {
@@ -718,6 +718,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }),
       )
 
+      const importedUrls = new Set(
+        orderedImportedUrls.filter(Boolean) as string[],
+      )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
