@@ -964,14 +964,14 @@ console.log(foo + 2)
   `),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\");
-    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"./a\\");
-    __vite_ssr_exportAll__(__vite_ssr_import_1__);
-    const __vite_ssr_import_2__ = await __vite_ssr_import__(\\"./b\\");
-    __vite_ssr_exportAll__(__vite_ssr_import_2__);
 
     console.log(__vite_ssr_import_0__.foo + 1)
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"./a\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);
 
 
+    const __vite_ssr_import_2__ = await __vite_ssr_import__(\\"./b\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_2__);
 
     console.log(__vite_ssr_import_0__.foo + 2)
       "
