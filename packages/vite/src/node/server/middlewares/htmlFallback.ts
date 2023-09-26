@@ -35,7 +35,7 @@ export function htmlFallbackMiddleware(
           if (fs.existsSync(path.join(root, pathname))) {
             return request.url
           }
-          return '/index.html'
+          return spaFallback ? `/index.html` : request.url
         },
       },
     ],
