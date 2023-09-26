@@ -1,14 +1,9 @@
 import './minify.css'
-// eslint-disable-next-line import/no-duplicates
 import './imported.css'
 import './sugarss.sss'
 import './sass.scss'
 import './less.less'
 import './stylus.styl'
-
-// eslint-disable-next-line import/no-duplicates
-import css from './imported.css'
-text('.imported-css', css) // deprecated, but leave this as-is to make sure it works
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
@@ -99,7 +94,7 @@ const globEager = import.meta.glob('./glob-import/*.css', {
 })
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
-import postcssSourceInput from './postcss-source-input.css?query=foo'
+import postcssSourceInput from './postcss-source-input.css?inline&query=foo'
 text('.postcss-source-input', postcssSourceInput)
 
 // The file is jsfile.css.js, and we should be able to import it without extension

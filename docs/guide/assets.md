@@ -1,7 +1,3 @@
----
-outline: [2, 3]
----
-
 # Static Asset Handling
 
 - Related: [Public Base Path](./build#public-base-path)
