@@ -268,24 +268,26 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         )
       }
 
-      isDebug &&
-        console.log(
-          `[@vitejs/plugin-legacy] legacy polyfills:`,
-          legacyPolyfills,
-        )
+      if (legacyPolyfills.size || !options.externalSystemJS) {
+        isDebug &&
+          console.log(
+            `[@vitejs/plugin-legacy] legacy polyfills:`,
+            legacyPolyfills,
+          )
 
-      await buildPolyfillChunk(
-        config.mode,
-        legacyPolyfills,
-        bundle,
-        facadeToLegacyPolyfillMap,
-        // force using terser for legacy polyfill minification, since esbuild
-        // isn't legacy-safe
-        config.build,
-        'iife',
-        opts,
-        options.externalSystemJS,
-      )
+        await buildPolyfillChunk(
+          config.mode,
+          legacyPolyfills,
+          bundle,
+          facadeToLegacyPolyfillMap,
+          // force using terser for legacy polyfill minification, since esbuild
+          // isn't legacy-safe
+          config.build,
+          'iife',
+          opts,
+          options.externalSystemJS,
+        )
+      }
     },
   }
 
