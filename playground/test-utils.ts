@@ -49,6 +49,7 @@ export const hmrPorts = {
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
   'css/lightningcss-proxy': 24686,
+  json: 24687,
 }
 
 const hexToNameMap: Record<string, string> = {}

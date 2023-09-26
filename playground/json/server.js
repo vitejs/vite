@@ -7,7 +7,7 @@ import express from 'express'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
-export async function createServer(root = process.cwd()) {
+export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
   const app = express()
 
@@ -26,6 +26,9 @@ export async function createServer(root = process.cwd()) {
         // misses change events, so enforce polling for consistency
         usePolling: true,
         interval: 100,
+      },
+      hmr: {
+        port: hmrPort,
       },
     },
     appType: 'custom',
