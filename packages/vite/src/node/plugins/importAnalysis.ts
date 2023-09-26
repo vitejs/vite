@@ -470,7 +470,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             return
           } else if (templateLiteralRE.test(rawUrl)) {
-            if (!rawUrl.includes('${') && !rawUrl.includes('}')) {
+            if (!(rawUrl.includes('${') && rawUrl.includes('}'))) {
               specifier = rawUrl.replace(templateLiteralRE, '$1')
             }
           }
