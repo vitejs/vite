@@ -123,6 +123,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
 
+  // browsers supporting ESM + dynamic import + import.meta + async generator
+  const modernTargetsEsbuild = [
+    'es2020',
+    'edge79',
+    'firefox67',
+    'chrome64',
+    'safari12',
+  ]
+  // same with above but by browserslist syntax
+  // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
+  // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
+  const modernTargetsBabel =
+    'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'
+
   const genLegacy = options.renderLegacyChunks !== false
   const genModern = options.renderModernChunks !== false
   if (!genLegacy && !genModern) {
@@ -188,14 +202,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
-          // browsers supporting ESM + dynamic import + import.meta + async generator
-          config.build.target = [
-            'es2020',
-            'edge79',
-            'firefox67',
-            'chrome64',
-            'safari12',
-          ]
+          config.build.target = modernTargetsEsbuild
         }
       }
 
@@ -258,7 +265,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // legacy bundle
-      if (legacyPolyfills.size) {
+      if (options.polyfills !== false) {
         // check if the target needs Promise polyfill because SystemJS relies on it
         // https://github.com/systemjs/systemjs#ie11-support
         await detectPolyfills(
@@ -266,7 +273,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           targets,
           legacyPolyfills,
         )
+      }
 
+      if (legacyPolyfills.size || !options.externalSystemJS) {
         isDebug &&
           console.log(
             `[@vitejs/plugin-legacy] legacy polyfills:`,
@@ -375,7 +384,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, { esmodules: true }, modernPolyfills)
+          await detectPolyfills(raw, modernTargetsBabel, modernPolyfills)
         }
 
         const ms = new MagicString(raw)
@@ -454,10 +463,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, {
-              needPolyfills,
-              ignoreBrowserslistConfig: options.ignoreBrowserslistConfig,
-            }),
+            createBabelPresetEnvOptions(targets, { needPolyfills }),
           ],
         ],
       })
@@ -634,9 +640,7 @@ export async function detectPolyfills(
     presets: [
       [
         (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, {
-          ignoreBrowserslistConfig: true,
-        }),
+        createBabelPresetEnvOptions(targets, {}),
       ],
     ],
   })
@@ -655,10 +659,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
-  {
-    needPolyfills = true,
-    ignoreBrowserslistConfig,
-  }: { needPolyfills?: boolean; ignoreBrowserslistConfig?: boolean },
+  { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
     targets,
@@ -673,7 +674,7 @@ function createBabelPresetEnvOptions(
         }
       : undefined,
     shippedProposals: true,
-    ignoreBrowserslistConfig,
+    ignoreBrowserslistConfig: true,
   }
 }
 
