@@ -8,6 +8,8 @@
     "build": "vite build --debug legacy",
     "build:custom-filename": "vite --config ./vite.config-custom-filename.js build  --debug legacy",
     "build:multiple-output": "vite --config ./vite.config-multiple-output.js build",
+    "build:no-polyfills": "vite --config ./vite.config-no-polyfills.js build",
+    "build:no-polyfills-no-systemjs": "vite --config ./vite.config-no-polyfills-no-systemjs.js build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
