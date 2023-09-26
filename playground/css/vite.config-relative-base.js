@@ -18,8 +18,5 @@ export default defineConfig({
       },
     },
   },
-  testConfig: {
-    baseRoute: '/relative-base/',
-  },
   cacheDir: 'node_modules/.vite-relative-base',
 })

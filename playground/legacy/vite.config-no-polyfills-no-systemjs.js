@@ -24,7 +24,4 @@ export default defineConfig({
       },
     },
   },
-  testConfig: {
-    baseRoute: '/no-polyfills-no-systemjs/',
-  },
 })

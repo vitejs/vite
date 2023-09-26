@@ -29,9 +29,6 @@ export default defineConfig({
       },
     },
   },
-  testConfig: {
-    baseRoute: '/relative-base/',
-  },
   plugins: [
     workerPluginTestPlugin(),
     {
