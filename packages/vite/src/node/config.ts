@@ -497,9 +497,9 @@ export async function resolveConfig(
   ) {
     logger.warn(
       colors.yellow(
-        `Putting ${colors.bold(
+        `Replacing ${colors.bold(
           foundDiscouragedVariableName,
-        )} to define option is discoraged. See https://vitejs.dev/config/shared-options.html#define for more details.`,
+        )} using the define option is discouraged. See https://vitejs.dev/config/shared-options.html#define for more details.`,
       ),
     )
   }
