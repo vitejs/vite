@@ -864,6 +864,9 @@ importers:
       '@vitejs/test-dep-with-optional-peer-dep':
         specifier: file:./dep-with-optional-peer-dep
         version: file:playground/optimize-deps/dep-with-optional-peer-dep
+      '@vitejs/test-dep-with-optional-peer-dep-submodule':
+        specifier: file:./dep-with-optional-peer-dep-submodule
+        version: file:playground/optimize-deps/dep-with-optional-peer-dep-submodule
       '@vitejs/test-nested-exclude':
         specifier: file:./nested-exclude
         version: file:playground/optimize-deps/nested-exclude
@@ -969,6 +972,8 @@ importers:
   playground/optimize-deps/dep-with-dynamic-import: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep: {}
+
+  playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
 
   playground/optimize-deps/nested-exclude:
     dependencies:
@@ -10323,6 +10328,16 @@ packages:
   file:playground/optimize-deps/dep-with-optional-peer-dep:
     resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep, type: directory}
     name: '@vitejs/test-dep-with-optional-peer-dep'
+    peerDependencies:
+      foobar: 0.0.0
+    peerDependenciesMeta:
+      foobar:
+        optional: true
+    dev: false
+
+  file:playground/optimize-deps/dep-with-optional-peer-dep-submodule:
+    resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep-submodule, type: directory}
+    name: '@vitejs/test-dep-with-optional-peer-dep-submodule'
     peerDependencies:
       foobar: 0.0.0
     peerDependenciesMeta:
