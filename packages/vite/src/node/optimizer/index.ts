@@ -1319,19 +1319,21 @@ export async function cleanupDepsCacheStaleDirs(
     const cacheDir = path.resolve(config.cacheDir)
     if (fs.existsSync(cacheDir)) {
       const dirents = await fsp.readdir(cacheDir, { withFileTypes: true })
-      for (const dirent of dirents) {
-        if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
-          const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const stats = await fsp.stat(tempDirPath).catch((_) => null)
-          if (
-            stats?.mtime &&
-            Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
-          ) {
-            debug?.(`removing stale cache temp dir ${tempDirPath}`)
-            await fsp.rm(tempDirPath, { recursive: true, force: true })
+      await Promise.all(
+        dirents.map(async (dirent) => {
+          if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
+            const tempDirPath = path.resolve(config.cacheDir, dirent.name)
+            const stats = await fsp.stat(tempDirPath).catch((_) => null)
+            if (
+              stats?.mtime &&
+              Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
+            ) {
+              debug?.(`removing stale cache temp dir ${tempDirPath}`)
+              await fsp.rm(tempDirPath, { recursive: true, force: true })
+            }
           }
-        }
-      }
+        }),
+      )
     }
   } catch (err) {
     config.logger.error(err)
