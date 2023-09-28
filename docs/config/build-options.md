@@ -209,6 +209,8 @@ npm add -D terser
 
 Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
 
+In addition, you can also pass a `maxWorkers: number` option to specify the max number of workers to spawn. Defaults to the number of CPUs minus 1.
+
 ## build.write
 
 - **Type:** `boolean`
