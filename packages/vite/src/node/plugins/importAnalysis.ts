@@ -470,6 +470,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             return
           } else if (templateLiteralRE.test(rawUrl)) {
+            // If the import has backticks but isn't transformed as a glob import
+            // (as there's nothing to glob), check if it's simply a plain string.
+            // If so, we can replace the specifier as a plain string to prevent
+            // an incorrect "cannot be analyzed" warning.
             if (!(rawUrl.includes('${') && rawUrl.includes('}'))) {
               specifier = rawUrl.replace(templateLiteralRE, '$1')
             }
