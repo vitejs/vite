@@ -123,19 +123,24 @@ async function instantiateModule(
     isProduction,
     resolve: { dedupe, preserveSymlinks },
     root,
+    ssr,
   } = server.config
+
+  const webTarget = ssr.target === 'webworker'
+  const overrideConditions = webTarget ? server.config.resolve.conditions : []
 
   const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
     mainFields: ['main'],
     browserField: true,
     conditions: [],
-    overrideConditions: ['production', 'development'],
+    overrideConditions: [...overrideConditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
     isBuild: false,
     isProduction,
     root,
+    ssrConfig: ssr,
   }
 
   // Since dynamic imports can happen in parallel, we need to
@@ -271,6 +276,8 @@ async function nodeImport(
   if (id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
+    const targetWeb = resolveOptions.ssrConfig?.target === 'webworker'
+
     const resolved = tryNodeResolve(
       id,
       importer,
@@ -280,7 +287,7 @@ async function nodeImport(
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,
-      false,
+      targetWeb,
     )
     if (!resolved) {
       const err: any = new Error(

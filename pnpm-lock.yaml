@@ -1372,6 +1372,12 @@ importers:
 
   playground/ssr-webworker:
     dependencies:
+      '@vitejs/test-browser-exports':
+        specifier: file:./browser-exports
+        version: file:playground/ssr-webworker/browser-exports
+      '@vitejs/test-worker-exports':
+        specifier: file:./worker-exports
+        version: file:playground/ssr-webworker/worker-exports
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1382,6 +1388,10 @@ importers:
       miniflare:
         specifier: ^3.20230918.0
         version: 3.20230918.0
+
+  playground/ssr-webworker/browser-exports: {}
+
+  playground/ssr-webworker/worker-exports: {}
 
   playground/tailwind:
     dependencies:
@@ -10500,6 +10510,16 @@ packages:
   file:playground/ssr-resolve/pkg-exports:
     resolution: {directory: playground/ssr-resolve/pkg-exports, type: directory}
     name: '@vitejs/test-resolve-pkg-exports'
+    dev: false
+
+  file:playground/ssr-webworker/browser-exports:
+    resolution: {directory: playground/ssr-webworker/browser-exports, type: directory}
+    name: '@vitejs/test-browser-exports'
+    dev: false
+
+  file:playground/ssr-webworker/worker-exports:
+    resolution: {directory: playground/ssr-webworker/worker-exports, type: directory}
+    name: '@vitejs/test-worker-exports'
     dev: false
 
   file:playground/worker/dep-to-optimize:
