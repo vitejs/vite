@@ -16,6 +16,7 @@ import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
+import { getEnvFilesForMode } from '../env'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -62,9 +63,10 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === name,
   )
+
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (fileName === '.env' || fileName.startsWith('.env.'))
+    getEnvFilesForMode(config.mode).includes(fileName)
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)

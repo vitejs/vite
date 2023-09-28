@@ -5,6 +5,15 @@ import { expand } from 'dotenv-expand'
 import { arraify, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
+export function getEnvFilesForMode(mode: string): string[] {
+  return [
+    /** default file */ `.env`,
+    /** local file */ `.env.local`,
+    /** mode file */ `.env.${mode}`,
+    /** mode local file */ `.env.${mode}.local`,
+  ]
+}
+
 export function loadEnv(
   mode: string,
   envDir: string,
@@ -18,12 +27,7 @@ export function loadEnv(
   }
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
-  const envFiles = [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
-    /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`,
-  ]
+  const envFiles = getEnvFilesForMode(mode)
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((file) => {
