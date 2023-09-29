@@ -126,8 +126,7 @@ async function instantiateModule(
     ssr,
   } = server.config
 
-  const webTarget = ssr.target === 'webworker'
-  const overrideConditions = webTarget ? server.config.resolve.conditions : []
+  const overrideConditions = ssr.resolve?.externalConditions || []
 
   const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
     mainFields: ['main'],
@@ -288,6 +287,8 @@ async function nodeImport(
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,
       targetWeb,
+      undefined,
+      true,
     )
     if (!resolved) {
       const err: any = new Error(
