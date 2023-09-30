@@ -252,7 +252,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const resolved = await this.resolve(url, importerFile)
+        const resolved = await this.resolve(url, importerFile, {
+          skipSelf: false,
+        })
 
         if (!resolved) {
           // in ssr, we should let node handle the missing modules

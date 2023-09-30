@@ -331,7 +331,7 @@ export async function createPluginContainer(
       },
     ) {
       let skip: Set<Plugin> | undefined
-      if (options?.skipSelf && this._activePlugin) {
+      if (options?.skipSelf !== false && this._activePlugin) {
         skip = new Set(this._resolveSkips)
         skip.add(this._activePlugin)
       }
