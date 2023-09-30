@@ -146,9 +146,7 @@ export interface PluginContainer {
 type PluginContext = Omit<
   RollupPluginContext,
   // not documented
-  | 'cache'
-  // deprecated
-  | 'moduleIds'
+  'cache'
 >
 
 export const parser = acorn.Parser.extend(importAttributes)
