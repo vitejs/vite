@@ -266,6 +266,10 @@ export async function startDefaultServe(): Promise<void> {
     if (config && config.__test__) {
       config.__test__()
     }
+    // TODO: use something like ConfigEnv['cmd'] https://github.com/vitejs/vite/pull/12298
+    if (config?.testConfig?.previewBase) {
+      testConfig.base = config.testConfig.previewBase
+    }
     const _nodeEnv = process.env.NODE_ENV
     const previewServer = await preview(testConfig)
     // prevent preview change NODE_ENV
@@ -346,5 +350,16 @@ declare module 'vite' {
      * runs after build and before preview
      */
     __test__?: () => void
+    /**
+     * special test only configs
+     */
+    testConfig?: {
+      /**
+       * a base used for preview
+       *
+       * useful for relative base tests
+       */
+      previewBase?: string
+    }
   }
 }

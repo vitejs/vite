@@ -24,4 +24,7 @@ export default defineConfig({
       },
     },
   },
+  testConfig: {
+    previewBase: '/no-polyfills-no-systemjs/',
+  },
 })
