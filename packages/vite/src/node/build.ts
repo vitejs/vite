@@ -14,7 +14,6 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
-  RollupWarning,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
@@ -858,7 +857,7 @@ const dynamicImportWarningIgnoreList = [
 ]
 
 export function onRollupWarning(
-  warning: RollupWarning,
+  warning: RollupLog,
   warn: LoggingFunction,
   config: ResolvedConfig,
 ): void {
