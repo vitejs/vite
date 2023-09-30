@@ -40,8 +40,7 @@ export function createIsConfiguredAsSsrExternal(
     typeof noExternal !== 'boolean' &&
     createFilter(undefined, noExternal, { resolve: false })
 
-  const targetConditions =
-    config.ssr.resolve?.externalConditions || config.resolve.conditions
+  const targetConditions = config.ssr.resolve?.externalConditions || []
 
   const resolveOptions: InternalResolveOptions = {
     ...config.resolve,
