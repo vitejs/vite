@@ -13,7 +13,8 @@ import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
+import type { RollupParseFunc } from '../server/pluginContainer'
+import { getRollupParseFunc } from '../server/pluginContainer'
 import { combineSourcemaps } from '../utils'
 import { isJSONRequest } from '../plugins/json'
 
@@ -61,6 +62,8 @@ async function ssrTransformJSON(
   }
 }
 
+let rollupParseFunc: RollupParseFunc | undefined
+
 async function ssrTransformScript(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
@@ -69,14 +72,13 @@ async function ssrTransformScript(
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
+  if (!rollupParseFunc) {
+    rollupParseFunc = await getRollupParseFunc()
+  }
+
   let ast: any
   try {
-    ast = parser.parse(code, {
-      sourceType: 'module',
-      ecmaVersion: 'latest',
-      locations: true,
-      allowHashBang: true,
-    })
+    ast = rollupParseFunc(code)
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
     const line = err.loc.line
@@ -377,7 +379,7 @@ function walk(
   }
 
   ;(eswalk as any)(root, {
-    enter(node: Node, parent: Node | null) {
+    enter(node: Node, parent: Node | null, prop: string) {
       if (node.type === 'ImportDeclaration') {
         return this.skip()
       }
@@ -405,7 +407,7 @@ function walk(
       if (node.type === 'Identifier') {
         if (
           !isInScope(node.name, parentStack) &&
-          isRefIdentifier(node, parent!, parentStack)
+          isRefIdentifier(node, parent!, parentStack, prop)
         ) {
           // record the identifier, for DFS -> BFS
           identifiers.push([node, parentStack.slice(0)])
@@ -427,7 +429,7 @@ function walk(
             return
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: Node, parent: Node) {
+            enter(child: Node, parent: Node, prop: string) {
               // skip params default value of destructure
               if (
                 parent?.type === 'AssignmentPattern' &&
@@ -437,7 +439,7 @@ function walk(
               }
               if (child.type !== 'Identifier') return
               // do not record as scope variable if is a destructuring keyword
-              if (isStaticPropertyKey(child, parent)) return
+              if (isStaticPropertyKey(child, parent, prop)) return
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (
@@ -489,7 +491,12 @@ function walk(
   })
 }
 
-function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
+function isRefIdentifier(
+  id: Identifier,
+  parent: _Node,
+  parentStack: _Node[],
+  prop: string,
+) {
   // declaration id
   if (
     parent.type === 'CatchClause' ||
@@ -517,7 +524,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // property key
-  if (isStaticPropertyKey(id, parent)) {
+  if (isStaticPropertyKey(id, parent, prop)) {
     return false
   }
 
@@ -558,8 +565,8 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 const isStaticProperty = (node: _Node): node is Property =>
   node && node.type === 'Property' && !node.computed
 
-const isStaticPropertyKey = (node: _Node, parent: _Node) =>
-  isStaticProperty(parent) && parent.key === node
+const isStaticPropertyKey = (node: _Node, parent: _Node, prop: string) =>
+  isStaticProperty(parent) && prop === 'key' && parent.key === node
 
 const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {

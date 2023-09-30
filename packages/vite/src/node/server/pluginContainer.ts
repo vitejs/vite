@@ -32,8 +32,9 @@ SOFTWARE.
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { VERSION as rollupVersion } from 'rollup'
+import { rollup, VERSION as rollupVersion } from 'rollup'
 import type {
+  AstNode,
   AsyncPluginHooks,
   CustomPluginOptions,
   EmittedFile,
@@ -56,11 +57,8 @@ import type {
   SourceMap,
   TransformResult,
 } from 'rollup'
-import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-// @ts-expect-error untyped
-import { importAttributes } from 'acorn-import-attributes'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
@@ -149,7 +147,32 @@ type PluginContext = Omit<
   'cache'
 >
 
-export const parser = acorn.Parser.extend(importAttributes)
+export type RollupParseFunc = (
+  input: string,
+  options?: { allowReturnOutsideFunction?: boolean },
+) => AstNode
+
+export const getRollupParseFunc = async (): Promise<RollupParseFunc> => {
+  let rollupParse!: RollupParseFunc
+  await rollup({
+    input: 'dummy',
+    plugins: [
+      {
+        name: 'get-parse',
+        resolveId(id) {
+          return id
+        },
+        load(id) {
+          return ''
+        },
+        transform(code, id) {
+          rollupParse = this.parse
+        },
+      },
+    ],
+  })
+  return rollupParse
+}
 
 export async function createPluginContainer(
   config: ResolvedConfig,
@@ -274,6 +297,8 @@ export async function createPluginContainer(
     }
   }
 
+  const rollupParseFunc = await getRollupParseFunc()
+
   // we should create a new context for each async hook pipeline so that the
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
@@ -291,13 +316,8 @@ export async function createPluginContainer(
       this._activePlugin = initialPlugin || null
     }
 
-    parse(code: string, opts: any = {}) {
-      return parser.parse(code, {
-        sourceType: 'module',
-        ecmaVersion: 'latest',
-        locations: true,
-        ...opts,
-      })
+    parse(code: string, opts: any) {
+      return rollupParseFunc(code, opts)
     }
 
     async resolve(
