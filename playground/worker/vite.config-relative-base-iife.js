@@ -29,9 +29,9 @@ export default defineConfig({
       },
     },
   },
-  plugins: [workerPluginTestPlugin()],
-  cacheDir: 'node_modules/.vite-relative-base-iife',
   testConfig: {
     previewBase: '/relative-base-iife/',
   },
+  plugins: [workerPluginTestPlugin()],
+  cacheDir: 'node_modules/.vite-relative-base-iife',
 })

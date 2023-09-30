@@ -29,6 +29,9 @@ export default defineConfig({
       },
     },
   },
+  testConfig: {
+    previewBase: '/relative-base/',
+  },
   plugins: [
     workerPluginTestPlugin(),
     {
@@ -44,7 +47,4 @@ export default defineConfig({
     },
   ],
   cacheDir: 'node_modules/.vite-relative-base',
-  testConfig: {
-    previewBase: '/relative-base/',
-  },
 })

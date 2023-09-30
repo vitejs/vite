@@ -18,8 +18,8 @@ export default defineConfig({
       },
     },
   },
-  cacheDir: 'node_modules/.vite-relative-base',
   testConfig: {
     previewBase: '/relative-base/',
   },
+  cacheDir: 'node_modules/.vite-relative-base',
 })
