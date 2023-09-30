@@ -1,73 +1,64 @@
-# Migration from v3
+# Migration from v4
 
-## Rollup 3
+## Node.js Support
 
-Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases/tag/v3.0.0).
+Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.js 18 / 20+ is now required.
 
-Rollup 3 is mostly compatible with Rollup 2. If you are using custom [`rollupOptions`](../config/build-options.md#rollup-options) in your project and encounter issues, refer to the [Rollup migration guide](https://rollupjs.org/migration/) to upgrade your config.
+## Deprecate CJS Node API
 
-## Modern Browser Baseline change
+The CJS Node API of Vite is deprecated. When calling `require('vite')`, a deprecation warning is now logged. You should update your files or frameworks to import the ESM build of Vite instead.
 
-The modern browser build now targets `safari14` by default for wider ES2020 compatibility (bumped from `safari13`). This means that modern builds can now use [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) and that the [nullish coalescing operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) isn't transpiled anymore. If you need to support older browsers, you can add [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) as usual.
+In a basic Vite project, make sure:
+
+1. The `vite.config.js` file content is using the ESM syntax.
+2. The closest `package.json` file has `"type": "module"`, or use the `.mjs` extension, e.g. `vite.config.mjs`.
+
+For other projects, there are a few general approaches:
+
+- **Configure ESM as default, opt-in to CJS if needed:** Add `"type": "module"` in the project `package.json`. All `*.js` files are now interpreted as ESM and needs to use the ESM syntax. You can rename a file with the `.cjs` extension to keep using CJS instead.
+- **Keep CJS as default, opt-in to ESM if needed:** If the project `package.json` does not have `"type": "module"`, all `*.js` files are interpreted as CJS. You can rename a file with the `.mjs` extension to use ESM instead.
+- **Dynamically import Vite:** If you need to keep using CJS, you can dynamically import Vite using `import('vite')` instead. This requires your code to be written in an `async` context, but should still be manageable as Vite's API is mostly asynchronous.
+
+See the [troubleshooting guide](https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated) for more information.
 
 ## General Changes
 
-### Encoding
+### Allow path containing `.` to fallback to index.html
 
-The build default charset is now utf8 (see [#10753](https://github.com/vitejs/vite/issues/10753) for details).
+In Vite 4, accessing a path containing `.` did not fallback to index.html even if `appType` is set to `'SPA'` (default).
+From Vite 5, it will fallback to index.html.
 
-### Importing CSS as a String
+Note that the browser will no longer show the 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
 
-In Vite 3, importing the default export of a `.css` file could introduce a double loading of CSS.
+### Manifest files are now generated in `.vite` directory by default
 
-```ts
-import cssString from './global.css'
-```
+In Vite 4, the manifest files (`build.manifest`, `build.ssrManifest`) was generated in the root of `build.outDir` by default. From Vite 5, those will be generated in the `.vite` directory in the `build.outDir` by default.
 
-This double loading could occur since a `.css` file will be emitted and it's likely that the CSS string will also be used by the application code — for example, injected by the framework runtime. From Vite 4, the `.css` default export [has been deprecated](https://github.com/vitejs/vite/issues/11094). The `?inline` query suffix modifier needs to be used in this case, as that doesn't emit the imported `.css` styles.
+### CLI shortcuts require an additional `Enter` press
 
-```ts
-import stuff from './global.css?inline'
-```
+CLI shortcuts, like `r` to restart the dev server, now require an additional `Enter` press to trigger the shortcut. For example, `r + Enter` to restart the dev server.
 
-### Production Builds by Default
+This change prevents Vite from swallowing and controlling OS-specific shortcuts, allowing better compatibility when combining the Vite dev server with other processes, and avoids the [previous caveats](https://github.com/vitejs/vite/pull/14342).
 
-`vite build` will now always build for production regardless of the `--mode` passed. Previously, changing `mode` to other than `production` would result in a development build. If you wish to still build for development, you can set `NODE_ENV=development` in the `.env.{mode}` file.
+## Removed Deprecated APIs
 
-In part of this change, `vite dev` and `vite build` will not override `process.env.NODE_ENV` anymore if it is already defined. So if you've set `process.env.NODE_ENV = 'development'` before building, it will also build for development. This gives more control when running multiple builds or dev servers in parallel.
-
-See the updated [`mode` documentation](https://vitejs.dev/guide/env-and-mode.html#modes) for more details.
-
-### Environment Variables
-
-Vite now uses `dotenv` 16 and `dotenv-expand` 9 (previously `dotenv` 14 and `dotenv-expand` 5). If you have a value including `#` or `` ` ``, you will need to wrap them with quotes.
-
-```diff
--VITE_APP=ab#cd`ef
-+VITE_APP="ab#cd`ef"
-```
-
-For more details, see the [`dotenv`](https://github.com/motdotla/dotenv/blob/master/CHANGELOG.md) and [`dotenv-expand` changelog](https://github.com/motdotla/dotenv-expand/blob/master/CHANGELOG.md).
+- Default exports of CSS files (e.g `import style from './foo.css'`): Use the `?inline` query instead
+- `import.meta.globEager`: Use `import.meta.glob('*', { eager: true })` instead
+- `ssr.format: 'cjs`' and `legacy.buildSsrCjsExternalHeuristics` ([#13816](https://github.com/vitejs/vite/discussions/13816))
 
 ## Advanced
 
 There are some changes which only affect plugin/tool creators.
 
-- [[#11036] feat(client)!: remove never implemented hot.decline](https://github.com/vitejs/vite/issues/11036)
-  - use `hot.invalidate` instead
-- [[#9669] feat: align object interface for `transformIndexHtml` hook](https://github.com/vitejs/vite/issues/9669)
-  - use `order` instead of `enforce`
+- [[#14119] refactor!: merge `PreviewServerForHook` into `PreviewServer` type](https://github.com/vitejs/vite/pull/14119)
 
 Also there are other breaking changes which only affect few users.
 
-- [[#11101] feat(ssr)!: remove dedupe and mode support for CJS](https://github.com/vitejs/vite/pull/11101)
-  - You should migrate to the default ESM mode for SSR, CJS SSR support may be removed in the next Vite major.
-- [[#10475] feat: handle static assets in case-sensitive manner](https://github.com/vitejs/vite/pull/10475)
-  - Your project shouldn't rely on an OS ignoring file names casing.
-- [[#10996] fix!: make `NODE_ENV` more predictable](https://github.com/vitejs/vite/pull/10996)
-  - Refer to the PR for an explanation about this change.
-- [[#10903] refactor(types)!: remove facade type files](https://github.com/vitejs/vite/pull/10903)
+- [[#14098] fix!: avoid rewriting this (reverts #5312)](https://github.com/vitejs/vite/pull/14098)
+  - Top level `this` was rewritten to `globalThis` by default when building. This behavior is now removed.
+- [[#14231] feat!: add extension to internal virtual modules](https://github.com/vitejs/vite/pull/14231)
+  - Internal virtual modules' id now has an extension (`.js`).
 
-## Migration from v2
+## Migration from v3
 
-Check the [Migration from v2 Guide](https://v3.vitejs.dev/guide/migration.html) in the Vite v3 docs first to see the needed changes to port your app to Vite v3, and then proceed with the changes on this page.
+Check the [Migration from v3 Guide](https://v4.vitejs.dev/guide/migration.html) in the Vite v4 docs first to see the needed changes to port your app to Vite v4, and then proceed with the changes on this page.
