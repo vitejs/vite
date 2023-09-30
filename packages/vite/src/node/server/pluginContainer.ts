@@ -67,7 +67,6 @@ import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
 import {
-  arraify,
   cleanUrl,
   combineSourcemaps,
   createDebugger,
@@ -152,7 +151,7 @@ type PluginContext = Omit<
   | 'moduleIds'
 >
 
-export let parser = acorn.Parser.extend(importAssertions)
+export const parser = acorn.Parser.extend(importAssertions)
 
 export async function createPluginContainer(
   config: ResolvedConfig,
@@ -628,17 +627,7 @@ export async function createPluginContainer(
             optionsHook.call(minimalContext, options),
           )) || options
       }
-      if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          importAssertions,
-          ...(arraify(options.acornInjectPlugins) as any),
-        )
-      }
-      return {
-        acorn,
-        acornInjectPlugins: [],
-        ...options,
-      }
+      return options
     })(),
 
     getModuleInfo,
