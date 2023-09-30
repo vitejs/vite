@@ -60,7 +60,7 @@ import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 // @ts-expect-error untyped
-import { importAssertions } from 'acorn-import-assertions'
+import { importAttributes } from 'acorn-import-attributes'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
@@ -115,7 +115,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
-      assertions?: Record<string, string>
+      attributes?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
@@ -151,7 +151,7 @@ type PluginContext = Omit<
   | 'moduleIds'
 >
 
-export const parser = acorn.Parser.extend(importAssertions)
+export const parser = acorn.Parser.extend(importAttributes)
 
 export async function createPluginContainer(
   config: ResolvedConfig,
@@ -306,7 +306,7 @@ export async function createPluginContainer(
       id: string,
       importer?: string,
       options?: {
-        assertions?: Record<string, string>
+        attributes?: Record<string, string>
         custom?: CustomPluginOptions
         isEntry?: boolean
         skipSelf?: boolean
@@ -318,7 +318,7 @@ export async function createPluginContainer(
         skip.add(this._activePlugin)
       }
       let out = await container.resolveId(id, importer, {
-        assertions: options?.assertions,
+        attributes: options?.attributes,
         custom: options?.custom,
         isEntry: !!options?.isEntry,
         skip,
@@ -667,7 +667,7 @@ export async function createPluginContainer(
             : plugin.resolveId
         const result = await handleHookPromise(
           handler.call(ctx as any, rawId, importer, {
-            assertions: options?.assertions ?? {},
+            attributes: options?.attributes ?? {},
             custom: options?.custom,
             isEntry: !!options?.isEntry,
             ssr,

@@ -279,9 +279,9 @@ importers:
       acorn:
         specifier: ^8.10.0
         version: 8.10.0
-      acorn-import-assertions:
-        specifier: ^1.9.0
-        version: 1.9.0(acorn@8.10.0)
+      acorn-import-attributes:
+        specifier: ^1.9.2
+        version: 1.9.2(acorn@8.10.0)
       acorn-walk:
         specifier: ^8.2.0
         version: 8.2.0(acorn@8.10.0)
@@ -1095,10 +1095,6 @@ importers:
       normalize.css:
         specifier: ^8.0.1
         version: 8.0.1
-    devDependencies:
-      rollup:
-        specifier: 4.0.0-23
-        version: 4.0.0-23
 
   playground/resolve-config: {}
 
@@ -4450,8 +4446,8 @@ packages:
       mime-types: 2.1.35
       negotiator: 0.6.3
 
-  /acorn-import-assertions@1.9.0(acorn@8.10.0):
-    resolution: {integrity: sha512-cmMwop9x+8KFhxvKrKfPYmN6/pKTYYHBqLa0DfvVZcKMJWNyWLnaqND7dx/qn66R7ewM1UX5XMaDVP5wlVTaVA==}
+  /acorn-import-attributes@1.9.2(acorn@8.10.0):
+    resolution: {integrity: sha512-O+nfJwNolEA771IYJaiLWK1UAwjNsQmZbTRqqwBYxCgVQTmpFEMvBw6LOIQV0Me339L5UMVYFyRohGnGlQDdIQ==}
     peerDependencies:
       acorn: ^8
     dependencies:

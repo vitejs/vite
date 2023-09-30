@@ -296,13 +296,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           se: expEnd,
           n: specifier,
           d: dynamicIndex,
-          a: assertIndex,
+          a: attributeIndex,
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
 
-        // strip import assertions as we can process them ourselves
-        if (!isDynamicImport && assertIndex > -1) {
+        // strip import attributes as we can process them ourselves
+        if (!isDynamicImport && attributeIndex > -1) {
           str().remove(end + 1, expEnd)
         }
 

@@ -150,7 +150,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        assertions: Record<string, string>
+        attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
