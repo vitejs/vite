@@ -5,7 +5,7 @@ export interface ImportGlobOptions<
   /**
    * Import type for the import url.
    *
-   * @deprecated Use `query` instead, e.g. `as: 'url'` -> `query: '?url'`
+   * @deprecated Use `query` instead, e.g. `as: 'url'` -> `query: '?url', import: 'default'`
    */
   as?: AsType
   /**

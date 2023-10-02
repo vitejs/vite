@@ -72,6 +72,7 @@
   const rawModules = import.meta.glob('/dir/*.json', {
     query: '?raw',
     eager: true,
+    import: 'default',
   })
   const globraw = {}
   Object.keys(rawModules).forEach((key) => {
@@ -88,6 +89,7 @@
   const bazJson = import.meta.glob('/dir/*.json', {
     query: '?raw',
     eager: true,
+    import: 'default',
   })['/dir/baz.json']
   document.querySelector('.property-access').textContent = JSON.stringify(
     JSON.parse(bazJson),
@@ -100,6 +102,7 @@
   const relativeRawModules = import.meta.glob('../glob-import/dir/*.json', {
     query: '?raw',
     eager: true,
+    import: 'default',
   })
   const relativeGlobRaw = {}
   Object.keys(relativeRawModules).forEach((key) => {
