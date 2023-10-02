@@ -108,6 +108,19 @@ test('dep with optional peer dep', async () => {
   }
 })
 
+test('dep with optional peer dep submodule', async () => {
+  expect(
+    await page.textContent('.dep-with-optional-peer-dep-submodule'),
+  ).toMatch(`[success]`)
+  if (isServe) {
+    expect(browserErrors.map((error) => error.message)).toEqual(
+      expect.arrayContaining([
+        'Could not resolve "foobar/baz" imported by "@vitejs/test-dep-with-optional-peer-dep-submodule". Is it installed?',
+      ]),
+    )
+  }
+})
+
 test('dep with css import', async () => {
   expect(await getColor('.dep-linked-include')).toBe('red')
 })
