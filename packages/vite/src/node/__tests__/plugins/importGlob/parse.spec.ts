@@ -133,10 +133,7 @@ describe('parse positives', async () => {
             "/dir/**",
           ],
           "options": {
-            "query": {
-              "foo": "bar",
-              "raw": true,
-            },
+            "query": "?foo=bar&raw=true",
           },
           "start": 21,
         },
