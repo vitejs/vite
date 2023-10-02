@@ -275,8 +275,6 @@ async function nodeImport(
   if (id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
-    const targetWeb = resolveOptions.ssrConfig?.target === 'webworker'
-
     const resolved = tryNodeResolve(
       id,
       importer,
@@ -286,7 +284,7 @@ async function nodeImport(
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,
-      targetWeb,
+      false,
       undefined,
       true,
     )
