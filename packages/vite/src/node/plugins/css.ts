@@ -827,10 +827,13 @@ export function getEmptyChunkReplacer(
     .join('|')
     .replace(/\./g, '\\.')
 
+  // require and import calls might be chained by minifier using the comma operator
+  // in this case we have to keep one comma
+  // if a next require is chained or add a semicolon to terminate the chain.
   const emptyChunkRE = new RegExp(
     outputFormat === 'es'
-      ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
-      : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
+      ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];`
+      : `(\\b|,\\s*)require\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\)(;|,)`,
     'g',
   )
 
@@ -838,7 +841,9 @@ export function getEmptyChunkReplacer(
     code.replace(
       emptyChunkRE,
       // remove css import while preserving source map location
-      (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`,
+      (m) => outputFormat === 'es'
+        ? `/* empty css ${''.padEnd(m.length - 15)}*/`
+        : `${m.at(-1)}/* empty css ${''.padEnd(m.length - 16)}*/`,
     )
 }
 
