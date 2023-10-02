@@ -65,6 +65,9 @@
 <h2>Import from dependency with optional peer dep</h2>
 <div class="dep-with-optional-peer-dep"></div>
 
+<h2>Import from dependency with optional peer dep submodule</h2>
+<div class="dep-with-optional-peer-dep-submodule"></div>
+
 <h2>Externalize known non-js files in optimize included dep</h2>
 <div class="externalize-known-non-js"></div>
 
@@ -203,6 +206,16 @@
   text('.dep-with-optional-peer-dep', callItself())
   // expect error as optional peer dep not installed
   callPeerDep()
+</script>
+
+<script type="module">
+  import {
+    callItself,
+    callPeerDepSubmodule,
+  } from '@vitejs/test-dep-with-optional-peer-dep-submodule'
+  text('.dep-with-optional-peer-dep-submodule', callItself())
+  // expect error as optional peer dep not installed
+  callPeerDepSubmodule()
 </script>
 
 <script type="module">

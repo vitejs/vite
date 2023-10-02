@@ -732,9 +732,11 @@ export function tryNodeResolve(
     ) {
       const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
       if (mainPkg) {
+        const pkgName = getNpmPackageName(id)
         if (
-          mainPkg.peerDependencies?.[id] &&
-          mainPkg.peerDependenciesMeta?.[id]?.optional
+          pkgName != null &&
+          mainPkg.peerDependencies?.[pkgName] &&
+          mainPkg.peerDependenciesMeta?.[pkgName]?.optional
         ) {
           return {
             id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
