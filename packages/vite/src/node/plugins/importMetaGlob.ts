@@ -31,7 +31,6 @@ import {
   transformStableResult,
 } from '../utils'
 import type { Logger } from '../logger'
-import { rawRE, urlRE } from './asset'
 
 const { isMatch, scan } = micromatch
 
@@ -183,9 +182,12 @@ function parseGlobOptions(
   }
 
   if (opts.as && logger) {
+    const importSuggestion = forceDefaultAs.includes(opts.as)
+      ? `, import: 'default'`
+      : ''
     logger.warn(
       colors.yellow(
-        `The glob option "as" has been deprecated in favour of "query". Please update \`as: '${opts.as}'\` to \`query: '?${opts.as}'\`.`,
+        `The glob option "as" has been deprecated in favour of "query". Please update \`as: '${opts.as}'\` to \`query: '?${opts.as}'${importSuggestion}\`.`,
       ),
     )
   }
@@ -210,31 +212,7 @@ function parseGlobOptions(
 
   if (opts.query && opts.query[0] !== '?') opts.query = `?${opts.query}`
 
-  // validate `import` option based on `query` option (`as` is already handled above)
-  if (!opts.as && opts.query) {
-    if (urlRE.test(opts.query)) {
-      errorIfImportIsNotDefault(opts.import, '?url', optsStartIndex)
-      opts.import = opts.import || 'default'
-    }
-    if (rawRE.test(opts.query)) {
-      errorIfImportIsNotDefault(opts.import, '?raw', optsStartIndex)
-      opts.import = opts.import || 'default'
-    }
-  }
-
   return opts as ParsedGeneralImportGlobOptions
-}
-
-function errorIfImportIsNotDefault(
-  importOpt: string | undefined,
-  querySyntax: string,
-  optsStartIndex: number,
-) {
-  if (importOpt && importOpt !== 'default' && importOpt !== '*')
-    throw err(
-      `Option "import" can only be "default" or "*" when "query" contains "${querySyntax}", but got "${importOpt}"`,
-      optsStartIndex,
-    )
 }
 
 export async function parseImportGlob(

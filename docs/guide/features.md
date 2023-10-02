@@ -448,9 +448,11 @@ You can also use the `query` option to provide queries to imports, for example, 
 ```ts
 const moduleStrings = import.meta.glob('./dir/*.svg', {
   query: '?raw',
+  import: 'default',
 })
 const moduleUrls = import.meta.glob('./dir/*.svg', {
   query: '?url',
+  import: 'default',
 })
 ```
 
