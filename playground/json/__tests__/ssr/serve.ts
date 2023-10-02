@@ -3,7 +3,7 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import { ports, rootDir } from '~utils'
+import { hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports.json
 
@@ -11,7 +11,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)
 
   const { createServer } = await import(path.resolve(rootDir, 'server.js'))
-  const { app, vite } = await createServer(rootDir)
+  const { app, vite } = await createServer(rootDir, hmrPorts.json)
 
   return new Promise((resolve, reject) => {
     try {

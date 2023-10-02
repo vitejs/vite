@@ -171,6 +171,7 @@ export async function preview(
       etag: true,
       dev: true,
       single: config.appType === 'spa',
+      ignores: false,
       setHeaders(res) {
         if (headers) {
           for (const name in headers) {

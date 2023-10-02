@@ -386,6 +386,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 
 export function tryStatSync(file: string): fs.Stats | undefined {
   try {
+    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
     return fs.statSync(file, { throwIfNoEntry: false })
   } catch {
     // Ignore errors
@@ -501,12 +502,11 @@ export function generateCodeFrame(
 }
 
 export function isFileReadable(filename: string): boolean {
-  try {
-    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
-    if (!fs.statSync(filename, { throwIfNoEntry: false })) {
-      return false
-    }
+  if (!tryStatSync(filename)) {
+    return false
+  }
 
+  try {
     // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
 
@@ -606,9 +606,9 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
-  // Skip if using Node <16.18 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
+  // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
   const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 16 || (nodeVersion[0] === 16 && nodeVersion[1] < 18)) {
+  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
     safeRealpathSync = fs.realpathSync
     return
   }
