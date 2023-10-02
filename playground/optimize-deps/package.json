@@ -30,6 +30,7 @@
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "@vitejs/test-dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "@vitejs/test-dep-with-optional-peer-dep": "file:./dep-with-optional-peer-dep",
+    "@vitejs/test-dep-with-optional-peer-dep-submodule": "file:./dep-with-optional-peer-dep-submodule",
     "@vitejs/test-dep-non-optimized": "file:./dep-non-optimized",
     "@vitejs/test-added-in-entries": "file:./added-in-entries",
     "lodash-es": "^4.17.21",
