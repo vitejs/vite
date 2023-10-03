@@ -1,13 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
+import type { OutputBundle, OutputChunk } from 'rollup'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
   cssPlugin,
   cssUrlRE,
+  getEmptyChunkReplacer,
   hoistAtRules,
+  removePureCssChunks,
 } from '../../plugins/css'
 
 describe('search css url function', () => {
@@ -257,4 +260,143 @@ describe('convertTargets', () => {
       safari: 852224,
     })
   })
+})
+
+describe('removePureCssChunks', () => {
+  test('import of removed chunk is dropped', () => {
+    const bundle: OutputBundle = {
+      'main.js': {
+        code: 'import "some-module";\nimport "pure_css_chunk.js";\nimport "other-module";\n',
+        imports: ['pure_css_chunk.js', 'some-module', 'other-module'],
+        type: 'chunk',
+        viteMetadata: {
+          importedAssets: new Set<string>(),
+          importedCss: new Set<string>(),
+        },
+      } as any as OutputChunk,
+      'pure_css_chunk.js': {
+        type: 'chunk',
+        code: '',
+        imports: [],
+        viteMetadata: {
+          importedAssets: new Set<string>(),
+          importedCss: new Set<string>(),
+        },
+      } as any as OutputChunk,
+    }
+
+    removePureCssChunks(bundle, ['pure_css_chunk.js'], 'es')
+
+    const chunk = bundle['main.js'] as OutputChunk
+    expect(chunk.code).toMatchSnapshot()
+    // import is removed
+    expect(chunk.imports).toEqual(['some-module', 'other-module'])
+  })
+
+  test('require of removed chunk is dropped', () => {
+    const bundle: OutputBundle = {
+      'main.js': {
+        code: 'require("some-module");\nrequire("pure_css_chunk.js");\nrequire("other-module");\n',
+        imports: ['pure_css_chunk.js', 'some-module', 'other-module'],
+        type: 'chunk',
+        viteMetadata: {
+          importedAssets: new Set<string>(),
+          importedCss: new Set<string>(),
+        },
+      } as any as OutputChunk,
+      'pure_css_chunk.js': {
+        type: 'chunk',
+        code: '',
+        imports: [],
+        viteMetadata: {
+          importedAssets: new Set<string>(),
+          importedCss: new Set<string>(),
+        },
+      } as any as OutputChunk,
+    }
+
+    removePureCssChunks(bundle, ['pure_css_chunk.js'], 'cjs')
+
+    const chunk = bundle['main.js'] as OutputChunk
+    expect(chunk.code).toMatchSnapshot()
+    // import is removed
+    expect(chunk.imports).toEqual(['some-module', 'other-module'])
+  })
+
+  test('imported assets of css chunk are transfered', () => {
+    const bundle: OutputBundle = {
+      'main.js': {
+        code: 'import "some-module";\nimport "pure_css_chunk.js";\nimport "other-module";\n',
+        imports: ['pure_css_chunk.js', 'some-module', 'other-module'],
+        type: 'chunk',
+        viteMetadata: {
+          importedAssets: new Set<string>(),
+          importedCss: new Set<string>(),
+        },
+      } as any as OutputChunk,
+      'pure_css_chunk.js': {
+        type: 'chunk',
+        code: '',
+        imports: [],
+        viteMetadata: {
+          importedAssets: new Set<string>(['some-asset.svg']),
+          importedCss: new Set<string>(['some-style.css']),
+        },
+      } as any as OutputChunk,
+    }
+
+    removePureCssChunks(bundle, ['pure_css_chunk.js'], 'es')
+
+    const chunk = bundle['main.js'] as OutputChunk
+    expect(chunk.code).toMatchSnapshot()
+    // import is removed
+    expect(chunk.imports).toEqual(['some-module', 'other-module'])
+    // metadata is transfered
+    expect(chunk.viteMetadata?.importedAssets.has('some-asset.svg')).toBe(true)
+    expect(chunk.viteMetadata?.importedCss.has('some-style.css')).toBe(true)
+  })
+})
+
+describe('getEmptyChunkReplacer', () => {
+  test('replaces import call', () => {
+    const code =
+      'import "some-module";\nimport "pure_css_chunk.js";\nimport "other-module";'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    expect(replacer(code)).toMatchSnapshot()
+  })
+
+  test('replaces require call', () => {
+    const code =
+      'require("some-module");\nrequire("pure_css_chunk.js");\nrequire("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchSnapshot()
+  })
+
+  test('replaces require call in minified code without new lines', () => {
+    const code =
+      'require("some-module");require("pure_css_chunk.js");require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchSnapshot()
+  })
+
+  /* Currently broken as the code still contains the css chunk
+  test('replaces require call in minified code that uses comma operator', () => {
+    const code = 'require("some-module"),require("pure_css_chunk.js"),require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode).toMatchSnapshot()
+    // So there should be no pure css chunk anymore
+    expect(newCode.match(/pure_css_chunk\.js/)).toBeNull()
+  }) */
+
+  /* Currently broken as the code is not valid
+  test('replaces require call in minified code that uses comma operator followed by assignment', () => {
+    const code = 'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchSnapshot()
+  }) */
 })
