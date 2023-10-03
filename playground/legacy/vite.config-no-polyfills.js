@@ -24,6 +24,6 @@ export default defineConfig({
     },
   },
   testConfig: {
-    baseRoute: '/no-polyfills/',
+    previewBase: '/no-polyfills/',
   },
 })
