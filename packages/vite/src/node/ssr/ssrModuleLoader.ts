@@ -5,6 +5,7 @@ import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
   isBuiltin,
+  isFilePathESM,
   unwrapId,
   usingDynamicImport,
 } from '../utils'
@@ -26,6 +27,17 @@ interface SSRContext {
 }
 
 type SSRModule = Record<string, any>
+
+interface NodeImportResolveOptions
+  extends InternalResolveOptionsWithOverrideConditions {
+  legacyProxySsrExternalModules?: boolean
+}
+
+interface SSRImportMetadata {
+  isDynamicImport?: boolean
+  isExportAll?: boolean
+  namedImportSpecifiers?: string[]
+}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const AsyncFunction = async function () {}.constructor as typeof Function
@@ -125,7 +137,7 @@ async function instantiateModule(
     root,
   } = server.config
 
-  const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
+  const resolveOptions: NodeImportResolveOptions = {
     mainFields: ['main'],
     browserField: true,
     conditions: [],
@@ -136,16 +148,18 @@ async function instantiateModule(
     isBuild: false,
     isProduction,
     root,
+    legacyProxySsrExternalModules:
+      server.config.legacy?.proxySsrExternalModules,
   }
 
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
-  const ssrImport = async (dep: string) => {
+  const ssrImport = async (dep: string, metadata?: SSRImportMetadata) => {
     try {
       if (dep[0] !== '.' && dep[0] !== '/') {
-        return await nodeImport(dep, mod.file!, resolveOptions)
+        return await nodeImport(dep, mod.file!, resolveOptions, metadata)
       }
       // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
       dep = unwrapId(dep)
@@ -184,7 +198,7 @@ async function instantiateModule(
     if (dep[0] === '.') {
       dep = path.posix.resolve(path.dirname(url), dep)
     }
-    return ssrImport(dep)
+    return ssrImport(dep, { isDynamicImport: true })
   }
 
   function ssrExportAll(sourceModule: any) {
@@ -265,10 +279,12 @@ async function instantiateModule(
 async function nodeImport(
   id: string,
   importer: string,
-  resolveOptions: InternalResolveOptionsWithOverrideConditions,
+  resolveOptions: NodeImportResolveOptions,
+  metadata?: SSRImportMetadata,
 ) {
   let url: string
-  if (id.startsWith('data:') || isBuiltin(id)) {
+  const isRuntimeHandled = id.startsWith('data:') || isBuiltin(id)
+  if (isRuntimeHandled) {
     url = id
   } else {
     const resolved = tryNodeResolve(
@@ -296,7 +312,17 @@ async function nodeImport(
   }
 
   const mod = await dynamicImport(url)
-  return proxyESM(mod)
+
+  if (resolveOptions.legacyProxySsrExternalModules) {
+    return proxyESM(mod)
+  } else if (isRuntimeHandled) {
+    return mod
+  } else {
+    // NOTE: Bun is able to handle the interop, should we skip for Bun?
+    // Also, how does Deno work here?
+    analyzeImportedModDifference(mod, url, id, metadata)
+    return proxyGuardOnlyEsm(mod, id)
+  }
 }
 
 // rollup-style default import interop for cjs
@@ -323,4 +349,59 @@ function proxyESM(mod: any) {
 
 function isPrimitive(value: any) {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
+}
+
+/**
+ * Vite converts `import { } from 'foo'` to `const _ = __vite_ssr_import__('foo')`.
+ * Top-level imports and dynamic imports work slightly differently in Node.js.
+ * This function normalizes the differences so it matches prod behaviour.
+ */
+function analyzeImportedModDifference(
+  mod: any,
+  filePath: string,
+  rawId: string,
+  metadata?: SSRImportMetadata,
+) {
+  // No normalization needed if the user already dynamic imports this module
+  if (metadata?.isDynamicImport) return
+  // If file path is ESM, everything should be fine
+  if (isFilePathESM(filePath)) return
+
+  // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
+  // If the user named imports a specifier that can't be analyzed, error.
+  const modExports = Object.keys(mod)
+
+  if (metadata?.namedImportSpecifiers?.length) {
+    const missingBindings = metadata.namedImportSpecifiers.filter(
+      (s) => !(s in modExports),
+    )
+    if (missingBindings.length) {
+      const lastBinding = missingBindings[missingBindings.length - 1]
+      // Copied from Node.js
+      throw new SyntaxError(`\
+Named export '${lastBinding}' not found. The requested module '${rawId}' is a CommonJS module, which may not support all module.exports as named exports.
+CommonJS modules can always be imported via the default export, for example using:
+
+import pkg from '${rawId}';
+const {${missingBindings.join(', ')}} = pkg;
+`)
+    }
+  }
+}
+
+/**
+ * Guard invalid named exports only, similar to how Node.js errors for top-level imports.
+ * But since we transform as dynamic imports, we need to emulate the error manually.
+ */
+function proxyGuardOnlyEsm(mod: any, rawId: string) {
+  return new Proxy(mod, {
+    get(mod, prop) {
+      if (prop !== 'then' && !(prop in mod)) {
+        throw new SyntaxError(
+          `The requested module '${rawId}' does not provide an export named '${prop.toString()}'`,
+        )
+      }
+      return mod[prop]
+    },
+  })
 }

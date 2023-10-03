@@ -409,6 +409,24 @@ export function lookupFile(
   }
 }
 
+export function isFilePathESM(filePath: string): boolean {
+  if (/\.m[jt]s$/.test(filePath)) {
+    return true
+  } else if (/\.c[jt]s$/.test(filePath)) {
+    return false
+  } else {
+    // check package.json for type: "module" and set `isESM` to true
+    try {
+      const pkg = lookupFile(path.dirname(filePath), ['package.json'])
+      return (
+        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
+      )
+    } catch {
+      return false
+    }
+  }
+}
+
 const splitRE = /\r?\n/
 
 const range: number = 2
