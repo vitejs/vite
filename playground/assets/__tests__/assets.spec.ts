@@ -405,7 +405,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })
@@ -472,6 +472,6 @@ test.skip('url() contains file in publicDir, as inline style', async () => {
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
-    /<img class="noscript" src="\/foo\/assets\/asset-\w+\.png" \/>/,
+    /<img class="noscript" src="\/foo\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })

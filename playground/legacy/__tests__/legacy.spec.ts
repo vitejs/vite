@@ -85,7 +85,7 @@ test('should load dynamic import with css', async () => {
 
 test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg',
+    isBuild ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
 })
 
