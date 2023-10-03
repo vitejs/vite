@@ -13,7 +13,7 @@ import {
 } from '~utils'
 
 const outerAssetMatch = isBuild
-  ? /\/dev\/assets\/logo-\w{8}\.png/
+  ? /\/dev\/assets\/logo-[-\w]{8}\.png/
   : /\/dev\/@fs\/.+?\/images\/logo\.png/
 
 test('should have no 404s', () => {

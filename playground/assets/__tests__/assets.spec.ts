@@ -19,7 +19,7 @@ import {
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/assets\/asset-\w{8}\.png/
+  ? /\/foo\/assets\/asset-[-\w]{8}\.png/
   : '/foo/nested/asset.png'
 
 const iconMatch = `/foo/icon.png`
@@ -245,7 +245,7 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset-\w{8}\.png \dx/
+          ? /\/foo\/assets\/asset-[-\w]{8}\.png \dx/
           : /\/foo\/nested\/asset.png \dx/,
       )
     })
@@ -366,7 +366,7 @@ test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
     isBuild
-      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
+      ? /\/foo\/assets\/asset-[-\w]{8}\.png\?abc/
       : '/foo/nested/asset.png?abc',
   )
 })
@@ -377,7 +377,7 @@ test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async ()
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
     isBuild
-      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
+      ? /\/foo\/assets\/asset-[-\w]{8}\.png\?abc/
       : '/foo/nested/asset.png?abc',
   )
 })

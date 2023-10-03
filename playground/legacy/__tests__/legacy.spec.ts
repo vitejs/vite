@@ -127,7 +127,7 @@ describe.runIf(isBuild)('build', () => {
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('"structuredClone"')
   })
 
   test('should generate legacy sourcemap file', async () => {
