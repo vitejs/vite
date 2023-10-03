@@ -17,6 +17,7 @@ export default defineConfig({
   ],
 
   build: {
+    outDir: 'dist/no-polyfills',
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'no-polyfills.html'),
