@@ -1074,18 +1074,6 @@ async function bundleConfigFile(
               false,
             )?.id
           }
-          const isESMFile = (id: string): boolean => {
-            if (id.endsWith('.mjs')) return true
-            if (id.endsWith('.cjs')) return false
-
-            const nearestPackageJson = findNearestPackageData(
-              path.dirname(id),
-              packageCache,
-            )
-            return (
-              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
-            )
-          }
 
           // externalize bare imports
           build.onResolve(
@@ -1133,7 +1121,11 @@ async function bundleConfigFile(
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
-              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+              if (
+                idFsPath &&
+                !isImport &&
+                isFilePathESM(idFsPath, packageCache)
+              ) {
                 throw new Error(
                   `${JSON.stringify(
                     id,

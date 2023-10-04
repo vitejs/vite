@@ -32,7 +32,11 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
-import { resolvePackageData } from './packages'
+import {
+  type PackageCache,
+  findNearestPackageData,
+  resolvePackageData,
+} from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -409,18 +413,19 @@ export function lookupFile(
   }
 }
 
-export function isFilePathESM(filePath: string): boolean {
+export function isFilePathESM(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
   if (/\.m[jt]s$/.test(filePath)) {
     return true
   } else if (/\.c[jt]s$/.test(filePath)) {
     return false
   } else {
-    // check package.json for type: "module" and set `isESM` to true
+    // check package.json for type: "module"
     try {
-      const pkg = lookupFile(path.dirname(filePath), ['package.json'])
-      return (
-        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
-      )
+      const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+      return pkg?.data.type === 'module'
     } catch {
       return false
     }

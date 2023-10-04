@@ -13,6 +13,7 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { PackageCache } from '../packages'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -31,6 +32,7 @@ type SSRModule = Record<string, any>
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
   legacyProxySsrExternalModules?: boolean
+  packageCache?: PackageCache
 }
 
 interface SSRImportMetadata {
@@ -150,6 +152,7 @@ async function instantiateModule(
     root,
     legacyProxySsrExternalModules:
       server.config.legacy?.proxySsrExternalModules,
+    packageCache: server.config.packageCache,
   }
 
   // Since dynamic imports can happen in parallel, we need to
@@ -318,9 +321,13 @@ async function nodeImport(
   } else if (isRuntimeHandled) {
     return mod
   } else {
-    // NOTE: Bun is able to handle the interop, should we skip for Bun?
-    // Also, how does Deno work here?
-    analyzeImportedModDifference(mod, url, id, metadata)
+    analyzeImportedModDifference(
+      mod,
+      url,
+      id,
+      metadata,
+      resolveOptions.packageCache,
+    )
     return proxyGuardOnlyEsm(mod, id)
   }
 }
@@ -361,19 +368,18 @@ function analyzeImportedModDifference(
   filePath: string,
   rawId: string,
   metadata?: SSRImportMetadata,
+  packageCache?: PackageCache,
 ) {
   // No normalization needed if the user already dynamic imports this module
   if (metadata?.isDynamicImport) return
   // If file path is ESM, everything should be fine
-  if (isFilePathESM(filePath)) return
+  if (isFilePathESM(filePath, packageCache)) return
 
   // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
   // If the user named imports a specifier that can't be analyzed, error.
-  const modExports = Object.keys(mod)
-
   if (metadata?.namedImportSpecifiers?.length) {
     const missingBindings = metadata.namedImportSpecifiers.filter(
-      (s) => !(s in modExports),
+      (s) => !(s in mod),
     )
     if (missingBindings.length) {
       const lastBinding = missingBindings[missingBindings.length - 1]
