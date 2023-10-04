@@ -1,3 +1,24 @@
+## 5.0.0-beta.0 (2023-10-04)
+
+* feat(create-vite): update to vite 5.0 beta (#14534) ([97c58e0](https://github.com/vitejs/vite/commit/97c58e0)), closes [#14534](https://github.com/vitejs/vite/issues/14534)
+* fix(create-vite): remove non-standard style (#14451) ([8349d4e](https://github.com/vitejs/vite/commit/8349d4e)), closes [#14451](https://github.com/vitejs/vite/issues/14451)
+* fix(create-vite): remove redundant tsconfig include configuration (#14256) ([6ea34cc](https://github.com/vitejs/vite/commit/6ea34cc)), closes [#14256](https://github.com/vitejs/vite/issues/14256)
+* fix(deps): update all non-major dependencies (#14092) ([68638f7](https://github.com/vitejs/vite/commit/68638f7)), closes [#14092](https://github.com/vitejs/vite/issues/14092)
+* fix(deps): update all non-major dependencies (#14460) ([b77bff0](https://github.com/vitejs/vite/commit/b77bff0)), closes [#14460](https://github.com/vitejs/vite/issues/14460)
+* fix(deps): update all non-major dependencies (#14510) ([eb204fd](https://github.com/vitejs/vite/commit/eb204fd)), closes [#14510](https://github.com/vitejs/vite/issues/14510)
+* fix(template): eliminate the error that occurs when enabling eslint-plugin-markdown (#13942) ([6251a66](https://github.com/vitejs/vite/commit/6251a66)), closes [#13942](https://github.com/vitejs/vite/issues/13942)
+* chore: ensure create-vite has unbuild dev dep (#14419) ([881d080](https://github.com/vitejs/vite/commit/881d080)), closes [#14419](https://github.com/vitejs/vite/issues/14419)
+* chore: update manually bumped deps (#14430) ([995c4b6](https://github.com/vitejs/vite/commit/995c4b6)), closes [#14430](https://github.com/vitejs/vite/issues/14430)
+* chore(create-vite): add npm badge (#14251) ([68bd0a8](https://github.com/vitejs/vite/commit/68bd0a8)), closes [#14251](https://github.com/vitejs/vite/issues/14251)
+* chore(deps): update all non-major dependencies (#13938) ([a1b519e](https://github.com/vitejs/vite/commit/a1b519e)), closes [#13938](https://github.com/vitejs/vite/issues/13938)
+* chore(deps): update all non-major dependencies (#14034) ([b0ebf5c](https://github.com/vitejs/vite/commit/b0ebf5c)), closes [#14034](https://github.com/vitejs/vite/issues/14034)
+* chore(templates): alias react to preact/compat in tsconfig (#14262) ([c796959](https://github.com/vitejs/vite/commit/c796959)), closes [#14262](https://github.com/vitejs/vite/issues/14262)
+* docs: detect Bun package manager in `create-vite` (#14017) ([4d3cdd1](https://github.com/vitejs/vite/commit/4d3cdd1)), closes [#14017](https://github.com/vitejs/vite/issues/14017)
+* docs: remove npm@6 commands (#14240) ([65b6906](https://github.com/vitejs/vite/commit/65b6906)), closes [#14240](https://github.com/vitejs/vite/issues/14240)
+* feat!: bump minimum node version to 18 (#14030) ([2c1a45c](https://github.com/vitejs/vite/commit/2c1a45c)), closes [#14030](https://github.com/vitejs/vite/issues/14030)
+
+
+
 ## <small>4.4.1 (2023-07-20)</small>
 
 * chore(deps): update dependency prettier to v3 (#13759) ([5a56941](https://github.com/vitejs/vite/commit/5a56941)), closes [#13759](https://github.com/vitejs/vite/issues/13759)
