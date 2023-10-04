@@ -259,7 +259,7 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported
 
-## SSR Resolve conditions
+## SSR Resolve Conditions
 
 By default package entry resolution will use the conditions set in [`resolve.conditions`](../config/shared-options.md#resolve-conditions) for the SSR build. You can use [`ssr.resolve.conditions`](../config/ssr-options.md#ssr-resolve-conditions) and [`ssr.resolve.externalConditions`](../config/ssr-options.md#ssr-resolve-externalconditions) to customize this behavior.
 
