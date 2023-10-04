@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.5.0",
+    "axios": "^1.5.1",
     "clipboard": "^2.0.11",
     "@vitejs/test-dep-alias-using-absolute-path": "file:./dep-alias-using-absolute-path",
     "@vitejs/test-dep-cjs-browser-field-bare": "file:./dep-cjs-browser-field-bare",
