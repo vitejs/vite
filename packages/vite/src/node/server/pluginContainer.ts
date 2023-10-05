@@ -32,7 +32,8 @@ SOFTWARE.
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { rollup, VERSION as rollupVersion } from 'rollup'
+import { VERSION as rollupVersion } from 'rollup'
+import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AstNode,
   AsyncPluginHooks,
@@ -151,28 +152,6 @@ export type RollupParseFunc = (
   input: string,
   options?: { allowReturnOutsideFunction?: boolean },
 ) => AstNode
-
-export const getRollupParseFunc = async (): Promise<RollupParseFunc> => {
-  let rollupParse!: RollupParseFunc
-  await rollup({
-    input: 'dummy',
-    plugins: [
-      {
-        name: 'get-parse',
-        resolveId(id) {
-          return id
-        },
-        load(id) {
-          return ''
-        },
-        transform(code, id) {
-          rollupParse = this.parse
-        },
-      },
-    ],
-  })
-  return rollupParse
-}
 
 export async function createPluginContainer(
   config: ResolvedConfig,
@@ -297,8 +276,6 @@ export async function createPluginContainer(
     }
   }
 
-  const rollupParseFunc = await getRollupParseFunc()
-
   // we should create a new context for each async hook pipeline so that the
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
@@ -317,7 +294,7 @@ export async function createPluginContainer(
     }
 
     parse(code: string, opts: any) {
-      return rollupParseFunc(code, opts)
+      return rollupParseAst(code, opts)
     }
 
     async resolve(
