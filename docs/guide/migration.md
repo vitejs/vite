@@ -4,6 +4,12 @@
 
 Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.js 18 / 20+ is now required.
 
+## Rollup 4
+
+Vite is now using Rollup 4. See the [Rollup 4 release notes here](https://github.com/rollup/rollup/releases/tag/v4.0.0).
+
+Rollup 4 is mostly compatible with Rollup 3. If you are using custom rollupOptions in your project and encounter issues, refer to the Rollup migration guide to upgrade your config.
+
 ## Deprecate CJS Node API
 
 The CJS Node API of Vite is deprecated. When calling `require('vite')`, a deprecation warning is now logged. You should update your files or frameworks to import the ESM build of Vite instead.
