@@ -1,3 +1,19 @@
+## 5.0.0-beta.4 (2023-10-02)
+
+* fix: allow path ending with .html to fallback to index.html ([dae6d0a](https://github.com/vitejs/vite/commit/dae6d0a))
+* fix: handle fs.realpath.native MAX_PATH issue for Node.js <18.10 (#14487) ([17c5928](https://github.com/vitejs/vite/commit/17c5928)), closes [#14487](https://github.com/vitejs/vite/issues/14487)
+* fix: update .html fallback in MPA ([b5637a7](https://github.com/vitejs/vite/commit/b5637a7))
+* fix(analysis): warnings for dynamic imports that use static template literals (#14458) ([ec7ee22](https://github.com/vitejs/vite/commit/ec7ee22)), closes [#14458](https://github.com/vitejs/vite/issues/14458)
+* fix(hmr): dev mode reduce unnecessary restart (#14426) ([6f9d39d](https://github.com/vitejs/vite/commit/6f9d39d)), closes [#14426](https://github.com/vitejs/vite/issues/14426)
+* fix(import-analysis): preserve importedUrls import order (#14465) ([99b0645](https://github.com/vitejs/vite/commit/99b0645)), closes [#14465](https://github.com/vitejs/vite/issues/14465)
+* fix(preview): allow path containing . to fallback to index.html ([fddc151](https://github.com/vitejs/vite/commit/fddc151))
+* fix(resolve): support submodules of optional peer deps (#14489) ([f80ff77](https://github.com/vitejs/vite/commit/f80ff77)), closes [#14489](https://github.com/vitejs/vite/issues/14489)
+* feat: show warning to discourage putting process/global to `define` option (#14447) ([83a56f7](https://github.com/vitejs/vite/commit/83a56f7)), closes [#14447](https://github.com/vitejs/vite/issues/14447)
+* feat(terser): add `maxWorkers` option for terserOptions (#13858) ([884fc3d](https://github.com/vitejs/vite/commit/884fc3d)), closes [#13858](https://github.com/vitejs/vite/issues/13858)
+* test(ssr): add import and export ordering snapshot (#14468) ([ca34c64](https://github.com/vitejs/vite/commit/ca34c64)), closes [#14468](https://github.com/vitejs/vite/issues/14468)
+
+
+
 ## 5.0.0-beta.3 (2023-09-25)
 
 * refactor: remove CJS ssr output format (#13944) ([2f60b9e](https://github.com/vitejs/vite/commit/2f60b9e)), closes [#13944](https://github.com/vitejs/vite/issues/13944)

@@ -62,11 +62,6 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
-/**
- * current test using vite inline config
- * when using serve.[jt]s is not possible to get the config
- */
-export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -78,22 +73,6 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
-
-declare module 'vite' {
-  interface InlineConfig {
-    testConfig?: {
-      // relative base output use relative path
-      // rewrite the url to truth file path
-      baseRoute: string
-    }
-  }
-
-  interface UserConfig {
-    testConfig?: {
-      baseRoute: string
-    }
-  }
-}
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -259,7 +238,6 @@ export async function startDefaultServe(): Promise<void> {
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
     const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
     viteServer = server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
     const devBase = server.config.base
@@ -278,7 +256,6 @@ export async function startDefaultServe(): Promise<void> {
     })
     options.plugins = [resolvedPlugin()]
     const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
     const rollupOutput = await build(testConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
@@ -288,6 +265,10 @@ export async function startDefaultServe(): Promise<void> {
     }
     if (config && config.__test__) {
       config.__test__()
+    }
+    // TODO: use something like ConfigEnv['cmd'] https://github.com/vitejs/vite/pull/12298
+    if (config?.testConfig?.previewBase) {
+      testConfig.base = config.testConfig.previewBase
     }
     const _nodeEnv = process.env.NODE_ENV
     const previewServer = await preview(testConfig)
@@ -369,5 +350,16 @@ declare module 'vite' {
      * runs after build and before preview
      */
     __test__?: () => void
+    /**
+     * special test only configs
+     */
+    testConfig?: {
+      /**
+       * a base used for preview
+       *
+       * useful for relative base tests
+       */
+      previewBase?: string
+    }
   }
 }

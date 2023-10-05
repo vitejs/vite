@@ -119,13 +119,6 @@ export interface ServerOptions extends CommonServerOptions {
   sourcemapIgnoreList?:
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   *
-   * @deprecated Use optimizeDeps.force instead, this option may be removed
-   * in a future minor version without following semver
-   */
-  force?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
