@@ -133,7 +133,7 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5
       rollup:
-        specifier: 4.0.0
+        specifier: ^4.0.0
         version: 4.0.0
       simple-git-hooks:
         specifier: ^2.9.0
@@ -230,7 +230,7 @@ importers:
         specifier: ^8.4.31
         version: 8.4.31
       rollup:
-        specifier: 4.0.0
+        specifier: ^4.0.0
         version: 4.0.0
     optionalDependencies:
       fsevents:
