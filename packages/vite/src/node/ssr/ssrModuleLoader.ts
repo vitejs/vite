@@ -123,19 +123,23 @@ async function instantiateModule(
     isProduction,
     resolve: { dedupe, preserveSymlinks },
     root,
+    ssr,
   } = server.config
+
+  const overrideConditions = ssr.resolve?.externalConditions || []
 
   const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
     mainFields: ['main'],
     browserField: true,
     conditions: [],
-    overrideConditions: ['production', 'development'],
+    overrideConditions: [...overrideConditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
     isBuild: false,
     isProduction,
     root,
+    ssrConfig: ssr,
   }
 
   // Since dynamic imports can happen in parallel, we need to
@@ -281,6 +285,8 @@ async function nodeImport(
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,
       false,
+      undefined,
+      true,
     )
     if (!resolved) {
       const err: any = new Error(

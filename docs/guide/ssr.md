@@ -259,6 +259,10 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported
 
+## SSR Resolve Conditions
+
+By default package entry resolution will use the conditions set in [`resolve.conditions`](../config/shared-options.md#resolve-conditions) for the SSR build. You can use [`ssr.resolve.conditions`](../config/ssr-options.md#ssr-resolve-conditions) and [`ssr.resolve.externalConditions`](../config/ssr-options.md#ssr-resolve-externalconditions) to customize this behavior.
+
 ## Vite CLI
 
 The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps. You can add your SSR middlewares to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).

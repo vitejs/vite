@@ -173,10 +173,17 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
+      // end user can configure different conditions for ssr and client.
+      // falls back to client conditions if no ssr conditions supplied
+      const ssrConditions =
+        resolveOptions.ssrConfig?.resolve?.conditions ||
+        resolveOptions.conditions
+
       const options: InternalResolveOptions = {
         isRequire,
         ...resolveOptions,
         scan: resolveOpts?.scan ?? resolveOptions.scan,
+        conditions: ssr ? ssrConditions : resolveOptions.conditions,
       }
 
       const resolvedImports = resolveSubpathImports(
