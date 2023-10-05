@@ -25,7 +25,6 @@ import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
-  ensureWatchedFile,
   fsPathFromId,
   injectQuery,
   isJSRequest,
@@ -148,7 +147,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
-  const { config, moduleGraph, watcher } = server!
+  const { config, moduleGraph } = server!
   const base = config.base || '/'
   htmlPath = decodeURI(htmlPath)
 
@@ -277,7 +276,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
-      ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
       let content = ''
