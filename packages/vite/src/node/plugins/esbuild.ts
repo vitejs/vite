@@ -25,9 +25,10 @@ import type { Plugin } from '../plugin'
 
 const debug = createDebugger('vite:esbuild')
 
-// IIFE content looks like `var MyLib = function() {`. Spaces are removed when minified
+// IIFE content looks like `var MyLib = function() {`.
+// Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(const|var)\s+\S+\s*=\s*function\(\)\s*\{.*"use strict";/s
+  /(const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
