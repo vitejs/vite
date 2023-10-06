@@ -33,22 +33,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  diff:
-    timeout-minutes: 2
-    runs-on: ubuntu-latest
-    name: "Diff files"
-    outputs:
-      runTest: ${{ steps.skip-tests-files.outputs.only_changed != 'true' }}
+  test:
+    timeout-minutes: 20
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node_version: [18, 20]
+        include:
+          # Active LTS + other OS
+          - os: macos-latest
+            node_version: 18
+          - os: windows-latest
+            node_version: 18.17
+      fail-fast: false
+
+    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
 
       - name: Get changed files
-        id: skip-tests-files
-        uses: tj-actions/changed-files@1d1287f9fafd92be283f99b781fb5f00f00dd471 # v35.2.1
+        id: changed-files
+        uses: tj-actions/changed-files@db153baf731265ad02cd490b07f470e2d55e3345 # v39.2.1
         with:
           files: |
             docs/**
@@ -57,55 +67,37 @@ jobs:
             packages/create-vite/template**
             **.md
 
-  test:
-    needs: diff
-    if: ${{ needs.diff.outputs.runTest }}
-    timeout-minutes: 20
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node_version: [14, 16, 18]
-        include:
-          # Active LTS + other OS
-          - os: macos-latest
-            node_version: 18
-          - os: windows-latest
-            node_version: 18
-      fail-fast: false
-
-    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.4
+        if: steps.changed-files.outputs.only_changed != 'true'
+        uses: pnpm/action-setup@v2.4.0
 
       - name: Set node version to ${{ matrix.node_version }}
+        if: steps.changed-files.outputs.only_changed != 'true'
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
 
       - name: Install deps
+        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm install
 
       # Install playwright's binary under custom directory to cache
       - name: (non-windows) Set Playwright path and Get playwright version
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && steps.changed-files.outputs.only_changed != 'true'
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
           PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
           echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
       - name: (windows) Set Playwright path and Get playwright version
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && steps.changed-files.outputs.only_changed != 'true'
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
           $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies[\"playwright-chromium\"].version')"
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
+        if: steps.changed-files.outputs.only_changed != 'true'
         uses: actions/cache@v3
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
@@ -114,19 +106,24 @@ jobs:
             ${{ runner.os }}-playwright-bin-v1-
 
       - name: Install Playwright
+        if: steps.changed-files.outputs.only_changed != 'true'
         # does not need to explicitly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
         run: pnpm playwright install chromium
 
       - name: Build
+        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run build
 
       - name: Test unit
+        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-unit
 
       - name: Test serve
+        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-serve
 
       - name: Test build
+        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-build
 
   lint:
@@ -134,10 +131,10 @@ jobs:
     runs-on: ubuntu-latest
     name: "Lint: node-18, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v2.4.0
 
       - name: Set node version to 18
         uses: actions/setup-node@v3

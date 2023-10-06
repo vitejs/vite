@@ -9,9 +9,10 @@ export function htmlFallbackMiddleware(
   spaFallback: boolean,
 ): Connect.NextHandleFunction {
   const historyHtmlFallbackMiddleware = history({
+    disableDotRule: true,
     logger: createDebugger('vite:html-fallback'),
-    // support /dir/ without explicit index.html
     rewrites: [
+      // support /dir/ without explicit index.html
       {
         from: /\/$/,
         to({ parsedUrl, request }: any) {
@@ -22,6 +23,18 @@ export function htmlFallbackMiddleware(
             return rewritten
           }
 
+          return spaFallback ? `/index.html` : request.url
+        },
+      },
+      {
+        from: /\.html$/,
+        to({ parsedUrl, request }: any) {
+          // .html files are not handled by serveStaticMiddleware
+          // so we need to check if the file exists
+          const pathname = decodeURIComponent(parsedUrl.pathname)
+          if (fs.existsSync(path.join(root, pathname))) {
+            return request.url
+          }
           return spaFallback ? `/index.html` : request.url
         },
       },

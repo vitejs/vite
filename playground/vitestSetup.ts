@@ -4,6 +4,7 @@ import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
+  ConfigEnv,
   InlineConfig,
   Logger,
   PluginOption,
@@ -61,11 +62,6 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
-/**
- * current test using vite inline config
- * when using server.js is not possible to get the config
- */
-export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -77,16 +73,6 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
-
-declare module 'vite' {
-  interface InlineConfig {
-    testConfig?: {
-      // relative base output use relative path
-      // rewrite the url to truth file path
-      baseRoute: string
-    }
-  }
-}
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -191,27 +177,31 @@ beforeAll(async (s) => {
   }
 })
 
-function loadConfigFromDir(dir: string) {
-  return loadConfigFromFile(
-    {
-      command: isBuild ? 'build' : 'serve',
-      mode: isBuild ? 'production' : 'development',
-    },
-    undefined,
-    dir,
-  )
-}
-
 export async function startDefaultServe(): Promise<void> {
   let config: UserConfig | null = null
-  // config file near the *.spec.ts
-  const res = await loadConfigFromDir(dirname(testPath))
-  if (res) {
-    config = res.config
+
+  const configEnv: ConfigEnv = {
+    command: isBuild ? 'build' : 'serve',
+    mode: isBuild ? 'production' : 'development',
+  }
+
+  // config file named by convention as the *.spec.ts folder
+  const variantName = path.basename(dirname(testPath))
+  if (variantName !== '__tests__') {
+    const configVariantPath = path.resolve(
+      rootDir,
+      `vite.config-${variantName}.js`,
+    )
+    if (fs.existsSync(configVariantPath)) {
+      const res = await loadConfigFromFile(configEnv, configVariantPath)
+      if (res) {
+        config = res.config
+      }
+    }
   }
   // config file from test root dir
   if (!config) {
-    const res = await loadConfigFromDir(rootDir)
+    const res = await loadConfigFromFile(configEnv, undefined, rootDir)
     if (res) {
       config = res.config
     }
@@ -248,7 +238,6 @@ export async function startDefaultServe(): Promise<void> {
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
     const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
     viteServer = server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
     const devBase = server.config.base
@@ -267,7 +256,6 @@ export async function startDefaultServe(): Promise<void> {
     })
     options.plugins = [resolvedPlugin()]
     const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
     const rollupOutput = await build(testConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
@@ -277,6 +265,10 @@ export async function startDefaultServe(): Promise<void> {
     }
     if (config && config.__test__) {
       config.__test__()
+    }
+    // TODO: use something like ConfigEnv['cmd'] https://github.com/vitejs/vite/pull/12298
+    if (config?.testConfig?.previewBase) {
+      testConfig.base = config.testConfig.previewBase
     }
     const _nodeEnv = process.env.NODE_ENV
     const previewServer = await preview(testConfig)
@@ -306,7 +298,7 @@ export async function notifyRebuildComplete(
   return watcher.off('event', callback)
 }
 
-function createInMemoryLogger(logs: string[]): Logger {
+export function createInMemoryLogger(logs: string[]): Logger {
   const loggedErrors = new WeakSet<Error | RollupError>()
   const warnedMessages = new Set<string>()
 
@@ -358,5 +350,16 @@ declare module 'vite' {
      * runs after build and before preview
      */
     __test__?: () => void
+    /**
+     * special test only configs
+     */
+    testConfig?: {
+      /**
+       * a base used for preview
+       *
+       * useful for relative base tests
+       */
+      previewBase?: string
+    }
   }
 }

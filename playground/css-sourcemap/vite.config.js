@@ -1,9 +1,7 @@
-const MagicString = require('magic-string')
+import { defineConfig } from 'vite'
+import MagicString from 'magic-string'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   resolve: {
     alias: {
       '@': __dirname,
@@ -23,7 +21,7 @@ module.exports = {
           const start = content.indexOf(willBeReplaced)
           ms.overwrite(start, start + willBeReplaced.length, 'purple')
 
-          const map = ms.generateMap({ hires: true })
+          const map = ms.generateMap({ hires: 'boundary' })
           map.file = filename
           map.sources = [filename]
 
@@ -58,4 +56,4 @@ module.exports = {
       },
     },
   ],
-}
+})

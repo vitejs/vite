@@ -69,9 +69,23 @@ test('should load dynamic import with vars', async () => {
   )
 })
 
+test('should load dynamic import with vars ignored', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-ignored'),
+    'hello',
+    true,
+  )
+  // No warning should be logged as we are using @vite-ignore
+  expect(
+    serverLogs.some((log) =>
+      log.includes('"https" has been externalized for browser compatibility'),
+    ),
+  ).toBe(false)
+})
+
 test('should load dynamic import with vars multiline', async () => {
   await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars'),
+    () => page.textContent('.dynamic-import-with-vars-multiline'),
     'hello',
     true,
   )
@@ -129,3 +143,22 @@ test('should work with load ../ and contain itself directory', async () => {
     true,
   )
 })
+
+test.runIf(isBuild)(
+  'should rollup warn when static and dynamic import a module in same chunk',
+  async () => {
+    const log = serverLogs.join('\n')
+    expect(log).toContain(
+      'dynamic import will not move module into another chunk',
+    )
+    expect(log).toMatch(
+      /\(!\).*\/dynamic-import\/files\/mxd\.js is dynamically imported by/,
+    )
+    expect(log).toMatch(
+      /\(!\).*\/dynamic-import\/files\/mxd\.json is dynamically imported by/,
+    )
+    expect(log).not.toMatch(
+      /\(!\).*\/dynamic-import\/nested\/shared\.js is dynamically imported by/,
+    )
+  },
+)

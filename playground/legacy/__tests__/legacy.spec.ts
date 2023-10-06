@@ -23,11 +23,20 @@ test('import.meta.env.LEGACY', async () => {
     isBuild ? 'true' : 'false',
     true,
   )
+  await untilUpdated(() => page.textContent('#env-equal'), 'true', true)
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
   await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
+})
+
+test('async generator', async () => {
+  await untilUpdated(
+    () => page.textContent('#async-generator'),
+    '[0,1,2]',
+    true,
+  )
 })
 
 test('wraps with iife', async () => {
@@ -43,22 +52,22 @@ test('generates assets', async () => {
     () => page.textContent('#assets'),
     isBuild
       ? [
-          'index: 404',
-          'index-legacy: 404',
-          'chunk-async: 404',
-          'chunk-async-legacy: 404',
-          'immutable-chunk: 200',
-          'immutable-chunk-legacy: 200',
-          'polyfills-legacy: 404',
+          'index: text/html;charset=utf-8',
+          'index-legacy: text/html;charset=utf-8',
+          'chunk-async: text/html;charset=utf-8',
+          'chunk-async-legacy: text/html;charset=utf-8',
+          'immutable-chunk: application/javascript',
+          'immutable-chunk-legacy: application/javascript',
+          'polyfills-legacy: text/html;charset=utf-8',
         ].join('\n')
       : [
-          'index: 404',
-          'index-legacy: 404',
-          'chunk-async: 404',
-          'chunk-async-legacy: 404',
-          'immutable-chunk: 404',
-          'immutable-chunk-legacy: 404',
-          'polyfills-legacy: 404',
+          'index: text/html',
+          'index-legacy: text/html',
+          'chunk-async: text/html',
+          'chunk-async-legacy: text/html',
+          'immutable-chunk: text/html',
+          'immutable-chunk-legacy: text/html',
+          'polyfills-legacy: text/html',
         ].join('\n'),
     true,
   )
@@ -118,11 +127,24 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should emit css file', async () => {
-    expect(listAssets().some((filename) => filename.endsWith('.css')))
+    expect(
+      listAssets().some((filename) => filename.endsWith('.css')),
+    ).toBeTruthy()
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
     expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
+  })
+
+  test('should generate legacy sourcemap file', async () => {
+    expect(
+      listAssets().some((filename) => /index-legacy.+\.map$/.test(filename)),
+    ).toBeTruthy()
+    expect(
+      listAssets().some((filename) =>
+        /polyfills-legacy.+\.map$/.test(filename),
+      ),
+    ).toBeFalsy()
   })
 })

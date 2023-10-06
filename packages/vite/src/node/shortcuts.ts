@@ -1,53 +1,55 @@
+import readline from 'node:readline'
 import colors from 'picocolors'
 import type { ViteDevServer } from './server'
-import { openBrowser } from './server/openBrowser'
 import { isDefined } from './utils'
+import type { PreviewServer } from './preview'
+import { openBrowser } from './server/openBrowser'
 
-export type BindShortcutsOptions = {
+export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Print a one line hint to the terminal.
    */
   print?: boolean
-  customShortcuts?: (CLIShortcut | undefined | null)[]
+  customShortcuts?: (CLIShortcut<Server> | undefined | null)[]
 }
 
-export type CLIShortcut = {
+export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   key: string
   description: string
-  action(server: ViteDevServer): void | Promise<void>
+  action(server: Server): void | Promise<void>
 }
 
-export function bindShortcuts(
-  server: ViteDevServer,
-  opts: BindShortcutsOptions,
+export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
+  server: Server,
+  opts?: BindCLIShortcutsOptions<Server>,
 ): void {
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
   }
-  server._shortcutsOptions = opts
 
-  if (opts.print) {
+  const isDev = isDevServer(server)
+
+  if (isDev) {
+    server._shortcutsOptions = opts as BindCLIShortcutsOptions<ViteDevServer>
+  }
+
+  if (opts?.print) {
     server.config.logger.info(
       colors.dim(colors.green('  ➜')) +
         colors.dim('  press ') +
-        colors.bold('h') +
+        colors.bold('h + enter') +
         colors.dim(' to show help'),
     )
   }
 
-  const shortcuts = (opts.customShortcuts ?? [])
+  const shortcuts = (opts?.customShortcuts ?? [])
     .filter(isDefined)
-    .concat(BASE_SHORTCUTS)
+    // @ts-expect-error passing the right types, but typescript can't detect it
+    .concat(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS)
 
   let actionRunning = false
 
   const onInput = async (input: string) => {
-    // ctrl+c or ctrl+d
-    if (input === '\x03' || input === '\x04') {
-      process.emit('SIGTERM')
-      return
-    }
-
     if (actionRunning) return
 
     if (input === 'h') {
@@ -58,7 +60,7 @@ export function bindShortcuts(
           ...shortcuts.map(
             (shortcut) =>
               colors.dim('  press ') +
-              colors.bold(shortcut.key) +
+              colors.bold(`${shortcut.key} + enter`) +
               colors.dim(` to ${shortcut.description}`),
           ),
         ].join('\n'),
@@ -73,16 +75,18 @@ export function bindShortcuts(
     actionRunning = false
   }
 
-  process.stdin.setRawMode(true)
-
-  process.stdin.on('data', onInput).setEncoding('utf8').resume()
-
-  server.httpServer.on('close', () => {
-    process.stdin.off('data', onInput).pause()
-  })
+  const rl = readline.createInterface({ input: process.stdin })
+  rl.on('line', onInput)
+  server.httpServer.on('close', () => rl.close())
 }
 
-const BASE_SHORTCUTS: CLIShortcut[] = [
+function isDevServer(
+  server: ViteDevServer | PreviewServer,
+): server is ViteDevServer {
+  return 'pluginContainer' in server
+}
+
+const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
   {
     key: 'r',
     description: 'restart the server',
@@ -102,14 +106,7 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     key: 'o',
     description: 'open in browser',
     action(server) {
-      const url = server.resolvedUrls?.local[0]
-
-      if (!url) {
-        server.config.logger.warn('No URL available to open in browser')
-        return
-      }
-
-      openBrowser(url, true, server.config.logger)
+      server.openBrowser()
     },
   },
   {
@@ -124,6 +121,33 @@ const BASE_SHORTCUTS: CLIShortcut[] = [
     description: 'quit',
     async action(server) {
       await server.close().finally(() => process.exit())
+    },
+  },
+]
+
+const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
+  {
+    key: 'o',
+    description: 'open in browser',
+    action(server) {
+      const url =
+        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      if (url) {
+        openBrowser(url, true, server.config.logger)
+      } else {
+        server.config.logger.warn('No URL available to open in browser')
+      }
+    },
+  },
+  {
+    key: 'q',
+    description: 'quit',
+    action(server) {
+      try {
+        server.httpServer.close()
+      } finally {
+        process.exit()
+      }
     },
   },
 ]

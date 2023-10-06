@@ -1,15 +1,13 @@
-/**
- * @type {import('vite').UserConfig}
- */
+import { defineConfig } from 'vite'
+import baseConfig from './vite.config.js'
 
-const baseConfig = require('./vite.config.js')
-module.exports = {
+export default defineConfig({
   ...baseConfig,
   base: './', // relative base to make dist portable
   build: {
     ...baseConfig.build,
     outDir: 'dist/relative-base',
-    watch: false,
+    watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {
@@ -21,6 +19,7 @@ module.exports = {
     },
   },
   testConfig: {
-    baseRoute: '/relative-base/',
+    previewBase: '/relative-base/',
   },
-}
+  cacheDir: 'node_modules/.vite-relative-base',
+})

@@ -1,3 +1,97 @@
+## 5.0.0-beta.1 (2023-09-25)
+
+* fix(deps): update all non-major dependencies (#14460) ([b77bff0](https://github.com/vitejs/vite/commit/b77bff0)), closes [#14460](https://github.com/vitejs/vite/issues/14460)
+* fix(legacy): add guard to modern polyfill chunk (#13719) ([945dc4d](https://github.com/vitejs/vite/commit/945dc4d)), closes [#13719](https://github.com/vitejs/vite/issues/13719)
+* fix(legacy): modern polyfill autodetection was injecting more polyfills than needed (#14428) ([1c2e941](https://github.com/vitejs/vite/commit/1c2e941)), closes [#14428](https://github.com/vitejs/vite/issues/14428)
+* fix(legacy): suppress babel warning during polyfill scan (#14425) ([aae3a83](https://github.com/vitejs/vite/commit/aae3a83)), closes [#14425](https://github.com/vitejs/vite/issues/14425)
+* fix(plugin-legacy): ensure correct typing for node esm (#13892) ([d914a9d](https://github.com/vitejs/vite/commit/d914a9d)), closes [#13892](https://github.com/vitejs/vite/issues/13892)
+* refactor(legacy)!: remove `ignoreBrowserslistConfig` option (#14429) ([941bb16](https://github.com/vitejs/vite/commit/941bb16)), closes [#14429](https://github.com/vitejs/vite/issues/14429)
+
+
+
+## 5.0.0-beta.0 (2023-09-19)
+
+* fix(deps): update all non-major dependencies (#14092) ([68638f7](https://github.com/vitejs/vite/commit/68638f7)), closes [#14092](https://github.com/vitejs/vite/issues/14092)
+* chore: upgrade babel and release-scripts (#14330) ([b361ffa](https://github.com/vitejs/vite/commit/b361ffa)), closes [#14330](https://github.com/vitejs/vite/issues/14330)
+* chore(deps): update all non-major dependencies (#13938) ([a1b519e](https://github.com/vitejs/vite/commit/a1b519e)), closes [#13938](https://github.com/vitejs/vite/issues/13938)
+* chore(eslint): allow type annotations (#13920) ([d1264fd](https://github.com/vitejs/vite/commit/d1264fd)), closes [#13920](https://github.com/vitejs/vite/issues/13920)
+* docs(legacy): correct `modernPolyfills` description (#14233) ([a57f388](https://github.com/vitejs/vite/commit/a57f388)), closes [#14233](https://github.com/vitejs/vite/issues/14233)
+* docs(plugin-legacy): fix typo (#13936) ([28ddd43](https://github.com/vitejs/vite/commit/28ddd43)), closes [#13936](https://github.com/vitejs/vite/issues/13936)
+* feat!: bump minimum node version to 18 (#14030) ([2c1a45c](https://github.com/vitejs/vite/commit/2c1a45c)), closes [#14030](https://github.com/vitejs/vite/issues/14030)
+* perf: use magic-string hires boundary for sourcemaps (#13971) ([b9a8d65](https://github.com/vitejs/vite/commit/b9a8d65)), closes [#13971](https://github.com/vitejs/vite/issues/13971)
+
+
+
+## <small>4.1.1 (2023-07-20)</small>
+
+* fix(deps): update all non-major dependencies (#13758) ([8ead116](https://github.com/vitejs/vite/commit/8ead116)), closes [#13758](https://github.com/vitejs/vite/issues/13758)
+* fix(deps): update all non-major dependencies (#13872) ([975a631](https://github.com/vitejs/vite/commit/975a631)), closes [#13872](https://github.com/vitejs/vite/issues/13872)
+
+
+
+## 4.1.0 (2023-07-06)
+
+* feat(plugin-legacy): add option to output only legacy builds (#10139) ([931b24f](https://github.com/vitejs/vite/commit/931b24f)), closes [#10139](https://github.com/vitejs/vite/issues/10139)
+* fix(deps): update all non-major dependencies (#13701) ([02c6bc3](https://github.com/vitejs/vite/commit/02c6bc3)), closes [#13701](https://github.com/vitejs/vite/issues/13701)
+
+
+
+## <small>4.0.5 (2023-06-21)</small>
+
+* chore: add funding field (#13585) ([2501627](https://github.com/vitejs/vite/commit/2501627)), closes [#13585](https://github.com/vitejs/vite/issues/13585)
+* chore(deps): update all non-major dependencies (#13553) ([3ea0534](https://github.com/vitejs/vite/commit/3ea0534)), closes [#13553](https://github.com/vitejs/vite/issues/13553)
+* fix(deps): update all non-major dependencies (#13059) ([123ef4c](https://github.com/vitejs/vite/commit/123ef4c)), closes [#13059](https://github.com/vitejs/vite/issues/13059)
+* fix(deps): update all non-major dependencies (#13488) ([bd09248](https://github.com/vitejs/vite/commit/bd09248)), closes [#13488](https://github.com/vitejs/vite/issues/13488)
+* docs(legacy): add test case to ensure correct csp hashes in readme.md (#13384) ([bf0cd25](https://github.com/vitejs/vite/commit/bf0cd25)), closes [#13384](https://github.com/vitejs/vite/issues/13384)
+
+
+
+## <small>4.0.4 (2023-05-24)</small>
+
+* fix(legacy): import `@babel/preset-env` (#12961) ([d53c650](https://github.com/vitejs/vite/commit/d53c650)), closes [#12961](https://github.com/vitejs/vite/issues/12961)
+* chore(deps): update all non-major dependencies (#12805) ([5731ac9](https://github.com/vitejs/vite/commit/5731ac9)), closes [#12805](https://github.com/vitejs/vite/issues/12805)
+
+
+
+## <small>4.0.3 (2023-04-25)</small>
+
+* feat(plugin-legacy): support file protocol (#8524) ([7a87ff4](https://github.com/vitejs/vite/commit/7a87ff4)), closes [#8524](https://github.com/vitejs/vite/issues/8524)
+* refactor(eslint): migrate to `eslint-plugin-n` (#12895) ([62ebe28](https://github.com/vitejs/vite/commit/62ebe28)), closes [#12895](https://github.com/vitejs/vite/issues/12895)
+* fix(deps): update all non-major dependencies (#12389) ([3e60b77](https://github.com/vitejs/vite/commit/3e60b77)), closes [#12389](https://github.com/vitejs/vite/issues/12389)
+
+
+
+## <small>4.0.2 (2023-03-16)</small>
+
+* chore(deps): update all non-major dependencies (#12299) ([b41336e](https://github.com/vitejs/vite/commit/b41336e)), closes [#12299](https://github.com/vitejs/vite/issues/12299)
+* chore(deps): update rollup to 3.17.2 (#12110) ([e54ffbd](https://github.com/vitejs/vite/commit/e54ffbd)), closes [#12110](https://github.com/vitejs/vite/issues/12110)
+* fix(deps): update all non-major dependencies (#12036) ([48150f2](https://github.com/vitejs/vite/commit/48150f2)), closes [#12036](https://github.com/vitejs/vite/issues/12036)
+* fix(plugin-legacy): no `build.target` override on SSR build (#12171) ([a1019f8](https://github.com/vitejs/vite/commit/a1019f8)), closes [#12171](https://github.com/vitejs/vite/issues/12171)
+* docs(plugin-legacy): outdated csp hash (fix #12112) (#12118) ([5f7f5dc](https://github.com/vitejs/vite/commit/5f7f5dc)), closes [#12112](https://github.com/vitejs/vite/issues/12112) [#12118](https://github.com/vitejs/vite/issues/12118)
+
+
+
+## <small>4.0.1 (2023-02-02)</small>
+
+* fix(legacy): fix browserslist import, close https://github.com/vitejs/vite/issues/11898 (#11899) ([9241d08](https://github.com/vitejs/vite/commit/9241d08)), closes [#11899](https://github.com/vitejs/vite/issues/11899)
+
+
+
+## 4.0.0 (2023-02-02)
+
+* feat(legacy)!: bump modern target to support async generator (#11896) ([55b9711](https://github.com/vitejs/vite/commit/55b9711)), closes [#11896](https://github.com/vitejs/vite/issues/11896)
+* fix(plugin-legacy)!: support browserslist and update default target (#11318) ([d5b8f86](https://github.com/vitejs/vite/commit/d5b8f86)), closes [#11318](https://github.com/vitejs/vite/issues/11318)
+* fix: typo (#11283) ([bf234a6](https://github.com/vitejs/vite/commit/bf234a6)), closes [#11283](https://github.com/vitejs/vite/issues/11283)
+* fix(deps): update all non-major dependencies (#11846) ([5d55083](https://github.com/vitejs/vite/commit/5d55083)), closes [#11846](https://github.com/vitejs/vite/issues/11846)
+* fix(plugin-legacy): legacy sourcemap not generate (fix #11693) (#11841) ([2ff5930](https://github.com/vitejs/vite/commit/2ff5930)), closes [#11693](https://github.com/vitejs/vite/issues/11693) [#11841](https://github.com/vitejs/vite/issues/11841)
+* chore: enable `@typescript-eslint/ban-ts-comment` (#11326) ([e58a4f0](https://github.com/vitejs/vite/commit/e58a4f0)), closes [#11326](https://github.com/vitejs/vite/issues/11326)
+* chore: update packages' (vite, vite-legacy) keywords (#11402) ([a56bc34](https://github.com/vitejs/vite/commit/a56bc34)), closes [#11402](https://github.com/vitejs/vite/issues/11402)
+* chore(deps): update all non-major dependencies (#11419) ([896475d](https://github.com/vitejs/vite/commit/896475d)), closes [#11419](https://github.com/vitejs/vite/issues/11419)
+* chore(deps): update all non-major dependencies (#11787) ([271394f](https://github.com/vitejs/vite/commit/271394f)), closes [#11787](https://github.com/vitejs/vite/issues/11787)
+* refactor(plugin-legacy): optimize cspHashes array (#11734) ([b1a8e58](https://github.com/vitejs/vite/commit/b1a8e58)), closes [#11734](https://github.com/vitejs/vite/issues/11734)
+
+
+
 ## <small>3.0.1 (2022-12-09)</small>
 
 * chore: update vite and plugins to stable (#11278) ([026f41e](https://github.com/vitejs/vite/commit/026f41e)), closes [#11278](https://github.com/vitejs/vite/issues/11278)

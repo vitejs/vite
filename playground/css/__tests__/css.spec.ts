@@ -1,12 +1,11 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
-  isServe,
   page,
   removeFile,
   serverLogs,
@@ -22,14 +21,6 @@ test('imported css', async () => {
   expect(glob).toContain('.dir-import')
   const globEager = await page.textContent('.imported-css-globEager')
   expect(globEager).toContain('.dir-import')
-})
-
-test('inline imported css', async () => {
-  const css = await page.textContent('.imported-css')
-  expect(css).toMatch(/\.imported ?\{/)
-  if (isBuild) {
-    expect(css.trim()).not.toContain('\n') // check minified
-  }
 })
 
 test('linked css', async () => {
@@ -146,6 +137,8 @@ test('stylus', async () => {
   const relativeImportAlias = await page.$('.stylus-import-alias')
   const optionsRelativeImport = await page.$('.stylus-options-relative-import')
   const optionsAbsoluteImport = await page.$('.stylus-options-absolute-import')
+  const optionsDefineVar = await page.$('.stylus-options-define-var')
+  const optionsDefineFunc = await page.$('.stylus-options-define-func')
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(additionalData)).toBe('orange')
@@ -156,6 +149,8 @@ test('stylus', async () => {
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
+  expect(await getColor(optionsDefineVar)).toBe('rgb(51, 197, 255)')
+  expect(await getColor(optionsDefineFunc)).toBe('rgb(255, 0, 98)')
 
   editFile('stylus.styl', (code) =>
     code.replace('$color ?= blue', '$color ?= red'),
@@ -283,6 +278,18 @@ test('@import dependency w/ style entry', async () => {
 
 test('@import dependency w/ sass entry', async () => {
   expect(await getColor('.css-dep-sass')).toBe('orange')
+})
+
+test('@import dependency w/ style export mapping', async () => {
+  expect(await getColor('.css-dep-exports')).toBe('purple')
+})
+
+test('@import dependency w/ sass export mapping', async () => {
+  expect(await getColor('.css-dep-exports-sass')).toBe('orange')
+})
+
+test('@import dependency that @import another dependency', async () => {
+  expect(await getColor('.css-proxy-dep')).toBe('purple')
 })
 
 test('@import dependency w/out package scss', async () => {
@@ -445,28 +452,7 @@ test("relative path rewritten in Less's data-uri", async () => {
 test('PostCSS source.input.from includes query', async () => {
   const code = await page.textContent('.postcss-source-input')
   // should resolve assets
-  expect(code).toContain(
-    isBuild
-      ? '/postcss-source-input.css?used&query=foo'
-      : '/postcss-source-input.css?query=foo',
-  )
-})
-
-describe.runIf(isServe)('deprecate default/named imports from CSS', () => {
-  test('css file', () => {
-    const actual = serverLogs.some((log) =>
-      /Use the \?inline query instead.+imported\.css/.test(log),
-    )
-    expect(actual).toBe(true)
-  })
-
-  test('js file ending with .css.js', async () => {
-    const message = await page.textContent('.jsfile-css-js')
-    expect(message).toMatch('from jsfile.css.js')
-    serverLogs.forEach((log) => {
-      expect(log).not.toMatch(/Use the \?inline query instead.+jsfile\.css/)
-    })
-  })
+  expect(code).toContain('/postcss-source-input.css?inline&query=foo')
 })
 
 test('aliased css has content', async () => {
@@ -517,4 +503,8 @@ test('async css order with css modules', async () => {
   await withRetry(async () => {
     expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
   }, true)
+})
+
+test('@import scss', async () => {
+  expect(await getColor('.at-import-scss')).toBe('red')
 })

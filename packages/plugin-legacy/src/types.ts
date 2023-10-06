@@ -4,10 +4,6 @@ export interface Options {
    */
   targets?: string | string[] | { [key: string]: string }
   /**
-   * default: false
-   */
-  ignoreBrowserslistConfig?: boolean
-  /**
    * default: true
    */
   polyfills?: boolean | string[]
@@ -24,4 +20,8 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
+  /**
+   * default: true
+   */
+  renderModernChunks?: boolean
 }

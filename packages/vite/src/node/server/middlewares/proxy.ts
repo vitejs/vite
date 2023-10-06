@@ -4,7 +4,6 @@ import httpProxy from 'http-proxy'
 import type { Connect } from 'dep-types/connect'
 import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
-import { HMR_HEADER } from '../ws'
 import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
@@ -47,10 +46,23 @@ export function proxyMiddleware(
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
+    if (opts.configure) {
+      opts.configure(proxy, opts)
+    }
+
     proxy.on('error', (err, req, originalRes) => {
       // When it is ws proxy, res is net.Socket
-      const res = originalRes as http.ServerResponse | net.Socket
-      if ('req' in res) {
+      // originalRes can be falsy if the proxy itself errored
+      const res = originalRes as http.ServerResponse | net.Socket | undefined
+      if (!res) {
+        config.logger.error(
+          `${colors.red(`http proxy error: ${err.message}`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err,
+          },
+        )
+      } else if ('req' in res) {
         config.logger.error(
           `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
             err.stack
@@ -76,9 +88,29 @@ export function proxyMiddleware(
       }
     })
 
-    if (opts.configure) {
-      opts.configure(proxy, opts)
-    }
+    proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+      socket.on('error', (err) => {
+        config.logger.error(
+          `${colors.red(`ws proxy socket error:`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err,
+          },
+        )
+      })
+    })
+
+    // https://github.com/http-party/node-http-proxy/issues/1520#issue-877626125
+    // https://github.com/chimurai/http-proxy-middleware/blob/cd58f962aec22c925b7df5140502978da8f87d5f/src/plugins/default/debug-proxy-errors-plugin.ts#L25-L37
+    proxy.on('proxyRes', (proxyRes, req, res) => {
+      res.on('close', () => {
+        if (!res.writableEnded) {
+          debug?.('destroying proxyRes in proxyRes close event')
+          proxyRes.destroy()
+        }
+      })
+    })
+
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
   })
@@ -90,15 +122,14 @@ export function proxyMiddleware(
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
-            (opts.ws ||
-              opts.target?.toString().startsWith('ws:') ||
-              opts.target?.toString().startsWith('wss:')) &&
-            req.headers['sec-websocket-protocol'] !== HMR_HEADER
+            opts.ws ||
+            opts.target?.toString().startsWith('ws:') ||
+            opts.target?.toString().startsWith('wss:')
           ) {
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
-            debug(`${req.url} -> ws ${opts.target}`)
+            debug?.(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
             return
           }
@@ -119,15 +150,15 @@ export function proxyMiddleware(
           const bypassResult = opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
-            debug(`bypass: ${req.url} -> ${bypassResult}`)
+            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
             return next()
           } else if (bypassResult === false) {
-            debug(`bypass: ${req.url} -> 404`)
+            debug?.(`bypass: ${req.url} -> 404`)
             return res.end(404)
           }
         }
 
-        debug(`${req.url} -> ${opts.target || opts.forward}`)
+        debug?.(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
@@ -141,7 +172,7 @@ export function proxyMiddleware(
 
 function doesProxyContextMatchUrl(context: string, url: string): boolean {
   return (
-    (context.startsWith('^') && new RegExp(context).test(url)) ||
+    (context[0] === '^' && new RegExp(context).test(url)) ||
     url.startsWith(context)
   )
 }

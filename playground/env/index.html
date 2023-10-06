@@ -13,8 +13,20 @@
 </p>
 <p>import.meta.env.VITE_INLINE: <code class="inline"></code></p>
 <p>typeof import.meta.env.VITE_BOOL: <code class="bool"></code></p>
+<p>typeof import.meta.env.VITE_NUMBER: <code class="number"></code></p>
+<p>typeof import.meta.env.VITE_STRING: <code class="string"></code></p>
+<p>
+  typeof import.meta.env.VITE_STRINGIFY_OBJECT:
+  <code class="stringify-object"></code>
+</p>
 <p>process.env.NODE_ENV: <code class="node-env"></code></p>
-<p>import.meta.env.VITE_EXPAND: <code class="expand"></code></p>
+<p>global.process.env.NODE_ENV: <code class="global-node-env"></code></p>
+<p>
+  globalThis.process.env.NODE_ENV: <code class="global-this-node-env"></code>
+</p>
+<p>import.meta.env.VITE_EXPAND_A: <code class="expand-a"></code></p>
+<p>import.meta.env.VITE_EXPAND_B: <code class="expand-b"></code></p>
+<p>import.meta.env.SSR: <code class="ssr"></code></p>
 <p>import.meta.env: <span class="pre env-object"></span></p>
 <p>import.meta.url: <span class="pre url"></span></p>
 
@@ -28,9 +40,16 @@
   text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
   text('.inline', import.meta.env.VITE_INLINE)
   text('.bool', typeof import.meta.env.VITE_BOOL)
+  text('.number', typeof import.meta.env.VITE_NUMBER)
+  text('.string', typeof import.meta.env.VITE_STRING)
+  text('.stringify-object', typeof import.meta.env.VITE_STRINGIFY_OBJECT)
+  text('.ssr', import.meta.env.SSR)
   text('.node-env', process.env.NODE_ENV)
+  text('.global-node-env', global.process.env.NODE_ENV)
+  text('.global-this-node-env', globalThis.process.env.NODE_ENV)
   text('.env-object', JSON.stringify(import.meta.env, null, 2))
-  text('.expand', import.meta.env.VITE_EXPAND)
+  text('.expand-a', import.meta.env.VITE_EXPAND_A)
+  text('.expand-b', import.meta.env.VITE_EXPAND_B)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

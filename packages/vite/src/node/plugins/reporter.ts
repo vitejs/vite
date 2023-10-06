@@ -4,7 +4,12 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import { isDefined, normalizePath } from '../utils'
+import {
+  isDefined,
+  isInNodeModules,
+  normalizePath,
+  withTrailingSlash,
+} from '../utils'
 import { LogLevels } from '../logger'
 
 const groups = [
@@ -14,15 +19,25 @@ const groups = [
 ]
 type LogEntry = {
   name: string
-  group: typeof groups[number]['name']
+  group: (typeof groups)[number]['name']
   size: number
   compressedSize: number | null
   mapSize: number | null
 }
 
+const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
+
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
+
+  const numberFormatter = new Intl.NumberFormat('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  })
+  const displaySize = (bytes: number) => {
+    return `${numberFormatter.format(bytes / 1000)} kB`
+  }
 
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
@@ -32,6 +47,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   let transformedCount = 0
   let chunkCount = 0
   let compressedCount = 0
+  let startTime = Date.now()
 
   async function getCompressedSize(
     code: string | Uint8Array,
@@ -84,11 +100,18 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       return null
     },
 
+    options() {
+      startTime = Date.now()
+    },
+
+    buildStart() {
+      transformedCount = 0
+    },
+
     buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
-          process.stdout.clearLine(0)
-          process.stdout.cursorTo(0)
+          clearLine()
         }
         config.logger.info(
           `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
@@ -101,7 +124,37 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       compressedCount = 0
     },
 
-    renderChunk() {
+    renderChunk(code, chunk, options) {
+      if (!options.inlineDynamicImports) {
+        for (const id of chunk.moduleIds) {
+          const module = this.getModuleInfo(id)
+          if (!module) continue
+          // When a dynamic importer shares a chunk with the imported module,
+          // warn that the dynamic imported module will not be moved to another chunk (#12850).
+          if (module.importers.length && module.dynamicImporters.length) {
+            // Filter out the intersection of dynamic importers and sibling modules in
+            // the same chunk. The intersecting dynamic importers' dynamic import is not
+            // expected to work. Note we're only detecting the direct ineffective
+            // dynamic import here.
+            const detectedIneffectiveDynamicImport =
+              module.dynamicImporters.some(
+                (id) => !isInNodeModules(id) && chunk.moduleIds.includes(id),
+              )
+            if (detectedIneffectiveDynamicImport) {
+              this.warn(
+                `\n(!) ${
+                  module.id
+                } is dynamically imported by ${module.dynamicImporters.join(
+                  ', ',
+                )} but also statically imported by ${module.importers.join(
+                  ', ',
+                )}, dynamic import will not move module into another chunk.\n`,
+              )
+            }
+          }
+        }
+      }
+
       chunkCount++
       if (shouldLogInfo) {
         if (!tty) {
@@ -139,12 +192,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                 } else {
                   if (chunk.fileName.endsWith('.map')) return null
                   const isCSS = chunk.fileName.endsWith('.css')
+                  const isCompressible =
+                    isCSS || COMPRESSIBLE_ASSETS_RE.test(chunk.fileName)
                   return {
                     name: chunk.fileName,
                     group: isCSS ? 'CSS' : 'Assets',
                     size: chunk.source.length,
                     mapSize: null, // Rollup doesn't support CSS maps?
-                    compressedSize: isCSS
+                    compressedSize: isCompressible
                       ? await getCompressedSize(chunk.source)
                       : null,
                   }
@@ -183,7 +238,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             path.resolve(config.root, outDir ?? config.build.outDir),
           ),
         )
-        const assetsDir = `${config.build.assetsDir}/`
+        const assetsDir = path.join(config.build.assetsDir, '/')
 
         for (const group of groups) {
           const filtered = entries.filter((e) => e.group === group.name)
@@ -193,15 +248,17 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               group.name === 'JS' && entry.size / 1000 > chunkLimit
             if (isLarge) hasLargeChunks = true
             const sizeColor = isLarge ? colors.yellow : colors.dim
-            let log = colors.dim(relativeOutDir + '/')
-            log += entry.name.startsWith(assetsDir)
-              ? colors.dim(assetsDir) +
-                group.color(
-                  entry.name
-                    .slice(assetsDir.length)
-                    .padEnd(longest + 2 - assetsDir.length),
-                )
-              : group.color(entry.name.padEnd(longest + 2))
+            let log = colors.dim(withTrailingSlash(relativeOutDir))
+            log +=
+              !config.build.lib &&
+              entry.name.startsWith(withTrailingSlash(assetsDir))
+                ? colors.dim(assetsDir) +
+                  group.color(
+                    entry.name
+                      .slice(assetsDir.length)
+                      .padEnd(longest + 2 - assetsDir.length),
+                  )
+                : group.color(entry.name.padEnd(longest + 2))
             log += colors.bold(
               sizeColor(displaySize(entry.size).padStart(sizePad)),
             )
@@ -234,11 +291,21 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       ) {
         config.logger.warn(
           colors.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit} kBs after minification. Consider:\n` +
+            `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
-              `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
+              `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n` +
               `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,
           ),
+        )
+      }
+    },
+
+    closeBundle() {
+      if (shouldLogInfo && !config.build.watch) {
+        config.logger.info(
+          `${colors.green(
+            `✓ built in ${displayTime(Date.now() - startTime)}`,
+          )}`,
         )
       }
     },
@@ -270,9 +337,22 @@ function throttle(fn: Function) {
   }
 }
 
-function displaySize(bytes: number) {
-  return `${(bytes / 1000).toLocaleString('en', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  })} kB`
+function displayTime(time: number) {
+  // display: {X}ms
+  if (time < 1000) {
+    return `${time}ms`
+  }
+
+  time = time / 1000
+
+  // display: {X}s
+  if (time < 60) {
+    return `${time.toFixed(2)}s`
+  }
+
+  const mins = parseInt((time / 60).toString())
+  const seconds = time % 60
+
+  // display: {X}m {Y}s
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
 }
