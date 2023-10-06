@@ -372,7 +372,7 @@ function walk(
   }
 
   ;(eswalk as any)(root, {
-    enter(node: Node, parent: Node | null, prop: string) {
+    enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
         return this.skip()
       }
@@ -400,7 +400,7 @@ function walk(
       if (node.type === 'Identifier') {
         if (
           !isInScope(node.name, parentStack) &&
-          isRefIdentifier(node, parent!, parentStack, prop)
+          isRefIdentifier(node, parent!, parentStack)
         ) {
           // record the identifier, for DFS -> BFS
           identifiers.push([node, parentStack.slice(0)])
@@ -422,7 +422,7 @@ function walk(
             return
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: Node, parent: Node, prop: string) {
+            enter(child: Node, parent: Node) {
               // skip params default value of destructure
               if (
                 parent?.type === 'AssignmentPattern' &&
@@ -432,7 +432,7 @@ function walk(
               }
               if (child.type !== 'Identifier') return
               // do not record as scope variable if is a destructuring keyword
-              if (isStaticPropertyKey(child, parent, prop)) return
+              if (isStaticPropertyKey(child, parent)) return
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (
@@ -484,12 +484,7 @@ function walk(
   })
 }
 
-function isRefIdentifier(
-  id: Identifier,
-  parent: _Node,
-  parentStack: _Node[],
-  prop: string,
-) {
+function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   // declaration id
   if (
     parent.type === 'CatchClause' ||
@@ -517,7 +512,7 @@ function isRefIdentifier(
   }
 
   // property key
-  if (isStaticPropertyKey(id, parent, prop)) {
+  if (isStaticPropertyKey(id, parent)) {
     return false
   }
 
@@ -558,8 +553,8 @@ function isRefIdentifier(
 const isStaticProperty = (node: _Node): node is Property =>
   node && node.type === 'Property' && !node.computed
 
-const isStaticPropertyKey = (node: _Node, parent: _Node, prop: string) =>
-  isStaticProperty(parent) && prop === 'key' && parent.key === node
+const isStaticPropertyKey = (node: _Node, parent: _Node) =>
+  isStaticProperty(parent) && parent.key === node
 
 const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {
