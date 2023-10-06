@@ -7,7 +7,7 @@ import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
-import type { Connect } from 'dep-types/connect'
+import { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
@@ -77,6 +77,7 @@ import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { directoryIndexMiddleware } from './middlewares/directoryIndex'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -649,6 +650,9 @@ export async function _createServer(
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
+
+    // show directory list of files if permissable
+    middlewares.use(directoryIndexMiddleware(root))
 
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
