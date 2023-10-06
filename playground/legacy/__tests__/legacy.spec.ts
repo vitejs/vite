@@ -97,6 +97,13 @@ describe.runIf(isBuild)('build', () => {
     expect(manifest['../../vite/legacy-polyfills-legacy'].src).toBe(
       '../../vite/legacy-polyfills-legacy',
     )
+    expect(manifest['custom0-legacy.js'].file).toMatch(
+      /chunk-X-legacy.\w{8}.js/,
+    )
+    expect(manifest['custom1-legacy.js'].file).toMatch(
+      /chunk-X-legacy-\w{8}.js/,
+    )
+    expect(manifest['custom2-legacy.js'].file).toMatch(/chunk-X-legacy\w{8}.js/)
     // modern polyfill
     expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
     expect(manifest['../../vite/legacy-polyfills'].src).toBe(
