@@ -35,7 +35,6 @@ import { performance } from 'node:perf_hooks'
 import { VERSION as rollupVersion } from 'rollup'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
-  AstNode,
   AsyncPluginHooks,
   CustomPluginOptions,
   EmittedFile,
@@ -147,11 +146,6 @@ type PluginContext = Omit<
   // not documented
   'cache'
 >
-
-export type RollupParseFunc = (
-  input: string,
-  options?: { allowReturnOutsideFunction?: boolean },
-) => AstNode
 
 export async function createPluginContainer(
   config: ResolvedConfig,
