@@ -44,15 +44,13 @@ import {
   timeFrom,
   transformStableResult,
   unwrapId,
+  withTrailingSlash,
   wrapId,
 } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cjsShouldExternalizeForSSR,
-  shouldExternalizeForSSR,
-} from '../ssr/ssrExternal'
+import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { checkPublicFile, urlRE } from './asset'
@@ -61,7 +59,7 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
 } from './optimizedDeps'
-import { isCSSRequest, isDirectCSSRequest, isModuleCSSRequest } from './css'
+import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
 const debug = createDebugger('vite:import-analysis')
@@ -278,7 +276,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      const importedUrls = new Set<string>()
       let isPartiallySelfAccepting = false
       const importedBindings = enablePartialAccept
         ? new Map<string, Set<string>>()
@@ -336,7 +333,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(root + '/')) {
+        if (resolved.id.startsWith(withTrailingSlash(root))) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
@@ -411,6 +408,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return [url, resolved.id]
       }
 
+      const orderedImportedUrls = new Array<string | undefined>(imports.length)
       const orderedAcceptedUrls = new Array<Set<UrlPosition> | undefined>(
         imports.length,
       )
@@ -487,13 +485,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr) {
-              if (config.legacy?.buildSsrCjsExternalHeuristics) {
-                if (
-                  cjsShouldExternalizeForSSR(specifier, server._ssrExternals)
-                ) {
-                  return
-                }
-              } else if (shouldExternalizeForSSR(specifier, importer, config)) {
+              if (shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
               if (isBuiltin(specifier)) {
@@ -527,35 +519,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             // normalize
             const [url, resolvedId] = await normalizeUrl(specifier, start)
-
-            if (
-              !isDynamicImport &&
-              specifier &&
-              !specifier.includes('?') && // ignore custom queries
-              isCSSRequest(resolvedId) &&
-              !isModuleCSSRequest(resolvedId)
-            ) {
-              const sourceExp = source.slice(expStart, start)
-              if (
-                sourceExp.includes('from') && // check default and named imports
-                !sourceExp.includes('__vite_glob_') // glob handles deprecation message itself
-              ) {
-                const newImport =
-                  sourceExp + specifier + `?inline` + source.slice(end, expEnd)
-                this.warn(
-                  `\n` +
-                    colors.cyan(importerModule.file) +
-                    `\n` +
-                    colors.reset(generateCodeFrame(source, start)) +
-                    `\n` +
-                    colors.yellow(
-                      `Default and named imports from CSS files are deprecated. ` +
-                        `Use the ?inline query instead. ` +
-                        `For example: ${newImport}`,
-                    ),
-                )
-              }
-            }
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.
@@ -640,7 +603,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             const hmrUrl = unwrapId(stripBase(url, base))
             const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
             if (isLocalImport) {
-              importedUrls.add(hmrUrl)
+              orderedImportedUrls[index] = hmrUrl
             }
 
             if (enablePartialAccept && importedBindings) {
@@ -674,7 +637,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 config.logger.error(e.message, { error: e })
               })
             }
-          } else if (!importer.startsWith(clientDir)) {
+          } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(
@@ -719,6 +682,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }),
       )
 
+      const importedUrls = new Set(
+        orderedImportedUrls.filter(Boolean) as string[],
+      )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
@@ -852,16 +818,17 @@ export function interopNamedImports(
     se: expEnd,
     d: dynamicIndex,
   } = importSpecifier
+  const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))` +
+        getLineBreaks(exp),
       { contentOnly: true },
     )
   } else {
-    const exp = source.slice(expStart, expEnd)
     const rawUrl = source.slice(start, end)
     const rewritten = transformCjsImport(
       exp,
@@ -872,12 +839,26 @@ export function interopNamedImports(
       config,
     )
     if (rewritten) {
-      str.overwrite(expStart, expEnd, rewritten, { contentOnly: true })
+      str.overwrite(expStart, expEnd, rewritten + getLineBreaks(exp), {
+        contentOnly: true,
+      })
     } else {
       // #1439 export * from '...'
-      str.overwrite(start, end, rewrittenUrl, { contentOnly: true })
+      str.overwrite(
+        start,
+        end,
+        rewrittenUrl + getLineBreaks(source.slice(start, end)),
+        {
+          contentOnly: true,
+        },
+      )
     }
   }
+}
+
+// get line breaks to preserve line count for not breaking source maps
+function getLineBreaks(str: string) {
+  return str.includes('\n') ? '\n'.repeat(str.split('\n').length - 1) : ''
 }
 
 type ImportNameSpecifier = { importedName: string; localName: string }

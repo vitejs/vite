@@ -6,7 +6,6 @@ import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
-  NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
   RollupError,
@@ -20,10 +19,10 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
+import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import type { BundleAsyncOptions, CustomAtRules } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -139,12 +138,6 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
   }
 }
 
-// remove options set by Vite
-export type LightningCSSOptions = Omit<
-  BundleAsyncOptions<CustomAtRules>,
-  'filename' | 'resolver' | 'minify' | 'sourceMap' | 'analyzeDependencies'
->
-
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions | undefined {
@@ -170,7 +163,6 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
-const usedRE = /[?&]used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -383,8 +375,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
-  let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
+  let chunkCSSMap: Map<string, string>
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -411,11 +403,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-post',
 
-    buildStart() {
+    renderStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<RenderedChunk>()
-      outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
+      chunkCSSMap = new Map()
       emitTasks = []
     },
 
@@ -473,10 +465,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           `const __vite__css = ${JSON.stringify(cssContent)}`,
           `__vite__updateStyle(__vite__id, __vite__css)`,
           // css modules exports change on edit so it can't self accept
-          `${
-            modulesCode ||
-            `import.meta.hot.accept()\nexport default __vite__css`
-          }`,
+          `${modulesCode || 'import.meta.hot.accept()'}`,
           `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`,
         ].join('\n')
         return { code, map: { mappings: '' } }
@@ -505,22 +494,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (usedRE.test(id)) {
-        if (modulesCode) {
-          code = modulesCode
-        } else {
-          let content = css
-          if (config.build.cssMinify) {
-            content = await minifyCSS(content, config, true)
-          }
-          code = `export default ${JSON.stringify(content)}`
+      if (modulesCode) {
+        code = modulesCode
+      } else if (inlined) {
+        let content = css
+        if (config.build.cssMinify) {
+          content = await minifyCSS(content, config, true)
         }
+        code = `export default ${JSON.stringify(content)}`
       } else {
-        // if moduleCode exists return it **even if** it does not have `?used`
-        // this will disable tree-shake to work with `import './foo.module.css'` but this usually does not happen
-        // this is a limitation of the current approach by `?used` to make tree-shake work
-        // See #8936 for more details
-        code = modulesCode || `export default ''`
+        // empty module when it's not a CSS module nor `?inline`
+        code = ''
       }
 
       return {
@@ -622,9 +606,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
-          const cssAssetName = chunk.facadeModuleId
-            ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-            : chunk.name
+          const isEntry = chunk.isEntry && isPureCssChunk
+          const cssAssetName = normalizePath(
+            !isEntry && chunk.facadeModuleId
+              ? path.relative(config.root, chunk.facadeModuleId)
+              : chunk.name,
+          )
 
           const lang = path.extname(cssAssetName).slice(1)
           const cssFileName = ensureFileExt(cssAssetName, '.css')
@@ -654,7 +641,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             source: chunkCSS,
           })
           const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
-          const isEntry = chunk.isEntry && isPureCssChunk
           generatedAssets
             .get(config)!
             .set(referenceId, { originalName, isEntry })
@@ -713,10 +699,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
         // finalizeCss is called for the aggregated chunk in generateBundle
 
-        outputToExtractedCSSMap.set(
-          opts,
-          (outputToExtractedCSSMap.get(opts) || '') + chunkCSS,
-        )
+        chunkCSSMap.set(chunk.fileName, chunkCSS)
       }
       return null
     },
@@ -770,10 +753,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const { importedCss } = (bundle[file] as OutputChunk)
-                  .viteMetadata!
+                const { importedCss, importedAssets } = (
+                  bundle[file] as OutputChunk
+                ).viteMetadata!
                 importedCss.forEach((file) =>
                   chunk.viteMetadata!.importedCss.add(file),
+                )
+                importedAssets.forEach((file) =>
+                  chunk.viteMetadata!.importedAssets.add(file),
                 )
                 return false
               }
@@ -790,11 +777,35 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         pureCssChunkNames.forEach((fileName) => {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
+          delete bundle[`${fileName}.map`]
         })
       }
 
-      let extractedCss = outputToExtractedCSSMap.get(opts)
-      if (extractedCss && !hasEmitted) {
+      function extractCss() {
+        let css = ''
+        const collected = new Set<OutputChunk>()
+        const prelimaryNameToChunkMap = new Map(
+          Object.values(bundle)
+            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+            .map((chunk) => [chunk.preliminaryFileName, chunk]),
+        )
+
+        function collect(fileName: string) {
+          const chunk = bundle[fileName]
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
+          collected.add(chunk)
+
+          chunk.imports.forEach(collect)
+          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+        }
+
+        for (const chunkName of chunkCSSMap.keys())
+          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+
+        return css
+      }
+      let extractedCss = !hasEmitted && extractCss()
+      if (extractedCss) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
         this.emitFile({
@@ -2183,10 +2194,9 @@ async function compileLightningCSS(
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
-        minify: config.isProduction && !!config.build.cssMinify,
         targets: config.css?.lightningcss?.targets,
+        minify: config.isProduction && !!config.build.cssMinify,
         analyzeDependencies: true,
-        visitor: config.css?.lightningcss?.visitor,
       })
     : await (
         await importLightningCSS()

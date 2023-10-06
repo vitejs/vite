@@ -170,8 +170,8 @@ Running `vite build` with this config uses a Rollup preset that is oriented towa
 ```
 $ vite build
 building for production...
-dist/my-lib.js      0.08 KiB / gzip: 0.07 KiB
-dist/my-lib.umd.cjs 0.30 KiB / gzip: 0.16 KiB
+dist/my-lib.js      0.08 kB / gzip: 0.07 kB
+dist/my-lib.umd.cjs 0.30 kB / gzip: 0.16 kB
 ```
 
 Recommended `package.json` for your lib:
@@ -214,12 +214,16 @@ Or, if exposing multiple entry points:
 }
 ```
 
-::: tip Note
+::: tip File Extensions
 If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.
 :::
 
 ::: tip Environment Variables
 In library mode, all `import.meta.env.*` usage are statically replaced when building for production. However, `process.env.*` usage are not, so that consumers of your library can dynamically change it. If this is undesirable, you can use `define: { 'process.env.NODE_ENV': '"production"' }` for example to statically replace them.
+:::
+
+::: warning Advanced Usage
+Library mode includes a simple and opinionated configuration for browser-oriented and JS framework libraries. If you are building non-browser libraries, or require advanced build flows, you can use [Rollup](https://rollupjs.org) or [esbuild](https://esbuild.github.io) directly.
 :::
 
 ## Advanced Base Options

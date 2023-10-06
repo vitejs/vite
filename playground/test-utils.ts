@@ -49,6 +49,7 @@ export const hmrPorts = {
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
   'css/lightningcss-proxy': 24686,
+  json: 24687,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -168,7 +169,10 @@ export function findAssetFile(
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
+    fs.readFileSync(
+      path.join(testDir, 'dist', base, '.vite/manifest.json'),
+      'utf-8',
+    ),
   )
 }
 

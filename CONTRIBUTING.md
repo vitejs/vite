@@ -250,6 +250,26 @@ We already have many config options, and we should avoid fixing an issue by addi
 - has workaround using existing options
 - can be addressed with a plugin instead
 
+## Release
+
+If you have publish access, the steps below explain how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
+
+"Release" is done locally to generate the changelogs and git tags:
+
+1. Make sure the git remote for https://github.com/vitejs/vite is set as `origin`.
+2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date.
+3. Run `pnpm release` and follow the prompts to cut a release for a package. It will generate the changelog, a git release tag, and push them to `origin`. You can run with the `--dry` flag to test it out.
+4. When the command finishes, it will provide a link to https://github.com/vitejs/vite/actions/workflows/publish.yml.
+5. Click the link to visit the page, and follow the next steps below.
+
+"Publish" is done on GitHub Actions to publish the package to npm:
+
+1. Shortly in the workflows page, a new workflow will appear for the released package and is waiting for approval to publish to npm.
+2. Click on the workflow to open its page.
+3. Click on the "Review deployments" button in the yellow box, a popup will appear.
+4. Check "Release" and click "Approve and deploy".
+5. The package will start publishing to npm.
+
 ## Docs Translation Contribution
 
 To add a new language to the Vite docs, see [`vite-docs-template`](https://github.com/tony19/vite-docs-template/blob/main/.github/CONTRIBUTING.md).
