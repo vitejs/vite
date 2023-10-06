@@ -137,19 +137,23 @@ async function instantiateModule(
     isProduction,
     resolve: { dedupe, preserveSymlinks },
     root,
+    ssr,
   } = server.config
+
+  const overrideConditions = ssr.resolve?.externalConditions || []
 
   const resolveOptions: NodeImportResolveOptions = {
     mainFields: ['main'],
     browserField: true,
     conditions: [],
-    overrideConditions: ['production', 'development'],
+    overrideConditions: [...overrideConditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
     isBuild: false,
     isProduction,
     root,
+    ssrConfig: ssr,
     legacyProxySsrExternalModules:
       server.config.legacy?.proxySsrExternalModules,
     packageCache: server.config.packageCache,
@@ -300,6 +304,8 @@ async function nodeImport(
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions,
       false,
+      undefined,
+      true,
     )
     if (!resolved) {
       const err: any = new Error(
