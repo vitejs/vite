@@ -9,7 +9,6 @@ import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
-export const ERR_EISDIR = 'EISDIR'
 
 const debug = createDebugger('vite:optimize-deps')
 

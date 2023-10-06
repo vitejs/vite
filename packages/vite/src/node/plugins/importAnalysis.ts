@@ -55,7 +55,6 @@ import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { checkPublicFile, urlRE } from './asset'
 import {
-  ERR_EISDIR,
   ERR_OUTDATED_OPTIMIZED_DEP,
   throwOutdatedRequest,
 } from './optimizedDeps'
@@ -627,8 +626,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               server.transformRequest(url, { ssr }).catch((e) => {
                 if (
                   e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-                  e?.code === ERR_CLOSED_SERVER ||
-                  e?.code === ERR_EISDIR
+                  e?.code === ERR_CLOSED_SERVER
                 ) {
                   // these are expected errors
                   return
