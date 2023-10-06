@@ -192,7 +192,9 @@ async function computeEntries(config: ResolvedConfig) {
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
   entries = entries.filter(
-    (entry) => isScannable(entry) && fs.existsSync(entry),
+    (entry) =>
+      isScannable(entry, config.optimizeDeps.extensions) &&
+      fs.existsSync(entry),
   )
 
   return entries
@@ -520,7 +522,7 @@ function esbuildScanPlugin(
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
-            } else if (isScannable(resolved)) {
+            } else if (isScannable(resolved, config.optimizeDeps.extensions)) {
               const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
@@ -576,7 +578,10 @@ function esbuildScanPlugin(
             },
           })
           if (resolved) {
-            if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
+            if (
+              shouldExternalizeDep(resolved, id) ||
+              !isScannable(resolved, config.optimizeDeps.extensions)
+            ) {
               return externalUnlessEntry({ path: id })
             }
 
@@ -659,8 +664,13 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
   return false
 }
 
-function isScannable(id: string): boolean {
-  return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
+function isScannable(id: string, extensions: string[] | undefined): boolean {
+  return (
+    JS_TYPES_RE.test(id) ||
+    htmlTypesRE.test(id) ||
+    extensions?.includes(path.extname(id)) ||
+    false
+  )
 }
 
 // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
