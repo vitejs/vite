@@ -98,7 +98,7 @@ async function ssrTransformScript(
   // hoist at the start of the file, after the hashbang
   const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
 
-  function defineImport(index = 0, source: string) {
+  function defineImport(index: number, source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
     s.appendLeft(
