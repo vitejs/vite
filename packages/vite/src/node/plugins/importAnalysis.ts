@@ -330,10 +330,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        url = resolved.id
-
-        if (isExternalUrl(url)) {
-          return [url, url]
+        if (isExternalUrl(resolved.id)) {
+          return [resolved.id, resolved.id]
         }
 
         const isRelative = url[0] === '.'
@@ -351,6 +349,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
           url = path.posix.join(FS_PREFIX, resolved.id)
+        } else {
+          url = resolved.id
         }
 
         // if the resolved id is not a valid browser import specifier,
