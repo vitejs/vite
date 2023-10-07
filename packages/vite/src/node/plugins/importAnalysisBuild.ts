@@ -53,7 +53,7 @@ function toRelativePath(filename: string, importer: string) {
 function indexOfMatchInSlice(
   str: string,
   reg: RegExp,
-  pos: number = 0
+  pos: number = 0,
 ): number {
   if (pos !== 0) {
     str = str.slice(pos)
@@ -82,7 +82,7 @@ declare const seen: Record<string, boolean>
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
-  importerUrl?: string
+  importerUrl?: string,
 ) {
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
@@ -129,11 +129,11 @@ function preload(
         return new Promise((res, rej) => {
           link.addEventListener('load', res)
           link.addEventListener('error', () =>
-            rej(new Error(`Unable to preload CSS for ${dep}`))
+            rej(new Error(`Unable to preload CSS for ${dep}`)),
           )
         })
       }
-    })
+    }),
   )
     .then(() => baseModule())
     .catch((err) => {
@@ -230,7 +230,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const normalizeUrl = async (
         url: string,
-        pos: number
+        pos: number,
       ): Promise<[string, string]> => {
         let importerFile = importer
 
@@ -262,9 +262,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
-              importerFile
+              importerFile,
             )}". Does the file exist?`,
-            pos
+            pos,
           )
         }
 
@@ -315,7 +315,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               optimizeModulePreloadRelativePaths || customModulePreloadPaths
                 ? ',import.meta.url'
                 : ''
-            })`
+            })`,
           )
         }
 
@@ -341,7 +341,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 depsOptimizer.metadata,
                 file,
                 config,
-                ssr
+                ssr,
               )
 
               let rewriteDone = false
@@ -353,8 +353,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (!file.match(optimizedDepDynamicRE)) {
                   config.logger.error(
                     colors.red(
-                      `Vite Error, ${url} optimized info should be defined`
-                    )
+                      `Vite Error, ${url} optimized info should be defined`,
+                    ),
                   )
                 }
               } else if (needsInterop) {
@@ -365,7 +365,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   url,
                   index,
                   importer,
-                  config
+                  config,
                 )
                 rewriteDone = true
               }
@@ -458,7 +458,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const fileDeps: FileDep[] = []
           const addFileDep = (
             url: string,
-            runtime: boolean = false
+            runtime: boolean = false,
           ): number => {
             const index = fileDeps.findIndex((dep) => dep.url === url)
             if (index === -1) {
@@ -500,7 +500,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (url) {
                 normalizedFile = path.posix.join(
                   path.posix.dirname(chunk.fileName),
-                  url
+                  url,
                 )
 
                 const ownerFilename = chunk.fileName
@@ -541,13 +541,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               let markerStartPos = indexOfMatchInSlice(
                 code,
                 preloadMarkerWithQuote,
-                end
+                end,
               )
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
                 markerStartPos = indexOfMatchInSlice(
                   code,
-                  preloadMarkerWithQuote
+                  preloadMarkerWithQuote,
                 )
               }
 
@@ -561,7 +561,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
                         // we still need to pass these deps to the preload helper in dynamic imports.
                         [...deps].filter((d) =>
-                          getFileDep(d).url.endsWith('.css')
+                          getFileDep(d).url.endsWith('.css'),
                         )
                       : [...deps]
                     : []
@@ -591,7 +591,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         {
                           hostId: file,
                           hostType: 'js',
-                        }
+                        },
                       ).map((otherDep) => addFileDep(otherDep)),
                       ...cssDeps,
                     ]
@@ -606,7 +606,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       chunk.fileName,
                       'js',
                       config,
-                      toRelativePath
+                      toRelativePath,
                     )
 
                     if (typeof replacement === 'string') {
@@ -621,14 +621,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // are used, the path will be reconstructed by the import preload helper
                     optimizeModulePreloadRelativePaths
                       ? addFileDep(toRelativePath(getFileDep(d).url, file))
-                      : d
+                      : d,
                   )
                 }
 
                 s.update(
                   markerStartPos,
                   markerStartPos + preloadMarker.length + 2,
-                  `__viteMapDep([${renderedDeps.join(',')}])`
+                  `__viteMapDep([${renderedDeps.join(',')}])`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
@@ -637,7 +637,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const fileDepsCode = `[${fileDeps
             .map((fileDep) =>
-              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url)
+              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
             )
             .join(',')}]`
 
@@ -657,13 +657,13 @@ function __viteMapDep(indexes) {
               s.update(
                 markerStartPos,
                 markerStartPos + preloadMarker.length + 2,
-                'void 0'
+                'void 0',
               )
             }
             markerStartPos = indexOfMatchInSlice(
               code,
               preloadMarkerWithQuote,
-              markerStartPos + preloadMarker.length + 2
+              markerStartPos + preloadMarker.length + 2,
             )
           }
 
@@ -684,7 +684,7 @@ function __viteMapDep(indexes) {
               if (config.build.sourcemap === 'inline') {
                 chunk.code = chunk.code.replace(
                   convertSourceMap.mapFileCommentRegex,
-                  ''
+                  '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
               } else if (config.build.sourcemap) {
