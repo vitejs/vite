@@ -450,16 +450,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
-          const fileDeps: string[] = []
-          const addFileDep = (url: string): number => {
-            const index = fileDeps.indexOf(url)
-            if (index !== -1) {
-              return index
+          type FileDep = {
+            url: string
+            runtime: boolean
+          };
+
+          const fileDeps: FileDep[] = []
+          const addFileDep = (url: string, runtime: boolean = false): number => {
+            const index = fileDeps.findIndex((dep) => dep.url === url)
+            if (index === -1) {
+              return fileDeps.push({url, runtime}) - 1
             } else {
-              return fileDeps.push(url) - 1
+              return index
             }
           }
-          const getFileDep = (index: number) => {
+          const getFileDep = (index: number): FileDep => {
             const fileDep = fileDeps[index];
             if (!fileDep) {
               throw new Error(`Cannot find file dep at index ${index}`)
@@ -552,7 +557,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ? modulePreload === false
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
                         // we still need to pass these deps to the preload helper in dynamic imports.
-                        [...deps].filter((d) => getFileDep(d).endsWith('.css'))
+                        [...deps].filter((d) => getFileDep(d).url.endsWith('.css'))
                       : [...deps]
                     : []
 
@@ -569,10 +574,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     const cssDeps: number[] = []
                     const otherDeps: number[] = []
                     for (const dep of depsArray) {
-                      ;(getFileDep(dep).endsWith('.css') ? cssDeps : otherDeps).push(dep)
+                      ;(getFileDep(dep).url.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                     }
                     resolvedDeps = [
-                      ...resolveDependencies(normalizedFile, otherDeps.map((otherDep) => getFileDep(otherDep)), {
+                      ...resolveDependencies(normalizedFile, otherDeps.map((otherDep) => getFileDep(otherDep).url), {
                         hostId: file,
                         hostType: 'js',
                       }).map((otherDep) => addFileDep(otherDep)),
@@ -584,26 +589,26 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
                   renderedDeps = resolvedDeps.map((dep: number) => {
                     const replacement = toOutputFilePathInJS(
-                      getFileDep(dep),
+                      getFileDep(dep).url,
                       'asset',
                       chunk.fileName,
                       'js',
                       config,
                       toRelativePath,
                     )
-                    const replacementString =
-                      typeof replacement === 'string'
-                        ? JSON.stringify(replacement)
-                        : replacement.runtime
 
-                    return addFileDep(replacementString);
+                    if (typeof replacement === 'string') {
+                      return addFileDep(replacement);
+                    }
+
+                    return addFileDep(replacement.runtime, true);
                   })
                 } else {
                   renderedDeps = depsArray.map((d) =>
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
                       optimizeModulePreloadRelativePaths
-                        ? addFileDep(toRelativePath(getFileDep(d), file))
+                        ? addFileDep(toRelativePath(getFileDep(d).url, file))
                         : d,
                   )
                 }
@@ -618,12 +623,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
 
+          const fileDepsCode = `[${fileDeps.map((fileDep) => fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url)).join(',')}]`;
+
           s.append(`\
 function __viteMapDep(indexes) {
   if (!__viteMapDep.viteFileDeps) {
-    __viteMapDep.viteFileDeps = ${JSON.stringify(
-      fileDeps,
-    )}
+    __viteMapDep.viteFileDeps = ${fileDepsCode}
   }
   return indexes.map((i) => __viteMapDep.viteFileDeps[i])
 }`)
