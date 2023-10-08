@@ -297,6 +297,11 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 
 You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
 
+## Stormkit
+
+To deploy your static site on [Stormkit](https://www.stormkit.io/), refer to [this guide](https://www.stormkit.io/blog/getting-started-with-vitejs). Additionally, you can explore the enhanced capabilities of Vite.js by [using template repository](https://github.com/stormkit-io/monorepo-template-react), which comes pre-configured to support features like server side rendering, static page generation, single-page application hosting, and API provision.
+
+
 ## Azure Static Web Apps
 
 You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://aka.ms/staticwebapps) service. You need:
