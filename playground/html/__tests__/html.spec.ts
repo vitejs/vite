@@ -331,7 +331,7 @@ describe.runIf(isServe)('url with pathname', () => {
     await page.goto(viteTestUrl + '/side-effects')
     expect(browserLogs).toContain('pathname:/side-effects')
   })
-  test('pathname conflicts with folder at same level as base, should load index.html', async () => {
+  test('pathname conflicts with the folder name of the project, should load index.html', async () => {
     await page.goto(viteTestUrl + '/vite')
     expect(browserLogs).toContain('pathname:/vite')
   })
