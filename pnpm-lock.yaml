@@ -726,12 +726,6 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
 
-  playground/long-file-name:
-    dependencies:
-      longfilenamepackage:
-        specifier: ^1.0.0
-        version: 1.0.0
-
   playground/minify:
     dependencies:
       minified-module:
@@ -894,6 +888,9 @@ importers:
       lodash.clonedeep:
         specifier: ^4.5.0
         version: 4.5.0
+      longfilenamepackage:
+        specifier: 1.0.0
+        version: 1.0.0
       phoenix:
         specifier: ^1.7.7
         version: 1.7.7

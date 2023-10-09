@@ -43,6 +43,7 @@
     "vue": "^3.3.4",
     "vuex": "^4.1.0",
     "lodash": "^4.17.21",
-    "lodash.clonedeep": "^4.5.0"
+    "lodash.clonedeep": "^4.5.0",
+    "longfilenamepackage": "1.0.0"
   }
 }

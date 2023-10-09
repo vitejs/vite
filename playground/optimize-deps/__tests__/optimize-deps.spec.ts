@@ -256,3 +256,7 @@ describe.runIf(isServe)('optimizeDeps config', () => {
     ])
   })
 })
+
+test('long file name should work', async () => {
+  expect(await page.textContent('.long-file-name')).toMatch(`hello world`)
+})
