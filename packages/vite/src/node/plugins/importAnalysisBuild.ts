@@ -26,6 +26,11 @@ import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
+type FileDep = {
+  url: string
+  runtime: boolean
+}
+
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
  * target is not native es - so that injected helper logic can be conditionally
@@ -449,11 +454,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
-
-          type FileDep = {
-            url: string
-            runtime: boolean
-          }
 
           const fileDeps: FileDep[] = []
           const addFileDep = (
