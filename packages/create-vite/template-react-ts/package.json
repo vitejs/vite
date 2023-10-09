@@ -14,12 +14,12 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.24",
-    "@types/react-dom": "^18.2.8",
+    "@types/react": "^18.2.25",
+    "@types/react-dom": "^18.2.11",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "@vitejs/plugin-react": "^4.1.0",
-    "eslint": "^8.50.0",
+    "eslint": "^8.51.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
     "typescript": "^5.2.2",
