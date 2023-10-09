@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.4.0",
+    "axios": "^1.5.1",
     "clipboard": "^2.0.11",
     "@vitejs/test-dep-alias-using-absolute-path": "file:./dep-alias-using-absolute-path",
     "@vitejs/test-dep-cjs-browser-field-bare": "file:./dep-cjs-browser-field-bare",
@@ -30,6 +30,7 @@
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "@vitejs/test-dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "@vitejs/test-dep-with-optional-peer-dep": "file:./dep-with-optional-peer-dep",
+    "@vitejs/test-dep-with-optional-peer-dep-submodule": "file:./dep-with-optional-peer-dep-submodule",
     "@vitejs/test-dep-non-optimized": "file:./dep-non-optimized",
     "@vitejs/test-added-in-entries": "file:./added-in-entries",
     "lodash-es": "^4.17.21",
@@ -38,7 +39,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
-    "url": "^0.11.1",
+    "url": "^0.11.3",
     "vue": "^3.3.4",
     "vuex": "^4.1.0",
     "lodash": "^4.17.21",

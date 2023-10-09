@@ -5,11 +5,18 @@ import colors from 'picocolors'
 import type { Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath, unique, wrapId } from '../utils'
+import {
+  createDebugger,
+  normalizePath,
+  unique,
+  withTrailingSlash,
+  wrapId,
+} from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
+import { getEnvFilesForMode } from '../env'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -38,7 +45,9 @@ export interface HmrContext {
 }
 
 export function getShortName(file: string, root: string): string {
-  return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
+  return file.startsWith(withTrailingSlash(root))
+    ? path.posix.relative(root, file)
+    : file
 }
 
 export async function handleHMRUpdate(
@@ -54,9 +63,10 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === name,
   )
+
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (fileName === '.env' || fileName.startsWith('.env.'))
+    getEnvFilesForMode(config.mode).includes(fileName)
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
@@ -81,7 +91,7 @@ export async function handleHMRUpdate(
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
-  if (file.startsWith(normalizedClientDir)) {
+  if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
     ws.send({
       type: 'full-reload',
       path: '*',

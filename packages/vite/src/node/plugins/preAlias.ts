@@ -14,6 +14,7 @@ import {
   isInNodeModules,
   isOptimizable,
   moduleListContains,
+  withTrailingSlash,
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
@@ -114,7 +115,7 @@ function matches(pattern: string | RegExp, importee: string) {
   if (importee === pattern) {
     return true
   }
-  return importee.startsWith(pattern + '/')
+  return importee.startsWith(withTrailingSlash(pattern))
 }
 
 function getAliasPatterns(

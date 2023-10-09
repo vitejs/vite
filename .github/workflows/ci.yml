@@ -45,20 +45,20 @@ jobs:
           - os: macos-latest
             node_version: 18
           - os: windows-latest
-            node_version: 18
+            node_version: 18.17
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@87697c0dca7dd44e37a2b79a79489332556ff1f3 # v37.6.0
+        uses: tj-actions/changed-files@db153baf731265ad02cd490b07f470e2d55e3345 # v39.2.1
         with:
           files: |
             docs/**
@@ -131,7 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Lint: node-18, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2.4.0

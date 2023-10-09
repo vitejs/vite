@@ -220,7 +220,7 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
 3. Run your build command.
-4. Deploy using `npx wrangler pages publish dist`.
+4. Deploy using `npx wrangler pages deploy dist`.
 
 ```bash
 # Install Wrangler CLI
@@ -233,7 +233,7 @@ $ wrangler login
 $ npm run build
 
 # Create new deployment
-$ npx wrangler pages publish dist
+$ npx wrangler pages deploy dist
 ```
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.

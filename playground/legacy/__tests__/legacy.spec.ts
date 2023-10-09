@@ -52,13 +52,13 @@ test('generates assets', async () => {
     () => page.textContent('#assets'),
     isBuild
       ? [
-          'index: text/html; charset=utf-8',
-          'index-legacy: text/html; charset=utf-8',
-          'chunk-async: text/html; charset=utf-8',
-          'chunk-async-legacy: text/html; charset=utf-8',
+          'index: text/html;charset=utf-8',
+          'index-legacy: text/html;charset=utf-8',
+          'chunk-async: text/html;charset=utf-8',
+          'chunk-async-legacy: text/html;charset=utf-8',
           'immutable-chunk: application/javascript',
           'immutable-chunk-legacy: application/javascript',
-          'polyfills-legacy: text/html; charset=utf-8',
+          'polyfills-legacy: text/html;charset=utf-8',
         ].join('\n')
       : [
           'index: text/html',
@@ -97,6 +97,13 @@ describe.runIf(isBuild)('build', () => {
     expect(manifest['../../vite/legacy-polyfills-legacy'].src).toBe(
       '../../vite/legacy-polyfills-legacy',
     )
+    expect(manifest['custom0-legacy.js'].file).toMatch(
+      /chunk-X-legacy.\w{8}.js/,
+    )
+    expect(manifest['custom1-legacy.js'].file).toMatch(
+      /chunk-X-legacy-\w{8}.js/,
+    )
+    expect(manifest['custom2-legacy.js'].file).toMatch(/chunk-X-legacy\w{8}.js/)
     // modern polyfill
     expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
     expect(manifest['../../vite/legacy-polyfills'].src).toBe(

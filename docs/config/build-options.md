@@ -163,7 +163,7 @@ Build as a library. `entry` is required since the library cannot use HTML as ent
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
+When set to `true`, the build will also generate a `.vite/manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
 
 ## build.ssrManifest
 
@@ -180,6 +180,13 @@ When set to `true`, the build will also generate an SSR manifest for determining
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
 Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
+
+## build.ssrEmitAssets
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+During the SSR build, static assets aren't emitted as it is assumed they would be emitted as part of the client build. This option allows frameworks to force emitting them in both the client and SSR build. It is responsibility of the framework to merge the assets with a post build step.
 
 ## build.minify
 
@@ -201,6 +208,8 @@ npm add -D terser
 - **Type:** `TerserOptions`
 
 Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
+
+In addition, you can also pass a `maxWorkers: number` option to specify the max number of workers to spawn. Defaults to the number of CPUs minus 1.
 
 ## build.write
 

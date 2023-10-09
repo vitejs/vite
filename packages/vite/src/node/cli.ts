@@ -8,7 +8,6 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
-import { bindShortcuts } from './shortcuts'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -112,9 +111,21 @@ const convertHost = (v: any) => {
   return v
 }
 
+/**
+ * base may be a number (like 0), should convert to empty string
+ */
+const convertBase = (v: any) => {
+  if (v === 0) {
+    return ''
+  }
+  return v
+}
+
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('--base <path>', `[string] public base path (default: /)`)
+  .option('--base <path>', `[string] public base path (default: /)`, {
+    type: [convertBase],
+  })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
@@ -174,11 +185,15 @@ cli
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
         )}  ${startupDurationString}\n`,
-        { clear: !server.config.logger.hasWarned },
+        {
+          clear:
+            !server.config.logger.hasWarned &&
+            !(globalThis as any).__vite_cjs_skip_clear_screen,
+        },
       )
 
       server.printUrls()
-      bindShortcuts(server, {
+      server.bindCLIShortcuts({
         print: true,
         customShortcuts: [
           profileSession && {
@@ -355,7 +370,7 @@ cli
           },
         })
         server.printUrls()
-        bindShortcuts(server, { print: true })
+        server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),
