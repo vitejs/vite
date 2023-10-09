@@ -7,7 +7,6 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   ModuleFormat,
-  OutputBundle,
   OutputChunk,
   RenderedChunk,
   RollupError,
