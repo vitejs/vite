@@ -323,6 +323,39 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config,
             publicToRelative,
           )
+        // Determines true start position for the node, either the < character
+        // position, or the newline at the end of the previous line's node.
+        const nodeStartWithLeadingWhitespace = (
+          node: DefaultTreeAdapterMap['node'],
+        ) => {
+          if (node.sourceCodeLocation!.startOffset === 0)
+            return node.sourceCodeLocation!.startOffset
+
+          // Gets the offset for the start of the line including the
+          // newline trailing the previous node
+          const lineStartOffset =
+            node.sourceCodeLocation!.startOffset -
+            node.sourceCodeLocation!.startCol
+          const line = s.slice(
+            lineStartOffset,
+            node.sourceCodeLocation!.startOffset,
+          )
+
+          // <previous-line-node></previous-line-node>
+          // <target-node></target-node>
+          //
+          // Here we want to target the newline at the end of the previous line
+          // as the start position for our target.
+          //
+          // <previous-node></previous-node>
+          // <doubled-up-node></doubled-up-node><target-node></target-node>
+          //
+          // However, if there is content between our target node start and the
+          // previous newline, we cannot strip it out without risking content deletion.
+          return line.trim()
+            ? node.sourceCodeLocation!.startOffset
+            : lineStartOffset
+        }
 
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
@@ -444,7 +477,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
                       url,
-                      start: node.sourceCodeLocation!.startOffset,
+                      start: nodeStartWithLeadingWhitespace(node),
                       end: node.sourceCodeLocation!.endOffset,
                     })
                     js += importExpression
@@ -516,7 +549,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             // remove the script tag from the html. we are going to inject new
             // ones in the end.
             s.remove(
-              node.sourceCodeLocation!.startOffset,
+              nodeStartWithLeadingWhitespace(node),
               node.sourceCodeLocation!.endOffset,
             )
           }
