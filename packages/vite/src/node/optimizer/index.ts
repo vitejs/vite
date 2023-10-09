@@ -1279,6 +1279,9 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       return value
     },
   )
+  if (config.optimizeDeps.hashFileNames) {
+    content += '&hashed'
+  }
   return getHash(content)
 }
 
@@ -1293,9 +1296,13 @@ function getOptimizedBrowserHash(
 export function optimizedDepInfoFromId(
   metadata: DepOptimizationMetadata,
   id: string,
+  useHash: boolean | undefined,
 ): OptimizedDepInfo | undefined {
   return (
-    metadata.optimized[id] || metadata.discovered[id] || metadata.chunks[id]
+    (useHash && metadata.optimized[flattenId(id, useHash)]) ||
+    metadata.optimized[id] ||
+    metadata.discovered[id] ||
+    metadata.chunks[id]
   )
 }
 

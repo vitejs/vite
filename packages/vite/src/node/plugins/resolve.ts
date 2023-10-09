@@ -20,7 +20,6 @@ import {
   cleanUrl,
   createDebugger,
   deepImportRE,
-  flattenId,
   fsPathFromId,
   getNpmPackageName,
   injectQuery,
@@ -924,10 +923,7 @@ export async function tryOptimizedResolve(
 
   const hashFileNames = depsOptimizer.options.hashFileNames
 
-  const depInfo = optimizedDepInfoFromId(
-    metadata,
-    hashFileNames ? flattenId(id, hashFileNames) : id,
-  )
+  const depInfo = optimizedDepInfoFromId(metadata, id, hashFileNames)
   if (depInfo) {
     return depsOptimizer.getOptimizedDepId(depInfo)
   }
