@@ -628,7 +628,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.update(
                   markerStartPos,
                   markerStartPos + preloadMarker.length + 2,
-                  `__viteMapDep([${renderedDeps.join(',')}])`,
+                  `__vite__mapDeps([${renderedDeps.join(',')}])`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
@@ -642,11 +642,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             .join(',')}]`
 
           s.append(`\
-function __viteMapDep(indexes) {
-  if (!__viteMapDep.viteFileDeps) {
-    __viteMapDep.viteFileDeps = ${fileDepsCode}
+function __vite__mapDeps(indexes) {
+  if (!__vite__mapDeps.viteFileDeps) {
+    __vite__mapDeps.viteFileDeps = ${fileDepsCode}
   }
-  return indexes.map((i) => __viteMapDep.viteFileDeps[i])
+  return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
 }`)
 
           // there may still be markers due to inlined dynamic imports, remove
