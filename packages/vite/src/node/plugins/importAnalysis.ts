@@ -329,6 +329,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
+        if (isExternalUrl(resolved.id)) {
+          return [resolved.id, resolved.id]
+        }
+
         const isRelative = url[0] === '.'
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
@@ -346,10 +350,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = path.posix.join(FS_PREFIX, resolved.id)
         } else {
           url = resolved.id
-        }
-
-        if (isExternalUrl(url)) {
-          return [url, url]
         }
 
         // if the resolved id is not a valid browser import specifier,
