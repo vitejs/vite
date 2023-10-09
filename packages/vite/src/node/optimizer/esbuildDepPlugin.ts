@@ -13,7 +13,6 @@ import {
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
-import { useHash } from '.'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -185,7 +184,7 @@ export function esbuildDepPlugin(
       )
 
       function resolveEntry(id: string) {
-        const flatId = flattenId(id, useHash)
+        const flatId = flattenId(id)
         if (flatId in qualified) {
           return {
             path: qualified[flatId],

@@ -44,8 +44,6 @@ const debug = createDebugger('vite:deps')
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
-export let useHash = false
-
 export type ExportsData = {
   hasImports: boolean
   // exported names (for `export { a as b }`, `b` is exported name)
@@ -140,6 +138,14 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   noDiscovery?: boolean
+  /**
+   * hash file names for optimized deps. This is useful when the file name is
+   * long enough to cause ENAMETOOLONG. This hashes all file names to 64 hex chars.
+   * Related issue: #14542
+   *
+   * @default false
+   */
+  hashFileNames?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -590,6 +596,8 @@ export function runOptimizeDeps(
     cancel: cleanUp,
   }
 
+  const useHash = !!config.optimizeDeps.hashFileNames
+
   const start = performance.now()
 
   const preparedRun = prepareEsbuildOptimizerRun(
@@ -603,7 +611,6 @@ export function runOptimizeDeps(
 
   const runResult = preparedRun.then(parseResult).catch((e) => {
     if (e.errors && e.message.includes('file name too long')) {
-      useHash = true
       const hashedPreparedRun = prepareEsbuildOptimizerRun(
         resolvedConfig,
         depsInfo,
@@ -956,7 +963,10 @@ export function getOptimizedDepPath(
   ssr: boolean,
 ): string {
   return normalizePath(
-    path.resolve(getDepsCacheDir(config, ssr), flattenId(id, useHash) + '.js'),
+    path.resolve(
+      getDepsCacheDir(config, ssr),
+      flattenId(id, config.optimizeDeps.hashFileNames) + '.js',
+    ),
   )
 }
 
