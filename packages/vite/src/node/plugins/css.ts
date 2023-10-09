@@ -737,7 +737,35 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
         )
 
-        removePureCssChunks(bundle, pureCssChunkNames, opts.format)
+        const replaceEmptyChunk = getEmptyChunkReplacer(
+          pureCssChunkNames,
+          opts.format,
+        )
+
+        for (const file in bundle) {
+          const chunk = bundle[file]
+          if (chunk.type === 'chunk') {
+            // remove pure css chunk from other chunk's imports,
+            // and also register the emitted CSS files under the importer
+            // chunks instead.
+            chunk.imports = chunk.imports.filter((file) => {
+              if (pureCssChunkNames.includes(file)) {
+                const { importedCss, importedAssets } = (
+                  bundle[file] as OutputChunk
+                ).viteMetadata!
+                importedCss.forEach((file) =>
+                  chunk.viteMetadata!.importedCss.add(file),
+                )
+                importedAssets.forEach((file) =>
+                  chunk.viteMetadata!.importedAssets.add(file),
+                )
+                return false
+              }
+              return true
+            })
+            chunk.code = replaceEmptyChunk(chunk.code)
+          }
+        }
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
@@ -798,9 +826,6 @@ export function getEmptyChunkReplacer(
     .join('|')
     .replace(/\./g, '\\.')
 
-  // require and import calls might be chained by minifier using the comma operator
-  // in this case we have to keep one comma
-  // if a next require is chained or add a semicolon to terminate the chain.
   const emptyChunkRE = new RegExp(
     outputFormat === 'es'
       ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
@@ -814,47 +839,6 @@ export function getEmptyChunkReplacer(
       // remove css import while preserving source map location
       (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`,
     )
-}
-
-/**
- * Remove pure CSS chunks from the output bundle
- * @param bundle The output bundle
- * @param pureCssChunkNames Array of pure CSS chunk names
- * @param outputFormat The current output format, to decide whether `require` or `import` is used
- */
-export function removePureCssChunks(
-  bundle: OutputBundle,
-  pureCssChunkNames: string[],
-  outputFormat: ModuleFormat,
-): void {
-  const replaceEmptyChunk = getEmptyChunkReplacer(
-    pureCssChunkNames,
-    outputFormat,
-  )
-
-  for (const file in bundle) {
-    const chunk = bundle[file]
-    if (chunk.type === 'chunk') {
-      // remove pure css chunk from other chunk's imports,
-      // and also register the emitted CSS files under the importer
-      // chunks instead.
-      chunk.imports = chunk.imports.filter((file) => {
-        if (pureCssChunkNames.includes(file)) {
-          const { importedCss, importedAssets } = (bundle[file] as OutputChunk)
-            .viteMetadata!
-          importedCss.forEach((file) =>
-            chunk.viteMetadata!.importedCss.add(file),
-          )
-          importedAssets.forEach((file) =>
-            chunk.viteMetadata!.importedAssets.add(file),
-          )
-          return false
-        }
-        return true
-      })
-      chunk.code = replaceEmptyChunk(chunk.code)
-    }
-  }
 }
 
 interface CSSAtImportResolvers {
