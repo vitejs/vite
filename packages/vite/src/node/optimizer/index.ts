@@ -4,11 +4,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
-import type {
-  BuildContext,
-  BuildResult,
-  BuildOptions as EsbuildBuildOptions,
-} from 'esbuild'
+import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import glob from 'fast-glob'
@@ -609,35 +605,7 @@ export function runOptimizeDeps(
     useHash,
   )
 
-  const runResult = preparedRun.then(parseResult).catch((e) => {
-    if (e.errors && e.message.includes('file name too long')) {
-      const hashedPreparedRun = prepareEsbuildOptimizerRun(
-        resolvedConfig,
-        depsInfo,
-        ssr,
-        processingCacheDir,
-        optimizerContext,
-        useHash,
-      )
-      const hashedContext = hashedPreparedRun.then(parseResult)
-
-      hashedContext.catch(() => {
-        cleanUp()
-      })
-
-      config.logger.error('2')
-      return hashedContext
-    }
-    throw e
-  })
-
-  function parseResult({
-    context,
-    idToExports,
-  }: {
-    context?: BuildContext
-    idToExports: Record<string, ExportsData>
-  }) {
+  const runResult = preparedRun.then(({ context, idToExports }) => {
     function disposeContext() {
       return context?.dispose().catch((e) => {
         config.logger.error('Failed to dispose esbuild context', { error: e })
@@ -648,89 +616,99 @@ export function runOptimizeDeps(
       return cancelledResult
     }
 
-    function parseSuccessfulResult(result: BuildResult<EsbuildBuildOptions>) {
-      const meta = result.metafile!
+    return context
+      .rebuild()
+      .then((result) => {
+        const meta = result.metafile!
 
-      // the paths in `meta.outputs` are relative to `process.cwd()`
-      const processingCacheDirOutputPath = path.relative(
-        process.cwd(),
-        processingCacheDir,
-      )
-
-      for (const id in depsInfo) {
-        const output = esbuildOutputFromId(
-          meta.outputs,
-          id,
+        // the paths in `meta.outputs` are relative to `process.cwd()`
+        const processingCacheDirOutputPath = path.relative(
+          process.cwd(),
           processingCacheDir,
-          useHash,
         )
 
-        const { exportsData, ...info } = depsInfo[id]
-        addOptimizedDepInfo(metadata, 'optimized', {
-          ...info,
-          // We only need to hash the output.imports in to check for stability, but adding the hash
-          // and file path gives us a unique hash that may be useful for other things in the future
-          fileHash: getHash(
-            metadata.hash + depsInfo[id].file + JSON.stringify(output.imports),
-          ),
-          browserHash: metadata.browserHash,
-          // After bundling we have more information and can warn the user about legacy packages
-          // that require manual configuration
-          needsInterop: needsInterop(config, ssr, id, idToExports[id], output),
-        })
-      }
+        for (const id in depsInfo) {
+          const output = esbuildOutputFromId(
+            meta.outputs,
+            id,
+            processingCacheDir,
+            useHash,
+          )
 
-      for (const o of Object.keys(meta.outputs)) {
-        if (!o.match(jsMapExtensionRE)) {
-          const id = path
-            .relative(processingCacheDirOutputPath, o)
-            .replace(jsExtensionRE, '')
-          const file = getOptimizedDepPath(id, resolvedConfig, ssr)
-          if (
-            !findOptimizedDepInfoInRecord(
-              metadata.optimized,
-              (depInfo) => depInfo.file === file,
-            )
-          ) {
-            addOptimizedDepInfo(metadata, 'chunks', {
+          const { exportsData, ...info } = depsInfo[id]
+          addOptimizedDepInfo(metadata, 'optimized', {
+            ...info,
+            // We only need to hash the output.imports in to check for stability, but adding the hash
+            // and file path gives us a unique hash that may be useful for other things in the future
+            fileHash: getHash(
+              metadata.hash +
+                depsInfo[id].file +
+                JSON.stringify(output.imports),
+            ),
+            browserHash: metadata.browserHash,
+            // After bundling we have more information and can warn the user about legacy packages
+            // that require manual configuration
+            needsInterop: needsInterop(
+              config,
+              ssr,
               id,
-              file,
-              needsInterop: false,
-              browserHash: metadata.browserHash,
-            })
+              idToExports[id],
+              output,
+            ),
+          })
+        }
+
+        for (const o of Object.keys(meta.outputs)) {
+          if (!o.match(jsMapExtensionRE)) {
+            const id = path
+              .relative(processingCacheDirOutputPath, o)
+              .replace(jsExtensionRE, '')
+            const file = getOptimizedDepPath(id, resolvedConfig, ssr)
+            if (
+              !findOptimizedDepInfoInRecord(
+                metadata.optimized,
+                (depInfo) => depInfo.file === file,
+              )
+            ) {
+              addOptimizedDepInfo(metadata, 'chunks', {
+                id,
+                file,
+                needsInterop: false,
+                browserHash: metadata.browserHash,
+              })
+            }
           }
         }
-      }
 
-      debug?.(
-        `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
-      )
+        debug?.(
+          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
+        )
 
-      return successfulResult
-    }
+        return successfulResult
+      })
 
-    function rebuildContext(context: BuildContext<EsbuildBuildOptions>) {
-      const result = context
-        .rebuild()
-        .then(parseSuccessfulResult)
-
-        .catch((e) => {
-          if (e.errors && e.message.includes('The build was canceled')) {
+      .catch((e) => {
+        if (e.errors) {
+          if (e.message.includes('The build was canceled')) {
             // esbuild logs an error when cancelling, but this is expected so
             // return an empty result instead
             return cancelledResult
           }
-          config.logger.error('1')
-          throw e
-        })
-        .finally(() => {
-          return disposeContext()
-        })
-      return result
-    }
-
-    return rebuildContext(context)
-  }
+          if (e.message.includes('The build was canceled')) {
+            config.logger.error(
+              colors.red(`Failed to optimize dependencies:`) +
+                ` file name too long. Try using ` +
+                colors.bold(`optimizeDeps.hashFileNames`) +
+                ` to hash file names.`,
+            )
+          }
+        }
+        throw e
+      })
+      .finally(() => {
+        return disposeContext()
+      })
+  })
 
   runResult.catch(() => {
     cleanUp()
