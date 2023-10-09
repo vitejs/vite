@@ -44,7 +44,6 @@ export default defineConfig({
       ],
     },
     entries: ['index.html', 'unused-split-entry.js'],
-    hashFileNames: true,
   },
 
   build: {

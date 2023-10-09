@@ -134,14 +134,6 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   noDiscovery?: boolean
-  /**
-   * hash file names for optimized deps. This is useful when the file name is
-   * long enough to cause ENAMETOOLONG. This hashes all file names to 64 hex chars.
-   * Related issue: #14542
-   *
-   * @default false
-   */
-  hashFileNames?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -592,8 +584,6 @@ export function runOptimizeDeps(
     cancel: cleanUp,
   }
 
-  const useHash = !!config.optimizeDeps.hashFileNames
-
   const start = performance.now()
 
   const preparedRun = prepareEsbuildOptimizerRun(
@@ -602,7 +592,6 @@ export function runOptimizeDeps(
     ssr,
     processingCacheDir,
     optimizerContext,
-    useHash,
   )
 
   const runResult = preparedRun.then(({ context, idToExports }) => {
@@ -632,7 +621,6 @@ export function runOptimizeDeps(
             meta.outputs,
             id,
             processingCacheDir,
-            useHash,
           )
 
           const { exportsData, ...info } = depsInfo[id]
@@ -694,14 +682,6 @@ export function runOptimizeDeps(
             // return an empty result instead
             return cancelledResult
           }
-          if (e.message.includes('The build was canceled')) {
-            config.logger.error(
-              colors.red(`Failed to optimize dependencies:`) +
-                ` file name too long. Try using ` +
-                colors.bold(`optimizeDeps.hashFileNames`) +
-                ` to hash file names.`,
-            )
-          }
         }
         throw e
       })
@@ -731,7 +711,6 @@ async function prepareEsbuildOptimizerRun(
   ssr: boolean,
   processingCacheDir: string,
   optimizerContext: { cancelled: boolean },
-  useHash: boolean,
 ): Promise<{
   context?: BuildContext
   idToExports: Record<string, ExportsData>
@@ -773,7 +752,7 @@ async function prepareEsbuildOptimizerRun(
           ...esbuildOptions.loader,
         }
       }
-      const flatId = flattenId(id, useHash)
+      const flatId = flattenId(id)
 
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
@@ -941,10 +920,7 @@ export function getOptimizedDepPath(
   ssr: boolean,
 ): string {
   return normalizePath(
-    path.resolve(
-      getDepsCacheDir(config, ssr),
-      flattenId(id, config.optimizeDeps.hashFileNames) + '.js',
-    ),
+    path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js'),
   )
 }
 
@@ -1114,10 +1090,9 @@ function esbuildOutputFromId(
   outputs: Record<string, any>,
   id: string,
   cacheDirOutputPath: string,
-  useHash: boolean,
 ): any {
   const cwd = process.cwd()
-  const flatId = flattenId(id, useHash) + '.js'
+  const flatId = flattenId(id) + '.js'
   const normalizedOutputPath = normalizePath(
     path.relative(cwd, path.join(cacheDirOutputPath, flatId)),
   )
@@ -1279,9 +1254,7 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       return value
     },
   )
-  if (config.optimizeDeps.hashFileNames) {
-    content += '&hashed'
-  }
+
   return getHash(content)
 }
 
@@ -1296,13 +1269,12 @@ function getOptimizedBrowserHash(
 export function optimizedDepInfoFromId(
   metadata: DepOptimizationMetadata,
   id: string,
-  useHash: boolean | undefined,
 ): OptimizedDepInfo | undefined {
+  const flatId = flattenId(id)
   return (
-    (useHash && metadata.optimized[flattenId(id, useHash)]) ||
-    metadata.optimized[id] ||
-    metadata.discovered[id] ||
-    metadata.chunks[id]
+    metadata.optimized[flatId] ||
+    metadata.discovered[flatId] ||
+    metadata.chunks[flatId]
   )
 }
 
