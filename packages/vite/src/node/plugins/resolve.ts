@@ -20,6 +20,7 @@ import {
   cleanUrl,
   createDebugger,
   deepImportRE,
+  flattenId,
   fsPathFromId,
   getNpmPackageName,
   injectQuery,
@@ -38,7 +39,11 @@ import {
   tryStatSync,
   withTrailingSlash,
 } from '../utils'
-import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
+import {
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId,
+  useHash,
+} from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
@@ -921,7 +926,7 @@ export async function tryOptimizedResolve(
 
   const metadata = depsOptimizer.metadata
 
-  const depInfo = optimizedDepInfoFromId(metadata, id)
+  const depInfo = optimizedDepInfoFromId(metadata, flattenId(id, true))
   if (depInfo) {
     return depsOptimizer.getOptimizedDepId(depInfo)
   }

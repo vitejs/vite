@@ -726,6 +726,12 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
 
+  playground/long-file-name:
+    dependencies:
+      longfilenamepackage:
+        specifier: ^1.0.0
+        version: 1.0.0
+
   playground/minify:
     dependencies:
       minified-module:
@@ -7400,6 +7406,10 @@ packages:
       strip-ansi: 7.1.0
       wrap-ansi: 8.1.0
     dev: true
+
+  /longfilenamepackage@1.0.0:
+    resolution: {integrity: sha512-c8vF3W2AEIMb4opbiTCXZTAtQitgAJ6ZNr6rypb7qwGDVF9kYKtdNtIq6ed5szpw6iAOwvHH60yNLWBB28AWXg==}
+    dev: false
 
   /loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}

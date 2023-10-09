@@ -4,7 +4,11 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
-import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import type {
+  BuildContext,
+  BuildResult,
+  BuildOptions as EsbuildBuildOptions,
+} from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import glob from 'fast-glob'
@@ -39,6 +43,8 @@ const debug = createDebugger('vite:deps')
 
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
+
+export let useHash = false
 
 export type ExportsData = {
   hasImports: boolean
@@ -592,9 +598,39 @@ export function runOptimizeDeps(
     ssr,
     processingCacheDir,
     optimizerContext,
+    useHash,
   )
 
-  const runResult = preparedRun.then(({ context, idToExports }) => {
+  const runResult = preparedRun.then(parseResult).catch((e) => {
+    if (e.errors && e.message.includes('file name too long')) {
+      useHash = true
+      const hashedPreparedRun = prepareEsbuildOptimizerRun(
+        resolvedConfig,
+        depsInfo,
+        ssr,
+        processingCacheDir,
+        optimizerContext,
+        useHash,
+      )
+      const hashedContext = hashedPreparedRun.then(parseResult)
+
+      hashedContext.catch(() => {
+        cleanUp()
+      })
+
+      config.logger.error('2')
+      return hashedContext
+    }
+    throw e
+  })
+
+  function parseResult({
+    context,
+    idToExports,
+  }: {
+    context?: BuildContext
+    idToExports: Record<string, ExportsData>
+  }) {
     function disposeContext() {
       return context?.dispose().catch((e) => {
         config.logger.error('Failed to dispose esbuild context', { error: e })
@@ -605,88 +641,89 @@ export function runOptimizeDeps(
       return cancelledResult
     }
 
-    return context
-      .rebuild()
-      .then((result) => {
-        const meta = result.metafile!
+    function parseSuccessfulResult(result: BuildResult<EsbuildBuildOptions>) {
+      const meta = result.metafile!
 
-        // the paths in `meta.outputs` are relative to `process.cwd()`
-        const processingCacheDirOutputPath = path.relative(
-          process.cwd(),
+      // the paths in `meta.outputs` are relative to `process.cwd()`
+      const processingCacheDirOutputPath = path.relative(
+        process.cwd(),
+        processingCacheDir,
+      )
+
+      for (const id in depsInfo) {
+        const output = esbuildOutputFromId(
+          meta.outputs,
+          id,
           processingCacheDir,
+          useHash,
         )
 
-        for (const id in depsInfo) {
-          const output = esbuildOutputFromId(
-            meta.outputs,
-            id,
-            processingCacheDir,
-          )
+        const { exportsData, ...info } = depsInfo[id]
+        addOptimizedDepInfo(metadata, 'optimized', {
+          ...info,
+          // We only need to hash the output.imports in to check for stability, but adding the hash
+          // and file path gives us a unique hash that may be useful for other things in the future
+          fileHash: getHash(
+            metadata.hash + depsInfo[id].file + JSON.stringify(output.imports),
+          ),
+          browserHash: metadata.browserHash,
+          // After bundling we have more information and can warn the user about legacy packages
+          // that require manual configuration
+          needsInterop: needsInterop(config, ssr, id, idToExports[id], output),
+        })
+      }
 
-          const { exportsData, ...info } = depsInfo[id]
-          addOptimizedDepInfo(metadata, 'optimized', {
-            ...info,
-            // We only need to hash the output.imports in to check for stability, but adding the hash
-            // and file path gives us a unique hash that may be useful for other things in the future
-            fileHash: getHash(
-              metadata.hash +
-                depsInfo[id].file +
-                JSON.stringify(output.imports),
-            ),
-            browserHash: metadata.browserHash,
-            // After bundling we have more information and can warn the user about legacy packages
-            // that require manual configuration
-            needsInterop: needsInterop(
-              config,
-              ssr,
+      for (const o of Object.keys(meta.outputs)) {
+        if (!o.match(jsMapExtensionRE)) {
+          const id = path
+            .relative(processingCacheDirOutputPath, o)
+            .replace(jsExtensionRE, '')
+          const file = getOptimizedDepPath(id, resolvedConfig, ssr)
+          if (
+            !findOptimizedDepInfoInRecord(
+              metadata.optimized,
+              (depInfo) => depInfo.file === file,
+            )
+          ) {
+            addOptimizedDepInfo(metadata, 'chunks', {
               id,
-              idToExports[id],
-              output,
-            ),
-          })
-        }
-
-        for (const o of Object.keys(meta.outputs)) {
-          if (!o.match(jsMapExtensionRE)) {
-            const id = path
-              .relative(processingCacheDirOutputPath, o)
-              .replace(jsExtensionRE, '')
-            const file = getOptimizedDepPath(id, resolvedConfig, ssr)
-            if (
-              !findOptimizedDepInfoInRecord(
-                metadata.optimized,
-                (depInfo) => depInfo.file === file,
-              )
-            ) {
-              addOptimizedDepInfo(metadata, 'chunks', {
-                id,
-                file,
-                needsInterop: false,
-                browserHash: metadata.browserHash,
-              })
-            }
+              file,
+              needsInterop: false,
+              browserHash: metadata.browserHash,
+            })
           }
         }
+      }
 
-        debug?.(
-          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
-        )
+      debug?.(
+        `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
+      )
 
-        return successfulResult
-      })
+      return successfulResult
+    }
 
-      .catch((e) => {
-        if (e.errors && e.message.includes('The build was canceled')) {
-          // esbuild logs an error when cancelling, but this is expected so
-          // return an empty result instead
-          return cancelledResult
-        }
-        throw e
-      })
-      .finally(() => {
-        return disposeContext()
-      })
-  })
+    function rebuildContext(context: BuildContext<EsbuildBuildOptions>) {
+      const result = context
+        .rebuild()
+        .then(parseSuccessfulResult)
+
+        .catch((e) => {
+          if (e.errors && e.message.includes('The build was canceled')) {
+            // esbuild logs an error when cancelling, but this is expected so
+            // return an empty result instead
+            return cancelledResult
+          }
+          config.logger.error('1')
+          throw e
+        })
+        .finally(() => {
+          return disposeContext()
+        })
+      return result
+    }
+
+    return rebuildContext(context)
+  }
 
   runResult.catch(() => {
     cleanUp()
@@ -709,6 +746,7 @@ async function prepareEsbuildOptimizerRun(
   ssr: boolean,
   processingCacheDir: string,
   optimizerContext: { cancelled: boolean },
+  useHash: boolean,
 ): Promise<{
   context?: BuildContext
   idToExports: Record<string, ExportsData>
@@ -750,7 +788,8 @@ async function prepareEsbuildOptimizerRun(
           ...esbuildOptions.loader,
         }
       }
-      const flatId = flattenId(id)
+      const flatId = flattenId(id, useHash)
+
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
     }),
@@ -917,7 +956,7 @@ export function getOptimizedDepPath(
   ssr: boolean,
 ): string {
   return normalizePath(
-    path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js'),
+    path.resolve(getDepsCacheDir(config, ssr), flattenId(id, useHash) + '.js'),
   )
 }
 
@@ -1087,9 +1126,10 @@ function esbuildOutputFromId(
   outputs: Record<string, any>,
   id: string,
   cacheDirOutputPath: string,
+  useHash: boolean,
 ): any {
   const cwd = process.cwd()
-  const flatId = flattenId(id) + '.js'
+  const flatId = flattenId(id, useHash) + '.js'
   const normalizedOutputPath = normalizePath(
     path.relative(cwd, path.join(cacheDirOutputPath, flatId)),
   )
