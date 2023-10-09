@@ -206,7 +206,7 @@ async function loadAndTransform(
       } catch (e) {
         if (e.code !== 'ENOENT') {
           if (e.code === 'EISDIR') {
-            e.message = `Pre-transform ${e.message} ${file}`
+            e.message = `${e.message} ${file}`
           }
           throw e
         }

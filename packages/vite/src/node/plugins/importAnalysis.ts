@@ -632,7 +632,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   return
                 }
                 // Unexpected error, log the issue but avoid an unhandled exception
-                config.logger.error(e.message, { error: e })
+                config.logger.error(`Pre-transform error: ${e.message}`, {
+                  error: e,
+                })
               })
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
