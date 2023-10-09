@@ -642,11 +642,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             .join(',')}]`
 
           s.append(`\
+const __vite__fileDeps = ${fileDepsCode}
 function __vite__mapDeps(indexes) {
-  if (!__vite__mapDeps.viteFileDeps) {
-    __vite__mapDeps.viteFileDeps = ${fileDepsCode}
-  }
-  return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
+  return indexes.map((i) => __vite__fileDeps[i])
 }`)
 
           // there may still be markers due to inlined dynamic imports, remove
