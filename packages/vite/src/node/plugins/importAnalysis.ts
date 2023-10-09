@@ -634,6 +634,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // Unexpected error, log the issue but avoid an unhandled exception
                 config.logger.error(`Pre-transform error: ${e.message}`, {
                   error: e,
+                  timestamp: true,
                 })
               })
             }
