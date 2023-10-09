@@ -323,6 +323,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config,
             publicToRelative,
           )
+        // Determines true start position for the node, either the < character
+        // position, or the newline at the end of the previous line's node.
         const nodeStartWithLeadingWhitespace = (
           node: DefaultTreeAdapterMap['node'],
         ) => {
@@ -338,7 +340,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             lineStartOffset,
             node.sourceCodeLocation!.startOffset,
           )
-          return /\S/.test(line)
+
+          // <previous-line-node></previous-line-node>
+          // <target-node></target-node>
+          //
+          // Here we want to target the newline at the end of the previous line
+          // as the start position for our target.
+          //
+          // <previous-node></previous-node>
+          // <doubled-up-node></doubled-up-node><target-node></target-node>
+          //
+          // However, if there is content between our target node start and the
+          // previous newline, we cannot strip it out without risking content deletion.
+          return line.trim()
             ? node.sourceCodeLocation!.startOffset
             : lineStartOffset
         }
