@@ -44,7 +44,7 @@ This change prevents Vite from swallowing and controlling OS-specific shortcuts,
 
 - Default exports of CSS files (e.g `import style from './foo.css'`): Use the `?inline` query instead
 - `import.meta.globEager`: Use `import.meta.glob('*', { eager: true })` instead
-- `ssr.format: 'cjs`' and `legacy.buildSsrCjsExternalHeuristics` ([#13816](https://github.com/vitejs/vite/discussions/13816))
+- `ssr.format: 'cjs'` and `legacy.buildSsrCjsExternalHeuristics` ([#13816](https://github.com/vitejs/vite/discussions/13816))
 
 ## Advanced
 
