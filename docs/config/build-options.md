@@ -43,7 +43,7 @@ type ResolveModulePreloadDependenciesFn = (
   context: {
     importer: string
   },
-) => (string | { runtime?: string })[]
+) => string[]
 ```
 
 The `resolveDependencies` function will be called for each dynamic import with a list of the chunks it depends on, and it will also be called for each chunk imported in entry HTML files. A new dependencies array can be returned with these filtered or more dependencies injected, and their paths modified. The `deps` paths are relative to the `build.outDir`. Returning a relative path to the `hostId` for `hostType === 'js'` is allowed, in which case `new URL(dep, import.meta.url)` is used to get an absolute path when injecting this module preload in the HTML head.
