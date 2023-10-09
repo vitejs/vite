@@ -233,7 +233,7 @@ $ wrangler login
 $ npm run build
 
 # Create new deployment
-$ npx wrangler pages publish dist
+$ npx wrangler pages deploy dist
 ```
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
