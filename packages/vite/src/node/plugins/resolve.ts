@@ -922,9 +922,11 @@ export async function tryOptimizedResolve(
 
   const metadata = depsOptimizer.metadata
 
+  const hashFileNames = depsOptimizer.options.hashFileNames
+
   const depInfo = optimizedDepInfoFromId(
     metadata,
-    flattenId(id, depsOptimizer.options.hashFileNames),
+    hashFileNames ? flattenId(id, hashFileNames) : id,
   )
   if (depInfo) {
     return depsOptimizer.getOptimizedDepId(depInfo)
