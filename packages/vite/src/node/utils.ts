@@ -79,19 +79,19 @@ const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
-  const flattenId = id
+  const flatId = id
     .replace(replaceSlashOrColonRE, '_')
     .replace(replaceDotRE, '__')
     .replace(replaceNestedIdRE, '___')
     .replace(replaceHashRE, '____')
-  if (flattenId.length > 200) {
+  if (flatId.length > 200) {
     return (
-      flattenId.slice(0, 189) +
+      flatId.slice(0, 180) +
       '_' +
-      createHash('sha256').update(flattenId).digest('hex').slice(0, 10)
+      createHash('sha256').update(flatId).digest('hex').slice(0, 10)
     )
   }
-  return flattenId
+  return flatId
 }
 
 export const normalizeId = (id: string): string =>
