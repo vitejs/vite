@@ -6,9 +6,6 @@ const url = `http://localhost:${port}`
 
 /**
  * test for #5809
- *
- * NOTE: This test will always succeed now, unless the temporary workaround for Jest can be removed
- * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
  */
 test('msg should be encrypted', async () => {
   await page.goto(url)

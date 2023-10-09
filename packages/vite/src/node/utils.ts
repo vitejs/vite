@@ -955,21 +955,12 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
-// @ts-expect-error jest only exists when running Jest
-export const usingDynamicImport = typeof jest === 'undefined'
-
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
- * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
- * if we're in a Jest environment.
- * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
- *
  * @param file File path to import.
  */
-export const dynamicImport = usingDynamicImport
-  ? new Function('file', 'return import(file)')
-  : _require
+export const dynamicImport = new Function('file', 'return import(file)')
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)

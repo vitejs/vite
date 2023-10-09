@@ -2,12 +2,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
-import {
-  dynamicImport,
-  isBuiltin,
-  unwrapId,
-  usingDynamicImport,
-} from '../utils'
+import { dynamicImport, isBuiltin, unwrapId } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
@@ -278,12 +273,7 @@ async function nodeImport(
     const resolved = tryNodeResolve(
       id,
       importer,
-      // Non-external modules can import ESM-only modules, but only outside
-      // of test runs, because we use Node `require` in Jest to avoid segfault.
-      // @ts-expect-error jest only exists when running Jest
-      typeof jest === 'undefined'
-        ? { ...resolveOptions, tryEsmOnly: true }
-        : resolveOptions,
+      { ...resolveOptions, tryEsmOnly: true },
       false,
       undefined,
       true,
@@ -295,10 +285,7 @@ async function nodeImport(
       err.code = 'ERR_MODULE_NOT_FOUND'
       throw err
     }
-    url = resolved.id
-    if (usingDynamicImport) {
-      url = pathToFileURL(url).toString()
-    }
+    url = pathToFileURL(resolved.id).toString()
   }
 
   const mod = await dynamicImport(url)
