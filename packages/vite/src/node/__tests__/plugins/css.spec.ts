@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
-import type { OutputBundle, OutputChunk } from 'rollup'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
