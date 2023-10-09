@@ -186,7 +186,7 @@ Produce SSR-oriented build. The value can be a string to directly specify the SS
 - **Type:** `boolean`
 - **Default:** `false`
 
-During the SSR build, static assets aren't emitted as it is assumed they would be emitted as part of the client build. This option allows frameworks to force emitting them in both the client and SSR build. It is responsability of the framework to merge the assets with a post build step.
+During the SSR build, static assets aren't emitted as it is assumed they would be emitted as part of the client build. This option allows frameworks to force emitting them in both the client and SSR build. It is responsibility of the framework to merge the assets with a post build step.
 
 ## build.minify
 
