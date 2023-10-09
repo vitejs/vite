@@ -579,7 +579,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     const cssDeps: number[] = []
                     const otherDeps: number[] = []
                     for (const dep of depsArray) {
-                      ;(getFileDep(dep).url.endsWith('.css')
+                      (getFileDep(dep).url.endsWith('.css')
                         ? cssDeps
                         : otherDeps
                       ).push(dep)
