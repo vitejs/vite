@@ -676,12 +676,10 @@ export function runOptimizeDeps(
       })
 
       .catch((e) => {
-        if (e.errors) {
-          if (e.message.includes('The build was canceled')) {
-            // esbuild logs an error when cancelling, but this is expected so
-            // return an empty result instead
-            return cancelledResult
-          }
+        if (e.errors && e.message.includes('The build was canceled')) {
+          // esbuild logs an error when cancelling, but this is expected so
+          // return an empty result instead
+          return cancelledResult
         }
         throw e
       })
@@ -753,7 +751,6 @@ async function prepareEsbuildOptimizerRun(
         }
       }
       const flatId = flattenId(id)
-
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
     }),
@@ -1254,7 +1251,6 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       return value
     },
   )
-
   return getHash(content)
 }
 
