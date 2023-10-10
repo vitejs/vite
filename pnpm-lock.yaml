@@ -804,6 +804,9 @@ importers:
 
   playground/optimize-deps:
     dependencies:
+      '@vitejs/longfilename':
+        specifier: file:./longfilename
+        version: file:playground/optimize-deps/longfilename
       '@vitejs/test-added-in-entries':
         specifier: file:./added-in-entries
         version: file:playground/optimize-deps/added-in-entries
@@ -974,6 +977,8 @@ importers:
   playground/optimize-deps/dep-with-optional-peer-dep: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
+
+  playground/optimize-deps/longfilename: {}
 
   playground/optimize-deps/nested-exclude:
     dependencies:
@@ -10482,6 +10487,11 @@ packages:
     peerDependenciesMeta:
       foobar:
         optional: true
+    dev: false
+
+  file:playground/optimize-deps/longfilename:
+    resolution: {directory: playground/optimize-deps/longfilename, type: directory}
+    name: '@vitejs/longfilename'
     dev: false
 
   file:playground/optimize-deps/nested-exclude:

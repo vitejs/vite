@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.5.1",
     "clipboard": "^2.0.11",
+    "@vitejs/longfilename": "file:./longfilename",
     "@vitejs/test-dep-alias-using-absolute-path": "file:./dep-alias-using-absolute-path",
     "@vitejs/test-dep-cjs-browser-field-bare": "file:./dep-cjs-browser-field-bare",
     "@vitejs/test-dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
