@@ -360,6 +360,9 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
       return
     }
     // Unexpected error, log the issue but avoid an unhandled exception
-    server.config.logger.error(e.message)
+    server.config.logger.error(`Pre-transform error: ${e.message}`, {
+      error: e,
+      timestamp: true,
+    })
   })
 }
