@@ -72,7 +72,7 @@
     "execa": "^8.0.1",
     "fs-extra": "^11.1.1",
     "lint-staged": "^14.0.1",
-    "npm-run-all": "^4.1.5",
+    "npm-run-all2": "^6.1.1",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.38.1",
     "prettier": "3.0.3",
