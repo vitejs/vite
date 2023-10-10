@@ -90,7 +90,12 @@ export const flattenId = (id: string): string => {
 }
 
 const HASH_LENGTH = 10
-export const limitToCharacters = (id: string, limit: number = 20): string => {
+const MAX_FILE_LENGTH = 170
+
+export const limitToCharacters = (
+  id: string,
+  limit: number = MAX_FILE_LENGTH,
+): string => {
   if (id.length <= limit) {
     return id
   }
