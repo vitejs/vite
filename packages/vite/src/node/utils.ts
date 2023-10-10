@@ -33,7 +33,7 @@ import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import { resolvePackageData } from './packages'
-import { type CommonServerOptions } from '.'
+import type { CommonServerOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
