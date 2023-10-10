@@ -1,3 +1,11 @@
+## 5.0.0-beta.6 (2023-10-10)
+
+* refactor(css): make `getEmptyChunkReplacer` for unit test (#14528) ([18900fd](https://github.com/vitejs/vite/commit/18900fd)), closes [#14528](https://github.com/vitejs/vite/issues/14528)
+* fix(optimizer): limit bundled file name length to 170 characters (#14561) ([a3b6d8d](https://github.com/vitejs/vite/commit/a3b6d8d)), closes [#14561](https://github.com/vitejs/vite/issues/14561)
+* perf: reduce preload marker markup size (#14550) ([6f12fd8](https://github.com/vitejs/vite/commit/6f12fd8)), closes [#14550](https://github.com/vitejs/vite/issues/14550)
+
+
+
 ## 5.0.0-beta.5 (2023-10-09)
 
 * perf: move up external url check before fs path checks (#13639) ([c2ebea1](https://github.com/vitejs/vite/commit/c2ebea1)), closes [#13639](https://github.com/vitejs/vite/issues/13639)
