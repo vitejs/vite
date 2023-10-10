@@ -79,7 +79,7 @@ const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
-  const flatId = limitToCharacters(
+  const flatId = limitFlattenIdLength(
     id
       .replace(replaceSlashOrColonRE, '_')
       .replace(replaceDotRE, '__')
@@ -89,21 +89,17 @@ export const flattenId = (id: string): string => {
   return flatId
 }
 
-const HASH_LENGTH = 10
-const MAX_FILE_LENGTH = 170
+const FLATTEN_ID_HASH_LENGTH = 8
+const FLATTEN_ID_MAX_FILE_LENGTH = 170
 
-export const limitToCharacters = (
+const limitFlattenIdLength = (
   id: string,
-  limit: number = MAX_FILE_LENGTH,
+  limit: number = FLATTEN_ID_MAX_FILE_LENGTH,
 ): string => {
   if (id.length <= limit) {
     return id
   }
-  return (
-    id.slice(0, limit - (HASH_LENGTH + 1)) +
-    '_' +
-    createHash('sha256').update(id).digest('hex').slice(0, HASH_LENGTH)
-  )
+  return id.slice(0, limit - (FLATTEN_ID_HASH_LENGTH + 1)) + '_' + getHash(id)
 }
 
 export const normalizeId = (id: string): string =>
