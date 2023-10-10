@@ -33,7 +33,7 @@ import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import { resolvePackageData } from './packages'
-import { type CommonServerOptions, createLogger } from '.'
+import { type CommonServerOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -86,7 +86,6 @@ export const flattenId = (id: string): string => {
       .replace(replaceNestedIdRE, '___')
       .replace(replaceHashRE, '____'),
   )
-  createLogger().warn(id + ' ' + flatId)
   return flatId
 }
 
