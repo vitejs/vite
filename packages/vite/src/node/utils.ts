@@ -33,7 +33,7 @@ import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import { resolvePackageData } from './packages'
-import { type CommonServerOptions } from '.'
+import { type CommonServerOptions, createLogger } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -79,21 +79,26 @@ const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
-  return id
-    .replace(replaceSlashOrColonRE, '_')
-    .replace(replaceDotRE, '__')
-    .replace(replaceNestedIdRE, '___')
-    .replace(replaceHashRE, '____')
+  const flatId = limitToCharacters(
+    id
+      .replace(replaceSlashOrColonRE, '_')
+      .replace(replaceDotRE, '__')
+      .replace(replaceNestedIdRE, '___')
+      .replace(replaceHashRE, '____'),
+  )
+  createLogger().warn(id + ' ' + flatId)
+  return flatId
 }
 
-export const limitToCharacters = (id: string, limit: number = 200): string => {
+const HASH_LENGTH = 10
+export const limitToCharacters = (id: string, limit: number = 20): string => {
   if (id.length <= limit) {
     return id
   }
   return (
-    id.slice(0, limit - 10) +
+    id.slice(0, limit - (HASH_LENGTH + 1)) +
     '_' +
-    createHash('sha256').update(id).digest('hex').slice(0, 10)
+    createHash('sha256').update(id).digest('hex').slice(0, HASH_LENGTH)
   )
 }
 
