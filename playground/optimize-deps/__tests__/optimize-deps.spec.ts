@@ -238,6 +238,24 @@ test.runIf(isBuild)('no missing deps during build', async () => {
   })
 })
 
+test('name file limit is 170 characters', async () => {
+  if (isServe) {
+    const response = page.waitForResponse(
+      /@vitejs_longfilename_\w+_[a-zA-Z\d]+\.js\?v=[a-zA-Z\d]+/,
+    )
+    await page.goto(viteTestUrl)
+    const content = await response
+
+    const fromUrl = content.url()
+    const stripFolderPart = fromUrl.split('/').at(-1)
+    const onlyTheFilePart = stripFolderPart.split('.')[0]
+    expect(onlyTheFilePart).toHaveLength(170)
+
+    const text = await content.text()
+    expect(text).toMatch(/import\s+("[^"]+")/)
+  }
+})
+
 describe.runIf(isServe)('optimizeDeps config', () => {
   test('supports include glob syntax', () => {
     const metadata = readDepOptimizationMetadata()
@@ -255,4 +273,8 @@ describe.runIf(isServe)('optimizeDeps config', () => {
       '@vitejs/test-dep-optimize-with-glob/glob/nested/baz.js',
     ])
   })
+})
+
+test('long file name should work', async () => {
+  expect(await page.textContent('.long-file-name')).toMatch(`hello world`)
 })
