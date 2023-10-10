@@ -18,6 +18,7 @@ import {
   getHash,
   isOptimizable,
   isWindows,
+  limitToCharacters,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -1266,11 +1267,11 @@ export function optimizedDepInfoFromId(
   metadata: DepOptimizationMetadata,
   id: string,
 ): OptimizedDepInfo | undefined {
-  const flatId = flattenId(id)
+  const hashedId = limitToCharacters(id)
   return (
-    metadata.optimized[flatId] ||
-    metadata.discovered[flatId] ||
-    metadata.chunks[flatId]
+    metadata.optimized[hashedId] ||
+    metadata.discovered[hashedId] ||
+    metadata.chunks[hashedId]
   )
 }
 

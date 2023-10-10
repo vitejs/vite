@@ -33,7 +33,7 @@ import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import { resolvePackageData } from './packages'
-import type { CommonServerOptions } from '.'
+import { type CommonServerOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -79,19 +79,22 @@ const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
-  const flatId = id
+  return id
     .replace(replaceSlashOrColonRE, '_')
     .replace(replaceDotRE, '__')
     .replace(replaceNestedIdRE, '___')
     .replace(replaceHashRE, '____')
-  if (flatId.length > 200) {
-    return (
-      flatId.slice(0, 180) +
-      '_' +
-      createHash('sha256').update(flatId).digest('hex').slice(0, 10)
-    )
+}
+
+export const limitToCharacters = (id: string, limit: number = 200): string => {
+  if (id.length <= limit) {
+    return id
   }
-  return flatId
+  return (
+    id.slice(0, limit - 10) +
+    '_' +
+    createHash('sha256').update(id).digest('hex').slice(0, 10)
+  )
 }
 
 export const normalizeId = (id: string): string =>
