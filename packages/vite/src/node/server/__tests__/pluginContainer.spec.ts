@@ -10,6 +10,32 @@ let resolveId: (id: string) => any
 let moduleGraph: ModuleGraph
 
 describe('plugin container', () => {
+  it('has bound methods', async () => {
+    expect.assertions(8)
+    const entryUrl = '/x.js'
+
+    const plugin: Plugin = {
+      name: 'p1',
+      load(id) {
+        // bound functions and bound arrow functions do not have prototype
+        expect(this.load.prototype).equals(undefined)
+        expect(this.parse.prototype).equals(undefined)
+        expect(this.resolve.prototype).equals(undefined)
+        expect(this.addWatchFile.prototype).equals(undefined)
+        expect(this.setAssetSource.prototype).equals(undefined)
+        expect(this.getFileName.prototype).equals(undefined)
+        expect(this.warn.prototype).equals(undefined)
+        expect(this.error.prototype).equals(undefined)
+      },
+    }
+
+    const container = await getPluginContainer({
+      plugins: [plugin],
+    })
+
+    await container.load(entryUrl)
+  })
+
   describe('getModuleInfo', () => {
     beforeEach(() => {
       moduleGraph = new ModuleGraph((id) => resolveId(id))

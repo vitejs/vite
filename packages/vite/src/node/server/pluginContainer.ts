@@ -292,6 +292,14 @@ export async function createPluginContainer(
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
+      this.load = this.load.bind(this)
+      this.parse = this.parse.bind(this)
+      this.resolve = this.resolve.bind(this)
+      this.addWatchFile = this.addWatchFile.bind(this)
+      this.setAssetSource = this.setAssetSource.bind(this)
+      this.getFileName = this.getFileName.bind(this)
+      this.warn = this.warn.bind(this)
+      this.error = this.error.bind(this)
     }
 
     parse(code: string, opts: any = {}) {
