@@ -61,7 +61,9 @@ function patchTypes(): Plugin {
       }
     },
     transform(code, id) {
-      if (id.includes('/node_modules/')) return
+      if (id.includes('/node_modules/') || id.includes('\\node_modules\\')) {
+        return
+      }
 
       const s = new MagicString(code)
       const ast = parse(code, {
