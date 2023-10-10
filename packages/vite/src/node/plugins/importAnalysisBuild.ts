@@ -26,6 +26,11 @@ import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
+type FileDep = {
+  url: string
+  runtime: boolean
+}
+
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
  * target is not native es - so that injected helper logic can be conditionally
@@ -450,6 +455,26 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
+          const fileDeps: FileDep[] = []
+          const addFileDep = (
+            url: string,
+            runtime: boolean = false,
+          ): number => {
+            const index = fileDeps.findIndex((dep) => dep.url === url)
+            if (index === -1) {
+              return fileDeps.push({ url, runtime }) - 1
+            } else {
+              return index
+            }
+          }
+          const getFileDep = (index: number): FileDep => {
+            const fileDep = fileDeps[index]
+            if (!fileDep) {
+              throw new Error(`Cannot find file dep at index ${index}`)
+            }
+            return fileDep
+          }
+
           if (imports.length) {
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
@@ -467,7 +492,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<string> = new Set()
+              const deps: Set<number> = new Set()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined
@@ -487,12 +512,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(chunk.fileName)
+                    deps.add(addFileDep(chunk.fileName))
                     chunk.imports.forEach(addDeps)
                     // Ensure that the css imported by current chunk is loaded after the dependencies.
                     // So the style of current chunk won't be overwritten unexpectedly.
                     chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.add(file)
+                      deps.add(addFileDep(file))
                     })
                   } else {
                     const removedPureCssFiles =
@@ -501,7 +526,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     if (chunk) {
                       if (chunk.viteMetadata!.importedCss.size) {
                         chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
+                          deps.add(addFileDep(file))
                         })
                         hasRemovedPureCssChunk = true
                       }
@@ -535,73 +560,95 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ? modulePreload === false
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
                         // we still need to pass these deps to the preload helper in dynamic imports.
-                        [...deps].filter((d) => d.endsWith('.css'))
+                        [...deps].filter((d) =>
+                          getFileDep(d).url.endsWith('.css'),
+                        )
                       : [...deps]
                     : []
 
-                let renderedDeps: string[]
+                let renderedDeps: number[]
                 if (normalizedFile && customModulePreloadPaths) {
                   const { modulePreload } = config.build
                   const resolveDependencies = modulePreload
                     ? modulePreload.resolveDependencies
                     : undefined
-                  let resolvedDeps: string[]
+                  let resolvedDeps: number[]
                   if (resolveDependencies) {
                     // We can't let the user remove css deps as these aren't really preloads, they are just using
                     // the same mechanism as module preloads for this chunk
-                    const cssDeps: string[] = []
-                    const otherDeps: string[] = []
+                    const cssDeps: number[] = []
+                    const otherDeps: number[] = []
                     for (const dep of depsArray) {
-                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
+                      if (getFileDep(dep).url.endsWith('.css')) {
+                        cssDeps.push(dep)
+                      } else {
+                        otherDeps.push(dep)
+                      }
                     }
                     resolvedDeps = [
-                      ...resolveDependencies(normalizedFile, otherDeps, {
-                        hostId: file,
-                        hostType: 'js',
-                      }),
+                      ...resolveDependencies(
+                        normalizedFile,
+                        otherDeps.map((otherDep) => getFileDep(otherDep).url),
+                        {
+                          hostId: file,
+                          hostType: 'js',
+                        },
+                      ).map((otherDep) => addFileDep(otherDep)),
                       ...cssDeps,
                     ]
                   } else {
                     resolvedDeps = depsArray
                   }
 
-                  renderedDeps = resolvedDeps.map((dep: string) => {
+                  renderedDeps = resolvedDeps.map((dep: number) => {
                     const replacement = toOutputFilePathInJS(
-                      dep,
+                      getFileDep(dep).url,
                       'asset',
                       chunk.fileName,
                       'js',
                       config,
                       toRelativePath,
                     )
-                    const replacementString =
-                      typeof replacement === 'string'
-                        ? JSON.stringify(replacement)
-                        : replacement.runtime
 
-                    return replacementString
+                    if (typeof replacement === 'string') {
+                      return addFileDep(replacement)
+                    }
+
+                    return addFileDep(replacement.runtime, true)
                   })
                 } else {
                   renderedDeps = depsArray.map((d) =>
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
-                    JSON.stringify(
-                      optimizeModulePreloadRelativePaths
-                        ? toRelativePath(d, file)
-                        : d,
-                    ),
+                    optimizeModulePreloadRelativePaths
+                      ? addFileDep(toRelativePath(getFileDep(d).url, file))
+                      : d,
                   )
                 }
 
                 s.update(
                   markerStartPos,
                   markerStartPos + preloadMarker.length + 2,
-                  `[${renderedDeps.join(',')}]`,
+                  `__vite__mapDeps([${renderedDeps.join(',')}])`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
             }
           }
+
+          const fileDepsCode = `[${fileDeps
+            .map((fileDep) =>
+              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
+            )
+            .join(',')}]`
+
+          s.append(`\
+function __vite__mapDeps(indexes) {
+  if (!__vite__mapDeps.viteFileDeps) {
+    __vite__mapDeps.viteFileDeps = ${fileDepsCode}
+  }
+  return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
+}`)
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
