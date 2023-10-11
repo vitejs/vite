@@ -21,8 +21,8 @@ import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
 import { DEFAULT_PREVIEW_PORT } from './constants'
-import { resolveConfig } from '.'
-import type { InlineConfig, ResolvedConfig } from '.'
+import { resolveConfig } from './config'
+import type { InlineConfig, ResolvedConfig } from './config'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
