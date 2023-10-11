@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { findStaticImports } from 'mlly'
 import { type Plugin, defineConfig } from 'rollup'
 import dts from 'rollup-plugin-dts'
 
@@ -29,6 +30,26 @@ const singlelineCommentsRE = /\/\/[^/].*/g
 const licenseCommentsRE = /MIT License|MIT license|BSD license/
 const consecutiveNewlinesRE = /\n{2,}/g
 const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
+
+/**
+ * Replace specific identifiers with a more readable name, grouped by
+ * the module that imports the identifer as a named import alias
+ */
+const identifierReplacements: Record<string, Record<string, string>> = {
+  rollup: {
+    Plugin$1: 'rollup.Plugin',
+    TransformResult$2: 'rollup.TransformResult',
+  },
+  esbuild: {
+    TransformResult$1: 'esbuild_TransformResult',
+    TransformOptions$1: 'esbuild_TransformOptions',
+    BuildOptions$1: 'esbuild_BuildOptions',
+  },
+  'node:https': {
+    Server$1: 'HttpsServer',
+    ServerOptions$1: 'HttpsServerOptions',
+  },
+}
 
 /**
  * Patch the types files before passing to dts plugin
@@ -76,33 +97,57 @@ function patchTypes(): Plugin {
 
       // Rollup deduplicate type names with a trailing `$1` or `$2`, which can be
       // confusing when showed in autocompletions. Try to replace with a better name
-      const foundDollarNames = new Set<string>()
-      for (const match of code.matchAll(identifierWithTrailingDollarRE)) {
-        foundDollarNames.add(match[0])
-      }
-      for (const name of foundDollarNames) {
-        const betterName = getBetterTypeName(name)
-        if (!betterName) {
+      const imports = findStaticImports(code)
+      for (const modName in identifierReplacements) {
+        const imp = imports.find(
+          (imp) => imp.specifier === modName && imp.imports.includes('{'),
+        )
+        // Validate that `identifierReplacements` is not outdated if there's no match
+        if (!imp) {
           this.warn(
-            `${chunk.fileName} contains "${name}" which is a confusing type name`,
+            `${chunk.fileName} does not import "${modName}" for replacement`,
           )
           process.exitCode = 1
           continue
         }
-        const regexEscapedName = escapeRegex(name)
-        // If the better name accesses a namespace, the existing `Foo as Foo$1`
-        // named import cannot be replaced with `Foo as Namespace.Foo`, so we
-        // pre-emptively remove the whole named import
-        if (betterName.includes('.')) {
+
+        const replacements = identifierReplacements[modName]
+        for (const id in replacements) {
+          // Validate that `identifierReplacements` is not outdated if there's no match
+          if (!imp.imports.includes(id)) {
+            this.warn(
+              `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+            )
+            process.exitCode = 1
+            continue
+          }
+
+          const betterId = replacements[id]
+          const regexEscapedId = escapeRegex(id)
+          // If the better id accesses a namespace, the existing `Foo as Foo$1`
+          // named import cannot be replaced with `Foo as Namespace.Foo`, so we
+          // pre-emptively remove the whole named import
+          if (betterId.includes('.')) {
+            code = code.replace(
+              new RegExp(`\\b\\w+\\b as ${regexEscapedId},?\\s?`),
+              '',
+            )
+          }
           code = code.replace(
-            new RegExp(`\\b\\w+\\b as ${regexEscapedName},?\\s?`),
-            '',
+            new RegExp(`\\b${escapeRegex(id)}\\b`, 'g'),
+            betterId,
           )
         }
-        code = code.replace(
-          new RegExp(`\\b${regexEscapedName}\\b`, 'g'),
-          betterName,
+      }
+      const unreplacedIds = unique(
+        Array.from(code.matchAll(identifierWithTrailingDollarRE), (m) => m[0]),
+      )
+      if (unreplacedIds.length) {
+        const unreplacedStr = unreplacedIds.map((id) => `\n- ${id}`).join('')
+        this.warn(
+          `${chunk.fileName} contains confusing identifier names${unreplacedStr}`,
         )
+        process.exitCode = 1
       }
 
       // Clean unnecessary comments
@@ -118,20 +163,11 @@ function patchTypes(): Plugin {
   }
 }
 
-function getBetterTypeName(name: string) {
-  // prettier-ignore
-  switch (name) {
-    case 'Plugin$1': return 'rollup.Plugin'
-    case 'TransformResult$1': return 'esbuild_TransformResult'
-    case 'TransformResult$2': return 'rollup.TransformResult'
-    case 'TransformOptions$1': return 'esbuild_TransformOptions'
-    case 'BuildOptions$1': return 'esbuild_BuildOptions'
-    case 'Server$1': return 'HttpsServer'
-    case 'ServerOptions$1': return 'HttpsServerOptions'
-  }
-}
-
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
+}
+
+function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
 }
