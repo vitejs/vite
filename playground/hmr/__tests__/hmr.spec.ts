@@ -177,6 +177,14 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), 'edited')
   })
 
+  test('plugin hmr remove custom events', async () => {
+    const el = await page.$('.toRemove')
+    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
+    await untilUpdated(() => el.textContent(), 'edited')
+    editFile('customFile.js', (code) => code.replace('edited', 'custom'))
+    await untilUpdated(() => el.textContent(), 'edited')
+  })
+
   test('plugin client-server communication', async () => {
     const el = await page.$('.custom-communication')
     await untilUpdated(() => el.textContent(), '3')

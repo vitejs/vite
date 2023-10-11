@@ -108,6 +108,8 @@ if (import.meta.hot) {
     text('.custom', msg)
   })
 
+  import.meta.hot.on('custom:remove', removeCb)
+
   // send custom event to server to calculate 1 + 2
   import.meta.hot.send('custom:remote-add', { a: 1, b: 2 })
   import.meta.hot.on('custom:remote-add-result', ({ result }) => {
@@ -117,4 +119,9 @@ if (import.meta.hot) {
 
 function text(el, text) {
   document.querySelector(el).textContent = text
+}
+
+function removeCb({ msg }) {
+  text('.toRemove', msg)
+  import.meta.hot.off('custom:remove', removeCb)
 }
