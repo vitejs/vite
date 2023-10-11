@@ -648,13 +648,13 @@ export async function _createServer(
   postHooks.forEach((fn) => fn && fn())
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
+    // transform index.html
+    middlewares.use(indexHtmlMiddleware(server))
+
     // handle directory indexes
     const directoryIndexPlugin = directoryIndex()
     directoryIndexPlugin.configResolved(config)
     directoryIndexPlugin.configureServer(server)
-
-    // transform index.html
-    middlewares.use(indexHtmlMiddleware(server))
 
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
