@@ -3,6 +3,7 @@
   "include": ["./", "../dep-types", "../types"],
   "exclude": ["**/__tests__"],
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"]
+    "lib": ["ESNext", "DOM"],
+    "stripInternal": true
   }
 }
