@@ -11,15 +11,9 @@ const wasmHelper = async (opts = {}, url: string) => {
     let bytes
     if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
       bytes = Buffer.from(urlContent, 'base64')
-    } else if (typeof atob === 'function') {
-      const binaryString = atob(urlContent)
-      bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
     } else {
       throw new Error(
-        'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
+        'Failed to decode base64-encoded data URL, Buffer is not supported',
       )
     }
     result = await WebAssembly.instantiate(bytes, opts)
