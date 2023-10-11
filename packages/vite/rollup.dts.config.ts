@@ -28,12 +28,17 @@ const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 const singlelineCommentsRE = /\/\/[^/].*/g
 const licenseCommentsRE = /MIT License|MIT license|BSD license/
 const consecutiveNewlinesRE = /\n{2,}/g
+const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
+const importStatementWithoutTypeRE = /^import (?!type|\{ type)/gm
+const exportStatementWithoutTypeRE = /^export (?!type|\{ type)/gm
 
 /**
  * Patch the types files before passing to dts plugin
  * 1. Resolve `dep-types/*` and `types/*` imports
  * 2. Validate unallowed dependency imports
- * 3. Clean unnecessary comments
+ * 3. Replace confusing type names
+ * 4. Ensure import/export statements use `import type` and `export type`
+ * 5. Clean unnecessary comments
  */
 function patchTypes(): Plugin {
   return {
@@ -56,8 +61,8 @@ function patchTypes(): Plugin {
       }
     },
     renderChunk(code, chunk) {
-      const deps = new Set(Object.keys(pkg.dependencies))
       // Validate that chunk imports do not import dev deps
+      const deps = new Set(Object.keys(pkg.dependencies))
       for (const id of chunk.imports) {
         if (
           !id.startsWith('./') &&
@@ -72,13 +77,69 @@ function patchTypes(): Plugin {
         }
       }
 
+      // Rollup deduplicate type names with a trailing `$1` or `$2`, which can be
+      // confusing when showed in autocompletions. Try to replace with a better name
+      const foundDollarNames = new Set<string>()
+      for (const match of code.matchAll(identifierWithTrailingDollarRE)) {
+        foundDollarNames.add(match[0])
+      }
+      for (const name of foundDollarNames) {
+        const betterName = getBetterTypeName(name)
+        if (!betterName) {
+          this.warn(
+            `${chunk.fileName} contains "${name}" which is a confusing type name`,
+          )
+          process.exitCode = 1
+          continue
+        }
+        const regexEscapedName = escapeRegex(name)
+        // If the better name accesses a namespace, the existing `Foo as Foo$1`
+        // named import cannot be replaced with `Foo as Namespace.Foo`, so we
+        // pre-emptively remove the whole named import
+        if (betterName.includes('.')) {
+          code = code.replace(
+            new RegExp(`\\b\\w+\\b as ${regexEscapedName},?\\s?`),
+            '',
+          )
+        }
+        code = code.replace(
+          new RegExp(`\\b${regexEscapedName}\\b`, 'g'),
+          betterName,
+        )
+      }
+
+      // Make sure all import and exports uses `import type` and `export type`
+      code = code
+        .replace(importStatementWithoutTypeRE, 'import type ')
+        .replace(exportStatementWithoutTypeRE, 'export type ')
+
       // Clean unnecessary comments
-      return code
+      code = code
         .replace(singlelineCommentsRE, '')
         .replace(multilineCommentsRE, (m) => {
           return licenseCommentsRE.test(m) ? '' : m
         })
         .replace(consecutiveNewlinesRE, '\n\n')
+
+      return code
     },
   }
+}
+
+function getBetterTypeName(name: string) {
+  // prettier-ignore
+  switch (name) {
+    case 'Plugin$1': return 'rollup.Plugin'
+    case 'TransformResult$1': return 'esbuild_TransformResult'
+    case 'TransformResult$2': return 'rollup.TransformResult'
+    case 'TransformOptions$1': return 'esbuild_TransformOptions'
+    case 'BuildOptions$1': return 'esbuild_BuildOptions'
+    case 'Server$1': return 'HttpsServer'
+    case 'ServerOptions$1': return 'HttpsServerOptions'
+  }
+}
+
+const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
+function escapeRegex(str: string): string {
+  return str.replace(escapeRegexRE, '\\$&')
 }
