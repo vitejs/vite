@@ -52,10 +52,6 @@ export default defineConfig({
 
 When making changes to the linked dep, restart the dev server with the `--force` command line option for the changes to take effect.
 
-::: warning Deduping
-Due to differences in linked dependency resolution, transitive dependencies can deduplicate incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
-:::
-
 ## Customizing the Behavior
 
 The default dependency discovery heuristics may not always be desirable. In cases where you want to explicitly include/exclude dependencies from the list, use the [`optimizeDeps` config options](/config/dep-optimization-options.md).
