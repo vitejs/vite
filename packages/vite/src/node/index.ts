@@ -8,8 +8,6 @@ export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
-export { resolvePackageEntry } from './plugins/resolve'
-export { resolvePackageData } from './packages'
 export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'
 
@@ -54,7 +52,6 @@ export type {
   SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
-export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,
   LogOptions,
