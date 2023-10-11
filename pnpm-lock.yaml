@@ -1030,6 +1030,8 @@ importers:
 
   playground/preserve-symlinks/module-a: {}
 
+  playground/proxy-bypass: {}
+
   playground/proxy-hmr: {}
 
   playground/proxy-hmr/other-app: {}
