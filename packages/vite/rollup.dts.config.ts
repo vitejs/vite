@@ -134,7 +134,7 @@ function patchTypes(): Plugin {
             )
           }
           code = code.replace(
-            new RegExp(`\\b${escapeRegex(id)}\\b`, 'g'),
+            new RegExp(`\\b${regexEscapedId}\\b`, 'g'),
             betterId,
           )
         }
