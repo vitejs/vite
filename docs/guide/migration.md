@@ -52,14 +52,14 @@ import { resolve } from 'import-meta-env'
 import { findDepPkgJsonPath } from 'vitefu'
 import fs from 'node:fs'
 
-const package = 'my-lib'
+const pkg = 'my-lib'
 const basedir = process.cwd()
 
 // `resolvePackageEntry`:
-const packageEntry = resolve(package, basedir)
+const packageEntry = resolve(pkg, basedir)
 
 // `resolvePackageData`:
-const packageJsonPath = findDepPkgJsonPath(package, basedir)
+const packageJsonPath = findDepPkgJsonPath(pkg, basedir)
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
 ```
 
