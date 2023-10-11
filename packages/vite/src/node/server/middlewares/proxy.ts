@@ -154,7 +154,8 @@ export function proxyMiddleware(
             return next()
           } else if (bypassResult === false) {
             debug?.(`bypass: ${req.url} -> 404`)
-            return res.end(404)
+            res.statusCode = 404
+            return res.end()
           }
         }
 
