@@ -63,12 +63,10 @@
     "dev": "rimraf dist && pnpm run build-bundle -w",
     "build": "rimraf dist && run-s build-bundle build-types",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-types": "run-s build-types-temp build-types-pre-patch build-types-roll build-types-post-patch build-types-check",
+    "build-types": "run-s build-types-temp build-types-roll build-types-check",
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
-    "build-types-pre-patch": "tsx scripts/prePatchTypes.ts",
-    "build-types-roll": "tsx scripts/api-extractor.ts run && rimraf temp",
-    "build-types-post-patch": "tsx scripts/postPatchTypes.ts",
-    "build-types-check": "tsx scripts/checkBuiltTypes.ts && tsc --project tsconfig.check.json",
+    "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin typescript && rimraf temp",
+    "build-types-check": "tsc --project tsconfig.check.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
@@ -78,15 +76,13 @@
   "dependencies": {
     "esbuild": "^0.19.3",
     "postcss": "^8.4.31",
-    "rollup": "^3.29.2"
+    "rollup": "^3.29.4"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
-    "@babel/parser": "^7.23.0",
-    "@babel/types": "^7.23.0",
     "@jridgewell/trace-mapping": "^0.3.19",
     "@rollup/plugin-alias": "^5.0.1",
     "@rollup/plugin-commonjs": "^25.0.5",
@@ -134,6 +130,7 @@
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^6.0.0",
     "resolve.exports": "^2.0.2",
+    "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-license": "^3.1.0",
     "sirv": "^2.0.3",
     "source-map-support": "^0.5.21",
