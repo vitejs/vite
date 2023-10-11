@@ -82,6 +82,12 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
       ),
     })
 
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.named-exports.config.js'),
+    })
+
     // start static file server
     const serve = sirv(path.resolve(rootDir, 'dist'))
     const httpServer = http.createServer((req, res) => {
