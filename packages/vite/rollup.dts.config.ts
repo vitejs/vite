@@ -29,16 +29,13 @@ const singlelineCommentsRE = /\/\/[^/].*/g
 const licenseCommentsRE = /MIT License|MIT license|BSD license/
 const consecutiveNewlinesRE = /\n{2,}/g
 const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
-const importStatementWithoutTypeRE = /^import (?!type|\{ type)/gm
-const exportStatementWithoutTypeRE = /^export (?!type|\{ type)/gm
 
 /**
  * Patch the types files before passing to dts plugin
  * 1. Resolve `dep-types/*` and `types/*` imports
  * 2. Validate unallowed dependency imports
  * 3. Replace confusing type names
- * 4. Ensure import/export statements use `import type` and `export type`
- * 5. Clean unnecessary comments
+ * 4. Clean unnecessary comments
  */
 function patchTypes(): Plugin {
   return {
@@ -107,11 +104,6 @@ function patchTypes(): Plugin {
           betterName,
         )
       }
-
-      // Make sure all import and exports uses `import type` and `export type`
-      code = code
-        .replace(importStatementWithoutTypeRE, 'import type ')
-        .replace(exportStatementWithoutTypeRE, 'export type ')
 
       // Clean unnecessary comments
       code = code
