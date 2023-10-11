@@ -77,7 +77,7 @@ import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
-import { directoryIndexMiddleware } from './middlewares/directoryIndex'
+import directoryIndex from './middlewares/directoryIndex'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -648,11 +648,13 @@ export async function _createServer(
   postHooks.forEach((fn) => fn && fn())
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
+    // handle directory indexes
+    const directoryIndexPlugin = directoryIndex()
+    directoryIndexPlugin.configResolved(config)
+    directoryIndexPlugin.configureServer(server)
+
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
-
-    // show directory list of files if permissable
-    middlewares.use(directoryIndexMiddleware(root))
 
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`

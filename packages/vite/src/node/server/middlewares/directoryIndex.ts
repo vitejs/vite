@@ -1,22 +1,23 @@
-import { Connect } from 'dep-types/connect'
-import { readdir, stat } from 'node:fs/promises'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { readdir, stat } from "node:fs/promises";
+import { join, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import picomatch from "picomatch";
+import prettyBytes from "pretty-bytes";
+import { Plugin } from "../..";
 
-type HTMLTemplateOptions = {
-  rootName: string
-  hasParent: boolean
-  values: {
-    name: string
-    url: string
-    isdir: number
-    size: number
-    size_string: string
-    date_modified: number
-    date_modified_string: string
-  }[]
-}
-
-const htmlTemplate = ({ rootName, hasParent, values }: HTMLTemplateOptions) => `
+const myTemplate = ({ rootName, hasParent, values }: {
+    rootName: string;
+    hasParent: boolean;
+    values: {
+      name: string;
+      url: string;
+      isdir: number;
+      size: number;
+      size_string: string;
+      date_modified: number;
+      date_modified_string: string;
+    }[];
+  }) => `
 <!DOCTYPE html>
 
 <html dir="ltr" lang="en">
@@ -251,7 +252,7 @@ window.addEventListener('DOMContentLoaded', onLoad);
 // found in the LICENSE file.
 var loadTimeData;class LoadTimeData{constructor(){this.data_=null}set data(value){expect(!this.data_,"Re-setting data.");this.data_=value}valueExists(id){return id in this.data_}getValue(id){expect(this.data_,"No data. Did you remember to include strings.js?");const value=this.data_[id];expect(typeof value!=="undefined","Could not find value for "+id);return value}getString(id){const value=this.getValue(id);expectIsType(id,value,"string");return value}getStringF(id,var_args){const value=this.getString(id);if(!value){return""}const args=Array.prototype.slice.call(arguments);args[0]=value;return this.substituteString.apply(this,args)}substituteString(label,var_args){const varArgs=arguments;return label.replace(/\$(.|$|\n)/g,(function(m){expect(m.match(/\$[$1-9]/),"Unescaped $ found in localized string.");return m==="$$"?"$":varArgs[m[1]]}))}getBoolean(id){const value=this.getValue(id);expectIsType(id,value,"boolean");return value}getInteger(id){const value=this.getValue(id);expectIsType(id,value,"number");expect(value===Math.floor(value),"Number isn't integer: "+value);return value}overrideValues(replacements){expect(typeof replacements==="object","Replacements must be a dictionary object.");for(const key in replacements){this.data_[key]=replacements[key]}}}function expect(condition,message){if(!condition){throw new Error("Unexpected condition on "+document.location.href+": "+message)}}function expectIsType(id,value,type){expect(typeof value===type,"["+value+"] ("+id+") is not a "+type)}expect(!loadTimeData,"should only include this file once");loadTimeData=new LoadTimeData;window.loadTimeData=loadTimeData;console.warn("crbug/1173575, non-JS module files deprecated.");</script><script>loadTimeData.data = {"header":"Index of LOCATION","headerDateModified":"Date Modified","headerName":"Name","headerSize":"Size","language":"en","parentDirText":"[parent directory]","textdirection":"ltr"};</script>
 <script>start(${JSON.stringify(rootName)});</script>
-${hasParent ? `<script>onHasParentDirectory();</script>` : ''}
+${hasParent ? `<script>onHasParentDirectory();</script>` : ""}
 ${values
   .map(
     ({
@@ -266,62 +267,116 @@ ${values
       // prettier-ignore
       `<script>addRow(${JSON.stringify(name)}, ${JSON.stringify(url)}, ${JSON.stringify(isdir)}, ${JSON.stringify(size)}, ${JSON.stringify(size_string)}, ${JSON.stringify(date_modified)}, ${JSON.stringify(date_modified_string)});</script>`,
   )
-  .join('\n')}
-`
+  .join("\n")}`;
 
-export function directoryIndexMiddleware(
-  root: string,
-): Connect.NextHandleFunction {
-  return async function viteDirectoryIndexMiddleware(req, res, next) {
-    // req.url is overwritten by other middlewares
-    const url = new URL(req.originalUrl!, 'http://localhost')
-    // url ~= "http://localhost/hello/world/"
-    if (url.pathname.endsWith('/')) {
-      const rootURL = pathToFileURL(root)
-      if (!rootURL.pathname.endsWith('/')) {
-        rootURL.pathname += '/'
+function directoryIndex(options: {} = {}) {
+  const {} = options;
+  // @ts-ignore
+  let config: Parameters<Plugin["configResolved"]>[0];
+  return {
+    name: "directory-index",
+    configResolved(config2) {
+      config = config2;
+    },
+    configureServer(server) {
+      if (config.mode !== "development") {
+        return;
       }
-      // rootURL ~= file:///workspaces/my-project/
-      const folder = new URL(url.pathname.slice(1), rootURL)
-      // folder ~= file:///workspaces/my-project/hello/world/
-
-      const files = await readdir(folder, { withFileTypes: true })
-      const html = htmlTemplate({
-        rootName: fileURLToPath(folder).slice(root.length),
-        hasParent: url.pathname !== '/',
-        values: await Promise.all(
-          files.map(async (file) => {
-            if (file.isDirectory()) {
-              return {
-                name: file.name,
-                url: encodeURIComponent(file.name),
-                isdir: 1,
-                size: 0,
-                size_string: '',
-                date_modified: 0,
-                date_modified_string: '',
+      server.middlewares.use(async (req, res, next) => {
+        if (res.headersSent) {
+          return next();
+        }
+        const url = new URL(req.originalUrl!, "http://localhost");
+        //== URL { http://localhost/hello/world/ }
+        const rootURL = pathToFileURL(config.root);
+        if (!rootURL.pathname.endsWith("/")) {
+          rootURL.pathname += "/";
+        }
+        //== URL { file:///my/project/ }
+        const dirURL = new URL(url.pathname.slice(1), rootURL);
+        if (!dirURL.pathname.endsWith("/")) {
+          dirURL.pathname += "/";
+        }
+        //== URL { file:///my/project/hello/world/ }
+        const indexStats = await stat(new URL("index.html", dirURL)).catch(
+          () => null,
+        );
+        if (indexStats) {
+          return next();
+        }
+        const stats = await stat(dirURL).catch(() => null);
+        if (stats?.isDirectory()) {
+          if (url.pathname.endsWith("/")) {
+            const dirents = await readdir(dirURL, { withFileTypes: true });
+            const dirPath = fileURLToPath(dirURL);
+            const allowedDirents = dirents.filter((entry) => {
+              const entryPath = join(dirPath, entry.name);
+              if (
+                config.server.fs.deny.some((x) => {
+                  const matcher = picomatch(x, { cwd: config.root });
+                  const relativePath = relative(config.root, entryPath);
+                  return matcher(relativePath);
+                })
+              ) {
+                return false;
               }
-            } else {
-              const stats = await stat(new URL(file.name, folder))
-              return {
-                name: file.name,
-                url: encodeURIComponent(file.name),
-                isdir: 0,
-                size: stats.size,
-                size_string: `${stats.size} bytes`,
-                date_modified: stats.mtimeMs,
-                date_modified_string: stats.mtime.toLocaleString(),
+              if (config.server.fs.strict) {
+                return config.server.fs.allow.some((x) => {
+                  const dirPath = resolve(config.root, x);
+                  return (entryPath + sep).startsWith(dirPath + sep);
+                });
+              } else {
+                return true;
               }
-            }
-          }),
-        ),
-      })
-
-      res.statusCode = 200
-      res.setHeader('Content-Type', 'text/html')
-      res.end(html)
-      return
-    }
-    return next()
-  }
+            });
+            const dirDirents = allowedDirents
+              .filter((x) => x.isDirectory())
+              .sort();
+            const fileDirents = allowedDirents.filter((x) => x.isFile()).sort();
+            const dirValues = dirDirents.map((dir) => ({
+              name: dir.name,
+              url: encodeURIComponent(dir.name),
+              isdir: 1,
+              size: 0,
+              size_string: "",
+              date_modified: 0,
+              date_modified_string: "",
+            }));
+            const fileValues = await Promise.all(
+              fileDirents.map(async (file) => {
+                const relativeURL = encodeURIComponent(file.name);
+                const stats = await stat(new URL(relativeURL, dirURL));
+                return {
+                  name: file.name,
+                  url: relativeURL,
+                  isdir: 0,
+                  size: stats.size,
+                  size_string: prettyBytes(stats.size),
+                  date_modified: stats.mtimeMs,
+                  date_modified_string: stats.mtime.toLocaleString(),
+                };
+              }),
+            );
+            const html = myTemplate({
+              rootName: url.pathname,
+              hasParent: url.pathname !== "/",
+              values: [...dirValues, ...fileValues],
+            });
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "text/html");
+            res.end(html);
+            return;
+          } else {
+            res.statusCode = 302;
+            res.setHeader("Location", url.pathname + "/");
+            res.end();
+            return;
+          }
+        }
+        return next();
+      });
+    },
+  } satisfies Plugin
 }
+
+export default directoryIndex;
