@@ -36,7 +36,7 @@ export function createIsConfiguredAsSsrExternal(
   const { ssr, root } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
-    noExternal !== 'undefined' &&
+    typeof noExternal !== 'undefined' &&
     typeof noExternal !== 'boolean' &&
     createFilter(undefined, noExternal, { resolve: false })
 
@@ -95,6 +95,10 @@ export function createIsConfiguredAsSsrExternal(
         ssr.external?.includes(id)
       ) {
         return true
+      }
+      // Allow individual package entries to be specified in noExternal
+      if (noExternalFilter && !noExternalFilter(id)) {
+        return false
       }
       const pkgName = getNpmPackageName(id)
       if (!pkgName) {
