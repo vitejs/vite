@@ -74,9 +74,6 @@ import { resolveSSROptions } from './ssr'
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
 
-// NOTE: every export in this file is re-exported from ./index.ts so it will
-// be part of the public API.
-
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
