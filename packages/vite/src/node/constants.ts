@@ -105,8 +105,7 @@ export const KNOWN_ASSET_TYPES = [
   'gif',
   'svg',
   'ico',
-  'webp',
-  'awebp',
+  'a?webp',
   'avif',
 
   // media
