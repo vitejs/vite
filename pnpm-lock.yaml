@@ -798,7 +798,7 @@ importers:
 
   playground/optimize-deps:
     dependencies:
-      '@vitejs/longfilename':
+      '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa':
         specifier: file:./longfilename
         version: file:playground/optimize-deps/longfilename
       '@vitejs/test-added-in-entries':
@@ -10385,7 +10385,7 @@ packages:
 
   file:playground/optimize-deps/longfilename:
     resolution: {directory: playground/optimize-deps/longfilename, type: directory}
-    name: '@vitejs/longfilename'
+    name: '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
     dev: false
 
   file:playground/optimize-deps/nested-exclude:
