@@ -337,7 +337,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             node.sourceCodeLocation!.startOffset -
             node.sourceCodeLocation!.startCol
           const line = s.slice(
-            lineStartOffset,
+            Math.max(0, lineStartOffset),
             node.sourceCodeLocation!.startOffset,
           )
 
