@@ -6,6 +6,7 @@
 <p>String <code class="string"></code></p>
 <p>Number <code class="number"></code></p>
 <p>Boolean <code class="boolean"></code></p>
+<p>Undefined <code class="undefined"></code></p>
 <p>Object <span class="pre object"></span></p>
 <p>Env Var <code class="env-var"></code></p>
 <p>process node env: <code class="process-node-env"></code></p>
@@ -72,6 +73,7 @@
   text('.string', __STRING__)
   text('.number', __NUMBER__)
   text('.boolean', __BOOLEAN__)
+  text('.undefined', __UNDEFINED__)
   text('.object', JSON.stringify(__OBJ__, null, 2))
   text('.process-node-env', process.env.NODE_ENV)
   text('.env-var', process.env.SOMEVAR)

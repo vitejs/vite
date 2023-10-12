@@ -205,7 +205,9 @@ export function serializeDefine(define: Record<string, any>): string {
 }
 
 function handleDefineValue(value: any): string {
-  return typeof value === 'string' ? value : JSON.stringify(value)
+  if (typeof value === 'undefined') return 'undefined'
+  if (typeof value === 'string') return value
+  return JSON.stringify(value)
 }
 
 function canJsonParse(value: any): boolean {
