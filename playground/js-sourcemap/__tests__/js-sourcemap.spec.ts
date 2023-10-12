@@ -1,6 +1,7 @@
 import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
+import { commentSourceMap } from '../foo-with-sourcemap-plugin'
 import {
   extractSourcemap,
   findAssetFile,
@@ -36,6 +37,7 @@ if (!isBuild) {
     )
     const js = await res.text()
 
+    expect(js).toContain(commentSourceMap)
     const sourcemapComments = js.match(mapFileCommentRegex).length
     expect(sourcemapComments).toBe(1)
 
@@ -45,9 +47,6 @@ if (!isBuild) {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
         "sources": [
           "",
-        ],
-        "sourcesContent": [
-          null,
         ],
         "version": 3,
       }
