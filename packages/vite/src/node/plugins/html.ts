@@ -432,22 +432,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             } else if (node.childNodes.length) {
               const scriptNode =
                 node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-              const cleanCode = stripLiteral(scriptNode.value)
-
-              let match: RegExpExecArray | null
-              inlineImportRE.lastIndex = 0
-              while ((match = inlineImportRE.exec(cleanCode))) {
-                const { 1: url, index } = match
-                const startUrl = cleanCode.indexOf(url, index)
-                const start = startUrl + 1
-                const end = start + url.length - 2
-                const startOffset = scriptNode.sourceCodeLocation!.startOffset
-                scriptUrls.push({
-                  start: start + startOffset,
-                  end: end + startOffset,
-                  url: scriptNode.value.slice(start, end),
-                })
-              }
+              scriptUrls.push(
+                ...extractImportExpressionFromClassicScript(scriptNode),
+              )
             }
           }
 
@@ -887,6 +874,29 @@ export function findNeedTransformStyleAttribute(
   if (!attr) return undefined
   const location = node.sourceCodeLocation?.attrs?.['style']
   return { attr, location }
+}
+
+export function extractImportExpressionFromClassicScript(
+  scriptTextNode: DefaultTreeAdapterMap['textNode'],
+): ScriptAssetsUrl[] {
+  const startOffset = scriptTextNode.sourceCodeLocation!.startOffset
+  const cleanCode = stripLiteral(scriptTextNode.value)
+
+  const scriptUrls: ScriptAssetsUrl[] = []
+  let match: RegExpExecArray | null
+  inlineImportRE.lastIndex = 0
+  while ((match = inlineImportRE.exec(cleanCode))) {
+    const { 1: url, index } = match
+    const startUrl = cleanCode.indexOf(url, index)
+    const start = startUrl + 1
+    const end = start + url.length - 2
+    scriptUrls.push({
+      start: start + startOffset,
+      end: end + startOffset,
+      url: scriptTextNode.value.slice(start, end),
+    })
+  }
+  return scriptUrls
 }
 
 export interface HtmlTagDescriptor {
