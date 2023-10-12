@@ -30,8 +30,7 @@ const fetchPath = (p: string) => {
   })
 }
 
-// See "import-expression from simple script" test below
-test.skip('should have no 404s', () => {
+test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
@@ -87,8 +86,7 @@ describe('raw references from /public', () => {
   })
 })
 
-// This feature seems to have a bug: it doesn't rewrite in dev, so it won't work if the base is /foo/bar/
-test.skip('import-expression from simple script', async () => {
+test('import-expression from simple script', async () => {
   expect(await page.textContent('.import-expression')).toMatch(
     '[success][success]',
   )
