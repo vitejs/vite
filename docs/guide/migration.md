@@ -58,6 +58,10 @@ Also there are other breaking changes which only affect few users.
   - Top level `this` was rewritten to `globalThis` by default when building. This behavior is now removed.
 - [[#14231] feat!: add extension to internal virtual modules](https://github.com/vitejs/vite/pull/14231)
   - Internal virtual modules' id now has an extension (`.js`).
+- [[#14583] refactor!: remove exporting internal APIs](https://github.com/vitejs/vite/pull/14583)
+  - Removed accidentally exported internal APIs: `isDepsOptimizerEnabled` and `getDepOptimizationConfig`
+  - Removed exported internal types: `DepOptimizationResult`, `DepOptimizationProcessing`, and `DepsOptimizer`
+  - Renamed `ResolveWorkerOptions` type to `ResolvedWorkerOptions`
 
 ## Migration from v3
 
