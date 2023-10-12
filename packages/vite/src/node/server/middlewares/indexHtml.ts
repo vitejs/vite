@@ -10,6 +10,7 @@ import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
   getAttrKey,
   getScriptInfo,
@@ -103,17 +104,16 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
 
 const startsWithWordCharRE = /^\w/
 
+const isSrcSet = (attr: Token.Attribute) =>
+  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
-  attr: Token.Attribute,
-  sourceCodeLocation: Token.Location,
-  s: MagicString,
+  url: string,
+  useSrcSetReplacer: boolean,
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
-) => {
-  let url = attr.value || ''
-
+): string | undefined => {
   if (server?.moduleGraph) {
     const mod = server.moduleGraph.urlToModuleMap.get(url)
     if (mod && mod.lastHMRTimestamp > 0) {
@@ -124,10 +124,10 @@ const processNodeUrl = (
   if (url[0] === '/' && url[1] !== '/') {
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
-    overwriteAttrValue(s, sourceCodeLocation, fullUrl)
     if (server && shouldPreTransform(url, config)) {
       preTransformRequest(server, fullUrl, devBase)
     }
+    return fullUrl
   } else if (
     (url[0] === '.' || startsWithWordCharRE.test(url)) &&
     originalUrl &&
@@ -148,11 +148,10 @@ const processNodeUrl = (
     // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
-    const processedUrl =
-      attr.name === 'srcset' && attr.prefix === undefined
-        ? processSrcSetSync(url, ({ url }) => replacer(url))
-        : replacer(url)
-    overwriteAttrValue(s, sourceCodeLocation, processedUrl)
+    const processedUrl = useSrcSetReplacer
+      ? processSrcSetSync(url, ({ url }) => replacer(url))
+      : replacer(url)
+    return processedUrl
   }
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
@@ -241,17 +240,39 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
 
       if (src) {
-        processNodeUrl(
-          src,
-          sourceCodeLocation!,
-          s,
+        const processedUrl = processNodeUrl(
+          src.value,
+          isSrcSet(src),
           config,
           htmlPath,
           originalUrl,
           server,
         )
+        if (processedUrl) {
+          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+        }
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
+      } else if (node.childNodes.length) {
+        const scriptNode = node.childNodes[
+          node.childNodes.length - 1
+        ] as DefaultTreeAdapterMap['textNode']
+        for (const {
+          url,
+          start,
+          end,
+        } of extractImportExpressionFromClassicScript(scriptNode)) {
+          const processedUrl = processNodeUrl(
+            url,
+            false,
+            config,
+            htmlPath,
+            originalUrl,
+          )
+          if (processedUrl) {
+            s.update(start, end, processedUrl)
+          }
+        }
       }
     }
 
@@ -280,14 +301,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       for (const p of node.attrs) {
         const attrKey = getAttrKey(p)
         if (p.value && assetAttrs.includes(attrKey)) {
-          processNodeUrl(
-            p,
-            node.sourceCodeLocation!.attrs![attrKey],
-            s,
+          const processedUrl = processNodeUrl(
+            p.value,
+            isSrcSet(p),
             config,
             htmlPath,
             originalUrl,
           )
+          if (processedUrl) {
+            overwriteAttrValue(
+              s,
+              node.sourceCodeLocation!.attrs![attrKey],
+              processedUrl,
+            )
+          }
         }
       }
     }
