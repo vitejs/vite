@@ -92,10 +92,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (chunk.viteMetadata.importedCss.size) {
+        if (chunk.viteMetadata?.importedCss.size) {
           manifestChunk.css = [...chunk.viteMetadata.importedCss]
         }
-        if (chunk.viteMetadata.importedAssets.size) {
+        if (chunk.viteMetadata?.importedAssets.size) {
           manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
         }
 
@@ -157,7 +157,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           fileName:
             typeof config.build.manifest === 'string'
               ? config.build.manifest
-              : 'manifest.json',
+              : '.vite/manifest.json',
           type: 'asset',
           source: jsonStableStringify(manifest, { space: 2 }),
         })

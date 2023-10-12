@@ -3,7 +3,13 @@ import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
-import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
+import {
+  convertTargets,
+  cssPlugin,
+  cssUrlRE,
+  getEmptyChunkReplacer,
+  hoistAtRules,
+} from '../../plugins/css'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -237,3 +243,73 @@ async function createCssPluginTransform(
     },
   }
 }
+
+describe('convertTargets', () => {
+  test('basic cases', () => {
+    expect(convertTargets('es2018')).toStrictEqual({
+      chrome: 4128768,
+      edge: 5177344,
+      firefox: 3801088,
+      safari: 786432,
+      opera: 3276800,
+    })
+    expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
+      ios_saf: 851968,
+      safari: 852224,
+    })
+  })
+})
+
+describe('getEmptyChunkReplacer', () => {
+  test('replaces import call', () => {
+    const code = `\
+import "some-module";
+import "pure_css_chunk.js";
+import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "import \\"some-module\\";
+      /* empty css              */import \\"other-module\\";"
+    `)
+  })
+
+  test('replaces import call without new lines', () => {
+    const code = `import "some-module";import "pure_css_chunk.js";import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      '"import \\"some-module\\";/* empty css             */import \\"other-module\\";"',
+    )
+  })
+
+  test('replaces require call', () => {
+    const code = `\
+require("some-module");
+require("pure_css_chunk.js");
+require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "require(\\"some-module\\");
+      /* empty css                */require(\\"other-module\\");"
+    `)
+  })
+
+  test('replaces require call in minified code without new lines', () => {
+    const code = `require("some-module");require("pure_css_chunk.js");require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      '"require(\\"some-module\\");/* empty css               */require(\\"other-module\\");"',
+    )
+  })
+})

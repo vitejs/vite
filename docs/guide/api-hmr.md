@@ -37,6 +37,10 @@ interface ViteHotContext {
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
+  off<T extends string>(
+    event: T,
+    cb: (payload: InferCustomEventPayload<T>) => void,
+  ): void
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }
 ```
@@ -49,6 +53,14 @@ First of all, make sure to guard all HMR API usage with a conditional block so t
 if (import.meta.hot) {
   // HMR code
 }
+```
+
+## IntelliSense for TypeScript
+
+Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). You can create an `env.d.ts` in the `src` directory so TypeScript picks up the type definitions:
+
+```ts
+/// <reference types="vite/client" />
 ```
 
 ## `hot.accept(cb)`
@@ -70,9 +82,9 @@ if (import.meta.hot) {
 
 A module that "accepts" hot updates is considered an **HMR boundary**.
 
-Note that Vite's HMR does not actually swap the originally imported module: if an HMR boundary module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the boundary module will not be notified of the change.
+Vite's HMR does not actually swap the originally imported module: if an HMR boundary module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the boundary module will not be notified of the change. This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 
-This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
+Vite requires that the call to this function appears as `import.meta.hot.accept(` (whitespace-sensitive) in the source code in order for the module to accept update. This is a requirement of the static analysis that Vite does to enable HMR support for a module.
 
 ## `hot.accept(deps, cb)`
 
@@ -93,8 +105,9 @@ if (import.meta.hot) {
   import.meta.hot.accept(
     ['./foo.js', './bar.js'],
     ([newFooModule, newBarModule]) => {
-      // The callback receives an array where only the updated module is non null
-      // If the update was not successful (syntax error for ex.), the array is empty
+      // The callback receives an array where only the updated module is
+      // non null. If the update was not successful (syntax error for ex.),
+      // the array is empty
     },
   )
 }
@@ -167,8 +180,14 @@ The following HMR events are dispatched by Vite automatically:
 - `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
 - `'vite:invalidate'` when a module is invalidated with `import.meta.hot.invalidate()`
 - `'vite:error'` when an error occurs (e.g. syntax error)
+- `'vite:ws:disconnect'` when the WebSocket connection is lost
+- `'vite:ws:connect'` when the WebSocket connection is (re-)established
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+
+## `hot.off(event, cb)`
+
+Remove callback from the event listeners
 
 ## `hot.send(event, data)`
 

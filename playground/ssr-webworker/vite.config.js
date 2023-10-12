@@ -6,6 +6,7 @@ export default defineConfig({
   },
   resolve: {
     dedupe: ['react'],
+    conditions: ['worker'],
   },
   ssr: {
     target: 'webworker',
@@ -13,6 +14,7 @@ export default defineConfig({
   },
   plugins: [
     {
+      name: '@vitejs/test-ssr-webworker/no-external',
       config() {
         return {
           ssr: {
@@ -22,6 +24,7 @@ export default defineConfig({
       },
     },
     {
+      name: '@vitejs/test-ssr-webworker/no-external-array',
       config() {
         return {
           ssr: {

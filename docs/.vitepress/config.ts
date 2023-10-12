@@ -86,8 +86,13 @@ export default defineConfig({
     ],
   ],
 
-  vue: {
-    reactivityTransform: true,
+  locales: {
+    root: { label: 'English' },
+    zh: { label: '简体中文', link: 'https://cn.vitejs.dev' },
+    ja: { label: '日本語', link: 'https://ja.vitejs.dev' },
+    es: { label: 'Español', link: 'https://es.vitejs.dev' },
+    pt: { label: 'Português', link: 'https://pt.vitejs.dev' },
+    ko: { label: '한국어', link: 'https://ko.vitejs.dev' },
   },
 
   themeConfig: {
@@ -99,6 +104,7 @@ export default defineConfig({
     },
 
     socialLinks: [
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@vite' },
       { icon: 'twitter', link: 'https://twitter.com/vite_js' },
       { icon: 'discord', link: 'https://chat.vitejs.dev' },
       { icon: 'github', link: 'https://github.com/vitejs/vite' },
@@ -118,15 +124,6 @@ export default defineConfig({
       placement: 'vitejsdev',
     },
 
-    localeLinks: {
-      text: 'English',
-      items: [
-        { text: '简体中文', link: 'https://cn.vitejs.dev' },
-        { text: '日本語', link: 'https://ja.vitejs.dev' },
-        { text: 'Español', link: 'https://es.vitejs.dev' },
-      ],
-    },
-
     footer: {
       message: `Released under the MIT License. (${commitRef})`,
       copyright: 'Copyright © 2019-present Evan You & Vite Contributors',
@@ -140,6 +137,7 @@ export default defineConfig({
         text: 'Resources',
         items: [
           { text: 'Team', link: '/team' },
+          { text: 'Releases', link: '/releases' },
           {
             items: [
               {
@@ -165,6 +163,10 @@ export default defineConfig({
               {
                 text: 'Changelog',
                 link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
+              },
+              {
+                text: 'Contributing',
+                link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
               },
             ],
           },
@@ -238,7 +240,11 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
-              text: 'Migration from v3',
+              text: 'Philosophy',
+              link: '/guide/philosophy',
+            },
+            {
+              text: 'Migration from v4',
               link: '/guide/migration',
             },
           ],
@@ -304,6 +310,10 @@ export default defineConfig({
           ],
         },
       ],
+    },
+
+    outline: {
+      level: [2, 3],
     },
   },
 })

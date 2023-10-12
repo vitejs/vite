@@ -2,6 +2,7 @@
   "name": "@vitejs/test-external",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,8 +15,8 @@
   },
   "devDependencies": {
     "slash3": "npm:slash@^3.0.0",
-    "slash5": "npm:slash@^5.0.0",
+    "slash5": "npm:slash@^5.1.0",
     "vite": "workspace:*",
-    "vue": "^3.2.45"
+    "vue": "^3.3.4"
   }
 }

@@ -22,6 +22,10 @@ test('normal', async () => {
   )
 })
 
+test('named', async () => {
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+})
+
 test('TS output', async () => {
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong', true)
 })
@@ -33,6 +37,14 @@ test.skip('inlined', async () => {
 
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
+})
+
+test('named shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+})
+
+test('inline shared worker', async () => {
+  await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {

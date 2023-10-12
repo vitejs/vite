@@ -1,10 +1,8 @@
-const path = require('node:path')
+import path from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
-  base: '/foo',
+export default defineConfig({
+  base: '/foo/bar',
   publicDir: 'static',
   resolve: {
     alias: {
@@ -14,8 +12,8 @@ module.exports = {
   assetsInclude: ['**/*.unknown'],
   build: {
     outDir: 'dist/foo',
-    assetsInlineLimit: 8192, // 8kb
+    assetsInlineLimit: 8000, // 8 kB
     manifest: true,
     watch: {},
   },
-}
+})

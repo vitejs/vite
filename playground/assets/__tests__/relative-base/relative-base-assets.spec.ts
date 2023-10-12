@@ -6,7 +6,6 @@ import {
   getColor,
   isBuild,
   page,
-  viteConfig,
 } from '~utils'
 
 const absoluteAssetMatch = isBuild
@@ -138,8 +137,7 @@ describe('css url() references', () => {
 describe.runIf(isBuild)('index.css URLs', () => {
   let css: string
   beforeAll(() => {
-    const base = viteConfig ? viteConfig?.testConfig?.baseRoute : ''
-    css = findAssetFile(/index.*\.css$/, base, 'other-assets')
+    css = findAssetFile(/index.*\.css$/, 'relative-base', 'other-assets')
   })
 
   test('relative asset URL', () => {
@@ -200,6 +198,10 @@ test('?url import on css', async () => {
   expect(txt).toMatch(
     isBuild ? /http.*\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css',
   )
+  isBuild &&
+    expect(findAssetFile(/index.*\.js$/, 'relative-base', 'entries')).toMatch(
+      /icons-.+\.css(?!\?used)/,
+    )
 })
 
 test('new URL(..., import.meta.url)', async () => {

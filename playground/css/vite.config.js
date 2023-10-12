@@ -1,14 +1,15 @@
-const path = require('node:path')
+import path from 'node:path'
+import stylus from 'stylus'
+import { defineConfig } from 'vite'
 
 // trigger scss bug: https://github.com/sass/dart-sass/issues/710
 // make sure Vite handles safely
+// @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.window = {}
+// @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.location = new URL('http://localhost/')
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   build: {
     cssTarget: 'chrome61',
   },
@@ -66,7 +67,11 @@ module.exports = {
           './options/relative-import.styl',
           path.join(__dirname, 'options/absolute-import.styl'),
         ],
+        define: {
+          $definedColor: new stylus.nodes.RGBA(51, 197, 255, 1),
+          definedFunction: () => new stylus.nodes.RGBA(255, 0, 98, 1),
+        },
       },
     },
   },
-}
+})

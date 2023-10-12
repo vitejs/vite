@@ -1,4 +1,3 @@
-import module from 'node:module'
 import { defineConfig } from 'vite'
 
 export default defineConfig({

@@ -26,6 +26,12 @@ const envConfig = defineConfig({
   output: {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
     sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 
@@ -40,6 +46,12 @@ const clientConfig = defineConfig({
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
     sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
+    },
   },
 })
 
@@ -50,7 +62,7 @@ const sharedNodeOptions = defineConfig({
     tryCatchDeoptimization: false,
   },
   output: {
-    dir: path.resolve(__dirname, 'dist'),
+    dir: './dist',
     entryFileNames: `node/[name].js`,
     chunkFileNames: 'node/chunks/dep-[hash].js',
     exports: 'named',
@@ -59,14 +71,6 @@ const sharedNodeOptions = defineConfig({
     freeze: false,
   },
   onwarn(warning, warn) {
-    // node-resolve complains a lot about this but seems to still work?
-    if (warning.message.includes('Package subpath')) {
-      return
-    }
-    // we use the eval('require') trick to deal with optional deps
-    if (warning.message.includes('Use of eval')) {
-      return
-    }
     if (warning.message.includes('Circular dependency')) {
       return
     }
@@ -110,11 +114,18 @@ function createNodePlugins(
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
           pattern: /require(?=\((configFile|'ts-node')\))/g,
-          replacement: `eval('require')`,
+          replacement: `__require`,
         },
         'json-stable-stringify/index.js': {
           pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
           replacement: 'var json = JSON',
+        },
+        // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
+        // However, we always pass the `resolve` option. Remove this import to avoid
+        // bundling the `resolve` dep.
+        'postcss-import/index.js': {
+          src: 'const resolveId = require("./lib/resolve-id")',
+          replacement: 'const resolveId = (id) => id',
         },
       }),
 
@@ -149,15 +160,16 @@ function createNodeConfig(isProduction: boolean) {
     },
     external: [
       'fsevents',
+      'lightningcss',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
-      // in production we use api-extractor for dts generation
+      // in production we use rollup.dts.config.ts for dts generation
       // in development we need to rely on the rollup ts plugin
-      isProduction ? false : path.resolve(__dirname, 'dist/node'),
+      isProduction ? false : './dist/node',
     ),
   })
 }
@@ -169,7 +181,7 @@ function createCjsConfig(isProduction: boolean) {
       publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
     },
     output: {
-      dir: path.resolve(__dirname, 'dist'),
+      dir: './dist',
       entryFileNames: `node-cjs/[name].cjs`,
       chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
       exports: 'named',
@@ -183,7 +195,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
   })
 }
 
@@ -248,7 +260,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
 
           return {
             code: magicString.toString(),
-            map: magicString.generateMap({ hires: true }),
+            map: magicString.generateMap({ hires: 'boundary' }),
           }
         }
       }
@@ -296,7 +308,7 @@ const __require = require;
 
       return {
         code: s.toString(),
-        map: s.generateMap(),
+        map: s.generateMap({ hires: 'boundary' }),
       }
     },
   }
@@ -305,7 +317,7 @@ const __require = require;
 /**
  * Guard the bundle size
  *
- * @param limit size in KB
+ * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
   return {
@@ -317,10 +329,10 @@ function bundleSizeLimit(limit: number): Plugin {
           .join(''),
         'utf-8',
       )
-      const kb = size / 1024
+      const kb = size / 1000
       if (kb > limit) {
         throw new Error(
-          `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(
+          `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,
         )

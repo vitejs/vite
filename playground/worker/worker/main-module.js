@@ -1,5 +1,6 @@
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
+import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
@@ -20,17 +21,60 @@ worker.addEventListener('message', (e) => {
   text('.asset-url', e.data.viteSvg)
 })
 
+const namedWorker = new myWorker({ name: 'namedWorker' })
+namedWorker.postMessage('ping')
+namedWorker.addEventListener('message', (e) => {
+  text('.pong-named', e.data.name)
+})
+
 const inlineWorker = new InlineWorker()
 inlineWorker.postMessage('ping')
 inlineWorker.addEventListener('message', (e) => {
   text('.pong-inline', e.data.msg)
 })
 
-const sharedWorker = new mySharedWorker()
-sharedWorker.port.addEventListener('message', (event) => {
-  text('.tick-count', event.data)
+const namedInlineWorker = new InlineWorker({ name: 'namedInlineWorker' })
+namedInlineWorker.postMessage('ping')
+namedInlineWorker.addEventListener('message', (e) => {
+  text('.pong-inline-named', e.data.name)
 })
-sharedWorker.port.start()
+
+const inlineWorkerUrl = new InlineWorker()
+inlineWorkerUrl.postMessage('ping')
+inlineWorkerUrl.addEventListener('message', (e) => {
+  text('.pong-inline-url', e.data.metaUrl)
+})
+
+const startSharedWorker = () => {
+  const sharedWorker = new mySharedWorker()
+  sharedWorker.port.addEventListener('message', (event) => {
+    text('.tick-count', event.data)
+  })
+  sharedWorker.port.start()
+}
+startSharedWorker()
+startSharedWorker()
+
+const startNamedSharedWorker = () => {
+  const sharedWorker = new mySharedWorker({ name: 'namedSharedWorker' })
+  sharedWorker.port.addEventListener('message', (event) => {
+    text('.tick-count-named', event.data)
+  })
+  sharedWorker.port.start()
+}
+startNamedSharedWorker()
+startNamedSharedWorker()
+
+const startInlineSharedWorker = () => {
+  const inlineSharedWorker = new InlineSharedWorker()
+  inlineSharedWorker.port.addEventListener('message', (event) => {
+    text('.pong-shared-inline', event.data)
+  })
+  inlineSharedWorker.port.start()
+}
+
+startInlineSharedWorker()
+startInlineSharedWorker()
 
 const tsOutputWorker = new TSOutputWorker()
 tsOutputWorker.postMessage('ping')
@@ -72,6 +116,15 @@ const wResolve = new Worker(
 )
 wResolve.addEventListener('message', (ev) =>
   text('.worker-import-meta-url-resolve', JSON.stringify(ev.data)),
+)
+
+// url import worker without extension
+const wWithoutExt = new Worker(
+  new URL('../url-worker', import.meta.url),
+  /* @vite-ignore */ workerOptions,
+)
+wWithoutExt.addEventListener('message', (ev) =>
+  text('.worker-import-meta-url-without-extension', JSON.stringify(ev.data)),
 )
 
 const genWorkerName = () => 'module'
