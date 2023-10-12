@@ -1,7 +1,7 @@
 import { transform } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { getHash } from '../utils'
+import { escapeRegex, getHash } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -67,7 +67,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
   }
 
-  function generateDefine(ssr: boolean) {
+  function generatePattern(ssr: boolean) {
     const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
     const define: Record<string, string> = {
@@ -93,11 +93,25 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       })
     }
 
-    return Object.keys(define).length ? define : null
+    const defineKeys = Object.keys(define)
+    const pattern = defineKeys.length
+      ? new RegExp(
+          // Mustn't be preceded by a char that can be part of an identifier
+          // or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
+            defineKeys.map(escapeRegex).join('|') +
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
+          'gu',
+        )
+      : null
+
+    return [define, pattern] as const
   }
 
-  const clientDefine = generateDefine(false)
-  const ssrDefine = generateDefine(true)
+  const defaultPattern = generatePattern(false)
+  const ssrPattern = generatePattern(true)
 
   return {
     name: 'vite:define',
@@ -120,8 +134,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const define = ssr ? ssrDefine : clientDefine
-      if (!define) return
+      const [define, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern?.test(code)) {
+        return
+      }
 
       return await replaceDefine(code, id, define, config)
     },
