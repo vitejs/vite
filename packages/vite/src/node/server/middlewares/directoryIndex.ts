@@ -3,7 +3,7 @@ import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import picomatch from "picomatch";
 import prettyBytes from "pretty-bytes";
-import { Plugin } from "../..";
+import type { Plugin, ResolvedConfig } from "../..";
 
 const myTemplate = ({ rootName, hasParent, values }: {
     rootName: string;
@@ -269,10 +269,8 @@ ${values
   )
   .join("\n")}`;
 
-function directoryIndex(options: {} = {}) {
-  const {} = options;
-  // @ts-ignore
-  let config: Parameters<Plugin["configResolved"]>[0];
+function directoryIndex(options: {} = {}): Pick<Plugin, "name" | "configResolved" | "configureServer"> {
+  let config: ResolvedConfig
   return {
     name: "directory-index",
     configResolved(config2) {
