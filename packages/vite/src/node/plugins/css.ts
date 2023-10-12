@@ -423,6 +423,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       css = stripBomTag(css)
 
+      // cache css compile result to map
+      // and then use the cache replace inline-style-flag
+      // when `generateBundle` in vite:build-html plugin and devHtmlHook
+      const inlineCSS = inlineCSSRE.test(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
+      if (inlineCSS && isHTMLProxy) {
+        const query = parseRequest(id)
+        if (styleAttrRE.test(id)) {
+          css = css.replace(/"/g, '&quot;')
+        }
+        addToHTMLProxyTransformResult(
+          `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
+          css,
+        )
+        return `export default ''`
+      }
+
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
 
@@ -475,21 +492,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // build CSS handling ----------------------------------------------------
 
       // record css
-      // cache css compile result to map
-      // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
-      const inlineCSS = inlineCSSRE.test(id)
-      const isHTMLProxy = htmlProxyRE.test(id)
-      const query = parseRequest(id)
-      if (inlineCSS && isHTMLProxy) {
-        if (styleAttrRE.test(id)) {
-          css = css.replace(/"/g, '&quot;')
-        }
-        addToHTMLProxyTransformResult(
-          `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
-          css,
-        )
-        return `export default ''`
-      }
       if (!inlined) {
         styles.set(id, css)
       }

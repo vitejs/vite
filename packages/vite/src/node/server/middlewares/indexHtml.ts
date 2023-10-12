@@ -10,9 +10,11 @@ import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  findNeedTransformStyleAttribute,
   getAttrKey,
   getScriptInfo,
   htmlEnvHook,
+  htmlProxyResult,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
@@ -27,6 +29,7 @@ import {
   cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
+  getHash,
   injectQuery,
   isJSRequest,
   joinUrlSegments,
@@ -45,6 +48,12 @@ import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 interface AssetNode {
   start: number
   end: number
+  code: string
+}
+
+interface InlineStyleAttribute {
+  index: number
+  location: Token.Location
   code: string
 }
 
@@ -179,6 +188,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     '',
   )
   const styleUrl: AssetNode[] = []
+  const inlineStyles: InlineStyleAttribute[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -245,6 +255,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
 
+    const inlineStyle = findNeedTransformStyleAttribute(node)
+    if (inlineStyle) {
+      inlineModuleIndex++
+      inlineStyles.push({
+        index: inlineModuleIndex,
+        location: inlineStyle.location!,
+        code: inlineStyle.attr.value,
+      })
+    }
+
     if (node.nodeName === 'style' && node.childNodes.length) {
       const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
       styleUrl.push({
@@ -273,8 +293,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
   })
 
-  await Promise.all(
-    styleUrl.map(async ({ start, end, code }, index) => {
+  await Promise.all([
+    ...styleUrl.map(async ({ start, end, code }, index) => {
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
@@ -299,7 +319,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
       s.overwrite(start, end, content)
     }),
-  )
+    ...inlineStyles.map(async ({ index, location, code }) => {
+      // will transform with css plugin and cache result with css-post plugin
+      const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
+
+      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      ensureWatchedFile(watcher, mod.file, config.root)
+
+      await server?.pluginContainer.transform(code, mod.id!)
+
+      const hash = getHash(cleanUrl(mod.id!))
+      const result = htmlProxyResult.get(`${hash}_${index}`)
+      overwriteAttrValue(s, location, result ?? '')
+    }),
+  ])
 
   html = s.toString()
 
