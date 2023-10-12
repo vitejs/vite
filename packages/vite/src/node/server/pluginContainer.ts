@@ -578,7 +578,16 @@ export async function createPluginContainer(
           break
         }
         if (!combinedMap) {
-          combinedMap = m as SourceMap
+          const sm = m as SourceMap
+          if (sm.sources.length === 1 && !sm.sources[0]) {
+            combinedMap = {
+              ...sm,
+              sources: [this.filename],
+              sourcesContent: [this.originalCode],
+            }
+          } else {
+            combinedMap = sm
+          }
         } else {
           combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             m as RawSourceMap,
