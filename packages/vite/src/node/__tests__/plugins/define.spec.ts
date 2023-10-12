@@ -50,7 +50,7 @@ describe('definePlugin', () => {
       'import.meta.hot': 'import.meta.hot',
     })
     expect(await overrideTransform('const hot = import.meta.hot;')).toBe(
-      'const hot = import.meta.hot;\n',
+      undefined,
     )
   })
 })

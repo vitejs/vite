@@ -135,10 +135,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       const [define, pattern] = ssr ? ssrPattern : defaultPattern
+      if (!pattern) return
 
-      if (!pattern?.test(code)) {
-        return
-      }
+      // Check if our code needs any replacements before running esbuild
+      pattern.lastIndex = 0
+      if (!pattern.test(code)) return
 
       return await replaceDefine(code, id, define, config)
     },
@@ -168,7 +169,7 @@ export async function replaceDefine(
     loader: 'js',
     charset: 'utf8',
     platform: 'neutral',
-    define: define,
+    define,
     sourcefile: id,
     sourcemap: config.command === 'build' && !!config.build.sourcemap,
   })
