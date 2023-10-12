@@ -883,8 +883,8 @@ export function resolveBaseUrl(
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-            `URL, ./, or an empty string.`,
+          `(!) invalid "base" option: "${base}". The value can only be an absolute ` +
+            `URL, "./", or an empty string.`,
         ),
       ),
     )
