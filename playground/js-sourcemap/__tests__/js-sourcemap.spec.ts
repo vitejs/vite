@@ -31,7 +31,7 @@ if (!isBuild) {
     `)
   })
 
-  test('js with existing inline sourcemap', async () => {
+  test('js with inline sourcemap injected by a plugin', async () => {
     const res = await page.request.get(
       new URL('./foo-with-sourcemap.js', page.url()).href,
     )
