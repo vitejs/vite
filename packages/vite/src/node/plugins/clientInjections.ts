@@ -3,7 +3,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
-import { replaceDefine } from './define'
+import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -51,7 +51,14 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         hmrBase = path.posix.join(hmrBase, hmrConfig.path)
       }
 
-      const serializedDefines = serializeDefine(config.define || {})
+      const userDefine: Record<string, any> = {}
+      for (const key in config.define) {
+        // import.meta.env.* is handled in `importAnalysis` plugin
+        if (!key.startsWith('import.meta.env.')) {
+          userDefine[key] = config.define[key]
+        }
+      }
+      const serializedDefines = serializeDefine(userDefine)
 
       const modeReplacement = escapeReplacement(config.mode)
       const baseReplacement = escapeReplacement(devBase)
@@ -110,15 +117,4 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 function escapeReplacement(value: string | number | boolean | null) {
   const jsonValue = JSON.stringify(value)
   return () => jsonValue
-}
-
-function serializeDefine(define: Record<string, any>): string {
-  let res = `{`
-  for (const key in define) {
-    const val = define[key]
-    res += `${JSON.stringify(key)}: ${
-      typeof val === 'string' ? `(${val})` : JSON.stringify(val)
-    }, `
-  }
-  return res + `}`
 }

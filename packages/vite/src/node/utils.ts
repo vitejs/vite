@@ -989,8 +989,8 @@ export function parseRequest(id: string): Record<string, string> | null {
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-export function getHash(text: Buffer | string): string {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+export function getHash(text: Buffer | string, length = 8): string {
+  return createHash('sha256').update(text).digest('hex').substring(0, length)
 }
 
 const _dirname = path.dirname(fileURLToPath(import.meta.url))

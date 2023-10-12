@@ -7,7 +7,10 @@ async function createDefinePluginTransform(
   build = true,
   ssr = false,
 ) {
-  const config = await resolveConfig({ define }, build ? 'build' : 'serve')
+  const config = await resolveConfig(
+    { configFile: false, define },
+    build ? 'build' : 'serve',
+  )
   const instance = definePlugin(config)
   return async (code: string) => {
     // @ts-expect-error transform should exist
@@ -40,14 +43,14 @@ describe('definePlugin', () => {
     // assert that the default behavior is to replace import.meta.hot with undefined
     const transform = await createDefinePluginTransform()
     expect(await transform('const hot = import.meta.hot;')).toBe(
-      'const hot = undefined;',
+      'const hot = void 0;\n',
     )
     // assert that we can specify a user define to preserve import.meta.hot
     const overrideTransform = await createDefinePluginTransform({
       'import.meta.hot': 'import.meta.hot',
     })
     expect(await overrideTransform('const hot = import.meta.hot;')).toBe(
-      'const hot = import.meta.hot;',
+      'const hot = import.meta.hot;\n',
     )
   })
 })
