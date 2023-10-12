@@ -497,31 +497,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-          // <tag style="... url(...) or image-set(...) ..."></tag>
-          // extract inline styles as virtual css and add class attribute to tag for selecting
-          const inlineStyle = node.attrs.find(
-            (prop) =>
-              prop.prefix === undefined &&
-              prop.name === 'style' &&
-              // only url(...) or image-set(...) in css need to emit file
-              (prop.value.includes('url(') ||
-                prop.value.includes('image-set(')),
-          )
+
+          const inlineStyle = findNeedTransformStyleAttribute(node)
           if (inlineStyle) {
             inlineModuleIndex++
-            // replace `inline style` to class
+            // replace `inline style` with __VITE_INLINE_CSS__**_**__
             // and import css in js code
-            const code = inlineStyle.value
+            const code = inlineStyle.attr.value
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
-            const sourceCodeLocation = node.sourceCodeLocation!.attrs!['style']
             overwriteAttrValue(
               s,
-              sourceCodeLocation,
+              inlineStyle.location!,
               `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
             )
           }
@@ -879,6 +870,23 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+// <tag style="... url(...) or image-set(...) ..."></tag>
+// extract inline styles as virtual css
+export function findNeedTransformStyleAttribute(
+  node: DefaultTreeAdapterMap['element'],
+): { attr: Token.Attribute; location?: Token.Location } | undefined {
+  const attr = node.attrs.find(
+    (prop) =>
+      prop.prefix === undefined &&
+      prop.name === 'style' &&
+      // only url(...) or image-set(...) in css need to emit file
+      (prop.value.includes('url(') || prop.value.includes('image-set(')),
+  )
+  if (!attr) return undefined
+  const location = node.sourceCodeLocation?.attrs?.['style']
+  return { attr, location }
 }
 
 export interface HtmlTagDescriptor {

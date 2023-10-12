@@ -467,10 +467,7 @@ test('url() contains file in publicDir, in <style> tag', async () => {
   expect(await getBg('.style-public-assets')).toContain(iconMatch)
 })
 
-test.skip('url() contains file in publicDir, as inline style', async () => {
-  // TODO: To investigate why `await getBg('.inline-style-public') === "url("http://localhost:5173/icon.png")"`
-  // It supposes to be `url("http://localhost:5173/foo/bar/icon.png")`
-  // (I built the playground to verify)
+test('url() contains file in publicDir, as inline style', async () => {
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
 })
 
