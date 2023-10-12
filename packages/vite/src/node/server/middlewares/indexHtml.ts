@@ -92,8 +92,6 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
   )
 }
 
-const startsWithWordCharRE = /^\w/
-
 const processNodeUrl = (
   attr: Token.Attribute,
   sourceCodeLocation: Token.Location,
@@ -120,7 +118,7 @@ const processNodeUrl = (
       preTransformRequest(server, fullUrl, devBase)
     }
   } else if (
-    (url[0] === '.' || startsWithWordCharRE.test(url)) &&
+    url[0] === '.' &&
     originalUrl &&
     originalUrl !== '/' &&
     htmlPath === '/index.html'
