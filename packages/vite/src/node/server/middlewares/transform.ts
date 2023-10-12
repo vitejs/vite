@@ -156,7 +156,7 @@ export function transformMiddleware(
             }
           } else {
             warning =
-              `files in the public directory are served at the root path.\n` +
+              `Files in the public directory are served at the root path.\n` +
               `Instead of ${colors.cyan(url)}, use ${colors.cyan(
                 url.replace(publicPath, '/'),
               )}.`

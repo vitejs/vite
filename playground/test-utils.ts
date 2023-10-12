@@ -36,6 +36,7 @@ export const ports = {
   'ssr-webworker': 9605,
   'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-conditions': 9608,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -49,6 +50,8 @@ export const hmrPorts = {
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
   'css/lightningcss-proxy': 24686,
+  json: 24687,
+  'ssr-conditions': 24688,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -168,7 +171,10 @@ export function findAssetFile(
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8'),
+    fs.readFileSync(
+      path.join(testDir, 'dist', base, '.vite/manifest.json'),
+      'utf-8',
+    ),
   )
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "4.4.1",
+  "version": "5.0.0-beta.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -33,11 +33,12 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
-    "@types/minimist": "^1.2.2",
-    "@types/prompts": "^2.4.4",
+    "@types/minimist": "^1.2.3",
+    "@types/prompts": "^2.4.5",
     "cross-spawn": "^7.0.3",
     "kolorist": "^1.8.0",
     "minimist": "^1.2.8",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "unbuild": "^2.0.0"
   }
 }

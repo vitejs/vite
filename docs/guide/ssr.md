@@ -181,14 +181,14 @@ Refer to the [Vue](https://github.com/vitejs/vite-plugin-vue/tree/main/playgroun
 
 ## Generating Preload Directives
 
-`vite build` supports the `--ssrManifest` flag which will generate `ssr-manifest.json` in build output directory:
+`vite build` supports the `--ssrManifest` flag which will generate `.vite/ssr-manifest.json` in build output directory:
 
 ```diff
 - "build:client": "vite build --outDir dist/client",
 + "build:client": "vite build --outDir dist/client --ssrManifest",
 ```
 
-The above script will now generate `dist/client/ssr-manifest.json` for the client build (Yes, the SSR manifest is generated from the client build because we want to map module IDs to client files). The manifest contains mappings of module IDs to their associated chunks and asset files.
+The above script will now generate `dist/client/.vite/ssr-manifest.json` for the client build (Yes, the SSR manifest is generated from the client build because we want to map module IDs to client files). The manifest contains mappings of module IDs to their associated chunks and asset files.
 
 To leverage the manifest, frameworks need to provide a way to collect the module IDs of the components that were used during a server render call.
 
@@ -259,18 +259,14 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported
 
+## SSR Resolve Conditions
+
+By default package entry resolution will use the conditions set in [`resolve.conditions`](../config/shared-options.md#resolve-conditions) for the SSR build. You can use [`ssr.resolve.conditions`](../config/ssr-options.md#ssr-resolve-conditions) and [`ssr.resolve.externalConditions`](../config/ssr-options.md#ssr-resolve-externalconditions) to customize this behavior.
+
 ## Vite CLI
 
 The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps. You can add your SSR middlewares to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).
 
 :::tip Note
 Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
-:::
-
-## SSR Format
-
-By default, Vite generates the SSR bundle in ESM. There is experimental support for configuring `ssr.format`, but it isn't recommended. Future efforts around SSR development will be based on ESM, and CommonJS remains available for backward compatibility. If using ESM for SSR isn't possible in your project, you can set `legacy.buildSsrCjsExternalHeuristics: true` to generate a CJS bundle using the same [externalization heuristics of Vite v2](https://v2.vitejs.dev/guide/ssr.html#ssr-externals).
-
-:::warning Warning
-Experimental `legacy.buildSsrCjsExternalHeuristics` and `ssr.format: 'cjs'` are going to be removed in Vite 5. Find more information and give feedback [in this discussion](https://github.com/vitejs/vite/discussions/13816).
 :::

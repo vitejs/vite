@@ -541,9 +541,8 @@ import wasmUrl from 'foo.wasm?url'
 
 const main = async () => {
   const responsePromise = fetch(wasmUrl)
-  const { module, instance } = await WebAssembly.instantiateStreaming(
-    responsePromise,
-  )
+  const { module, instance } =
+    await WebAssembly.instantiateStreaming(responsePromise)
   /* ... */
 }
 

@@ -185,7 +185,11 @@ cli
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
         )}  ${startupDurationString}\n`,
-        { clear: !server.config.logger.hasWarned },
+        {
+          clear:
+            !server.config.logger.hasWarned &&
+            !(globalThis as any).__vite_cjs_skip_clear_screen,
+        },
       )
 
       server.printUrls()

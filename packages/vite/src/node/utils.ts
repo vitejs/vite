@@ -78,41 +78,52 @@ const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
-export const flattenId = (id: string): string =>
-  id
-    .replace(replaceSlashOrColonRE, '_')
-    .replace(replaceDotRE, '__')
-    .replace(replaceNestedIdRE, '___')
-    .replace(replaceHashRE, '____')
+export const flattenId = (id: string): string => {
+  const flatId = limitFlattenIdLength(
+    id
+      .replace(replaceSlashOrColonRE, '_')
+      .replace(replaceDotRE, '__')
+      .replace(replaceNestedIdRE, '___')
+      .replace(replaceHashRE, '____'),
+  )
+  return flatId
+}
+
+const FLATTEN_ID_HASH_LENGTH = 8
+const FLATTEN_ID_MAX_FILE_LENGTH = 170
+
+const limitFlattenIdLength = (
+  id: string,
+  limit: number = FLATTEN_ID_MAX_FILE_LENGTH,
+): string => {
+  if (id.length <= limit) {
+    return id
+  }
+  return id.slice(0, limit - (FLATTEN_ID_HASH_LENGTH + 1)) + '_' + getHash(id)
+}
 
 export const normalizeId = (id: string): string =>
   id.replace(replaceNestedIdRE, ' > ')
 
-//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
-const builtins = new Set([
-  ...builtinModules,
-  'assert/strict',
-  'diagnostics_channel',
-  'dns/promises',
-  'fs/promises',
-  'path/posix',
-  'path/win32',
-  'readline/promises',
-  'stream/consumers',
-  'stream/promises',
-  'stream/web',
-  'timers/promises',
-  'util/types',
-  'wasi',
-])
-
+// Supported by Node, Deno, Bun
 const NODE_BUILTIN_NAMESPACE = 'node:'
+// Supported by Deno
+const NPM_BUILTIN_NAMESPACE = 'npm:'
+// Supported by Bun
+const BUN_BUILTIN_NAMESPACE = 'bun:'
+// Some runtimes like Bun injects namespaced modules here, which is not a node builtin
+const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
+
+// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
 export function isBuiltin(id: string): boolean {
-  return builtins.has(
-    id.startsWith(NODE_BUILTIN_NAMESPACE)
-      ? id.slice(NODE_BUILTIN_NAMESPACE.length)
-      : id,
-  )
+  if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
+  if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
+  return isNodeBuiltin(id)
+}
+
+export function isNodeBuiltin(id: string): boolean {
+  if (id.startsWith(NODE_BUILTIN_NAMESPACE)) return true
+  return nodeBuiltins.includes(id)
 }
 
 export function isInNodeModules(id: string): boolean {
@@ -392,6 +403,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 
 export function tryStatSync(file: string): fs.Stats | undefined {
   try {
+    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
     return fs.statSync(file, { throwIfNoEntry: false })
   } catch {
     // Ignore errors
@@ -507,12 +519,11 @@ export function generateCodeFrame(
 }
 
 export function isFileReadable(filename: string): boolean {
-  try {
-    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
-    if (!fs.statSync(filename, { throwIfNoEntry: false })) {
-      return false
-    }
+  if (!tryStatSync(filename)) {
+    return false
+  }
 
+  try {
     // Check if current process has read permission to the file
     fs.accessSync(filename, fs.constants.R_OK)
 
@@ -612,9 +623,9 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
-  // Skip if using Node <16.18 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
+  // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
   const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 16 || (nodeVersion[0] === 16 && nodeVersion[1] < 18)) {
+  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
     safeRealpathSync = fs.realpathSync
     return
   }
@@ -961,21 +972,12 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
-// @ts-expect-error jest only exists when running Jest
-export const usingDynamicImport = typeof jest === 'undefined'
-
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
- * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
- * if we're in a Jest environment.
- * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
- *
  * @param file File path to import.
  */
-export const dynamicImport = usingDynamicImport
-  ? new Function('file', 'return import(file)')
-  : _require
+export const dynamicImport = new Function('file', 'return import(file)')
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)
