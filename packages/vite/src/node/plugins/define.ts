@@ -13,19 +13,19 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuildLib = isBuild && config.build.lib
 
   // ignore replace process.env in lib build
-  const processNodeEnv: Record<string, string> = {}
   const processEnv: Record<string, string> = {}
+  const processNodeEnv: Record<string, string> = {}
   if (!isBuildLib) {
     const nodeEnv = process.env.NODE_ENV || config.mode
-    Object.assign(processNodeEnv, {
-      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-    })
     Object.assign(processEnv, {
       'process.env': `{}`,
       'global.process.env': `{}`,
       'globalThis.process.env': `{}`,
+    })
+    Object.assign(processNodeEnv, {
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
       __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv),
     })
   }
@@ -120,7 +120,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
-        // avoid the transform cost. see the clientInjection plugin.
+        // avoid the transform cost. see the `clientInjection` and
+        // `importAnalysis` plugin.
         return
       }
 
