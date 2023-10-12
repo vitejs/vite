@@ -998,6 +998,12 @@ importers:
 
   playground/optimize-missing-deps/multi-entry-dep: {}
 
+  playground/plugin-sourcemap:
+    devDependencies:
+      magic-string:
+        specifier: ^0.30.3
+        version: 0.30.3
+
   playground/preload:
     devDependencies:
       '@vitejs/test-dep-a':
@@ -1925,6 +1931,7 @@ packages:
   /@babel/highlight@7.22.13:
     resolution: {integrity: sha512-C/BaXcnnvBCmHTpz/VGZ8jgtE2aYlW4hxDhseJAWZb7gqGM/qtCK6iZUb0TyKFf7BOUsBH7Q7fkRsDRhg1XklQ==}
     engines: {node: '>=6.9.0'}
+    requiresBuild: true
     dependencies:
       '@babel/helper-validator-identifier': 7.22.15
       chalk: 2.4.2
