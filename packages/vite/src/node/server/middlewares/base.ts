@@ -33,10 +33,12 @@ export function baseMiddleware({
       })
       res.end()
       return
-    } else if (req.headers.accept?.includes('text/html')) {
-      // non-based page visit
-      const redirectPath =
-        withTrailingSlash(url) !== base ? joinUrlSegments(base, url) : base
+    }
+
+    // non-based page visit
+    const redirectPath =
+      withTrailingSlash(url) !== base ? joinUrlSegments(base, url) : base
+    if (req.headers.accept?.includes('text/html')) {
       res.writeHead(404, {
         'Content-Type': 'text/html',
       })
@@ -45,8 +47,16 @@ export function baseMiddleware({
           `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`,
       )
       return
+    } else {
+      // not found for resources
+      res.writeHead(404, {
+        'Content-Type': 'text/plain',
+      })
+      res.end(
+        `The server is configured with a public base URL of ${base} - ` +
+          `did you mean to visit ${redirectPath} instead?`,
+      )
+      return
     }
-
-    next()
   }
 }
