@@ -1147,7 +1147,7 @@ export function transformStableResult(
     map:
       config.command === 'build' && config.build.sourcemap
         ? s.generateMap({ hires: 'boundary', source: id })
-        : null,
+        : { mappings: '' },
   }
 }
 
