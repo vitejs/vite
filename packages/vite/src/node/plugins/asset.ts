@@ -52,6 +52,7 @@ export const generatedAssets = new WeakMap<
 export function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
   mrmime.mimes['ico'] = 'image/x-icon'
+  mrmime.mimes['awebp'] = 'image/webp'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
   // mrmime and mime-db is not released yet: https://github.com/jshttp/mime-db/commit/c9242a9b7d4bb25d7a0c9244adec74aeef08d8a1
