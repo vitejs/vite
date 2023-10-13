@@ -241,7 +241,7 @@ test.runIf(isBuild)('no missing deps during build', async () => {
 test('name file limit is 170 characters', async () => {
   if (isServe) {
     const response = page.waitForResponse(
-      /@vitejs_longfilename_\w+_[a-zA-Z\d]+\.js\?v=[a-zA-Z\d]+/,
+      /@vitejs_longfilename-\w+_[a-zA-Z\d]+\.js\?v=[a-zA-Z\d]+/,
     )
     await page.goto(viteTestUrl)
     const content = await response
