@@ -74,16 +74,6 @@ import { resolveSSROptions } from './ssr'
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
 
-export type {
-  RenderBuiltAssetUrl,
-  ModulePreloadOptions,
-  ResolvedModulePreloadOptions,
-  ResolveModulePreloadDependenciesFn,
-} from './build'
-
-// NOTE: every export in this file is re-exported from ./index.ts so it will
-// be part of the public API.
-
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
@@ -327,7 +317,7 @@ export interface LegacyOptions {
    */
 }
 
-export interface ResolveWorkerOptions extends PluginHookUtils {
+export interface ResolvedWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
   plugins: Plugin[]
   rollupOptions: RollupOptions
@@ -377,7 +367,7 @@ export type ResolvedConfig = Readonly<
     optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
-    worker: ResolveWorkerOptions
+    worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
   } & PluginHookUtils
@@ -682,7 +672,7 @@ export async function resolveConfig(
     ...workerPostPlugins,
   ]
   workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
-  const resolvedWorkerOptions: ResolveWorkerOptions = {
+  const resolvedWorkerOptions: ResolvedWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
     rollupOptions: workerConfig.worker?.rollupOptions || {},
