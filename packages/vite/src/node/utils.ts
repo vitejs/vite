@@ -1055,6 +1055,14 @@ function mergeConfigRecursively(
     ) {
       merged[key] = true
       continue
+    } else if (
+      key === 'https' &&
+      (rootPath === 'server' || rootPath === 'preview') &&
+      typeof existing === 'object' &&
+      value === true
+    ) {
+      // if `--https` and `https: { ... }` are both present, prefer the object form
+      continue
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {

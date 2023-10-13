@@ -185,6 +185,37 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles server.https and preview.https', () => {
+    const baseConfig = {
+      server: {
+        https: { cert: '' },
+      },
+      preview: {
+        https: { cert: '' },
+      },
+    }
+
+    const newConfig = {
+      server: {
+        https: true,
+      },
+      preview: {
+        https: true,
+      },
+    }
+
+    const mergedConfig = {
+      server: {
+        https: { cert: '' },
+      },
+      preview: {
+        https: { cert: '' },
+      },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
   test('throws error with functions', () => {
     const baseConfig = defineConfig(() => ({ base: 'base' }))
     const newConfig = defineConfig(() => ({ base: 'new' }))
