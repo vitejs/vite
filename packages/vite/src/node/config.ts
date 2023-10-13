@@ -74,16 +74,6 @@ import { resolveSSROptions } from './ssr'
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
 
-export type {
-  RenderBuiltAssetUrl,
-  ModulePreloadOptions,
-  ResolvedModulePreloadOptions,
-  ResolveModulePreloadDependenciesFn,
-} from './build'
-
-// NOTE: every export in this file is re-exported from ./index.ts so it will
-// be part of the public API.
-
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
@@ -327,7 +317,7 @@ export interface LegacyOptions {
    */
 }
 
-export interface ResolveWorkerOptions extends PluginHookUtils {
+export interface ResolvedWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
   plugins: Plugin[]
   rollupOptions: RollupOptions
@@ -377,7 +367,7 @@ export type ResolvedConfig = Readonly<
     optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
-    worker: ResolveWorkerOptions
+    worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
   } & PluginHookUtils
@@ -489,6 +479,21 @@ export async function resolveConfig(
     allowClearScreen: config.clearScreen,
     customLogger: config.customLogger,
   })
+
+  let foundDiscouragedVariableName
+  if (
+    (foundDiscouragedVariableName = Object.keys(config.define ?? {}).find((k) =>
+      ['process', 'global'].includes(k),
+    ))
+  ) {
+    logger.warn(
+      colors.yellow(
+        `Replacing ${colors.bold(
+          foundDiscouragedVariableName,
+        )} using the define option is discouraged. See https://vitejs.dev/config/shared-options.html#define for more details.`,
+      ),
+    )
+  }
 
   // resolve root
   const resolvedRoot = normalizePath(
@@ -667,7 +672,7 @@ export async function resolveConfig(
     ...workerPostPlugins,
   ]
   workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
-  const resolvedWorkerOptions: ResolveWorkerOptions = {
+  const resolvedWorkerOptions: ResolvedWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
     rollupOptions: workerConfig.worker?.rollupOptions || {},
@@ -795,19 +800,6 @@ export async function resolveConfig(
     )
   }
 
-  if (
-    config.server?.force &&
-    !isBuild &&
-    config.optimizeDeps?.force === undefined
-  ) {
-    resolved.optimizeDeps.force = true
-    logger.warn(
-      colors.yellow(
-        `server.force is deprecated, use optimizeDeps.force instead`,
-      ),
-    )
-  }
-
   debug?.(`using resolved config: %O`, {
     ...resolved,
     plugins: resolved.plugins.map((p) => p.name),
@@ -881,8 +873,8 @@ export function resolveBaseUrl(
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-            `URL, ./, or an empty string.`,
+          `(!) invalid "base" option: "${base}". The value can only be an absolute ` +
+            `URL, "./", or an empty string.`,
         ),
       ),
     )

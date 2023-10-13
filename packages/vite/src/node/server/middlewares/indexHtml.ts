@@ -10,9 +10,12 @@ import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  extractImportExpressionFromClassicScript,
+  findNeedTransformStyleAttribute,
   getAttrKey,
   getScriptInfo,
   htmlEnvHook,
+  htmlProxyResult,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
@@ -27,6 +30,7 @@ import {
   cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
+  getHash,
   injectQuery,
   isJSRequest,
   joinUrlSegments,
@@ -45,6 +49,12 @@ import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 interface AssetNode {
   start: number
   end: number
+  code: string
+}
+
+interface InlineStyleAttribute {
+  index: number
+  location: Token.Location
   code: string
 }
 
@@ -92,17 +102,18 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
   )
 }
 
+const startsWithWordCharRE = /^\w/
+
+const isSrcSet = (attr: Token.Attribute) =>
+  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
-  attr: Token.Attribute,
-  sourceCodeLocation: Token.Location,
-  s: MagicString,
+  url: string,
+  useSrcSetReplacer: boolean,
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
-) => {
-  let url = attr.value || ''
-
+): string | undefined => {
   if (server?.moduleGraph) {
     const mod = server.moduleGraph.urlToModuleMap.get(url)
     if (mod && mod.lastHMRTimestamp > 0) {
@@ -113,12 +124,12 @@ const processNodeUrl = (
   if (url[0] === '/' && url[1] !== '/') {
     // prefix with base (dev only, base is never relative)
     const fullUrl = path.posix.join(devBase, url)
-    overwriteAttrValue(s, sourceCodeLocation, fullUrl)
     if (server && shouldPreTransform(url, config)) {
       preTransformRequest(server, fullUrl, devBase)
     }
+    return fullUrl
   } else if (
-    url[0] === '.' &&
+    (url[0] === '.' || startsWithWordCharRE.test(url)) &&
     originalUrl &&
     originalUrl !== '/' &&
     htmlPath === '/index.html'
@@ -137,11 +148,10 @@ const processNodeUrl = (
     // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
-    const processedUrl =
-      attr.name === 'srcset' && attr.prefix === undefined
-        ? processSrcSetSync(url, ({ url }) => replacer(url))
-        : replacer(url)
-    overwriteAttrValue(s, sourceCodeLocation, processedUrl)
+    const processedUrl = useSrcSetReplacer
+      ? processSrcSetSync(url, ({ url }) => replacer(url))
+      : replacer(url)
+    return processedUrl
   }
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
@@ -177,6 +187,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     '',
   )
   const styleUrl: AssetNode[] = []
+  const inlineStyles: InlineStyleAttribute[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -229,18 +240,50 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
 
       if (src) {
-        processNodeUrl(
-          src,
-          sourceCodeLocation!,
-          s,
+        const processedUrl = processNodeUrl(
+          src.value,
+          isSrcSet(src),
           config,
           htmlPath,
           originalUrl,
           server,
         )
+        if (processedUrl) {
+          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+        }
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
+      } else if (node.childNodes.length) {
+        const scriptNode = node.childNodes[
+          node.childNodes.length - 1
+        ] as DefaultTreeAdapterMap['textNode']
+        for (const {
+          url,
+          start,
+          end,
+        } of extractImportExpressionFromClassicScript(scriptNode)) {
+          const processedUrl = processNodeUrl(
+            url,
+            false,
+            config,
+            htmlPath,
+            originalUrl,
+          )
+          if (processedUrl) {
+            s.update(start, end, processedUrl)
+          }
+        }
       }
+    }
+
+    const inlineStyle = findNeedTransformStyleAttribute(node)
+    if (inlineStyle) {
+      inlineModuleIndex++
+      inlineStyles.push({
+        index: inlineModuleIndex,
+        location: inlineStyle.location!,
+        code: inlineStyle.attr.value,
+      })
     }
 
     if (node.nodeName === 'style' && node.childNodes.length) {
@@ -258,21 +301,27 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       for (const p of node.attrs) {
         const attrKey = getAttrKey(p)
         if (p.value && assetAttrs.includes(attrKey)) {
-          processNodeUrl(
-            p,
-            node.sourceCodeLocation!.attrs![attrKey],
-            s,
+          const processedUrl = processNodeUrl(
+            p.value,
+            isSrcSet(p),
             config,
             htmlPath,
             originalUrl,
           )
+          if (processedUrl) {
+            overwriteAttrValue(
+              s,
+              node.sourceCodeLocation!.attrs![attrKey],
+              processedUrl,
+            )
+          }
         }
       }
     }
   })
 
-  await Promise.all(
-    styleUrl.map(async ({ start, end, code }, index) => {
+  await Promise.all([
+    ...styleUrl.map(async ({ start, end, code }, index) => {
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
@@ -297,7 +346,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
       s.overwrite(start, end, content)
     }),
-  )
+    ...inlineStyles.map(async ({ index, location, code }) => {
+      // will transform with css plugin and cache result with css-post plugin
+      const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
+
+      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      ensureWatchedFile(watcher, mod.file, config.root)
+
+      await server?.pluginContainer.transform(code, mod.id!)
+
+      const hash = getHash(cleanUrl(mod.id!))
+      const result = htmlProxyResult.get(`${hash}_${index}`)
+      overwriteAttrValue(s, location, result ?? '')
+    }),
+  ])
 
   html = s.toString()
 
@@ -360,6 +422,9 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
       return
     }
     // Unexpected error, log the issue but avoid an unhandled exception
-    server.config.logger.error(e.message)
+    server.config.logger.error(`Pre-transform error: ${e.message}`, {
+      error: e,
+      timestamp: true,
+    })
   })
 }

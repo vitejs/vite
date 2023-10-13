@@ -1,3 +1,11 @@
+## 5.0.0-beta.2 (2023-10-09)
+
+* fix(legacy)!: should rename `x.[hash].js` to `x-legacy.[hash].js` (#11599) ([e7d7a6f](https://github.com/vitejs/vite/commit/e7d7a6f)), closes [#11599](https://github.com/vitejs/vite/issues/11599)
+* fix(deps): update all non-major dependencies (#14510) ([eb204fd](https://github.com/vitejs/vite/commit/eb204fd)), closes [#14510](https://github.com/vitejs/vite/issues/14510)
+* fix(legacy): fix broken build when renderModernChunks=false & polyfills=false (fix #14324) (#14346) ([27e5b11](https://github.com/vitejs/vite/commit/27e5b11)), closes [#14324](https://github.com/vitejs/vite/issues/14324) [#14346](https://github.com/vitejs/vite/issues/14346)
+
+
+
 ## 5.0.0-beta.1 (2023-09-25)
 
 * fix(deps): update all non-major dependencies (#14460) ([b77bff0](https://github.com/vitejs/vite/commit/b77bff0)), closes [#14460](https://github.com/vitejs/vite/issues/14460)

@@ -167,7 +167,7 @@ function createNodeConfig(isProduction: boolean) {
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
-      // in production we use api-extractor for dts generation
+      // in production we use rollup.dts.config.ts for dts generation
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : './dist/node',
     ),
@@ -195,7 +195,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(162)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
   })
 }
 
