@@ -2,8 +2,8 @@ import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
-import { getDepOptimizationConfig } from '..'
-import type { ResolvedConfig } from '..'
+import { getDepOptimizationConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import {
   escapeRegex,
   flattenId,

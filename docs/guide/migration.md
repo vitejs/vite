@@ -81,6 +81,10 @@ Also there are other breaking changes which only affect few users.
   - Top level `this` was rewritten to `globalThis` by default when building. This behavior is now removed.
 - [[#14231] feat!: add extension to internal virtual modules](https://github.com/vitejs/vite/pull/14231)
   - Internal virtual modules' id now has an extension (`.js`).
+- [[#14583] refactor!: remove exporting internal APIs](https://github.com/vitejs/vite/pull/14583)
+  - Removed accidentally exported internal APIs: `isDepsOptimizerEnabled` and `getDepOptimizationConfig`
+  - Removed exported internal types: `DepOptimizationResult`, `DepOptimizationProcessing`, and `DepsOptimizer`
+  - Renamed `ResolveWorkerOptions` type to `ResolvedWorkerOptions`
 - [[#5657] fix: return 404 for resources requests outside the base path](https://github.com/vitejs/vite/pull/5657)
   - In the past, Vite responded to requests outside the base path without `Accept: text/html`, as if they were requested with the base path. Vite no longer does that and responds with 404 instead.
 

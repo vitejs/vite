@@ -8,7 +8,7 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
-import { resolveConfig } from '.'
+import { resolveConfig } from './config'
 
 const cli = cac('vite')
 
