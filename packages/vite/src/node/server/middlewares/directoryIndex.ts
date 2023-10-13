@@ -269,7 +269,7 @@ ${values
   )
   .join("\n")}`;
 
-function directoryIndex(options: {} = {}): Pick<Plugin, "name" | "configResolved" | "configureServer"> {
+function directoryIndex(options: {} = {}): Required<Pick<Plugin, "name" | "configResolved" | "configureServer">> {
   let config: ResolvedConfig
   return {
     name: "directory-index",
