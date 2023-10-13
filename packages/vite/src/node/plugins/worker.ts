@@ -44,9 +44,9 @@ function saveEmitWorkerAsset(
 // Ensure that only one rollup build is called at the same time to avoid
 // leaking state in plugins between worker builds.
 // TODO: Review if we can parallelize the bundling of workers.
-const workerKey = { key: 'vite:worker' }
+const workerKey: { key: string } = { key: 'vite:worker' }
 const workerConfigSemaphore = new WeakMap<
-  ResolvedConfig,
+  typeof workerKey,
   Promise<OutputChunk>
 >()
 export async function bundleWorkerEntry(
