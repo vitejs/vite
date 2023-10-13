@@ -8,6 +8,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isServe,
   listAssets,
   notifyRebuildComplete,
   page,
@@ -58,6 +59,22 @@ test('should get a 404 when using incorrect case', async () => {
 
 test('should fallback to index.html when accessing non-existant html file', async () => {
   expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
+})
+
+describe.runIf(isServe)('outside base', () => {
+  test('should get a 404 with html', async () => {
+    const res = await fetch(new URL('/baz', viteTestUrl), {
+      headers: { Accept: 'text/html,*/*' },
+    })
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toBe('text/html')
+  })
+
+  test('should get a 404 with text', async () => {
+    const res = await fetch(new URL('/baz', viteTestUrl))
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toBe('text/plain')
+  })
 })
 
 describe('injected scripts', () => {
@@ -467,10 +484,7 @@ test('url() contains file in publicDir, in <style> tag', async () => {
   expect(await getBg('.style-public-assets')).toContain(iconMatch)
 })
 
-test.skip('url() contains file in publicDir, as inline style', async () => {
-  // TODO: To investigate why `await getBg('.inline-style-public') === "url("http://localhost:5173/icon.png")"`
-  // It supposes to be `url("http://localhost:5173/foo/bar/icon.png")`
-  // (I built the playground to verify)
+test('url() contains file in publicDir, as inline style', async () => {
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
 })
 

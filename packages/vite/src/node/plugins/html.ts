@@ -432,22 +432,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             } else if (node.childNodes.length) {
               const scriptNode =
                 node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-              const cleanCode = stripLiteral(scriptNode.value)
-
-              let match: RegExpExecArray | null
-              inlineImportRE.lastIndex = 0
-              while ((match = inlineImportRE.exec(cleanCode))) {
-                const { 1: url, index } = match
-                const startUrl = cleanCode.indexOf(url, index)
-                const start = startUrl + 1
-                const end = start + url.length - 2
-                const startOffset = scriptNode.sourceCodeLocation!.startOffset
-                scriptUrls.push({
-                  start: start + startOffset,
-                  end: end + startOffset,
-                  url: scriptNode.value.slice(start, end),
-                })
-              }
+              scriptUrls.push(
+                ...extractImportExpressionFromClassicScript(scriptNode),
+              )
             }
           }
 
@@ -497,31 +484,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-          // <tag style="... url(...) or image-set(...) ..."></tag>
-          // extract inline styles as virtual css and add class attribute to tag for selecting
-          const inlineStyle = node.attrs.find(
-            (prop) =>
-              prop.prefix === undefined &&
-              prop.name === 'style' &&
-              // only url(...) or image-set(...) in css need to emit file
-              (prop.value.includes('url(') ||
-                prop.value.includes('image-set(')),
-          )
+
+          const inlineStyle = findNeedTransformStyleAttribute(node)
           if (inlineStyle) {
             inlineModuleIndex++
-            // replace `inline style` to class
+            // replace `inline style` with __VITE_INLINE_CSS__**_**__
             // and import css in js code
-            const code = inlineStyle.value
+            const code = inlineStyle.attr.value
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
-            const sourceCodeLocation = node.sourceCodeLocation!.attrs!['style']
             overwriteAttrValue(
               s,
-              sourceCodeLocation,
+              inlineStyle.location!,
               `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
             )
           }
@@ -879,6 +857,46 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+// <tag style="... url(...) or image-set(...) ..."></tag>
+// extract inline styles as virtual css
+export function findNeedTransformStyleAttribute(
+  node: DefaultTreeAdapterMap['element'],
+): { attr: Token.Attribute; location?: Token.Location } | undefined {
+  const attr = node.attrs.find(
+    (prop) =>
+      prop.prefix === undefined &&
+      prop.name === 'style' &&
+      // only url(...) or image-set(...) in css need to emit file
+      (prop.value.includes('url(') || prop.value.includes('image-set(')),
+  )
+  if (!attr) return undefined
+  const location = node.sourceCodeLocation?.attrs?.['style']
+  return { attr, location }
+}
+
+export function extractImportExpressionFromClassicScript(
+  scriptTextNode: DefaultTreeAdapterMap['textNode'],
+): ScriptAssetsUrl[] {
+  const startOffset = scriptTextNode.sourceCodeLocation!.startOffset
+  const cleanCode = stripLiteral(scriptTextNode.value)
+
+  const scriptUrls: ScriptAssetsUrl[] = []
+  let match: RegExpExecArray | null
+  inlineImportRE.lastIndex = 0
+  while ((match = inlineImportRE.exec(cleanCode))) {
+    const { 1: url, index } = match
+    const startUrl = cleanCode.indexOf(url, index)
+    const start = startUrl + 1
+    const end = start + url.length - 2
+    scriptUrls.push({
+      start: start + startOffset,
+      end: end + startOffset,
+      url: scriptTextNode.value.slice(start, end),
+    })
+  }
+  return scriptUrls
 }
 
 export interface HtmlTagDescriptor {
