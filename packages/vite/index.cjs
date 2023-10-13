@@ -25,16 +25,6 @@ asyncFunctions.forEach((name) => {
     import('./dist/node/index.js').then((i) => i[name](...args))
 })
 
-// some sync functions are marked not supported due to their complexity and uncommon usage
-const unsupportedCJS = ['resolvePackageEntry', 'resolvePackageData']
-unsupportedCJS.forEach((name) => {
-  module.exports[name] = () => {
-    throw new Error(
-      `"${name}" is not supported in CJS build of Vite 4.\nPlease use ESM or dynamic imports \`const { ${name} } = await import('vite')\`.`,
-    )
-  }
-})
-
 function warnCjsUsage() {
   if (process.env.VITE_CJS_IGNORE_WARNING) return
   globalThis.__vite_cjs_skip_clear_screen = true

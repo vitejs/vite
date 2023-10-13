@@ -66,6 +66,29 @@ CLI shortcuts, like `r` to restart the dev server, now require an additional `En
 
 This change prevents Vite from swallowing and controlling OS-specific shortcuts, allowing better compatibility when combining the Vite dev server with other processes, and avoids the [previous caveats](https://github.com/vitejs/vite/pull/14342).
 
+### Remove `resolvePackageEntry` and `resolvePackageData` APIs
+
+The `resolvePackageEntry` and `resolvePackageData` APIs are removed as they exposed Vite's internals and blocked potential Vite 4.3 optimizations in the past. These APIs can be replaced with third-party packages, for example:
+
+- `resolvePackageEntry`: [`import.meta.resolve`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve) or the [`import-meta-resolve`](https://github.com/wooorm/import-meta-resolve) package.
+- `resolvePackageData`: Same as above, and crawl up the package directory to get the root `package.json`. Or use the community [`vitefu`](https://github.com/svitejs/vitefu) package.
+
+```js
+import { resolve } from 'import-meta-env'
+import { findDepPkgJsonPath } from 'vitefu'
+import fs from 'node:fs'
+
+const pkg = 'my-lib'
+const basedir = process.cwd()
+
+// `resolvePackageEntry`:
+const packageEntry = resolve(pkg, basedir)
+
+// `resolvePackageData`:
+const packageJsonPath = findDepPkgJsonPath(pkg, basedir)
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+```
+
 ## Removed Deprecated APIs
 
 - Default exports of CSS files (e.g `import style from './foo.css'`): Use the `?inline` query instead
@@ -84,6 +107,8 @@ Also there are other breaking changes which only affect few users.
   - Top level `this` was rewritten to `globalThis` by default when building. This behavior is now removed.
 - [[#14231] feat!: add extension to internal virtual modules](https://github.com/vitejs/vite/pull/14231)
   - Internal virtual modules' id now has an extension (`.js`).
+- [[#5657] fix: return 404 for resources requests outside the base path](https://github.com/vitejs/vite/pull/5657)
+  - In the past, Vite responded to requests outside the base path without `Accept: text/html`, as if they were requested with the base path. Vite no longer does that and responds with 404 instead.
 
 ## Migration from v3
 
