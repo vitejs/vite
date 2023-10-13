@@ -24,7 +24,7 @@ import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
-import { interopNamedImports } from './importAnalysis'
+import { createParseErrorInfo, interopNamedImports } from './importAnalysis'
 
 type FileDep = {
   url: string
@@ -223,7 +223,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       try {
         imports = parseImports(source)[0]
       } catch (e: any) {
-        this.error(e, e.idx)
+        const { message, showCodeFrame } = createParseErrorInfo(
+          importer,
+          source,
+        )
+        this.error(message, showCodeFrame ? e.idx : undefined)
       }
 
       if (!imports.length) {

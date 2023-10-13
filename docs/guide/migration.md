@@ -62,6 +62,8 @@ Also there are other breaking changes which only affect few users.
   - Removed accidentally exported internal APIs: `isDepsOptimizerEnabled` and `getDepOptimizationConfig`
   - Removed exported internal types: `DepOptimizationResult`, `DepOptimizationProcessing`, and `DepsOptimizer`
   - Renamed `ResolveWorkerOptions` type to `ResolvedWorkerOptions`
+- [[#5657] fix: return 404 for resources requests outside the base path](https://github.com/vitejs/vite/pull/5657)
+  - In the past, Vite responded to requests outside the base path without `Accept: text/html`, as if they were requested with the base path. Vite no longer does that and responds with 404 instead.
 
 ## Migration from v3
 

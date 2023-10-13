@@ -1,3 +1,18 @@
+## 5.0.0-beta.7 (2023-10-12)
+
+* feat: add off method to ViteHotContext (issue #14185) (#14518) ([31333bb](https://github.com/vitejs/vite/commit/31333bb)), closes [#14185](https://github.com/vitejs/vite/issues/14185) [#14518](https://github.com/vitejs/vite/issues/14518)
+* feat: show better parse error in build (#14600) ([84df7db](https://github.com/vitejs/vite/commit/84df7db)), closes [#14600](https://github.com/vitejs/vite/issues/14600)
+* chore(config): improve the readability of warning messages (#14594) ([b43b4df](https://github.com/vitejs/vite/commit/b43b4df)), closes [#14594](https://github.com/vitejs/vite/issues/14594)
+* fix: off-by-one bug in HTML whitespace removal (#14589) ([f54e6d8](https://github.com/vitejs/vite/commit/f54e6d8)), closes [#14589](https://github.com/vitejs/vite/issues/14589)
+* fix(html): import expression in classic script for dev (#14595) ([ea47b8f](https://github.com/vitejs/vite/commit/ea47b8f)), closes [#14595](https://github.com/vitejs/vite/issues/14595)
+* fix(html): inline style attribute not working in dev (#14592) ([a4a17b8](https://github.com/vitejs/vite/commit/a4a17b8)), closes [#14592](https://github.com/vitejs/vite/issues/14592)
+* fix(html): relative paths without leading dot wasn't rewritten (#14591) ([0a38e3b](https://github.com/vitejs/vite/commit/0a38e3b)), closes [#14591](https://github.com/vitejs/vite/issues/14591)
+* fix(proxy): correct the logic of bypass returning false (#14579) ([261633a](https://github.com/vitejs/vite/commit/261633a)), closes [#14579](https://github.com/vitejs/vite/issues/14579)
+* build: clean generated type file (#14582) ([fffe16e](https://github.com/vitejs/vite/commit/fffe16e)), closes [#14582](https://github.com/vitejs/vite/issues/14582)
+* build: use rollup-plugin-dts (#14571) ([d89725b](https://github.com/vitejs/vite/commit/d89725b)), closes [#14571](https://github.com/vitejs/vite/issues/14571)
+
+
+
 ## 5.0.0-beta.6 (2023-10-10)
 
 * refactor(css): make `getEmptyChunkReplacer` for unit test (#14528) ([18900fd](https://github.com/vitejs/vite/commit/18900fd)), closes [#14528](https://github.com/vitejs/vite/issues/14528)
