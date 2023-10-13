@@ -218,7 +218,6 @@ export async function startDefaultServe(): Promise<void> {
         usePolling: true,
         interval: 100,
       },
-      host: true,
       fs: {
         strict: !isBuild,
       },
@@ -239,7 +238,7 @@ export async function startDefaultServe(): Promise<void> {
     process.env.VITE_INLINE = 'inline-serve'
     const testConfig = mergeConfig(options, config || {})
     viteServer = server = await (await createServer(testConfig)).listen()
-    viteTestUrl = server.resolvedUrls.network[0]
+    viteTestUrl = server.resolvedUrls.local[0]
     if (server.config.base === '/') {
       viteTestUrl = viteTestUrl.replace(/\/$/, '')
     }
