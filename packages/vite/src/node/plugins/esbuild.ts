@@ -248,7 +248,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     minifyIdentifiers: false,
     minifySyntax: false,
     minifyWhitespace: false,
-    treeShaking: false
+    treeShaking: false,
   }
 
   return {
