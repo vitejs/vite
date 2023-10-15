@@ -18,6 +18,7 @@ export default defineConfig({
   ],
 
   build: {
+    outDir: 'dist/no-polyfills-no-systemjs',
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'no-polyfills-no-systemjs.html'),
@@ -25,6 +26,6 @@ export default defineConfig({
     },
   },
   testConfig: {
-    baseRoute: '/no-polyfills-no-systemjs/',
+    previewBase: '/no-polyfills-no-systemjs/',
   },
 })

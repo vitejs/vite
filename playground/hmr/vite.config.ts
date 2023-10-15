@@ -13,6 +13,7 @@ export default defineConfig({
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
           server.ws.send('custom:foo', { msg })
+          server.ws.send('custom:remove', { msg })
         }
       },
       configureServer(server) {

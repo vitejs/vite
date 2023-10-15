@@ -727,7 +727,6 @@ async function prepareEsbuildOptimizerRun(
   //    path.
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
-  const flatIdToExports: Record<string, ExportsData> = {}
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
@@ -754,7 +753,6 @@ async function prepareEsbuildOptimizerRun(
       const flatId = flattenId(id)
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
-      flatIdToExports[flatId] = exportsData
     }),
   )
 
