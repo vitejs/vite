@@ -10,6 +10,7 @@ import {
   green,
   lightBlue,
   lightGreen,
+  lightMagenta,
   lightRed,
   magenta,
   red,
@@ -207,6 +208,25 @@ const FRAMEWORKS: Framework[] = [
         display: 'QwikCity ↗',
         color: lightBlue,
         customCommand: 'npm create qwik@latest basic TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'mithril',
+    display: 'Mithril',
+    color: lightMagenta,
+    variants: [
+      {
+        name: 'vitriol-standard',
+        display: 'Vitriol (Mithril Standard) ↗',
+        color: lightBlue,
+        customCommand: 'npm create vitriol@latest standard TARGET_DIR',
+      },
+      {
+        name: 'vitriol-jsx',
+        display: 'Vitriol (Mithril JSX) ↗',
+        color: yellow,
+        customCommand: 'npm create vitriol@latest jsx TARGET_DIR',
       },
     ],
   },
