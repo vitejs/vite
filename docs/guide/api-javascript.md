@@ -44,6 +44,9 @@ When using `createServer` and `build` in the same Node.js process, both function
 ::: tip NOTE
 When using [middleware mode](/config/server-options.html#server-middlewaremode) combined with [proxy config for WebSocket](/config/server-options.html#server-proxy), the parent http server should be provided in the second argument to bind the proxy correctly.
 
+<details>
+<summary>Example</summary>
+
 ```ts
 import http from 'http'
 import { createServer } from 'vite'
@@ -73,6 +76,7 @@ const vite = await createServer(
 server.use(vite.middlewares)
 ```
 
+</details>
 :::
 
 ## `InlineConfig`
