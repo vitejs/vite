@@ -46,7 +46,7 @@ if (!isBuild) {
       {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
         "sources": [
-          "foo-with-sourcemap.js",
+          "",
         ],
         "version": 3,
       }
