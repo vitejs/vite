@@ -316,15 +316,32 @@ export interface ResolvedServerUrls {
   network: string[]
 }
 
+export interface CreateServerOptions {
+  /**
+   * Provide the parent http server instance for middleware mode.
+   *
+   * It's required when using proxy for WebSocket.
+   */
+  middlewareModeHttpServer?: http.Server | null
+  /**
+   * Initialize WebSocket server
+   */
+  ws?: boolean
+}
+
 export function createServer(
   inlineConfig: InlineConfig = {},
+  options: CreateServerOptions = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { ws: true })
+  return _createServer(inlineConfig, {
+    ws: true,
+    ...options,
+  })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { ws: boolean },
+  options: CreateServerOptions = {},
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -599,7 +616,13 @@ export async function _createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(httpServer, proxy, config))
+    middlewares.use(
+      proxyMiddleware(
+        httpServer ? httpServer : options.middlewareModeHttpServer || null,
+        proxy,
+        config,
+      ),
+    )
   }
 
   // base

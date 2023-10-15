@@ -7,7 +7,10 @@ Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript o
 **Type Signature:**
 
 ```ts
-async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
+async function createServer(
+  inlineConfig?: InlineConfig,
+  options?: CreateServerOptions,
+): Promise<ViteDevServer>
 ```
 
 **Example Usage:**
@@ -36,6 +39,40 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 ::: tip NOTE
 When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
+:::
+
+::: tip NOTE
+When using [middleware mode](/config/server-options.html#server-middlewaremode) combined with [proxy config for WebSocket](/config/server-options.html#server-proxy), the parent http server should be provided in the second argument to bind the proxy correctly.
+
+```ts
+import http from 'http'
+import { createServer } from 'vite'
+
+const server = http.createServer() // or express, koa, etc.
+
+const vite = await createServer(
+  {
+    server: {
+      // Enable middleware mode
+      middlewareMode: true,
+    },
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:3000',
+        // Proxying WebSocket
+        ws: true,
+      },
+    },
+  },
+  {
+    // Provide the parent http server
+    middlewareModeHttpServer: server,
+  },
+)
+
+server.use(vite.middlewares)
+```
+
 :::
 
 ## `InlineConfig`
