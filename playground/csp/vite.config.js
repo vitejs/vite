@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-const createNonce = () => crypto.randomUUID().replaceAll('-', '')
+const createNonce = () => crypto.randomBytes(16).toString('base64')
 
 /**
  * @param {import('node:http').ServerResponse} res
