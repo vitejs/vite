@@ -13,9 +13,11 @@ import {
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
   getAttrKey,
+  getNonceValue,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
+  isLinkRelStyleSheet,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
@@ -277,23 +279,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
 
       if (!nonce.script) {
-        nonce.script = node.attrs.find(
-          (attr) => attr.prefix === undefined && attr.name === 'nonce',
-        )?.value
+        nonce.script = getNonceValue(node)
       }
     }
 
-    if (!nonce.style) {
-      if (
-        node.nodeName === 'link' &&
-        node.attrs.find(
-          (attr) => attr.prefix === undefined && attr.name === 'rel',
-        )?.value === 'stylesheet'
-      ) {
-        nonce.style = node.attrs.find(
-          (attr) => attr.prefix === undefined && attr.name === 'nonce',
-        )?.value
-      }
+    if (!nonce.style && isLinkRelStyleSheet(node)) {
+      nonce.style = getNonceValue(node)
     }
 
     const inlineStyle = findNeedTransformStyleAttribute(node)
@@ -306,18 +297,18 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       })
     }
 
-    if (node.nodeName === 'style' && node.childNodes.length) {
-      const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
-      styleUrl.push({
-        start: children.sourceCodeLocation!.startOffset,
-        end: children.sourceCodeLocation!.endOffset,
-        code: children.value,
-      })
+    if (node.nodeName === 'style') {
+      if (node.childNodes.length) {
+        const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
+        styleUrl.push({
+          start: children.sourceCodeLocation!.startOffset,
+          end: children.sourceCodeLocation!.endOffset,
+          code: children.value,
+        })
+      }
 
       if (!nonce.style) {
-        nonce.style = node.attrs.find(
-          (attr) => attr.prefix === undefined && attr.name === 'nonce',
-        )?.value
+        nonce.style = getNonceValue(node)
       }
     }
 

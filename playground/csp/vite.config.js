@@ -10,24 +10,26 @@ const createNonce = () => crypto.randomUUID().replaceAll('-', '')
 
 /**
  * @param {import('node:http').ServerResponse} res
- * @param {string} nonce
+ * @param {string} nonceScript
+ * @param {string} nonceStyle
  */
-const setNonceHeader = (res, nonce) => {
+const setNonceHeader = (res, nonceScript, nonceStyle) => {
   res.setHeader(
     'Content-Security-Policy',
-    `default-src 'nonce-${nonce}'; connect-src 'self'`,
+    `default-src 'nonce-${nonceScript}'; style-src 'nonce-${nonceStyle}'; connect-src 'self'`,
   )
 }
 
 /**
  * @param {string} htmlFile
- * @param {string} nonce
+ * @param {string} nonceScript
+ * @param {string} nonceStyle
  */
-const getNonceInjectedHtml = async (htmlFile, nonce) => {
+const getNonceInjectedHtml = async (htmlFile, nonceScript, nonceStyle) => {
   const content = await fs.readFile(htmlFile, 'utf8')
   const tranformedContent = content
-    .replace(/<script\s*/g, `$&nonce="${nonce}" `)
-    .replace(/<link\s*/g, `$&nonce="${nonce}" `)
+    .replaceAll('$@NONCE_SCRIPT@$', nonceScript)
+    .replace('$@NONCE_STYLE@$', nonceStyle)
   return tranformedContent
 }
 
@@ -41,11 +43,13 @@ export default defineConfig({
       configureServer({ transformIndexHtml, middlewares }) {
         return () => {
           middlewares.use(async (req, res) => {
-            const nonce = createNonce()
-            setNonceHeader(res, nonce)
+            const nonceScript = createNonce()
+            const nonceStyle = createNonce()
+            setNonceHeader(res, nonceScript, nonceStyle)
             const content = await getNonceInjectedHtml(
               path.join(__dirname, './index.html'),
-              nonce,
+              nonceScript,
+              nonceStyle,
             )
             res.end(await transformIndexHtml(req.originalUrl, content))
           })
@@ -62,11 +66,13 @@ export default defineConfig({
             }
           } catch {}
 
-          const nonce = createNonce()
-          setNonceHeader(res, nonce)
+          const nonceScript = createNonce()
+          const nonceStyle = createNonce()
+          setNonceHeader(res, nonceScript, nonceStyle)
           const content = await getNonceInjectedHtml(
             path.join(__dirname, './dist/index.html'),
-            nonce,
+            nonceScript,
+            nonceStyle,
           )
           res.end(content)
         })

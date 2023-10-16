@@ -140,9 +140,15 @@ export const assetAttrsConfig: Record<string, string[]> = {
   use: ['xlink:href', 'href'],
 }
 
-export const isAsyncScriptMap = new WeakMap<
+const scriptStyleMetaMap = new WeakMap<
   ResolvedConfig,
-  Map<string, boolean>
+  Map<
+    string,
+    {
+      isScriptAllAsync: boolean
+      nonceValue: { script?: string; style?: string }
+    }
+  >
 >()
 
 export function nodeIsElement(
@@ -298,7 +304,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     isDataUrl(url) ||
     checkPublicFile(url, config)
   // Same reason with `htmlInlineProxyPlugin`
-  isAsyncScriptMap.set(config, new Map())
+  scriptStyleMetaMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
@@ -361,6 +367,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         html = await applyHtmlTransforms(html, preHooks, {
           path: publicPath,
           filename: id,
+          nonce: {},
         })
 
         let js = ''
@@ -376,6 +383,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let everyScriptIsAsync = true
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
+        const nonce: { script?: string; style?: string } = {}
 
         await traverseHtml(html, id, (node) => {
           if (!nodeIsElement(node)) {
@@ -388,6 +396,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (node.nodeName === 'script') {
             const { src, sourceCodeLocation, isModule, isAsync } =
               getScriptInfo(node)
+
+            if (!nonce.script) {
+              nonce.script = getNonceValue(node)
+            }
 
             const url = src && src.value
             const isPublicFile = !!(url && checkPublicFile(url, config))
@@ -504,23 +516,33 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
+          if (!nonce.style && isLinkRelStyleSheet(node)) {
+            nonce.style = getNonceValue(node)
+          }
+
           // <style>...</style>
-          if (node.nodeName === 'style' && node.childNodes.length) {
-            const styleNode =
-              node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-            const filePath = id.replace(normalizePath(config.root), '')
-            inlineModuleIndex++
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
-              code: styleNode.value,
-            })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getHash(cleanUrl(id))
-            // will transform in `applyHtmlTransforms`
-            s.update(
-              styleNode.sourceCodeLocation!.startOffset,
-              styleNode.sourceCodeLocation!.endOffset,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
-            )
+          if (node.nodeName === 'style') {
+            if (node.childNodes.length) {
+              const styleNode =
+                node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+              const filePath = id.replace(normalizePath(config.root), '')
+              inlineModuleIndex++
+              addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                code: styleNode.value,
+              })
+              js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+              const hash = getHash(cleanUrl(id))
+              // will transform in `applyHtmlTransforms`
+              s.update(
+                styleNode.sourceCodeLocation!.startOffset,
+                styleNode.sourceCodeLocation!.endOffset,
+                `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              )
+            }
+
+            if (!nonce.style) {
+              nonce.style = getNonceValue(node)
+            }
           }
 
           if (shouldRemove) {
@@ -533,7 +555,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         })
 
-        isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+        scriptStyleMetaMap.get(config)!.set(id, {
+          isScriptAllAsync: everyScriptIsAsync,
+          nonceValue: nonce,
+        })
 
         if (someScriptsAreAsync && someScriptsAreDefer) {
           config.logger.warn(
@@ -642,6 +667,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
+        nonce: string | undefined,
       ): HtmlTagDescriptor => ({
         tag: 'script',
         attrs: {
@@ -649,12 +675,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           type: 'module',
           crossorigin: true,
           src: toOutputPath(chunk.fileName),
+          nonce: nonce,
         },
       })
 
       const toPreloadTag = (
         filename: string,
         toOutputPath: (filename: string) => string,
+        nonce: string | undefined,
       ): HtmlTagDescriptor => ({
         tag: 'link',
         attrs: {
@@ -667,6 +695,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       const getCssTagsForChunk = (
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
+        nonce: string | undefined,
         seen: Set<string> = new Set(),
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
@@ -675,7 +704,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           chunk.imports.forEach((file) => {
             const importee = bundle[file]
             if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, toOutputPath, seen))
+              tags.push(
+                ...getCssTagsForChunk(importee, toOutputPath, nonce, seen),
+              )
             }
           })
         }
@@ -688,6 +719,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               attrs: {
                 rel: 'stylesheet',
                 href: toOutputPath(file),
+                nonce,
               },
             })
           }
@@ -726,7 +758,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const toOutputPublicAssetFilePath = (filename: string) =>
           toOutputFilePath(filename, 'public')
 
-        const isAsync = isAsyncScriptMap.get(config)!.get(id)!
+        const { isScriptAllAsync: isAsync, nonceValue } = scriptStyleMetaMap
+          .get(config)!
+          .get(id)!
 
         let result = html
 
@@ -755,10 +789,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           let assetTags: HtmlTagDescriptor[]
           if (canInlineEntry) {
             assetTags = imports.map((chunk) =>
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+              toScriptTag(
+                chunk,
+                toOutputAssetFilePath,
+                isAsync,
+                nonceValue.script || nonceValue.style,
+              ),
             )
           } else {
-            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
+            assetTags = [
+              toScriptTag(
+                chunk,
+                toOutputAssetFilePath,
+                isAsync,
+                nonceValue.script || nonceValue.style,
+              ),
+            ]
             const { modulePreload } = config.build
             if (modulePreload !== false) {
               const resolveDependencies =
@@ -773,12 +819,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 : importsFileNames
               assetTags.push(
                 ...resolvedDeps.map((i) =>
-                  toPreloadTag(i, toOutputAssetFilePath),
+                  toPreloadTag(
+                    i,
+                    toOutputAssetFilePath,
+                    nonceValue.script || nonceValue.style,
+                  ),
                 ),
               )
             }
           }
-          assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
+          assetTags.push(
+            ...getCssTagsForChunk(
+              chunk,
+              toOutputAssetFilePath,
+              nonceValue.style || nonceValue.script,
+            ),
+          )
 
           result = injectToHead(result, assetTags)
         }
@@ -822,6 +878,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             filename: id,
             bundle,
             chunk,
+            nonce: {},
           },
         )
         // resolve asset url references
@@ -857,6 +914,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function getNonceValue(
+  node: DefaultTreeAdapterMap['element'],
+): string | undefined {
+  return node.attrs.find(
+    (attr) => attr.prefix === undefined && attr.name === 'nonce',
+  )?.value
+}
+
+export function isLinkRelStyleSheet(
+  node: DefaultTreeAdapterMap['element'],
+): boolean {
+  return (
+    node.nodeName === 'link' &&
+    node.attrs.find((attr) => attr.prefix === undefined && attr.name === 'rel')
+      ?.value === 'stylesheet'
+  )
 }
 
 // <tag style="... url(...) or image-set(...) ..."></tag>
