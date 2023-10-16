@@ -65,6 +65,8 @@ Currently supported template presets include:
 - `svelte-ts`
 - `solid`
 - `solid-ts`
+- `qwik`
+- `qwik-ts`
 
 You can use `.` for the project name to scaffold in the current directory.
 
