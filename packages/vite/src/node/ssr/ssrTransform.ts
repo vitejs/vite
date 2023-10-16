@@ -274,7 +274,7 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: 'boundary' })
+  let map = s.generateMap({ hires: 'boundary' }) as SourceMap
   if (
     inMap &&
     inMap.mappings &&
