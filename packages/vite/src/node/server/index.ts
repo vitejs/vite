@@ -77,12 +77,27 @@ import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { warmupFiles } from './warmup'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
    */
   hmr?: HmrOptions | boolean
+  /**
+   * Warm-up files to transform and cache the results in advance. This improves the
+   * initial page load during server starts and prevents transform waterfalls.
+   */
+  warmup?: {
+    /**
+     * The files to be transformed and used on the client-side. Supports glob patterns.
+     */
+    clientFiles?: string[]
+    /**
+     * The files to be transformed and used in SSR. Supports glob patterns.
+     */
+    ssrFiles?: string[]
+  }
   /**
    * chokidar watch options or null to disable FS watching
    * https://github.com/paulmillr/chokidar#api
@@ -676,6 +691,7 @@ export async function _createServer(
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
       }
+      warmupFiles(server)
       initingServer = undefined
       serverInited = true
     })()
