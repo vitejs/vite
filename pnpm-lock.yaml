@@ -112,8 +112,8 @@ importers:
         specifier: ^11.1.1
         version: 11.1.1
       lint-staged:
-        specifier: ^14.0.1
-        version: 14.0.1
+        specifier: ^15.0.1
+        version: 15.0.1
       npm-run-all2:
         specifier: ^6.1.1
         version: 6.1.1
@@ -4987,8 +4987,8 @@ packages:
       delayed-stream: 1.0.0
     dev: false
 
-  /commander@11.0.0:
-    resolution: {integrity: sha512-9HMlXtt/BNoYr8ooyjjNRdIilOTkVJXB+GhxMTtOKwk0R4j4lS4NpjuqmRxroBfnfTSHQIHQB7wryHhXarNjmQ==}
+  /commander@11.1.0:
+    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
     dev: true
 
@@ -5909,21 +5909,6 @@ packages:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
     dev: true
 
-  /execa@7.2.0:
-    resolution: {integrity: sha512-UduyVP7TLB5IcAQl+OzLyLcS/l32W/GLg+AhHJ+ow40FOk2U3SAllPwR44v4vmdFwIWqpdwxxpQbF1n5ta9seA==}
-    engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
-    dependencies:
-      cross-spawn: 7.0.3
-      get-stream: 6.0.1
-      human-signals: 4.3.0
-      is-stream: 3.0.0
-      merge-stream: 2.0.0
-      npm-run-path: 5.1.0
-      onetime: 6.0.0
-      signal-exit: 3.0.7
-      strip-final-newline: 3.0.0
-    dev: true
-
   /execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
     engines: {node: '>=16.17'}
@@ -6269,11 +6254,6 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /get-stream@6.0.1:
-    resolution: {integrity: sha512-ts6Wi+2j3jQjqi70w5AlN8DFnkSwC+MqmxEzdEALB2qXZYV3X/b1CTfgPLGJNMeAWxdPfU8FO1ms3NUfaHCPYg==}
-    engines: {node: '>=10'}
-    dev: true
-
   /get-stream@8.0.1:
     resolution: {integrity: sha512-VaUJspBffn/LMCJVoMvSAdmscJyS1auj5Zulnn5UoYcY531UWmdwhRWkcGKnGU93m5HSXP9LP2usOryrBtQowA==}
     engines: {node: '>=16'}
@@ -6579,11 +6559,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: false
-
-  /human-signals@4.3.0:
-    resolution: {integrity: sha512-zyzVyMjpGBX2+6cDVZeFPCdtOtdsxOeseRhB9tkQ6xXmGUNrcnBzdEKPy3VPNYz+4gy1oukVOXcrJCunSyc6QQ==}
-    engines: {node: '>=14.18.0'}
-    dev: true
 
   /human-signals@5.0.0:
     resolution: {integrity: sha512-AXcZb6vzzrFAUE61HnN4mpLqd/cSIwNQjtNWR0euPm6y0iqx3G4gOXaIDdtdDwZmhwe82LA6+zinmW4UBWVePQ==}
@@ -7205,34 +7180,28 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: true
 
-  /lint-staged@14.0.1:
-    resolution: {integrity: sha512-Mw0cL6HXnHN1ag0mN/Dg4g6sr8uf8sn98w2Oc1ECtFto9tvRF7nkXGJRbx8gPlHyoR0pLyBr2lQHbWwmUHe1Sw==}
-    engines: {node: ^16.14.0 || >=18.0.0}
+  /lint-staged@15.0.1:
+    resolution: {integrity: sha512-2IU5OWmCaxch0X0+IBF4/v7sutpB+F3qoXbro43pYjQTOo5wumckjxoxn47pQBqqBsCWrD5HnI2uG/zJA7isew==}
+    engines: {node: '>=18.12.0'}
     hasBin: true
     dependencies:
       chalk: 5.3.0
-      commander: 11.0.0
+      commander: 11.1.0
       debug: 4.3.4
-      execa: 7.2.0
+      execa: 8.0.1
       lilconfig: 2.1.0
-      listr2: 6.6.1
+      listr2: 7.0.1
       micromatch: 4.0.5
       pidtree: 0.6.0
       string-argv: 0.3.2
-      yaml: 2.3.1
+      yaml: 2.3.2
     transitivePeerDependencies:
-      - enquirer
       - supports-color
     dev: true
 
-  /listr2@6.6.1:
-    resolution: {integrity: sha512-+rAXGHh0fkEWdXBmX+L6mmfmXmXvDGEKzkjxO+8mP3+nI/r/CWznVBvsibXdxda9Zz0OW2e2ikphN3OwCT/jSg==}
+  /listr2@7.0.1:
+    resolution: {integrity: sha512-nz+7hwgbDp8eWNoDgzdl4hA/xDSLrNRzPu1TLgOYs6l5Y+Ma6zVWWy9Oyt9TQFONwKoSPoka3H50D3vD5EuNwg==}
     engines: {node: '>=16.0.0'}
-    peerDependencies:
-      enquirer: '>= 2.3.0 < 3'
-    peerDependenciesMeta:
-      enquirer:
-        optional: true
     dependencies:
       cli-truncate: 3.1.0
       colorette: 2.0.20
@@ -10144,8 +10113,8 @@ packages:
     resolution: {integrity: sha512-o96x3OPo8GjWeSLF+wOAbrPfhFOGY0W00GNaxCDv+9hkcDJEnev1yh8S7pgHF0ik6zc8sQLuL8hjHjJULZp8bw==}
     engines: {node: '>= 14'}
 
-  /yaml@2.3.1:
-    resolution: {integrity: sha512-2eHWfjaoXgTBC2jNM1LRef62VQa0umtvRiDSk6HSzW7RvS5YtkabJrwYLLEKWBc8a5U2PTSCs+dJjUTJdlHsWQ==}
+  /yaml@2.3.2:
+    resolution: {integrity: sha512-N/lyzTPaJasoDmfV7YTrYCI0G/3ivm/9wdG0aHuheKowWQwGTsK0Eoiw6utmzAnI6pkJa0DUVygvp3spqqEKXg==}
     engines: {node: '>= 14'}
     dev: true
 
