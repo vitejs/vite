@@ -43,7 +43,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
           if (chunk.code.includes(preloadMethod)) {
             // generate css deps map
             const code = chunk.code
-            let imports: ImportSpecifier[]
+            let imports: ImportSpecifier[] = []
             try {
               imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
             } catch (e: any) {
@@ -94,7 +94,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
         fileName:
           typeof config.build.ssrManifest === 'string'
             ? config.build.ssrManifest
-            : 'ssr-manifest.json',
+            : '.vite/ssr-manifest.json',
         type: 'asset',
         source: jsonStableStringify(ssrManifest, { space: 2 }),
       })

@@ -1,6 +1,7 @@
 // @ts-check
 const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
+const pkg = require('./package.json')
 
 module.exports = defineConfig({
   root: true,
@@ -8,6 +9,7 @@ module.exports = defineConfig({
     'eslint:recommended',
     'plugin:n/recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/stylistic',
     'plugin:regexp/recommended',
   ],
   ignorePatterns: ['packages/create-vite/template-**'],
@@ -15,7 +17,7 @@ module.exports = defineConfig({
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 2021,
+    ecmaVersion: 2022,
   },
   rules: {
     eqeqeq: ['warn', 'always', { null: 'never' }],
@@ -69,15 +71,24 @@ module.exports = defineConfig({
     ],
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
+    'no-extra-semi': 'off',
     '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
     '@typescript-eslint/no-inferrable-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'off', // maybe we should turn this on in a new PR
     '@typescript-eslint/no-unused-vars': 'off', // maybe we should turn this on in a new PR
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/consistent-type-imports': [
       'error',
-      { prefer: 'type-imports' },
+      { prefer: 'type-imports', disallowTypeAnnotations: false },
     ],
+    // disable rules set in @typescript-eslint/stylistic v6 that wasn't set in @typescript-eslint/recommended v5 and which conflict with current code
+    // maybe we should turn them on in a new PR
+    '@typescript-eslint/array-type': 'off',
+    '@typescript-eslint/ban-tslint-comment': 'off',
+    '@typescript-eslint/consistent-generic-constructors': 'off',
+    '@typescript-eslint/consistent-indexed-object-style': 'off',
+    '@typescript-eslint/consistent-type-definitions': 'off',
+    '@typescript-eslint/prefer-for-of': 'off',
+    '@typescript-eslint/prefer-function-type': 'off',
 
     'import/no-nodejs-modules': [
       'error',
@@ -163,13 +174,13 @@ module.exports = defineConfig({
         'n/no-unsupported-features/es-builtins': [
           'error',
           {
-            version: '^14.18.0 || >=16.0.0',
+            version: pkg.engines.node,
           },
         ],
         'n/no-unsupported-features/node-builtins': [
           'error',
           {
-            version: '^14.18.0 || >=16.0.0',
+            version: pkg.engines.node,
           },
         ],
         '@typescript-eslint/explicit-module-boundary-types': 'off',

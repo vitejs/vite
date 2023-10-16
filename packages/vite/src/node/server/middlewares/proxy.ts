@@ -52,8 +52,17 @@ export function proxyMiddleware(
 
     proxy.on('error', (err, req, originalRes) => {
       // When it is ws proxy, res is net.Socket
-      const res = originalRes as http.ServerResponse | net.Socket
-      if ('req' in res) {
+      // originalRes can be falsy if the proxy itself errored
+      const res = originalRes as http.ServerResponse | net.Socket | undefined
+      if (!res) {
+        config.logger.error(
+          `${colors.red(`http proxy error: ${err.message}`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err,
+          },
+        )
+      } else if ('req' in res) {
         config.logger.error(
           `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
             err.stack
@@ -145,7 +154,8 @@ export function proxyMiddleware(
             return next()
           } else if (bypassResult === false) {
             debug?.(`bypass: ${req.url} -> 404`)
-            return res.end(404)
+            res.statusCode = 404
+            return res.end()
           }
         }
 

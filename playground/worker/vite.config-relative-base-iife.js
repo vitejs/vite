@@ -30,7 +30,7 @@ export default defineConfig({
     },
   },
   testConfig: {
-    baseRoute: '/relative-base-iife/',
+    previewBase: '/relative-base-iife/',
   },
   plugins: [workerPluginTestPlugin()],
   cacheDir: 'node_modules/.vite-relative-base-iife',

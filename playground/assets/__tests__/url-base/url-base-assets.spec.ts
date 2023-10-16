@@ -6,7 +6,6 @@ import {
   getColor,
   isBuild,
   page,
-  viteConfig,
 } from '~utils'
 
 const urlAssetMatch = isBuild
@@ -132,8 +131,7 @@ describe('css url() references', () => {
 describe.runIf(isBuild)('index.css URLs', () => {
   let css: string
   beforeAll(() => {
-    const base = viteConfig ? viteConfig?.testConfig?.baseRoute : ''
-    css = findAssetFile(/index.*\.css$/, base, 'other-assets')
+    css = findAssetFile(/index.*\.css$/, 'url-base', 'other-assets')
   })
 
   test('use base URL for asset URL', () => {

@@ -1,10 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
+import {
+  createFilter,
+  isInNodeModules,
+  safeRealpathSync,
+  tryStatSync,
+} from './utils'
 import type { Plugin } from './plugin'
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
   try {
@@ -126,8 +130,8 @@ export function findNearestPackageData(
     }
 
     const pkgPath = path.join(basedir, 'package.json')
-    try {
-      if (fs.statSync(pkgPath, { throwIfNoEntry: false })?.isFile()) {
+    if (tryStatSync(pkgPath)?.isFile()) {
+      try {
         const pkgData = loadPackageData(pkgPath)
 
         if (packageCache) {
@@ -135,8 +139,8 @@ export function findNearestPackageData(
         }
 
         return pkgData
-      }
-    } catch {}
+      } catch {}
+    }
 
     const nextBasedir = path.dirname(basedir)
     if (nextBasedir === basedir) break

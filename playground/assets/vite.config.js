@@ -1,10 +1,8 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 
-/** @type {import('vite').UserConfig} */
-// @ts-expect-error typecast
 export default defineConfig({
-  base: '/foo',
+  base: '/foo/bar',
   publicDir: 'static',
   resolve: {
     alias: {
@@ -14,7 +12,7 @@ export default defineConfig({
   assetsInclude: ['**/*.unknown'],
   build: {
     outDir: 'dist/foo',
-    assetsInlineLimit: 8192, // 8kb
+    assetsInlineLimit: 8000, // 8 kB
     manifest: true,
     watch: {},
   },

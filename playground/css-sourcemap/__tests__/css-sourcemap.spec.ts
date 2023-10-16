@@ -82,8 +82,7 @@ describe.runIf(isServe)('serve', () => {
         new URL('./linked-with-import.css', page.url()).href,
       )
       const content = await res.text()
-      const lines = content.trim().split('\n')
-      expect(lines[lines.length - 1]).not.toMatch(/^\/\/#/)
+      expect(content).not.toMatch('//#s*sourceMappingURL')
     },
   )
 
@@ -92,7 +91,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
+        "mappings": "AAAA,CAAC,QAAQ,CAAC,CAAC;AACX,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC;AACb,CAAC;",
         "sources": [
           "/root/imported.css",
         ],

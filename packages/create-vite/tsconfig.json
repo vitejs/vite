@@ -2,7 +2,7 @@
   "include": ["build.config.ts", "src", "__tests__"],
   "compilerOptions": {
     "outDir": "dist",
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "ES2020",
     "moduleResolution": "bundler",
     "strict": true,

@@ -1,3 +1,42 @@
+## 5.0.0-beta.2 (2023-10-09)
+
+* fix(legacy)!: should rename `x.[hash].js` to `x-legacy.[hash].js` (#11599) ([e7d7a6f](https://github.com/vitejs/vite/commit/e7d7a6f)), closes [#11599](https://github.com/vitejs/vite/issues/11599)
+* fix(deps): update all non-major dependencies (#14510) ([eb204fd](https://github.com/vitejs/vite/commit/eb204fd)), closes [#14510](https://github.com/vitejs/vite/issues/14510)
+* fix(legacy): fix broken build when renderModernChunks=false & polyfills=false (fix #14324) (#14346) ([27e5b11](https://github.com/vitejs/vite/commit/27e5b11)), closes [#14324](https://github.com/vitejs/vite/issues/14324) [#14346](https://github.com/vitejs/vite/issues/14346)
+
+
+
+## 5.0.0-beta.1 (2023-09-25)
+
+* fix(deps): update all non-major dependencies (#14460) ([b77bff0](https://github.com/vitejs/vite/commit/b77bff0)), closes [#14460](https://github.com/vitejs/vite/issues/14460)
+* fix(legacy): add guard to modern polyfill chunk (#13719) ([945dc4d](https://github.com/vitejs/vite/commit/945dc4d)), closes [#13719](https://github.com/vitejs/vite/issues/13719)
+* fix(legacy): modern polyfill autodetection was injecting more polyfills than needed (#14428) ([1c2e941](https://github.com/vitejs/vite/commit/1c2e941)), closes [#14428](https://github.com/vitejs/vite/issues/14428)
+* fix(legacy): suppress babel warning during polyfill scan (#14425) ([aae3a83](https://github.com/vitejs/vite/commit/aae3a83)), closes [#14425](https://github.com/vitejs/vite/issues/14425)
+* fix(plugin-legacy): ensure correct typing for node esm (#13892) ([d914a9d](https://github.com/vitejs/vite/commit/d914a9d)), closes [#13892](https://github.com/vitejs/vite/issues/13892)
+* refactor(legacy)!: remove `ignoreBrowserslistConfig` option (#14429) ([941bb16](https://github.com/vitejs/vite/commit/941bb16)), closes [#14429](https://github.com/vitejs/vite/issues/14429)
+
+
+
+## 5.0.0-beta.0 (2023-09-19)
+
+* fix(deps): update all non-major dependencies (#14092) ([68638f7](https://github.com/vitejs/vite/commit/68638f7)), closes [#14092](https://github.com/vitejs/vite/issues/14092)
+* chore: upgrade babel and release-scripts (#14330) ([b361ffa](https://github.com/vitejs/vite/commit/b361ffa)), closes [#14330](https://github.com/vitejs/vite/issues/14330)
+* chore(deps): update all non-major dependencies (#13938) ([a1b519e](https://github.com/vitejs/vite/commit/a1b519e)), closes [#13938](https://github.com/vitejs/vite/issues/13938)
+* chore(eslint): allow type annotations (#13920) ([d1264fd](https://github.com/vitejs/vite/commit/d1264fd)), closes [#13920](https://github.com/vitejs/vite/issues/13920)
+* docs(legacy): correct `modernPolyfills` description (#14233) ([a57f388](https://github.com/vitejs/vite/commit/a57f388)), closes [#14233](https://github.com/vitejs/vite/issues/14233)
+* docs(plugin-legacy): fix typo (#13936) ([28ddd43](https://github.com/vitejs/vite/commit/28ddd43)), closes [#13936](https://github.com/vitejs/vite/issues/13936)
+* feat!: bump minimum node version to 18 (#14030) ([2c1a45c](https://github.com/vitejs/vite/commit/2c1a45c)), closes [#14030](https://github.com/vitejs/vite/issues/14030)
+* perf: use magic-string hires boundary for sourcemaps (#13971) ([b9a8d65](https://github.com/vitejs/vite/commit/b9a8d65)), closes [#13971](https://github.com/vitejs/vite/issues/13971)
+
+
+
+## <small>4.1.1 (2023-07-20)</small>
+
+* fix(deps): update all non-major dependencies (#13758) ([8ead116](https://github.com/vitejs/vite/commit/8ead116)), closes [#13758](https://github.com/vitejs/vite/issues/13758)
+* fix(deps): update all non-major dependencies (#13872) ([975a631](https://github.com/vitejs/vite/commit/975a631)), closes [#13872](https://github.com/vitejs/vite/issues/13872)
+
+
+
 ## 4.1.0 (2023-07-06)
 
 * feat(plugin-legacy): add option to output only legacy builds (#10139) ([931b24f](https://github.com/vitejs/vite/commit/931b24f)), closes [#10139](https://github.com/vitejs/vite/issues/10139)

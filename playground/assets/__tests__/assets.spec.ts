@@ -8,6 +8,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isServe,
   listAssets,
   notifyRebuildComplete,
   page,
@@ -19,10 +20,10 @@ import {
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/assets\/asset-\w{8}\.png/
-  : '/foo/nested/asset.png'
+  ? /\/foo\/bar\/assets\/asset-\w{8}\.png/
+  : '/foo/bar/nested/asset.png'
 
-const iconMatch = `/foo/icon.png`
+const iconMatch = `/foo/bar/icon.png`
 
 const fetchPath = (p: string) => {
   return fetch(path.posix.join(viteTestUrl, p), {
@@ -37,21 +38,49 @@ test('should have no 404s', () => {
 })
 
 test('should get a 404 when using incorrect case', async () => {
-  expect((await fetchPath('icon.png')).status).toBe(200)
-  // won't be wrote to index.html because the url includes `.`
-  expect((await fetchPath('ICON.png')).status).toBe(404)
-
-  expect((await fetchPath('bar')).status).toBe(200)
+  expect((await fetchPath('icon.png')).headers.get('Content-Type')).toBe(
+    'image/png',
+  )
   // fallback to index.html
-  const incorrectBarFetch = await fetchPath('BAR')
-  expect(incorrectBarFetch.status).toBe(200)
-  expect(incorrectBarFetch.headers.get('Content-Type')).toContain('text/html')
+  const iconPngResult = await fetchPath('ICON.png')
+  expect(iconPngResult.headers.get('Content-Type')).toBe(
+    isBuild ? 'text/html;charset=utf-8' : 'text/html',
+  )
+  expect(iconPngResult.status).toBe(200)
+
+  expect((await fetchPath('bar')).headers.get('Content-Type')).toBe('')
+  // fallback to index.html
+  const barResult = await fetchPath('BAR')
+  expect(barResult.headers.get('Content-Type')).toContain(
+    isBuild ? 'text/html;charset=utf-8' : 'text/html',
+  )
+  expect(barResult.status).toBe(200)
+})
+
+test('should fallback to index.html when accessing non-existant html file', async () => {
+  expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
+})
+
+describe.runIf(isServe)('outside base', () => {
+  test('should get a 404 with html', async () => {
+    const res = await fetch(new URL('/baz', viteTestUrl), {
+      headers: { Accept: 'text/html,*/*' },
+    })
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toBe('text/html')
+  })
+
+  test('should get a 404 with text', async () => {
+    const res = await fetch(new URL('/baz', viteTestUrl))
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toBe('text/plain')
+  })
 })
 
 describe('injected scripts', () => {
   test('@vite/client', async () => {
     const hasClient = await page.$(
-      'script[type="module"][src="/foo/@vite/client"]',
+      'script[type="module"][src="/foo/bar/@vite/client"]',
     )
     if (isBuild) {
       expect(hasClient).toBeFalsy()
@@ -62,7 +91,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src^="/foo/index.html?html-proxy"]',
+      'script[type="module"][src^="/foo/bar/index.html?html-proxy"]',
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
@@ -103,7 +132,7 @@ describe('asset imports from js', () => {
 
   test('from /public (json)', async () => {
     expect(await page.textContent('.public-json-import')).toMatch(
-      '/foo/foo.json',
+      '/foo/bar/foo.json',
     )
     expect(await page.textContent('.public-json-import-content'))
       .toMatchInlineSnapshot(`
@@ -195,7 +224,7 @@ describe('css url() references', () => {
   })
 
   test('base64 inline', async () => {
-    const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
+    const match = isBuild ? `data:image/png;base64` : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
     const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
@@ -233,8 +262,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset-\w{8}\.png \dx/
-          : /\/foo\/nested\/asset.png \dx/,
+          ? /\/foo\/bar\/assets\/asset-\w{8}\.png \dx/
+          : /\/foo\/bar\/nested\/asset.png \dx/,
       )
     })
   })
@@ -277,7 +306,7 @@ test('?url import', async () => {
       ? `data:application/javascript;base64,${Buffer.from(src).toString(
           'base64',
         )}`
-      : `/foo/foo.js`,
+      : `/foo/bar/foo.js`,
   )
 })
 
@@ -287,7 +316,7 @@ test('?url import on css', async () => {
   expect(txt).toEqual(
     isBuild
       ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
-      : '/foo/css/icons.css',
+      : '/foo/bar/css/icons.css',
   )
 })
 
@@ -299,7 +328,7 @@ describe('unicode url', () => {
         ? `data:application/javascript;base64,${Buffer.from(src).toString(
             'base64',
           )}`
-        : `/foo/テスト-測試-white space.js`,
+        : `/foo/bar/テスト-測試-white space.js`,
     )
   })
 })
@@ -338,41 +367,46 @@ test('new URL(..., import.meta.url) without extension', async () => {
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png',
+    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
     assetMatch,
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:application/javascript;base64' : '/foo/nested/test.js',
+    isBuild ? 'data:application/javascript;base64' : '/foo/bar/nested/test.js',
   )
 })
 
 test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
     isBuild
-      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
-      : '/foo/nested/asset.png?abc',
+      ? /\/foo\/bar\/assets\/asset-\w{8}\.png\?abc/
+      : '/foo/bar/nested/asset.png?abc',
   )
 })
 
 test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1-ternary')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
     isBuild
-      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
-      : '/foo/nested/asset.png?abc',
+      ? /\/foo\/bar\/assets\/asset-\w{8}\.png\?abc/
+      : '/foo/bar/nested/asset.png?abc',
   )
 })
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
+  // the inlined script tag is extracted in a separate file
+  const importMetaUrl = new URL(
+    isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
+    page.url(),
+  )
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    new URL('non-existent', page.url()).pathname,
+    new URL('non-existent', importMetaUrl).pathname,
   )
 })
 
@@ -450,16 +484,13 @@ test('url() contains file in publicDir, in <style> tag', async () => {
   expect(await getBg('.style-public-assets')).toContain(iconMatch)
 })
 
-test.skip('url() contains file in publicDir, as inline style', async () => {
-  // TODO: To investigate why `await getBg('.inline-style-public') === "url("http://localhost:5173/icon.png")"`
-  // It supposes to be `url("http://localhost:5173/foo/icon.png")`
-  // (I built the playground to verify)
+test('url() contains file in publicDir, as inline style', async () => {
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
 })
 
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
-    /<img class="noscript" src="\/foo\/assets\/asset-\w+\.png" \/>/,
+    /<img class="noscript" src="\/foo\/bar\/assets\/asset-\w+\.png" \/>/,
   )
 })

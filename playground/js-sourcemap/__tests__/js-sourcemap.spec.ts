@@ -1,5 +1,7 @@
 import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
+import { mapFileCommentRegex } from 'convert-source-map'
+import { commentSourceMap } from '../foo-with-sourcemap-plugin'
 import {
   extractSourcemap,
   findAssetFile,
@@ -13,8 +15,42 @@ if (!isBuild) {
   test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
-    const lines = js.split('\n')
-    expect(lines[lines.length - 1].includes('//')).toBe(false) // expect no sourcemap
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
+        "sources": [
+          "foo.js",
+        ],
+        "sourcesContent": [
+          "export const foo = 'foo'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('js with inline sourcemap injected by a plugin', async () => {
+    const res = await page.request.get(
+      new URL('./foo-with-sourcemap.js', page.url()).href,
+    )
+    const js = await res.text()
+
+    expect(js).toContain(commentSourceMap)
+    const sourcemapComments = js.match(mapFileCommentRegex).length
+    expect(sourcemapComments).toBe(1)
+
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
+        "sources": [
+          "",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('ts', async () => {
@@ -29,6 +65,32 @@ if (!isBuild) {
         ],
         "sourcesContent": [
           "export const bar = 'bar'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('multiline import', async () => {
+    const res = await page.request.get(
+      new URL('./with-multiline-import.ts', page.url()).href,
+    )
+    const multi = await res.text()
+    const map = extractSourcemap(multi)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AACA;AAAA,EACE;AAAA,OACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG;",
+        "sources": [
+          "with-multiline-import.ts",
+        ],
+        "sourcesContent": [
+          "// prettier-ignore
+      import {
+        foo
+      } from '@vitejs/test-importee-pkg'
+
+      console.log('with-multiline-import', foo)
       ",
         ],
         "version": 3,
@@ -54,7 +116,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "41BAAAA,EAAA,WAAO,2BAAuB,EAAC,sEAE/B,QAAQ,IAAI,uBAAuB",
+        "mappings": "k2BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],

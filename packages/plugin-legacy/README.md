@@ -44,6 +44,8 @@ npm add -D terser
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
+  If it's not set, plugin-legacy will load [the browserslist config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
+
 ### `polyfills`
 
 - **Type:** `boolean | string[]`
@@ -63,24 +65,12 @@ npm add -D terser
 
   Note: if additional polyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
 
-### `ignoreBrowserslistConfig`
-
-- **Type:** `boolean`
-- **Default:** `false`
-
-  `@babel/preset-env` automatically detects [`browserslist` config sources](https://github.com/browserslist/browserslist#browserslist-):
-
-  - `browserslist` field in `package.json`
-  - `.browserslistrc` file in cwd.
-
-  Set to `false` to ignore these sources.
-
 ### `modernPolyfills`
 
 - **Type:** `boolean | string[]`
 - **Default:** `false`
 
-  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting browsers with [native ESM support](https://caniuse.com/es6-module)).
+  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting [browsers that support widely-available features](#browsers-that-supports-esm-but-does-not-support-widely-available-features)).
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 

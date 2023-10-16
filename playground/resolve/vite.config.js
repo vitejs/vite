@@ -107,4 +107,7 @@ export default defineConfig({
       '@vitejs/test-resolve-sharp-dir',
     ],
   },
+  build: {
+    copyPublicDir: false,
+  },
 })

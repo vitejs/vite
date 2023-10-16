@@ -17,8 +17,9 @@ import {
   transformStableResult,
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
+import { hasViteIgnoreRE } from './importAnalysis'
 
-export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
+export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
 
 const relativePathRE = /^\.{1,2}\//
 // fast path to check if source contains a dynamic import. we check for a
@@ -203,6 +204,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         } = imports[index]
 
         if (dynamicIndex === -1 || source[start] !== '`') {
+          continue
+        }
+
+        if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
           continue
         }
 

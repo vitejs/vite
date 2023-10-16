@@ -260,7 +260,7 @@ export default defineConfig({
 
 ## css.devSourcemap
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
 - **Type:** `boolean`
 - **Default:** `false`
 
@@ -268,7 +268,7 @@ Whether to enable sourcemaps during dev.
 
 ## css.transformer
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
 - **Type:** `'postcss' | 'lightningcss'`
 - **Default:** `'postcss'`
 
@@ -276,7 +276,7 @@ Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/f
 
 ## css.lightningcss
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
 - **Type:**
 
 ```js
@@ -326,7 +326,7 @@ Enabling this disables named imports.
 
 - **Type:** `ESBuildOptions | false`
 
-`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform). The most common use case is customizing JSX:
 
 ```js
 export default defineConfig({
