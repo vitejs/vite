@@ -218,7 +218,6 @@ export async function startDefaultServe(): Promise<void> {
         usePolling: true,
         interval: 100,
       },
-      host: true,
       fs: {
         strict: !isBuild,
       },
