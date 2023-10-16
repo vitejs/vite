@@ -463,7 +463,7 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckCache: TSConfckCache<TSConfckParseResult>
+let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 
 async function loadTsconfigJsonForFile(
   filename: string,
@@ -518,7 +518,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache.clear()
+    tsconfckCache?.clear()
 
     // server may not be available if vite config is updated at the same time
     if (server) {
