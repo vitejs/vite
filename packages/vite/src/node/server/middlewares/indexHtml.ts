@@ -81,7 +81,7 @@ export function createDevHtmlTransformFn(
         filename: getHtmlFilename(url, server),
         server,
         originalUrl,
-        nonce: undefined,
+        nonce: {},
       },
     )
   }
@@ -155,8 +155,10 @@ const processNodeUrl = (
     return processedUrl
   }
 }
-const devHtmlHook: IndexHtmlTransformHook = async (html, ctx) => {
-  let { path: htmlPath, filename, server, originalUrl } = ctx
+const devHtmlHook: IndexHtmlTransformHook = async (
+  html,
+  { path: htmlPath, filename, server, originalUrl, nonce },
+) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
   htmlPath = decodeURI(htmlPath)
@@ -274,8 +276,21 @@ const devHtmlHook: IndexHtmlTransformHook = async (html, ctx) => {
         }
       }
 
-      if (!ctx.nonce) {
-        ctx.nonce = node.attrs.find(
+      if (!nonce.script) {
+        nonce.script = node.attrs.find(
+          (attr) => attr.prefix === undefined && attr.name === 'nonce',
+        )?.value
+      }
+    }
+
+    if (!nonce.style) {
+      if (
+        node.nodeName === 'link' &&
+        node.attrs.find(
+          (attr) => attr.prefix === undefined && attr.name === 'rel',
+        )?.value === 'stylesheet'
+      ) {
+        nonce.style = node.attrs.find(
           (attr) => attr.prefix === undefined && attr.name === 'nonce',
         )?.value
       }
@@ -298,6 +313,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (html, ctx) => {
         end: children.sourceCodeLocation!.endOffset,
         code: children.value,
       })
+
+      if (!nonce.style) {
+        nonce.style = node.attrs.find(
+          (attr) => attr.prefix === undefined && attr.name === 'nonce',
+        )?.value
+      }
     }
 
     // elements with [href/src] attrs
@@ -376,7 +397,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (html, ctx) => {
         attrs: {
           type: 'module',
           src: path.posix.join(base, CLIENT_PUBLIC_PATH),
-          nonce: ctx.nonce,
+          nonce: nonce.script || nonce.style,
         },
         injectTo: 'head-prepend',
       },

@@ -85,8 +85,12 @@ function detectScriptRel() {
 declare const scriptRel: string
 declare const seen: Record<string, boolean>
 function createPreload() {
-  function getCspNonce(tagName: 'script' | 'style'): string | undefined {
-    const elements = document.getElementsByTagName(tagName)
+  function getCspNonce(
+    selectors: 'script' | 'style' | 'link[rel="stylesheet"]',
+  ): string | undefined {
+    const elements = document.querySelectorAll<
+      HTMLScriptElement | HTMLStyleElement | HTMLLinkElement
+    >(selectors)
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i]
       if (element.nonce) {

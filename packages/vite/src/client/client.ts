@@ -392,16 +392,22 @@ if ('document' in globalThis) {
     })
 }
 
-function getNonceFromElements(selectors: 'style' | 'script') {
-  return [...document.querySelectorAll(selectors)].find(
-    (element) => !!element.nonce,
-  )?.nonce
+function getNonceFromElements(
+  selectors: 'style' | 'link[rel="stylesheet"]' | 'script',
+) {
+  return [
+    ...document.querySelectorAll<
+      HTMLStyleElement | HTMLLinkElement | HTMLScriptElement
+    >(selectors),
+  ].find((element) => !!element.nonce)?.nonce
 }
 
 const nonceValue =
   'document' in globalThis
-    ? // prioritize style tag's nonce as that will work with style-src
-      getNonceFromElements('style') ?? getNonceFromElements('script')
+    ? // prioritize style/link[rel="stylesheet"] tag's nonce as that will work with style-src
+      getNonceFromElements('style') ??
+      getNonceFromElements('link[rel="stylesheet"]') ??
+      getNonceFromElements('script')
     : undefined
 
 // all css imports should be inserted at the same position
