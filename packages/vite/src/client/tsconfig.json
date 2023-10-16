@@ -4,7 +4,7 @@
   "compilerOptions": {
     "types": [],
     "target": "ES2019",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "declaration": false
   }
 }

@@ -84,72 +84,92 @@ function detectScriptRel() {
 
 declare const scriptRel: string
 declare const seen: Record<string, boolean>
-function preload(
-  baseModule: () => Promise<{}>,
-  deps?: string[],
-  importerUrl?: string,
-) {
-  // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
-  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
-    return baseModule()
+function createPreload() {
+  function getCspNonce(tagName: 'script' | 'style'): string | undefined {
+    const elements = document.getElementsByTagName(tagName)
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i]
+      if (element.nonce) {
+        return element.nonce
+      }
+    }
   }
 
-  const links = document.getElementsByTagName('link')
+  const scriptNonceRawValue = getCspNonce('script')
+  const styleNonceRawValue = getCspNonce('style')
+  const scriptNonceValue = scriptNonceRawValue ?? styleNonceRawValue
+  const styleNonceValue = styleNonceRawValue ?? scriptNonceRawValue
 
-  return Promise.all(
-    deps.map((dep) => {
-      // @ts-expect-error assetsURL is declared before preload.toString()
-      dep = assetsURL(dep, importerUrl)
-      if (dep in seen) return
-      seen[dep] = true
-      const isCss = dep.endsWith('.css')
-      const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      const isBaseRelative = !!importerUrl
+  return function preload(
+    baseModule: () => Promise<{}>,
+    deps?: string[],
+    importerUrl?: string,
+  ) {
+    // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
+    if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
+      return baseModule()
+    }
 
-      // check if the file is already preloaded by SSR markup
-      if (isBaseRelative) {
-        // When isBaseRelative is true then we have `importerUrl` and `dep` is
-        // already converted to an absolute URL by the `assetsURL` function
-        for (let i = links.length - 1; i >= 0; i--) {
-          const link = links[i]
-          // The `links[i].href` is an absolute URL thanks to browser doing the work
-          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-            return
+    const links = document.getElementsByTagName('link')
+
+    return Promise.all(
+      deps.map((dep) => {
+        // @ts-expect-error assetsURL is declared before preload.toString()
+        dep = assetsURL(dep, importerUrl)
+        if (dep in seen) return
+        seen[dep] = true
+        const isCss = dep.endsWith('.css')
+        const cssSelector = isCss ? '[rel="stylesheet"]' : ''
+        const isBaseRelative = !!importerUrl
+
+        // check if the file is already preloaded by SSR markup
+        if (isBaseRelative) {
+          // When isBaseRelative is true then we have `importerUrl` and `dep` is
+          // already converted to an absolute URL by the `assetsURL` function
+          for (let i = links.length - 1; i >= 0; i--) {
+            const link = links[i]
+            // The `links[i].href` is an absolute URL thanks to browser doing the work
+            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+              return
+            }
           }
+        } else if (
+          document.querySelector(`link[href="${dep}"]${cssSelector}`)
+        ) {
+          return
         }
-      } else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
-        return
-      }
 
-      const link = document.createElement('link')
-      link.rel = isCss ? 'stylesheet' : scriptRel
-      if (!isCss) {
-        link.as = 'script'
-        link.crossOrigin = ''
-      }
-      link.href = dep
-      document.head.appendChild(link)
-      if (isCss) {
-        return new Promise((res, rej) => {
-          link.addEventListener('load', res)
-          link.addEventListener('error', () =>
-            rej(new Error(`Unable to preload CSS for ${dep}`)),
-          )
-        })
-      }
-    }),
-  )
-    .then(() => baseModule())
-    .catch((err) => {
-      const e = new Event('vite:preloadError', { cancelable: true })
-      // @ts-expect-error custom payload
-      e.payload = err
-      window.dispatchEvent(e)
-      if (!e.defaultPrevented) {
-        throw err
-      }
-    })
+        const link = document.createElement('link')
+        link.rel = isCss ? 'stylesheet' : scriptRel
+        if (!isCss) {
+          link.as = 'script'
+          link.crossOrigin = ''
+        }
+        link.href = dep
+        link.nonce = isCss ? styleNonceValue : scriptNonceValue
+        document.head.appendChild(link)
+        if (isCss) {
+          return new Promise((res, rej) => {
+            link.addEventListener('load', res)
+            link.addEventListener('error', () =>
+              rej(new Error(`Unable to preload CSS for ${dep}`)),
+            )
+          })
+        }
+      }),
+    )
+      .then(() => baseModule())
+      .catch((err) => {
+        const e = new Event('vite:preloadError', { cancelable: true })
+        // @ts-expect-error custom payload
+        e.payload = err
+        window.dispatchEvent(e)
+        if (!e.defaultPrevented) {
+          throw err
+        }
+      })
+  }
 }
 
 /**
@@ -196,7 +216,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
       // is appended inside __vitePreload too.
       `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = (${createPreload.toString()})()`
 
   return {
     name: 'vite:build-import-analysis',

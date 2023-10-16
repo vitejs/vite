@@ -81,6 +81,7 @@ export function createDevHtmlTransformFn(
         filename: getHtmlFilename(url, server),
         server,
         originalUrl,
+        nonce: undefined,
       },
     )
   }
@@ -154,10 +155,8 @@ const processNodeUrl = (
     return processedUrl
   }
 }
-const devHtmlHook: IndexHtmlTransformHook = async (
-  html,
-  { path: htmlPath, filename, server, originalUrl },
-) => {
+const devHtmlHook: IndexHtmlTransformHook = async (html, ctx) => {
+  let { path: htmlPath, filename, server, originalUrl } = ctx
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
   htmlPath = decodeURI(htmlPath)
@@ -274,6 +273,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           }
         }
       }
+
+      if (!ctx.nonce) {
+        ctx.nonce = node.attrs.find(
+          (attr) => attr.prefix === undefined && attr.name === 'nonce',
+        )?.value
+      }
     }
 
     const inlineStyle = findNeedTransformStyleAttribute(node)
@@ -371,6 +376,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         attrs: {
           type: 'module',
           src: path.posix.join(base, CLIENT_PUBLIC_PATH),
+          nonce: ctx.nonce,
         },
         injectTo: 'head-prepend',
       },

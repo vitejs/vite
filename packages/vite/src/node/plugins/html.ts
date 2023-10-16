@@ -930,6 +930,8 @@ export interface IndexHtmlTransformContext {
   bundle?: OutputBundle
   chunk?: OutputChunk
   originalUrl?: string
+  /** nonce value extracted from script tag only available in normal/post hooks during dev */
+  nonce?: string
 }
 
 export type IndexHtmlTransformHook = (
