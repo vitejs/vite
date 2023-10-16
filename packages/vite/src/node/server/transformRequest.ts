@@ -18,7 +18,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
-import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
+import { applySourcemapIgnoreList, genSourceMapUrl, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 
@@ -346,6 +346,10 @@ async function loadAndTransform(
   if (timestamp > mod.lastInvalidationTimestamp) {
     if (ssr) mod.ssrTransformResult = result
     else mod.transformResult = result
+  }
+
+  if (result && result.map) {
+    result.map.toUrl = genSourceMapUrl.bind(null, result.map);
   }
 
   return result
