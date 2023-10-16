@@ -36,6 +36,12 @@ export class ModuleNode {
   ssrError: Error | null = null
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
+  /**
+   * If the module only needs to update its imports timestamp (e.g. within an HMR chain),
+   * it is considered soft-invalidated. In this state, its `transformResult` should exist,
+   * and the next `transformRequest` for this module will replace the timestamps.
+   */
+  softInvalidated: boolean | null = null
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -131,6 +137,7 @@ export class ModuleGraph {
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     hmrBoundaries: ModuleNode[] = [],
+    softInvalidate = false,
   ): void {
     if (seen.has(mod)) {
       return
@@ -145,8 +152,13 @@ export class ModuleGraph {
     }
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
-    mod.transformResult = null
-    mod.ssrTransformResult = null
+    if (softInvalidate && mod.softInvalidated !== false) {
+      mod.softInvalidated = true
+    } else {
+      mod.softInvalidated = false
+      mod.transformResult = null
+      mod.ssrTransformResult = null
+    }
     mod.ssrModule = null
     mod.ssrError = null
 
@@ -160,7 +172,7 @@ export class ModuleGraph {
     }
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
-        this.invalidateModule(importer, seen, timestamp, isHmr)
+        this.invalidateModule(importer, seen, timestamp, isHmr, undefined, true)
       }
     })
   }
@@ -314,6 +326,8 @@ export class ModuleGraph {
       else if (!this.urlToModuleMap.has(url)) {
         this.urlToModuleMap.set(url, mod)
       }
+      // if module exists before, reset its soft-invalidation state
+      mod.softInvalidated = null
       this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
       return mod
     })()

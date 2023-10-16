@@ -3,16 +3,21 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
+import MagicString from 'magic-string'
+import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   cleanUrl,
+  // combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
+  injectQuery,
   isObject,
   prettifyUrl,
+  removeImportQuery,
   removeTimestampQuery,
   timeFrom,
 } from '../utils'
@@ -21,6 +26,7 @@ import { getDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
+// import { RawSourceMap } from '@ampproject/remapping'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -133,11 +139,13 @@ async function doTransform(
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
-    // TODO: check if the module is "partially invalidated" - i.e. an import
-    // down the chain has been fully invalidated, but this current module's
-    // content has not changed.
-    // in this case, we can reuse its previous cached result and only update
-    // its import timestamps.
+    // if a module is soft-invalidated, use its previous cached result and update
+    // the import timestamps only
+    if (module.softInvalidated) {
+      module.softInvalidated = null
+      debugCache?.(`[memory-hmr] ${prettyUrl}`)
+      return await transformImportTimestamps(module, ssr)
+    }
 
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
@@ -358,4 +366,56 @@ function createConvertSourceMapReadMap(originalFileName: string) {
       'utf-8',
     )
   }
+}
+
+async function transformImportTimestamps(mod: ModuleNode, ssr: boolean) {
+  await init
+
+  // The callee should have transform result before calling this
+  const transformResult = ssr ? mod.ssrTransformResult! : mod.transformResult!
+  const importedModules = ssr ? mod.ssrImportedModules : mod.importedModules
+  const source = transformResult.code
+  const s = new MagicString(source)
+  const [imports] = parseImports(source)
+
+  for (const imp of imports) {
+    let rawUrl = source.slice(imp.s, imp.e)
+    if (rawUrl === 'import.meta') continue
+
+    const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
+    if (hasQuotes) {
+      rawUrl = rawUrl.slice(1, -1)
+    }
+
+    const hmrUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    for (const importedMod of importedModules) {
+      if (importedMod.url !== hmrUrl) continue
+      if (importedMod.lastHMRTimestamp > 0) {
+        const replacedUrl = injectQuery(
+          removeTimestampQuery(rawUrl),
+          `t=${importedMod.lastHMRTimestamp}`,
+        )
+        const start = hasQuotes ? imp.s + 1 : imp.s
+        const end = hasQuotes ? imp.e - 1 : imp.e
+        s.overwrite(start, end, replacedUrl)
+      }
+      break
+    }
+  }
+
+  transformResult.code = s.toString()
+
+  // TODO: is this sourcemap generation correct?
+  // const oldMap = transformResult.map
+  // const newMap = s.generateMap({ hires: 'boundary' })
+  // if (oldMap) {
+  //   transformResult.map = combineSourcemaps(mod.id ?? mod.url, [
+  //     newMap as RawSourceMap,
+  //     oldMap as RawSourceMap,
+  //   ]) as SourceMap
+  // } else {
+  //   transformResult.map = newMap as SourceMap
+  // }
+
+  return transformResult
 }
