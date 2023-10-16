@@ -371,7 +371,8 @@ async function fileToBuiltUrl(
   let url: string
   if (
     config.build.lib ||
-    (!file.endsWith('.svg') &&
+    // Don't inline SVG with fragments, as they are meant to be reused
+    (!(file.endsWith('.svg') && id.includes('#')) &&
       !file.endsWith('.html') &&
       content.length < Number(config.build.assetsInlineLimit) &&
       !isGitLfsPlaceholder(content))
@@ -382,9 +383,20 @@ async function fileToBuiltUrl(
       )
     }
 
-    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-    // base64 inlined as a string
-    url = `data:${mimeType};base64,${content.toString('base64')}`
+    if (file.endsWith('.svg')) {
+      const stringContent = content.toString()
+      // If the SVG contains some text, any transformation is unsafe, and given that double quotes would then
+      // need to be escaped, the gain to use a data URI would be ridiculous if not negative
+      if (stringContent.includes('<text')) {
+        url = `data:image/svg+xml;base64,${content.toString('base64')}`
+      } else {
+        url = svgToDataURL(stringContent)
+      }
+    } else {
+      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+      // base64 inlined as a string
+      url = `data:${mimeType};base64,${content.toString('base64')}`
+    }
   } else {
     // emit as asset
     const { search, hash } = parseUrl(id)
@@ -426,5 +438,20 @@ export async function urlToBuiltUrl(
     pluginContext,
     // skip public check since we just did it above
     true,
+  )
+}
+
+// Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
+function svgToDataURL(svg: string): string {
+  return (
+    'data:image/svg+xml,' +
+    svg
+      .trim()
+      .replaceAll(/\s+/g, ' ')
+      .replaceAll('"', "'")
+      .replaceAll('%', '%25')
+      .replaceAll('#', '%23')
+      .replaceAll('<', '%3c')
+      .replaceAll('>', '%3e')
   )
 }
