@@ -1,3 +1,17 @@
+## 5.0.0-beta.8 (2023-10-16)
+
+* fix(deps): update all non-major dependencies (#14635) ([21017a9](https://github.com/vitejs/vite/commit/21017a9)), closes [#14635](https://github.com/vitejs/vite/issues/14635)
+* fix(esbuild): handle tsconfck cache undefined (#14650) ([4e763c5](https://github.com/vitejs/vite/commit/4e763c5)), closes [#14650](https://github.com/vitejs/vite/issues/14650)
+* test(hmr): improve #3033 fix description (#14645) ([3e264ef](https://github.com/vitejs/vite/commit/3e264ef)), closes [#14645](https://github.com/vitejs/vite/issues/14645)
+* feat: add import-meta.d.ts (#14615) ([598d423](https://github.com/vitejs/vite/commit/598d423)), closes [#14615](https://github.com/vitejs/vite/issues/14615)
+* feat: add mdx as known js source (#14560) ([dd213b5](https://github.com/vitejs/vite/commit/dd213b5)), closes [#14560](https://github.com/vitejs/vite/issues/14560)
+* chore(deps): update tsconfck to 3.0.0 (#14629) ([4dcf9c4](https://github.com/vitejs/vite/commit/4dcf9c4)), closes [#14629](https://github.com/vitejs/vite/issues/14629)
+* fix!: return 404 for resources requests outside the base path (#5657) ([40fd2d9](https://github.com/vitejs/vite/commit/40fd2d9)), closes [#5657](https://github.com/vitejs/vite/issues/5657)
+* refactor!: remove `resolvePackageEntry` and `resolvePackageData` APIs (#14584) ([339f300](https://github.com/vitejs/vite/commit/339f300)), closes [#14584](https://github.com/vitejs/vite/issues/14584)
+* refactor!: remove exporting internal APIs (#14583) ([7861a33](https://github.com/vitejs/vite/commit/7861a33)), closes [#14583](https://github.com/vitejs/vite/issues/14583)
+
+
+
 ## 5.0.0-beta.7 (2023-10-12)
 
 * feat: add off method to ViteHotContext (issue #14185) (#14518) ([31333bb](https://github.com/vitejs/vite/commit/31333bb)), closes [#14185](https://github.com/vitejs/vite/issues/14185) [#14518](https://github.com/vitejs/vite/issues/14518)
