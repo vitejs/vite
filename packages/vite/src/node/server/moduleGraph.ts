@@ -150,7 +150,11 @@ export class ModuleGraph {
     mod.ssrModule = null
     mod.ssrError = null
 
-    // Fix #3033
+    // https://github.com/vitejs/vite/issues/3033
+    // Given b.js -> c.js -> b.js (arrow means top-level import), if c.js self-accepts
+    // and refetches itself, the execution order becomes c.js -> b.js -> c.js. The import
+    // order matters here as it will fail. The workaround for now is to not hmr invalidate
+    // b.js so that c.js refetches the already cached b.js, skipping the import loop.
     if (hmrBoundaries.includes(mod)) {
       return
     }
