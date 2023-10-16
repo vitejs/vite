@@ -51,7 +51,6 @@
     "@types/estree": "^1.0.2",
     "@types/etag": "^1.8.1",
     "@types/fs-extra": "^11.0.2",
-    "@types/json-stable-stringify": "^1.0.34",
     "@types/less": "^3.0.4",
     "@types/micromatch": "^4.0.3",
     "@types/node": "^18.18.4",
