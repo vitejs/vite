@@ -26,6 +26,10 @@ describe('parse positives', () => {
     expect(await run('`@/${base}.js`')).toMatchSnapshot()
   })
 
+  it('with query', async () => {
+    expect(await run('`./mods/${base}.js?foo=bar`')).toMatchSnapshot()
+  })
+
   it('with query raw', async () => {
     expect(await run('`./mods/${base}.js?raw`')).toMatchSnapshot()
   })
