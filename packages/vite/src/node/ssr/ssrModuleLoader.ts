@@ -2,7 +2,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
-import { dynamicImport, isBuiltin, unwrapId } from '../utils'
+import { isBuiltin, unwrapId } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
@@ -288,7 +288,7 @@ async function nodeImport(
     url = pathToFileURL(resolved.id).toString()
   }
 
-  const mod = await dynamicImport(url)
+  const mod = await import(url)
   return proxyESM(mod)
 }
 
