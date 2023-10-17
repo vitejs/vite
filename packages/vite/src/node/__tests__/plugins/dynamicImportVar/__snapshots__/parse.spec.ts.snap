@@ -14,6 +14,8 @@ exports[`parse positives > with ../ and itself 1`] = `"__variableDynamicImportRu
 
 exports[`parse positives > with multi ../ and itself 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"../../plugins/dynamicImportVar/*.js\\")), \`./\${name}.js\`)"`;
 
+exports[`parse positives > with query 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"query\\":{\\"foo\\":\\"bar\\"}})), \`./mods/\${base}.js\`)"`;
+
 exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;
 
 exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"url\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;

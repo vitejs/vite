@@ -29,6 +29,8 @@ const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
+  query?: Record<string, string>
+  import?: string
 }
 
 interface DynamicImportPattern {
@@ -55,6 +57,7 @@ function parseDynamicImportPattern(
   const filename = strings.slice(1, -1)
   const rawQuery = parseRequest(filename)
   let globParams: DynamicImportRequest | null = null
+
   const ast = (
     parseJS(strings, {
       ecmaVersion: 'latest',
@@ -70,16 +73,19 @@ function parseDynamicImportPattern(
   const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  if (rawQuery?.raw !== undefined) {
-    globParams = { as: 'raw' }
-  }
+  const as = (['worker', 'url', 'raw'] as const).find(
+    (key) => rawQuery && key in rawQuery,
+  )
 
-  if (rawQuery?.url !== undefined) {
-    globParams = { as: 'url' }
-  }
-
-  if (rawQuery?.worker !== undefined) {
-    globParams = { as: 'worker' }
+  if (as) {
+    globParams = {
+      as,
+      import: '*',
+    }
+  } else if (rawQuery) {
+    globParams = {
+      query: rawQuery,
+    }
   }
 
   return {
@@ -121,9 +127,7 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams
-    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
-    : ''
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
 
   let newRawPattern = posix.relative(
     posix.dirname(importer),
