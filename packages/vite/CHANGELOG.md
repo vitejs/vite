@@ -1,3 +1,9 @@
+## 5.0.0-beta.10 (2023-10-17)
+
+* feat!: rollup v4 (#14508) ([dee6067](https://github.com/vitejs/vite/commit/dee6067)), closes [#14508](https://github.com/vitejs/vite/issues/14508)
+
+
+
 ## 5.0.0-beta.9 (2023-10-17)
 
 * fix: avoid --open optimization if preTransformRequests is disabled (#14666) ([d4f62e4](https://github.com/vitejs/vite/commit/d4f62e4)), closes [#14666](https://github.com/vitejs/vite/issues/14666)
