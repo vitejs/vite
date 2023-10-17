@@ -451,27 +451,30 @@ export async function _createServer(
         // We know the url that the browser would be opened to, so we can
         // start the request while we are awaiting the browser. This will
         // start the crawling of static imports ~500ms before.
-        setTimeout(() => {
-          httpGet(
-            path,
-            {
-              headers: {
-                // Allow the history middleware to redirect to /index.html
-                Accept: 'text/html',
+        // preTransformRequests needs to be enabled for this optimization.
+        if (server.config.server.preTransformRequests) {
+          setTimeout(() => {
+            httpGet(
+              path,
+              {
+                headers: {
+                  // Allow the history middleware to redirect to /index.html
+                  Accept: 'text/html',
+                },
               },
-            },
-            (res) => {
-              res.on('end', () => {
-                // Ignore response, scripts discovered while processing the entry
-                // will be preprocessed (server.config.server.preTransformRequests)
+              (res) => {
+                res.on('end', () => {
+                  // Ignore response, scripts discovered while processing the entry
+                  // will be preprocessed (server.config.server.preTransformRequests)
+                })
+              },
+            )
+              .on('error', () => {
+                // Ignore errors
               })
-            },
-          )
-            .on('error', () => {
-              // Ignore errors
-            })
-            .end()
-        }, 0)
+              .end()
+          }, 0)
+        }
 
         _openBrowser(path, true, server.config.logger)
       } else {
