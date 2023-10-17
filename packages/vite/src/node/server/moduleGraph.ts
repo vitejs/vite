@@ -40,8 +40,13 @@ export class ModuleNode {
    * If the module only needs to update its imports timestamp (e.g. within an HMR chain),
    * it is considered soft-invalidated. In this state, its `transformResult` should exist,
    * and the next `transformRequest` for this module will replace the timestamps.
+   * @internal
    */
-  softInvalidated: boolean | null = null
+  softInvalidatedTransformResult: TransformResult | null = null
+  /**
+   * @internal
+   */
+  softInvalidatedSsrTransformResult: TransformResult | null = null
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -150,15 +155,14 @@ export class ModuleGraph {
       // processing being done for this module
       mod.lastInvalidationTimestamp = timestamp
     }
+    if (softInvalidate) {
+      mod.softInvalidatedTransformResult = mod.transformResult
+      mod.softInvalidatedSsrTransformResult = mod.ssrTransformResult
+    }
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
-    if (softInvalidate && mod.softInvalidated !== false) {
-      mod.softInvalidated = true
-    } else {
-      mod.softInvalidated = false
-      mod.transformResult = null
-      mod.ssrTransformResult = null
-    }
+    mod.transformResult = null
+    mod.ssrTransformResult = null
     mod.ssrModule = null
     mod.ssrError = null
 

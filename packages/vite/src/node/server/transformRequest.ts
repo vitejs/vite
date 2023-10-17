@@ -135,19 +135,18 @@ async function doTransform(
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
 
+  // tries to handle soft invalidation of the module if available,
+  // returns a boolean true is successful, or false if no handling is needed
+  const softInvalidated =
+    module && (await handleModuleSoftInvalidation(module, ssr))
+
   // check if we have a fresh cache
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
-    // if a module is soft-invalidated, use its previous cached result and update
-    // the import timestamps only
-    if (module.softInvalidated) {
-      module.softInvalidated = null
-      debugCache?.(`[memory-hmr] ${prettyUrl}`)
-      return await transformImportTimestamps(module, ssr)
-    }
-
-    debugCache?.(`[memory] ${prettyUrl}`)
+    debugCache?.(
+      `${softInvalidated ? '[memory-hmr]' : '[memory]'} ${prettyUrl}`,
+    )
     return cached
   }
 
@@ -368,16 +367,26 @@ function createConvertSourceMapReadMap(originalFileName: string) {
   }
 }
 
-async function transformImportTimestamps(mod: ModuleNode, ssr: boolean) {
-  await init
+async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
+  const transformResult = ssr
+    ? mod.softInvalidatedSsrTransformResult
+    : mod.softInvalidatedTransformResult
+  if (!transformResult) return false
 
-  // The callee should have transform result before calling this
-  const transformResult = ssr ? mod.ssrTransformResult! : mod.transformResult!
+  if (ssr ? mod.ssrTransformResult : mod.transformResult) {
+    throw new Error(
+      'Internal server error: Soft-invalidated module should not have existing tranform result',
+    )
+  }
+
   const importedModules = ssr ? mod.ssrImportedModules : mod.importedModules
   const source = transformResult.code
   const s = new MagicString(source)
+  await init
   const [imports] = parseImports(source)
 
+  // TODO: Actually in SSR there's no import at all! We just need to decide whether to do a hard invalidation
+  // or not if there module watches another module that's not part of the import
   for (const imp of imports) {
     let rawUrl = source.slice(imp.s, imp.e)
     if (rawUrl === 'import.meta') continue
@@ -403,19 +412,13 @@ async function transformImportTimestamps(mod: ModuleNode, ssr: boolean) {
     }
   }
 
-  transformResult.code = s.toString()
+  if (ssr) {
+    mod.ssrTransformResult = { ...transformResult, code: s.toString() }
+    mod.softInvalidatedSsrTransformResult = null
+  } else {
+    mod.transformResult = { ...transformResult, code: s.toString() }
+    mod.softInvalidatedTransformResult = null
+  }
 
-  // TODO: is this sourcemap generation correct?
-  // const oldMap = transformResult.map
-  // const newMap = s.generateMap({ hires: 'boundary' })
-  // if (oldMap) {
-  //   transformResult.map = combineSourcemaps(mod.id ?? mod.url, [
-  //     newMap as RawSourceMap,
-  //     oldMap as RawSourceMap,
-  //   ]) as SourceMap
-  // } else {
-  //   transformResult.map = newMap as SourceMap
-  // }
-
-  return transformResult
+  return true
 }
