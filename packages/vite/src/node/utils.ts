@@ -973,13 +973,6 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 
-/**
- * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
- *
- * @param file File path to import.
- */
-export const dynamicImport = new Function('file', 'return import(file)')
-
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
