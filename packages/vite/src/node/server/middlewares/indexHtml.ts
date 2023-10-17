@@ -120,33 +120,27 @@ const processNodeUrl = (
       url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
     }
   }
-  const devBase = config.base
-  if (url[0] === '/' && url[1] !== '/') {
-    // prefix with base (dev only, base is never relative)
-    const fullUrl = path.posix.join(devBase, url)
-    if (server && shouldPreTransform(url, config)) {
-      preTransformRequest(server, fullUrl, devBase)
-    }
-    return fullUrl
-  } else if (
-    (url[0] === '.' || startsWithWordCharRE.test(url)) &&
-    originalUrl &&
-    originalUrl !== '/' &&
-    htmlPath === '/index.html'
+
+  if (
+    (url[0] === '/' && url[1] !== '/') ||
+    // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
+    // path will add `/a/` prefix, it will caused 404.
+    // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
+    // rewrite after `../index.js` -> `localhost:5173/index.js`.
+    ((url[0] === '.' || startsWithWordCharRE.test(url)) &&
+      originalUrl &&
+      originalUrl !== '/' &&
+      htmlPath === '/index.html')
   ) {
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
+      const devBase = config.base
       const fullUrl = path.posix.join(devBase, url)
       if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
     }
-
-    // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
-    // path will add `/a/` prefix, it will caused 404.
-    // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
-    // rewrite after `../index.js` -> `localhost:5173/index.js`.
 
     const processedUrl = useSrcSetReplacer
       ? processSrcSetSync(url, ({ url }) => replacer(url))
