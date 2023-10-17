@@ -1,3 +1,15 @@
+## 5.0.0-beta.9 (2023-10-17)
+
+* fix: avoid --open optimization if preTransformRequests is disabled (#14666) ([d4f62e4](https://github.com/vitejs/vite/commit/d4f62e4)), closes [#14666](https://github.com/vitejs/vite/issues/14666)
+* fix(dynamic-import-vars): preserve custom query string (#14459) ([1f2a982](https://github.com/vitejs/vite/commit/1f2a982)), closes [#14459](https://github.com/vitejs/vite/issues/14459)
+* fix(hmr): add timestamp for assets in dev (#13371) ([40ee245](https://github.com/vitejs/vite/commit/40ee245)), closes [#13371](https://github.com/vitejs/vite/issues/13371)
+* fix(html): srcset pointing image in public dir wasn't working during dev (#14663) ([4496ae7](https://github.com/vitejs/vite/commit/4496ae7)), closes [#14663](https://github.com/vitejs/vite/issues/14663)
+* refactor: use dynamic import directly (#14661) ([af60592](https://github.com/vitejs/vite/commit/af60592)), closes [#14661](https://github.com/vitejs/vite/issues/14661)
+* perf: pre transform requests while opening the browser (#12809) ([96a4ce3](https://github.com/vitejs/vite/commit/96a4ce3)), closes [#12809](https://github.com/vitejs/vite/issues/12809)
+* feat: add server.warmup option (#14291) ([da80372](https://github.com/vitejs/vite/commit/da80372)), closes [#14291](https://github.com/vitejs/vite/issues/14291)
+
+
+
 ## 5.0.0-beta.8 (2023-10-16)
 
 * fix(deps): update all non-major dependencies (#14635) ([21017a9](https://github.com/vitejs/vite/commit/21017a9)), closes [#14635](https://github.com/vitejs/vite/issues/14635)
