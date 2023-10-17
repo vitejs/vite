@@ -267,6 +267,14 @@ describe('image', () => {
       )
     })
   })
+
+  test('srcset (public)', async () => {
+    const img = await page.$('.img-src-set-public')
+    const srcset = await img.getAttribute('srcset')
+    srcset.split(', ').forEach((s) => {
+      expect(s).toMatch(/\/foo\/bar\/icon\.png \dx/)
+    })
+  })
 })
 
 describe('svg fragments', () => {
