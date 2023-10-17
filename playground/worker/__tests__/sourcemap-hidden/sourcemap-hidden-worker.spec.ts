@@ -14,20 +14,22 @@ describe.runIf(isBuild)('build', () => {
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
-    const worker = files.find((f) => /^my-worker-\w+\.js$/.test(f))
+    const worker = files.find((f) => /^my-worker-[-\w]+\.js$/.test(f))
     const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
       'utf-8',
     )
     const workerSourcemap = getSourceMapUrl(workerContent)
-    const sharedWorker = files.find((f) => /^my-shared-worker-\w+\.js$/.test(f))
+    const sharedWorker = files.find((f) =>
+      /^my-shared-worker-[-\w]+\.js$/.test(f),
+    )
     const sharedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, sharedWorker),
       'utf-8',
     )
     const sharedWorkerSourcemap = getSourceMapUrl(sharedWorkerContent)
     const possibleTsOutputWorker = files.find((f) =>
-      /^possible-ts-output-worker-\w+\.js$/.test(f),
+      /^possible-ts-output-worker-[-\w]+\.js$/.test(f),
     )
     const possibleTsOutputWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, possibleTsOutputWorker),
@@ -37,7 +39,7 @@ describe.runIf(isBuild)('build', () => {
       possibleTsOutputWorkerContent,
     )
     const workerNestedWorker = files.find((f) =>
-      /^worker-nested-worker-\w+\.js$/.test(f),
+      /^worker-nested-worker-[-\w]+\.js$/.test(f),
     )
     const workerNestedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, workerNestedWorker),
@@ -46,28 +48,30 @@ describe.runIf(isBuild)('build', () => {
     const workerNestedWorkerSourcemap = getSourceMapUrl(
       workerNestedWorkerContent,
     )
-    const subWorker = files.find((f) => /^sub-worker-\w+\.js$/.test(f))
+    const subWorker = files.find((f) => /^sub-worker-[-\w]+\.js$/.test(f))
     const subWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, subWorker),
       'utf-8',
     )
     const subWorkerSourcemap = getSourceMapUrl(subWorkerContent)
 
-    expect(files).toContainEqual(expect.stringMatching(/^index-\w+\.js\.map$/))
     expect(files).toContainEqual(
-      expect.stringMatching(/^my-worker-\w+\.js\.map$/),
+      expect.stringMatching(/^index-[-\w]+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^my-shared-worker-\w+\.js\.map$/),
+      expect.stringMatching(/^my-worker-[-\w]+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^possible-ts-output-worker-\w+\.js\.map$/),
+      expect.stringMatching(/^my-shared-worker-[-\w]+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^worker-nested-worker-\w+\.js\.map$/),
+      expect.stringMatching(/^possible-ts-output-worker-[-\w]+\.js\.map$/),
     )
     expect(files).toContainEqual(
-      expect.stringMatching(/^sub-worker-\w+\.js\.map$/),
+      expect.stringMatching(/^worker-nested-worker-[-\w]+\.js\.map$/),
+    )
+    expect(files).toContainEqual(
+      expect.stringMatching(/^sub-worker-[-\w]+\.js\.map$/),
     )
 
     // sourcemap should exist and have a data URL

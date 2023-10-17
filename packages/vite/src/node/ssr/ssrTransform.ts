@@ -12,8 +12,8 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
 import { combineSourcemaps } from '../utils'
 import { isJSONRequest } from '../plugins/json'
 
@@ -71,12 +71,7 @@ async function ssrTransformScript(
 
   let ast: any
   try {
-    ast = parser.parse(code, {
-      sourceType: 'module',
-      ecmaVersion: 'latest',
-      locations: true,
-      allowHashBang: true,
-    })
+    ast = rollupParseAst(code)
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
     const line = err.loc.line
@@ -274,7 +269,7 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: 'boundary' }) as SourceMap
+  let map = s.generateMap({ hires: 'boundary' })
   if (
     inMap &&
     inMap.mappings &&

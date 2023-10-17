@@ -85,7 +85,7 @@ test('should load dynamic import with css', async () => {
 
 test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg',
+    isBuild ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
 })
 
@@ -98,12 +98,14 @@ describe.runIf(isBuild)('build', () => {
       '../../vite/legacy-polyfills-legacy',
     )
     expect(manifest['custom0-legacy.js'].file).toMatch(
-      /chunk-X-legacy.\w{8}.js/,
+      /chunk-X-legacy\.[-\w]{8}.js/,
     )
     expect(manifest['custom1-legacy.js'].file).toMatch(
-      /chunk-X-legacy-\w{8}.js/,
+      /chunk-X-legacy-[-\w]{8}.js/,
     )
-    expect(manifest['custom2-legacy.js'].file).toMatch(/chunk-X-legacy\w{8}.js/)
+    expect(manifest['custom2-legacy.js'].file).toMatch(
+      /chunk-X-legacy[-\w]{8}.js/,
+    )
     // modern polyfill
     expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
     expect(manifest['../../vite/legacy-polyfills'].src).toBe(
@@ -134,7 +136,7 @@ describe.runIf(isBuild)('build', () => {
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('"structuredClone"')
   })
 
   test('should generate legacy sourcemap file', async () => {

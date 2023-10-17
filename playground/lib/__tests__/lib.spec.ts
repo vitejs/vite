@@ -63,7 +63,7 @@ describe.runIf(isBuild)('build', () => {
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
-    expect(code).toMatch(/await import\("\.\/message-[a-z\d]{8}.js"\)/)
+    expect(code).toMatch(/await import\("\.\/message-[-\w]{8}.js"\)/)
   })
 
   test('@import hoist', async () => {

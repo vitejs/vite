@@ -161,6 +161,7 @@ function createNodeConfig(isProduction: boolean) {
     external: [
       'fsevents',
       'lightningcss',
+      'rollup/parseAst',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],

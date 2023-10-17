@@ -4,6 +4,17 @@
 
 Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.js 18 / 20+ is now required.
 
+## Rollup 4
+
+Vite is now using Rollup 4 which also brings along its breaking changes, in particular:
+
+- Import assertions (`assertions` prop) has been renamed to import attributes (`attributes` prop).
+- Acorn plugins are no longer supported.
+- For Vite plugins, `this.resolve` `skipSelf` option is now `true` by default.
+- For Vite plugins, `this.parse` now only supports the `allowReturnOutsideFunction` option for now.
+
+Read the full breaking changes in [Rollup's release notes](https://github.com/rollup/rollup/releases/tag/v4.0.0) for build-related changes in `build.rollupOptions`.
+
 ## Deprecate CJS Node API
 
 The CJS Node API of Vite is deprecated. When calling `require('vite')`, a deprecation warning is now logged. You should update your files or frameworks to import the ESM build of Vite instead.

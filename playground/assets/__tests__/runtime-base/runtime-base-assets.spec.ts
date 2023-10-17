@@ -9,7 +9,7 @@ import {
 } from '~utils'
 
 const absoluteAssetMatch = isBuild
-  ? /\/other-assets\/asset-\w{8}\.png/
+  ? /\/other-assets\/asset-[-\w]{8}\.png/
   : '/nested/asset.png'
 
 // Asset URLs in CSS are relative to the same dir, the computed
@@ -19,7 +19,7 @@ const cssBgAssetMatch = absoluteAssetMatch
 const iconMatch = `/icon.png`
 
 const absoluteIconMatch = isBuild
-  ? /\/other-assets\/icon-\w{8}\.png/
+  ? /\/other-assets\/icon-[-\w]{8}\.png/
   : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild ? /\/icon\.png/ : '/icon.png'
@@ -137,7 +137,7 @@ describe('css url() references', () => {
 describe.runIf(isBuild)('index.css URLs', () => {
   let css: string
   beforeAll(() => {
-    css = findAssetFile(/index-\w{8}\.css$/, '', 'other-assets')
+    css = findAssetFile(/index-[-\w]{8}\.css$/, '', 'other-assets')
   })
 
   test('relative asset URL', () => {
@@ -156,7 +156,7 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /other-assets\/asset-\w{8}\.png \dx/
+          ? /other-assets\/asset-[-\w]{8}\.png \dx/
           : /\.\/nested\/asset\.png \dx/,
       )
     })
@@ -191,14 +191,14 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /\/other-assets\/foo-\w{8}\.js/ : `/foo.js`,
+    isBuild ? /\/other-assets\/foo-[-\w]{8}\.js/ : `/foo.js`,
   )
 })
 
 test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
-    isBuild ? /\/other-assets\/icons-\w{8}\.css/ : '/css/icons.css',
+    isBuild ? /\/other-assets\/icons-[-\w]{8}\.css/ : '/css/icons.css',
   )
 })
 

@@ -76,7 +76,7 @@
   "dependencies": {
     "esbuild": "^0.19.3",
     "postcss": "^8.4.31",
-    "rollup": "^3.29.4"
+    "rollup": "^4.1.4"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
@@ -94,7 +94,6 @@
     "@types/escape-html": "^1.0.2",
     "@types/pnpapi": "^0.0.3",
     "acorn": "^8.10.0",
-    "acorn-import-assertions": "^1.9.0",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",

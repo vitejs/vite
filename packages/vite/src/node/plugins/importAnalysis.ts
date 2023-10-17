@@ -408,7 +408,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             ss: expStart,
             se: expEnd,
             d: dynamicIndex,
-            a: assertIndex,
+            a: attributeIndex,
           } = importSpecifier
 
           // #2083 User may use escape path,
@@ -464,8 +464,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const isDynamicImport = dynamicIndex > -1
 
-          // strip import assertions as we can process them ourselves
-          if (!isDynamicImport && assertIndex > -1) {
+          // strip import attributes as we can process them ourselves
+          if (!isDynamicImport && attributeIndex > -1) {
             str().remove(end + 1, expEnd)
           }
 
