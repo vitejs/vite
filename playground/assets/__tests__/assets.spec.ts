@@ -20,7 +20,7 @@ import {
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/bar\/assets\/asset-\w{8}\.png/
+  ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
   : '/foo/bar/nested/asset.png'
 
 const iconMatch = `/foo/bar/icon.png`
@@ -262,9 +262,17 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/bar\/assets\/asset-\w{8}\.png \dx/
+          ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
           : /\/foo\/bar\/nested\/asset.png \dx/,
       )
+    })
+  })
+
+  test('srcset (public)', async () => {
+    const img = await page.$('.img-src-set-public')
+    const srcset = await img.getAttribute('srcset')
+    srcset.split(', ').forEach((s) => {
+      expect(s).toMatch(/\/foo\/bar\/icon\.png \dx/)
     })
   })
 })
@@ -285,7 +293,9 @@ describe('svg fragments', () => {
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
+    expect(await img.getAttribute('src')).toMatch(
+      isBuild ? /svg#icon-heart-view$/ : /svg\?t=\d+#icon-heart-view$/,
+    )
   })
 })
 
@@ -313,11 +323,11 @@ test('?url import', async () => {
 test('?url import on css', async () => {
   const src = readFile('css/icons.css')
   const txt = await page.textContent('.url-css')
-  expect(txt).toEqual(
-    isBuild
-      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
-      : '/foo/bar/css/icons.css',
-  )
+  isBuild
+    ? expect(txt).toEqual(
+        `data:text/css;base64,${Buffer.from(src).toString('base64')}`,
+      )
+    : expect(txt).toMatch(/^\/foo\/bar\/css\/icons.css\?t=\d+$/)
 })
 
 describe('unicode url', () => {
@@ -383,7 +393,7 @@ test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
     isBuild
-      ? /\/foo\/bar\/assets\/asset-\w{8}\.png\?abc/
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
       : '/foo/bar/nested/asset.png?abc',
   )
 })
@@ -394,7 +404,7 @@ test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async ()
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
     isBuild
-      ? /\/foo\/bar\/assets\/asset-\w{8}\.png\?abc/
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
       : '/foo/bar/nested/asset.png?abc',
   )
 })
@@ -427,7 +437,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })
@@ -491,6 +501,6 @@ test('url() contains file in publicDir, as inline style', async () => {
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
-    /<img class="noscript" src="\/foo\/bar\/assets\/asset-\w+\.png" \/>/,
+    /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })
