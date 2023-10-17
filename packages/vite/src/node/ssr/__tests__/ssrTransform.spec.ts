@@ -938,14 +938,14 @@ const Baz = class extends Foo {}
 test('import assertion attribute', async () => {
   expect(
     await ssrTransformSimpleCode(`
-  import * as foo from './foo.json' assert { type: 'json' };
-  import('./bar.json', { assert: { type: 'json' } });
+  import * as foo from './foo.json' with { type: 'json' };
+  import('./bar.json', { with: { type: 'json' } });
   `),
   ).toMatchInlineSnapshot(`
   "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo.json\\");
   
     
-    __vite_ssr_dynamic_import__('./bar.json', { assert: { type: 'json' } });
+    __vite_ssr_dynamic_import__('./bar.json', { with: { type: 'json' } });
     "`)
 })
 

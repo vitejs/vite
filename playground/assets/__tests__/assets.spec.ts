@@ -20,7 +20,7 @@ import {
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/bar\/assets\/asset-\w{8}\.png/
+  ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
   : '/foo/bar/nested/asset.png'
 
 const iconMatch = `/foo/bar/icon.png`
@@ -262,7 +262,7 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/bar\/assets\/asset-\w{8}\.png \dx/
+          ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
           : /\/foo\/bar\/nested\/asset.png \dx/,
       )
     })
@@ -393,7 +393,7 @@ test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
     isBuild
-      ? /\/foo\/bar\/assets\/asset-\w{8}\.png\?abc/
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
       : '/foo/bar/nested/asset.png?abc',
   )
 })
@@ -404,7 +404,7 @@ test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async ()
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
     isBuild
-      ? /\/foo\/bar\/assets\/asset-\w{8}\.png\?abc/
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
       : '/foo/bar/nested/asset.png?abc',
   )
 })
@@ -437,7 +437,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })
@@ -501,6 +501,6 @@ test('url() contains file in publicDir, as inline style', async () => {
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
-    /<img class="noscript" src="\/foo\/bar\/assets\/asset-\w+\.png" \/>/,
+    /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })

@@ -10,7 +10,6 @@ import {
   blankReplacer,
   cleanUrl,
   createDebugger,
-  ensureWatchedFile,
   isObject,
   prettifyUrl,
   removeTimestampQuery,
@@ -174,8 +173,8 @@ async function loadAndTransform(
   mod?: ModuleNode,
   resolved?: PartialResolvedId,
 ) {
-  const { config, pluginContainer, moduleGraph, watcher } = server
-  const { root, logger } = config
+  const { config, pluginContainer, moduleGraph } = server
+  const { logger } = config
   const prettyUrl =
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
@@ -263,7 +262,6 @@ async function loadAndTransform(
 
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
-  ensureWatchedFile(watcher, mod.file, root)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0

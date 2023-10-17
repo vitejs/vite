@@ -27,7 +27,8 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 
-export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
+// referenceId is base64url but replaces - with $
+export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 export const urlRE = /(\?|&)url(?:&|$)/
@@ -78,10 +79,10 @@ export function renderAssetUrlInJS(
   let s: MagicString | undefined
 
   // Urls added with JS using e.g.
-  // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
+  // imgElement.src = "__VITE_ASSET__5aA0Ddc0__" are using quotes
 
   // Urls added in CSS that is imported in JS end up like
-  // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
+  // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aA0Ddc0__)}\n";
 
   // In both cases, the wrapping should already be fine
 
@@ -107,7 +108,7 @@ export function renderAssetUrlInJS(
     s.update(match.index, match.index + full.length, replacementString)
   }
 
-  // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
+  // Replace __VITE_PUBLIC_ASSET__5aA0Ddc0__ with absolute paths
 
   const publicAssetUrlMap = publicAssetUrlCache.get(config)!
   publicAssetUrlRE.lastIndex = 0
@@ -179,6 +180,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // raw requests, read from disk
       if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
+        this.addWatchFile(file)
         // raw query, read file and return as string
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8'),

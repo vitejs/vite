@@ -1,7 +1,6 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
-import type { SourceMap as MagicStringSourceMap } from 'magic-string'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
@@ -66,9 +65,7 @@ export async function injectSourcesContent(
   }
 }
 
-export function genSourceMapUrl(
-  map: SourceMap | MagicStringSourceMap | string,
-): string {
+export function genSourceMapUrl(map: SourceMap | string): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -78,7 +75,7 @@ export function genSourceMapUrl(
 export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
-  map: SourceMap | MagicStringSourceMap,
+  map: SourceMap,
 ): string {
   if (debug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
