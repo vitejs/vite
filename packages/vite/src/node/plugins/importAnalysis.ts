@@ -677,9 +677,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }),
       )
 
-      const importedUrls = new Set(
-        orderedImportedUrls.filter(Boolean) as string[],
-      )
+      const _orderedImportedUrls = orderedImportedUrls.filter(
+        Boolean,
+      ) as string[]
+      const importedUrls = new Set(_orderedImportedUrls)
+      // `importedUrls` will be mixed with watched files for the module graph,
+      // `staticImportedUrls` will only contain the static top-level imports and
+      // dynamic imports
+      const staticImportedUrls = new Set(_orderedImportedUrls)
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
@@ -767,6 +772,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
           ssr,
+          staticImportedUrls,
         )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)

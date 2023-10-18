@@ -11,7 +11,6 @@ import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   cleanUrl,
-  // combineSourcemaps,
   createDebugger,
   injectQuery,
   isObject,
@@ -25,7 +24,6 @@ import { getDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
-// import { RawSourceMap } from '@ampproject/remapping'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -365,6 +363,13 @@ function createConvertSourceMapReadMap(originalFileName: string) {
   }
 }
 
+/**
+ * When a module is soft-invalidated, we can preserve its previous `transformResult` and
+ * return similar code to before:
+ *
+ * - Client: We need to transform the import specifiers with new timestamps
+ * - SSR: We don't need to change anything as `ssrLoadModule` controls it
+ */
 async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
   const transformResult = ssr
     ? mod.softInvalidatedSsrTransformResult
@@ -377,14 +382,25 @@ async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
     )
   }
 
-  const importedModules = ssr ? mod.ssrImportedModules : mod.importedModules
+  // Reset soft-invalidation state
+  if (ssr) {
+    mod.softInvalidatedSsrTransformResult = undefined
+  } else {
+    mod.softInvalidatedTransformResult = undefined
+  }
+
+  // For SSR soft-invalidation, no transformation is needed
+  if (ssr) {
+    mod.ssrTransformResult = transformResult
+    return true
+  }
+
+  // For client soft-invalidation, we need to transform each imports with new timestamps if available
+  await init
   const source = transformResult.code
   const s = new MagicString(source)
-  await init
   const [imports] = parseImports(source)
 
-  // TODO: Actually in SSR there's no import at all! We just need to decide whether to do a hard invalidation
-  // or not if there module watches another module that's not part of the import
   for (const imp of imports) {
     let rawUrl = source.slice(imp.s, imp.e)
     if (rawUrl === 'import.meta') continue
@@ -395,7 +411,7 @@ async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
     }
 
     const hmrUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    for (const importedMod of importedModules) {
+    for (const importedMod of mod.clientImportedModules) {
       if (importedMod.url !== hmrUrl) continue
       if (importedMod.lastHMRTimestamp > 0) {
         const replacedUrl = injectQuery(
@@ -410,13 +426,8 @@ async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
     }
   }
 
-  if (ssr) {
-    mod.ssrTransformResult = { ...transformResult, code: s.toString() }
-    mod.softInvalidatedSsrTransformResult = null
-  } else {
-    mod.transformResult = { ...transformResult, code: s.toString() }
-    mod.softInvalidatedTransformResult = null
-  }
-
+  // Update `transformResult` with new code. We don't have to update the sourcemap as
+  // the timestamps changes are doesn't affect the code lines (stable).
+  mod.transformResult = { ...transformResult, code: s.toString() }
   return true
 }

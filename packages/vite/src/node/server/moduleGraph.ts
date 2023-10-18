@@ -40,13 +40,24 @@ export class ModuleNode {
    * If the module only needs to update its imports timestamp (e.g. within an HMR chain),
    * it is considered soft-invalidated. In this state, its `transformResult` should exist,
    * and the next `transformRequest` for this module will replace the timestamps.
+   *
+   * By default the value is `undefined` it it's not soft/hard-invalidated. If it gets
+   * soft-invalidated, this will contain the previous `transformResult` value. If it gets
+   * hard-invalidated, this will be set to `null`.
    * @internal
    */
-  softInvalidatedTransformResult: TransformResult | null = null
+  softInvalidatedTransformResult?: TransformResult | null
   /**
    * @internal
    */
-  softInvalidatedSsrTransformResult: TransformResult | null = null
+  softInvalidatedSsrTransformResult?: TransformResult | null
+  /**
+   * The module urls that are statically imported in the code. This information is separated
+   * out from `importedModules` as only importers that statically import the module can be
+   * soft invalidated. Other imports (e.g. watched files) needs the importer to be hard invalidated.
+   * @internal
+   */
+  staticImportedUrls?: Set<string>
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -142,7 +153,7 @@ export class ModuleGraph {
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     hmrBoundaries: ModuleNode[] = [],
-    softInvalidate = false,
+    softInvalidated = false,
   ): void {
     if (seen.has(mod)) {
       return
@@ -154,10 +165,6 @@ export class ModuleGraph {
       // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
       // processing being done for this module
       mod.lastInvalidationTimestamp = timestamp
-    }
-    if (softInvalidate) {
-      mod.softInvalidatedTransformResult = mod.transformResult
-      mod.softInvalidatedSsrTransformResult = mod.ssrTransformResult
     }
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
@@ -176,7 +183,37 @@ export class ModuleGraph {
     }
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
-        this.invalidateModule(importer, seen, timestamp, isHmr, undefined, true)
+        // If the importer statically imports the current module, we can soft-invalidate the importer
+        // to only update the import timestamps. If it's not statically imported, e.g. watched/glob file,
+        // we can only soft invalidate if the current module was also soft-invalidated. A soft-invalidation
+        // doesn't need to trigger a re-load and re-transform of the importer.
+        const shouldSoftInvalidateImporter =
+          importer.staticImportedUrls?.has(mod.url) || softInvalidated
+        // If soft invalidated, save the previous `transformResult` so that we can reuse and transform the
+        // import timestamps only in `transformRequest`. If hard-invalidated, set to `null`. Otherwise, the
+        // default non-validated state is `undefined.
+        if (shouldSoftInvalidateImporter) {
+          if (importer.softInvalidatedTransformResult === undefined) {
+            importer.softInvalidatedTransformResult = importer.transformResult
+          }
+          if (importer.softInvalidatedSsrTransformResult === undefined) {
+            importer.softInvalidatedSsrTransformResult =
+              importer.ssrTransformResult
+          }
+        }
+        // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
+        else {
+          importer.softInvalidatedTransformResult = null
+          importer.softInvalidatedSsrTransformResult = null
+        }
+        this.invalidateModule(
+          importer,
+          seen,
+          timestamp,
+          isHmr,
+          undefined,
+          shouldSoftInvalidateImporter,
+        )
       }
     })
   }
@@ -193,6 +230,9 @@ export class ModuleGraph {
    * Update the module graph based on a module's updated imports information
    * If there are dependencies that no longer have any importers, they are
    * returned as a Set.
+   *
+   * @param staticImportedUrls Subset of `importedModules` where they're statically imported in code.
+   *   This is only used for soft invalidations so `undefined` is fine but may cause more runtime processing.
    */
   async updateModuleInfo(
     mod: ModuleNode,
@@ -202,6 +242,7 @@ export class ModuleGraph {
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     ssr?: boolean,
+    staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = ssr ? mod.ssrImportedModules : mod.clientImportedModules
@@ -273,6 +314,7 @@ export class ModuleGraph {
     }
 
     mod.acceptedHmrDeps = new Set(resolveResults)
+    mod.staticImportedUrls = staticImportedUrls
 
     // update accepted hmr exports
     mod.acceptedHmrExports = acceptedExports
@@ -330,8 +372,6 @@ export class ModuleGraph {
       else if (!this.urlToModuleMap.has(url)) {
         this.urlToModuleMap.set(url, mod)
       }
-      // if module exists before, reset its soft-invalidation state
-      mod.softInvalidated = null
       this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
       return mod
     })()
