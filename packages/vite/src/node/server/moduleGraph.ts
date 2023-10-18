@@ -155,10 +155,31 @@ export class ModuleGraph {
     hmrBoundaries: ModuleNode[] = [],
     softInvalidated = false,
   ): void {
+    // Handle soft invalidation before the `seen` check, as consecutive soft/hard invalidations can
+    // cause the final soft invalidation state to be different.
+    // If soft invalidated, save the previous `transformResult` so that we can reuse and transform the
+    // import timestamps only in `transformRequest`. If hard-invalidated, set to `null`. Otherwise, the
+    // default non-validated state is `undefined.
+    if (softInvalidated) {
+      if (mod.softInvalidatedTransformResult === undefined) {
+        mod.softInvalidatedTransformResult = mod.transformResult
+      }
+      if (mod.softInvalidatedSsrTransformResult === undefined) {
+        mod.softInvalidatedSsrTransformResult = mod.ssrTransformResult
+      }
+    }
+    // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
+    else {
+      mod.softInvalidatedTransformResult = null
+      mod.softInvalidatedSsrTransformResult = null
+    }
+
+    // Skip updating the module if it was already invalidated before
     if (seen.has(mod)) {
       return
     }
     seen.add(mod)
+
     if (isHmr) {
       mod.lastHMRTimestamp = timestamp
     } else {
@@ -166,6 +187,7 @@ export class ModuleGraph {
       // processing being done for this module
       mod.lastInvalidationTimestamp = timestamp
     }
+
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
@@ -189,23 +211,6 @@ export class ModuleGraph {
         // doesn't need to trigger a re-load and re-transform of the importer.
         const shouldSoftInvalidateImporter =
           importer.staticImportedUrls?.has(mod.url) || softInvalidated
-        // If soft invalidated, save the previous `transformResult` so that we can reuse and transform the
-        // import timestamps only in `transformRequest`. If hard-invalidated, set to `null`. Otherwise, the
-        // default non-validated state is `undefined.
-        if (shouldSoftInvalidateImporter) {
-          if (importer.softInvalidatedTransformResult === undefined) {
-            importer.softInvalidatedTransformResult = importer.transformResult
-          }
-          if (importer.softInvalidatedSsrTransformResult === undefined) {
-            importer.softInvalidatedSsrTransformResult =
-              importer.ssrTransformResult
-          }
-        }
-        // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
-        else {
-          importer.softInvalidatedTransformResult = null
-          importer.softInvalidatedSsrTransformResult = null
-        }
         this.invalidateModule(
           importer,
           seen,

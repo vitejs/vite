@@ -17,7 +17,9 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
+  stripBase,
   timeFrom,
+  unwrapId,
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
@@ -134,16 +136,24 @@ async function doTransform(
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
-  const softInvalidated =
-    module && (await handleModuleSoftInvalidation(module, ssr))
+  const softInvalidatedTransformResult =
+    module &&
+    (await handleModuleSoftInvalidation(
+      module,
+      ssr,
+      timestamp,
+      server.config.base,
+    ))
+  if (softInvalidatedTransformResult) {
+    debugCache?.(`[memory-hmr] ${prettyUrl}`)
+    return softInvalidatedTransformResult
+  }
 
   // check if we have a fresh cache
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
-    debugCache?.(
-      `${softInvalidated ? '[memory-hmr]' : '[memory]'} ${prettyUrl}`,
-    )
+    debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
 
@@ -370,11 +380,16 @@ function createConvertSourceMapReadMap(originalFileName: string) {
  * - Client: We need to transform the import specifiers with new timestamps
  * - SSR: We don't need to change anything as `ssrLoadModule` controls it
  */
-async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
+async function handleModuleSoftInvalidation(
+  mod: ModuleNode,
+  ssr: boolean,
+  timestamp: number,
+  base: string,
+) {
   const transformResult = ssr
     ? mod.softInvalidatedSsrTransformResult
     : mod.softInvalidatedTransformResult
-  if (!transformResult) return false
+  if (!transformResult) return
 
   if (ssr ? mod.ssrTransformResult : mod.transformResult) {
     throw new Error(
@@ -389,45 +404,57 @@ async function handleModuleSoftInvalidation(mod: ModuleNode, ssr: boolean) {
     mod.softInvalidatedTransformResult = undefined
   }
 
+  let result: TransformResult
   // For SSR soft-invalidation, no transformation is needed
   if (ssr) {
-    mod.ssrTransformResult = transformResult
-    return true
+    result = transformResult
   }
-
   // For client soft-invalidation, we need to transform each imports with new timestamps if available
-  await init
-  const source = transformResult.code
-  const s = new MagicString(source)
-  const [imports] = parseImports(source)
+  else {
+    await init
+    const source = transformResult.code
+    const s = new MagicString(source)
+    const [imports] = parseImports(source)
 
-  for (const imp of imports) {
-    let rawUrl = source.slice(imp.s, imp.e)
-    if (rawUrl === 'import.meta') continue
+    for (const imp of imports) {
+      let rawUrl = source.slice(imp.s, imp.e)
+      if (rawUrl === 'import.meta') continue
 
-    const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
-    if (hasQuotes) {
-      rawUrl = rawUrl.slice(1, -1)
-    }
-
-    const hmrUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    for (const importedMod of mod.clientImportedModules) {
-      if (importedMod.url !== hmrUrl) continue
-      if (importedMod.lastHMRTimestamp > 0) {
-        const replacedUrl = injectQuery(
-          removeTimestampQuery(rawUrl),
-          `t=${importedMod.lastHMRTimestamp}`,
-        )
-        const start = hasQuotes ? imp.s + 1 : imp.s
-        const end = hasQuotes ? imp.e - 1 : imp.e
-        s.overwrite(start, end, replacedUrl)
+      const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
+      if (hasQuotes) {
+        rawUrl = rawUrl.slice(1, -1)
       }
-      break
+
+      // hmrUrl must be derived the same was as importAnalysis
+      const hmrUrl = unwrapId(
+        stripBase(removeImportQuery(removeTimestampQuery(rawUrl)), base),
+      )
+      for (const importedMod of mod.clientImportedModules) {
+        if (importedMod.url !== hmrUrl) continue
+        if (importedMod.lastHMRTimestamp > 0) {
+          const replacedUrl = injectQuery(
+            removeTimestampQuery(rawUrl),
+            `t=${importedMod.lastHMRTimestamp}`,
+          )
+          const start = hasQuotes ? imp.s + 1 : imp.s
+          const end = hasQuotes ? imp.e - 1 : imp.e
+          s.overwrite(start, end, replacedUrl)
+        }
+        break
+      }
     }
+
+    // Update `transformResult` with new code. We don't have to update the sourcemap as
+    // the timestamps changes are doesn't affect the code lines (stable).
+    result = { ...transformResult, code: s.toString() }
   }
 
-  // Update `transformResult` with new code. We don't have to update the sourcemap as
-  // the timestamps changes are doesn't affect the code lines (stable).
-  mod.transformResult = { ...transformResult, code: s.toString() }
-  return true
+  // Only cache the result if the module wasn't invalidated while it was
+  // being processed, so it is re-processed next time if it is stale
+  if (timestamp > mod.lastInvalidationTimestamp) {
+    if (ssr) mod.ssrTransformResult = result
+    else mod.transformResult = result
+  }
+
+  return result
 }
