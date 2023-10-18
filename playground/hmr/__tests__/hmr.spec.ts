@@ -713,21 +713,25 @@ if (!isBuild) {
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
 
-    await page.goto(viteTestUrl + '/missing-import/index.html', {
-      waitUntil: 'load',
-    })
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-import/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(importCode, unImportCode))
       await loadPromise
-    }, 'missing test')
+    }, ['missing test', /connected/])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await loadPromise
-    }, /500/)
+    }, [/500/, /connected/])
   })
 
   test('should hmr when file is deleted and restored', async () => {
