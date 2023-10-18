@@ -661,7 +661,13 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
 }
 
 function isScannable(id: string): boolean {
-  return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
+  // From Vite 5, all optimizeDeps.extensions are scannable. We hardcode .marko for 4.5.0 to avoid
+  // potential regressions. See https://github.com/vitejs/vite/pull/14543
+  return (
+    JS_TYPES_RE.test(id) ||
+    htmlTypesRE.test(id) ||
+    path.extname(id) === '.marko'
+  )
 }
 
 // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
