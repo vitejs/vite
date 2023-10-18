@@ -10,29 +10,12 @@ export default defineConfig({
   },
   worker: {
     format: 'iife',
-    plugins: [
-      workerPluginTestPlugin(),
-      {
-        name: 'config-test',
-        config() {
-          return {
-            worker: {
-              rollupOptions: {
-                output: {
-                  entryFileNames: 'assets/worker_entry-[name].js',
-                },
-              },
-            },
-          }
-        },
-      },
-    ],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
         assetFileNames: 'assets/worker_asset-[name].[ext]',
         chunkFileNames: 'assets/worker_chunk-[name].js',
-        // should fix by config-test plugin
-        entryFileNames: 'assets/worker_-[name].js',
+        entryFileNames: 'assets/worker_entry-[name].js',
       },
     },
   },

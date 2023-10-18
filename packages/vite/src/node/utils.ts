@@ -1012,6 +1012,16 @@ export function removeComments(raw: string): string {
   return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
 }
 
+function backwardCompatibleWorkerPlugins(plugins: any) {
+  if (Array.isArray(plugins)) {
+    return plugins
+  }
+  if (typeof plugins === 'function') {
+    return plugins()
+  }
+  return []
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
@@ -1044,6 +1054,12 @@ function mergeConfigRecursively(
       (existing === true || value === true)
     ) {
       merged[key] = true
+      continue
+    } else if (key === 'plugins' && rootPath === 'worker') {
+      merged[key] = () => [
+        ...backwardCompatibleWorkerPlugins(existing),
+        ...backwardCompatibleWorkerPlugins(value),
+      ]
       continue
     }
 
