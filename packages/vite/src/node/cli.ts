@@ -139,7 +139,6 @@ cli
   .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
@@ -334,7 +333,6 @@ cli
   .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .action(
@@ -343,7 +341,6 @@ cli
       options: {
         host?: string | boolean
         port?: number
-        https?: boolean
         open?: boolean | string
         strictPort?: boolean
         outDir?: string
@@ -365,7 +362,6 @@ cli
             port: options.port,
             strictPort: options.strictPort,
             host: options.host,
-            https: options.https,
             open: options.open,
           },
         })

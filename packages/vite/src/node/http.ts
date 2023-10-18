@@ -7,7 +7,6 @@ import type {
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
-import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 
@@ -31,7 +30,7 @@ export interface CommonServerOptions {
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
-  https?: boolean | HttpsServerOptions
+  https?: HttpsServerOptions
   /**
    * Open browser window on startup
    */
@@ -121,10 +120,9 @@ export async function resolveHttpServer(
 }
 
 export async function resolveHttpsConfig(
-  https: boolean | HttpsServerOptions | undefined,
+  https: HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
-  if (!isObject(https)) return {}
 
   const [ca, cert, key, pfx] = await Promise.all([
     readFileIfExists(https.ca),
