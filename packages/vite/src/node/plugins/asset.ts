@@ -20,6 +20,7 @@ import type { ResolvedConfig } from '../config'
 import {
   cleanUrl,
   getHash,
+  getIdMatcher,
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
@@ -257,6 +258,14 @@ export function checkPublicFile(
   } else {
     return
   }
+}
+
+export function checkUserExternal(
+  url: string,
+  { build }: ResolvedConfig,
+): boolean {
+  const isUserExternal = getIdMatcher(build?.rollupOptions?.external)
+  return isUserExternal(url, undefined, false)
 }
 
 export async function fileToUrl(

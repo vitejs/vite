@@ -29,6 +29,7 @@ import { resolveEnvPrefix } from '../env'
 import {
   assetUrlRE,
   checkPublicFile,
+  checkUserExternal,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
@@ -296,7 +297,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     url[0] === '#' ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
-    checkPublicFile(url, config)
+    checkPublicFile(url, config) ||
+    checkUserExternal(url, config)
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
