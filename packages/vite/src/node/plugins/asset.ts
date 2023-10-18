@@ -384,14 +384,7 @@ async function fileToBuiltUrl(
     }
 
     if (file.endsWith('.svg')) {
-      const stringContent = content.toString()
-      // If the SVG contains some text, any transformation is unsafe, and given that double quotes would then
-      // need to be escaped, the gain to use a data URI would be ridiculous if not negative
-      if (stringContent.includes('<text')) {
-        url = `data:image/svg+xml;base64,${content.toString('base64')}`
-      } else {
-        url = svgToDataURL(stringContent)
-      }
+      url = svgToDataURL(content)
     } else {
       const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
       // base64 inlined as a string
@@ -442,16 +435,26 @@ export async function urlToBuiltUrl(
 }
 
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
-function svgToDataURL(svg: string): string {
-  return (
-    'data:image/svg+xml,' +
-    svg
-      .trim()
-      .replaceAll(/\s+/g, ' ')
-      .replaceAll('"', "'")
-      .replaceAll('%', '%25')
-      .replaceAll('#', '%23')
-      .replaceAll('<', '%3c')
-      .replaceAll('>', '%3e')
-  )
+function svgToDataURL(content: Buffer): string {
+  const stringContent = content.toString()
+  // If the SVG contains some text, any transformation is unsafe, and given that double quotes would then
+  // need to be escaped, the gain to use a data URI would be ridiculous if not negative
+  if (stringContent.includes('<text')) {
+    return `data:image/svg+xml;base64,${content.toString('base64')}`
+  } else {
+    return (
+      'data:image/svg+xml,' +
+      stringContent
+        .trim()
+        .replaceAll('"', "'")
+        .replaceAll('%', '%25')
+        .replaceAll('#', '%23')
+        .replaceAll('<', '%3c')
+        .replaceAll('>', '%3e')
+        // Spaces are not valid in srcset it has some use cases
+        // it can make the uncompressed URI slightly higher than base64, but will compress way better
+        // https://github.com/vitejs/vite/pull/14643#issuecomment-1766288673
+        .replaceAll(/\s+/g, '%20')
+    )
+  }
 }
