@@ -232,7 +232,6 @@ describe('preview config', () => {
     strictPort: true,
     host: true,
     open: true,
-    https: true,
     headers: {
       'Cache-Control': 'no-store',
     },
@@ -272,7 +271,6 @@ describe('preview config', () => {
     strictPort: false,
     open: false,
     host: false,
-    https: false,
     proxy: { '/bar': 'http://localhost:3010' },
     cors: true,
   })
