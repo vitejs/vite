@@ -53,7 +53,7 @@ This change prevents Vite from swallowing and controlling OS-specific shortcuts,
 
 ### Remove `--https` flag and `https: true`
 
-`--https` flag sets `https: true`. This config was meant to be used together with the Automatic https certification generation feature which [was dropped in Vite 3](https://v3.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). This config no longer makes sense as it will make Vite start a HTTPS server without a certificate.
+`--https` flag sets `https: true`. This config was meant to be used together with the automatic https certification generation feature which [was dropped in Vite 3](https://v3.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). This config no longer makes sense as it will make Vite start a HTTPS server without a certificate.
 Both [`@vitejs/plugin-basic-ssl`](https://github.com/vitejs/vite-plugin-basic-ssl) and [`vite-plugin-mkcert`](https://github.com/liuweiGL/vite-plugin-mkcert) sets `https` setting regardless of the `https` value, so you can just remove `--https` and `https: true`.
 
 ### Remove `resolvePackageEntry` and `resolvePackageData` APIs
