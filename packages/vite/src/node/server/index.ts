@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type * as net from 'node:net'
+import { get as httpGet } from 'node:http'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import connect from 'connect'
@@ -77,12 +78,27 @@ import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { warmupFiles } from './warmup'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
    * Configure HMR-specific options (port, host, path & protocol)
    */
   hmr?: HmrOptions | boolean
+  /**
+   * Warm-up files to transform and cache the results in advance. This improves the
+   * initial page load during server starts and prevents transform waterfalls.
+   */
+  warmup?: {
+    /**
+     * The files to be transformed and used on the client-side. Supports glob patterns.
+     */
+    clientFiles?: string[]
+    /**
+     * The files to be transformed and used in SSR. Supports glob patterns.
+     */
+    ssrFiles?: string[]
+  }
   /**
    * chokidar watch options or null to disable FS watching
    * https://github.com/paulmillr/chokidar#api
@@ -432,6 +448,34 @@ export async function _createServer(
             ? new URL(options.open, url).href
             : url
 
+        // We know the url that the browser would be opened to, so we can
+        // start the request while we are awaiting the browser. This will
+        // start the crawling of static imports ~500ms before.
+        // preTransformRequests needs to be enabled for this optimization.
+        if (server.config.server.preTransformRequests) {
+          setTimeout(() => {
+            httpGet(
+              path,
+              {
+                headers: {
+                  // Allow the history middleware to redirect to /index.html
+                  Accept: 'text/html',
+                },
+              },
+              (res) => {
+                res.on('end', () => {
+                  // Ignore response, scripts discovered while processing the entry
+                  // will be preprocessed (server.config.server.preTransformRequests)
+                })
+              },
+            )
+              .on('error', () => {
+                // Ignore errors
+              })
+              .end()
+          }, 0)
+        }
+
         _openBrowser(path, true, server.config.logger)
       } else {
         server.config.logger.warn('No URL available to open in browser')
@@ -676,6 +720,7 @@ export async function _createServer(
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
       }
+      warmupFiles(server)
       initingServer = undefined
       serverInited = true
     })()

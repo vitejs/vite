@@ -800,13 +800,26 @@ if (import.meta.hot) {
     await untilUpdated(() => el.textContent(), '2')
   })
 
-  test('issue-3033', async () => {
-    await page.goto(viteTestUrl + '/issue-3033/index.html')
-    const el = await page.$('.issue-3033')
+  test('hmr works for self-accepted module within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
+    const el = await page.$('.self-accept-within-circular')
     expect(await el.textContent()).toBe('c')
-    editFile('issue-3033/c.js', (code) =>
+    editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
     await untilUpdated(() => el.textContent(), 'cc')
+  })
+
+  test('assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
   })
 }
