@@ -179,9 +179,7 @@ describe('svg fragments', () => {
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
-    expect(await img.getAttribute('src')).toMatch(
-      isBuild ? /svg#icon-heart-view$/ : /svg\?t=\d+#icon-heart-view$/,
-    )
+    expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
   })
 })
 
