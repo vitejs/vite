@@ -425,15 +425,16 @@ async function handleModuleSoftInvalidation(
         rawUrl = rawUrl.slice(1, -1)
       }
 
-      // hmrUrl must be derived the same was as importAnalysis
+      const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
+      // hmrUrl must be derived the same way as importAnalysis
       const hmrUrl = unwrapId(
-        stripBase(removeImportQuery(removeTimestampQuery(rawUrl)), base),
+        stripBase(removeImportQuery(urlWithoutTimestamp), base),
       )
       for (const importedMod of mod.clientImportedModules) {
         if (importedMod.url !== hmrUrl) continue
         if (importedMod.lastHMRTimestamp > 0) {
           const replacedUrl = injectQuery(
-            removeTimestampQuery(rawUrl),
+            urlWithoutTimestamp,
             `t=${importedMod.lastHMRTimestamp}`,
           )
           const start = hasQuotes ? imp.s + 1 : imp.s
@@ -444,8 +445,8 @@ async function handleModuleSoftInvalidation(
       }
     }
 
-    // Update `transformResult` with new code. We don't have to update the sourcemap as
-    // the timestamps changes are doesn't affect the code lines (stable).
+    // Update `transformResult` with new code. We don't have to update the sourcemap
+    // as the timestamp changes doesn't affect the code lines (stable).
     result = { ...transformResult, code: s.toString() }
   }
 
