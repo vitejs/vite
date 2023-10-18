@@ -631,7 +631,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => page.goto(`${viteTestUrl}/${testDir}/`),
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a0b0c0default0')
               expect(logs).toContain('some >>>>>> a0, b0, c0')
@@ -643,7 +643,7 @@ if (!isBuild) {
               editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
               await page.waitForEvent('load')
             },
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a1b1c1default0')
               expect(logs).toContain('some >>>>>> a1, b1, c1')
