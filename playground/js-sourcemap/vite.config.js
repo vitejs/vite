@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
+import transformFooWithInlineSourceMap from './foo-with-sourcemap-plugin'
 
 export default defineConfig({
+  plugins: [transformFooWithInlineSourceMap()],
   build: {
     sourcemap: true,
     rollupOptions: {

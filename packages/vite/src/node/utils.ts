@@ -297,7 +297,8 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba)(?:$|\?)/
+const knownJsSrcRE =
+  /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -704,23 +705,19 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
-function reduceSrcset(ret: { url: string; descriptor: string }[]) {
-  return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor ??= ''
-    return (prev +=
-      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
-  }, '')
+function joinSrcset(ret: ImageCandidate[]) {
+  return ret.map(({ url, descriptor }) => `${url} ${descriptor}`).join(', ')
 }
 
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
   return splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const [url] = imageSetUrlRE.exec(src) || ['']
+      const url = imageSetUrlRE.exec(src)?.[0] ?? ''
 
       return {
         url,
-        descriptor: src?.slice(url.length).trim(),
+        descriptor: src.slice(url.length).trim(),
       }
     })
     .filter(({ url }) => !!url)
@@ -735,14 +732,14 @@ export function processSrcSet(
       url: await replacer({ url, descriptor }),
       descriptor,
     })),
-  ).then((ret) => reduceSrcset(ret))
+  ).then(joinSrcset)
 }
 
 export function processSrcSetSync(
   srcs: string,
   replacer: (arg: ImageCandidate) => string,
 ): string {
-  return reduceSrcset(
+  return joinSrcset(
     splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
       url: replacer({ url, descriptor }),
       descriptor,
@@ -994,13 +991,6 @@ export function arraify<T>(target: T | T[]): T[] {
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
-
-/**
- * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
- *
- * @param file File path to import.
- */
-export const dynamicImport = new Function('file', 'return import(file)')
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)

@@ -9,13 +9,13 @@ import {
 } from '~utils'
 
 const urlAssetMatch = isBuild
-  ? /http:\/\/localhost:\d+\/other-assets\/asset-\w{8}\.png/
+  ? /http:\/\/localhost:\d+\/other-assets\/asset-[-\w]{8}\.png/
   : '/nested/asset.png'
 
 const iconMatch = '/icon.png'
 
 const absoluteIconMatch = isBuild
-  ? /http:\/\/localhost:\d+\/.*\/icon-\w{8}\.png/
+  ? /http:\/\/localhost:\d+\/.*\/icon-[-\w]{8}\.png/
   : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild
@@ -150,7 +150,7 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /other-assets\/asset-\w{8}\.png \dx/
+          ? /other-assets\/asset-[-\w]{8}\.png \dx/
           : /\.\/nested\/asset\.png \dx/,
       )
     })
@@ -173,7 +173,9 @@ describe('svg fragments', () => {
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
+    expect(await img.getAttribute('src')).toMatch(
+      isBuild ? /svg#icon-heart-view$/ : /svg\?t=\d+#icon-heart-view$/,
+    )
   })
 })
 
@@ -183,7 +185,9 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /http:\/\/localhost:\d+\/other-assets\/foo-\w{8}\.js/ : '/foo.js',
+    isBuild
+      ? /http:\/\/localhost:\d+\/other-assets\/foo-[-\w]{8}\.js/
+      : '/foo.js',
   )
 })
 
@@ -191,7 +195,7 @@ test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
     isBuild
-      ? /http:\/\/localhost:\d+\/other-assets\/icons-\w{8}\.css/
+      ? /http:\/\/localhost:\d+\/other-assets\/icons-[-\w]{8}\.css/
       : '/css/icons.css',
   )
 })
