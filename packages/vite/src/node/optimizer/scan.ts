@@ -661,7 +661,7 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
 }
 
 function isScannable(id: string): boolean {
-  // From Vite 5, all optimizeDeps.extensions are scannable. We harcode .marko for 4.10.0 to avoid
+  // From Vite 5, all optimizeDeps.extensions are scannable. We hardcode .marko for 4.5.0 to avoid
   // potential regressions. See https://github.com/vitejs/vite/pull/14543
   return (
     JS_TYPES_RE.test(id) ||
