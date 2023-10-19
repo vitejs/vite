@@ -24,7 +24,7 @@ export default (sourcemap) => {
     },
     worker: {
       format: 'iife',
-      plugins: [workerPluginTestPlugin()],
+      plugins: () => [workerPluginTestPlugin()],
       rollupOptions: {
         output: {
           assetFileNames: 'assets/[name]-worker_asset[hash].[ext]',
