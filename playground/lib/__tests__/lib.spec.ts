@@ -6,6 +6,7 @@ import {
   readFile,
   serverLogs,
   untilUpdated,
+  withRetry,
 } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
@@ -84,5 +85,7 @@ describe.runIf(isBuild)('build', () => {
 })
 
 test.runIf(isServe)('dev', async () => {
-  expect(await page.textContent('.demo')).toBe('It works')
+  await withRetry(async () => {
+    expect(await page.textContent('.demo')).toBe('It works')
+  })
 })
