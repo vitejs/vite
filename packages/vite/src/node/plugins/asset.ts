@@ -20,12 +20,14 @@ import type { ResolvedConfig } from '../config'
 import {
   cleanUrl,
   getHash,
+  injectQuery,
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
   withTrailingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
+import type { ModuleGraph } from '../server/moduleGraph'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -144,12 +146,18 @@ const viteBuildPublicIdPrefix = '\0vite:asset:public'
 export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
 
+  let moduleGraph: ModuleGraph | undefined
+
   return {
     name: 'vite:asset',
 
     buildStart() {
       assetCache.set(config, new Map())
       generatedAssets.set(config, new Map())
+    },
+
+    configureServer(server) {
+      moduleGraph = server.moduleGraph
     },
 
     resolveId(id) {
@@ -192,10 +200,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       id = id.replace(urlRE, '$1').replace(unnededFinalQueryCharRE, '')
-      const url = await fileToUrl(id, config, this)
-      return `export default ${JSON.stringify(
-        config.command === 'serve' ? `${url}?t=${Date.now()}` : url,
-      )}`
+      let url = await fileToUrl(id, config, this)
+
+      // Inherit HMR timestamp if this asset was invalidated
+      if (moduleGraph) {
+        const mod = moduleGraph.getModuleById(id)
+        if (mod && mod.lastHMRTimestamp > 0) {
+          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+        }
+      }
+
+      return `export default ${JSON.stringify(url)}`
     },
 
     renderChunk(code, chunk, opts) {
