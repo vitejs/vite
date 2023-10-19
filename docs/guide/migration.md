@@ -34,6 +34,32 @@ See the [troubleshooting guide](/guide/troubleshooting.html#vite-cjs-node-api-de
 
 ## General Changes
 
+### SSR externalized modules value now matches production
+
+In Vite 4, SSR externalized modules are wrapped with `.default` and `.__esModule` handling for better interoperability, but it doesn't match the production behaviour when loaded by the runtime environment (e.g. Node.js), causing hard-to-catch inconsistencies. By default, all direct project dependencies are SSR externalized.
+
+Vite 5 now removes the `.default` and `.__esModule` handling to match the production behaviour. In practice, this shouldn't affect properly-packaged dependencies, but if you encounter new issues loading modules, you can try these refactors:
+
+```js
+// Before:
+import { foo } from 'bar'
+
+// After:
+import _bar from 'bar'
+const { foo } = _bar
+```
+
+```js
+// Before:
+import foo from 'bar'
+
+// After:
+import * as _foo from 'bar'
+const foo = _foo.default
+```
+
+Note that these changes matches the Node.js behaviour, so you can also run the imports in Node.js to test it out. If you prefer to stick with the previous behaviour, you can set `legacy.proxySsrExternalModules` to `true`.
+
 ### `worker.plugins` is now a function
 
 In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]`). From Vite 5, it needs to be configured as a function that returns an array of plugins (`() => (Plugin | Plugin[])[]`). This change is required so parallel worker builds run more consistently and predictably.

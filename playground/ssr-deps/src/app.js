@@ -21,10 +21,8 @@ import '@vitejs/test-css-lib'
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
 import '@vitejs/test-non-optimized-with-nested-external'
 
-// These two are optimized and get the message from nested-external, if the dependency is
-// not properly externalized and ends up bundled, the message will be undefined
-import optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
-import optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
+import * as optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
+import * as optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
 
 import { setMessage } from '@vitejs/test-external-entry/entry'
 setMessage('Hello World!')
@@ -42,7 +40,8 @@ export async function render(url, rootDir) {
 
   html += `\n<p class="primitive-export-message">message from primitive export: ${primitiveExport}</p>`
 
-  const tsDefaultExportMessage = tsDefaultExport()
+  // `.default()` as incorrectly packaged
+  const tsDefaultExportMessage = tsDefaultExport.default()
   html += `\n<p class="ts-default-export-message">message from ts-default-export: ${tsDefaultExportMessage}</p>`
 
   const tsNamedExportMessage = tsNamedExport()

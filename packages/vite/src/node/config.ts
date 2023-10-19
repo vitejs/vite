@@ -32,9 +32,9 @@ import {
   createFilter,
   isBuiltin,
   isExternalUrl,
+  isFilePathESM,
   isNodeBuiltin,
   isObject,
-  lookupFile,
   mergeAlias,
   mergeConfig,
   normalizeAlias,
@@ -314,8 +314,16 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * No longer needed for now, but kept for backwards compatibility.
+   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
+   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
+   * However, this does not correctly reflect how it works in the Node.js runtime, causing
+   * inconsistencies between dev and prod.
+   *
+   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
+   * the old behaviour, you can enable this option. If so, please leave your feedback at
+   * https://github.com/vitejs/vite/discussions/14697.
    */
+  proxySsrExternalModules?: boolean
 }
 
 export interface ResolvedWorkerOptions {
@@ -978,19 +986,7 @@ export async function loadConfigFromFile(
     return null
   }
 
-  let isESM = false
-  if (/\.m[jt]s$/.test(resolvedPath)) {
-    isESM = true
-  } else if (/\.c[jt]s$/.test(resolvedPath)) {
-    isESM = false
-  } else {
-    // check package.json for type: "module" and set `isESM` to true
-    try {
-      const pkg = lookupFile(configRoot, ['package.json'])
-      isESM =
-        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
-    } catch (e) {}
-  }
+  const isESM = isFilePathESM(resolvedPath)
 
   try {
     const bundled = await bundleConfigFile(resolvedPath, isESM)
@@ -1076,18 +1072,6 @@ async function bundleConfigFile(
               false,
             )?.id
           }
-          const isESMFile = (id: string): boolean => {
-            if (id.endsWith('.mjs')) return true
-            if (id.endsWith('.cjs')) return false
-
-            const nearestPackageJson = findNearestPackageData(
-              path.dirname(id),
-              packageCache,
-            )
-            return (
-              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
-            )
-          }
 
           // externalize bare imports
           build.onResolve(
@@ -1135,7 +1119,11 @@ async function bundleConfigFile(
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
-              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+              if (
+                idFsPath &&
+                !isImport &&
+                isFilePathESM(idFsPath, packageCache)
+              ) {
                 throw new Error(
                   `${JSON.stringify(
                     id,

@@ -26,6 +26,7 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isFilePathESM,
   isInNodeModules,
   isNonDriveRelativeAbsolutePath,
   isObject,
@@ -822,8 +823,6 @@ export function tryNodeResolve(
     })
   }
 
-  const ext = path.extname(resolved)
-
   if (
     !options.ssrOptimizeCheck &&
     (!isInNodeModules(resolved) || // linked
@@ -859,12 +858,7 @@ export function tryNodeResolve(
     (!options.ssrOptimizeCheck && !isBuild && ssr) ||
     // Only optimize non-external CJS deps during SSR by default
     (ssr &&
-      !(
-        ext === '.cjs' ||
-        (ext === '.js' &&
-          findNearestPackageData(path.dirname(resolved), options.packageCache)
-            ?.data.type !== 'module')
-      ) &&
+      isFilePathESM(resolved, options.packageCache) &&
       !(include?.includes(pkgId) || include?.includes(id)))
 
   if (options.ssrOptimizeCheck) {
