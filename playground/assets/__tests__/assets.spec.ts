@@ -294,7 +294,10 @@ describe('svg fragments', () => {
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
     expect(await img.getAttribute('src')).toMatch(
-      isBuild ? /svg#icon-heart-view$/ : /svg\?t=\d+#icon-heart-view$/,
+      isBuild
+        ? // Assert trimmed (data URI starts with < and ends with >)
+          /^data:image\/svg\+xml,%3c.*%3e#icon-heart-view$/
+        : /svg#icon-heart-view$/,
     )
   })
 })
@@ -323,11 +326,11 @@ test('?url import', async () => {
 test('?url import on css', async () => {
   const src = readFile('css/icons.css')
   const txt = await page.textContent('.url-css')
-  isBuild
-    ? expect(txt).toEqual(
-        `data:text/css;base64,${Buffer.from(src).toString('base64')}`,
-      )
-    : expect(txt).toMatch(/^\/foo\/bar\/css\/icons.css\?t=\d+$/)
+  expect(txt).toEqual(
+    isBuild
+      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      : '/foo/bar/css/icons.css',
+  )
 })
 
 describe('unicode url', () => {

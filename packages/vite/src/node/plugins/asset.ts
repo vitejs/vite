@@ -20,12 +20,14 @@ import type { ResolvedConfig } from '../config'
 import {
   cleanUrl,
   getHash,
+  injectQuery,
   joinUrlSegments,
   normalizePath,
   removeLeadingSlash,
   withTrailingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
+import type { ModuleGraph } from '../server/moduleGraph'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -144,12 +146,18 @@ const viteBuildPublicIdPrefix = '\0vite:asset:public'
 export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
 
+  let moduleGraph: ModuleGraph | undefined
+
   return {
     name: 'vite:asset',
 
     buildStart() {
       assetCache.set(config, new Map())
       generatedAssets.set(config, new Map())
+    },
+
+    configureServer(server) {
+      moduleGraph = server.moduleGraph
     },
 
     resolveId(id) {
@@ -192,10 +200,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       id = id.replace(urlRE, '$1').replace(unnededFinalQueryCharRE, '')
-      const url = await fileToUrl(id, config, this)
-      return `export default ${JSON.stringify(
-        config.command === 'serve' ? `${url}?t=${Date.now()}` : url,
-      )}`
+      let url = await fileToUrl(id, config, this)
+
+      // Inherit HMR timestamp if this asset was invalidated
+      if (moduleGraph) {
+        const mod = moduleGraph.getModuleById(id)
+        if (mod && mod.lastHMRTimestamp > 0) {
+          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+        }
+      }
+
+      return `export default ${JSON.stringify(url)}`
     },
 
     renderChunk(code, chunk, opts) {
@@ -356,7 +371,8 @@ async function fileToBuiltUrl(
   let url: string
   if (
     config.build.lib ||
-    (!file.endsWith('.svg') &&
+    // Don't inline SVG with fragments, as they are meant to be reused
+    (!(file.endsWith('.svg') && id.includes('#')) &&
       !file.endsWith('.html') &&
       content.length < Number(config.build.assetsInlineLimit) &&
       !isGitLfsPlaceholder(content))
@@ -367,9 +383,13 @@ async function fileToBuiltUrl(
       )
     }
 
-    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-    // base64 inlined as a string
-    url = `data:${mimeType};base64,${content.toString('base64')}`
+    if (file.endsWith('.svg')) {
+      url = svgToDataURL(content)
+    } else {
+      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+      // base64 inlined as a string
+      url = `data:${mimeType};base64,${content.toString('base64')}`
+    }
   } else {
     // emit as asset
     const { search, hash } = parseUrl(id)
@@ -412,4 +432,29 @@ export async function urlToBuiltUrl(
     // skip public check since we just did it above
     true,
   )
+}
+
+// Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
+function svgToDataURL(content: Buffer): string {
+  const stringContent = content.toString()
+  // If the SVG contains some text, any transformation is unsafe, and given that double quotes would then
+  // need to be escaped, the gain to use a data URI would be ridiculous if not negative
+  if (stringContent.includes('<text')) {
+    return `data:image/svg+xml;base64,${content.toString('base64')}`
+  } else {
+    return (
+      'data:image/svg+xml,' +
+      stringContent
+        .trim()
+        .replaceAll('"', "'")
+        .replaceAll('%', '%25')
+        .replaceAll('#', '%23')
+        .replaceAll('<', '%3c')
+        .replaceAll('>', '%3e')
+        // Spaces are not valid in srcset it has some use cases
+        // it can make the uncompressed URI slightly higher than base64, but will compress way better
+        // https://github.com/vitejs/vite/pull/14643#issuecomment-1766288673
+        .replaceAll(/\s+/g, '%20')
+    )
+  }
 }

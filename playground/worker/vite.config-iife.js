@@ -38,6 +38,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/iife',
+    assetsInlineLimit: 100, // keep SVG as assets URL
     manifest: true,
     rollupOptions: {
       output: {

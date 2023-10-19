@@ -21,6 +21,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/relative-base-iife',
+    assetsInlineLimit: 100, // keep SVG as assets URL
     rollupOptions: {
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
