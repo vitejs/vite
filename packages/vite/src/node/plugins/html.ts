@@ -687,6 +687,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'link',
               attrs: {
                 rel: 'stylesheet',
+                crossorigin: true,
                 href: toOutputPath(file),
               },
             })
@@ -794,6 +795,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
+                  crossorigin: true,
                   href: toOutputAssetFilePath(cssChunk.fileName),
                 },
               },
@@ -826,7 +828,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return toOutputAssetFilePath(this.getFileName(fileHash)) + postfix
+          const file = this.getFileName(fileHash)
+          if (chunk) {
+            chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+          }
+          return toOutputAssetFilePath(file) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
