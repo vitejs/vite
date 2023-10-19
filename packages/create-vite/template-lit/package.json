@@ -12,6 +12,6 @@
     "lit": "^3.0.0"
   },
   "devDependencies": {
-    "vite": "^5.0.0-beta.7"
+    "vite": "^5.0.0-beta.11"
   }
 }
