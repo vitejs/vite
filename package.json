@@ -119,7 +119,8 @@
     "patchedDependencies": {
       "chokidar@3.5.3": "patches/chokidar@3.5.3.patch",
       "sirv@2.0.3": "patches/sirv@2.0.3.patch",
-      "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch"
+      "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch",
+      "postcss-load-config@4.0.1": "patches/postcss-load-config@4.0.1.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {

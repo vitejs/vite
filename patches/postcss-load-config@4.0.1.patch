@@ -1,0 +1,38 @@
+diff --git a/src/index.js b/src/index.js
+index a7d16703a96a1229381beef905287192db332332..53a29ba20c7826caefc18bc0e786493a6ffcf978 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -85,10 +85,12 @@ const addTypeScriptLoader = (options = {}, loader) => {
+       `.${moduleName}rc.yaml`,
+       `.${moduleName}rc.yml`,
+       `.${moduleName}rc.ts`,
++      `.${moduleName}rc.cts`,
+       `.${moduleName}rc.js`,
+       `.${moduleName}rc.cjs`,
+       `.${moduleName}rc.mjs`,
+       `${moduleName}.config.ts`,
++      `${moduleName}.config.cts`,
+       `${moduleName}.config.js`,
+       `${moduleName}.config.cjs`,
+       `${moduleName}.config.mjs`
+@@ -100,7 +102,8 @@ const addTypeScriptLoader = (options = {}, loader) => {
+       '.js': importDefault,
+       '.cjs': importDefault,
+       '.mjs': importDefault,
+-      '.ts': loader
++      '.ts': loader,
++      '.cts': loader
+     }
+   }
+ }
+@@ -112,7 +115,9 @@ const withTypeScriptLoader = (rcFunc) => {
+ 
+       try {
+         // Register TypeScript compiler instance
+-        registerer = require('ts-node').register()
++        registerer = require('ts-node').register({
++          moduleTypes: { '**/*.cts': 'cjs' }
++        })
+ 
+         return require(configFile)
+       } catch (err) {
