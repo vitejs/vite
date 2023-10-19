@@ -16,6 +16,9 @@ patchedDependencies:
   dotenv-expand@10.0.0:
     hash: weuqf2vlv5b5g6cikeo4slurbm
     path: patches/dotenv-expand@10.0.0.patch
+  postcss-load-config@4.0.1:
+    hash: 5knejszxzvonoprcgageucoem4
+    path: patches/postcss-load-config@4.0.1.patch
   sirv@2.0.3:
     hash: z45f224eewh2pgpijxcc3aboqm
     path: patches/sirv@2.0.3.patch
@@ -368,7 +371,7 @@ importers:
         version: 15.1.0(postcss@8.4.31)
       postcss-load-config:
         specifier: ^4.0.1
-        version: 4.0.1(postcss@8.4.31)(ts-node@10.9.1)
+        version: 4.0.1(patch_hash=5knejszxzvonoprcgageucoem4)(postcss@8.4.31)(ts-node@10.9.1)
       postcss-modules:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.31)
@@ -8142,7 +8145,7 @@ packages:
       camelcase-css: 2.0.1
       postcss: 8.4.31
 
-  /postcss-load-config@4.0.1(postcss@8.4.31)(ts-node@10.9.1):
+  /postcss-load-config@4.0.1(patch_hash=5knejszxzvonoprcgageucoem4)(postcss@8.4.31)(ts-node@10.9.1):
     resolution: {integrity: sha512-vEJIc8RdiBRu3oRAI0ymerOn+7rPuMvRXslTvZUKZonDHFIczxztIyJ1urxM1x9JXEikvpWWTUUqal5j/8QgvA==}
     engines: {node: '>= 14'}
     peerDependencies:
@@ -8158,6 +8161,7 @@ packages:
       postcss: 8.4.31
       ts-node: 10.9.1(@types/node@18.18.5)(typescript@5.2.2)
       yaml: 2.1.1
+    patched: true
 
   /postcss-modules-extract-imports@3.0.0(postcss@8.4.31):
     resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
@@ -9312,7 +9316,7 @@ packages:
       postcss: 8.4.31
       postcss-import: 15.1.0(postcss@8.4.31)
       postcss-js: 4.0.1(postcss@8.4.31)
-      postcss-load-config: 4.0.1(postcss@8.4.31)(ts-node@10.9.1)
+      postcss-load-config: 4.0.1(patch_hash=5knejszxzvonoprcgageucoem4)(postcss@8.4.31)(ts-node@10.9.1)
       postcss-nested: 6.0.1(postcss@8.4.31)
       postcss-selector-parser: 6.0.11
       resolve: 1.22.2
