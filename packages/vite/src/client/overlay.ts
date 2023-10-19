@@ -71,6 +71,16 @@ pre::-webkit-scrollbar {
   display: none;
 }
 
+pre.frame::-webkit-scrollbar {
+  display: block;
+  height: 5px;
+}
+
+pre.frame::-webkit-scrollbar-thumb {
+  background: #999;
+  border-radius: 5px;
+}
+
 .message {
   line-height: 1.3;
   font-weight: 600;
