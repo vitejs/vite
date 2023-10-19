@@ -67,7 +67,7 @@ test('export named', async () => {
   expect(
     await ssrTransformSimpleCode(`const a = 1, b = 2; export { a, b as c }`),
   ).toMatchInlineSnapshot(`
-    "const a = 1, b = 2;
+    "const a = 1, b = 2; 
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, configurable: true, get(){ return a }});
     Object.defineProperty(__vite_ssr_exports__, \\"c\\", { enumerable: true, configurable: true, get(){ return b }});"
   `)
@@ -133,8 +133,7 @@ test('export then import minified', async () => {
     ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\", {\\"namedImportSpecifiers\\":[\\"createApp\\"]});
-    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\", {\\"isExportAll\\":true});
-    __vite_ssr_exportAll__(__vite_ssr_import_1__);
+    __vite_ssr_exportAll__(__vite_ssr_import_0__);
     "
   `)
 })
@@ -944,7 +943,7 @@ test('import assertion attribute', async () => {
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo.json\\");
 
-
+      
       __vite_ssr_dynamic_import__('./bar.json', { with: { type: 'json' } });
       "
   `)
