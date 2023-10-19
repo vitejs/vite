@@ -319,7 +319,7 @@ export interface LegacyOptions {
    *
    * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
    * the old behaviour, you can enable this option. If so, please leave your feedback at
-   * **TODO GitHub discussion link**.
+   * https://github.com/vitejs/vite/discussions/14697.
    */
   proxySsrExternalModules?: boolean
 }
