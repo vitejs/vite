@@ -20,6 +20,25 @@ Here are a few things you can look out for when using additional Vite plugins:
 
    You can inspect the duration it takes to transform a file using `DEBUG="vite:plugin-transform" vite` or [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect). Note that as asynchronous operations tend to provide inaccurate timings, you should treat the numbers as a rough estimate, but it should still reveal the more expensive operations.
 
+## Reduce Resolve Operations
+
+Resolving import paths can be an expensive operation when hitting its worst case often. For example, Vite supports "guessing" import paths with the [`resolve.extensions`](/config/shared-options.md#resolve-extensions) option, which defaults to `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`.
+
+When you try to import `./Component.jsx` with `import './Component'`, Vite will run these steps to resolve it:
+
+1. Check if `./Component` exists, no.
+2. Check if `./Component.mjs` exists, no.
+3. Check if `./Component.js` exists, no.
+4. Check if `./Component.mts` exists, no.
+5. Check if `./Component.ts` exists, no.
+6. Check if `./Component.jsx` exists, yes!
+
+As shown, a total of 6 filesystem checks is required to resolve an import path. The more implicit imports you have, the more time it adds up to resolve the paths.
+
+Hence, it's usually better to be explicit with your import paths, e.g. `import './Component.jsx'`. You can also narrow down the list for `resolve.extensions` to reduce the general filesystem checks, but you have to make sure it works for files in `node_modules` too.
+
+If you're a plugin author, make sure to only call [`this.resolve`](https://rollupjs.org/plugin-development/#this-resolve) when needed to reduce the number of checks above.
+
 ## Avoid Barrel Files
 
 Barrel files are files that re-export the APIs of other files in the same directory. For example:
@@ -73,22 +92,3 @@ export default defineConfig({
 Note that you should only warm up files that are frequently used to not overload the Vite dev server on startup. Check the [`server.warmup`](/config/server-options.md#server-warmup) option for more information.
 
 Using [`--open` or `server.open`](/config/server-options.html#server-open) also provides a performance boost, as Vite will automatically warm up the entry point of your app or the provided URL to open.
-
-## Reduce Resolve Operations
-
-Resolving import paths can be an expensive operation when hitting its worst case often. For example, Vite supports "guessing" import paths with the [`resolve.extensions`](/config/shared-options.md#resolve-extensions) option, which defaults to `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`.
-
-When you try to import `./Component.jsx` with `import './Component'`, Vite will run these steps to resolve it:
-
-1. Check if `./Component` exists, no.
-2. Check if `./Component.mjs` exists, no.
-3. Check if `./Component.js` exists, no.
-4. Check if `./Component.mts` exists, no.
-5. Check if `./Component.ts` exists, no.
-6. Check if `./Component.jsx` exists, yes!
-
-As shown, a total of 6 filesystem checks is required to resolve an import path. The more implicit imports you have, the more time it adds up to resolve the paths.
-
-Hence, it's usually better to be explicit with your import paths, e.g. `import './Component.jsx'`. You can also narrow down the list for `resolve.extensions` to reduce the general filesystem checks, but you have to make sure it works for files in `node_modules` too.
-
-If you're a plugin author, make sure to only call [`this.resolve`](https://rollupjs.org/plugin-development/#this-resolve) when needed to reduce the number of checks above.
