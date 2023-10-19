@@ -32,7 +32,11 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
-import { resolvePackageData } from './packages'
+import {
+  type PackageCache,
+  findNearestPackageData,
+  resolvePackageData,
+} from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -424,6 +428,25 @@ export function lookupFile(
     if (parentDir === dir) return
 
     dir = parentDir
+  }
+}
+
+export function isFilePathESM(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
+  if (/\.m[jt]s$/.test(filePath)) {
+    return true
+  } else if (/\.c[jt]s$/.test(filePath)) {
+    return false
+  } else {
+    // check package.json for type: "module"
+    try {
+      const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+      return pkg?.data.type === 'module'
+    } catch {
+      return false
+    }
   }
 }
 
