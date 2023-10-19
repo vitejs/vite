@@ -90,17 +90,22 @@ async function ssrTransformScript(
   }
 
   let uid = 0
-  const deps = new Set<string>()
   const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
+  const depToImportIdMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
   const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
 
   function defineImport(source: string, metadata?: DefineImportMetadata) {
-    deps.add(source)
-    const importId = `__vite_ssr_import_${uid++}__`
+    let importId = depToImportIdMap.get(source)
+    if (importId) {
+      return importId
+    } else {
+      importId = `__vite_ssr_import_${uid++}__`
+      depToImportIdMap.set(source, importId)
+    }
 
     // Reduce metadata to undefined if it's all default values
     if (
@@ -321,7 +326,7 @@ async function ssrTransformScript(
   return {
     code: s.toString(),
     map,
-    deps: [...deps],
+    deps: [...depToImportIdMap.keys()],
     dynamicDeps: [...dynamicDeps],
   }
 }
