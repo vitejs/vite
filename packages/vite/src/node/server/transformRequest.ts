@@ -389,19 +389,18 @@ async function handleModuleSoftInvalidation(
   const transformResult = ssr
     ? mod.softInvalidatedSsrTransformResult
     : mod.softInvalidatedTransformResult
-  if (!transformResult) return
+
+  // Reset soft-invalidation state
+  if (ssr) mod.softInvalidatedSsrTransformResult = undefined
+  else mod.softInvalidatedTransformResult = undefined
+
+  // Skip if not soft-invalidated
+  if (!transformResult || transformResult === 'HARD_INVALIDATED') return
 
   if (ssr ? mod.ssrTransformResult : mod.transformResult) {
     throw new Error(
-      'Internal server error: Soft-invalidated module should not have existing tranform result',
+      `Internal server error: Soft-invalidated module "${mod.url}" should not have existing tranform result`,
     )
-  }
-
-  // Reset soft-invalidation state
-  if (ssr) {
-    mod.softInvalidatedSsrTransformResult = undefined
-  } else {
-    mod.softInvalidatedTransformResult = undefined
   }
 
   let result: TransformResult

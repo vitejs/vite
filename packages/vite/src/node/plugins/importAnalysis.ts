@@ -31,6 +31,7 @@ import {
   injectQuery,
   isBuiltin,
   isDataUrl,
+  isDefined,
   isExternalUrl,
   isInNodeModules,
   isJSRequest,
@@ -677,9 +678,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }),
       )
 
-      const _orderedImportedUrls = orderedImportedUrls.filter(
-        Boolean,
-      ) as string[]
+      const _orderedImportedUrls = orderedImportedUrls.filter(isDefined)
       const importedUrls = new Set(_orderedImportedUrls)
       // `importedUrls` will be mixed with watched files for the module graph,
       // `staticImportedUrls` will only contain the static top-level imports and

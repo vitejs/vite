@@ -43,14 +43,20 @@ export class ModuleNode {
    *
    * By default the value is `undefined` if it's not soft/hard-invalidated. If it gets
    * soft-invalidated, this will contain the previous `transformResult` value. If it gets
-   * hard-invalidated, this will be set to `null`.
+   * hard-invalidated, this will be set to `'HARD_INVALIDATED'`.
    * @internal
    */
-  softInvalidatedTransformResult?: TransformResult | null
+  softInvalidatedTransformResult:
+    | TransformResult
+    | 'HARD_INVALIDATED'
+    | undefined
   /**
    * @internal
    */
-  softInvalidatedSsrTransformResult?: TransformResult | null
+  softInvalidatedSsrTransformResult:
+    | TransformResult
+    | 'HARD_INVALIDATED'
+    | undefined
   /**
    * The module urls that are statically imported in the code. This information is separated
    * out from `importedModules` as only importers that statically import the module can be
@@ -153,25 +159,27 @@ export class ModuleGraph {
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     hmrBoundaries: ModuleNode[] = [],
-    softInvalidated = false,
+    softInvalidate = false,
   ): void {
     // Handle soft invalidation before the `seen` check, as consecutive soft/hard invalidations can
     // cause the final soft invalidation state to be different.
     // If soft invalidated, save the previous `transformResult` so that we can reuse and transform the
-    // import timestamps only in `transformRequest`. If hard-invalidated, set to `null`. Otherwise, the
-    // default non-validated state is `undefined.
-    if (softInvalidated) {
+    // import timestamps only in `transformRequest`. If hard-invalidated, set to `'HARD_INVALIDATED'`.
+    // Otherwise, the default non-validated state is `undefined`.
+    if (softInvalidate) {
       if (mod.softInvalidatedTransformResult === undefined) {
-        mod.softInvalidatedTransformResult = mod.transformResult
+        mod.softInvalidatedTransformResult =
+          mod.transformResult ?? 'HARD_INVALIDATED'
       }
       if (mod.softInvalidatedSsrTransformResult === undefined) {
-        mod.softInvalidatedSsrTransformResult = mod.ssrTransformResult
+        mod.softInvalidatedSsrTransformResult =
+          mod.ssrTransformResult ?? 'HARD_INVALIDATED'
       }
     }
     // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
     else {
-      mod.softInvalidatedTransformResult = null
-      mod.softInvalidatedSsrTransformResult = null
+      mod.softInvalidatedTransformResult = 'HARD_INVALIDATED'
+      mod.softInvalidatedSsrTransformResult = 'HARD_INVALIDATED'
     }
 
     // Skip updating the module if it was already invalidated before
@@ -210,7 +218,7 @@ export class ModuleGraph {
         // we can only soft invalidate if the current module was also soft-invalidated. A soft-invalidation
         // doesn't need to trigger a re-load and re-transform of the importer.
         const shouldSoftInvalidateImporter =
-          importer.staticImportedUrls?.has(mod.url) || softInvalidated
+          importer.staticImportedUrls?.has(mod.url) || softInvalidate
         this.invalidateModule(
           importer,
           seen,
