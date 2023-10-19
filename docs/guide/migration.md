@@ -34,6 +34,10 @@ See the [troubleshooting guide](/guide/troubleshooting.html#vite-cjs-node-api-de
 
 ## General Changes
 
+### `worker.plugins` is now a function
+
+In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]`). From Vite 5, it needs to be configured as a function that returns an array of plugins (`() => (Plugin | Plugin[])[]`). This change is required so parallel worker builds run more consistently and predictably.
+
 ### Allow path containing `.` to fallback to index.html
 
 In Vite 4, accessing a path containing `.` did not fallback to index.html even if `appType` is set to `'SPA'` (default).
