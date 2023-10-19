@@ -41,7 +41,7 @@ export class ModuleNode {
    * it is considered soft-invalidated. In this state, its `transformResult` should exist,
    * and the next `transformRequest` for this module will replace the timestamps.
    *
-   * By default the value is `undefined` it it's not soft/hard-invalidated. If it gets
+   * By default the value is `undefined` if it's not soft/hard-invalidated. If it gets
    * soft-invalidated, this will contain the previous `transformResult` value. If it gets
    * hard-invalidated, this will be set to `null`.
    * @internal
