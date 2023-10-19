@@ -174,6 +174,34 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+## server.warmup
+
+- **Type:** `{ clientFiles?: string[], ssrFiles?: string[] }`
+
+Warm up files to transform and cache the results in advance. This improves the initial page load during server starts and prevents transform waterfalls.
+
+The `clientFiles` and `ssrFiles` options accept an array of file paths or glob patterns relative to the `root`. Make sure to only add files that are hot code, as otherwise adding too many may slow down the transform process.
+
+To understand why warmup can be useful, here's an example. Given this module graph where the left file imports the right file:
+
+```
+main.js -> Component.vue -> big-file.js -> large-data.json
+```
+
+The imported ids can only be known after the file is transformed, so if `Component.vue` takes some time to transform, `big-file.js` has to wait for it's turn, and so on. This causes an internal waterfall.
+
+By warming up `big-file.js`, or any files that you know is hot path in your app, they'll be cached and can be served immediately.
+
+```js
+export default defineConfig({
+  server: {
+    warmup: {
+      clientFiles: ['./src/big-file.js', './src/components/*.vue'],
+    },
+  },
+})
+```
+
 ## server.watch
 
 - **Type:** `object | null`

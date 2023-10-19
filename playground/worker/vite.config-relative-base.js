@@ -10,7 +10,7 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: [workerPluginTestPlugin()],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
         assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
@@ -21,6 +21,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/relative-base',
+    assetsInlineLimit: 100, // keep SVG as assets URL
     rollupOptions: {
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
@@ -30,7 +31,7 @@ export default defineConfig({
     },
   },
   testConfig: {
-    baseRoute: '/relative-base/',
+    previewBase: '/relative-base/',
   },
   plugins: [
     workerPluginTestPlugin(),

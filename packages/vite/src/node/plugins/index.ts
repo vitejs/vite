@@ -21,7 +21,6 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
-import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
@@ -33,7 +32,6 @@ export async function resolvePlugins(
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
-  const isWatch = isBuild && !!config.build.watch
   const buildPlugins = isBuild
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
@@ -48,7 +46,6 @@ export async function resolvePlugins(
             : optimizedDepsPlugin(config),
         ]
       : []),
-    isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
     watchPackageDataPlugin(config.packageCache),
     preAliasPlugin(config),

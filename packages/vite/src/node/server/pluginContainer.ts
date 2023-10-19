@@ -33,6 +33,7 @@ import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { VERSION as rollupVersion } from 'rollup'
+import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -56,18 +57,14 @@ import type {
   SourceMap,
   TransformResult,
 } from 'rollup'
-import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-// @ts-expect-error untyped
-import { importAssertions } from 'acorn-import-assertions'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
 import {
-  arraify,
   cleanUrl,
   combineSourcemaps,
   createDebugger,
@@ -116,7 +113,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
-      assertions?: Record<string, string>
+      attributes?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
@@ -147,12 +144,8 @@ export interface PluginContainer {
 type PluginContext = Omit<
   RollupPluginContext,
   // not documented
-  | 'cache'
-  // deprecated
-  | 'moduleIds'
+  'cache'
 >
-
-export let parser = acorn.Parser.extend(importAssertions)
 
 export async function createPluginContainer(
   config: ResolvedConfig,
@@ -294,32 +287,27 @@ export async function createPluginContainer(
       this._activePlugin = initialPlugin || null
     }
 
-    parse(code: string, opts: any = {}) {
-      return parser.parse(code, {
-        sourceType: 'module',
-        ecmaVersion: 'latest',
-        locations: true,
-        ...opts,
-      })
+    parse(code: string, opts: any) {
+      return rollupParseAst(code, opts)
     }
 
     async resolve(
       id: string,
       importer?: string,
       options?: {
-        assertions?: Record<string, string>
+        attributes?: Record<string, string>
         custom?: CustomPluginOptions
         isEntry?: boolean
         skipSelf?: boolean
       },
     ) {
       let skip: Set<Plugin> | undefined
-      if (options?.skipSelf && this._activePlugin) {
+      if (options?.skipSelf !== false && this._activePlugin) {
         skip = new Set(this._resolveSkips)
         skip.add(this._activePlugin)
       }
       let out = await container.resolveId(id, importer, {
-        assertions: options?.assertions,
+        attributes: options?.attributes,
         custom: options?.custom,
         isEntry: !!options?.isEntry,
         skip,
@@ -628,17 +616,7 @@ export async function createPluginContainer(
             optionsHook.call(minimalContext, options),
           )) || options
       }
-      if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          importAssertions,
-          ...(arraify(options.acornInjectPlugins) as any),
-        )
-      }
-      return {
-        acorn,
-        acornInjectPlugins: [],
-        ...options,
-      }
+      return options
     })(),
 
     getModuleInfo,
@@ -678,7 +656,7 @@ export async function createPluginContainer(
             : plugin.resolveId
         const result = await handleHookPromise(
           handler.call(ctx as any, rawId, importer, {
-            assertions: options?.assertions ?? {},
+            attributes: options?.attributes ?? {},
             custom: options?.custom,
             isEntry: !!options?.isEntry,
             ssr,
