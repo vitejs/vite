@@ -21,6 +21,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/es',
+    assetsInlineLimit: 100, // keep SVG as assets URL
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name].[ext]',

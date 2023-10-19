@@ -16,6 +16,7 @@ export default defineConfig({
     cssCodeSplit: false,
     manifest: true,
     sourcemap: true,
+    assetsInlineLimit: 100, // keep SVG as assets URL
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'index.html'),

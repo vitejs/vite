@@ -293,7 +293,12 @@ describe('svg fragments', () => {
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
+    expect(await img.getAttribute('src')).toMatch(
+      isBuild
+        ? // Assert trimmed (data URI starts with < and ends with >)
+          /^data:image\/svg\+xml,%3c.*%3e#icon-heart-view$/
+        : /svg#icon-heart-view$/,
+    )
   })
 })
 
