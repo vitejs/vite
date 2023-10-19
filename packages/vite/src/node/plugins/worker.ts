@@ -41,30 +41,7 @@ function saveEmitWorkerAsset(
   workerMap.assets.set(fileName, asset)
 }
 
-// Ensure that only one rollup build is called at the same time to avoid
-// leaking state in plugins between worker builds.
-// TODO: Review if we can parallelize the bundling of workers.
-const workerConfigSemaphore = new WeakMap<
-  ResolvedConfig,
-  Promise<OutputChunk>
->()
-export async function bundleWorkerEntry(
-  config: ResolvedConfig,
-  id: string,
-  query: Record<string, string> | null,
-): Promise<OutputChunk> {
-  const processing = workerConfigSemaphore.get(config)
-  if (processing) {
-    await processing
-    return bundleWorkerEntry(config, id, query)
-  }
-  const promise = serialBundleWorkerEntry(config, id, query)
-  workerConfigSemaphore.set(config, promise)
-  promise.then(() => workerConfigSemaphore.delete(config))
-  return promise
-}
-
-async function serialBundleWorkerEntry(
+async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
@@ -75,7 +52,7 @@ async function serialBundleWorkerEntry(
   const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
-    plugins,
+    plugins: await plugins(),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },

@@ -80,12 +80,30 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   )
 })
 
+test('deeply nested workers', async () => {
+  await untilUpdated(
+    async () => page.textContent('.deeply-nested-worker'),
+    /Hello\sfrom\sroot.*\/es\/.+deeply-nested-worker\.js/,
+    true,
+  )
+  await untilUpdated(
+    async () => page.textContent('.deeply-nested-second-worker'),
+    /Hello\sfrom\ssecond.*\/es\/.+second-worker\.js/,
+    true,
+  )
+  await untilUpdated(
+    async () => page.textContent('.deeply-nested-third-worker'),
+    /Hello\sfrom\sthird.*\/es\/.+third-worker\.js/,
+    true,
+  )
+})
+
 describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(28)
+    expect(files.length).toBe(32)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
