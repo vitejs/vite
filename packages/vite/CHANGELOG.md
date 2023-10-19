@@ -1,3 +1,17 @@
+## 5.0.0-beta.11 (2023-10-19)
+
+* feat!: remove ssr proxy for externalized modules (#14521) ([5786837](https://github.com/vitejs/vite/commit/5786837)), closes [#14521](https://github.com/vitejs/vite/issues/14521)
+* feat(build)!: inline SVGs (#14643) ([5acda5e](https://github.com/vitejs/vite/commit/5acda5e)), closes [#14643](https://github.com/vitejs/vite/issues/14643)
+* fix!: worker.plugins is a function (#14685) ([9d09dfe](https://github.com/vitejs/vite/commit/9d09dfe)), closes [#14685](https://github.com/vitejs/vite/issues/14685)
+* refactor!: remove https flag (#14681) ([5b65bfd](https://github.com/vitejs/vite/commit/5b65bfd)), closes [#14681](https://github.com/vitejs/vite/issues/14681)
+* fix(assets): make timestamp invalidation lazy (#14675) ([dd610b5](https://github.com/vitejs/vite/commit/dd610b5)), closes [#14675](https://github.com/vitejs/vite/issues/14675)
+* fix(build): add crossorigin attribute to `link[rel="stylesheet"]` (#12991) ([6e7b25c](https://github.com/vitejs/vite/commit/6e7b25c)), closes [#12991](https://github.com/vitejs/vite/issues/12991)
+* fix(hmr): clean importers in module graph when file is deleted (#14315) ([7acb016](https://github.com/vitejs/vite/commit/7acb016)), closes [#14315](https://github.com/vitejs/vite/issues/14315)
+* fix(manifest): include assets referenced in html (#14657) ([f627b91](https://github.com/vitejs/vite/commit/f627b91)), closes [#14657](https://github.com/vitejs/vite/issues/14657)
+* chore: fix changelog compare links (#14695) ([cc6ac1e](https://github.com/vitejs/vite/commit/cc6ac1e)), closes [#14695](https://github.com/vitejs/vite/issues/14695)
+
+
+
 ## 5.0.0-beta.10 (2023-10-17)
 
 * feat!: rollup v4 (#14508) ([dee6067](https://github.com/vitejs/vite/commit/dee6067)), closes [#14508](https://github.com/vitejs/vite/issues/14508)
