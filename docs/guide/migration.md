@@ -36,7 +36,7 @@ See the [troubleshooting guide](/guide/troubleshooting.html#vite-cjs-node-api-de
 
 ### `worker.plugins` is now a function
 
-In Vite 4, `worker.plugins` was `(Plugin | Plugin[])[]`. From Vite 5, it needs to be configured as a function `() => (Plugin | Plugin[])[]`. Vite uses parallel rollup builds to bundle workers so new instances of worker plugins are needed for each build.
+In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]`). From Vite 5, it needs to be configured as a function that returns an array of plugins (`() => (Plugin | Plugin[])[]`). This change is required so parallel worker builds run more consistently and predictably.
 
 ### Allow path containing `.` to fallback to index.html
 
