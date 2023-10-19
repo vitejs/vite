@@ -77,7 +77,7 @@ describe.runIf(isBuild)('build', () => {
     expect(files.length).toBe(20)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
-    const worker = files.find((f) => f.includes('my-worker'))
+    const worker = files.find((f) => f.includes('worker_entry-my-worker'))
     const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
       'utf-8',

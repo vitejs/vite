@@ -15,7 +15,8 @@ export default defineConfig({
       output: {
         assetFileNames: 'assets/worker_asset-[name].[ext]',
         chunkFileNames: 'assets/worker_chunk-[name].js',
-        entryFileNames: 'assets/worker_entry-[name].js',
+        // should be overwritten to worker_entry-[name] by the config-test plugin
+        entryFileNames: 'assets/worker_-[name].js',
       },
     },
   },
@@ -30,6 +31,22 @@ export default defineConfig({
       },
     },
   },
-  plugins: [workerPluginTestPlugin()],
+  plugins: [
+    workerPluginTestPlugin(),
+    {
+      name: 'config-test',
+      config() {
+        return {
+          worker: {
+            rollupOptions: {
+              output: {
+                entryFileNames: 'assets/worker_entry-[name].js',
+              },
+            },
+          },
+        }
+      },
+    },
+  ],
   cacheDir: 'node_modules/.vite-iife',
 })
