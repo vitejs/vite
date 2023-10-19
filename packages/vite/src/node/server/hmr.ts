@@ -224,8 +224,8 @@ export async function handleFileAddUnlink(
 
   if (isUnlink) {
     for (const deletedMod of modules) {
-      server.moduleGraph.idToModuleMap.forEach((mod) => {
-        mod.importers.delete(deletedMod)
+      deletedMod.importedModules.forEach((importedMod) => {
+        importedMod.importers.delete(deletedMod)
       })
     }
   }
