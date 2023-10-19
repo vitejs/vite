@@ -240,6 +240,10 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
+              text: 'Performance',
+              link: '/guide/performance',
+            },
+            {
               text: 'Philosophy',
               link: '/guide/philosophy',
             },
