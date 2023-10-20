@@ -110,17 +110,29 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     asSrc: true,
   }
 
+  const isIncludeWorkerImportMetaUrl = (code: string): boolean => {
+    if (
+      (code.includes('new Worker') || code.includes('new SharedWorker')) &&
+      code.includes('new URL') &&
+      code.includes(`import.meta.url`)
+    ) {
+      return true
+    }
+    return false
+  }
+
   return {
     name: 'vite:worker-import-meta-url',
 
+    shouldTransformCachedModule({ code }) {
+      if (isBuild && config.build.watch && isIncludeWorkerImportMetaUrl(code)) {
+        return true
+      }
+    },
+
     async transform(code, id, options) {
       const ssr = options?.ssr === true
-      if (
-        !options?.ssr &&
-        (code.includes('new Worker') || code.includes('new SharedWorker')) &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
-      ) {
+      if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
         const query = parseRequest(id)
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
