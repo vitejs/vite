@@ -107,3 +107,16 @@ urls inside comments should be ignored
   background-size: 10px;
 }
 */
+
+.css-url-svg {
+  background: url(../nested/fragment-bg.svg);
+  background-size: 10px;
+}
+
+.css-image-set-svg {
+  background: -webkit-image-set(
+    url('../nested/fragment-bg.svg') 1x,
+    url('../nested/fragment-bg.svg') 2x
+  );
+  background-size: 10px;
+}
