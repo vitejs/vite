@@ -336,6 +336,14 @@ export async function _createServer(
   const config = await resolveConfig(inlineConfig, 'serve')
 
   const { root, server: serverConfig } = config
+  if (!serverConfig?.port) {
+    serverConfig.port = _currentServerPort
+  } else {
+    if (serverConfig.port !== _configServePort) {
+      _configServePort = serverConfig.port
+    }
+  }
+
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
@@ -714,6 +722,7 @@ export async function _createServer(
 }
 
 let _currentServerPort: number | undefined
+let _configServePort: number | undefined
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
@@ -727,6 +736,7 @@ async function startServer(
   const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
 
+  _configServePort = port
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
@@ -832,11 +842,7 @@ async function restartServer(server: ViteDevServer) {
   const shortcutsOptions = server._shortcutsOptions
   const oldUrls = server.resolvedUrls
 
-  let inlineConfig = mergeConfig(server.config.inlineConfig, {
-    server: {
-      port: _currentServerPort,
-    },
-  })
+  let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
       optimizeDeps: {
