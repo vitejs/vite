@@ -31,7 +31,6 @@ interface NodeImportResolveOptions
 
 interface SSRImportMetadata {
   isDynamicImport?: boolean
-  isExportAll?: boolean
   namedImportSpecifiers?: string[]
 }
 
