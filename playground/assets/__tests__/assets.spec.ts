@@ -253,6 +253,18 @@ describe('css url() references', () => {
     // generate non-relative base for public path in CSS
     expect(css).not.toMatch(`../icon.png`)
   })
+
+  test('url() with svg', async () => {
+    expect(await getBg('.css-url-svg')).toMatch(
+      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
+    )
+  })
+
+  test('image-set() with svg', async () => {
+    expect(await getBg('.css-image-set-svg')).toMatch(
+      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
+    )
+  })
 })
 
 describe('image', () => {
