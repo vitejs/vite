@@ -386,13 +386,11 @@ async function handleModuleSoftInvalidation(
   timestamp: number,
   base: string,
 ) {
-  const transformResult = ssr
-    ? mod.softInvalidatedSsrTransformResult
-    : mod.softInvalidatedTransformResult
+  const transformResult = ssr ? mod.ssrInvalidationState : mod.invalidationState
 
-  // Reset soft-invalidation state
-  if (ssr) mod.softInvalidatedSsrTransformResult = undefined
-  else mod.softInvalidatedTransformResult = undefined
+  // Reset invalidation state
+  if (ssr) mod.ssrInvalidationState = undefined
+  else mod.invalidationState = undefined
 
   // Skip if not soft-invalidated
   if (!transformResult || transformResult === 'HARD_INVALIDATED') return
@@ -446,7 +444,12 @@ async function handleModuleSoftInvalidation(
 
     // Update `transformResult` with new code. We don't have to update the sourcemap
     // as the timestamp changes doesn't affect the code lines (stable).
-    result = { ...transformResult, code: s.toString() }
+    const code = s.toString()
+    result = {
+      ...transformResult,
+      code,
+      etag: getEtag(code, { weak: true }),
+    }
   }
 
   // Only cache the result if the module wasn't invalidated while it was

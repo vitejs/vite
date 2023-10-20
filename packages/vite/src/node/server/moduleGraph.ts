@@ -46,17 +46,11 @@ export class ModuleNode {
    * hard-invalidated, this will be set to `'HARD_INVALIDATED'`.
    * @internal
    */
-  softInvalidatedTransformResult:
-    | TransformResult
-    | 'HARD_INVALIDATED'
-    | undefined
+  invalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
   /**
    * @internal
    */
-  softInvalidatedSsrTransformResult:
-    | TransformResult
-    | 'HARD_INVALIDATED'
-    | undefined
+  ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
   /**
    * The module urls that are statically imported in the code. This information is separated
    * out from `importedModules` as only importers that statically import the module can be
@@ -161,29 +155,29 @@ export class ModuleGraph {
     hmrBoundaries: ModuleNode[] = [],
     softInvalidate = false,
   ): void {
+    const prevInvalidationState = mod.invalidationState
+    const prevSsrInvalidationState = mod.ssrInvalidationState
+
     // Handle soft invalidation before the `seen` check, as consecutive soft/hard invalidations can
     // cause the final soft invalidation state to be different.
     // If soft invalidated, save the previous `transformResult` so that we can reuse and transform the
-    // import timestamps only in `transformRequest`. If hard-invalidated, set to `'HARD_INVALIDATED'`.
-    // Otherwise, the default non-validated state is `undefined`.
+    // import timestamps only in `transformRequest`. If there's no previous `transformResult`, hard invalidate it.
     if (softInvalidate) {
-      if (mod.softInvalidatedTransformResult === undefined) {
-        mod.softInvalidatedTransformResult =
-          mod.transformResult ?? 'HARD_INVALIDATED'
-      }
-      if (mod.softInvalidatedSsrTransformResult === undefined) {
-        mod.softInvalidatedSsrTransformResult =
-          mod.ssrTransformResult ?? 'HARD_INVALIDATED'
-      }
+      mod.invalidationState ??= mod.transformResult ?? 'HARD_INVALIDATED'
+      mod.ssrInvalidationState ??= mod.ssrTransformResult ?? 'HARD_INVALIDATED'
     }
     // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
     else {
-      mod.softInvalidatedTransformResult = 'HARD_INVALIDATED'
-      mod.softInvalidatedSsrTransformResult = 'HARD_INVALIDATED'
+      mod.invalidationState = 'HARD_INVALIDATED'
+      mod.ssrInvalidationState = 'HARD_INVALIDATED'
     }
 
-    // Skip updating the module if it was already invalidated before
-    if (seen.has(mod)) {
+    // Skip updating the module if it was already invalidated before and the invalidation state has not changed
+    if (
+      seen.has(mod) &&
+      prevInvalidationState === mod.invalidationState &&
+      prevSsrInvalidationState === mod.ssrInvalidationState
+    ) {
       return
     }
     seen.add(mod)
