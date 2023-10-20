@@ -29,7 +29,6 @@ interface TransformOptions {
 }
 
 interface DefineImportMetadata {
-  isExportAll?: boolean
   namedImportSpecifiers?: string[]
 }
 
@@ -105,7 +104,6 @@ async function ssrTransformScript(
     // Reduce metadata to undefined if it's all default values
     if (
       metadata &&
-      metadata.isExportAll !== true &&
       (metadata.namedImportSpecifiers == null ||
         metadata.namedImportSpecifiers.length === 0)
     ) {
@@ -237,9 +235,7 @@ async function ssrTransformScript(
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
       s.remove(node.start, node.end)
-      const importId = defineImport(node.source.value as string, {
-        isExportAll: true,
-      })
+      const importId = defineImport(node.source.value as string)
       // hoist re-exports near the defined import so they are immediately exported
       if (node.exported) {
         defineExport(hoistIndex, node.exported.name, `${importId}`)

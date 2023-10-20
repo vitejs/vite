@@ -102,9 +102,9 @@ test('export * from', async () => {
       `export * from 'vue'\n` + `export * from 'react'`,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\", {\\"isExportAll\\":true});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
     __vite_ssr_exportAll__(__vite_ssr_import_0__);
-    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"react\\", {\\"isExportAll\\":true});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"react\\");
     __vite_ssr_exportAll__(__vite_ssr_import_1__);
 
     "
@@ -114,7 +114,7 @@ test('export * from', async () => {
 test('export * as from', async () => {
   expect(await ssrTransformSimpleCode(`export * as foo from 'vue'`))
     .toMatchInlineSnapshot(`
-      "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\", {\\"isExportAll\\":true});
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
 
       Object.defineProperty(__vite_ssr_exports__, \\"foo\\", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__ }});"
     `)
@@ -133,7 +133,7 @@ test('export then import minified', async () => {
     ),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\", {\\"namedImportSpecifiers\\":[\\"createApp\\"]});
-    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\", {\\"isExportAll\\":true});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
     __vite_ssr_exportAll__(__vite_ssr_import_1__);
     "
   `)
@@ -964,9 +964,9 @@ console.log(foo + 2)
   `),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"./foo\\", {\\"namedImportSpecifiers\\":[\\"foo\\"]});
-    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"./a\\", {\\"isExportAll\\":true});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"./a\\");
     __vite_ssr_exportAll__(__vite_ssr_import_1__);
-    const __vite_ssr_import_2__ = await __vite_ssr_import__(\\"./b\\", {\\"isExportAll\\":true});
+    const __vite_ssr_import_2__ = await __vite_ssr_import__(\\"./b\\");
     __vite_ssr_exportAll__(__vite_ssr_import_2__);
 
     console.log(__vite_ssr_import_0__.foo + 1)
