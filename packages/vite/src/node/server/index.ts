@@ -338,6 +338,14 @@ export async function _createServer(
   const { root, server: serverConfig } = config
   if (!serverConfig?.port) {
     serverConfig.port = _currentServerPort
+  } else {
+    if (serverConfig.port !== _currentServerPort) {
+      if (serverConfig.port !== _configServerPort) {
+        _configServerPort = serverConfig.port
+      } else {
+        serverConfig.port = _currentServerPort
+      }
+    }
   }
 
   const httpsOptions = await resolveHttpsConfig(config.server.https)
@@ -718,6 +726,7 @@ export async function _createServer(
 }
 
 let _currentServerPort: number | undefined
+let _configServerPort: number | undefined
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
@@ -731,6 +740,7 @@ async function startServer(
   const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
 
+  _configServerPort = port
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
