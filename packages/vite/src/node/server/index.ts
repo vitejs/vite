@@ -577,9 +577,9 @@ export async function _createServer(
     }
   }
 
-  const onFileAddUnlink = async (file: string) => {
+  const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
-    await handleFileAddUnlink(file, server)
+    await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
   }
 
@@ -591,8 +591,8 @@ export async function _createServer(
     await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', onFileAddUnlink)
-  watcher.on('unlink', onFileAddUnlink)
+  watcher.on('add', (file) => onFileAddUnlink(file, false))
+  watcher.on('unlink', (file) => onFileAddUnlink(file, true))
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)

@@ -645,7 +645,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => page.goto(`${viteTestUrl}/${testDir}/`),
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a0b0c0default0')
               expect(logs).toContain('some >>>>>> a0, b0, c0')
@@ -654,10 +654,11 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             async () => {
+              const loadPromise = page.waitForEvent('load')
               editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
-              await page.waitForEvent('load')
+              await loadPromise
             },
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a1b1c1default0')
               expect(logs).toContain('some >>>>>> a1, b1, c1')
@@ -726,21 +727,25 @@ if (!isBuild) {
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
 
-    await page.goto(viteTestUrl + '/missing-import/index.html', {
-      waitUntil: 'load',
-    })
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-import/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(importCode, unImportCode))
       await loadPromise
-    }, 'missing test')
+    }, ['missing test', /connected/])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await loadPromise
-    }, /500/)
+    }, [/500/, /connected/])
   })
 
   test('should hmr when file is deleted and restored', async () => {
@@ -799,6 +804,57 @@ if (import.meta.hot) {
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:child',
+    )
+  })
+
+  test('delete file should not break hmr', async () => {
+    await page.goto(viteTestUrl)
+
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 1',
+    )
+
+    // add state
+    await page.click('.intermediate-file-delete-increment')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2',
+    )
+
+    // update import, hmr works
+    editFile('intermediate-file-delete/index.js', (code) =>
+      code.replace("from './re-export.js'", "from './display.js'"),
+    )
+    editFile('intermediate-file-delete/display.js', (code) =>
+      code.replace('count is ${count}', 'count is ${count}!'),
+    )
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2!',
+    )
+
+    // remove unused file, page reload because it's considered entry point now
+    removeFile('intermediate-file-delete/re-export.js')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 1!',
+    )
+
+    // re-add state
+    await page.click('.intermediate-file-delete-increment')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2!',
+    )
+
+    // hmr works after file deletion
+    editFile('intermediate-file-delete/display.js', (code) =>
+      code.replace('count is ${count}!', 'count is ${count}'),
+    )
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2',
     )
   })
 
