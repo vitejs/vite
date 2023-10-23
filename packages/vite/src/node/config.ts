@@ -537,6 +537,20 @@ export async function resolveConfig(
     alias: resolvedAlias,
   }
 
+  if (
+    // @ts-expect-error removed field
+    config.resolve?.browserField === false &&
+    resolveOptions.mainFields.includes('browser')
+  ) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
+          `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
+          `to remove the 'browser' string and preserve the previous browser behaviour.`,
+      ),
+    )
+  }
+
   // load .env files
   const envDir = config.envDir
     ? normalizePath(path.resolve(resolvedRoot, config.envDir))
