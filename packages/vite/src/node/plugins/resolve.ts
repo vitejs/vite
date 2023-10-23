@@ -987,17 +987,8 @@ export function resolvePackageEntry(
       )
     }
 
-    const resolvedFromExports = !!entryPoint
-
-    // if exports resolved to .mjs, still resolve other fields.
-    // This is because .mjs files can technically import .cjs files which would
-    // make them invalid for pure ESM environments - so if other module/browser
-    // fields are present, prioritize those instead.
-    if (
-      targetWeb &&
-      options.browserField &&
-      (!entryPoint || entryPoint.endsWith('.mjs'))
-    ) {
+    // handle edge case with browser and module field semantics
+    if (!entryPoint && targetWeb && options.browserField) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
       const browserEntry =
@@ -1039,8 +1030,7 @@ export function resolvePackageEntry(
     }
 
     // fallback to mainFields if still not resolved
-    // TODO: review if `.mjs` check is still needed
-    if (!resolvedFromExports && (!entryPoint || entryPoint.endsWith('.mjs'))) {
+    if (!entryPoint) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {
