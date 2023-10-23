@@ -177,8 +177,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
 
   let _env: string | undefined
+  let _ssrEnv: string | undefined
   function getEnv(ssr: boolean) {
-    if (!_env) {
+    if (!_ssrEnv || !_env) {
       const importMetaEnvKeys: Record<string, any> = {}
       const userDefineEnv: Record<string, any> = {}
       for (const key in config.env) {
@@ -190,13 +191,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           userDefineEnv[key.slice(16)] = config.define[key]
         }
       }
-      _env = `import.meta.env = ${serializeDefine({
+      const env = `import.meta.env = ${serializeDefine({
         ...importMetaEnvKeys,
-        SSR: ssr,
+        SSR: '__vite_ssr__',
         ...userDefineEnv,
       })};`
+      _ssrEnv = env.replace('__vite_ssr__', 'true')
+      _env = env.replace('__vite_ssr__', 'false')
     }
-    return _env
+    return ssr ? _ssrEnv : _env
   }
 
   return {
