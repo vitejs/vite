@@ -166,9 +166,11 @@ export async function replaceDefine(
     define = { ...define, 'import.meta.env': marker }
   }
 
+  const esbuildOptions = config.esbuild || {}
+
   const result = await transform(code, {
     loader: 'js',
-    charset: 'utf8',
+    charset: esbuildOptions.charset ?? 'utf8',
     platform: 'neutral',
     define,
     sourcefile: id,

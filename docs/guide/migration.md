@@ -42,13 +42,22 @@ In Vite 4, the `define` and `import.meta.env.*` features use different replaceme
 This results in a dev and build inconsistency when trying to access the variables, and sometimes even caused failed builds. For example:
 
 ```js
+// vite.config.js
+export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify('1.0.0'),
+  },
+})
+```
+
+```js
 const data = { __APP_VERSION__ }
 // dev: { __APP_VERSION__: "1.0.0" } ✅
-// build: { __APP_VERSION__: undefined } ❌
+// build: { "1.0.0" } ❌
 
-const docs = 'I like import.meta.env'
-// dev: "I like import.meta.env" ✅
-// build: "I like ({ ... })" ❌
+const docs = 'I like import.meta.env.MODE'
+// dev: "I like import.meta.env.MODE" ✅
+// build: "I like "production"" ❌
 ```
 
 Vite 5 fixes this by using `esbuild` to handle the replacements in builds, aligning with the dev behaviour.
