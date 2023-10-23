@@ -1,3 +1,14 @@
+## 5.0.0-beta.12 (2023-10-23)
+
+* fix(resolve)!: remove special .mjs handling (#14723) ([2141d31](https://github.com/vitejs/vite/commit/2141d31)), closes [#14723](https://github.com/vitejs/vite/issues/14723)
+* fix(assets): fix svg inline in css url (#14714) ([eef4aaa](https://github.com/vitejs/vite/commit/eef4aaa)), closes [#14714](https://github.com/vitejs/vite/issues/14714)
+* fix(resolve): make directory package.json check best effort (#14626) ([d520388](https://github.com/vitejs/vite/commit/d520388)), closes [#14626](https://github.com/vitejs/vite/issues/14626)
+* docs: port 4.4.10 to 4.5 changelog to main (#14732) ([2728a31](https://github.com/vitejs/vite/commit/2728a31)), closes [#14732](https://github.com/vitejs/vite/issues/14732)
+* refactor(ssr): remove unused metadata code (#14711) ([c5f2d60](https://github.com/vitejs/vite/commit/c5f2d60)), closes [#14711](https://github.com/vitejs/vite/issues/14711)
+* chore: link migration guide to changelog (#14699) ([4cedcdc](https://github.com/vitejs/vite/commit/4cedcdc)), closes [#14699](https://github.com/vitejs/vite/issues/14699)
+
+
+
 ## 5.0.0-beta.11 (2023-10-19)
 
 Learn more at the [Vite 5 Migration guide](https://main.vitejs.dev/guide/migration) and help us test the beta!
