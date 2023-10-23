@@ -78,7 +78,7 @@ export async function handleHMRUpdate(
       { clear: true, timestamp: true },
     )
     try {
-      const { port: prevPort, host: prevHost } = config.server
+      const { port: prevPort, host: prevHost, middlewareMode } = config.server
       const oldUrls = server.resolvedUrls
       await server.restart()
       const {
@@ -86,9 +86,10 @@ export async function handleHMRUpdate(
         server: { port, host },
       } = server.config
       if (
-        (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
-        host !== prevHost ||
-        diffDnsOrderChange(oldUrls, server.resolvedUrls)
+        !middlewareMode &&
+        ((port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
+          host !== prevHost ||
+          diffDnsOrderChange(oldUrls, server.resolvedUrls))
       ) {
         logger.info('')
         server.printUrls()
