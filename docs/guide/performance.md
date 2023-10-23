@@ -8,17 +8,21 @@ While Vite is fast by default, performance issues can creep in as the project's 
 
 ## Audit Configured Vite Plugins
 
-Vite's internal and official plugins are optimized to do the least amount of work possible. For example, code transformations use regex in dev, but do a complete parse in build to ensure correctness. However, the performance of community plugins is out of Vite's control, which may affect the developer experience.
+Vite's internal and official plugins are optimized to do the least amount of work possible while providing compatibility with the broader ecosystem. For example, code transformations use regex in dev, but do a complete parse in build to ensure correctness.
 
-Here are a few things you can look out for when using additional Vite plugins:
+However, the performance of community plugins is out of Vite's control, which may affect the developer experience. Here are a few things you can look out for when using additional Vite plugins:
 
 1. The `buildStart`, `config`, and `configResolved` hooks should not run long and extensive operations. These hooks are awaited during dev server startup, which delays when you can access the site in the browser.
 
-2. The `resolveId`, `load`, and `transform` hooks may cause some files to load slower than others. Sometimes this may be unavoidable, but it's worth checking for ways to optimize if possible. For example, checking if the `code` contains a specific keyword, or the `id` matches a specific extension, before doing the full transformation.
+2. The `resolveId`, `load`, and `transform` hooks may cause some files to load slower than others. While sometimes unavoidable, it's still worth checking for possible areas to optimize. For example, checking if the `code` contains a specific keyword, or the `id` matches a specific extension, before doing the full transformation.
 
    The longer it takes to transform a file, the more significant the request waterfall will be when loading the site in the browser.
 
    You can inspect the duration it takes to transform a file using `DEBUG="vite:plugin-transform" vite` or [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect). Note that as asynchronous operations tend to provide inaccurate timings, you should treat the numbers as a rough estimate, but it should still reveal the more expensive operations.
+
+::: tip Profiling
+You can run `vite --profile`, visit the site, and press `p + enter` in your terminal to record a `.cpuprofile`. A tool like [speedscope](https://www.speedscope.app) can then be used to inspect the profile and identify the bottlenecks. You can also [share the profiles](https://chat.vitejs.dev) with the Vite team to help us identify performance issues.
+:::
 
 ## Reduce Resolve Operations
 
@@ -38,6 +42,10 @@ As shown, a total of 6 filesystem checks is required to resolve an import path. 
 Hence, it's usually better to be explicit with your import paths, e.g. `import './Component.jsx'`. You can also narrow down the list for `resolve.extensions` to reduce the general filesystem checks, but you have to make sure it works for files in `node_modules` too.
 
 If you're a plugin author, make sure to only call [`this.resolve`](https://rollupjs.org/plugin-development/#this-resolve) when needed to reduce the number of checks above.
+
+::: tip TypeScript
+If you are using TypeScript, enable `"moduleResolution": "bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
+:::
 
 ## Avoid Barrel Files
 
