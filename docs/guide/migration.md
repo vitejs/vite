@@ -4,6 +4,17 @@
 
 Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.js 18 / 20+ is now required.
 
+## Rollup 4
+
+Vite is now using Rollup 4 which also brings along its breaking changes, in particular:
+
+- Import assertions (`assertions` prop) has been renamed to import attributes (`attributes` prop).
+- Acorn plugins are no longer supported.
+- For Vite plugins, `this.resolve` `skipSelf` option is now `true` by default.
+- For Vite plugins, `this.parse` now only supports the `allowReturnOutsideFunction` option for now.
+
+Read the full breaking changes in [Rollup's release notes](https://github.com/rollup/rollup/releases/tag/v4.0.0) for build-related changes in `build.rollupOptions`.
+
 ## Deprecate CJS Node API
 
 The CJS Node API of Vite is deprecated. When calling `require('vite')`, a deprecation warning is now logged. You should update your files or frameworks to import the ESM build of Vite instead.
@@ -19,9 +30,39 @@ For other projects, there are a few general approaches:
 - **Keep CJS as default, opt-in to ESM if needed:** If the project `package.json` does not have `"type": "module"`, all `*.js` files are interpreted as CJS. You can rename a file with the `.mjs` extension to use ESM instead.
 - **Dynamically import Vite:** If you need to keep using CJS, you can dynamically import Vite using `import('vite')` instead. This requires your code to be written in an `async` context, but should still be manageable as Vite's API is mostly asynchronous.
 
-See the [troubleshooting guide](https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated) for more information.
+See the [troubleshooting guide](/guide/troubleshooting.html#vite-cjs-node-api-deprecated) for more information.
 
 ## General Changes
+
+### SSR externalized modules value now matches production
+
+In Vite 4, SSR externalized modules are wrapped with `.default` and `.__esModule` handling for better interoperability, but it doesn't match the production behaviour when loaded by the runtime environment (e.g. Node.js), causing hard-to-catch inconsistencies. By default, all direct project dependencies are SSR externalized.
+
+Vite 5 now removes the `.default` and `.__esModule` handling to match the production behaviour. In practice, this shouldn't affect properly-packaged dependencies, but if you encounter new issues loading modules, you can try these refactors:
+
+```js
+// Before:
+import { foo } from 'bar'
+
+// After:
+import _bar from 'bar'
+const { foo } = _bar
+```
+
+```js
+// Before:
+import foo from 'bar'
+
+// After:
+import * as _foo from 'bar'
+const foo = _foo.default
+```
+
+Note that these changes matches the Node.js behaviour, so you can also run the imports in Node.js to test it out. If you prefer to stick with the previous behaviour, you can set `legacy.proxySsrExternalModules` to `true`.
+
+### `worker.plugins` is now a function
+
+In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]`). From Vite 5, it needs to be configured as a function that returns an array of plugins (`() => (Plugin | Plugin[])[]`). This change is required so parallel worker builds run more consistently and predictably.
 
 ### Allow path containing `.` to fallback to index.html
 
@@ -39,6 +80,11 @@ In Vite 4, the manifest files (`build.manifest`, `build.ssrManifest`) was genera
 CLI shortcuts, like `r` to restart the dev server, now require an additional `Enter` press to trigger the shortcut. For example, `r + Enter` to restart the dev server.
 
 This change prevents Vite from swallowing and controlling OS-specific shortcuts, allowing better compatibility when combining the Vite dev server with other processes, and avoids the [previous caveats](https://github.com/vitejs/vite/pull/14342).
+
+### Remove `--https` flag and `https: true`
+
+`--https` flag sets `https: true`. This config was meant to be used together with the automatic https certification generation feature which [was dropped in Vite 3](https://v3.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). This config no longer makes sense as it will make Vite start a HTTPS server without a certificate.
+Both [`@vitejs/plugin-basic-ssl`](https://github.com/vitejs/vite-plugin-basic-ssl) and [`vite-plugin-mkcert`](https://github.com/liuweiGL/vite-plugin-mkcert) sets `https` setting regardless of the `https` value, so you can just remove `--https` and `https: true`.
 
 ### Remove `resolvePackageEntry` and `resolvePackageData` APIs
 

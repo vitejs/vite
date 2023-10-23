@@ -1,3 +1,14 @@
+## 5.0.0-beta.1 (2023-10-19)
+
+* chore(create-vite): update dependencies (#14698) ([bd82c30](https://github.com/vitejs/vite/commit/bd82c30)), closes [#14698](https://github.com/vitejs/vite/issues/14698)
+* feat!: rollup v4 (#14508) ([dee6067](https://github.com/vitejs/vite/commit/dee6067)), closes [#14508](https://github.com/vitejs/vite/issues/14508)
+* fix(deps): update all non-major dependencies (#14559) ([6868480](https://github.com/vitejs/vite/commit/6868480)), closes [#14559](https://github.com/vitejs/vite/issues/14559)
+* fix(deps): update all non-major dependencies (#14635) ([21017a9](https://github.com/vitejs/vite/commit/21017a9)), closes [#14635](https://github.com/vitejs/vite/issues/14635)
+* fix(deps): update dependency lit to v3 (#14638) ([c81f3da](https://github.com/vitejs/vite/commit/c81f3da)), closes [#14638](https://github.com/vitejs/vite/issues/14638)
+* docs(create-vite): add qwik and qwik-ts to the list (#14624) ([de87fe4](https://github.com/vitejs/vite/commit/de87fe4)), closes [#14624](https://github.com/vitejs/vite/issues/14624)
+
+
+
 ## 5.0.0-beta.0 (2023-10-04)
 
 * feat(create-vite): update to vite 5.0 beta (#14534) ([97c58e0](https://github.com/vitejs/vite/commit/97c58e0)), closes [#14534](https://github.com/vitejs/vite/issues/14534)
