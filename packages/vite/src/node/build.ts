@@ -492,7 +492,7 @@ export async function build(
             ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
-      : options.rollupOptions?.input || resolve('index.html')
+      : options.rollupOptions?.input || normalizePath(resolve('index.html'))
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
