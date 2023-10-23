@@ -1,44 +1,51 @@
-const path = require('path')
-const vueJsx = require('@vitejs/plugin-vue-jsx')
-const vite = require('vite')
+import { defineConfig } from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig({
+export default defineConfig({
   base: './',
+  resolve: {
+    alias: {
+      '@': __dirname,
+    },
+  },
   worker: {
     format: 'es',
-    plugins: [vueJsx()],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
-        assetFileNames: 'worker-assets/worker_asset.[name]-[hash].[ext]',
-        chunkFileNames: 'worker-chunks/worker_chunk.[name]-[hash].js',
-        entryFileNames: 'worker-entries/worker_entry.[name]-[hash].js'
-      }
-    }
+        assetFileNames: 'worker-assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'worker-chunks/worker_chunk-[name]-[hash].js',
+        entryFileNames: 'worker-entries/worker_entry-[name]-[hash].js',
+      },
+    },
   },
   build: {
     outDir: 'dist/relative-base',
+    assetsInlineLimit: 100, // keep SVG as assets URL
     rollupOptions: {
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        entryFileNames: 'entries/[name]-[hash].js'
-      }
-    }
+        entryFileNames: 'entries/[name]-[hash].js',
+      },
+    },
   },
   testConfig: {
-    baseRoute: '/relative-base/'
+    previewBase: '/relative-base/',
   },
   plugins: [
+    workerPluginTestPlugin(),
     {
       name: 'resolve-format-es',
       transform(code, id) {
         if (id.includes('main.js')) {
           return code.replace(
             `/* flag: will replace in vite config import("./format-es.js") */`,
-            `import("./main-format-es")`
+            `import("./main-format-es")`,
           )
         }
-      }
-    }
-  ]
+      },
+    },
+  ],
+  cacheDir: 'node_modules/.vite-relative-base',
 })

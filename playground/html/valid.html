@@ -1,0 +1,18 @@
+<!-- accepted HTML parsing errors, browsers accept these -->
+<div id="duplicated-attrs" style="color: green;" style="color: red;">Accept duplicated attribute</div>
+
+<!-- accepted HTML constructs -->
+<datalist>
+  <option value="option-without-closing-tag">    
+</datalist>
+
+<div id="no-quotes-on-attr">No quotes on Attr</div>
+<script type="module" src=/valid.js></script>
+
+<svg>
+  <!-- attr with prefix -->
+  <use xlink:href="/sprite.svg#svg"></use>
+</svg>
+
+<!-- allow self closing on non-void elements -->
+<self-close-non-void />

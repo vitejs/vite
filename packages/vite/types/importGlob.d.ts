@@ -1,6 +1,6 @@
 export interface ImportGlobOptions<
   Eager extends boolean,
-  AsType extends string
+  AsType extends string,
 > {
   /**
    * Import type for the import url.
@@ -38,50 +38,36 @@ export interface KnownAsTypeMap {
 
 export interface ImportGlobFunction {
   /**
-   * 1. No generic provided, infer the type from `eager` and `as`
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 1: No generic provided, infer the type from `eager` and `as`
    */
   <
     Eager extends boolean,
     As extends string,
-    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown
+    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown,
   >(
     glob: string | string[],
-    options?: ImportGlobOptions<Eager, As>
+    options?: ImportGlobOptions<Eager, As>,
   ): (Eager extends true ? true : false) extends true
     ? Record<string, T>
     : Record<string, () => Promise<T>>
   /**
-   * 2. Module generic provided, infer the type from `eager: false`
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 2: Module generic provided, infer the type from `eager: false`
    */
   <M>(
     glob: string | string[],
-    options?: ImportGlobOptions<false, string>
+    options?: ImportGlobOptions<false, string>,
   ): Record<string, () => Promise<M>>
   /**
-   * 3. Module generic provided, infer the type from `eager: true`
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 3: Module generic provided, infer the type from `eager: true`
    */
   <M>(
     glob: string | string[],
-    options: ImportGlobOptions<true, string>
-  ): Record<string, M>
-}
-
-export interface ImportGlobEagerFunction {
-  /**
-   * 1. No generic provided, infer the type from `as`
-   */
-  <
-    As extends string,
-    T = As extends keyof KnownAsTypeMap ? KnownAsTypeMap[As] : unknown
-  >(
-    glob: string | string[],
-    options?: Omit<ImportGlobOptions<boolean, As>, 'eager'>
-  ): Record<string, T>
-  /**
-   * 2. Module generic provided
-   */
-  <M>(
-    glob: string | string[],
-    options?: Omit<ImportGlobOptions<boolean, string>, 'eager'>
+    options: ImportGlobOptions<true, string>,
   ): Record<string, M>
 }

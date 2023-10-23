@@ -1,6 +1,7 @@
-const legacy = require('@vitejs/plugin-legacy').default
+import { defineConfig } from 'vite'
+import legacy from '@vitejs/plugin-legacy'
 
-module.exports = {
+export default defineConfig({
   plugins: [legacy({ modernPolyfills: true })],
   build: {
     manifest: true,
@@ -8,8 +9,8 @@ module.exports = {
     rollupOptions: {
       output: {
         entryFileNames: `assets/[name].js`,
-        chunkFileNames: `assets/[name].js`
-      }
-    }
-  }
-}
+        chunkFileNames: `assets/[name].js`,
+      },
+    },
+  },
+})

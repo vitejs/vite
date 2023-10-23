@@ -38,10 +38,16 @@
     template: '[{{ msg }}] alias optimized dep',
     setup() {
       return {
-        msg: ref('success')
+        msg: ref('success'),
       }
-    }
+    },
   }).mount('.optimized')
+
+  // aliased to an absolute URL in CJS, should be optimized
+  import { isFunction } from '@vue/shared'
+  // also check name clash for aliased deps
+  export { isFunction } from '@vue/shared'
+  console.log(isFunction(() => {}))
 </script>
 
 <script type="module" src="/@/from-script-src.js"></script>

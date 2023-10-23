@@ -1,5 +1,5 @@
 {
-  "name": "primitive-export",
+  "name": "@vitejs/test-no-external-cjs",
   "private": true,
   "type": "commonjs",
   "version": "0.0.0"

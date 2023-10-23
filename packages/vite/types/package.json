@@ -1,3 +1,4 @@
 {
-  "//": "this file is just here to make pnpm happy with --frozen-lockfile"
+  "//": "this file is here to make typescript happy when moduleResolution=node16+",
+  "version": "0.0.0"
 }

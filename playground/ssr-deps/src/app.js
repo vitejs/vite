@@ -1,15 +1,33 @@
 import path from 'node:path'
-import readFileContent from 'read-file-content'
-import primitiveExport from 'primitive-export'
-import tsDefaultExport, { hello as tsNamedExport } from 'ts-transpiled-exports'
-import objectAssignedExports from 'object-assigned-exports'
-import forwardedExport from 'forwarded-export'
+import readFileContent from '@vitejs/test-read-file-content'
+import primitiveExport from '@vitejs/test-primitive-export'
+import tsDefaultExport, {
+  hello as tsNamedExport,
+} from '@vitejs/test-ts-transpiled-exports'
+import objectAssignedExports from '@vitejs/test-object-assigned-exports'
+import forwardedExport from '@vitejs/test-forwarded-export'
 import bcrypt from 'bcrypt'
-import definePropertiesExports from 'define-properties-exports'
-import definePropertyExports from 'define-property-exports'
-import onlyObjectAssignedExports from 'only-object-assigned-exports'
-import requireAbsolute from 'require-absolute'
-import noExternalCjs from 'no-external-cjs'
+import definePropertiesExports from '@vitejs/test-define-properties-exports'
+import definePropertyExports from '@vitejs/test-define-property-exports'
+import onlyObjectAssignedExports from '@vitejs/test-only-object-assigned-exports'
+import requireAbsolute from '@vitejs/test-require-absolute'
+import noExternalCjs from '@vitejs/test-no-external-cjs'
+import importBuiltinCjs from '@vitejs/test-import-builtin-cjs'
+import { hello as linkedNoExternal } from '@vitejs/test-linked-no-external'
+import virtualMessage from '@vitejs/test-pkg-exports/virtual'
+import moduleConditionMessage from '@vitejs/test-module-condition'
+import '@vitejs/test-css-lib'
+
+// This import will set a 'Hello World!" message in the nested-external non-entry dependency
+import '@vitejs/test-non-optimized-with-nested-external'
+
+import * as optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
+import * as optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
+
+import { setMessage } from '@vitejs/test-external-entry/entry'
+setMessage('Hello World!')
+import externalUsingExternalEntry from '@vitejs/test-external-using-external-entry'
+import isomorphicModuleMessage from 'virtual:isomorphic-module'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -22,7 +40,8 @@ export async function render(url, rootDir) {
 
   html += `\n<p class="primitive-export-message">message from primitive export: ${primitiveExport}</p>`
 
-  const tsDefaultExportMessage = tsDefaultExport()
+  // `.default()` as incorrectly packaged
+  const tsDefaultExportMessage = tsDefaultExport.default()
   html += `\n<p class="ts-default-export-message">message from ts-default-export: ${tsDefaultExportMessage}</p>`
 
   const tsNamedExportMessage = tsNamedExport()
@@ -48,6 +67,32 @@ export async function render(url, rootDir) {
 
   const noExternalCjsMessage = noExternalCjs.hello()
   html += `\n<p class="no-external-cjs-msg">message from no-external-cjs: ${noExternalCjsMessage}</p>`
+
+  const importBuiltinCjsMessage = importBuiltinCjs.hello()
+  html += `\n<p class="import-builtin-cjs-msg">message from import-builtin-cjs: ${importBuiltinCjsMessage}</p>`
+
+  const optimizedWithNestedExternalMessage = optimizedWithNestedExternal.hello()
+  html += `\n<p class="optimized-with-nested-external">message from optimized-with-nested-external: ${optimizedWithNestedExternalMessage}</p>`
+
+  const optimizedCjsWithNestedExternalMessage =
+    optimizedCjsWithNestedExternal.hello()
+  html += `\n<p class="optimized-cjs-with-nested-external">message from optimized-cjs-with-nested-external: ${optimizedCjsWithNestedExternalMessage}</p>`
+
+  const externalUsingExternalEntryMessage = externalUsingExternalEntry.hello()
+  html += `\n<p class="external-using-external-entry">message from external-using-external-entry: ${externalUsingExternalEntryMessage}</p>`
+
+  const linkedNoExternalMessage = linkedNoExternal()
+  html += `\n<p class="linked-no-external">linked-no-external msg: ${linkedNoExternalMessage}</p>`
+
+  html += `\n<p class="dep-virtual">message from dep-virtual: ${virtualMessage}</p>`
+
+  html += `\n<p class="css-lib">I should be blue</p>`
+
+  html += `\n<p class="module-condition">${moduleConditionMessage}</p>`
+
+  html += `\n<p class="isomorphic-module-server">${isomorphicModuleMessage}</p>`
+
+  html += `\n<p class="isomorphic-module-browser"></p>`
 
   return html + '\n'
 }

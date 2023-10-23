@@ -1,7 +1,0 @@
-{
-  "name": "@vitejs/dep-that-requires-vue",
-  "version": "0.0.1",
-  "dependencies": {
-    "vue": "^3.2.37"
-  }
-}

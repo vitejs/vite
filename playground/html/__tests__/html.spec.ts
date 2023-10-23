@@ -1,5 +1,15 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  getColor,
+  isBuild,
+  isServe,
+  page,
+  viteServer,
+  viteTestUrl,
+  withRetry,
+} from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -8,7 +18,7 @@ function testPage(isNested: boolean) {
 
   test('string transform', async () => {
     expect(await page.textContent('h1')).toBe(
-      isNested ? 'Nested' : 'Transformed'
+      isNested ? 'Nested' : 'Transformed',
     )
   })
 
@@ -29,7 +39,7 @@ function testPage(isNested: boolean) {
   test('server only transform', async () => {
     if (!isBuild) {
       expect(await page.textContent('body p.server')).toMatch(
-        'injected only during dev'
+        'injected only during dev',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="server"')
@@ -39,7 +49,7 @@ function testPage(isNested: boolean) {
   test('build only transform', async () => {
     if (isBuild) {
       expect(await page.textContent('body p.build')).toMatch(
-        'injected only during build'
+        'injected only during build',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="build"')
@@ -49,7 +59,7 @@ function testPage(isNested: boolean) {
   test('conditional transform', async () => {
     if (isNested) {
       expect(await page.textContent('body p.conditional')).toMatch(
-        'injected only for /nested/'
+        'injected only for /nested/',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="conditional"')
@@ -58,7 +68,7 @@ function testPage(isNested: boolean) {
 
   test('body prepend/append transform', async () => {
     expect(await page.innerHTML('body')).toMatch(
-      /prepended to body(.*)appended to body/s
+      /prepended to body(.*)appended to body/s,
     )
   })
 
@@ -142,7 +152,7 @@ describe.runIf(isBuild)('build', () => {
     const countPreloadTags = _countTags.bind(this, 'link[rel=modulepreload]')
 
     test('is inlined', async () => {
-      await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
+      await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
       expect(await countScriptTags()).toBeGreaterThan(1)
       expect(await countPreloadTags()).toBe(0)
     })
@@ -154,16 +164,20 @@ describe.runIf(isBuild)('build', () => {
     })
 
     test('execution order when inlined', async () => {
+      await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
+      expect((await page.textContent('#output')).trim()).toBe(
+        'dep1 common dep2 dep3 shared',
+      )
       await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
       expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 dep3 shared'
+        'dep1 common dep2 dep3 shared',
       )
     })
 
     test('execution order when not inlined', async () => {
       await page.goto(viteTestUrl + '/inline/unique.html?v=1')
       expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 unique'
+        'dep1 common dep2 unique',
       )
     })
   })
@@ -201,7 +215,7 @@ describe('noBody', () => {
 describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
     )
     expect(await page.textContent('h1')).toBe('Unicode path')
   })
@@ -209,6 +223,13 @@ describe('Unicode path', () => {
   test('spa fallback', async () => {
     await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
     expect(await page.textContent('h1')).toBe('Unicode path')
+  })
+})
+
+describe('link with props', () => {
+  test('separate links with different media props', async () => {
+    await page.goto(viteTestUrl + '/link-props/index.html')
+    expect(await getColor('h1')).toBe('red')
   })
 })
 
@@ -226,6 +247,26 @@ describe.runIf(isServe)('invalid', () => {
     expect(message).toMatch(/^Unable to parse HTML/)
   })
 
+  test('should close overlay when clicked away', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
+
+    await page.click('html')
+    const isVisbleOverlay = await errorOverlay.isVisible()
+    expect(isVisbleOverlay).toBeFalsy()
+  })
+
+  test('should close overlay when escape key is pressed', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
+
+    await page.keyboard.press('Escape')
+    const isVisbleOverlay = await errorOverlay.isVisible()
+    expect(isVisbleOverlay).toBeFalsy()
+  })
+
   test('should reload when fixed', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
@@ -233,5 +274,87 @@ describe.runIf(isServe)('invalid', () => {
     })
     const content = await page.waitForSelector('text=Good HTML')
     expect(content).toBeTruthy()
+  })
+})
+
+describe('Valid HTML', () => {
+  test('valid HTML is parsed', async () => {
+    await page.goto(viteTestUrl + '/valid.html')
+    expect(await page.textContent('#no-quotes-on-attr')).toBe(
+      'No quotes on Attr working',
+    )
+
+    expect(await getColor('#duplicated-attrs')).toBe('green')
+  })
+})
+
+describe('env', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/env.html')
+  })
+
+  test('env works', async () => {
+    expect(await page.textContent('.env')).toBe('bar')
+    expect(await page.textContent('.env-define')).toBe('5173')
+    expect(await page.textContent('.env-define-string')).toBe('string')
+    expect(await page.textContent('.env-define-object-string')).toBe(
+      '{ "foo": "bar" }',
+    )
+    expect(await page.textContent('.env-define-template-literal')).toBe(
+      '`template literal`', // only double quotes will be unquoted
+    )
+    expect(await page.textContent('.env-define-null-string')).toBe('null')
+    expect(await page.textContent('.env-bar')).toBeTruthy()
+    expect(await page.textContent('.env-prod')).toBe(isBuild + '')
+    expect(await page.textContent('.env-dev')).toBe(isServe + '')
+
+    const iconLink = await page.$('link[rel=icon]')
+    expect(await iconLink.getAttribute('href')).toBe(
+      `${isBuild ? './' : '/'}sprite.svg`,
+    )
+  })
+})
+
+describe('importmap', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/importmapOrder.html')
+  })
+
+  // Should put this test at the end to get all browser logs above
+  test('importmap should be prepended', async () => {
+    expect(browserLogs).not.toContain(
+      'An import map is added after module script load was triggered.',
+    )
+  })
+})
+
+describe('side-effects', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/side-effects/')
+  })
+
+  test('console.log is not tree-shaken', async () => {
+    expect(browserLogs).toContain('message from sideEffects script')
+  })
+})
+
+describe('special character', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/a á.html')
+  })
+
+  test('should fetch html proxy', async () => {
+    expect(browserLogs).toContain('special character')
+  })
+})
+
+describe.runIf(isServe)('warmup', () => {
+  test('should warmup /warmup/warm.js', async () => {
+    // warmup transform files async during server startup, so the module check
+    // here might take a while to load
+    await withRetry(async () => {
+      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      expect(mod).toBeTruthy()
+    })
   })
 })

@@ -1,7 +1,8 @@
 {
-  "name": "resolve-config",
+  "name": "@vitejs/test-resolve-config",
   "private": true,
   "version": "0.0.0",
+  "type": "commonjs",
   "scripts": {
     "dev": "vite --force",
     "build": "vite build",

@@ -1,12 +1,12 @@
-import fs, { promises as fsp } from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type {
   Server as HttpServer,
-  OutgoingHttpHeaders as HttpServerHeaders
+  OutgoingHttpHeaders as HttpServerHeaders,
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import type { Connect } from 'types/connect'
-import { isObject } from './utils'
+import type { Connect } from 'dep-types/connect'
+import colors from 'picocolors'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
 
@@ -30,7 +30,7 @@ export interface CommonServerOptions {
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
-  https?: boolean | HttpsServerOptions
+  https?: HttpsServerOptions
   /**
    * Open browser window on startup
    */
@@ -92,87 +92,52 @@ export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 export async function resolveHttpServer(
   { proxy }: CommonServerOptions,
   app: Connect.Server,
-  httpsOptions?: HttpsServerOptions
+  httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
   if (!httpsOptions) {
-    const { createServer } = await import('http')
+    const { createServer } = await import('node:http')
     return createServer(app)
   }
 
   // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    const { createServer } = await import('https')
+    const { createServer } = await import('node:https')
     return createServer(httpsOptions, app)
   } else {
-    const { createSecureServer } = await import('http2')
+    const { createSecureServer } = await import('node:http2')
     return createSecureServer(
       {
         // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
         // errors on large numbers of requests
         maxSessionMemory: 1000,
         ...httpsOptions,
-        allowHTTP1: true
+        allowHTTP1: true,
       },
       // @ts-expect-error TODO: is this correct?
-      app
+      app,
     ) as unknown as HttpServer
   }
 }
 
 export async function resolveHttpsConfig(
-  https: boolean | HttpsServerOptions | undefined,
-  cacheDir: string
+  https: HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? { ...https } : {}
-
-  const { ca, cert, key, pfx } = httpsOption
-  Object.assign(httpsOption, {
-    ca: readFileIfExists(ca),
-    cert: readFileIfExists(cert),
-    key: readFileIfExists(key),
-    pfx: readFileIfExists(pfx)
-  })
-  if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = await getCertificate(cacheDir)
-  }
-  return httpsOption
+  const [ca, cert, key, pfx] = await Promise.all([
+    readFileIfExists(https.ca),
+    readFileIfExists(https.cert),
+    readFileIfExists(https.key),
+    readFileIfExists(https.pfx),
+  ])
+  return { ...https, ca, cert, key, pfx }
 }
 
-function readFileIfExists(value?: string | Buffer | any[]) {
+async function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
-    try {
-      return fs.readFileSync(path.resolve(value))
-    } catch (e) {
-      return value
-    }
+    return fsp.readFile(path.resolve(value)).catch(() => value)
   }
   return value
-}
-
-async function getCertificate(cacheDir: string) {
-  const cachePath = path.join(cacheDir, '_cert.pem')
-
-  try {
-    const [stat, content] = await Promise.all([
-      fsp.stat(cachePath),
-      fsp.readFile(cachePath, 'utf8')
-    ])
-
-    if (Date.now() - stat.ctime.valueOf() > 30 * 24 * 60 * 60 * 1000) {
-      throw new Error('cache is outdated.')
-    }
-
-    return content
-  } catch {
-    const content = (await import('./certificate')).createCertificate()
-    fsp
-      .mkdir(cacheDir, { recursive: true })
-      .then(() => fsp.writeFile(cachePath, content))
-      .catch(() => {})
-    return content
-  }
 }
 
 export async function httpServerStart(
@@ -182,7 +147,7 @@ export async function httpServerStart(
     strictPort: boolean | undefined
     host: string | undefined
     logger: Logger
-  }
+  },
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
 
@@ -208,5 +173,27 @@ export async function httpServerStart(
       httpServer.removeListener('error', onError)
       resolve(port)
     })
+  })
+}
+
+export function setClientErrorHandler(
+  server: HttpServer,
+  logger: Logger,
+): void {
+  server.on('clientError', (err, socket) => {
+    let msg = '400 Bad Request'
+    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
+      msg = '431 Request Header Fields Too Large'
+      logger.warn(
+        colors.yellow(
+          'Server responded with status code 431. ' +
+            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+        ),
+      )
+    }
+    if ((err as any).code === 'ECONNRESET' || !socket.writable) {
+      return
+    }
+    socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
   })
 }

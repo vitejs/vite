@@ -1,20 +1,29 @@
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   resolve: {
     alias: {
-      '/@': __dirname
-    }
+      '/@': __dirname,
+    },
   },
-  plugins: [vue()],
   build: {
     // to make tests faster
-    minify: false
+    minify: false,
   },
   server: {
     // This option caused issues with HMR,
     // although it should not affect the build
-    origin: 'http://localhost:8080/'
-  }
+    origin: 'http://localhost:8080',
+  },
+  plugins: [
+    {
+      name: 'delay view',
+      enforce: 'pre',
+      async transform(_code, id) {
+        if (id.includes('views/view1.js')) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+      },
+    },
+  ],
 })

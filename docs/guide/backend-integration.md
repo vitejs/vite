@@ -12,13 +12,13 @@ If you need a custom integration, you can follow the steps in this guide to conf
    // vite.config.js
    export default defineConfig({
      build: {
-       // generate manifest.json in outDir
+       // generate .vite/manifest.json in outDir
        manifest: true,
        rollupOptions: {
          // overwrite default .html entry
-         input: '/path/to/main.js'
-       }
-     }
+         input: '/path/to/main.js',
+       },
+     },
    })
    ```
 
@@ -33,6 +33,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```html
    <!-- if development -->
+   <script type="module" src="http://localhost:5173/@vite/client"></script>
    <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
@@ -43,7 +44,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    This is needed for assets such as images to load properly.
 
-   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
+   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving (substitute `http://localhost:5173` with the local URL Vite is running at):
 
    ```html
    <script type="module">
@@ -55,7 +56,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    </script>
    ```
 
-3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
+3. For production: after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
    ```json
    {
@@ -82,7 +83,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - The manifest has a `Record<name, chunk>` structure
    - For entry or dynamic entry chunks, the key is the relative src path from project root.
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
-   - Chunks will contain information on its static and dynamic imports (both are keys that maps to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
+   - Chunks will contain information on its static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
 
    You can use this file to render links or preload directives with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
 

@@ -1,18 +1,23 @@
 // @ts-check
+const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
+const pkg = require('./package.json')
 
 module.exports = defineConfig({
   root: true,
   extends: [
     'eslint:recommended',
-    'plugin:node/recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:n/recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/stylistic',
+    'plugin:regexp/recommended',
   ],
-  plugins: ['import'],
+  ignorePatterns: ['packages/create-vite/template-**'],
+  plugins: ['import', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 2021
+    ecmaVersion: 2022,
   },
   rules: {
     eqeqeq: ['warn', 'always', { null: 'never' }],
@@ -23,76 +28,72 @@ module.exports = defineConfig({
     'prefer-const': [
       'warn',
       {
-        destructuring: 'all'
-      }
+        destructuring: 'all',
+      },
     ],
 
-    'node/no-missing-import': [
-      'error',
-      {
-        allowModules: ['types', 'estree', 'less', 'sass', 'stylus'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
-      }
-    ],
-    'node/no-missing-require': [
+    'n/no-process-exit': 'off',
+    'n/no-missing-import': 'off',
+    'n/no-missing-require': [
       'error',
       {
         // for try-catching yarn pnp
         allowModules: ['pnpapi', 'vite'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
-      }
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
     ],
-    'node/no-restricted-require': [
-      'error',
-      Object.keys(require('./packages/vite/package.json').devDependencies).map(
-        (d) => ({
-          name: d,
-          message:
-            `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rollup bundle. If you are trying to ` +
-            `lazy load a dependency, use (await import('dependency')).default instead.`
-        })
-      )
-    ],
-    'node/no-extraneous-import': [
+    'n/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass', 'vitest']
-      }
+        allowModules: ['vite', 'less', 'sass', 'vitest', 'unbuild'],
+      },
     ],
-    'node/no-extraneous-require': [
+    'n/no-extraneous-require': [
       'error',
       {
-        allowModules: ['vite']
-      }
+        allowModules: ['vite'],
+      },
     ],
-    'node/no-deprecated-api': 'off',
-    'node/no-unpublished-import': 'off',
-    'node/no-unpublished-require': 'off',
-    'node/no-unsupported-features/es-syntax': 'off',
+    'n/no-deprecated-api': 'off',
+    'n/no-unpublished-import': 'off',
+    'n/no-unpublished-require': 'off',
+    'n/no-unsupported-features/es-syntax': 'off',
 
-    '@typescript-eslint/ban-ts-comment': 'off', // TODO: we should turn this on in a new PR
+    '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
     '@typescript-eslint/explicit-module-boundary-types': [
       'error',
-      { allowArgumentsExplicitlyTypedAsAny: true }
+      { allowArgumentsExplicitlyTypedAsAny: true },
     ],
     '@typescript-eslint/no-empty-function': [
       'error',
-      { allow: ['arrowFunctions'] }
+      { allow: ['arrowFunctions'] },
     ],
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
+    'no-extra-semi': 'off',
     '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
     '@typescript-eslint/no-inferrable-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'off', // maybe we should turn this on in a new PR
     '@typescript-eslint/no-unused-vars': 'off', // maybe we should turn this on in a new PR
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/consistent-type-imports': [
       'error',
-      { prefer: 'type-imports' }
+      { prefer: 'type-imports', disallowTypeAnnotations: false },
     ],
+    // disable rules set in @typescript-eslint/stylistic v6 that wasn't set in @typescript-eslint/recommended v5 and which conflict with current code
+    // maybe we should turn them on in a new PR
+    '@typescript-eslint/array-type': 'off',
+    '@typescript-eslint/ban-tslint-comment': 'off',
+    '@typescript-eslint/consistent-generic-constructors': 'off',
+    '@typescript-eslint/consistent-indexed-object-style': 'off',
+    '@typescript-eslint/consistent-type-definitions': 'off',
+    '@typescript-eslint/prefer-for-of': 'off',
+    '@typescript-eslint/prefer-function-type': 'off',
 
+    'import/no-nodejs-modules': [
+      'error',
+      { allow: builtinModules.map((mod) => `node:${mod}`) },
+    ],
     'import/no-duplicates': 'error',
     'import/order': 'error',
     'sort-imports': [
@@ -102,76 +103,136 @@ module.exports = defineConfig({
         ignoreDeclarationSort: true,
         ignoreMemberSort: false,
         memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-        allowSeparatedGroups: false
-      }
-    ]
+        allowSeparatedGroups: false,
+      },
+    ],
+
+    'regexp/no-contradiction-with-assertion': 'error',
   },
   overrides: [
     {
-      files: ['packages/vite/src/node/**'],
+      files: ['packages/**'],
+      excludedFiles: '**/__tests__/**',
       rules: {
-        'no-console': ['error']
-      }
-    },
-    {
-      files: ['packages/vite/types/**', '*.spec.ts'],
-      rules: {
-        'node/no-extraneous-import': 'off'
-      }
-    },
-    {
-      files: ['packages/plugin-*/**/*'],
-      rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
-      }
-    },
-    {
-      files: ['playground/**'],
-      rules: {
-        'node/no-extraneous-import': 'off',
-        'node/no-extraneous-require': 'off',
-        'node/no-missing-import': 'off',
-        'node/no-missing-require': 'off',
-        'no-undef': 'off',
-        // engine field doesn't exist in playgrounds
-        'node/no-unsupported-features/es-builtins': [
+        'no-restricted-globals': [
           'error',
-          {
-            version: '>=14.18.0'
-          }
+          'require',
+          '__dirname',
+          '__filename',
         ],
-        'node/no-unsupported-features/node-builtins': [
-          'error',
-          {
-            version: '>=14.18.0'
-          }
-        ]
-      }
-    },
-    {
-      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
-      rules: {
-        'node/no-missing-import': 'off'
-      }
-    },
-    {
-      files: ['playground/**', '*.js'],
-      rules: {
-        '@typescript-eslint/explicit-module-boundary-types': 'off'
-      }
-    },
-    {
-      files: ['*.d.ts'],
-      rules: {
-        '@typescript-eslint/triple-slash-reference': 'off'
-      }
+      },
     },
     {
       files: 'packages/vite/**/*.*',
       rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
-      }
-    }
+        'n/no-restricted-require': [
+          'error',
+          Object.keys(
+            require('./packages/vite/package.json').devDependencies,
+          ).map((d) => ({
+            name: d,
+            message:
+              `devDependencies can only be imported using ESM syntax so ` +
+              `that they are included in the rollup bundle. If you are trying to ` +
+              `lazy load a dependency, use (await import('dependency')).default instead.`,
+          })),
+        ],
+      },
+    },
+    {
+      files: ['packages/vite/src/node/**'],
+      rules: {
+        'no-console': ['error'],
+      },
+    },
+    {
+      files: [
+        'packages/vite/src/types/**',
+        'packages/vite/scripts/**',
+        '*.spec.ts',
+      ],
+      rules: {
+        'n/no-extraneous-import': 'off',
+      },
+    },
+    {
+      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
+      rules: {
+        'no-undef': 'off',
+        'n/no-missing-import': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+      },
+    },
+    {
+      files: ['playground/**'],
+      rules: {
+        'n/no-extraneous-import': 'off',
+        'n/no-extraneous-require': 'off',
+        'n/no-missing-import': 'off',
+        'n/no-missing-require': 'off',
+        // engine field doesn't exist in playgrounds
+        'n/no-unsupported-features/es-builtins': [
+          'error',
+          {
+            version: pkg.engines.node,
+          },
+        ],
+        'n/no-unsupported-features/node-builtins': [
+          'error',
+          {
+            version: pkg.engines.node,
+          },
+        ],
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+      },
+    },
+    {
+      files: ['playground/**'],
+      excludedFiles: '**/__tests__/**',
+      rules: {
+        'no-undef': 'off',
+        'no-empty': 'off',
+        'no-constant-condition': 'off',
+        '@typescript-eslint/no-empty-function': 'off',
+      },
+    },
+    {
+      files: ['playground/**'],
+      excludedFiles: [
+        'playground/ssr-resolve/**',
+        'playground/**/*{commonjs,cjs}*/**',
+        'playground/**/*{commonjs,cjs}*',
+        'playground/**/*dep*/**',
+        'playground/resolve/browser-module-field2/index.web.js',
+        'playground/resolve/browser-field/**',
+        'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
+      ],
+      rules: {
+        'import/no-commonjs': 'error',
+      },
+    },
+    {
+      files: [
+        'playground/tsconfig-json/**',
+        'playground/tsconfig-json-load-error/**',
+      ],
+      excludedFiles: '**/__tests__/**',
+      rules: {
+        '@typescript-eslint/ban-ts-comment': 'off',
+      },
+    },
+    {
+      files: ['*.js', '*.mjs', '*.cjs'],
+      rules: {
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+      },
+    },
+    {
+      files: ['*.d.ts'],
+      rules: {
+        '@typescript-eslint/triple-slash-reference': 'off',
+      },
+    },
   ],
-  reportUnusedDisableDirectives: true
+  reportUnusedDisableDirectives: true,
 })

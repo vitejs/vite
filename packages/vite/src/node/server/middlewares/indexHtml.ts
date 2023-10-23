@@ -1,36 +1,50 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
-import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
-import { NodeTypes } from '@vue/compiler-dom'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
+import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
+  extractImportExpressionFromClassicScript,
+  findNeedTransformStyleAttribute,
+  getAttrKey,
   getScriptInfo,
+  htmlEnvHook,
+  htmlProxyResult,
+  nodeIsElement,
+  overwriteAttrValue,
+  postImportMapHook,
+  preImportMapHook,
   resolveHtmlTransforms,
-  traverseHtml
+  traverseHtml,
 } from '../../plugins/html'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
-import {
-  CLIENT_PUBLIC_PATH,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
-} from '../../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
+  getHash,
   injectQuery,
+  isJSRequest,
+  joinUrlSegments,
   normalizePath,
-  processSrcSetSync
+  processSrcSetSync,
+  stripBase,
+  unwrapId,
+  wrapId,
 } from '../../utils'
-import type { ModuleGraph } from '../moduleGraph'
+import { ERR_CLOSED_SERVER } from '../pluginContainer'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../plugins/optimizedDeps'
+import { isCSSRequest } from '../../plugins/css'
+import { checkPublicFile } from '../../plugins/asset'
+import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 
 interface AssetNode {
   start: number
@@ -38,17 +52,37 @@ interface AssetNode {
   code: string
 }
 
+interface InlineStyleAttribute {
+  index: number
+  location: Token.Location
+  code: string
+}
+
 export function createDevHtmlTransformFn(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
-  const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
+  const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
+    server.config.plugins,
+  )
   return (url: string, html: string, originalUrl: string): Promise<string> => {
-    return applyHtmlTransforms(html, [...preHooks, devHtmlHook, ...postHooks], {
-      path: url,
-      filename: getHtmlFilename(url, server),
-      server,
-      originalUrl
-    })
+    return applyHtmlTransforms(
+      html,
+      [
+        preImportMapHook(server.config),
+        ...preHooks,
+        htmlEnvHook(server.config),
+        devHtmlHook,
+        ...normalHooks,
+        ...postHooks,
+        postImportMapHook(),
+      ],
+      {
+        path: url,
+        filename: getHtmlFilename(url, server),
+        server,
+        originalUrl,
+      },
+    )
   }
 }
 
@@ -57,69 +91,70 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
     return decodeURIComponent(
-      normalizePath(path.join(server.config.root, url.slice(1)))
+      normalizePath(path.join(server.config.root, url.slice(1))),
     )
   }
 }
 
-const startsWithSingleSlashRE = /^\/(?!\/)/
+function shouldPreTransform(url: string, config: ResolvedConfig) {
+  return (
+    !checkPublicFile(url, config) && (isJSRequest(url) || isCSSRequest(url))
+  )
+}
+
+const startsWithWordCharRE = /^\w/
+
+const isSrcSet = (attr: Token.Attribute) =>
+  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
-  node: AttributeNode,
-  s: MagicString,
+  url: string,
+  useSrcSetReplacer: boolean,
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
-  moduleGraph?: ModuleGraph
-) => {
-  let url = node.value?.content || ''
-
-  if (moduleGraph) {
-    const mod = moduleGraph.urlToModuleMap.get(url)
+  server?: ViteDevServer,
+): string | undefined => {
+  if (server?.moduleGraph) {
+    const mod = server.moduleGraph.urlToModuleMap.get(url)
     if (mod && mod.lastHMRTimestamp > 0) {
       url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
     }
   }
-  const devBase = config.base
-  if (startsWithSingleSlashRE.test(url)) {
-    // prefix with base (dev only, base is never relative)
-    s.overwrite(
-      node.value!.loc.start.offset,
-      node.value!.loc.end.offset,
-      `"${devBase + url.slice(1)}"`,
-      { contentOnly: true }
-    )
-  } else if (
-    url.startsWith('.') &&
-    originalUrl &&
-    originalUrl !== '/' &&
-    htmlPath === '/index.html'
-  ) {
-    const replacer = (url: string) =>
-      path.posix.join(
-        devBase,
-        path.posix.relative(originalUrl, devBase),
-        url.slice(1)
-      )
 
+  if (
+    (url[0] === '/' && url[1] !== '/') ||
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
     // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
-    s.overwrite(
-      node.value!.loc.start.offset,
-      node.value!.loc.end.offset,
-      node.name === 'srcset'
-        ? `"${processSrcSetSync(url, ({ url }) => replacer(url))}"`
-        : `"${replacer(url)}"`
-    )
+    ((url[0] === '.' || startsWithWordCharRE.test(url)) &&
+      originalUrl &&
+      originalUrl !== '/' &&
+      htmlPath === '/index.html')
+  ) {
+    // prefix with base (dev only, base is never relative)
+    const replacer = (url: string) => {
+      const devBase = config.base
+      const fullUrl = path.posix.join(devBase, url)
+      if (server && shouldPreTransform(url, config)) {
+        preTransformRequest(server, fullUrl, devBase)
+      }
+      return fullUrl
+    }
+
+    const processedUrl = useSrcSetReplacer
+      ? processSrcSetSync(url, ({ url }) => replacer(url))
+      : replacer(url)
+    return processedUrl
   }
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: htmlPath, filename, server, originalUrl }
+  { path: htmlPath, filename, server, originalUrl },
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
+  htmlPath = decodeURI(htmlPath)
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -127,7 +162,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
-    proxyModuleUrl = base + htmlPath.slice(1)
+    proxyModuleUrl = joinUrlSegments(base, htmlPath)
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -136,29 +171,36 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // and ids are properly handled
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
-    proxyModuleUrl = `${VALID_ID_PREFIX}${NULL_BYTE_PLACEHOLDER}${validPath}`
+    proxyModuleUrl = wrapId(proxyModulePath)
   }
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
   const proxyCacheUrl = cleanUrl(proxyModulePath).replace(
     normalizePath(config.root),
-    ''
+    '',
   )
   const styleUrl: AssetNode[] = []
+  const inlineStyles: InlineStyleAttribute[] = []
 
-  const addInlineModule = (node: ElementNode, ext: 'js') => {
+  const addInlineModule = (
+    node: DefaultTreeAdapterMap['element'],
+    ext: 'js',
+  ) => {
     inlineModuleIndex++
 
-    const contentNode = node.children[0] as TextNode
+    const contentNode = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
 
-    const code = contentNode.content
+    const code = contentNode.value
 
     let map: SourceMapInput | undefined
-    if (!proxyModulePath.startsWith('\0')) {
+    if (proxyModulePath[0] !== '\0') {
       map = new MagicString(html)
-        .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
-        .generateMap({ hires: true })
+        .snip(
+          contentNode.sourceCodeLocation!.startOffset,
+          contentNode.sourceCodeLocation!.endOffset,
+        )
+        .generateMap({ hires: 'boundary' })
       map.sources = [filename]
       map.file = filename
     }
@@ -174,56 +216,106 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    s.overwrite(
-      node.loc.start.offset,
-      node.loc.end.offset,
+    s.update(
+      node.sourceCodeLocation!.startOffset,
+      node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${modulePath}"></script>`,
-      { contentOnly: true }
     )
+    preTransformRequest(server!, modulePath, base)
   }
 
-  await traverseHtml(html, htmlPath, (node) => {
-    if (node.type !== NodeTypes.ELEMENT) {
+  await traverseHtml(html, filename, (node) => {
+    if (!nodeIsElement(node)) {
       return
     }
 
     // script tags
-    if (node.tag === 'script') {
-      const { src, isModule } = getScriptInfo(node)
+    if (node.nodeName === 'script') {
+      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
 
       if (src) {
-        processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
-      } else if (isModule && node.children.length) {
+        const processedUrl = processNodeUrl(
+          src.value,
+          isSrcSet(src),
+          config,
+          htmlPath,
+          originalUrl,
+          server,
+        )
+        if (processedUrl) {
+          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+        }
+      } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
+      } else if (node.childNodes.length) {
+        const scriptNode = node.childNodes[
+          node.childNodes.length - 1
+        ] as DefaultTreeAdapterMap['textNode']
+        for (const {
+          url,
+          start,
+          end,
+        } of extractImportExpressionFromClassicScript(scriptNode)) {
+          const processedUrl = processNodeUrl(
+            url,
+            false,
+            config,
+            htmlPath,
+            originalUrl,
+          )
+          if (processedUrl) {
+            s.update(start, end, processedUrl)
+          }
+        }
       }
     }
 
-    if (node.tag === 'style' && node.children.length) {
-      const children = node.children[0] as TextNode
+    const inlineStyle = findNeedTransformStyleAttribute(node)
+    if (inlineStyle) {
+      inlineModuleIndex++
+      inlineStyles.push({
+        index: inlineModuleIndex,
+        location: inlineStyle.location!,
+        code: inlineStyle.attr.value,
+      })
+    }
+
+    if (node.nodeName === 'style' && node.childNodes.length) {
+      const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
       styleUrl.push({
-        start: children.loc.start.offset,
-        end: children.loc.end.offset,
-        code: children.content
+        start: children.sourceCodeLocation!.startOffset,
+        end: children.sourceCodeLocation!.endOffset,
+        code: children.value,
       })
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.tag]
+    const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
-      for (const p of node.props) {
-        if (
-          p.type === NodeTypes.ATTRIBUTE &&
-          p.value &&
-          assetAttrs.includes(p.name)
-        ) {
-          processNodeUrl(p, s, config, htmlPath, originalUrl)
+      for (const p of node.attrs) {
+        const attrKey = getAttrKey(p)
+        if (p.value && assetAttrs.includes(attrKey)) {
+          const processedUrl = processNodeUrl(
+            p.value,
+            isSrcSet(p),
+            config,
+            htmlPath,
+            originalUrl,
+          )
+          if (processedUrl) {
+            overwriteAttrValue(
+              s,
+              node.sourceCodeLocation!.attrs![attrKey],
+              processedUrl,
+            )
+          }
         }
       }
     }
   })
 
-  await Promise.all(
-    styleUrl.map(async ({ start, end, code }, index) => {
+  await Promise.all([
+    ...styleUrl.map(async ({ start, end, code }, index) => {
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
@@ -231,9 +323,37 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
-      s.overwrite(start, end, result?.code || '')
-    })
-  )
+      let content = ''
+      if (result) {
+        if (result.map && 'version' in result.map) {
+          if (result.map.mappings) {
+            await injectSourcesContent(
+              result.map,
+              proxyModulePath,
+              config.logger,
+            )
+          }
+          content = getCodeWithSourcemap('css', result.code, result.map)
+        } else {
+          content = result.code
+        }
+      }
+      s.overwrite(start, end, content)
+    }),
+    ...inlineStyles.map(async ({ index, location, code }) => {
+      // will transform with css plugin and cache result with css-post plugin
+      const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
+
+      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      ensureWatchedFile(watcher, mod.file, config.root)
+
+      await server?.pluginContainer.transform(code, mod.id!)
+
+      const hash = getHash(cleanUrl(mod.id!))
+      const result = htmlProxyResult.get(`${hash}_${index}`)
+      overwriteAttrValue(s, location, result ?? '')
+    }),
+  ])
 
   html = s.toString()
 
@@ -244,16 +364,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         tag: 'script',
         attrs: {
           type: 'module',
-          src: path.posix.join(base, CLIENT_PUBLIC_PATH)
+          src: path.posix.join(base, CLIENT_PUBLIC_PATH),
         },
-        injectTo: 'head-prepend'
-      }
-    ]
+        injectTo: 'head-prepend',
+      },
+    ],
   }
 }
 
 export function indexHtmlMiddleware(
-  server: ViteDevServer
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -262,15 +382,15 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // spa-fallback always redirects to /index.html
+    // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {
         try {
-          let html = fs.readFileSync(filename, 'utf-8')
+          let html = await fsp.readFile(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
           return send(req, res, html, 'html', {
-            headers: server.config.server.headers
+            headers: server.config.server.headers,
           })
         } catch (e) {
           return next(e)
@@ -279,4 +399,26 @@ export function indexHtmlMiddleware(
     }
     next()
   }
+}
+
+function preTransformRequest(server: ViteDevServer, url: string, base: string) {
+  if (!server.config.server.preTransformRequests) return
+
+  url = unwrapId(stripBase(url, base))
+
+  // transform all url as non-ssr as html includes client-side assets only
+  server.transformRequest(url).catch((e) => {
+    if (
+      e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+      e?.code === ERR_CLOSED_SERVER
+    ) {
+      // these are expected errors
+      return
+    }
+    // Unexpected error, log the issue but avoid an unhandled exception
+    server.config.logger.error(`Pre-transform error: ${e.message}`, {
+      error: e,
+      timestamp: true,
+    })
+  })
 }

@@ -1,0 +1,15 @@
+{
+  "name": "@vitejs/test-import-assertion",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-import-assertion-dep": "file:./import-assertion-dep"
+  }
+}

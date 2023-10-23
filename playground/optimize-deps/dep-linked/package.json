@@ -1,5 +1,5 @@
 {
-  "name": "dep-linked",
+  "name": "@vitejs/test-dep-linked",
   "private": true,
   "version": "0.0.0",
   "type": "module",

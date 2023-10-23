@@ -1,12 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../../types"],
+  "include": ["./", "../dep-types", "../types"],
   "exclude": ["**/__tests__"],
   "compilerOptions": {
-    "target": "ES2020",
-    "outDir": "../../dist/node",
-    "module": "ESNext",
     "lib": ["ESNext", "DOM"],
-    "sourceMap": true
+    "stripInternal": true
   }
 }

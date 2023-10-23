@@ -1,12 +1,11 @@
-import { platform } from 'node:os'
 import fetch from 'node-fetch'
+import { expect, test } from 'vitest'
 import { port } from './serve'
 import { page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}/`
 
-// TODO: on macOS this test causing the process exists for some reason
-test.skipIf(platform() === 'darwin')('optimize', async () => {
+test('optimize', async () => {
   await page.goto(url)
   // reload page to get optimized missing deps
   await page.reload()

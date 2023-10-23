@@ -1,38 +1,38 @@
-/* eslint-disable no-restricted-globals */
-import fs from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
-import alias from '@rollup/plugin-alias'
-import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
-import colors from 'picocolors'
-import fg from 'fast-glob'
-import { sync as resolve } from 'resolve'
-import type { Plugin } from 'rollup'
+import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
-import pkg from './package.json'
+import licensePlugin from './rollupLicensePlugin'
+
+const pkg = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url)).toString(),
+)
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
-      tsconfig: false,
-      target: 'es2020',
-      module: 'esnext',
-      include: ['src/client/env.ts'],
-      baseUrl: path.resolve(__dirname, 'src/env'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
-    })
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
+    }),
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
-    sourcemap: true
-  }
+    sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
+    },
+  },
 })
 
 const clientConfig = defineConfig({
@@ -40,77 +40,56 @@ const clientConfig = defineConfig({
   external: ['./env', '@vite/env'],
   plugins: [
     typescript({
-      tsconfig: false,
-      target: 'es2020',
-      include: ['src/client/**/*.ts'],
-      baseUrl: path.resolve(__dirname, 'src/client'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
-    })
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
+    }),
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
-    sourcemap: true
-  }
+    sourcemap: true,
+    sourcemapPathTransform(relativeSourcePath) {
+      return path.basename(relativeSourcePath)
+    },
+    sourcemapIgnoreList() {
+      return true
+    },
+  },
 })
 
 const sharedNodeOptions = defineConfig({
   treeshake: {
     moduleSideEffects: 'no-external',
     propertyReadSideEffects: false,
-    tryCatchDeoptimization: false
+    tryCatchDeoptimization: false,
   },
   output: {
-    dir: path.resolve(__dirname, 'dist'),
+    dir: './dist',
     entryFileNames: `node/[name].js`,
     chunkFileNames: 'node/chunks/dep-[hash].js',
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
-    freeze: false
+    freeze: false,
   },
   onwarn(warning, warn) {
-    // node-resolve complains a lot about this but seems to still work?
-    if (warning.message.includes('Package subpath')) {
-      return
-    }
-    // we use the eval('require') trick to deal with optional deps
-    if (warning.message.includes('Use of eval')) {
-      return
-    }
     if (warning.message.includes('Circular dependency')) {
       return
     }
     warn(warning)
-  }
+  },
 })
 
 function createNodePlugins(
   isProduction: boolean,
   sourceMap: boolean,
-  declarationDir: string | false
-): Plugin[] {
+  declarationDir: string | false,
+): (Plugin | false)[] {
   return [
-    alias({
-      // packages with "module" field that doesn't play well with cjs bundles
-      entries: {
-        '@vue/compiler-dom': require.resolve(
-          '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-        )
-      }
-    }),
     nodeResolve({ preferBuiltins: true }),
     typescript({
-      tsconfig: 'src/node/tsconfig.json',
-      module: 'esnext',
-      target: 'es2020',
-      include: ['src/**/*.ts', 'types/**'],
-      exclude: ['src/**/__tests__/**'],
-      esModuleInterop: true,
+      tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
       sourceMap,
       declaration: declarationDir !== false,
-      declarationDir: declarationDir !== false ? declarationDir : undefined
+      declarationDir: declarationDir !== false ? declarationDir : undefined,
     }),
 
     // Some deps have try...catch require of optional deps, but rollup will
@@ -121,37 +100,49 @@ function createNodePlugins(
         // chokidar -> fsevents
         'fsevents-handler.js': {
           src: `require('fsevents')`,
-          replacement: `__require('fsevents')`
+          replacement: `__require('fsevents')`,
         },
         // postcss-import -> sugarss
         'process-content.js': {
           src: 'require("sugarss")',
-          replacement: `__require('sugarss')`
+          replacement: `__require('sugarss')`,
         },
         'lilconfig/dist/index.js': {
           pattern: /: require,/g,
-          replacement: `: __require,`
+          replacement: `: __require,`,
         },
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
-          src: `require(configFile)`,
-          replacement: `__require(configFile)`
+          pattern: /require(?=\((configFile|'ts-node')\))/g,
+          replacement: `__require`,
         },
-        // @rollup/plugin-commonjs uses incorrect esm
-        '@rollup/plugin-commonjs/dist/index.es.js': {
-          src: `import { sync } from 'resolve';`,
-          replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
-        }
+        'json-stable-stringify/index.js': {
+          pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
+          replacement: 'var json = JSON',
+        },
+        // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
+        // However, we always pass the `resolve` option. Remove this import to avoid
+        // bundling the `resolve` dep.
+        'postcss-import/index.js': {
+          src: 'const resolveId = require("./lib/resolve-id")',
+          replacement: 'const resolveId = (id) => id',
+        },
       }),
+
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
       // Since ws is not that perf critical for us, just ignore these deps.
-      ignore: ['bufferutil', 'utf-8-validate']
+      ignore: ['bufferutil', 'utf-8-validate'],
     }),
     json(),
-    isProduction && licensePlugin(),
-    cjsPatchPlugin()
+    isProduction &&
+      licensePlugin(
+        path.resolve(__dirname, 'LICENSE.md'),
+        'Vite core license',
+        'Vite',
+      ),
+    cjsPatchPlugin(),
   ]
 }
 
@@ -161,24 +152,26 @@ function createNodeConfig(isProduction: boolean) {
     input: {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts'),
-      constants: path.resolve(__dirname, 'src/node/constants.ts')
+      constants: path.resolve(__dirname, 'src/node/constants.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
-      sourcemap: !isProduction
+      sourcemap: !isProduction,
     },
     external: [
       'fsevents',
+      'lightningcss',
+      'rollup/parseAst',
       ...Object.keys(pkg.dependencies),
-      ...(isProduction ? [] : Object.keys(pkg.devDependencies))
+      ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
-      // in production we use api-extractor for dts generation
+      // in production we use rollup.dts.config.ts for dts generation
       // in development we need to rely on the rollup ts plugin
-      isProduction ? false : path.resolve(__dirname, 'dist/node')
-    )
+      isProduction ? false : './dist/node',
+    ),
   })
 }
 
@@ -186,28 +179,28 @@ function createCjsConfig(isProduction: boolean) {
   return defineConfig({
     ...sharedNodeOptions,
     input: {
-      publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts')
+      publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
     },
     output: {
-      dir: path.resolve(__dirname, 'dist'),
+      dir: './dist',
       entryFileNames: `node-cjs/[name].cjs`,
       chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
       exports: 'named',
       format: 'cjs',
       externalLiveBindings: false,
       freeze: false,
-      sourcemap: false
+      sourcemap: false,
     },
     external: [
       'fsevents',
       ...Object.keys(pkg.dependencies),
-      ...(isProduction ? [] : Object.keys(pkg.devDependencies))
+      ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)]
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
   })
 }
 
-export default (commandLineArgs: any) => {
+export default (commandLineArgs: any): RollupOptions[] => {
   const isDev = commandLineArgs.watch
   const isProduction = !isDev
 
@@ -215,7 +208,7 @@ export default (commandLineArgs: any) => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
-    createCjsConfig(isProduction)
+    createCjsConfig(isProduction),
   ])
 }
 
@@ -242,7 +235,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             const pos = code.indexOf(src)
             if (pos < 0) {
               this.error(
-                `Could not find expected src "${src}" in file "${file}"`
+                `Could not find expected src "${src}" in file "${file}"`,
               )
             }
             transformed[file] = true
@@ -260,7 +253,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             }
             if (!transformed[file]) {
               this.error(
-                `Could not find expected pattern "${pattern}" in file "${file}"`
+                `Could not find expected pattern "${pattern}" in file "${file}"`,
               )
             }
             console.log(`shimmed: ${file}`)
@@ -268,7 +261,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
 
           return {
             code: magicString.toString(),
-            map: magicString.generateMap({ hires: true })
+            map: magicString.generateMap({ hires: 'boundary' }),
           }
         }
       }
@@ -278,122 +271,13 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
         for (const file in deps) {
           if (!transformed[file]) {
             this.error(
-              `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`
+              `Did not find "${file}" which is supposed to be shimmed, was the file renamed?`,
             )
           }
         }
       }
-    }
+    },
   }
-}
-
-function licensePlugin() {
-  return license({
-    thirdParty(dependencies) {
-      // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
-      // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
-      const coreLicense = fs.readFileSync(
-        path.resolve(__dirname, '../../LICENSE')
-      )
-      function sortLicenses(licenses) {
-        let withParenthesis = []
-        let noParenthesis = []
-        licenses.forEach((license) => {
-          if (/^\(/.test(license)) {
-            withParenthesis.push(license)
-          } else {
-            noParenthesis.push(license)
-          }
-        })
-        withParenthesis = withParenthesis.sort()
-        noParenthesis = noParenthesis.sort()
-        return [...noParenthesis, ...withParenthesis]
-      }
-      const licenses = new Set()
-      const dependencyLicenseTexts = dependencies
-        .sort(({ name: nameA }, { name: nameB }) =>
-          nameA > nameB ? 1 : nameB > nameA ? -1 : 0
-        )
-        .map(
-          ({
-            name,
-            license,
-            licenseText,
-            author,
-            maintainers,
-            contributors,
-            repository
-          }) => {
-            let text = `## ${name}\n`
-            if (license) {
-              text += `License: ${license}\n`
-            }
-            const names = new Set()
-            for (const person of [author, ...maintainers, ...contributors]) {
-              const name = typeof person === 'string' ? person : person?.name
-              if (name) {
-                names.add(name)
-              }
-            }
-            if (names.size > 0) {
-              text += `By: ${Array.from(names).join(', ')}\n`
-            }
-            if (repository) {
-              text += `Repository: ${
-                typeof repository === 'string' ? repository : repository.url
-              }\n`
-            }
-            if (!licenseText) {
-              try {
-                const pkgDir = path.dirname(
-                  resolve(path.join(name, 'package.json'), {
-                    preserveSymlinks: false
-                  })
-                )
-                const licenseFile = fg.sync(`${pkgDir}/LICENSE*`, {
-                  caseSensitiveMatch: false
-                })[0]
-                if (licenseFile) {
-                  licenseText = fs.readFileSync(licenseFile, 'utf-8')
-                }
-              } catch {}
-            }
-            if (licenseText) {
-              text +=
-                '\n' +
-                licenseText
-                  .trim()
-                  .replace(/(\r\n|\r)/gm, '\n')
-                  .split('\n')
-                  .map((line) => `> ${line}`)
-                  .join('\n') +
-                '\n'
-            }
-            licenses.add(license)
-            return text
-          }
-        )
-        .join('\n---------------------------------------\n\n')
-      const licenseText =
-        `# Vite core license\n` +
-        `Vite is released under the MIT license:\n\n` +
-        coreLicense +
-        `\n# Licenses of bundled dependencies\n` +
-        `The published Vite artifact additionally contains code with the following licenses:\n` +
-        `${sortLicenses(licenses).join(', ')}\n\n` +
-        `# Bundled dependencies:\n` +
-        dependencyLicenseTexts
-      const existingLicenseText = fs.readFileSync('LICENSE.md', 'utf8')
-      if (existingLicenseText !== licenseText) {
-        fs.writeFileSync('LICENSE.md', licenseText)
-        console.warn(
-          colors.yellow(
-            '\nLICENSE.md updated. You should commit the updated file.\n'
-          )
-        )
-      }
-    }
-  })
 }
 
 /**
@@ -417,7 +301,7 @@ const __require = require;
       if (!chunk.fileName.includes('chunks/dep-')) return
 
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
-      const index = match ? match.index + match[0].length : 0
+      const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
       // inject after the last `import`
       s.appendRight(index, cjsPatch)
@@ -425,16 +309,16 @@ const __require = require;
 
       return {
         code: s.toString(),
-        map: s.generateMap()
+        map: s.generateMap({ hires: 'boundary' }),
       }
-    }
+    },
   }
 }
 
 /**
  * Guard the bundle size
  *
- * @param limit size in KB
+ * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
   return {
@@ -444,15 +328,17 @@ function bundleSizeLimit(limit: number): Plugin {
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
           .join(''),
-        'utf-8'
+        'utf-8',
       )
-      const kb = size / 1024
+      const kb = size / 1000
       if (kb > limit) {
         throw new Error(
-          `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(2)}kb.`
+          `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
+            2,
+          )}kb.`,
         )
       }
-    }
+    },
   }
 }
 
