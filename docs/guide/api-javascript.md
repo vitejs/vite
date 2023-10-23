@@ -79,7 +79,7 @@ interface ViteDevServer {
    * returns a noop event emitter.
    * https://github.com/paulmillr/chokidar#api
    */
-  watcher: FSWatcher
+  watcher: Watcher
   /**
    * Web socket server with `send(payload)` method.
    */

@@ -60,7 +60,6 @@ import type {
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
@@ -79,6 +78,7 @@ import {
   unwrapId,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
+import type { Watcher } from '../watch'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
@@ -150,7 +150,7 @@ type PluginContext = Omit<
 export async function createPluginContainer(
   config: ResolvedConfig,
   moduleGraph?: ModuleGraph,
-  watcher?: FSWatcher,
+  watcher?: Watcher,
 ): Promise<PluginContainer> {
   const {
     plugins,

@@ -74,6 +74,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
+    "@parcel/watcher": "^2.3.0",
     "esbuild": "^0.19.3",
     "postcss": "^8.4.31",
     "rollup": "^4.1.4"
@@ -96,7 +97,6 @@
     "acorn": "^8.10.0",
     "acorn-walk": "^8.2.0",
     "cac": "^6.7.14",
-    "chokidar": "^3.5.3",
     "connect": "^3.7.0",
     "connect-history-api-fallback": "^2.0.0",
     "convert-source-map": "^2.0.0",
@@ -111,6 +111,7 @@
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "fast-glob": "^3.3.1",
+    "glob-parent": "^6.0.2",
     "http-proxy": "^1.18.1",
     "json-stable-stringify": "^1.0.2",
     "launch-editor-middleware": "^2.6.1",

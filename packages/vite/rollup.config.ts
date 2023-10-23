@@ -97,11 +97,6 @@ function createNodePlugins(
     // Shim them with eval() so rollup can skip these calls.
     isProduction &&
       shimDepsPlugin({
-        // chokidar -> fsevents
-        'fsevents-handler.js': {
-          src: `require('fsevents')`,
-          replacement: `__require('fsevents')`,
-        },
         // postcss-import -> sugarss
         'process-content.js': {
           src: 'require("sugarss")',

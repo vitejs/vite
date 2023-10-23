@@ -8,7 +8,6 @@ import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
-import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
@@ -37,6 +36,7 @@ import {
   findNearestPackageData,
   resolvePackageData,
 } from './packages'
+import type { Watcher } from './watch'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -682,7 +682,7 @@ function optimizeSafeRealPathSync() {
 }
 
 export function ensureWatchedFile(
-  watcher: FSWatcher,
+  watcher: Watcher,
   file: string | null,
   root: string,
 ): void {

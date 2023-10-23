@@ -6,8 +6,7 @@ import { performance } from 'node:perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
-import chokidar from 'chokidar'
-import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import type { Options as WatchOptions } from '@parcel/watcher'
 import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
@@ -45,7 +44,7 @@ import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { createNoopWatcher, resolveChokidarOptions } from '../watch'
+import { NoopWatcher, Watcher, resolveWatchOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -100,8 +99,7 @@ export interface ServerOptions extends CommonServerOptions {
     ssrFiles?: string[]
   }
   /**
-   * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#api
+   * vite watch options
    */
   watch?: WatchOptions | null
   /**
@@ -200,10 +198,9 @@ export interface ViteDevServer {
    */
   httpServer: http.Server | null
   /**
-   * chokidar watcher instance
-   * https://github.com/paulmillr/chokidar#api
+   * vite watcher instance
    */
-  watcher: FSWatcher
+  watcher: Watcher
   /**
    * web socket server with `send(payload)` method
    */
@@ -348,11 +345,6 @@ export async function _createServer(
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
-  const resolvedWatchOptions = resolveChokidarOptions(config, {
-    disableGlobbing: true,
-    ...serverConfig.watch,
-  })
-
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
@@ -366,12 +358,12 @@ export async function _createServer(
   // eslint-disable-next-line eqeqeq
   const watchEnabled = serverConfig.watch !== null
   const watcher = watchEnabled
-    ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [root, ...config.configFileDependencies, config.envDir],
-        resolvedWatchOptions,
-      ) as FSWatcher)
-    : createNoopWatcher(resolvedWatchOptions)
+    ? new Watcher(root, resolveWatchOptions(config, serverConfig.watch))
+    : (new NoopWatcher() as any as Watcher)
+
+  // config file dependencies and env file might be outside of root
+  watcher.add(config.configFileDependencies)
+  watcher.add(config.envDir)
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr }),
