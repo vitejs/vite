@@ -1320,3 +1320,14 @@ export function getPackageManagerCommand(
       throw new TypeError(`Unknown command type: ${type}`)
   }
 }
+
+export function safeURL(
+  input: string,
+  base?: string | URL | undefined,
+): URL | null {
+  try {
+    return new URL(input, base)
+  } catch {
+    return null
+  }
+}
