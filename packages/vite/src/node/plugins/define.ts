@@ -174,7 +174,7 @@ export async function replaceDefine(
     platform: 'neutral',
     define,
     sourcefile: id,
-    sourcemap: config.command === 'build' && !!config.build.sourcemap,
+    sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
   })
 
   for (const marker in replacementMarkers) {
