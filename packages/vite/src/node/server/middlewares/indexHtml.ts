@@ -32,7 +32,7 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
-  isExternalUrl,
+  isExcludedUrl,
   isJSRequest,
   joinUrlSegments,
   normalizePath,
@@ -136,7 +136,9 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const devBase = config.base
-      const fullUrl = isExternalUrl(url) ? url : path.posix.join(devBase, url)
+      const fullUrl = isExcludedUrl(url, config)
+        ? url
+        : path.posix.join(devBase, url)
       if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
