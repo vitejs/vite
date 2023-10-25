@@ -11,6 +11,12 @@ import {
   withRetry,
 } from '~utils'
 
+function fetchHtml(p: string) {
+  return fetch(viteTestUrl + p, {
+    headers: { Accept: 'text/html,*/*' },
+  })
+}
+
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
     expect(await page.$('head meta[name=viewport]')).toBeTruthy()
@@ -357,4 +363,38 @@ describe.runIf(isServe)('warmup', () => {
       expect(mod).toBeTruthy()
     })
   })
+})
+
+test('html resolve behavior', async () => {
+  const [
+    nestedIndexHtml,
+    nested,
+    nestedSlash,
+
+    nonNestedHtml,
+    nonNested,
+    nonNestedSlash,
+  ] = await Promise.all([
+    fetchHtml('/nested/index.html'), // -> nested/index.html
+    fetchHtml('/nested'), // -> index.html (404 in mpa)
+    fetchHtml('/nested/'), // -> nested/index.html
+
+    fetchHtml('/nonNested.html'), // -> nonNested.html
+    fetchHtml('/nonNested'), // -> nonNested.html
+    fetchHtml('/nonNested/'), // -> index.html (404 in mpa)
+  ])
+
+  expect(nestedIndexHtml.status).toBe(200)
+  expect(await nestedIndexHtml.text()).toContain('Nested')
+  expect(nested.status).toBe(200)
+  expect(await nested.text()).toContain('HTML')
+  expect(nestedSlash.status).toBe(200)
+  expect(await nestedSlash.text()).toContain('Nested')
+
+  expect(nonNestedHtml.status).toBe(200)
+  expect(await nonNestedHtml.text()).toContain('NonNested')
+  expect(nonNested.status).toBe(200)
+  expect(await nonNested.text()).toContain('NonNested')
+  expect(nonNestedSlash.status).toBe(200)
+  expect(await nonNestedSlash.text()).toContain('HTML')
 })

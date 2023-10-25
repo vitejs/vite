@@ -30,6 +30,7 @@ export default defineConfig({
         env: resolve(__dirname, 'env.html'),
         sideEffects: resolve(__dirname, 'side-effects/index.html'),
         'a á': resolve(__dirname, 'a á.html'),
+        nonNested: resolve(__dirname, 'nonNested.html'),
       },
     },
   },
