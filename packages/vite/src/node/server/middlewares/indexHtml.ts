@@ -32,11 +32,11 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
+  isExternalUrl,
   isJSRequest,
   joinUrlSegments,
   normalizePath,
   processSrcSetSync,
-  safeURL,
   stripBase,
   unwrapId,
   wrapId,
@@ -136,7 +136,7 @@ const processNodeUrl = (
     // prefix with base (dev only, base is never relative)
     const replacer = (url: string) => {
       const devBase = config.base
-      const fullUrl = safeURL(url)?.href ?? path.posix.join(devBase, url)
+      const fullUrl = isExternalUrl(url) ? url : path.posix.join(devBase, url)
       if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }

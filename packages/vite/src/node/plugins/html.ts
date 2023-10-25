@@ -16,7 +16,7 @@ import {
   cleanUrl,
   generateCodeFrame,
   getHash,
-  isDataUrl,
+  isExcludedUrl,
   isExternalUrl,
   normalizePath,
   processSrcSet,
@@ -292,11 +292,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
-  const isExcludedUrl = (url: string) =>
-    url[0] === '#' ||
-    isExternalUrl(url) ||
-    isDataUrl(url) ||
-    checkPublicFile(url, config)
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
@@ -402,7 +397,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
             if (isModule) {
               inlineModuleIndex++
-              if (url && !isExcludedUrl(url)) {
+              if (url && !isExcludedUrl(url, config)) {
                 // <script type="module" src="..."/>
                 // add it as an import
                 js += `\nimport ${JSON.stringify(url)}`
@@ -424,7 +419,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
             } else if (url && !isPublicFile) {
-              if (!isExcludedUrl(url)) {
+              if (!isExcludedUrl(url, config)) {
                 config.logger.warn(
                   `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
                 )
@@ -449,7 +444,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   node.sourceCodeLocation!.attrs![attrKey]
                 // assetsUrl may be encodeURI
                 const url = decodeURI(p.value)
-                if (!isExcludedUrl(url)) {
+                if (!isExcludedUrl(url, config)) {
                   if (
                     node.nodeName === 'link' &&
                     isCSSRequest(url) &&
@@ -573,7 +568,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
-          if (!isExcludedUrl(url)) {
+          if (!isExcludedUrl(url, config)) {
             s.update(start, end, await urlToBuiltUrl(url, id, config, this))
           } else if (checkPublicFile(url, config)) {
             s.update(start, end, toOutputPublicFilePath(url))

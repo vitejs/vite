@@ -37,6 +37,7 @@ import {
   findNearestPackageData,
   resolvePackageData,
 } from './packages'
+import { checkPublicFile } from './plugins/asset'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -1321,13 +1322,11 @@ export function getPackageManagerCommand(
   }
 }
 
-export function safeURL(
-  input: string,
-  base?: string | URL | undefined,
-): URL | null {
-  try {
-    return new URL(input, base)
-  } catch {
-    return null
-  }
+export function isExcludedUrl(url: string, config: ResolvedConfig): boolean {
+  return (
+    url[0] === '#' ||
+    isExternalUrl(url) ||
+    isDataUrl(url) ||
+    !!checkPublicFile(url, config)
+  )
 }
