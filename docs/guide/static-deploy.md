@@ -343,10 +343,11 @@ Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref
 Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)
 
 ## Kinsta Static Site Hosting
+
 You can deploy your Vite app as a Static Site on [Kinsta](https://kinsta.com/static-site-hosting/).
 
 1. Login or create an account to view your [MyKinsta](https://my.kinsta.com/) dashboard.
-   
+
 2. Authorize Kinsta with your Git provider.
 
 3. Select **Static Sites** from the left sidebar and press **Add sites**.
@@ -355,8 +356,8 @@ You can deploy your Vite app as a Static Site on [Kinsta](https://kinsta.com/sta
 
 5. During the build settings, Kinsta will automatically try to fill out the **Build command**, **Node version**, and **Publish directory**. If it won't, fill out the following:
 
-    * Build command: `npm run build`
-    * Node version: `18.16.0`
-    * Publish directory: `dist`
-  
+   - Build command: `npm run build`
+   - Node version: `18.16.0`
+   - Publish directory: `dist`
+
 6. Click the **Create site**.
