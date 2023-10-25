@@ -171,6 +171,20 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), 'child updated')
   })
 
+  test('soft invalidate', async () => {
+    const el = await page.$('.soft-invalidation')
+    expect(await el.textContent()).toBe(
+      'soft-invalidation/index.js is transformed 1 times. child is bar',
+    )
+    editFile('soft-invalidation/child.js', (code) =>
+      code.replace('bar', 'updated'),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'soft-invalidation/index.js is transformed 1 times. child is updated',
+    )
+  })
+
   test('plugin hmr handler + custom event', async () => {
     const el = await page.$('.custom')
     editFile('customFile.js', (code) => code.replace('custom', 'edited'))
