@@ -4,10 +4,9 @@ import type { Server } from 'node:http'
 import colors from 'picocolors'
 import type { Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import { CLIENT_DIR } from '../constants'
 import {
   createDebugger,
-  diffDnsOrderChange,
   normalizePath,
   unique,
   withTrailingSlash,
@@ -19,6 +18,7 @@ import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import type { ModuleNode } from './moduleGraph'
+import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -78,22 +78,7 @@ export async function handleHMRUpdate(
       { clear: true, timestamp: true },
     )
     try {
-      const { port: prevPort, host: prevHost, middlewareMode } = config.server
-      const oldUrls = server.resolvedUrls
-      await server.restart()
-      const {
-        logger,
-        server: { port, host },
-      } = server.config
-      if (
-        !middlewareMode &&
-        ((port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
-          host !== prevHost ||
-          diffDnsOrderChange(oldUrls, server.resolvedUrls))
-      ) {
-        logger.info('')
-        server.printUrls()
-      }
+      await restartServerWithUrls(server)
     } catch (e) {
       config.logger.error(colors.red(e))
     }

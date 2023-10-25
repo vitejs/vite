@@ -1,6 +1,6 @@
 import readline from 'node:readline'
 import colors from 'picocolors'
-import type { ViteDevServer } from './server'
+import { type ViteDevServer, restartServerWithUrls } from './server'
 import { isDefined } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
@@ -91,7 +91,7 @@ const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
     key: 'r',
     description: 'restart the server',
     async action(server) {
-      await server.restart()
+      await restartServerWithUrls(server)
     },
   },
   {
