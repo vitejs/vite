@@ -10,7 +10,7 @@ import {
   normalizePath,
   withTrailingSlash,
 } from '../utils'
-import { LogLevels } from '../logger'
+import { LogLevels, buildBreakInfo } from '../logger'
 
 const groups = [
   { name: 'Assets', color: colors.green },
@@ -301,7 +301,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     closeBundle() {
-      if (shouldLogInfo && !config.build.watch) {
+      if (shouldLogInfo && !config.build.watch && !buildBreakInfo.break) {
         config.logger.info(
           `${colors.green(
             `✓ built in ${displayTime(Date.now() - startTime)}`,

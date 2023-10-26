@@ -33,6 +33,10 @@ export const LogLevels: Record<LogLevel, number> = {
   info: 3,
 }
 
+export const buildBreakInfo: Record<string, boolean> = {
+  break: false,
+}
+
 let lastType: LogType | undefined
 let lastMsg: string | undefined
 let sameCount = 0
