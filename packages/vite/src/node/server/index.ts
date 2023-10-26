@@ -863,9 +863,7 @@ export function resolveServerOptions(
 
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
-  const { port: prevPort, host: prevHost } = server.config.server
   const shortcutsOptions = server._shortcutsOptions
-  const oldUrls = server.resolvedUrls
 
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
@@ -895,26 +893,47 @@ async function restartServer(server: ViteDevServer) {
 
   const {
     logger,
-    server: { port, host, middlewareMode },
+    server: { port, middlewareMode },
   } = server.config
   if (!middlewareMode) {
     await server.listen(port, true)
-    logger.info('server restarted.', { timestamp: true })
-    if (
-      (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
-      host !== prevHost ||
-      diffDnsOrderChange(oldUrls, newServer.resolvedUrls)
-    ) {
-      logger.info('')
-      server.printUrls()
-    }
   } else {
     server.ws.listen()
-    logger.info('server restarted.', { timestamp: true })
   }
+  logger.info('server restarted.', { timestamp: true })
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
     bindCLIShortcuts(newServer, shortcutsOptions)
+  }
+}
+
+/**
+ * Internal function to restart the Vite server and print URLs if changed
+ */
+export async function restartServerWithUrls(
+  server: ViteDevServer,
+): Promise<void> {
+  if (server.config.server.middlewareMode) {
+    await server.restart()
+    return
+  }
+
+  const { port: prevPort, host: prevHost } = server.config.server
+  const prevUrls = server.resolvedUrls
+
+  await server.restart()
+
+  const {
+    logger,
+    server: { port, host },
+  } = server.config
+  if (
+    (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
+    host !== prevHost ||
+    diffDnsOrderChange(prevUrls, server.resolvedUrls)
+  ) {
+    logger.info('')
+    server.printUrls()
   }
 }
