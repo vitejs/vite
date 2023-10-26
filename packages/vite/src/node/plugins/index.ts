@@ -32,6 +32,7 @@ export async function resolvePlugins(
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
+  const isWorker = config.isWorker
   const buildPlugins = isBuild
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
@@ -47,7 +48,7 @@ export async function resolvePlugins(
         ]
       : []),
     isBuild ? metadataPlugin() : null,
-    watchPackageDataPlugin(config.packageCache),
+    !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
