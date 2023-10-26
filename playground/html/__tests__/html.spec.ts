@@ -362,36 +362,55 @@ describe.runIf(isServe)('warmup', () => {
   })
 })
 
-test('html resolve behavior', async () => {
+test('html serve behavior', async () => {
   const [
-    nestedIndexHtml,
-    nested,
-    nestedSlash,
+    file,
+    fileSlash,
+    fileDotHtml,
 
-    nonNestedHtml,
-    nonNested,
-    nonNestedSlash,
+    folder,
+    folderSlash,
+    folderSlashIndexHtml,
+
+    both,
+    bothSlash,
+    bothDotHtml,
+    bothSlashIndexHtml,
   ] = await Promise.all([
-    fetchHtml('/nested/index.html'), // -> nested/index.html
-    fetchHtml('/nested'), // -> index.html (404 in mpa)
-    fetchHtml('/nested/'), // -> nested/index.html
+    fetchHtml('/serve/file'), // -> serve/file.html
+    fetchHtml('/serve/file/'), // -> index.html (404 in mpa)
+    fetchHtml('/serve/file.html'), // -> serve/file.html
 
-    fetchHtml('/nonNested.html'), // -> nonNested.html
-    fetchHtml('/nonNested'), // -> nonNested.html
-    fetchHtml('/nonNested/'), // -> index.html (404 in mpa)
+    fetchHtml('/serve/folder'), // -> index.html (404 in mpa)
+    fetchHtml('/serve/folder/'), // -> serve/folder/index.html
+    fetchHtml('/serve/folder/index.html'), // -> serve/folder/index.html
+
+    fetchHtml('/serve/both'), // -> serve/both.html
+    fetchHtml('/serve/both/'), // -> serve/both/index.html
+    fetchHtml('/serve/both.html'), // -> serve/both.html
+    fetchHtml('/serve/both/index.html'), // -> serve/both/index.html
   ])
 
-  expect(nestedIndexHtml.status).toBe(200)
-  expect(await nestedIndexHtml.text()).toContain('Nested')
-  expect(nested.status).toBe(200)
-  expect(await nested.text()).toContain('HTML')
-  expect(nestedSlash.status).toBe(200)
-  expect(await nestedSlash.text()).toContain('Nested')
+  expect(file.status).toBe(200)
+  expect(await file.text()).toContain('file.html')
+  expect(fileSlash.status).toBe(200)
+  expect(await fileSlash.text()).toContain('index.html (fallback)')
+  expect(fileDotHtml.status).toBe(200)
+  expect(await fileDotHtml.text()).toContain('file.html')
 
-  expect(nonNestedHtml.status).toBe(200)
-  expect(await nonNestedHtml.text()).toContain('NonNested')
-  expect(nonNested.status).toBe(200)
-  expect(await nonNested.text()).toContain('NonNested')
-  expect(nonNestedSlash.status).toBe(200)
-  expect(await nonNestedSlash.text()).toContain('HTML')
+  expect(folder.status).toBe(200)
+  expect(await folder.text()).toContain('index.html (fallback)')
+  expect(folderSlash.status).toBe(200)
+  expect(await folderSlash.text()).toContain('folder/index.html')
+  expect(folderSlashIndexHtml.status).toBe(200)
+  expect(await folderSlashIndexHtml.text()).toContain('folder/index.html')
+
+  expect(both.status).toBe(200)
+  expect(await both.text()).toContain('both.html')
+  expect(bothSlash.status).toBe(200)
+  expect(await bothSlash.text()).toContain('both/index.html')
+  expect(bothDotHtml.status).toBe(200)
+  expect(await bothDotHtml.text()).toContain('both.html')
+  expect(bothSlashIndexHtml.status).toBe(200)
+  expect(await bothSlashIndexHtml.text()).toContain('both/index.html')
 })
