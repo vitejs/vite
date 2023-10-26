@@ -841,9 +841,10 @@ export function getEmptyChunkReplacer(
     code.replace(
       emptyChunkRE,
       // remove css import while preserving source map location
-      (m) => outputFormat === 'es'
-        ? `/* empty css ${''.padEnd(m.length - 15)}*/`
-        : `${m.at(-1)}/* empty css ${''.padEnd(m.length - 16)}*/`,
+      (m) =>
+        outputFormat === 'es'
+          ? `/* empty css ${''.padEnd(m.length - 15)}*/`
+          : `${m.at(-1)}/* empty css ${''.padEnd(m.length - 16)}*/`,
     )
 }
 
