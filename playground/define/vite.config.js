@@ -6,6 +6,7 @@ export default defineConfig({
     __STRING__: '"hello"',
     __NUMBER__: 123,
     __BOOLEAN__: true,
+    __UNDEFINED__: undefined,
     __OBJ__: {
       foo: 1,
       bar: {

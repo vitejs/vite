@@ -61,6 +61,7 @@ import {
 } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
+import { serializeDefine } from './define'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -177,23 +178,29 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
 
   let _env: string | undefined
+  let _ssrEnv: string | undefined
   function getEnv(ssr: boolean) {
-    if (!_env) {
-      _env = `import.meta.env = ${JSON.stringify({
-        ...config.env,
-        SSR: '__vite__ssr__',
-      })};`
-      // account for user env defines
+    if (!_ssrEnv || !_env) {
+      const importMetaEnvKeys: Record<string, any> = {}
+      const userDefineEnv: Record<string, any> = {}
+      for (const key in config.env) {
+        importMetaEnvKeys[key] = JSON.stringify(config.env[key])
+      }
       for (const key in config.define) {
-        if (key.startsWith(`import.meta.env.`)) {
-          const val = config.define[key]
-          _env += `${key} = ${
-            typeof val === 'string' ? val : JSON.stringify(val)
-          };`
+        // non-import.meta.env.* is handled in `clientInjection` plugin
+        if (key.startsWith('import.meta.env.')) {
+          userDefineEnv[key.slice(16)] = config.define[key]
         }
       }
+      const env = `import.meta.env = ${serializeDefine({
+        ...importMetaEnvKeys,
+        SSR: '__vite_ssr__',
+        ...userDefineEnv,
+      })};`
+      _ssrEnv = env.replace('__vite_ssr__', 'true')
+      _env = env.replace('__vite_ssr__', 'false')
     }
-    return _env.replace('"__vite__ssr__"', ssr + '')
+    return ssr ? _ssrEnv : _env
   }
 
   return {
