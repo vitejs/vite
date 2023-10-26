@@ -67,7 +67,7 @@
     "eslint-define-config": "^1.24.1",
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-n": "^16.2.0",
-    "eslint-plugin-regexp": "^1.15.0",
+    "eslint-plugin-regexp": "^2.1.1",
     "execa": "^8.0.1",
     "fs-extra": "^11.1.1",
     "lint-staged": "^15.0.1",

@@ -344,7 +344,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
-            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+            // entry.min.js -> entry-legacy.min.js
+            fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
           }
 
           return fileName
