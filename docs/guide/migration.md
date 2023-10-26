@@ -32,6 +32,42 @@ For other projects, there are a few general approaches:
 
 See the [troubleshooting guide](/guide/troubleshooting.html#vite-cjs-node-api-deprecated) for more information.
 
+## Rework `define` and `import.meta.env.*` replacement strategy
+
+In Vite 4, the `define` and `import.meta.env.*` features use different replacement strategies in dev and build:
+
+- In dev, both features are injected as global variables to `globalThis` and `import.meta` respectively.
+- In build, both features are statically replaced with a regex.
+
+This results in a dev and build inconsistency when trying to access the variables, and sometimes even caused failed builds. For example:
+
+```js
+// vite.config.js
+export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify('1.0.0'),
+  },
+})
+```
+
+```js
+const data = { __APP_VERSION__ }
+// dev: { __APP_VERSION__: "1.0.0" } ✅
+// build: { "1.0.0" } ❌
+
+const docs = 'I like import.meta.env.MODE'
+// dev: "I like import.meta.env.MODE" ✅
+// build: "I like "production"" ❌
+```
+
+Vite 5 fixes this by using `esbuild` to handle the replacements in builds, aligning with the dev behaviour.
+
+This change should not affect most setups, as it's already documented that `define` values should follow esbuild's syntax:
+
+> To be consistent with esbuild behavior, expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
+
+However, if you prefer to keep statically replacing values directly, you can use [`@rollup/plugin-replace`](https://github.com/rollup/plugins/tree/master/packages/replace).
+
 ## General Changes
 
 ### SSR externalized modules value now matches production
@@ -133,6 +169,10 @@ Also there are other breaking changes which only affect few users.
   - Renamed `ResolveWorkerOptions` type to `ResolvedWorkerOptions`
 - [[#5657] fix: return 404 for resources requests outside the base path](https://github.com/vitejs/vite/pull/5657)
   - In the past, Vite responded to requests outside the base path without `Accept: text/html`, as if they were requested with the base path. Vite no longer does that and responds with 404 instead.
+- [[#14723] fix(resolve)!: remove special .mjs handling](https://github.com/vitejs/vite/pull/14723)
+  - In the past, when a library `"exports"` field maps to an `.mjs` file, Vite will still try to match the `"browser"` and `"module"` fields to fix compatibility with certain libraries. This behavior is now removed to align with the exports resolution algorithm.
+- [[#14733] feat(resolve)!: remove `resolve.browserField`](https://github.com/vitejs/vite/pull/14733)
+  - `resolve.browserField` has been deprecated since Vite 3 in favour of an updated default of `['browser', 'module', 'jsnext:main', 'jsnext']` for `resolve.mainFields`.
 
 ## Migration from v3
 

@@ -71,14 +71,9 @@ const debug = createDebugger('vite:resolve-details', {
 
 export interface ResolveOptions {
   /**
-   * @default ['module', 'jsnext:main', 'jsnext']
+   * @default ['browser', 'module', 'jsnext:main', 'jsnext']
    */
   mainFields?: string[]
-  /**
-   * @deprecated In future, `mainFields` should be used instead.
-   * @default true
-   */
-  browserField?: boolean
   conditions?: string[]
   /**
    * @default ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
@@ -283,7 +278,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
         if (
           targetWeb &&
-          options.browserField &&
+          options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
@@ -367,7 +362,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
         if (
           targetWeb &&
-          options.browserField &&
+          options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(
             id,
             importer,
@@ -987,17 +982,8 @@ export function resolvePackageEntry(
       )
     }
 
-    const resolvedFromExports = !!entryPoint
-
-    // if exports resolved to .mjs, still resolve other fields.
-    // This is because .mjs files can technically import .cjs files which would
-    // make them invalid for pure ESM environments - so if other module/browser
-    // fields are present, prioritize those instead.
-    if (
-      targetWeb &&
-      options.browserField &&
-      (!entryPoint || entryPoint.endsWith('.mjs'))
-    ) {
+    // handle edge case with browser and module field semantics
+    if (!entryPoint && targetWeb && options.mainFields.includes('browser')) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
       const browserEntry =
@@ -1039,8 +1025,7 @@ export function resolvePackageEntry(
     }
 
     // fallback to mainFields if still not resolved
-    // TODO: review if `.mjs` check is still needed
-    if (!resolvedFromExports && (!entryPoint || entryPoint.endsWith('.mjs'))) {
+    if (!entryPoint) {
       for (const field of options.mainFields) {
         if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {
@@ -1069,7 +1054,11 @@ export function resolvePackageEntry(
       } else {
         // resolve object browser field in package.json
         const { browser: browserField } = data
-        if (targetWeb && options.browserField && isObject(browserField)) {
+        if (
+          targetWeb &&
+          options.mainFields.includes('browser') &&
+          isObject(browserField)
+        ) {
           entry = mapWithBrowserField(entry, browserField) || entry
         }
       }
@@ -1191,7 +1180,11 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`,
       )
     }
-  } else if (targetWeb && options.browserField && isObject(browserField)) {
+  } else if (
+    targetWeb &&
+    options.mainFields.includes('browser') &&
+    isObject(browserField)
+  ) {
     // resolve without postfix (see #7098)
     const { file, postfix } = splitFileAndPostfix(relativeId)
     const mapped = mapWithBrowserField(file, browserField)

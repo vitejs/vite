@@ -3,6 +3,8 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
+import MagicString from 'magic-string'
+import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
@@ -10,10 +12,14 @@ import {
   blankReplacer,
   cleanUrl,
   createDebugger,
+  injectQuery,
   isObject,
   prettifyUrl,
+  removeImportQuery,
   removeTimestampQuery,
+  stripBase,
   timeFrom,
+  unwrapId,
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
@@ -128,16 +134,25 @@ async function doTransform(
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
 
+  // tries to handle soft invalidation of the module if available,
+  // returns a boolean true is successful, or false if no handling is needed
+  const softInvalidatedTransformResult =
+    module &&
+    (await handleModuleSoftInvalidation(
+      module,
+      ssr,
+      timestamp,
+      server.config.base,
+    ))
+  if (softInvalidatedTransformResult) {
+    debugCache?.(`[memory-hmr] ${prettyUrl}`)
+    return softInvalidatedTransformResult
+  }
+
   // check if we have a fresh cache
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
-    // TODO: check if the module is "partially invalidated" - i.e. an import
-    // down the chain has been fully invalidated, but this current module's
-    // content has not changed.
-    // in this case, we can reuse its previous cached result and only update
-    // its import timestamps.
-
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
@@ -356,4 +371,93 @@ function createConvertSourceMapReadMap(originalFileName: string) {
       'utf-8',
     )
   }
+}
+
+/**
+ * When a module is soft-invalidated, we can preserve its previous `transformResult` and
+ * return similar code to before:
+ *
+ * - Client: We need to transform the import specifiers with new timestamps
+ * - SSR: We don't need to change anything as `ssrLoadModule` controls it
+ */
+async function handleModuleSoftInvalidation(
+  mod: ModuleNode,
+  ssr: boolean,
+  timestamp: number,
+  base: string,
+) {
+  const transformResult = ssr ? mod.ssrInvalidationState : mod.invalidationState
+
+  // Reset invalidation state
+  if (ssr) mod.ssrInvalidationState = undefined
+  else mod.invalidationState = undefined
+
+  // Skip if not soft-invalidated
+  if (!transformResult || transformResult === 'HARD_INVALIDATED') return
+
+  if (ssr ? mod.ssrTransformResult : mod.transformResult) {
+    throw new Error(
+      `Internal server error: Soft-invalidated module "${mod.url}" should not have existing tranform result`,
+    )
+  }
+
+  let result: TransformResult
+  // For SSR soft-invalidation, no transformation is needed
+  if (ssr) {
+    result = transformResult
+  }
+  // For client soft-invalidation, we need to transform each imports with new timestamps if available
+  else {
+    await init
+    const source = transformResult.code
+    const s = new MagicString(source)
+    const [imports] = parseImports(source)
+
+    for (const imp of imports) {
+      let rawUrl = source.slice(imp.s, imp.e)
+      if (rawUrl === 'import.meta') continue
+
+      const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
+      if (hasQuotes) {
+        rawUrl = rawUrl.slice(1, -1)
+      }
+
+      const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
+      // hmrUrl must be derived the same way as importAnalysis
+      const hmrUrl = unwrapId(
+        stripBase(removeImportQuery(urlWithoutTimestamp), base),
+      )
+      for (const importedMod of mod.clientImportedModules) {
+        if (importedMod.url !== hmrUrl) continue
+        if (importedMod.lastHMRTimestamp > 0) {
+          const replacedUrl = injectQuery(
+            urlWithoutTimestamp,
+            `t=${importedMod.lastHMRTimestamp}`,
+          )
+          const start = hasQuotes ? imp.s + 1 : imp.s
+          const end = hasQuotes ? imp.e - 1 : imp.e
+          s.overwrite(start, end, replacedUrl)
+        }
+        break
+      }
+    }
+
+    // Update `transformResult` with new code. We don't have to update the sourcemap
+    // as the timestamp changes doesn't affect the code lines (stable).
+    const code = s.toString()
+    result = {
+      ...transformResult,
+      code,
+      etag: getEtag(code, { weak: true }),
+    }
+  }
+
+  // Only cache the result if the module wasn't invalidated while it was
+  // being processed, so it is re-processed next time if it is stale
+  if (timestamp > mod.lastInvalidationTimestamp) {
+    if (ssr) mod.ssrTransformResult = result
+    else mod.transformResult = result
+  }
+
+  return result
 }

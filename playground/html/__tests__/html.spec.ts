@@ -300,9 +300,6 @@ describe('env', () => {
     expect(await page.textContent('.env-define-object-string')).toBe(
       '{ "foo": "bar" }',
     )
-    expect(await page.textContent('.env-define-template-literal')).toBe(
-      '`template literal`', // only double quotes will be unquoted
-    )
     expect(await page.textContent('.env-define-null-string')).toBe('null')
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
