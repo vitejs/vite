@@ -1,12 +1,11 @@
-import MagicString from 'magic-string'
+import { transform } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex, transformStableResult } from '../utils'
+import { escapeRegex, getHash } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
-const metaEnvRe = /import\.meta\.env\.(.+)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -19,9 +18,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   if (!isBuildLib) {
     const nodeEnv = process.env.NODE_ENV || config.mode
     Object.assign(processEnv, {
-      'process.env.': `({}).`,
-      'global.process.env.': `({}).`,
-      'globalThis.process.env.': `({}).`,
+      'process.env': `{}`,
+      'global.process.env': `{}`,
+      'globalThis.process.env': `{}`,
     })
     Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
@@ -31,86 +30,76 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const userDefine: Record<string, string> = {}
-  const userDefineEnv: Record<string, string> = {}
-  for (const key in config.define) {
-    const val = config.define[key]
-    userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
-
-    // make sure `import.meta.env` object has user define properties
-    if (isBuild) {
-      const match = key.match(metaEnvRe)
-      if (match) {
-        userDefineEnv[match[1]] = `__vite__define__${key}__define__vite__`
-      }
-    }
-  }
-
   // during dev, import.meta properties are handled by importAnalysis plugin.
   const importMetaKeys: Record<string, string> = {}
+  const importMetaEnvKeys: Record<string, string> = {}
   const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
-    // set here to allow override with config.define
     importMetaKeys['import.meta.hot'] = `undefined`
     for (const key in config.env) {
-      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(config.env[key])
+      const val = JSON.stringify(config.env[key])
+      importMetaKeys[`import.meta.env.${key}`] = val
+      importMetaEnvKeys[key] = val
     }
-    Object.assign(importMetaFallbackKeys, {
-      'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify({
-        ...config.env,
-        SSR: '__vite__ssr__',
-        ...userDefineEnv,
-      }).replace(
-        /"__vite__define__(.+?)__define__vite__"/g,
-        (_, key) => userDefine[key],
-      ),
-    })
+    // these will be set to a proper value in `generatePattern`
+    importMetaKeys['import.meta.env.SSR'] = `undefined`
+    importMetaFallbackKeys['import.meta.env'] = `undefined`
   }
 
-  function getImportMetaKeys(ssr: boolean): Record<string, string> {
-    if (!isBuild) return {}
-    return {
-      ...importMetaKeys,
-      'import.meta.env.SSR': ssr + '',
+  const userDefine: Record<string, string> = {}
+  const userDefineEnv: Record<string, any> = {}
+  for (const key in config.define) {
+    // user can define keys with the same values to declare that some keys
+    // should not be replaced. in this case, we delete references of the key
+    // so they aren't replaced in the first place.
+    const val = config.define[key]
+    if (key === val) {
+      delete processNodeEnv[key]
+      delete importMetaKeys[key]
+      continue
     }
-  }
 
-  function getImportMetaFallbackKeys(ssr: boolean): Record<string, string> {
-    if (!isBuild) return {}
-    return {
-      ...importMetaFallbackKeys,
-      'import.meta.env': importMetaFallbackKeys['import.meta.env'].replace(
-        '"__vite__ssr__"',
-        ssr + '',
-      ),
+    userDefine[key] = handleDefineValue(config.define[key])
+
+    // make sure `import.meta.env` object has user define properties
+    if (isBuild && key.startsWith('import.meta.env.')) {
+      userDefineEnv[key.slice(16)] = config.define[key]
     }
   }
 
-  function generatePattern(
-    ssr: boolean,
-  ): [Record<string, string | undefined>, RegExp | null] {
+  function generatePattern(ssr: boolean) {
     const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
-    const replacements: Record<string, string> = {
+    const define: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...getImportMetaKeys(ssr),
+      ...importMetaKeys,
       ...userDefine,
-      ...getImportMetaFallbackKeys(ssr),
+      ...importMetaFallbackKeys,
       ...(replaceProcessEnv ? processEnv : {}),
     }
 
+    // Additional define fixes based on `ssr` value
     if (isBuild && !replaceProcessEnv) {
-      replacements['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
+      define['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
+    }
+    if ('import.meta.env.SSR' in define) {
+      define['import.meta.env.SSR'] = ssr + ''
+    }
+    if ('import.meta.env' in define) {
+      define['import.meta.env'] = serializeDefine({
+        ...importMetaEnvKeys,
+        SSR: ssr + '',
+        ...userDefineEnv,
+      })
     }
 
-    const replacementsKeys = Object.keys(replacements)
-    const pattern = replacementsKeys.length
+    const defineKeys = Object.keys(define)
+    const pattern = defineKeys.length
       ? new RegExp(
           // Mustn't be preceded by a char that can be part of an identifier
           // or a '.' that isn't part of a spread operator
           '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
-            replacementsKeys.map(escapeRegex).join('|') +
+            defineKeys.map(escapeRegex).join('|') +
             // Mustn't be followed by a char that can be part of an identifier
             // or an assignment (but allow equality operators)
             ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
@@ -118,7 +107,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         )
       : null
 
-    return [replacements, pattern]
+    return [define, pattern] as const
   }
 
   const defaultPattern = generatePattern(false)
@@ -127,11 +116,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:define',
 
-    transform(code, id, options) {
+    async transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
-        // avoid the transform cost.
+        // avoid the transform cost. see the `clientInjection` and
+        // `importAnalysis` plugin.
         return
       }
 
@@ -145,36 +135,88 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+      const [define, pattern] = ssr ? ssrPattern : defaultPattern
+      if (!pattern) return
 
-      if (!pattern) {
-        return null
-      }
+      // Check if our code needs any replacements before running esbuild
+      pattern.lastIndex = 0
+      if (!pattern.test(code)) return
 
-      if (ssr && !isBuild) {
-        // ssr + dev, simple replace
-        return code.replace(pattern, (_, match) => {
-          return '' + replacements[match]
-        })
-      }
-
-      const s = new MagicString(code)
-      let hasReplaced = false
-      let match: RegExpExecArray | null
-
-      while ((match = pattern.exec(code))) {
-        hasReplaced = true
-        const start = match.index
-        const end = start + match[0].length
-        const replacement = '' + replacements[match[1]]
-        s.update(start, end, replacement)
-      }
-
-      if (!hasReplaced) {
-        return null
-      }
-
-      return transformStableResult(s, id, config)
+      return await replaceDefine(code, id, define, config)
     },
+  }
+}
+
+export async function replaceDefine(
+  code: string,
+  id: string,
+  define: Record<string, string>,
+  config: ResolvedConfig,
+): Promise<{ code: string; map: string | null }> {
+  // Because esbuild only allows JSON-serializable values, and `import.meta.env`
+  // may contain values with raw identifiers, making it non-JSON-serializable,
+  // we replace it with a temporary marker and then replace it back after to
+  // workaround it. This means that esbuild is unable to optimize the `import.meta.env`
+  // access, but that's a tradeoff for now.
+  const replacementMarkers: Record<string, string> = {}
+  const env = define['import.meta.env']
+  if (env && !canJsonParse(env)) {
+    const marker = `_${getHash(env, env.length - 2)}_`
+    replacementMarkers[marker] = env
+    define = { ...define, 'import.meta.env': marker }
+  }
+
+  const esbuildOptions = config.esbuild || {}
+
+  const result = await transform(code, {
+    loader: 'js',
+    charset: esbuildOptions.charset ?? 'utf8',
+    platform: 'neutral',
+    define,
+    sourcefile: id,
+    sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
+  })
+
+  for (const marker in replacementMarkers) {
+    result.code = result.code.replaceAll(marker, replacementMarkers[marker])
+  }
+
+  return {
+    code: result.code,
+    map: result.map || null,
+  }
+}
+
+/**
+ * Like `JSON.stringify` but keeps raw string values as a literal
+ * in the generated code. For example: `"window"` would refer to
+ * the global `window` object directly.
+ */
+export function serializeDefine(define: Record<string, any>): string {
+  let res = `{`
+  const keys = Object.keys(define)
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]
+    const val = define[key]
+    res += `${JSON.stringify(key)}: ${handleDefineValue(val)}`
+    if (i !== keys.length - 1) {
+      res += `, `
+    }
+  }
+  return res + `}`
+}
+
+function handleDefineValue(value: any): string {
+  if (typeof value === 'undefined') return 'undefined'
+  if (typeof value === 'string') return value
+  return JSON.stringify(value)
+}
+
+function canJsonParse(value: any): boolean {
+  try {
+    JSON.parse(value)
+    return true
+  } catch {
+    return false
   }
 }

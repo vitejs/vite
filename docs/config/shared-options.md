@@ -37,17 +37,18 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
-- String values will be used as raw expressions, so if defining a string constant, **it needs to be explicitly quoted** (e.g. with `JSON.stringify`).
+Vite uses [esbuild defines](https://esbuild.github.io/api/#define) to perform replacements, so value expressions must be a string that contains a JSON-serializable value (null, boolean, number, string, array, or object) or a single identifier. For non-string values, Vite will automatically convert it to a string with `JSON.stringify`.
 
-- To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
+**Example:**
 
-- Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
-
-::: warning
-Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
-
-For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
-:::
+```js
+export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify('v1.0.0'),
+    __API_URL__: 'window.__backend_api_url',
+  },
+})
+```
 
 ::: tip NOTE
 For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
@@ -57,20 +58,6 @@ Example:
 ```ts
 // vite-env.d.ts
 declare const __APP_VERSION__: string
-```
-
-:::
-
-::: tip NOTE
-Since dev and build implement `define` differently, we should avoid some use cases to avoid inconsistency.
-
-Example:
-
-```js
-const obj = {
-  __NAME__, // Don't define object shorthand property names
-  __KEY__: value, // Don't define object key
-}
 ```
 
 :::

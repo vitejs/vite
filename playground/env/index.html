@@ -5,6 +5,10 @@
 <p>import.meta.env.PROD: <code class="prod"></code></p>
 <p>import.meta.env.VITE_CUSTOM_ENV_VARIABLE: <code class="custom"></code></p>
 <p>
+  ${import.meta.env.VITE_CUSTOM_ENV_VARIABLE}:
+  <code class="custom-template-literal-exp"></code>
+</p>
+<p>
   import.meta.env.CUSTOM_PREFIX_ENV_VARIABLE:
   <code class="custom-prefix"></code>
 </p>
@@ -28,7 +32,15 @@
 <p>import.meta.env.VITE_EXPAND_B: <code class="expand-b"></code></p>
 <p>import.meta.env.SSR: <code class="ssr"></code></p>
 <p>import.meta.env: <span class="pre env-object"></span></p>
+<p>
+  ${import.meta.env}:
+  <span class="pre env-object-in-template-literal-exp"></span>
+</p>
 <p>import.meta.url: <span class="pre url"></span></p>
+<p>
+  import.meta.env. <code class="ignores-literal-import-meta-env-dot"></code>
+</p>
+<p>import.meta.env <code class="ignores-literal-import-meta-env"></code></p>
 
 <script type="module">
   text('.base', import.meta.env.BASE_URL)
@@ -36,6 +48,10 @@
   text('.dev', import.meta.env.DEV)
   text('.prod', import.meta.env.PROD)
   text('.custom', import.meta.env.VITE_CUSTOM_ENV_VARIABLE)
+  text(
+    '.custom-template-literal-exp',
+    `${import.meta.env.VITE_CUSTOM_ENV_VARIABLE}`,
+  )
   text('.custom-prefix', import.meta.env.CUSTOM_PREFIX_ENV_VARIABLE)
   text('.mode-file', import.meta.env.VITE_EFFECTIVE_MODE_FILE_NAME)
   text('.inline', import.meta.env.VITE_INLINE)
@@ -48,6 +64,12 @@
   text('.global-node-env', global.process.env.NODE_ENV)
   text('.global-this-node-env', globalThis.process.env.NODE_ENV)
   text('.env-object', JSON.stringify(import.meta.env, null, 2))
+  text(
+    '.env-object-in-template-literal-exp',
+    `${JSON.stringify(import.meta.env, null, 2)}`,
+  )
+  text('.ignores-literal-import-meta-env-dot', 'import' + '.meta.env.')
+  text('.ignores-literal-import-meta-env', 'import' + '.meta.env')
   text('.expand-a', import.meta.env.VITE_EXPAND_A)
   text('.expand-b', import.meta.env.VITE_EXPAND_B)
 
