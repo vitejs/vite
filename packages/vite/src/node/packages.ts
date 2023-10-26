@@ -241,16 +241,7 @@ export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
   return {
     name: 'vite:watch-package-data',
     buildStart() {
-      watchFile = (id) => {
-        try {
-          this.addWatchFile(id)
-        } catch (e) {
-          // Rollup tracks the build phase slightly earlier before `buildEnd` is called,
-          // so there's a chance we can call `this.addWatchFile` in the invalid phase. Skip for now.
-          if (e.pluginCode === 'INVALID_ROLLUP_PHASE') return
-          throw e
-        }
-      }
+      watchFile = this.addWatchFile.bind(this)
       watchQueue.forEach(watchFile)
       watchQueue.clear()
     },
