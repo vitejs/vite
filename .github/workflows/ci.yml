@@ -43,9 +43,9 @@ jobs:
         include:
           # Active LTS + other OS
           - os: macos-latest
-            node_version: 18
+            node_version: 20
           - os: windows-latest
-            node_version: 18.17
+            node_version: 20.3.1 # https://github.com/nodejs/node/issues/48673
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
