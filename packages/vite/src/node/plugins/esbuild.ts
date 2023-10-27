@@ -471,7 +471,7 @@ async function loadTsconfigJsonForFile(
   try {
     if (tsconfckCache) {
       // shortcut, the cache stores resolved TSConfckParseResult
-      // so getting it from the cache directly we bypass aysnc fn call wrapping it in a promise again
+      // so getting it from the cache directly we bypass async fn call wrapping it in a promise again
       if (tsconfckCache.hasParseResult(filename)) {
         const result = await tsconfckCache.getParseResult(filename)
         return result.tsconfig
