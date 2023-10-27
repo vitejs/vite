@@ -125,6 +125,12 @@ export interface ServerOptions extends CommonServerOptions {
    */
   preTransformRequests?: boolean
   /**
+   * Pre-transform a set of dynamic imports
+   * @experimental
+   * @default true
+   */
+  preTransformDynamicRequests?: (url: string) => boolean
+  /**
    * Whether or not to ignore-list source files in the dev server sourcemap, used to populate
    * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
    *

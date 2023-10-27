@@ -616,15 +616,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               )
             }
 
+            const requestUrl = removeImportQuery(hmrUrl)
             if (
-              !isDynamicImport &&
+              (!isDynamicImport ||
+                config.server.preTransformDynamicRequests?.(requestUrl)) &&
               isLocalImport &&
               config.server.preTransformRequests
             ) {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
-              const url = removeImportQuery(hmrUrl)
+              const url = removeImportQuery(requestUrl)
               server.transformRequest(url, { ssr }).catch((e) => {
                 if (
                   e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||

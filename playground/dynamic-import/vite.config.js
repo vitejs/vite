@@ -3,6 +3,11 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  server: {
+    preTransformDynamicRequests(url) {
+      return url.startsWith('/views/')
+    },
+  },
   plugins: [
     {
       name: 'copy',
