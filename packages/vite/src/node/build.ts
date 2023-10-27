@@ -893,15 +893,6 @@ export function onRollupWarning(
         return
       }
 
-      // Rollup tracks the build phase slightly earlier before `buildEnd` is called,
-      // so there's a chance we can call `this.addWatchFile` in the invalid phase. Skip for now.
-      if (
-        warning.plugin === 'vite:worker-import-meta-url' &&
-        warning.pluginCode === 'INVALID_ROLLUP_PHASE'
-      ) {
-        return
-      }
-
       if (warningIgnoreList.includes(warning.code!)) {
         return
       }
