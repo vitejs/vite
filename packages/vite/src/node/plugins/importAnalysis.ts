@@ -626,8 +626,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
-              const url = removeImportQuery(requestUrl)
-              server.transformRequest(url, { ssr }).catch((e) => {
+              server.transformRequest(requestUrl, { ssr }).catch((e) => {
                 if (
                   e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
                   e?.code === ERR_CLOSED_SERVER
