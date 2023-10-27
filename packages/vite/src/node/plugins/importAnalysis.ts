@@ -619,7 +619,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             const requestUrl = removeImportQuery(hmrUrl)
             if (
               (!isDynamicImport ||
-                config.server.preTransformDynamicRequests?.(requestUrl)) &&
+                config.server.preTransformDynamicRequests?.(
+                  requestUrl,
+                  importer,
+                )) &&
               isLocalImport &&
               config.server.preTransformRequests
             ) {
