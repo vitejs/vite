@@ -513,6 +513,11 @@ test('url() contains file in publicDir, as inline style', async () => {
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
 })
 
+test('should not rewrite non-relative urls in html', async () => {
+  const link = page.locator('.data-href')
+  expect(await link.getAttribute('href')).toBe('data:,')
+})
+
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
