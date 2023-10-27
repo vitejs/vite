@@ -272,7 +272,8 @@ import "other-module";`
     expect(replaced.length).toBe(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "import \\"some-module\\";
-      /* empty css              */import \\"other-module\\";"
+      /* empty css             */
+      import \\"other-module\\";"
     `)
   })
 
@@ -298,7 +299,8 @@ require("other-module");`
     expect(replaced.length).toBe(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "require(\\"some-module\\");
-      /* empty css                */require(\\"other-module\\");"
+      ;/* empty css              */
+      require(\\"other-module\\");"
     `)
   })
 
@@ -309,7 +311,30 @@ require("other-module");`
     const replaced = replacer(code)
     expect(replaced.length).toBe(code.length)
     expect(replaced).toMatchInlineSnapshot(
-      '"require(\\"some-module\\");/* empty css               */require(\\"other-module\\");"',
+      '"require(\\"some-module\\");;/* empty css              */require(\\"other-module\\");"',
+    )
+  })
+
+  test('replaces require call in minified code that uses comma operator', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js"),require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode).toMatchInlineSnapshot(
+      '"require(\\"some-module\\"),/* empty css               */require(\\"other-module\\");"',
+    )
+    // So there should be no pure css chunk anymore
+    expect(newCode.match(/pure_css_chunk\.js/)).toBeNull()
+  })
+
+  test('replaces require call in minified code that uses comma operator followed by assignment', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchInlineSnapshot(
+      '"require(\\"some-module\\");/* empty css               */const v=require(\\"other-module\\");"',
     )
   })
 })
