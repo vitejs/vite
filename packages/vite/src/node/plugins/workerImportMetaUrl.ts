@@ -96,6 +96,17 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   return 'classic'
 }
 
+function isIncludeWorkerImportMetaUrl(code: string): boolean {
+  if (
+    (code.includes('new Worker') || code.includes('new SharedWorker')) &&
+    code.includes('new URL') &&
+    code.includes(`import.meta.url`)
+  ) {
+    return true
+  }
+  return false
+}
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let workerResolver: ResolveFn
@@ -108,17 +119,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     packageCache: config.packageCache,
     ssrConfig: config.ssr,
     asSrc: true,
-  }
-
-  const isIncludeWorkerImportMetaUrl = (code: string): boolean => {
-    if (
-      (code.includes('new Worker') || code.includes('new SharedWorker')) &&
-      code.includes('new URL') &&
-      code.includes(`import.meta.url`)
-    ) {
-      return true
-    }
-    return false
   }
 
   return {
