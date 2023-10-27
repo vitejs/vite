@@ -125,6 +125,9 @@ const processNodeUrl = (
     (url[0] === '/' && url[1] !== '/') ||
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
+    //
+    // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace.
+    //
     // rewrite `./index.js` -> `localhost:5173/a/index.js`.
     // rewrite `../index.js` -> `localhost:5173/index.js`.
     // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
