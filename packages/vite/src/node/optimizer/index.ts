@@ -1050,26 +1050,27 @@ function stringifyDepsOptimizerMetadata(
   depsCacheDir: string,
 ) {
   const { hash, browserHash, optimized, chunks } = metadata
+  const formatOptimized: Record<
+    string,
+    Pick<OptimizedDepInfo, 'src' | 'file' | 'fileHash' | 'needsInterop'>
+  > = {}
+  for (const key in optimized) {
+    const { id, src, file, fileHash, needsInterop } = optimized[key]
+    formatOptimized[id] = { src, file, fileHash, needsInterop }
+  }
+
+  const formatChunks: Record<string, Pick<OptimizedDepInfo, 'file'>> = {}
+  for (const key in chunks) {
+    const { id, file } = chunks[key]
+    formatChunks[id] = { file }
+  }
+
   return JSON.stringify(
     {
       hash,
       browserHash,
-      optimized: Object.fromEntries(
-        Object.values(optimized).map(
-          ({ id, src, file, fileHash, needsInterop }) => [
-            id,
-            {
-              src,
-              file,
-              fileHash,
-              needsInterop,
-            },
-          ],
-        ),
-      ),
-      chunks: Object.fromEntries(
-        Object.values(chunks).map(({ id, file }) => [id, { file }]),
-      ),
+      optimized: formatOptimized,
+      chunks: formatChunks,
     },
     (key: string, value: string) => {
       // Paths can be absolute or relative to the deps cache dir where
