@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
-import { arraify, tryStatSync } from './utils'
+import { arraify, fromEntries, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
 export function getEnvFilesForMode(mode: string): string[] {
@@ -29,7 +29,7 @@ export function loadEnv(
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode)
 
-  const parsed = Object.fromEntries(
+  const parsed = fromEntries(
     envFiles.flatMap((file) => {
       const filePath = path.join(envDir, file)
       if (!tryStatSync(filePath)?.isFile()) return []

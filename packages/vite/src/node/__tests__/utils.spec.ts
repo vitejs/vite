@@ -5,6 +5,7 @@ import {
   asyncFlatten,
   bareImportRE,
   flattenId,
+  fromEntries,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
@@ -278,5 +279,25 @@ describe('flattenId', () => {
     id += tenChars
     const result2 = flattenId(id)
     expect(result2).toHaveLength(170)
+  })
+})
+
+describe('fromEntries', () => {
+  test('same with Object.fromObject', () => {
+    const arr = [
+      ['foo', 'bar'],
+      ['1', 1],
+      ['2', 2],
+      ['3', 3],
+      [
+        '4',
+        {
+          '4': 4,
+        },
+      ],
+      ['5', [5, 6, 7]],
+    ] as [string, string | number | any][]
+
+    expect(fromEntries(arr)).toEqual(Object.fromEntries(arr))
   })
 })

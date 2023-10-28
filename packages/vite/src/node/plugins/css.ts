@@ -42,6 +42,7 @@ import {
   cleanUrl,
   combineSourcemaps,
   emptyCssComments,
+  fromEntries,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -729,7 +730,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
         // chunk. we check that by `preliminaryFileName` as they have different
         // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
-        const prelimaryNameToChunkMap = Object.fromEntries(
+        const prelimaryNameToChunkMap = fromEntries(
           Object.values(bundle)
             .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),

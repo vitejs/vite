@@ -25,6 +25,7 @@ import {
   createDebugger,
   dataUrlRE,
   externalRE,
+  fromEntries,
   isInNodeModules,
   isObject,
   isOptimizable,
@@ -242,7 +243,7 @@ function orderedDependencies(deps: Record<string, string>) {
   const depsList = Object.entries(deps)
   // Ensure the same browserHash for the same set of dependencies
   depsList.sort((a, b) => a[0].localeCompare(b[0]))
-  return Object.fromEntries(depsList)
+  return fromEntries(depsList)
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {

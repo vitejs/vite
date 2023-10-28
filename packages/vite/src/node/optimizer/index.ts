@@ -15,6 +15,7 @@ import {
   arraify,
   createDebugger,
   flattenId,
+  fromEntries,
   getHash,
   isOptimizable,
   isWindows,
@@ -1054,7 +1055,7 @@ function stringifyDepsOptimizerMetadata(
     {
       hash,
       browserHash,
-      optimized: Object.fromEntries(
+      optimized: fromEntries(
         Object.values(optimized).map(
           ({ id, src, file, fileHash, needsInterop }) => [
             id,
@@ -1067,7 +1068,7 @@ function stringifyDepsOptimizerMetadata(
           ],
         ),
       ),
-      chunks: Object.fromEntries(
+      chunks: fromEntries(
         Object.values(chunks).map(({ id, file }) => [id, { file }]),
       ),
     },

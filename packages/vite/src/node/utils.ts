@@ -1322,3 +1322,13 @@ export function getPackageManagerCommand(
       throw new TypeError(`Unknown command type: ${type}`)
   }
 }
+
+export function fromEntries<T extends string | number | any>(
+  value: [string, T][],
+): Record<string, T> {
+  const result: Record<string, T> = {}
+  for (const [key, val] of value) {
+    result[key] = val
+  }
+  return result
+}
