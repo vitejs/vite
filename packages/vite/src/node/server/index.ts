@@ -35,6 +35,7 @@ import {
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import {
   getDepsOptimizer,
   initDepsOptimizer,
@@ -47,7 +48,7 @@ import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
-import { createPluginContainer } from './pluginContainer'
+import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -180,6 +181,15 @@ export type ServerHook = (
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
+export interface TransformRequestOptions extends TransformOptions {
+  /**
+   * If `true`, the url will be warmed up with built-in error handling and
+   * will never throw. The returned result will also always be `null`.
+   * If you require the transform result, you should not use this option.
+   */
+  warmup?: boolean
+}
+
 export interface ViteDevServer {
   /**
    * The resolved vite config object
@@ -228,7 +238,7 @@ export interface ViteDevServer {
    */
   transformRequest(
     url: string,
-    options?: TransformOptions,
+    options?: TransformRequestOptions,
   ): Promise<TransformResult | null>
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
@@ -399,8 +409,26 @@ export async function _createServer(
     ) {
       return ssrTransform(code, inMap, url, originalCode, server.config)
     },
-    transformRequest(url, options) {
-      return transformRequest(url, server, options)
+    async transformRequest(url, options) {
+      if (options?.warmup) {
+        await transformRequest(url, server, options).catch((e) => {
+          if (
+            e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+            e?.code === ERR_CLOSED_SERVER
+          ) {
+            // these are expected errors
+            return
+          }
+          // Unexpected error, log the issue but avoid an unhandled exception
+          server.config.logger.error(`Pre-transform error: ${e.message}`, {
+            error: e,
+            timestamp: true,
+          })
+        })
+        return null
+      } else {
+        return await transformRequest(url, server, options)
+      }
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
