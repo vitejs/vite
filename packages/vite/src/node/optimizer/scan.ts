@@ -243,8 +243,8 @@ function orderedDependencies(deps: Record<string, string>) {
   // Ensure the same browserHash for the same set of dependencies
   depsList.sort((a, b) => a[0].localeCompare(b[0]))
   const obj: Record<string, string> = {}
-  for (const key in depsList) {
-    obj[key] = deps[key]
+  for (const [key, val] of depsList) {
+    obj[key] = val
   }
   return obj
 }
