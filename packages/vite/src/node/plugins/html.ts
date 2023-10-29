@@ -26,6 +26,7 @@ import {
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
+import type { Logger } from '../logger'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -287,6 +288,7 @@ function handleParseError(
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
+    config.logger,
   )
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
@@ -1066,6 +1068,7 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[],
+  logger: Logger,
 ): [
   IndexHtmlTransformHook[],
   IndexHtmlTransformHook[],
@@ -1082,6 +1085,21 @@ export function resolveHtmlTransforms(
     if (typeof hook === 'function') {
       normalHooks.push(hook)
     } else {
+      if (!('order' in hook) && 'enforce' in hook) {
+        logger.warnOnce(
+          colors.yellow(
+            `plugin '${plugin.name}' uses deprecated 'enforce' option. Use 'order' option instead.`,
+          ),
+        )
+      }
+      if (!('handler' in hook) && 'transform' in hook) {
+        logger.warnOnce(
+          colors.yellow(
+            `plugin '${plugin.name}' uses deprecated 'transform' option. Use 'handler' option instead.`,
+          ),
+        )
+      }
+
       // `enforce` had only two possible values for the `transformIndexHtml` hook
       // `'pre'` and `'post'` (the default). `order` now works with three values
       // to align with other hooks (`'pre'`, normal, and `'post'`). We map
