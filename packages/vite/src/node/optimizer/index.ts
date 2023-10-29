@@ -1054,14 +1054,14 @@ function stringifyDepsOptimizerMetadata(
     string,
     Pick<OptimizedDepInfo, 'src' | 'file' | 'fileHash' | 'needsInterop'>
   > = {}
-  for (const key in optimized) {
-    const { id, src, file, fileHash, needsInterop } = optimized[key]
+  for (const { id, src, file, fileHash, needsInterop } of Object.values(
+    optimized,
+  )) {
     formatOptimized[id] = { src, file, fileHash, needsInterop }
   }
 
   const formatChunks: Record<string, Pick<OptimizedDepInfo, 'file'>> = {}
-  for (const key in chunks) {
-    const { id, file } = chunks[key]
+  for (const { id, file } of Object.values(chunks)) {
     formatChunks[id] = { file }
   }
 

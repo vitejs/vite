@@ -730,10 +730,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // chunk. we check that by `preliminaryFileName` as they have different
         // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
         const prelimaryNameToChunkMap: Record<string, string> = {}
-        for (const val of Object.values(bundle).filter(
-          (chunk): chunk is OutputChunk => chunk.type === 'chunk',
-        )) {
-          const { preliminaryFileName, fileName } = val
+        for (const { preliminaryFileName, fileName } of Object.values(
+          bundle,
+        ).filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')) {
           prelimaryNameToChunkMap[preliminaryFileName] = fileName
         }
 
