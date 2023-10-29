@@ -49,16 +49,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const userDefine: Record<string, string> = {}
   const userDefineEnv: Record<string, any> = {}
   for (const key in config.define) {
-    // user can define keys with the same values to declare that some keys
-    // should not be replaced. in this case, we delete references of the key
-    // so they aren't replaced in the first place.
-    const val = config.define[key]
-    if (key === val) {
-      delete processNodeEnv[key]
-      delete importMetaKeys[key]
-      continue
-    }
-
     userDefine[key] = handleDefineValue(config.define[key])
 
     // make sure `import.meta.env` object has user define properties
