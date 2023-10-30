@@ -50,7 +50,16 @@ describe('definePlugin', () => {
       'import.meta.hot': 'import.meta.hot',
     })
     expect(await overrideTransform('const hot = import.meta.hot;')).toBe(
-      undefined,
+      'const hot = import.meta.hot;\n',
+    )
+  })
+
+  test('preserve import.meta.env.UNKNOWN with override', async () => {
+    const transform = await createDefinePluginTransform({
+      'import.meta.env.UNKNOWN': 'import.meta.env.UNKNOWN',
+    })
+    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
+      'const foo = import.meta.env.UNKNOWN;\n',
     )
   })
 })

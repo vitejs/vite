@@ -64,6 +64,7 @@ export function createDevHtmlTransformFn(
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     server.config.plugins,
+    server.config.logger,
   )
   return (url: string, html: string, originalUrl: string): Promise<string> => {
     return applyHtmlTransforms(
