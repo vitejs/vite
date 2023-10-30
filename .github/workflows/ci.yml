@@ -73,7 +73,7 @@ jobs:
 
       - name: Set node version to ${{ matrix.node_version }}
         if: steps.changed-files.outputs.only_changed != 'true'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
@@ -137,7 +137,7 @@ jobs:
         uses: pnpm/action-setup@v2.4.0
 
       - name: Set node version to 18
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "pnpm"
