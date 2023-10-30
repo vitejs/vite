@@ -23,6 +23,7 @@ import {
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
+import type { ConnectContext } from '../../server'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
@@ -60,12 +61,22 @@ interface InlineStyleAttribute {
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer,
-): (url: string, html: string, originalUrl: string) => Promise<string> {
+): (
+  url: string,
+  html: string,
+  originalUrl: string,
+  connectCtx?: ConnectContext,
+) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     server.config.plugins,
     server.config.logger,
   )
-  return (url: string, html: string, originalUrl: string): Promise<string> => {
+  return (
+    url: string,
+    html: string,
+    originalUrl: string,
+    connextCtx?: ConnectContext,
+  ): Promise<string> => {
     return applyHtmlTransforms(
       html,
       [
@@ -82,6 +93,7 @@ export function createDevHtmlTransformFn(
         filename: getHtmlFilename(url, server),
         server,
         originalUrl,
+        ...connextCtx,
       },
     )
   }
@@ -393,7 +405,10 @@ export function indexHtmlMiddleware(
       if (fs.existsSync(filename)) {
         try {
           let html = await fsp.readFile(filename, 'utf-8')
-          html = await server.transformIndexHtml(url, html, req.originalUrl)
+          html = await server.transformIndexHtml(url, html, req.originalUrl, {
+            req,
+            res,
+          })
           return send(req, res, html, 'html', {
             headers: server.config.server.headers,
           })

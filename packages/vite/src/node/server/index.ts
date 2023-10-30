@@ -180,6 +180,11 @@ export type ServerHook = (
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
+export interface ConnectContext {
+  req: Connect.IncomingMessage
+  res: http.ServerResponse
+}
+
 export interface ViteDevServer {
   /**
    * The resolved vite config object
@@ -237,6 +242,7 @@ export interface ViteDevServer {
     url: string,
     html: string,
     originalUrl?: string,
+    connectCtx?: ConnectContext,
   ): Promise<string>
   /**
    * Transform module code into SSR format.
