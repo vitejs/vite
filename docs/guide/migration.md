@@ -119,7 +119,7 @@ This change prevents Vite from swallowing and controlling OS-specific shortcuts,
 
 ### Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behaviour
 
-Vite 5 uses esbuild 0.18, which changes how `experimentalDecorators` and `useDefineForClassFields` are handled.
+Vite 5 uses esbuild 0.19 and removes the compatibility layer for esbuild 0.18, which changes how `experimentalDecorators` and `useDefineForClassFields` are handled.
 
 - **`experimentalDecorators` is not enabled by default**
 
