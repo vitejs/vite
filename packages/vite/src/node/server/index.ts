@@ -108,7 +108,7 @@ export interface ServerOptions extends CommonServerOptions {
    * Create Vite dev server to be used as a middleware in an existing server
    * @default false
    */
-  middlewareMode?: boolean | 'html' | 'ssr'
+  middlewareMode?: boolean
   /**
    * Options for files served via '/\@fs/'.
    */
