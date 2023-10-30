@@ -52,13 +52,13 @@ test('generates assets', async () => {
     () => page.textContent('#assets'),
     isBuild
       ? [
-          'index: text/html;charset=utf-8',
-          'index-legacy: text/html;charset=utf-8',
-          'chunk-async: text/html;charset=utf-8',
-          'chunk-async-legacy: text/html;charset=utf-8',
+          'index: text/html',
+          'index-legacy: text/html',
+          'chunk-async: text/html',
+          'chunk-async-legacy: text/html',
           'immutable-chunk: application/javascript',
           'immutable-chunk-legacy: application/javascript',
-          'polyfills-legacy: text/html;charset=utf-8',
+          'polyfills-legacy: text/html',
         ].join('\n')
       : [
           'index: text/html',

@@ -102,10 +102,29 @@ In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]
 
 ### Allow path containing `.` to fallback to index.html
 
-In Vite 4, accessing a path containing `.` did not fallback to index.html even if `appType` is set to `'SPA'` (default).
-From Vite 5, it will fallback to index.html.
+In Vite 4, accessing a path in dev containing `.` did not fallback to index.html even if `appType` is set to `'spa'` (default). From Vite 5, it will fallback to index.html.
 
-Note that the browser will no longer show the 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
+Note that the browser will no longer show a 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
+
+### Align dev and preview HTML serving behaviour
+
+In Vite 4, the dev and preview servers serve HTML based on its directory structure and trailing slash differently. This causes inconsistencies when testing your built app. Vite 5 refactors into a single behaviour like below, given the following file structure:
+
+```
+├── index.html
+├── file.html
+└── dir
+    └── index.html
+```
+
+| Request           | Before (dev)                 | Before (preview)  | After (dev & preview)        |
+| ----------------- | ---------------------------- | ----------------- | ---------------------------- |
+| `/dir/index.html` | `/dir/index.html`            | `/dir/index.html` | `/dir/index.html`            |
+| `/dir`            | `/index.html` (SPA fallback) | `/dir/index.html` | `/dir.html` (SPA fallback)   |
+| `/dir/`           | `/dir/index.html`            | `/dir/index.html` | `/dir/index.html`            |
+| `/file.html`      | `/file.html`                 | `/file.html`      | `/file.html`                 |
+| `/file`           | `/index.html` (SPA fallback) | `/file.html`      | `/file.html`                 |
+| `/file/`          | `/index.html` (SPA fallback) | `/file.html`      | `/index.html` (SPA fallback) |
 
 ### Manifest files are now generated in `.vite` directory by default
 

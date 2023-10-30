@@ -32,6 +32,7 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
+import type { PreviewServer } from './preview'
 import {
   type PackageCache,
   findNearestPackageData,
@@ -1321,4 +1322,10 @@ export function getPackageManagerCommand(
     default:
       throw new TypeError(`Unknown command type: ${type}`)
   }
+}
+
+export function isDevServer(
+  server: ViteDevServer | PreviewServer,
+): server is ViteDevServer {
+  return 'pluginContainer' in server
 }

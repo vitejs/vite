@@ -66,6 +66,7 @@ import {
 import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
+import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
 import {
@@ -692,14 +693,10 @@ export async function _createServer(
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
-    middlewares.use(indexHtmlMiddleware(server))
+    middlewares.use(indexHtmlMiddleware(root, server))
 
     // handle 404s
-    // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-    middlewares.use(function vite404Middleware(_, res) {
-      res.statusCode = 404
-      res.end()
-    })
+    middlewares.use(notFoundMiddleware())
   }
 
   // error handler

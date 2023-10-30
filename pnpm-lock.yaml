@@ -285,9 +285,6 @@ importers:
       connect:
         specifier: ^3.7.0
         version: 3.7.0
-      connect-history-api-fallback:
-        specifier: ^2.0.0
-        version: 2.0.0
       convert-source-map:
         specifier: ^2.0.0
         version: 2.0.0
@@ -5001,11 +4998,6 @@ packages:
 
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
-
-  /connect-history-api-fallback@2.0.0:
-    resolution: {integrity: sha512-U73+6lQFmfiNPrYbXqr6kZ1i1wiRqXnp2nhMsINseWXO8lDau0LGEffJ8kQi4EjLZympVgRdvqjAgiZ1tgzDDA==}
-    engines: {node: '>=0.8'}
-    dev: true
 
   /connect@3.7.0:
     resolution: {integrity: sha512-ZqRXc+tZukToSNmh5C2iWMSoV3X1YUcPbqEM4DkEG5tNQXrQUZCNVGGv3IuicnkMtPfGf3Xtp8WCXs295iQ1pQ==}
