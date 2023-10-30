@@ -46,9 +46,11 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? [])
-    // @ts-expect-error passing the right types, but typescript can't detect it
-    .concat(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS)
+  const shortcuts = (opts?.customShortcuts ?? []).concat(
+    (isDev
+      ? BASE_DEV_SHORTCUTS
+      : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
+  )
 
   let actionRunning = false
 
