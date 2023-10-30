@@ -136,6 +136,31 @@ CLI shortcuts, like `r` to restart the dev server, now require an additional `En
 
 This change prevents Vite from swallowing and controlling OS-specific shortcuts, allowing better compatibility when combining the Vite dev server with other processes, and avoids the [previous caveats](https://github.com/vitejs/vite/pull/14342).
 
+### Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behaviour
+
+Vite 5 uses esbuild 0.19 and removes the compatibility layer for esbuild 0.18, which changes how `experimentalDecorators` and `useDefineForClassFields` are handled.
+
+- **`experimentalDecorators` is not enabled by default**
+
+  You need to set `compilerOptions.experimentalDecorators` to `true` in `tsconfig.json` to use decorators.
+
+- **`useDefineForClassFields` defaults depend on the TypeScript `target` value**
+
+  If `target` is not `ESNext` or `ES2022` or newer, or if there's no `tsconfig.json` file, `useDefineForClassFields` will default to `false` which can be problematic with the default `esbuild.target` value of `esnext`. It may transpile to [static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks#browser_compatibility) which may not be supported in your browser.
+
+  As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
+
+```jsonc
+{
+  "compilerOptions": {
+    // Set true if you use decorators
+    "experimentalDecorators": true,
+    // Set true if you see parsing errors in your browser
+    "useDefineForClassFields": true
+  }
+}
+```
+
 ### Remove `--https` flag and `https: true`
 
 `--https` flag sets `https: true`. This config was meant to be used together with the automatic https certification generation feature which [was dropped in Vite 3](https://v3.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). This config no longer makes sense as it will make Vite start a HTTPS server without a certificate.
