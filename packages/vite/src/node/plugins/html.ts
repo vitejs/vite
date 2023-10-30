@@ -1,3 +1,4 @@
+import type * as http from 'node:http'
 import path from 'node:path'
 import type {
   OutputAsset,
@@ -6,6 +7,7 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rollup'
+import type { Connect } from 'dep-types/connect'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
@@ -938,6 +940,8 @@ export interface IndexHtmlTransformContext {
   bundle?: OutputBundle
   chunk?: OutputChunk
   originalUrl?: string
+  req?: Connect.IncomingMessage
+  res?: http.ServerResponse
 }
 
 export type IndexHtmlTransformHook = (
