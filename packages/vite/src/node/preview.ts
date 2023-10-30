@@ -193,7 +193,11 @@ export async function preview(
   if (config.appType === 'spa' || config.appType === 'mpa') {
     app.use(
       previewBase,
-      htmlFallbackMiddleware(distDir, config.appType === 'spa', true),
+      htmlFallbackMiddleware(
+        distDir,
+        config.appType === 'spa',
+        previewBase !== '/',
+      ),
     )
   }
 
