@@ -2,6 +2,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import { restartServerWithUrls } from './server'
 import type { ViteDevServer } from './server'
+import { isDevServer } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
@@ -86,12 +87,6 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   const rl = readline.createInterface({ input: process.stdin })
   rl.on('line', onInput)
   server.httpServer.on('close', () => rl.close())
-}
-
-function isDevServer(
-  server: ViteDevServer | PreviewServer,
-): server is ViteDevServer {
-  return 'pluginContainer' in server
 }
 
 const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [

@@ -15,6 +15,9 @@ import {
 } from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
+import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
+import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
+import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
@@ -170,7 +173,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: config.appType === 'spa',
+      extensions: [],
       ignores: false,
       setHeaders(res) {
         if (headers) {
@@ -186,8 +189,28 @@ export async function preview(
 
   app.use(previewBase, viteAssetMiddleware)
 
+  // html fallback
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    app.use(
+      previewBase,
+      htmlFallbackMiddleware(
+        distDir,
+        config.appType === 'spa',
+        previewBase !== '/',
+      ),
+    )
+  }
+
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
+
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    // transform index.html
+    app.use(previewBase, indexHtmlMiddleware(distDir, server))
+
+    // handle 404s
+    app.use(previewBase, notFoundMiddleware())
+  }
 
   const hostname = await resolveHostname(options.host)
   const port = options.port ?? DEFAULT_PREVIEW_PORT
