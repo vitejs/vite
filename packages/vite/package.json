@@ -124,7 +124,7 @@
     "parse5": "^7.1.2",
     "periscopic": "^4.0.2",
     "picocolors": "^1.0.0",
-    "picomatch": "^2.3.1",
+    "picomatch": "^3.0.1",
     "postcss-import": "^15.1.0",
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^6.0.0",
