@@ -2,6 +2,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import { restartServerWithUrls } from './server'
 import type { ViteDevServer } from './server'
+import { isDevServer } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
@@ -46,9 +47,11 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? [])
-    // @ts-expect-error passing the right types, but typescript can't detect it
-    .concat(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS)
+  const shortcuts = (opts?.customShortcuts ?? []).concat(
+    (isDev
+      ? BASE_DEV_SHORTCUTS
+      : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
+  )
 
   let actionRunning = false
 
@@ -84,12 +87,6 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   const rl = readline.createInterface({ input: process.stdin })
   rl.on('line', onInput)
   server.httpServer.on('close', () => rl.close())
-}
-
-function isDevServer(
-  server: ViteDevServer | PreviewServer,
-): server is ViteDevServer {
-  return 'pluginContainer' in server
 }
 
 const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
