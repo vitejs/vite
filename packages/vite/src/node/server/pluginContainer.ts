@@ -138,6 +138,7 @@ export interface PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null>
+  watchChange(id: string, change: {event: 'create' | 'update' | 'delete'}): Promise<void>
   close(): Promise<void>
 }
 
@@ -776,6 +777,15 @@ export async function createPluginContainer(
         code,
         map: ctx._getCombinedSourcemap(),
       }
+    },
+
+    async watchChange(id, change) {
+      const ctx = new Context()
+      await hookParallel(
+        'watchChange',
+        () => ctx,
+        () => [id, change],
+      )
     },
 
     async close() {
