@@ -207,10 +207,10 @@ export async function preview(
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
     app.use(previewBase, indexHtmlMiddleware(distDir, server))
-
-    // handle 404s
-    app.use(previewBase, notFoundMiddleware())
   }
+
+  // handle 404s
+  app.use(previewBase, notFoundMiddleware())
 
   const hostname = await resolveHostname(options.host)
   const port = options.port ?? DEFAULT_PREVIEW_PORT
