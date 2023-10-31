@@ -32,6 +32,16 @@ describe('definePlugin', () => {
     )
   })
 
+  test('should not replace if not defined', async () => {
+    const transform = await createDefinePluginTransform({
+      __APP_VERSION__: JSON.stringify('1.0'),
+    })
+    expect(await transform('const version = "1.0";')).toBe(undefined)
+    expect(await transform('const version = import.meta.SOMETHING')).toBe(
+      undefined,
+    )
+  })
+
   test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
     expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
