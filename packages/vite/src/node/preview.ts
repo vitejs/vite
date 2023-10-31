@@ -190,16 +190,15 @@ export async function preview(
   app.use(previewBase, viteAssetMiddleware)
 
   // html fallback
-  if (config.appType === 'spa' || config.appType === 'mpa') {
-    app.use(
-      previewBase,
-      htmlFallbackMiddleware(
-        distDir,
-        config.appType === 'spa',
-        previewBase !== '/',
-      ),
-    )
-  }
+  // we serve `.html` files for all app types (`appType)`, including SSR apps/frameworks (`appType: 'custom'`) in order to serve pre-rendered pages
+  app.use(
+    previewBase,
+    htmlFallbackMiddleware(
+      distDir,
+      config.appType === 'spa',
+      previewBase !== '/',
+    ),
+  )
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
