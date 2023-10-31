@@ -43,7 +43,6 @@ export type {
   ServerHook,
   ResolvedServerOptions,
   ResolvedServerUrls,
-  TransformRequestOptions,
 } from './server'
 export type {
   BuildOptions,

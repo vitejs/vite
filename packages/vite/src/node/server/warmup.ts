@@ -51,7 +51,7 @@ async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
   // for other files, pass it through `transformRequest` with warmup
   else {
     const url = fileToUrl(file, server.config.root)
-    await server.transformRequest(url, { ssr, warmup: true })
+    await server.warmupRequest(url, { ssr })
   }
 }
 

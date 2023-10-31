@@ -436,7 +436,7 @@ async function handleModuleSoftInvalidation(
 
         if (imp.d === -1 && server.config.server.preTransformRequests) {
           // pre-transform known direct imports
-          server.transformRequest(hmrUrl, { ssr, warmup: true })
+          server.warmupRequest(hmrUrl, { ssr })
         }
 
         break

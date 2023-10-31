@@ -422,5 +422,5 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
 
   // transform all url as non-ssr as html includes client-side assets only
   url = unwrapId(stripBase(url, base))
-  server.transformRequest(url, { warmup: true })
+  server.warmupRequest(url)
 }

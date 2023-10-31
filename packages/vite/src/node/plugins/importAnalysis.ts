@@ -621,7 +621,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
-              server.transformRequest(url, { ssr, warmup: true })
+              server.warmupRequest(url, { ssr })
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
