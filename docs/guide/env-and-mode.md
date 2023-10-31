@@ -14,10 +14,6 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.SSR`**: {boolean} whether the app is running in the [server](./ssr.md#conditional-logic).
 
-### Production Replacement
-
-During production, these env variables are replaced by [esbuild defines](https://esbuild.github.io/api/#define). It is therefore recommended to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will only work if the `key` is constant folded.
-
 ## `.env` Files
 
 Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/shared-options.md#envdir):
