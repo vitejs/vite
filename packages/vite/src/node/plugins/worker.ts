@@ -218,7 +218,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     shouldTransformCachedModule({ id }) {
-      if (isBuild && isWorkerQueryId(id) && config.build.watch) {
+      if (isBuild && config.build.watch && isWorkerQueryId(id)) {
         return true
       }
     },
