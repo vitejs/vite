@@ -83,18 +83,16 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       })
     }
 
-    const defineKeys = Object.keys(define)
-    const pattern = defineKeys.length
-      ? new RegExp(
-          // Mustn't be preceded by a char that can be part of an identifier
-          // or a '.' that isn't part of a spread operator
-          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
-            defineKeys.map(escapeRegex).join('|') +
-            // Mustn't be followed by a char that can be part of an identifier
-            // or an assignment (but allow equality operators)
-            ')(?:(?<=\\.)|(?![\\p{L}\\p{N}_$]|\\s*?=[^=]))',
-          'gu',
-        )
+    // Create regex pattern as a fast check before running esbuild
+    const patternKeys = Object.keys(userDefine)
+    if (replaceProcessEnv && Object.keys(processEnv).length) {
+      patternKeys.push('process.env', '__vite_process_env_NODE_ENV')
+    }
+    if (Object.keys(importMetaKeys).length) {
+      patternKeys.push('import.meta.env', 'import.meta.hot')
+    }
+    const pattern = patternKeys.length
+      ? new RegExp(patternKeys.map(escapeRegex).join('|'))
       : null
 
     return [define, pattern] as const

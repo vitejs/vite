@@ -259,7 +259,7 @@ export interface UserConfig {
      */
     format?: 'es' | 'iife'
     /**
-     * Vite plugins that apply to worker bundle. The plugins retured by this function
+     * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
      * rollup worker bundling process.
      */
@@ -482,21 +482,6 @@ export async function resolveConfig(
     allowClearScreen: config.clearScreen,
     customLogger: config.customLogger,
   })
-
-  let foundDiscouragedVariableName
-  if (
-    (foundDiscouragedVariableName = Object.keys(config.define ?? {}).find((k) =>
-      ['process', 'global'].includes(k),
-    ))
-  ) {
-    logger.warn(
-      colors.yellow(
-        `Replacing ${colors.bold(
-          foundDiscouragedVariableName,
-        )} using the define option is discouraged. See https://vitejs.dev/config/shared-options.html#define for more details.`,
-      ),
-    )
-  }
 
   // resolve root
   const resolvedRoot = normalizePath(
