@@ -102,10 +102,29 @@ In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]
 
 ### Allow path containing `.` to fallback to index.html
 
-In Vite 4, accessing a path containing `.` did not fallback to index.html even if `appType` is set to `'SPA'` (default).
-From Vite 5, it will fallback to index.html.
+In Vite 4, accessing a path in dev containing `.` did not fallback to index.html even if `appType` is set to `'spa'` (default). From Vite 5, it will fallback to index.html.
 
-Note that the browser will no longer show the 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
+Note that the browser will no longer show a 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
+
+### Align dev and preview HTML serving behaviour
+
+In Vite 4, the dev and preview servers serve HTML based on its directory structure and trailing slash differently. This causes inconsistencies when testing your built app. Vite 5 refactors into a single behaviour like below, given the following file structure:
+
+```
+├── index.html
+├── file.html
+└── dir
+    └── index.html
+```
+
+| Request           | Before (dev)                 | Before (preview)  | After (dev & preview)        |
+| ----------------- | ---------------------------- | ----------------- | ---------------------------- |
+| `/dir/index.html` | `/dir/index.html`            | `/dir/index.html` | `/dir/index.html`            |
+| `/dir`            | `/index.html` (SPA fallback) | `/dir/index.html` | `/dir.html` (SPA fallback)   |
+| `/dir/`           | `/dir/index.html`            | `/dir/index.html` | `/dir/index.html`            |
+| `/file.html`      | `/file.html`                 | `/file.html`      | `/file.html`                 |
+| `/file`           | `/index.html` (SPA fallback) | `/file.html`      | `/file.html`                 |
+| `/file/`          | `/index.html` (SPA fallback) | `/file.html`      | `/index.html` (SPA fallback) |
 
 ### Manifest files are now generated in `.vite` directory by default
 
@@ -116,6 +135,31 @@ In Vite 4, the manifest files (`build.manifest`, `build.ssrManifest`) was genera
 CLI shortcuts, like `r` to restart the dev server, now require an additional `Enter` press to trigger the shortcut. For example, `r + Enter` to restart the dev server.
 
 This change prevents Vite from swallowing and controlling OS-specific shortcuts, allowing better compatibility when combining the Vite dev server with other processes, and avoids the [previous caveats](https://github.com/vitejs/vite/pull/14342).
+
+### Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behaviour
+
+Vite 5 uses esbuild 0.19 and removes the compatibility layer for esbuild 0.18, which changes how `experimentalDecorators` and `useDefineForClassFields` are handled.
+
+- **`experimentalDecorators` is not enabled by default**
+
+  You need to set `compilerOptions.experimentalDecorators` to `true` in `tsconfig.json` to use decorators.
+
+- **`useDefineForClassFields` defaults depend on the TypeScript `target` value**
+
+  If `target` is not `ESNext` or `ES2022` or newer, or if there's no `tsconfig.json` file, `useDefineForClassFields` will default to `false` which can be problematic with the default `esbuild.target` value of `esnext`. It may transpile to [static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks#browser_compatibility) which may not be supported in your browser.
+
+  As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
+
+```jsonc
+{
+  "compilerOptions": {
+    // Set true if you use decorators
+    "experimentalDecorators": true,
+    // Set true if you see parsing errors in your browser
+    "useDefineForClassFields": true
+  }
+}
+```
 
 ### Remove `--https` flag and `https: true`
 
@@ -150,6 +194,7 @@ const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
 - Default exports of CSS files (e.g `import style from './foo.css'`): Use the `?inline` query instead
 - `import.meta.globEager`: Use `import.meta.glob('*', { eager: true })` instead
 - `ssr.format: 'cjs'` and `legacy.buildSsrCjsExternalHeuristics` ([#13816](https://github.com/vitejs/vite/discussions/13816))
+- `server.middlewareMode: 'ssr'` and `server.middlewareMode: 'html'`: Use [`appType`](/config/shared-options.md#apptype) + [`server.middlewareMode: true`](/config/server-options.md#server-middlewaremode) instead ([#8452](https://github.com/vitejs/vite/pull/8452))
 
 ## Advanced
 

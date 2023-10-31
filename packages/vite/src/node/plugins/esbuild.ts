@@ -93,7 +93,6 @@ export async function transformWithEsbuild(
   }
 
   let tsconfigRaw = options?.tsconfigRaw
-  const fallbackSupported: Record<string, boolean> = {}
 
   // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
@@ -140,23 +139,6 @@ export async function transformWithEsbuild(
       compilerOptions.useDefineForClassFields = false
     }
 
-    // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
-    // To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
-    // `true` by default if it's unset.
-    // TODO: Remove this in Vite 5
-    if (compilerOptions.experimentalDecorators === undefined) {
-      compilerOptions.experimentalDecorators = true
-    }
-
-    // Compat with esbuild 0.17 where static properties are transpiled to
-    // static blocks when `useDefineForClassFields` is false. Its support
-    // is not great yet, so temporarily disable it for now.
-    // TODO: Remove this in Vite 5, don't pass hardcoded `esnext` target
-    // to `transformWithEsbuild` in the esbuild plugin.
-    if (compilerOptions.useDefineForClassFields !== true) {
-      fallbackSupported['class-static-blocks'] = false
-    }
-
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
@@ -179,10 +161,6 @@ export async function transformWithEsbuild(
     ...options,
     loader,
     tsconfigRaw,
-    supported: {
-      ...fallbackSupported,
-      ...options?.supported,
-    },
   }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions
@@ -220,9 +198,13 @@ export async function transformWithEsbuild(
     if (e.errors) {
       e.frame = ''
       e.errors.forEach((m: Message) => {
-        if (m.text === 'Experimental decorators are not currently enabled') {
+        if (
+          m.text === 'Experimental decorators are not currently enabled' ||
+          m.text ===
+            'Parameter decorators only work when experimental decorators are enabled'
+        ) {
           m.text +=
-            '. Vite 4.4+ now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
+            '. Vite 5 now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
         }
         e.frame += `\n` + prettifyMessage(m, code)
       })

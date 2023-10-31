@@ -27,7 +27,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { resolveTsconfigRaw, scanImports } from './scan'
+import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
@@ -730,12 +730,8 @@ async function prepareEsbuildOptimizerRun(
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const {
-    plugins: pluginsFromConfig = [],
-    tsconfig,
-    tsconfigRaw,
-    ...esbuildOptions
-  } = optimizeDeps?.esbuildOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
+    optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -826,8 +822,6 @@ async function prepareEsbuildOptimizerRun(
     metafile: true,
     plugins,
     charset: 'utf8',
-    tsconfig,
-    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,

@@ -71,9 +71,8 @@ describe('transformWithEsbuild', () => {
   test('experimentalDecorators', async () => {
     const main = path.resolve(__dirname, '../src/decorator.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
-    // Should not error when transpiling decorators
-    // TODO: In Vite 5, this should require setting `tsconfigRaw.experimentalDecorators`
-    // or via the closest `tsconfig.json`
+    // Should not error when transpiling decorators as nearest tsconfig.json
+    // has "experimentalDecorators": true
     const result = await transformWithEsbuild(mainContent, main, {
       target: 'es2020',
     })
