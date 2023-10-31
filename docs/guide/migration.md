@@ -13,7 +13,7 @@ Vite is now using Rollup 4 which also brings along its breaking changes, in part
 - For Vite plugins, `this.resolve` `skipSelf` option is now `true` by default.
 - For Vite plugins, `this.parse` now only supports the `allowReturnOutsideFunction` option for now.
 
-Read the full breaking changes in [Rollup's release notes](https://github.com/rollup/rollup/releases/tag/v4.0.0) for build-related changes in `build.rollupOptions`.
+Read the full breaking changes in [Rollup's release notes](https://github.com/rollup/rollup/releases/tag/v4.0.0) for build-related changes in [`build.rollupOptions`](/config/build-options.md#build-rollupoptions).
 
 ## Deprecate CJS Node API
 
