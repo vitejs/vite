@@ -6,6 +6,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isServe,
   page,
   removeFile,
   serverLogs,
