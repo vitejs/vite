@@ -13,7 +13,7 @@ Vite is now using Rollup 4 which also brings along its breaking changes, in part
 - For Vite plugins, `this.resolve` `skipSelf` option is now `true` by default.
 - For Vite plugins, `this.parse` now only supports the `allowReturnOutsideFunction` option for now.
 
-Read the full breaking changes in [Rollup's release notes](https://github.com/rollup/rollup/releases/tag/v4.0.0) for build-related changes in `build.rollupOptions`.
+Read the full breaking changes in [Rollup's release notes](https://github.com/rollup/rollup/releases/tag/v4.0.0) for build-related changes in [`build.rollupOptions`](/config/build-options.md#build-rollupoptions).
 
 ## Deprecate CJS Node API
 
@@ -34,7 +34,7 @@ See the [troubleshooting guide](/guide/troubleshooting.html#vite-cjs-node-api-de
 
 ## Rework `define` and `import.meta.env.*` replacement strategy
 
-In Vite 4, the `define` and `import.meta.env.*` features use different replacement strategies in dev and build:
+In Vite 4, the [`define`](/config/shared-options.md#define) and [`import.meta.env.*`](/guide/env-and-mode.md#env-variables) features use different replacement strategies in dev and build:
 
 - In dev, both features are injected as global variables to `globalThis` and `import.meta` respectively.
 - In build, both features are statically replaced with a regex.
@@ -98,11 +98,11 @@ Note that these changes matches the Node.js behaviour, so you can also run the i
 
 ### `worker.plugins` is now a function
 
-In Vite 4, `worker.plugins` accepted an array of plugins (`(Plugin | Plugin[])[]`). From Vite 5, it needs to be configured as a function that returns an array of plugins (`() => (Plugin | Plugin[])[]`). This change is required so parallel worker builds run more consistently and predictably.
+In Vite 4, [`worker.plugins`](/config/worker-options.md#worker-plugins) accepted an array of plugins (`(Plugin | Plugin[])[]`). From Vite 5, it needs to be configured as a function that returns an array of plugins (`() => (Plugin | Plugin[])[]`). This change is required so parallel worker builds run more consistently and predictably.
 
 ### Allow path containing `.` to fallback to index.html
 
-In Vite 4, accessing a path in dev containing `.` did not fallback to index.html even if `appType` is set to `'spa'` (default). From Vite 5, it will fallback to index.html.
+In Vite 4, accessing a path in dev containing `.` did not fallback to index.html even if [`appType`](/config/shared-options.md#apptype) is set to `'spa'` (default). From Vite 5, it will fallback to index.html.
 
 Note that the browser will no longer show a 404 error message in the console if you point the image path to a non-existent file (e.g. `<img src="./file-does-not-exist.png">`).
 
@@ -128,7 +128,7 @@ In Vite 4, the dev and preview servers serve HTML based on its directory structu
 
 ### Manifest files are now generated in `.vite` directory by default
 
-In Vite 4, the manifest files (`build.manifest`, `build.ssrManifest`) was generated in the root of `build.outDir` by default. From Vite 5, those will be generated in the `.vite` directory in the `build.outDir` by default.
+In Vite 4, the manifest files ([`build.manifest`](/config/build-options.md#build-manifest), [`build.ssrManifest`](/config/build-options.md#build-ssrmanifest)) was generated in the root of [`build.outDir`](/config/build-options.md#build-outdir) by default. From Vite 5, those will be generated in the `.vite` directory in the `build.outDir` by default.
 
 ### CLI shortcuts require an additional `Enter` press
 
@@ -138,7 +138,7 @@ This change prevents Vite from swallowing and controlling OS-specific shortcuts,
 
 ### Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behaviour
 
-Vite 5 uses esbuild 0.19 and removes the compatibility layer for esbuild 0.18, which changes how `experimentalDecorators` and `useDefineForClassFields` are handled.
+Vite 5 uses esbuild 0.19 and removes the compatibility layer for esbuild 0.18, which changes how [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) and [`useDefineForClassFields`](https://www.typescriptlang.org/tsconfig#useDefineForClassFields) are handled.
 
 - **`experimentalDecorators` is not enabled by default**
 
@@ -217,7 +217,7 @@ Also there are other breaking changes which only affect few users.
 - [[#14723] fix(resolve)!: remove special .mjs handling](https://github.com/vitejs/vite/pull/14723)
   - In the past, when a library `"exports"` field maps to an `.mjs` file, Vite will still try to match the `"browser"` and `"module"` fields to fix compatibility with certain libraries. This behavior is now removed to align with the exports resolution algorithm.
 - [[#14733] feat(resolve)!: remove `resolve.browserField`](https://github.com/vitejs/vite/pull/14733)
-  - `resolve.browserField` has been deprecated since Vite 3 in favour of an updated default of `['browser', 'module', 'jsnext:main', 'jsnext']` for `resolve.mainFields`.
+  - `resolve.browserField` has been deprecated since Vite 3 in favour of an updated default of `['browser', 'module', 'jsnext:main', 'jsnext']` for [`resolve.mainFields`](/config/shared-options.md#resolve-mainfields).
 
 ## Migration from v3
 
