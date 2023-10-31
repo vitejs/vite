@@ -397,7 +397,7 @@ async function handleModuleSoftInvalidation(
 
   if (ssr ? mod.ssrTransformResult : mod.transformResult) {
     throw new Error(
-      `Internal server error: Soft-invalidated module "${mod.url}" should not have existing tranform result`,
+      `Internal server error: Soft-invalidated module "${mod.url}" should not have existing transform result`,
     )
   }
 

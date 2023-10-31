@@ -259,7 +259,7 @@ export interface UserConfig {
      */
     format?: 'es' | 'iife'
     /**
-     * Vite plugins that apply to worker bundle. The plugins retured by this function
+     * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
      * rollup worker bundling process.
      */
