@@ -147,7 +147,15 @@ if (import.meta.hot) {
 
 ## `hot.data`
 
-The `import.meta.hot.data` object is persisted across different instances of the same updated module. It can be used to pass on information from a previous version of the module to the next one.
+The `import.meta.hot.data` object is persisted across different instances of the same updated module. It can be used to pass on information from a previous version of the module to the next one. Note that re-assignment of `data` itself is not supported. Instead, you can mutate properties of `data` object.
+
+```js
+// ok
+import.meta.hot.data.someValue = 'hello'
+
+// not supported
+// import.meta.hot.data = { someValue: 'hello' }
+```
 
 ## `hot.decline()`
 
