@@ -408,7 +408,7 @@ export function updateStyle(id: string, content: string): void {
     if (cspNonce === undefined) {
       cspNonce =
         document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')
-          ?.content ?? null
+          ?.nonce ?? null
     }
     if (cspNonce) {
       style.setAttribute('nonce', cspNonce)
