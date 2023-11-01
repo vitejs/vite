@@ -27,27 +27,31 @@ export function warmupFiles(server: ViteDevServer): void {
 }
 
 async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
-  try {
-    // transform html with the `transformIndexHtml` hook as Vite internals would
-    // pre-transform the imported JS modules linked. this may cause `transformIndexHtml`
-    // plugins to be executed twice, but that's probably fine.
-    if (file.endsWith('.html')) {
-      const url = htmlFileToUrl(file, server.config.root)
-      if (url) {
+  // transform html with the `transformIndexHtml` hook as Vite internals would
+  // pre-transform the imported JS modules linked. this may cause `transformIndexHtml`
+  // plugins to be executed twice, but that's probably fine.
+  if (file.endsWith('.html')) {
+    const url = htmlFileToUrl(file, server.config.root)
+    if (url) {
+      try {
         const html = await fs.readFile(file, 'utf-8')
         await server.transformIndexHtml(url, html)
+      } catch (e) {
+        // Unexpected error, log the issue but avoid an unhandled exception
+        server.config.logger.error(
+          `Pre-transform error (${colors.cyan(file)}): ${e.message}`,
+          {
+            error: e,
+            timestamp: true,
+          },
+        )
       }
     }
-    // for other files, pass it through `transformRequest`. this is what Vite uses
-    // for it's `server.preTransformRequests` option.
-    else {
-      const url = fileToUrl(file, server.config.root)
-      await server.transformRequest(url, { ssr })
-    }
-  } catch (e) {
-    server.config.logger.error(
-      colors.red(`Failed to warm up ${colors.cyan(file)}:\n`) + e.message,
-    )
+  }
+  // for other files, pass it through `transformRequest` with warmup
+  else {
+    const url = fileToUrl(file, server.config.root)
+    await server.warmupRequest(url, { ssr })
   }
 }
 

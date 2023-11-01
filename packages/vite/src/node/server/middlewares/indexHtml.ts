@@ -41,8 +41,6 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
-import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../plugins/optimizedDeps'
 import { isCSSRequest } from '../../plugins/css'
 import { checkPublicFile } from '../../plugins/asset'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
@@ -422,21 +420,7 @@ export function indexHtmlMiddleware(
 function preTransformRequest(server: ViteDevServer, url: string, base: string) {
   if (!server.config.server.preTransformRequests) return
 
-  url = unwrapId(stripBase(url, base))
-
   // transform all url as non-ssr as html includes client-side assets only
-  server.transformRequest(url).catch((e) => {
-    if (
-      e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-      e?.code === ERR_CLOSED_SERVER
-    ) {
-      // these are expected errors
-      return
-    }
-    // Unexpected error, log the issue but avoid an unhandled exception
-    server.config.logger.error(`Pre-transform error: ${e.message}`, {
-      error: e,
-      timestamp: true,
-    })
-  })
+  url = unwrapId(stripBase(url, base))
+  server.warmupRequest(url)
 }
