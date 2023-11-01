@@ -210,6 +210,8 @@ export async function preview(
   }
 
   // handle 404s
+  // we serve 404.html for all app types (`config.appType`), including SSR apps/frameworks (`appType: 'custom'`)
+  // in order to serve pre-rendered 404 pages
   app.use(previewBase, notFoundMiddleware())
 
   const hostname = await resolveHostname(options.host)
