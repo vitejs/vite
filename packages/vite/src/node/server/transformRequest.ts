@@ -138,12 +138,7 @@ async function doTransform(
   // returns a boolean true is successful, or false if no handling is needed
   const softInvalidatedTransformResult =
     module &&
-    (await handleModuleSoftInvalidation(
-      module,
-      ssr,
-      timestamp,
-      server.config.base,
-    ))
+    (await handleModuleSoftInvalidation(module, ssr, timestamp, server))
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
@@ -384,7 +379,7 @@ async function handleModuleSoftInvalidation(
   mod: ModuleNode,
   ssr: boolean,
   timestamp: number,
-  base: string,
+  server: ViteDevServer,
 ) {
   const transformResult = ssr ? mod.ssrInvalidationState : mod.invalidationState
 
@@ -425,7 +420,7 @@ async function handleModuleSoftInvalidation(
       const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
       // hmrUrl must be derived the same way as importAnalysis
       const hmrUrl = unwrapId(
-        stripBase(removeImportQuery(urlWithoutTimestamp), base),
+        stripBase(removeImportQuery(urlWithoutTimestamp), server.config.base),
       )
       for (const importedMod of mod.clientImportedModules) {
         if (importedMod.url !== hmrUrl) continue
@@ -438,6 +433,12 @@ async function handleModuleSoftInvalidation(
           const end = hasQuotes ? imp.e - 1 : imp.e
           s.overwrite(start, end, replacedUrl)
         }
+
+        if (imp.d === -1 && server.config.server.preTransformRequests) {
+          // pre-transform known direct imports
+          server.warmupRequest(hmrUrl, { ssr })
+        }
+
         break
       }
     }

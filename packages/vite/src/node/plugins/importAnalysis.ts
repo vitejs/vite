@@ -53,12 +53,8 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { checkPublicFile, urlRE } from './asset'
-import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  throwOutdatedRequest,
-} from './optimizedDeps'
+import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
@@ -625,20 +621,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
-              server.transformRequest(url, { ssr }).catch((e) => {
-                if (
-                  e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-                  e?.code === ERR_CLOSED_SERVER
-                ) {
-                  // these are expected errors
-                  return
-                }
-                // Unexpected error, log the issue but avoid an unhandled exception
-                config.logger.error(`Pre-transform error: ${e.message}`, {
-                  error: e,
-                  timestamp: true,
-                })
-              })
+              server.warmupRequest(url, { ssr })
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
