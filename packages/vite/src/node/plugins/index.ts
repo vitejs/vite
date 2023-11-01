@@ -1,4 +1,5 @@
 import aliasPlugin from '@rollup/plugin-alias'
+import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin, WithRequiredHook } from '../plugin'
@@ -122,6 +123,7 @@ export function createPluginHookUtils(
     return plugins
       .map((p) => {
         const hook = p[hookName]!
+        // TODO: align implement with `getHookHandler` and replace with it
         return typeof hook === 'object' && 'handler' in hook
           ? hook.handler
           : hook
@@ -158,5 +160,12 @@ export function getSortedPluginsByHook<K extends keyof Plugin>(
       normal.push(plugin)
     }
   }
+
   return [...pre, ...normal, ...post] as WithRequiredHook<K>[]
+}
+
+export function getHookHandler<T extends ObjectHook<Function>>(
+  hook: T,
+): HookHandler<T> {
+  return ('handler' in hook ? hook.handler : hook) as HookHandler<T>
 }
