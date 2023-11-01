@@ -73,11 +73,6 @@ test('ignores constants in string literals', async () => {
     ),
   ).toBe('globalThis.process.env.NODE_ENV')
   expect(
-    await page.textContent(
-      '.ignores-string-literals .__vite_process_env_NODE_ENV',
-    ),
-  ).toBe('__vite_process_env_NODE_ENV')
-  expect(
     await page.textContent('.ignores-string-literals .import-meta-hot'),
   ).toBe('import' + '.meta.hot')
 })

@@ -26,7 +26,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv),
     })
   }
 
@@ -69,9 +68,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     // Additional define fixes based on `ssr` value
-    if (isBuild && !replaceProcessEnv) {
-      define['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
-    }
     if ('import.meta.env.SSR' in define) {
       define['import.meta.env.SSR'] = ssr + ''
     }
@@ -86,7 +82,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     // Create regex pattern as a fast check before running esbuild
     const patternKeys = Object.keys(userDefine)
     if (replaceProcessEnv && Object.keys(processEnv).length) {
-      patternKeys.push('process.env', '__vite_process_env_NODE_ENV')
+      patternKeys.push('process.env')
     }
     if (Object.keys(importMetaKeys).length) {
       patternKeys.push('import.meta.env', 'import.meta.hot')
