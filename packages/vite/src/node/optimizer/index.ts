@@ -48,7 +48,7 @@ export type ExportsData = {
   jsxLoader?: boolean
 }
 
-export interface DepsOptimizer {
+export interface DepsOptimizer extends AsyncDisposable {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo

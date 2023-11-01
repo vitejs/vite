@@ -64,6 +64,7 @@ import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
+import { ASYNC_DISPOSE, FS_PREFIX } from '../constants'
 import {
   cleanUrl,
   combineSourcemaps,
@@ -78,7 +79,6 @@ import {
   timeFrom,
   unwrapId,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
@@ -105,7 +105,7 @@ export interface PluginContainerOptions {
   writeFile?: (name: string, source: string | Uint8Array) => void
 }
 
-export interface PluginContainer {
+export interface PluginContainer extends AsyncDisposable {
   options: InputOptions
   getModuleInfo(id: string): ModuleInfo | null
   buildStart(options: InputOptions): Promise<void>
@@ -806,6 +806,9 @@ export async function createPluginContainer(
         () => ctx,
         () => [],
       )
+    },
+    [ASYNC_DISPOSE]() {
+      return this.close()
     },
   }
 
