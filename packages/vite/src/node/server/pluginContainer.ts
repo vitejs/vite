@@ -138,7 +138,10 @@ export interface PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null>
-  watchChange(id: string, change: {event: 'create' | 'update' | 'delete'}): Promise<void>
+  watchChange(
+    id: string,
+    change: { event: 'create' | 'update' | 'delete' },
+  ): Promise<void>
   close(): Promise<void>
 }
 
