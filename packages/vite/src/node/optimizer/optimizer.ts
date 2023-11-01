@@ -2,6 +2,7 @@ import colors from 'picocolors'
 import { createDebugger, getHash } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
+import { ASYNC_DISPOSE } from '../constants'
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
@@ -119,6 +120,9 @@ async function createDepsOptimizer(
     resetRegisteredIds,
     ensureFirstRun,
     close,
+    [ASYNC_DISPOSE]() {
+      return this.close()
+    },
     options: getDepOptimizationConfig(config, ssr),
   }
 
@@ -832,6 +836,7 @@ async function createDevSsrDepsOptimizer(
     ensureFirstRun: () => {},
 
     close: async () => {},
+    [ASYNC_DISPOSE]: async () => {},
     options: config.ssr.optimizeDeps,
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)

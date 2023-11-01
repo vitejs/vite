@@ -14,6 +14,7 @@ import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
 import type { InvalidatePayload } from 'types/customEvent'
+import { ASYNC_DISPOSE, CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -43,7 +44,6 @@ import {
 } from '../optimizer'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
@@ -182,7 +182,7 @@ export type ServerHook = (
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
-export interface ViteDevServer {
+export interface ViteDevServer extends AsyncDisposable {
   /**
    * The resolved vite config object
    */
@@ -534,6 +534,9 @@ export async function _createServer(
         )
       }
       server.resolvedUrls = null
+    },
+    [ASYNC_DISPOSE]() {
+      return this.close()
     },
     printUrls() {
       if (server.resolvedUrls) {
