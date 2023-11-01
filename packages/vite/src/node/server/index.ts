@@ -603,12 +603,14 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
+    await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
     await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
   }
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
 
