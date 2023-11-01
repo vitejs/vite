@@ -156,7 +156,7 @@ Note that re-assignment of `data` itself is not supported. Instead, you should m
 import.meta.hot.data.someValue = 'hello'
 
 // not supported
-// import.meta.hot.data = { someValue: 'hello' }
+import.meta.hot.data = { someValue: 'hello' }
 ```
 
 ## `hot.decline()`
