@@ -1,7 +1,7 @@
 import aliasPlugin from '@rollup/plugin-alias'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
-import type { HookHandler, Plugin } from '../plugin'
+import type { HookHandler, Plugin, WithRequiredHook } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { watchPackageDataPlugin } from '../packages'
@@ -106,9 +106,11 @@ export function createPluginHookUtils(
 ): PluginHookUtils {
   // sort plugins per hook
   const sortedPluginsCache = new Map<keyof Plugin, Plugin[]>()
-  function getSortedPlugins(hookName: keyof Plugin): Plugin[] {
+  function getSortedPlugins<K extends keyof Plugin>(
+    hookName: K,
+  ): WithRequiredHook<K>[] {
     if (sortedPluginsCache.has(hookName))
-      return sortedPluginsCache.get(hookName)!
+      return sortedPluginsCache.get(hookName) as WithRequiredHook<K>[]
     const sorted = getSortedPluginsByHook(hookName, plugins)
     sortedPluginsCache.set(hookName, sorted)
     return sorted
@@ -133,10 +135,10 @@ export function createPluginHookUtils(
   }
 }
 
-export function getSortedPluginsByHook(
-  hookName: keyof Plugin,
+export function getSortedPluginsByHook<K extends keyof Plugin>(
+  hookName: K,
   plugins: readonly Plugin[],
-): Plugin[] {
+): WithRequiredHook<K>[] {
   const pre: Plugin[] = []
   const normal: Plugin[] = []
   const post: Plugin[] = []
@@ -156,5 +158,5 @@ export function getSortedPluginsByHook(
       normal.push(plugin)
     }
   }
-  return [...pre, ...normal, ...post]
+  return [...pre, ...normal, ...post] as WithRequiredHook<K>[]
 }
