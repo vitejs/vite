@@ -712,9 +712,11 @@ export async function _createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
-  // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
+    // html fallback
     middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
+    // transform index.html
+    middlewares.use(indexHtmlMiddleware(root, server))
   }
 
   // run post config hooks
@@ -723,9 +725,6 @@ export async function _createServer(
   postHooks.forEach((fn) => fn && fn())
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    // transform index.html
-    middlewares.use(indexHtmlMiddleware(root, server))
-
     // handle 404s
     middlewares.use(notFoundMiddleware())
   }
