@@ -680,7 +680,7 @@ export async function _createServer(
 
   // base
   if (config.base !== '/') {
-    middlewares.use(baseMiddleware(server))
+    middlewares.use(baseMiddleware(config.rawBase, middlewareMode))
   }
 
   // open in editor support

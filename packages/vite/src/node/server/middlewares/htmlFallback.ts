@@ -8,21 +8,7 @@ const debug = createDebugger('vite:html-fallback')
 export function htmlFallbackMiddleware(
   root: string,
   spaFallback: boolean,
-  mounted = false,
 ): Connect.NextHandleFunction {
-  // When this middleware is mounted on a route, we need to re-assign `req.url` with a
-  // leading `.` to signal a relative rewrite. Returning with a leading `/` returns a
-  // buggy `req.url`. e.g.:
-  //
-  // mount /foo/bar:
-  //  req.url = /index.html
-  //  final   = /foo/barindex.html
-  //
-  // mount /foo/bar:
-  //  req.url = ./index.html
-  //  final   = /foo/bar/index.html
-  const prepend = mounted ? '.' : ''
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteHtmlFallbackMiddleware(req, res, next) {
     if (
@@ -51,7 +37,7 @@ export function htmlFallbackMiddleware(
       const filePath = path.join(root, pathname)
       if (fs.existsSync(filePath)) {
         debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
-        req.url = prepend + url
+        req.url = url
         return next()
       }
     }
@@ -61,7 +47,7 @@ export function htmlFallbackMiddleware(
       if (fs.existsSync(filePath)) {
         const newUrl = url + 'index.html'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
-        req.url = prepend + newUrl
+        req.url = newUrl
         return next()
       }
     }
@@ -71,14 +57,14 @@ export function htmlFallbackMiddleware(
       if (fs.existsSync(filePath)) {
         const newUrl = url + '.html'
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
-        req.url = prepend + newUrl
+        req.url = newUrl
         return next()
       }
     }
 
     if (spaFallback) {
       debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
-      req.url = prepend + '/index.html'
+      req.url = '/index.html'
     }
 
     next()
