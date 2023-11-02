@@ -180,6 +180,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
 
-export type WithRequiredHook<K extends keyof Plugin> = Plugin & {
+export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
   [P in K]: NonNullable<Plugin[P]>
 }
