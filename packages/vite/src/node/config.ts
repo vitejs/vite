@@ -10,7 +10,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
-import type { HookHandler, Plugin } from './plugin'
+import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
   BuildOptions,
   RenderBuiltAssetUrl,
@@ -43,6 +43,7 @@ import {
 } from './utils'
 import {
   createPluginHookUtils,
+  getHookHandler,
   getSortedPluginsByHook,
   resolvePlugins,
 } from './plugins'
@@ -383,7 +384,9 @@ export type ResolvedConfig = Readonly<
 >
 
 export interface PluginHookUtils {
-  getSortedPlugins: (hookName: keyof Plugin) => Plugin[]
+  getSortedPlugins: <K extends keyof Plugin>(
+    hookName: K,
+  ) => PluginWithRequiredHook<K>[]
   getSortedPluginHooks: <K extends keyof Plugin>(
     hookName: K,
   ) => NonNullable<HookHandler<Plugin[K]>>[]
@@ -1207,7 +1210,7 @@ async function runConfigHook(
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
+    const handler = getHookHandler(hook)
     if (handler) {
       const res = await handler(conf, configEnv)
       if (res) {
