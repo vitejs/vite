@@ -120,15 +120,7 @@ export function createPluginHookUtils(
     hookName: K,
   ): NonNullable<HookHandler<Plugin[K]>>[] {
     const plugins = getSortedPlugins(hookName)
-    return plugins
-      .map((p) => {
-        const hook = p[hookName]!
-        // TODO: align implement with `getHookHandler` and replace with it
-        return typeof hook === 'object' && 'handler' in hook
-          ? hook.handler
-          : hook
-      })
-      .filter(Boolean)
+    return plugins.map((p) => getHookHandler(p[hookName])).filter(Boolean)
   }
 
   return {
@@ -167,5 +159,5 @@ export function getSortedPluginsByHook<K extends keyof Plugin>(
 export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
-  return ('handler' in hook ? hook.handler : hook) as HookHandler<T>
+  return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
 }
