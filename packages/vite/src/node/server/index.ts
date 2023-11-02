@@ -14,6 +14,7 @@ import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
 import type { InvalidatePayload } from 'types/customEvent'
+import { ASYNC_DISPOSE, CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -35,6 +36,7 @@ import {
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import {
   getDepsOptimizer,
   initDepsOptimizer,
@@ -42,12 +44,11 @@ import {
 } from '../optimizer'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
-import { createPluginContainer } from './pluginContainer'
+import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -181,7 +182,7 @@ export type ServerHook = (
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
-export interface ViteDevServer {
+export interface ViteDevServer extends AsyncDisposable {
   /**
    * The resolved vite config object
    */
@@ -231,6 +232,12 @@ export interface ViteDevServer {
     url: string,
     options?: TransformOptions,
   ): Promise<TransformResult | null>
+  /**
+   * Same as `transformRequest` but only warm up the URLs so the next request
+   * will already be cached. The function will never throw as it handles and
+   * reports errors internally.
+   */
+  warmupRequest(url: string, options?: TransformOptions): Promise<void>
   /**
    * Apply vite built-in HTML transforms and any plugin HTML transforms.
    */
@@ -403,6 +410,22 @@ export async function _createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
+    async warmupRequest(url, options) {
+      await transformRequest(url, server, options).catch((e) => {
+        if (
+          e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
+          e?.code === ERR_CLOSED_SERVER
+        ) {
+          // these are expected errors
+          return
+        }
+        // Unexpected error, log the issue but avoid an unhandled exception
+        server.config.logger.error(`Pre-transform error: ${e.message}`, {
+          error: e,
+          timestamp: true,
+        })
+      })
+    },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       if (isDepsOptimizerEnabled(config, true)) {
@@ -512,6 +535,9 @@ export async function _createServer(
       }
       server.resolvedUrls = null
     },
+    [ASYNC_DISPOSE]() {
+      return this.close()
+    },
     printUrls() {
       if (server.resolvedUrls) {
         printServerUrls(
@@ -580,12 +606,14 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
+    await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
     await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
   }
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
 

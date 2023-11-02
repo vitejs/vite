@@ -152,3 +152,6 @@ export const wildcardHosts = new Set([
 export const DEFAULT_DEV_PORT = 5173
 
 export const DEFAULT_PREVIEW_PORT = 4173
+
+export const ASYNC_DISPOSE: typeof Symbol.asyncDispose =
+  Symbol.asyncDispose || Symbol.for('Symbol.asyncDispose')

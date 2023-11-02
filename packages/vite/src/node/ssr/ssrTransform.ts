@@ -12,7 +12,7 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { parseAst as rollupParseAst } from 'rollup/parseAst'
+import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
 import { combineSourcemaps } from '../utils'
 import { isJSONRequest } from '../plugins/json'
@@ -75,7 +75,7 @@ async function ssrTransformScript(
 
   let ast: any
   try {
-    ast = rollupParseAst(code)
+    ast = await rollupParseAstAsync(code)
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
     const line = err.loc.line

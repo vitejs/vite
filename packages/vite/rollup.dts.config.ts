@@ -17,6 +17,7 @@ export default defineConfig({
   },
   external: [
     /^node:*/,
+    'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
     // lightningcss types are bundled
     ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
@@ -80,13 +81,14 @@ function patchTypes(): Plugin {
     },
     renderChunk(code, chunk) {
       // Validate that chunk imports do not import dev deps
-      const deps = new Set(Object.keys(pkg.dependencies))
+      const deps = Object.keys(pkg.dependencies)
       for (const id of chunk.imports) {
         if (
           !id.startsWith('./') &&
           !id.startsWith('../') &&
           !id.startsWith('node:') &&
-          !deps.has(id)
+          !deps.includes(id) &&
+          !deps.some((name) => id.startsWith(name + '/'))
         ) {
           // If validation failed, only warn and set exit code 1 so that files
           // are written to disk for inspection, but the build will fail
