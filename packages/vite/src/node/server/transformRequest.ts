@@ -249,10 +249,13 @@ async function loadAndTransform(
   }
   if (code == null) {
     const isPublicFile = checkPublicFile(url, config)
+    let publicDirName = path.relative(config.root, config.publicDir)
+    if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
     const msg = isPublicFile
-      ? `This file is in /public and will be copied as-is during build without ` +
-        `going through the plugin transforms, and therefore should not be ` +
-        `imported from source code. It can only be referenced via HTML tags.`
+      ? `This file is in ${publicDirName} and will be copied as-is during ` +
+        `build without going through the plugin transforms, and therefore ` +
+        `should not be imported from source code. It can only be referenced ` +
+        `via HTML tags.`
       : `Does the file exist?`
     const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
       .get(id)
