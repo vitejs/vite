@@ -642,9 +642,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS,
           })
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName: originalFilename, isEntry })
+          generatedAssets.get(config)!.set(referenceId, {
+            originalName: originalFilename,
+            isEntry,
+            source: chunkCSS,
+          })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
 
           if (emitTasksLength === emitTasks.length) {

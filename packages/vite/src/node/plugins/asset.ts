@@ -43,9 +43,15 @@ const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 // For the manifest, we need to preserve the original file path and isEntry
 // for CSS assets. We keep a map from referenceId to this information.
 export interface GeneratedAssetMeta {
+  source: string | Uint8Array
   originalName: string
   isEntry?: boolean
 }
+
+export interface AssetPluginApi {
+  getAssets(): Map<string, GeneratedAssetMeta> | undefined
+}
+
 export const generatedAssets = new WeakMap<
   ResolvedConfig,
   Map<string, GeneratedAssetMeta>
@@ -140,16 +146,28 @@ export function renderAssetUrlInJS(
 // watch for these ids resulting in watching the root of the file system in Windows,
 const viteBuildPublicIdPrefix = '\0vite:asset:public'
 
+export function getAssets(
+  config: ResolvedConfig,
+): Map<string, GeneratedAssetMeta> | undefined {
+  return generatedAssets.get(config)
+}
+
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
-export function assetPlugin(config: ResolvedConfig): Plugin {
+export function assetPlugin(config: ResolvedConfig): Plugin<AssetPluginApi> {
   registerCustomMime()
 
   let moduleGraph: ModuleGraph | undefined
 
   return {
     name: 'vite:asset',
+
+    api: {
+      getAssets() {
+        return getAssets(config)
+      },
+    },
 
     buildStart() {
       assetCache.set(config, new Map())
@@ -403,7 +421,9 @@ async function fileToBuiltUrl(
     })
 
     const originalName = normalizePath(path.relative(config.root, file))
-    generatedAssets.get(config)!.set(referenceId, { originalName })
+    generatedAssets
+      .get(config)!
+      .set(referenceId, { originalName, source: content })
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
   }
