@@ -249,10 +249,8 @@ async function loadAndTransform(
   }
   if (code == null) {
     const isPublicFile = checkPublicFile(url, config)
-    const publicDirName =
-      config.publicDir && config.root
-        ? path.relative(config.root, config.publicDir)
-        : '/public'
+    let publicDirName = path.relative(config.root, config.publicDir)
+    if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
     const msg = isPublicFile
       ? `This file is in ${publicDirName} and will be copied as-is during ` +
         `build without going through the plugin transforms, and therefore ` +
