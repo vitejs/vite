@@ -3,6 +3,7 @@ import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
+import type { Http2SecureServer } from 'node:http2'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -182,6 +183,8 @@ export type ServerHook = (
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
+export type HttpServer = http.Server | Http2SecureServer
+
 export interface ViteDevServer extends AsyncDisposable {
   /**
    * The resolved vite config object
@@ -200,7 +203,7 @@ export interface ViteDevServer extends AsyncDisposable {
    * native Node http server instance
    * will be null in middleware mode
    */
-  httpServer: http.Server | null
+  httpServer: HttpServer | null
   /**
    * chokidar watcher instance
    * https://github.com/paulmillr/chokidar#api
@@ -797,7 +800,7 @@ async function startServer(
   })
 }
 
-function createServerCloseFn(server: http.Server | null) {
+function createServerCloseFn(server: HttpServer | null) {
   if (!server) {
     return () => {}
   }

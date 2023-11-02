@@ -1,11 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
-import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
+import type {
+  HttpServer,
+  ResolvedServerOptions,
+  ResolvedServerUrls,
+} from './server'
 import type { CommonServerOptions } from './http'
 import {
   httpServerStart,
@@ -67,7 +70,7 @@ export interface PreviewServer {
   /**
    * native Node http server instance
    */
-  httpServer: http.Server
+  httpServer: HttpServer
   /**
    * The resolved urls Vite prints on the CLI.
    * null before server is listening.

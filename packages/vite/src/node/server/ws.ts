@@ -14,6 +14,7 @@ import type { InferCustomEventPayload } from 'types/customEvent'
 import { ASYNC_DISPOSE } from '../constants'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
  * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
@@ -93,7 +94,7 @@ const wsServerEvents = [
 ]
 
 export function createWebSocketServer(
-  server: Server | null,
+  server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
