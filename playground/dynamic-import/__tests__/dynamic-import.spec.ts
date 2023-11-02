@@ -1,5 +1,12 @@
 import { expect, test } from 'vitest'
-import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
+import {
+  getColor,
+  isBuild,
+  isServe,
+  page,
+  serverLogs,
+  untilUpdated,
+} from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -30,11 +37,14 @@ test('should have same reference on static and dynamic js import, .mxd', async (
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })
 
-// in this case, it is not possible to detect the correct module
-test('should have same reference on static and dynamic js import, .mxd2', async () => {
-  await page.click('.mxd2')
-  await untilUpdated(() => page.textContent('.view'), 'false', true)
-})
+// in this case, it is not possible to detect the correct module in build
+test.runIf(isServe)(
+  'should have same reference on static and dynamic js import, .mxd2',
+  async () => {
+    await page.click('.mxd2')
+    await untilUpdated(() => page.textContent('.view'), 'true')
+  },
+)
 
 test('should have same reference on static and dynamic js import, .mxdjson', async () => {
   await page.click('.mxdjson')
