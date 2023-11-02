@@ -192,8 +192,8 @@ export async function preview(
 
   app.use(previewBase, viteAssetMiddleware)
 
-  // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
+    // html fallback
     app.use(
       previewBase,
       htmlFallbackMiddleware(
@@ -202,15 +202,14 @@ export async function preview(
         previewBase !== '/',
       ),
     )
+    // transform index.html
+    app.use(previewBase, indexHtmlMiddleware(distDir, server))
   }
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    // transform index.html
-    app.use(previewBase, indexHtmlMiddleware(distDir, server))
-
     // handle 404s
     app.use(previewBase, notFoundMiddleware())
   }
