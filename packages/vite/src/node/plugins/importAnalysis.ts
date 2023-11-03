@@ -624,12 +624,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               server.warmupRequest(url, { ssr })
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
-            // check @vite-ignore which suppresses dynamic import warning
-            const hasViteIgnore = hasViteIgnoreRE.test(
-              // complete expression inside parens
-              source.slice(dynamicIndex + 1, end),
-            )
             if (!isInNodeModules(importer)) {
+              // check @vite-ignore which suppresses dynamic import warning
+              const hasViteIgnore = hasViteIgnoreRE.test(
+                // complete expression inside parens
+                source.slice(dynamicIndex + 1, end),
+              )
               if (!hasViteIgnore) {
                 this.warn(
                   `\n` +
@@ -652,9 +652,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (!ssr) {
               const url = rawUrl.replace(cleanUpRawUrlRE, '').trim()
               if (
-                !hasViteIgnore &&
-                (!urlIsStringRE.test(url) ||
-                  isExplicitImportRequired(url.slice(1, -1)))
+                !urlIsStringRE.test(url) ||
+                isExplicitImportRequired(url.slice(1, -1))
               ) {
                 needQueryInjectHelper = true
                 str().overwrite(
