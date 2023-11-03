@@ -51,7 +51,6 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
             // something unexpected has happened. In this case, Vite
             // returns an empty response that will error.
             throwProcessingError(id)
-            return
           }
           const newMetadata = depsOptimizer.metadata
           if (metadata !== newMetadata) {
