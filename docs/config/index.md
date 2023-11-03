@@ -48,10 +48,10 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 
 ## Conditional Config
 
-If the config needs to conditionally determine options based on the command (`dev`/`serve` or `build`), the [mode](/guide/env-and-mode) being used, or if it is an SSR build (`ssrBuild`), it can export a function instead:
+If the config needs to conditionally determine options based on the command (`serve` or `build`), the [mode](/guide/env-and-mode) being used, if it's an SSR build (`isSsrBuild`), or is previewing the build (`isPreview`), it can export a function instead:
 
 ```js
-export default defineConfig(({ command, mode, ssrBuild }) => {
+export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
   if (command === 'serve') {
     return {
       // dev specific config
@@ -67,7 +67,7 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
 
 It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
 
-`ssrBuild` is experimental. It is only available during build instead of a more general `ssr` flag because, during dev, the config is shared by the single server handling SSR and non-SSR requests. The value could be `undefined` for tools that don't have separate commands for the browser and SSR build, so use explicit comparison against `true` and `false`.
+`isSsrBuild` and `isPreview` are additional optional flags to differentiate the kind of `build` and `serve` commands respectively. Some tools that load the Vite config may not support these flags and will pass `undefined` instead. Hence, it's recommended to use explicit comparison against `true` and `false`.
 
 ## Async Config
 
