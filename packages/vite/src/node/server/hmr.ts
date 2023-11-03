@@ -337,9 +337,25 @@ function propagateUpdate(
       }
     }
 
-    if (currentChain.includes(importer)) {
-      // circular deps is considered dead end
-      return true
+    // check for circular deps
+    const importerIndex = currentChain.indexOf(importer)
+    if (importerIndex > -1) {
+      // if found, iterate through the circular modules and check if any of them
+      // are boundaries. if yes, assume a dead end to force a reload as we can't
+      // recover the execution order after HMR.
+      for (let i = importerIndex; i < currentChain.length; i++) {
+        if (boundaries.some((b) => b.boundary === currentChain[i])) {
+          debugHmr?.(
+            colors.yellow(`circular imports detected: `) +
+              currentChain
+                .slice(importerIndex)
+                .map((m) => colors.dim(m.url))
+                .join(' -> '),
+          )
+          return true
+        }
+      }
+      return false
     }
 
     if (propagateUpdate(importer, traversedModules, boundaries, subChain)) {
