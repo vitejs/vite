@@ -131,6 +131,21 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 }
 ```
 
+::: warning `types` is an explicit list.
+When `types` is undefined, TypeScript implicitly includes all your installed `@types` modules. If you explicitly declare `types`, that implicit include will be overridden.
+
+To preserve any types your project depends on, explicitly include them in the list. For instance, if you have `@types/colab` installed, your `compilerOptions` should look like this:
+
+```json
+{
+  "compilerOptions": {
+    "types": ["colab", "vite/client"]
+  }
+}
+```
+
+:::
+
 This will provide the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
