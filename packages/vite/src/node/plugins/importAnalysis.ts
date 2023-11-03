@@ -169,8 +169,40 @@ function extractImportedBindings(
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
+  const needCheckFileExistsRE = new RegExp(root + '/(?!node_modules/)')
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
+  const filepathExistsCache = new Map()
+
+  const isFileExists = (filepath: string) => {
+    if (filepathExistsCache.has(filepath)) {
+      return filepathExistsCache.get(filepath)
+    }
+    const check = (fp: string): boolean => {
+      const dir = path.dirname(fp)
+      if (filepathExistsCache.has(dir)) {
+        return filepathExistsCache.get(dir)
+      }
+      if (dir === path.dirname(dir)) {
+        return true
+      }
+      const filenames = fs.readdirSync(dir)
+      if (!filenames.includes(path.basename(fp))) {
+        return false
+      }
+      if (dir === root) {
+        return true
+      }
+      const checked = check(dir)
+      filepathExistsCache.set(dir, checked)
+      return checked
+    }
+
+    const result = check(filepath)
+    filepathExistsCache.set(filepath, result)
+    return result
+  }
+
   let server: ViteDevServer
 
   let _env: string | undefined
@@ -299,8 +331,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const resolved = await this.resolve(url, importerFile)
-
-        if (!resolved) {
+        if (
+          !resolved ||
+          (needCheckFileExistsRE.test(resolved.id) &&
+            !isFileExists(cleanUrl(resolved.id)))
+        ) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
             return [url, url]
