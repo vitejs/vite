@@ -77,8 +77,8 @@ const promisifiedRealpath = promisify(fs.realpath)
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
-  isSsrBuild: boolean
-  isPreview: boolean
+  isSsrBuild?: boolean
+  isPreview?: boolean
 }
 
 /**

@@ -183,9 +183,6 @@ export async function startDefaultServe(): Promise<void> {
   const configEnv: ConfigEnv = {
     command: isBuild ? 'build' : 'serve',
     mode: isBuild ? 'production' : 'development',
-    // we're unable to differentiate these properties so just set false
-    isSsrBuild: false,
-    isPreview: false,
   }
 
   // config file named by convention as the *.spec.ts folder
