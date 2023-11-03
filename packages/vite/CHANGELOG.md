@@ -1,3 +1,17 @@
+## 5.0.0-beta.16 (2023-11-03)
+
+* feat!: add isPreview to ConfigEnv and resolveConfig (#14855) ([d195860](https://github.com/vitejs/vite/commit/d195860)), closes [#14855](https://github.com/vitejs/vite/issues/14855)
+* fix(types)!: expose httpServer with Http2SecureServer union (#14834) ([ab5bb40](https://github.com/vitejs/vite/commit/ab5bb40)), closes [#14834](https://github.com/vitejs/vite/issues/14834)
+* refactor(preview)!: use base middleware (#14818) ([69737f4](https://github.com/vitejs/vite/commit/69737f4)), closes [#14818](https://github.com/vitejs/vite/issues/14818)
+* chore: add `PluginWithRequiredHook` type & extract `getHookHandler` function  (#14845) ([997f2d5](https://github.com/vitejs/vite/commit/997f2d5)), closes [#14845](https://github.com/vitejs/vite/issues/14845)
+* chore: revert "fix: don't add `?import` for `@vite-ignore`ed import (#14851)" (#14866) ([6516607](https://github.com/vitejs/vite/commit/6516607)), closes [#14851](https://github.com/vitejs/vite/issues/14851) [#14866](https://github.com/vitejs/vite/issues/14866)
+* chore(optimizedDeps): remove unused return (#14773) ([9d744dd](https://github.com/vitejs/vite/commit/9d744dd)), closes [#14773](https://github.com/vitejs/vite/issues/14773)
+* fix: don't add `?import` for `@vite-ignore`ed import (#14851) ([42fee9e](https://github.com/vitejs/vite/commit/42fee9e)), closes [#14851](https://github.com/vitejs/vite/issues/14851)
+* fix: use correct publicDir in ERR_LOAD_PUBLIC_URL (#14847) ([66caef3](https://github.com/vitejs/vite/commit/66caef3)), closes [#14847](https://github.com/vitejs/vite/issues/14847)
+* feat: implement AsyncDisposable (#14648) ([385d580](https://github.com/vitejs/vite/commit/385d580)), closes [#14648](https://github.com/vitejs/vite/issues/14648)
+
+
+
 ## 5.0.0-beta.15 (2023-11-01)
 
 * feat: expose parseAst and parseAstAsync from rollup (#14833) ([6229485](https://github.com/vitejs/vite/commit/6229485)), closes [#14833](https://github.com/vitejs/vite/issues/14833)
