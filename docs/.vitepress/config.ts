@@ -154,6 +154,10 @@ export default defineConfig({
                 link: 'https://github.com/vitejs/awesome-vite',
               },
               {
+                text: 'ViteConf',
+                link: 'https://viteconf.org',
+              },
+              {
                 text: 'DEV Community',
                 link: 'https://dev.to/t/vite',
               },
@@ -239,6 +243,10 @@ export default defineConfig({
             {
               text: 'Troubleshooting',
               link: '/guide/troubleshooting',
+            },
+            {
+              text: 'Performance',
+              link: '/guide/performance',
             },
             {
               text: 'Philosophy',

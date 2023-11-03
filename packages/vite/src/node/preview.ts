@@ -1,11 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
-import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
+import type {
+  HttpServer,
+  ResolvedServerOptions,
+  ResolvedServerUrls,
+} from './server'
 import type { CommonServerOptions } from './http'
 import {
   httpServerStart,
@@ -15,6 +18,10 @@ import {
 } from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
+import { baseMiddleware } from './server/middlewares/base'
+import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
+import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
+import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
@@ -64,7 +71,7 @@ export interface PreviewServer {
   /**
    * native Node http server instance
    */
-  httpServer: http.Server
+  httpServer: HttpServer
   /**
    * The resolved urls Vite prints on the CLI.
    * null before server is listening.
@@ -161,8 +168,10 @@ export async function preview(
 
   app.use(compression())
 
-  const previewBase =
-    config.base === './' || config.base === '' ? '/' : config.base
+  // base
+  if (config.base !== '/') {
+    app.use(baseMiddleware(config.rawBase, false))
+  }
 
   // static assets
   const headers = config.preview.headers
@@ -170,7 +179,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: config.appType === 'spa',
+      extensions: [],
       ignores: false,
       setHeaders(res) {
         if (headers) {
@@ -184,16 +193,28 @@ export async function preview(
       },
     })(...args)
 
-  app.use(previewBase, viteAssetMiddleware)
+  app.use(viteAssetMiddleware)
+
+  // html fallback
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    app.use(htmlFallbackMiddleware(distDir, config.appType === 'spa'))
+  }
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    // transform index.html
+    app.use(indexHtmlMiddleware(distDir, server))
+
+    // handle 404s
+    app.use(notFoundMiddleware())
+  }
+
   const hostname = await resolveHostname(options.host)
   const port = options.port ?? DEFAULT_PREVIEW_PORT
-  const protocol = options.https ? 'https' : 'http'
 
-  const serverPort = await httpServerStart(httpServer, {
+  await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
@@ -207,14 +228,12 @@ export async function preview(
   )
 
   if (options.open) {
-    const path = typeof options.open === 'string' ? options.open : previewBase
-    openBrowser(
-      path.startsWith('http')
-        ? path
-        : new URL(path, `${protocol}://${hostname.name}:${serverPort}`).href,
-      true,
-      logger,
-    )
+    const url = server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+    if (url) {
+      const path =
+        typeof options.open === 'string' ? new URL(options.open, url).href : url
+      openBrowser(path, true, logger)
+    }
   }
 
   return server as PreviewServer

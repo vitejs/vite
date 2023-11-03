@@ -1,14 +1,12 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import type {
-  Server as HttpServer,
-  OutgoingHttpHeaders as HttpServerHeaders,
-} from 'node:http'
+import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
+import type { HttpServer } from './server'
 
 export interface CommonServerOptions {
   /**
@@ -115,7 +113,7 @@ export async function resolveHttpServer(
       },
       // @ts-expect-error TODO: is this correct?
       app,
-    ) as unknown as HttpServer
+    )
   }
 }
 

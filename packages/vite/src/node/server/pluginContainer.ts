@@ -64,6 +64,7 @@ import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
+import { ASYNC_DISPOSE, FS_PREFIX } from '../constants'
 import {
   cleanUrl,
   combineSourcemaps,
@@ -78,9 +79,8 @@ import {
   timeFrom,
   unwrapId,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
-import { createPluginHookUtils } from '../plugins'
+import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 
@@ -105,7 +105,7 @@ export interface PluginContainerOptions {
   writeFile?: (name: string, source: string | Uint8Array) => void
 }
 
-export interface PluginContainer {
+export interface PluginContainer extends AsyncDisposable {
   options: InputOptions
   getModuleInfo(id: string): ModuleInfo | null
   buildStart(options: InputOptions): Promise<void>
@@ -138,6 +138,10 @@ export interface PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null>
+  watchChange(
+    id: string,
+    change: { event: 'create' | 'update' | 'delete' },
+  ): Promise<void>
   close(): Promise<void>
 }
 
@@ -213,9 +217,8 @@ export async function createPluginContainer(
       // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
       const hook = plugin[hookName]
       if (!hook) continue
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore hook is not a primitive
-      const handler: Function = 'handler' in hook ? hook.handler : hook
+
+      const handler: Function = getHookHandler(hook)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
@@ -650,10 +653,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
 
         const pluginResolveStart = debugPluginResolve ? performance.now() : 0
-        const handler =
-          'handler' in plugin.resolveId
-            ? plugin.resolveId.handler
-            : plugin.resolveId
+        const handler = getHookHandler(plugin.resolveId)
         const result = await handleHookPromise(
           handler.call(ctx as any, rawId, importer, {
             attributes: options?.attributes ?? {},
@@ -711,8 +711,7 @@ export async function createPluginContainer(
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const handler =
-          'handler' in plugin.load ? plugin.load.handler : plugin.load
+        const handler = getHookHandler(plugin.load)
         const result = await handleHookPromise(
           handler.call(ctx as any, id, { ssr }),
         )
@@ -739,10 +738,7 @@ export async function createPluginContainer(
         ctx._activeCode = code
         const start = debugPluginTransform ? performance.now() : 0
         let result: TransformResult | string | undefined
-        const handler =
-          'handler' in plugin.transform
-            ? plugin.transform.handler
-            : plugin.transform
+        const handler = getHookHandler(plugin.transform)
         try {
           result = await handleHookPromise(
             handler.call(ctx as any, code, id, { ssr }),
@@ -778,6 +774,15 @@ export async function createPluginContainer(
       }
     },
 
+    async watchChange(id, change) {
+      const ctx = new Context()
+      await hookParallel(
+        'watchChange',
+        () => ctx,
+        () => [id, change],
+      )
+    },
+
     async close() {
       if (closed) return
       closed = true
@@ -793,6 +798,9 @@ export async function createPluginContainer(
         () => ctx,
         () => [],
       )
+    },
+    [ASYNC_DISPOSE]() {
+      return this.close()
     },
   }
 

@@ -18,6 +18,7 @@ import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import type { ModuleNode } from './moduleGraph'
+import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -77,7 +78,7 @@ export async function handleHMRUpdate(
       { clear: true, timestamp: true },
     )
     try {
-      await server.restart()
+      await restartServerWithUrls(server)
     } catch (e) {
       config.logger.error(colors.red(e))
     }

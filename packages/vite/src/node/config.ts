@@ -10,7 +10,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
-import type { HookHandler, Plugin } from './plugin'
+import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
   BuildOptions,
   RenderBuiltAssetUrl,
@@ -43,6 +43,7 @@ import {
 } from './utils'
 import {
   createPluginHookUtils,
+  getHookHandler,
   getSortedPluginsByHook,
   resolvePlugins,
 } from './plugins'
@@ -259,7 +260,7 @@ export interface UserConfig {
      */
     format?: 'es' | 'iife'
     /**
-     * Vite plugins that apply to worker bundle. The plugins retured by this function
+     * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
      * rollup worker bundling process.
      */
@@ -383,7 +384,9 @@ export type ResolvedConfig = Readonly<
 >
 
 export interface PluginHookUtils {
-  getSortedPlugins: (hookName: keyof Plugin) => Plugin[]
+  getSortedPlugins: <K extends keyof Plugin>(
+    hookName: K,
+  ) => PluginWithRequiredHook<K>[]
   getSortedPluginHooks: <K extends keyof Plugin>(
     hookName: K,
   ) => NonNullable<HookHandler<Plugin[K]>>[]
@@ -483,21 +486,6 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
-  let foundDiscouragedVariableName
-  if (
-    (foundDiscouragedVariableName = Object.keys(config.define ?? {}).find((k) =>
-      ['process', 'global'].includes(k),
-    ))
-  ) {
-    logger.warn(
-      colors.yellow(
-        `Replacing ${colors.bold(
-          foundDiscouragedVariableName,
-        )} using the define option is discouraged. See https://vitejs.dev/config/shared-options.html#define for more details.`,
-      ),
-    )
-  }
-
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
@@ -530,12 +518,25 @@ export async function resolveConfig(
 
   const resolveOptions: ResolvedConfig['resolve'] = {
     mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    browserField: config.resolve?.browserField ?? true,
     conditions: config.resolve?.conditions ?? [],
     extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: config.resolve?.dedupe ?? [],
     preserveSymlinks: config.resolve?.preserveSymlinks ?? false,
     alias: resolvedAlias,
+  }
+
+  if (
+    // @ts-expect-error removed field
+    config.resolve?.browserField === false &&
+    resolveOptions.mainFields.includes('browser')
+  ) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
+          `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
+          `to remove the 'browser' string and preserve the previous browser behaviour.`,
+      ),
+    )
   }
 
   // load .env files
@@ -656,8 +657,6 @@ export async function resolveConfig(
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
   const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
-
-  const middlewareMode = config?.server?.middlewareMode
 
   const optimizeDeps = config.optimizeDeps || {}
 
@@ -783,7 +782,7 @@ export async function resolveConfig(
       },
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? (middlewareMode === 'ssr' ? 'custom' : 'spa'),
+    appType: config.appType ?? 'spa',
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
@@ -811,24 +810,6 @@ export async function resolveConfig(
       .map((hook) => hook(resolved)),
   )
 
-  // validate config
-
-  if (middlewareMode === 'ssr') {
-    logger.warn(
-      colors.yellow(
-        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
-          config.appType === 'custom' ? '' : ` and appType to 'custom'`
-        } instead`,
-      ),
-    )
-  } else if (middlewareMode === 'html') {
-    logger.warn(
-      colors.yellow(
-        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`,
-      ),
-    )
-  }
-
   debug?.(`using resolved config: %O`, {
     ...resolved,
     plugins: resolved.plugins.map((p) => p.name),
@@ -837,6 +818,8 @@ export async function resolveConfig(
       plugins: `() => plugins`,
     },
   })
+
+  // validate config
 
   if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
@@ -1060,7 +1043,6 @@ async function bundleConfigFile(
                 preferRelative: false,
                 tryIndex: true,
                 mainFields: [],
-                browserField: false,
                 conditions: [],
                 overrideConditions: ['node'],
                 dedupe: [],
@@ -1228,7 +1210,7 @@ async function runConfigHook(
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
+    const handler = getHookHandler(hook)
     if (handler) {
       const res = await handler(conf, configEnv)
       if (res) {

@@ -108,6 +108,8 @@ module.exports = defineConfig({
     ],
 
     'regexp/no-contradiction-with-assertion': 'error',
+    // in some cases using explicit letter-casing is more performant than the `i` flag
+    'regexp/use-ignore-case': 'off',
   },
   overrides: [
     {

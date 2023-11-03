@@ -23,6 +23,7 @@ export default defineConfig({
       },
     },
     virtualPlugin(),
+    transformCountPlugin(),
   ],
 })
 
@@ -50,6 +51,18 @@ export const virtual = _virtual + '${num}';`
           server.reloadModule(mod)
         }
       })
+    },
+  }
+}
+
+function transformCountPlugin(): Plugin {
+  let num = 0
+  return {
+    name: 'transform-count',
+    transform(code) {
+      if (code.includes('__TRANSFORM_COUNT__')) {
+        return code.replace('__TRANSFORM_COUNT__', String(++num))
+      }
     },
   }
 }
