@@ -283,6 +283,18 @@ describe('image', () => {
       expect(s).toMatch(/\/foo\/bar\/icon\.png \dx/)
     })
   })
+
+  // TODO: fix build
+  test.runIf(!isBuild)('srcset (mixed)', async () => {
+    const img = await page.$('.img-src-set-mixed')
+    const srcset = await img.getAttribute('srcset')
+    const srcs = srcset.split(', ')
+    expect(srcs[1]).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
+        : /\/foo\/bar\/nested\/asset.png \dx/,
+    )
+  })
 })
 
 describe('svg fragments', () => {
