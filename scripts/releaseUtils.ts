@@ -20,7 +20,7 @@ export async function getLatestTag(pkgName: string): Promise<string> {
   const prefix = pkgName === 'vite' ? 'v' : `${pkgName}@`
   return tags
     .filter((tag) => tag.startsWith(prefix))
-    .sort()
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
     .reverse()[0]
 }
 
