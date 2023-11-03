@@ -126,24 +126,14 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 ```json
 {
   "compilerOptions": {
-    "types": ["vite/client"]
+    "types": ["vite/client", "some-other-lib"]
   }
 }
 ```
 
-::: warning `types` is an explicit list.
-When `types` is undefined, TypeScript implicitly includes all your installed `@types` modules. If you explicitly declare `types`, that implicit include will be overridden.
+::: warning Be sure to include any `@types` imports, as [they will be overriden when you specify `"types"`](https://www.typescriptlang.org/tsconfig#types).
 
-To preserve any types your project depends on, explicitly include them in the list. For instance, if you have `@types/colab` installed, your `compilerOptions` should look like this:
-
-```json
-{
-  "compilerOptions": {
-    "types": ["colab", "vite/client"]
-  }
-}
-```
-
+For instance, `@types/some-other-lib` should be added as `"some-other-lib"`.
 :::
 
 This will provide the following type shims:
