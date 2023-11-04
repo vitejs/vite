@@ -141,7 +141,7 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
-): ResolvedCSSOptions | undefined {
+): ResolvedCSSOptions {
   if (options?.transformer === 'lightningcss') {
     return {
       ...options,
@@ -153,8 +153,7 @@ export function resolveCSSOptions(
       },
     }
   }
-  // TS doesn't narrow the type with the previous if :/
-  return options as Omit<CSSOptions, 'lightningcss'> | undefined
+  return { ...options, lightningcss: undefined }
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
