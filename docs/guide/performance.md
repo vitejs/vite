@@ -55,14 +55,14 @@ Barrel files are files that re-export the APIs of other files in the same direct
 
 ```js
 // src/utils/index.js
-export * from './color'
-export * from './dom'
-export * from './string'
+export * from './color.js'
+export * from './dom.js'
+export * from './string.js'
 ```
 
-When you only import an individual API, e.g. `import { slash } from './utils'`, all the files in that barrel file need to be fetched and transformed as they may contain the `slash` API and may also contain side-effects that run on initialization. This means you're loading more files than required on the initial page load, resulting in a slower page load.
+When you only import an individual API, e.g. `import { slash } from './utils.js'`, all the files in that barrel file need to be fetched and transformed as they may contain the `slash` API and may also contain side-effects that run on initialization. This means you're loading more files than required on the initial page load, resulting in a slower page load.
 
-If possible, you should avoid barrel files and import the individual APIs directly, e.g. `import { slash } from './utils/slash'`. You can read [issue #8237](https://github.com/vitejs/vite/issues/8237) for more information.
+If possible, you should avoid barrel files and import the individual APIs directly, e.g. `import { slash } from './utils/slash.js'`. You can read [issue #8237](https://github.com/vitejs/vite/issues/8237) for more information.
 
 ## Warm Up Frequently Used Files
 
@@ -102,3 +102,20 @@ export default defineConfig({
 Note that you should only warm up files that are frequently used to not overload the Vite dev server on startup. Check the [`server.warmup`](/config/server-options.md#server-warmup) option for more information.
 
 Using [`--open` or `server.open`](/config/server-options.html#server-open) also provides a performance boost, as Vite will automatically warm up the entry point of your app or the provided URL to open.
+
+## Use Lesser or Native Tooling
+
+Keeping Vite fast with a growing codebase is about reducing the amount of work for the source files (JS/TS/CSS).
+
+Examples of doing less work:
+
+- Using CSS instead of SaaS when possible (nesting can be handled by postcss)
+- Don't transform SVG to React components
+- When using the React plugins, avoid configuration at build time so only esbuild is used
+
+Examples of using native tooling:
+
+Using native tooling often come at a cost of larger installation size and this why some of them are not the default when starting a new Vite project. But these are examples you can opt in for larger applications:
+
+- Try out the experimental support for [LightningCSS](https://github.com/vitejs/vite/discussions/13835)
+- Use the [react-swc plugin](https://github.com/vitejs/vite-plugin-react-swc) in place of Babel one.
