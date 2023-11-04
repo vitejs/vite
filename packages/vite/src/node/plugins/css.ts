@@ -2273,9 +2273,10 @@ async function compileLightningCSS(
           },
         },
         minify: config.isProduction && !!config.build.cssMinify,
-        sourceMap: config.isProduction
-          ? !!config.build.sourcemap
-          : config.css?.devSourcemap,
+        sourceMap:
+          config.command === 'build'
+            ? !!config.build.sourcemap
+            : config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
           ? config.css?.lightningcss?.cssModules ?? true
