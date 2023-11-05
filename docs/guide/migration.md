@@ -120,7 +120,7 @@ In Vite 4, the dev and preview servers serve HTML based on its directory structu
 | Request           | Before (dev)                 | Before (preview)  | After (dev & preview)        |
 | ----------------- | ---------------------------- | ----------------- | ---------------------------- |
 | `/dir/index.html` | `/dir/index.html`            | `/dir/index.html` | `/dir/index.html`            |
-| `/dir`            | `/index.html` (SPA fallback) | `/dir/index.html` | `/dir.html` (SPA fallback)   |
+| `/dir`            | `/index.html` (SPA fallback) | `/dir/index.html` | `/index.html` (SPA fallback) |
 | `/dir/`           | `/dir/index.html`            | `/dir/index.html` | `/dir/index.html`            |
 | `/file.html`      | `/file.html`                 | `/file.html`      | `/file.html`                 |
 | `/file`           | `/index.html` (SPA fallback) | `/file.html`      | `/file.html`                 |
@@ -128,7 +128,9 @@ In Vite 4, the dev and preview servers serve HTML based on its directory structu
 
 ### Manifest files are now generated in `.vite` directory by default
 
-In Vite 4, the manifest files ([`build.manifest`](/config/build-options.md#build-manifest), [`build.ssrManifest`](/config/build-options.md#build-ssrmanifest)) was generated in the root of [`build.outDir`](/config/build-options.md#build-outdir) by default. From Vite 5, those will be generated in the `.vite` directory in the `build.outDir` by default.
+In Vite 4, the manifest files ([`build.manifest`](/config/build-options.md#build-manifest) and [`build.ssrManifest`](/config/build-options.md#build-ssrmanifest)) were generated in the root of [`build.outDir`](/config/build-options.md#build-outdir) by default.
+
+From Vite 5, they will be generated in the `.vite` directory in the `build.outDir` by default. This change helps deconflict public files with the same manifest file names when they are copied to the `build.outDir`.
 
 ### CLI shortcuts require an additional `Enter` press
 
@@ -163,8 +165,9 @@ Vite 5 uses esbuild 0.19 and removes the compatibility layer for esbuild 0.18, w
 
 ### Remove `--https` flag and `https: true`
 
-`--https` flag sets `https: true`. This config was meant to be used together with the automatic https certification generation feature which [was dropped in Vite 3](https://v3.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). This config no longer makes sense as it will make Vite start a HTTPS server without a certificate.
-Both [`@vitejs/plugin-basic-ssl`](https://github.com/vitejs/vite-plugin-basic-ssl) and [`vite-plugin-mkcert`](https://github.com/liuweiGL/vite-plugin-mkcert) sets `https` setting regardless of the `https` value, so you can just remove `--https` and `https: true`.
+The `--https` flag sets `server.https: true` and `preview.https: true` internally. This config was meant to be used together with the automatic https certification generation feature which [was dropped in Vite 3](https://v3.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). Hence, this config is no longer useful as it will start a Vite HTTPS server without a certificate.
+
+If you use [`@vitejs/plugin-basic-ssl`](https://github.com/vitejs/vite-plugin-basic-ssl) or [`vite-plugin-mkcert`](https://github.com/liuweiGL/vite-plugin-mkcert), they will already set the `https` config internally, so you can remove `--https`, `server.https: true`, and `preview.https: true` in your setup.
 
 ### Remove `resolvePackageEntry` and `resolvePackageData` APIs
 
