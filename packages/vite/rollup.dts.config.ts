@@ -4,6 +4,9 @@ import { findStaticImports } from 'mlly'
 import { defineConfig } from 'rollup'
 import type { Plugin, PluginContext, RenderedChunk } from 'rollup'
 import dts from 'rollup-plugin-dts'
+import { parse } from '@babel/parser'
+import { walk } from 'estree-walker'
+import MagicString from 'magic-string'
 
 const depTypesDir = new URL('./src/types/', import.meta.url)
 const pkg = JSON.parse(
@@ -58,7 +61,8 @@ const identifierReplacements: Record<string, Record<string, string>> = {
  * 1. Resolve `dep-types/*` and `types/*` imports
  * 2. Validate unallowed dependency imports
  * 3. Replace confusing type names
- * 4. Clean unnecessary comments
+ * 4. Strip leftover internal types
+ * 5. Clean unnecessary comments
  */
 function patchTypes(): Plugin {
   return {
@@ -83,6 +87,7 @@ function patchTypes(): Plugin {
     renderChunk(code, chunk) {
       validateChunkImports.call(this, chunk)
       code = replaceConfusingTypeNames.call(this, code, chunk)
+      code = stripInternalTypes.call(this, code, chunk)
       code = cleanUnnecessaryComments(code)
       return code
     },
@@ -172,6 +177,64 @@ function replaceConfusingTypeNames(
   }
 
   return code
+}
+
+/**
+ * While we already enable `compilerOptions.stripInternal`, some internal comments
+ * like internal parameters are still not stripped by TypeScript, so we run another
+ * pass here.
+ */
+function stripInternalTypes(
+  this: PluginContext,
+  code: string,
+  chunk: RenderedChunk,
+) {
+  if (code.includes('@internal')) {
+    const s = new MagicString(code)
+    const ast = parse(code, {
+      plugins: ['typescript'],
+      sourceType: 'module',
+    })
+
+    walk(ast as any, {
+      enter(node: any) {
+        if (removeInternal(s, node)) {
+          this.skip()
+        }
+      },
+    })
+
+    code = s.toString()
+
+    if (code.includes('@internal')) {
+      this.warn(`${chunk.fileName} has unhandled @internal declarations`)
+      process.exitCode = 1
+    }
+  }
+
+  return code
+}
+
+/**
+ * Remove `@internal` comments not handled by `compilerOptions.stripInternal`
+ * Reference: https://github.com/vuejs/core/blob/main/rollup.dts.config.js
+ */
+function removeInternal(s: MagicString, node: any): boolean {
+  if (
+    node.leadingComments &&
+    node.leadingComments.some((c: any) => {
+      return c.type === 'CommentBlock' && c.value.includes('@internal')
+    })
+  ) {
+    // Examples:
+    // function a(foo: string, /* @internal */ bar: number)
+    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // strip trailing comma
+    const end = s.original[node.end] === ',' ? node.end + 1 : node.end
+    s.remove(node.leadingComments[0].start, end)
+    return true
+  }
+  return false
 }
 
 function cleanUnnecessaryComments(code: string) {

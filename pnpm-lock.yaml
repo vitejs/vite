@@ -240,6 +240,9 @@ importers:
       '@ampproject/remapping':
         specifier: ^2.2.1
         version: 2.2.1
+      '@babel/parser':
+        specifier: ^7.23.0
+        version: 7.23.0
       '@jridgewell/trace-mapping':
         specifier: ^0.3.20
         version: 0.3.20

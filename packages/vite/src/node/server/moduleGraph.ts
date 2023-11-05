@@ -152,7 +152,9 @@ export class ModuleGraph {
     seen: Set<ModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
+    /** @internal */
     hmrBoundaries: ModuleNode[] = [],
+    /** @internal */
     softInvalidate = false,
   ): void {
     const prevInvalidationState = mod.invalidationState
@@ -249,6 +251,7 @@ export class ModuleGraph {
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     ssr?: boolean,
+    /** @internal */
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
