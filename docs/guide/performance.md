@@ -109,13 +109,13 @@ Keeping Vite fast with a growing codebase is about reducing the amount of work f
 
 Examples of doing less work:
 
-- Using CSS instead of SaaS when possible (nesting can be handled by postcss)
-- Don't transform SVG to React components
-- When using the React plugins, avoid configuration at build time so only esbuild is used
+- Use CSS instead of Sass/Less/Stylus when possible (nesting can be handled by PostCSS)
+- Don't transform SVGs into UI framework components (React, Vue, etc). Import them as strings or URLs instead.
+- When using `@vitejs/plugin-react`, avoid configuring the Babel options, so it skips the transformation during build (only esbuild will be used).
 
 Examples of using native tooling:
 
-Using native tooling often come at a cost of larger installation size and this why some of them are not the default when starting a new Vite project. But these are examples you can opt in for larger applications:
+Using native tooling often brings larger installation size and as so is not the default when starting a new Vite project. But it may be worth the cost for larger applications.
 
 - Try out the experimental support for [LightningCSS](https://github.com/vitejs/vite/discussions/13835)
-- Use the [react-swc plugin](https://github.com/vitejs/vite-plugin-react-swc) in place of Babel one.
+- Use [`@vitejs/plugin-react-swc`](https://github.com/vitejs/vite-plugin-react-swc) in place of `@vitejs/plugin-react`.
