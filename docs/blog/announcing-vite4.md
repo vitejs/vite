@@ -38,7 +38,7 @@ Today, the Vite [team](https://vitejs.dev/team) with the help of our ecosystem p
 Quick links:
 
 - [Docs](/)
-- [Migration Guide](/guide/migration)
+- [Migration Guide](https://v4.vitejs.dev/guide/migration.html)
 - [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#400-2022-12-09)
 
 Docs in other languages:
@@ -87,7 +87,7 @@ This double loading could occur since a `.css` file will be emitted and it's lik
 import stuff from './global.css?inline'
 ```
 
-Learn more in the [Migration Guide](/guide/migration).
+Learn more in the [Migration Guide](https://v4.vitejs.dev/guide/migration.html).
 
 ## Environment Variables
 
