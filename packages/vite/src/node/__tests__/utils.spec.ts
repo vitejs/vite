@@ -243,8 +243,10 @@ describe('isFileReadable', () => {
       expect(isFileReadable(testFile)).toBe(true)
     })
     test('file without read permission', async () => {
-      fs.chmodSync(testFile, '044')
-      expect(isFileReadable(testFile)).toBe(false)
+      if (process.getuid && process.getuid() !== 0) {
+        fs.chmodSync(testFile, '044')
+        expect(isFileReadable(testFile)).toBe(false)
+      }
       fs.chmodSync(testFile, '644')
     })
   }
