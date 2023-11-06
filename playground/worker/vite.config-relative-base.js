@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-export default defineConfig({
-  base: './',
+export default defineConfig(({ isPreview }) => ({
+  base: !isPreview ? './' : '/relative-base/',
   resolve: {
     alias: {
       '@': __dirname,
@@ -30,9 +30,6 @@ export default defineConfig({
       },
     },
   },
-  testConfig: {
-    previewBase: '/relative-base/',
-  },
   plugins: [
     workerPluginTestPlugin(),
     {
@@ -48,4 +45,4 @@ export default defineConfig({
     },
   ],
   cacheDir: 'node_modules/.vite-relative-base',
-})
+}))
