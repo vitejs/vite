@@ -808,7 +808,6 @@ async function startServer(
     host: hostname.host,
     logger: server.config.logger,
   })
-  // the port may have been used by another server, so we need to update it to avoid changing the port when restarting
   _currentServerPort = serverPort
 }
 
@@ -969,8 +968,7 @@ export async function restartServerWithUrls(
     server: { port, host },
   } = server.config
   if (
-    (_currentServerPort ?? port ?? DEFAULT_DEV_PORT) !==
-      (prevPort ?? DEFAULT_DEV_PORT) ||
+    (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
     host !== prevHost ||
     diffDnsOrderChange(prevUrls, server.resolvedUrls)
   ) {
