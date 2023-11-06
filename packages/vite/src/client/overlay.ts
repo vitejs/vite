@@ -221,7 +221,12 @@ export class ErrorOverlay extends HTMLElement {
           link.textContent = file
           link.className = 'file-link'
           link.onclick = () => {
-            fetch(`${base}__open-in-editor?file=` + encodeURIComponent(file))
+            fetch(
+              new URL(
+                `${base}__open-in-editor?file=${encodeURIComponent(file)}`,
+                import.meta.url,
+              ),
+            )
           }
           el.appendChild(link)
           curIndex += frag.length + file.length
