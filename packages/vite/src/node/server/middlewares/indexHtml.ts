@@ -113,7 +113,7 @@ const processNodeUrl = (
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
-): string | undefined => {
+): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
     if (server?.moduleGraph) {
@@ -248,7 +248,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           originalUrl,
           server,
         )
-        if (processedUrl) {
+        if (processedUrl !== src.value) {
           overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
         }
       } else if (isModule && node.childNodes.length) {
@@ -269,7 +269,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             htmlPath,
             originalUrl,
           )
-          if (processedUrl) {
+          if (processedUrl !== url) {
             s.update(start, end, processedUrl)
           }
         }
@@ -308,7 +308,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             htmlPath,
             originalUrl,
           )
-          if (processedUrl) {
+          if (processedUrl !== p.value) {
             overwriteAttrValue(
               s,
               node.sourceCodeLocation!.attrs![attrKey],
