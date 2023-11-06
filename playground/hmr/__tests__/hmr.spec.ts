@@ -880,6 +880,21 @@ if (import.meta.hot) {
     await untilUpdated(() => el.textContent(), 'cc')
   })
 
+  test('hmr should not reload if no accepted within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/circular/index.html')
+    const el = await page.$('.circular')
+    expect(await el.textContent()).toBe(
+      'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
+    )
+    editFile('circular/mod-b.js', (code) =>
+      code.replace(`mod-b ->`, `mod-b (edited) ->`),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)',
+    )
+  })
+
   test('assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
