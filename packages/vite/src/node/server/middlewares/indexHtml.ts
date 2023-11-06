@@ -113,44 +113,46 @@ const processNodeUrl = (
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
-): string | undefined => {
-  if (server?.moduleGraph) {
-    const mod = server.moduleGraph.urlToModuleMap.get(url)
-    if (mod && mod.lastHMRTimestamp > 0) {
-      url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+): string => {
+  // prefix with base (dev only, base is never relative)
+  const replacer = (url: string) => {
+    if (server?.moduleGraph) {
+      const mod = server.moduleGraph.urlToModuleMap.get(url)
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+      }
     }
-  }
 
-  if (
-    (url[0] === '/' && url[1] !== '/') ||
-    // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
-    // path will add `/a/` prefix, it will caused 404.
-    //
-    // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace.
-    //
-    // rewrite `./index.js` -> `localhost:5173/a/index.js`.
-    // rewrite `../index.js` -> `localhost:5173/index.js`.
-    // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
-    ((url[0] === '.' || (wordCharRE.test(url[0]) && !url.includes(':'))) &&
-      originalUrl &&
-      originalUrl !== '/' &&
-      htmlPath === '/index.html')
-  ) {
-    // prefix with base (dev only, base is never relative)
-    const replacer = (url: string) => {
+    if (
+      (url[0] === '/' && url[1] !== '/') ||
+      // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
+      // path will add `/a/` prefix, it will caused 404.
+      //
+      // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace.
+      //
+      // rewrite `./index.js` -> `localhost:5173/a/index.js`.
+      // rewrite `../index.js` -> `localhost:5173/index.js`.
+      // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
+      ((url[0] === '.' || (wordCharRE.test(url[0]) && !url.includes(':'))) &&
+        originalUrl &&
+        originalUrl !== '/' &&
+        htmlPath === '/index.html')
+    ) {
       const devBase = config.base
       const fullUrl = path.posix.join(devBase, url)
       if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
+    } else {
+      return url
     }
-
-    const processedUrl = useSrcSetReplacer
-      ? processSrcSetSync(url, ({ url }) => replacer(url))
-      : replacer(url)
-    return processedUrl
   }
+
+  const processedUrl = useSrcSetReplacer
+    ? processSrcSetSync(url, ({ url }) => replacer(url))
+    : replacer(url)
+  return processedUrl
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
@@ -246,7 +248,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           originalUrl,
           server,
         )
-        if (processedUrl) {
+        if (processedUrl !== src.value) {
           overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
         }
       } else if (isModule && node.childNodes.length) {
@@ -267,7 +269,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             htmlPath,
             originalUrl,
           )
-          if (processedUrl) {
+          if (processedUrl !== url) {
             s.update(start, end, processedUrl)
           }
         }
@@ -306,7 +308,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             htmlPath,
             originalUrl,
           )
-          if (processedUrl) {
+          if (processedUrl !== p.value) {
             overwriteAttrValue(
               s,
               node.sourceCodeLocation!.attrs![attrKey],
