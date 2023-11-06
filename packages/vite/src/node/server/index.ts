@@ -336,18 +336,6 @@ export async function _createServer(
   const config = await resolveConfig(inlineConfig, 'serve')
 
   const { root, server: serverConfig } = config
-  if (!serverConfig?.port) {
-    serverConfig.port = _currentServerPort
-  } else {
-    if (serverConfig.port !== _currentServerPort) {
-      if (serverConfig.port !== _configServerPort) {
-        _configServerPort = serverConfig.port
-      } else {
-        serverConfig.port = _currentServerPort
-      }
-    }
-  }
-
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
@@ -725,6 +713,9 @@ export async function _createServer(
   return server
 }
 
+// When using non strict port for the dev server, the running port can be different from the config one.
+// When restarting, the original port may be available but to avoid a switch of URL for the running
+// browser tabs, we enforce the previously used port, expect if the config port changed.
 let _currentServerPort: number | undefined
 let _configServerPort: number | undefined
 async function startServer(
@@ -737,10 +728,14 @@ async function startServer(
   }
 
   const options = server.config.server
-  const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
+  const configPort = inlinePort ?? options.port
+  const port =
+    (!configPort || configPort === _configServerPort
+      ? _currentServerPort
+      : configPort) ?? DEFAULT_DEV_PORT
+  _configServerPort = configPort
 
-  _configServerPort = port
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
@@ -880,7 +875,8 @@ async function restartServer(server: ViteDevServer) {
     await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
     if (
-      (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
+      (_currentServerPort ?? port ?? DEFAULT_DEV_PORT) !==
+        (prevPort ?? DEFAULT_DEV_PORT) ||
       host !== prevHost ||
       diffDnsOrderChange(oldUrls, newServer.resolvedUrls)
     ) {
