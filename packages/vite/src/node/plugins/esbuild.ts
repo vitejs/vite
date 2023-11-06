@@ -25,9 +25,10 @@ import type { Plugin } from '../plugin'
 
 const debug = createDebugger('vite:esbuild')
 
-// IIFE content looks like `var MyLib = function() {`. Spaces are removed when minified
+// IIFE content looks like `var MyLib = function() {`.
+// Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(const|var)\s+\S+\s*=\s*function\(\)\s*\{.*"use strict";/s
+  /(const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -462,7 +463,7 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckCache: TSConfckCache<TSConfckParseResult>
+let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 
 async function loadTsconfigJsonForFile(
   filename: string,
@@ -517,7 +518,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache.clear()
+    tsconfckCache?.clear()
 
     // server may not be available if vite config is updated at the same time
     if (server) {

@@ -16,6 +16,7 @@ export default defineConfig({
     cssCodeSplit: false,
     manifest: true,
     sourcemap: true,
+    assetsInlineLimit: 100, // keep SVG as assets URL
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'index.html'),
@@ -25,6 +26,10 @@ export default defineConfig({
         chunkFileNames(chunkInfo) {
           if (chunkInfo.name === 'immutable-chunk') {
             return `assets/${chunkInfo.name}.js`
+          } else if (/custom\d/.test(chunkInfo.name)) {
+            return `assets/chunk-X${
+              ['.', '-', ''][/custom(\d)/.exec(chunkInfo.name)[1]]
+            }[hash].js`
           }
           return `assets/chunk-[name].[hash].js`
         },

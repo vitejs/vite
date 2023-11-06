@@ -1,0 +1,18 @@
+{
+  "name": "@vitejs/test-ssr-conditions",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "serve": "NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "dependencies": {
+    "@vitejs/test-ssr-conditions-external": "file:./external",
+    "@vitejs/test-ssr-conditions-no-external": "file:./no-external"
+  },
+  "devDependencies": {
+    "express": "^4.18.2"
+  }
+}

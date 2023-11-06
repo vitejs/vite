@@ -1,3 +1,22 @@
+## 5.0.0-beta.2 (2023-10-09)
+
+* fix(legacy)!: should rename `x.[hash].js` to `x-legacy.[hash].js` (#11599) ([e7d7a6f](https://github.com/vitejs/vite/commit/e7d7a6f)), closes [#11599](https://github.com/vitejs/vite/issues/11599)
+* fix(deps): update all non-major dependencies (#14510) ([eb204fd](https://github.com/vitejs/vite/commit/eb204fd)), closes [#14510](https://github.com/vitejs/vite/issues/14510)
+* fix(legacy): fix broken build when renderModernChunks=false & polyfills=false (fix #14324) (#14346) ([27e5b11](https://github.com/vitejs/vite/commit/27e5b11)), closes [#14324](https://github.com/vitejs/vite/issues/14324) [#14346](https://github.com/vitejs/vite/issues/14346)
+
+
+
+## 5.0.0-beta.1 (2023-09-25)
+
+* fix(deps): update all non-major dependencies (#14460) ([b77bff0](https://github.com/vitejs/vite/commit/b77bff0)), closes [#14460](https://github.com/vitejs/vite/issues/14460)
+* fix(legacy): add guard to modern polyfill chunk (#13719) ([945dc4d](https://github.com/vitejs/vite/commit/945dc4d)), closes [#13719](https://github.com/vitejs/vite/issues/13719)
+* fix(legacy): modern polyfill autodetection was injecting more polyfills than needed (#14428) ([1c2e941](https://github.com/vitejs/vite/commit/1c2e941)), closes [#14428](https://github.com/vitejs/vite/issues/14428)
+* fix(legacy): suppress babel warning during polyfill scan (#14425) ([aae3a83](https://github.com/vitejs/vite/commit/aae3a83)), closes [#14425](https://github.com/vitejs/vite/issues/14425)
+* fix(plugin-legacy): ensure correct typing for node esm (#13892) ([d914a9d](https://github.com/vitejs/vite/commit/d914a9d)), closes [#13892](https://github.com/vitejs/vite/issues/13892)
+* refactor(legacy)!: remove `ignoreBrowserslistConfig` option (#14429) ([941bb16](https://github.com/vitejs/vite/commit/941bb16)), closes [#14429](https://github.com/vitejs/vite/issues/14429)
+
+
+
 ## 5.0.0-beta.0 (2023-09-19)
 
 * fix(deps): update all non-major dependencies (#14092) ([68638f7](https://github.com/vitejs/vite/commit/68638f7)), closes [#14092](https://github.com/vitejs/vite/issues/14092)

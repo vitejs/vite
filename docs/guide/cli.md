@@ -18,7 +18,6 @@ vite [root]
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `--host [host]`          | Specify hostname (`string`)                                                                                        |
 | `--port <port>`          | Specify port (`number`)                                                                                            |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                                                                                       |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)                                                                      |
 | `--cors`                 | Enable CORS (`boolean`)                                                                                            |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`)                                                               |
@@ -115,7 +114,6 @@ vite preview [root]
 | `--host [host]`          | Specify hostname (`string`)                          |
 | `--port <port>`          | Specify port (`number`)                              |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`) |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                         |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)        |
 | `--outDir <dir>`         | Output directory (default: `dist`)(`string`)         |
 | `-c, --config <file>`    | Use specified config file (`string`)                 |

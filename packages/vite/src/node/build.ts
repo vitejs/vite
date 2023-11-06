@@ -14,11 +14,9 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
-  RollupWarning,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
-import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
@@ -27,7 +25,7 @@ import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
-import { terserPlugin } from './plugins/terser'
+import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
   asyncFlatten,
   copyDir,
@@ -46,7 +44,6 @@ import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
@@ -143,8 +140,11 @@ export interface BuildOptions {
   /**
    * Options for terser
    * https://terser.org/docs/api-reference#minify-options
+   *
+   * In addition, you can also pass a `maxWorkers: number` option to specify the
+   * max number of workers to spawn. Defaults to the number of CPUs minus 1.
    */
-  terserOptions?: Terser.MinifyOptions
+  terserOptions?: TerserOptions
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/configuration-options/
@@ -424,7 +424,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      ...(options.watch ? [ensureWatchPlugin()] : []),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       ...((
@@ -856,7 +855,7 @@ const dynamicImportWarningIgnoreList = [
 ]
 
 export function onRollupWarning(
-  warning: RollupWarning,
+  warning: RollupLog,
   warn: LoggingFunction,
   config: ResolvedConfig,
 ): void {
@@ -890,6 +889,15 @@ export function onRollupWarning(
           // @ts-expect-error warning is RollupLog
           warning.message.includes(msg),
         )
+      ) {
+        return
+      }
+
+      // Rollup tracks the build phase slightly earlier before `buildEnd` is called,
+      // so there's a chance we can call `this.addWatchFile` in the invalid phase. Skip for now.
+      if (
+        warning.plugin === 'vite:worker-import-meta-url' &&
+        warning.pluginCode === 'INVALID_ROLLUP_PHASE'
       ) {
         return
       }

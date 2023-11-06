@@ -45,7 +45,7 @@ jobs:
           - os: macos-latest
             node_version: 18
           - os: windows-latest
-            node_version: 18
+            node_version: 18.17
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
@@ -58,7 +58,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@76c4d81a6acd339b55bd7407a016981c853eb702 # v39.0.3
+        uses: tj-actions/changed-files@408093d9ff9c134c33b974e0722ce06b9d6e8263 # v39.2.2
         with:
           files: |
             docs/**

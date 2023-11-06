@@ -174,30 +174,43 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+## server.warmup
+
+- **Type:** `{ clientFiles?: string[], ssrFiles?: string[] }`
+- **Related:** [Warm Up Frequently Used Files](/guide/performance.html#warm-up-frequently-used-files)
+
+Warm up files to transform and cache the results in advance. This improves the initial page load during server starts and prevents transform waterfalls.
+
+`clientFiles` are files that are used in the client only, while `ssrFiles` are files that are used in SSR only. They accept an array of file paths or [`fast-glob`](https://github.com/mrmlnc/fast-glob) patterns relative to the `root`.
+
+Make sure to only add files that are frequently used to not overload the Vite dev server on startup.
+
+```js
+export default defineConfig({
+  server: {
+    warmup: {
+      clientFiles: ['./src/components/*.vue', './src/utils/big-utils.js'],
+      ssrFiles: ['./src/server/modules/*.js'],
+    },
+  },
+})
+```
+
 ## server.watch
 
 - **Type:** `object | null`
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
-The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
-
-```js
-export default defineConfig({
-  server: {
-    watch: {
-      ignored: ['!**/node_modules/your-package-name/**'],
-    },
-  },
-  // The watched package must be excluded from optimization,
-  // so that it can appear in the dependency graph and trigger hot reload.
-  optimizeDeps: {
-    exclude: ['your-package-name'],
-  },
-})
-```
+The Vite server watcher watches the `root` and skips the `.git/` and `node_modules/` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
 If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
+
+::: warning Watching files in `node_modules`
+
+It's currently not possible to watch files and packages in `node_modules`. For further progress and workarounds, you can follow [issue #8619](https://github.com/vitejs/vite/issues/8619).
+
+:::
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 

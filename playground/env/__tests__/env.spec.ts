@@ -23,6 +23,10 @@ test('custom', async () => {
   expect(await page.textContent('.custom')).toBe('1')
 })
 
+test('custom in template literal expression', async () => {
+  expect(await page.textContent('.custom-template-literal-exp')).toBe('1')
+})
+
 test('custom-prefix', async () => {
   expect(await page.textContent('.custom-prefix')).toBe('1')
 })
@@ -91,8 +95,30 @@ test('env object', async () => {
   })
 })
 
+test('env object in template literal expression', async () => {
+  const envText = await page.textContent('.env-object-in-template-literal-exp')
+  expect(JSON.parse(envText)).toMatchObject({
+    VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
+    CUSTOM_PREFIX_ENV_VARIABLE: '1',
+    VITE_CUSTOM_ENV_VARIABLE: '1',
+    BASE_URL: '/env/',
+    MODE: mode,
+    DEV: !isBuild,
+    PROD: isBuild,
+  })
+})
+
 if (!isBuild) {
   test('relative url import script return import.meta.url', async () => {
     expect(await page.textContent('.url')).toMatch('/env/index.js')
   })
 }
+
+test('ignores import' + '.meta.env in string literals', async () => {
+  expect(await page.textContent('.ignores-literal-import-meta-env-dot')).toBe(
+    'import' + '.meta.env.',
+  )
+  expect(await page.textContent('.ignores-literal-import-meta-env')).toBe(
+    'import' + '.meta.env',
+  )
+})

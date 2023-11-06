@@ -34,11 +34,16 @@ export default defineConfig({
     },
   },
 
+  server: {
+    warmup: {
+      clientFiles: ['./warmup/*'],
+    },
+  },
+
   define: {
     'import.meta.env.VITE_NUMBER': 5173,
     'import.meta.env.VITE_STRING': JSON.stringify('string'),
     'import.meta.env.VITE_OBJECT_STRING': '{ "foo": "bar" }',
-    'import.meta.env.VITE_TEMPLATE_LITERAL': '`template literal`',
     'import.meta.env.VITE_NULL_STRING': 'null',
   },
 

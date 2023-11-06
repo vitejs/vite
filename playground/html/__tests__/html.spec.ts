@@ -6,7 +6,9 @@ import {
   isBuild,
   isServe,
   page,
+  viteServer,
   viteTestUrl,
+  withRetry,
 } from '~utils'
 
 function testPage(isNested: boolean) {
@@ -298,9 +300,6 @@ describe('env', () => {
     expect(await page.textContent('.env-define-object-string')).toBe(
       '{ "foo": "bar" }',
     )
-    expect(await page.textContent('.env-define-template-literal')).toBe(
-      '`template literal`', // only double quotes will be unquoted
-    )
     expect(await page.textContent('.env-define-null-string')).toBe('null')
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
@@ -343,5 +342,16 @@ describe('special character', () => {
 
   test('should fetch html proxy', async () => {
     expect(browserLogs).toContain('special character')
+  })
+})
+
+describe.runIf(isServe)('warmup', () => {
+  test('should warmup /warmup/warm.js', async () => {
+    // warmup transform files async during server startup, so the module check
+    // here might take a while to load
+    await withRetry(async () => {
+      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      expect(mod).toBeTruthy()
+    })
   })
 })
