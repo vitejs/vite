@@ -141,20 +141,19 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
-): ResolvedCSSOptions | undefined {
-  if (options?.lightningcss) {
+): ResolvedCSSOptions {
+  if (options?.transformer === 'lightningcss') {
     return {
       ...options,
       lightningcss: {
         ...options.lightningcss,
         targets:
-          options.lightningcss.targets ??
+          options.lightningcss?.targets ??
           convertTargets(ESBUILD_MODULES_TARGET),
       },
     }
   }
-  // TS doesn't narrow the type with the previous if :/
-  return options as Omit<CSSOptions, 'lightningcss'>
+  return { ...options, lightningcss: undefined }
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
@@ -828,10 +827,13 @@ export function getEmptyChunkReplacer(
     .join('|')
     .replace(/\./g, '\\.')
 
+  // for cjs, require calls might be chained by minifier using the comma operator.
+  // in this case we have to keep one comma if a next require is chained
+  // or add a semicolon to terminate the chain.
   const emptyChunkRE = new RegExp(
     outputFormat === 'es'
-      ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
-      : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
+      ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];`
+      : `(\\b|,\\s*)require\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\)(;|,)`,
     'g',
   )
 
@@ -839,7 +841,10 @@ export function getEmptyChunkReplacer(
     code.replace(
       emptyChunkRE,
       // remove css import while preserving source map location
-      (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`,
+      (m) =>
+        outputFormat === 'es'
+          ? `/* empty css ${''.padEnd(m.length - 15)}*/`
+          : `${m.at(-1)}/* empty css ${''.padEnd(m.length - 16)}*/`,
     )
 }
 
@@ -2267,7 +2272,10 @@ async function compileLightningCSS(
           },
         },
         minify: config.isProduction && !!config.build.cssMinify,
-        sourceMap: config.css?.devSourcemap,
+        sourceMap:
+          config.command === 'build'
+            ? !!config.build.sourcemap
+            : config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
           ? config.css?.lightningcss?.cssModules ?? true

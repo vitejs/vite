@@ -11,8 +11,10 @@ import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
+import { ASYNC_DISPOSE } from '../constants'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
  * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
@@ -29,7 +31,7 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
-export interface WebSocketServer {
+export interface WebSocketServer extends AsyncDisposable {
   /**
    * Listen on port and host
    */
@@ -92,7 +94,7 @@ const wsServerEvents = [
 ]
 
 export function createWebSocketServer(
-  server: Server | null,
+  server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
@@ -307,6 +309,9 @@ export function createWebSocketServer(
           }
         })
       })
+    },
+    [ASYNC_DISPOSE]() {
+      return this.close()
     },
   }
 }

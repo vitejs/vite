@@ -49,6 +49,7 @@ import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
+import { getHookHandler } from './plugins'
 
 export interface BuildOptions {
   /**
@@ -893,15 +894,6 @@ export function onRollupWarning(
         return
       }
 
-      // Rollup tracks the build phase slightly earlier before `buildEnd` is called,
-      // so there's a chance we can call `this.addWatchFile` in the invalid phase. Skip for now.
-      if (
-        warning.plugin === 'vite:worker-import-meta-url' &&
-        warning.pluginCode === 'INVALID_ROLLUP_PHASE'
-      ) {
-        return
-      }
-
       if (warningIgnoreList.includes(warning.code!)) {
         return
       }
@@ -968,7 +960,7 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
 function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
@@ -986,7 +978,7 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
 function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
@@ -1005,7 +997,7 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
 function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))

@@ -57,6 +57,8 @@ Some configuration fields under `compilerOptions` in `tsconfig.json` require spe
 
 #### `isolatedModules`
 
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig#isolatedModules)
+
 Should be set to `true`.
 
 It is because `esbuild` only performs transpilation without type information, it doesn't support certain features like const enum and implicit type-only imports.
@@ -67,7 +69,11 @@ However, some libraries (e.g. [`vue`](https://github.com/vuejs/core/issues/1228)
 
 #### `useDefineForClassFields`
 
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig#useDefineForClassFields)
+
 Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext` or `ES2022` or newer. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
+
+Other TypeScript targets will default to `false`.
 
 But it may be counter-intuitive for those coming from other programming languages or older versions of TypeScript.
 You can read more about the transition in the [TypeScript 3.7 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier).
@@ -78,13 +84,32 @@ Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://
 
 But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
 
+#### `target`
+
+- [TypeScript documentation](https://www.typescriptlang.org/tsconfig#target)
+
+Vite does not transpile TypeScript with the configured `target` value by default, following the same behaviour as `esbuild`.
+
+The [`esbuild.target`](/config/shared-options.html#esbuild) option can be used instead, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority and can also be set if needed.
+
+::: warning `useDefineForClassFields`
+If `target` is not `ESNext` or `ES2022` or newer, or if there's no `tsconfig.json` file, `useDefineForClassFields` will default to `false` which can be problematic with the default `esbuild.target` value of `esnext`. It may transpile to [static initialization blocks](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Static_initialization_blocks#browser_compatibility) which may not be supported in your browser.
+
+As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or set `useDefineForClassFields` to `true` explicitly when configuring `tsconfig.json`.
+:::
+
 #### Other Compiler Options Affecting the Build Result
 
 - [`extends`](https://www.typescriptlang.org/tsconfig#extends)
 - [`importsNotUsedAsValues`](https://www.typescriptlang.org/tsconfig#importsNotUsedAsValues)
 - [`preserveValueImports`](https://www.typescriptlang.org/tsconfig#preserveValueImports)
+- [`verbatimModuleSyntax`](https://www.typescriptlang.org/tsconfig#verbatimModuleSyntax)
+- [`jsx`](https://www.typescriptlang.org/tsconfig#jsx)
 - [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
+- [`jsxImportSource`](https://www.typescriptlang.org/tsconfig#jsxImportSource)
+- [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators)
+- [`alwaysStrict`](https://www.typescriptlang.org/tsconfig#alwaysStrict)
 
 If migrating your codebase to `"isolatedModules": true` is an insurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
 

@@ -32,6 +32,16 @@ describe('definePlugin', () => {
     )
   })
 
+  test('should not replace if not defined', async () => {
+    const transform = await createDefinePluginTransform({
+      __APP_VERSION__: JSON.stringify('1.0'),
+    })
+    expect(await transform('const version = "1.0";')).toBe(undefined)
+    expect(await transform('const version = import.meta.SOMETHING')).toBe(
+      undefined,
+    )
+  })
+
   test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
     expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
@@ -50,7 +60,16 @@ describe('definePlugin', () => {
       'import.meta.hot': 'import.meta.hot',
     })
     expect(await overrideTransform('const hot = import.meta.hot;')).toBe(
-      undefined,
+      'const hot = import.meta.hot;\n',
+    )
+  })
+
+  test('preserve import.meta.env.UNKNOWN with override', async () => {
+    const transform = await createDefinePluginTransform({
+      'import.meta.env.UNKNOWN': 'import.meta.env.UNKNOWN',
+    })
+    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
+      'const foo = import.meta.env.UNKNOWN;\n',
     )
   })
 })

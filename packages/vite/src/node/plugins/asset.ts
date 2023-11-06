@@ -437,15 +437,19 @@ export async function urlToBuiltUrl(
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
 function svgToDataURL(content: Buffer): string {
   const stringContent = content.toString()
-  // If the SVG contains some text, any transformation is unsafe, and given that double quotes would then
+  // If the SVG contains some text or HTML, any transformation is unsafe, and given that double quotes would then
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
-  if (stringContent.includes('<text')) {
+  if (
+    stringContent.includes('<text') ||
+    stringContent.includes('<foreignObject')
+  ) {
     return `data:image/svg+xml;base64,${content.toString('base64')}`
   } else {
     return (
       'data:image/svg+xml,' +
       stringContent
         .trim()
+        .replaceAll(/>\s+</g, '><')
         .replaceAll('"', "'")
         .replaceAll('%', '%25')
         .replaceAll('#', '%23')
