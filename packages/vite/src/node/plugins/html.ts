@@ -366,10 +366,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         let js = ''
         const s = new MagicString(html)
-        const assetUrls: {
-          attr: Token.Attribute
-          sourceCodeLocation: Token.Location
-        }[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
         const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
@@ -377,6 +373,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let everyScriptIsAsync = true
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
+
+        const assetUrlsPromises: Promise<void>[] = []
+
+        // for each encountered asset url, rewrite original html so that it
+        // references the post-build location, ignoring empty attributes and
+        // attributes that directly reference named output.
+        const namedOutput = Object.keys(
+          config?.build?.rollupOptions?.input || {},
+        )
+        const processAssetUrl = async (url: string) => {
+          if (
+            url !== '' && // Empty attribute
+            !namedOutput.includes(url) && // Direct reference to named output
+            !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
+          ) {
+            return await urlToBuiltUrl(url, id, config, this)
+          }
+          return url
+        }
 
         await traverseHtml(html, id, (node) => {
           if (!nodeIsElement(node)) {
@@ -446,40 +461,70 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             for (const p of node.attrs) {
               const attrKey = getAttrKey(p)
               if (p.value && assetAttrs.includes(attrKey)) {
-                const attrSourceCodeLocation =
-                  node.sourceCodeLocation!.attrs![attrKey]
-                // assetsUrl may be encodeURI
-                const url = decodeURI(p.value)
-                if (checkPublicFile(url, config)) {
-                  overwriteAttrValue(
-                    s,
-                    attrSourceCodeLocation,
-                    toOutputPublicFilePath(url),
+                if (attrKey === 'srcset') {
+                  assetUrlsPromises.push(
+                    (async () => {
+                      const processedUrl = await processSrcSet(
+                        p.value,
+                        async ({ url }) => {
+                          const decodedUrl = decodeURI(url)
+                          if (!isExcludedUrl(decodedUrl)) {
+                            const result = await processAssetUrl(url)
+                            return result !== decodedUrl ? result : url
+                          }
+                          return url
+                        },
+                      )
+                      if (processedUrl !== p.value) {
+                        overwriteAttrValue(
+                          s,
+                          getAttrSourceCodeLocation(node, attrKey),
+                          processedUrl,
+                        )
+                      }
+                    })(),
                   )
-                } else if (!isExcludedUrl(url)) {
-                  if (
-                    node.nodeName === 'link' &&
-                    isCSSRequest(url) &&
-                    // should not be converted if following attributes are present (#6748)
-                    !node.attrs.some(
-                      (p) =>
-                        p.prefix === undefined &&
-                        (p.name === 'media' || p.name === 'disabled'),
+                } else {
+                  const url = decodeURI(p.value)
+                  if (checkPublicFile(url, config)) {
+                    overwriteAttrValue(
+                      s,
+                      getAttrSourceCodeLocation(node, attrKey),
+                      toOutputPublicFilePath(url),
                     )
-                  ) {
-                    // CSS references, convert to import
-                    const importExpression = `\nimport ${JSON.stringify(url)}`
-                    styleUrls.push({
-                      url,
-                      start: nodeStartWithLeadingWhitespace(node),
-                      end: node.sourceCodeLocation!.endOffset,
-                    })
-                    js += importExpression
-                  } else {
-                    assetUrls.push({
-                      attr: p,
-                      sourceCodeLocation: attrSourceCodeLocation,
-                    })
+                  } else if (!isExcludedUrl(url)) {
+                    if (
+                      node.nodeName === 'link' &&
+                      isCSSRequest(url) &&
+                      // should not be converted if following attributes are present (#6748)
+                      !node.attrs.some(
+                        (p) =>
+                          p.prefix === undefined &&
+                          (p.name === 'media' || p.name === 'disabled'),
+                      )
+                    ) {
+                      // CSS references, convert to import
+                      const importExpression = `\nimport ${JSON.stringify(url)}`
+                      styleUrls.push({
+                        url,
+                        start: nodeStartWithLeadingWhitespace(node),
+                        end: node.sourceCodeLocation!.endOffset,
+                      })
+                      js += importExpression
+                    } else {
+                      assetUrlsPromises.push(
+                        (async () => {
+                          const processedUrl = await processAssetUrl(url)
+                          if (processedUrl !== url) {
+                            overwriteAttrValue(
+                              s,
+                              getAttrSourceCodeLocation(node, attrKey),
+                              processedUrl,
+                            )
+                          }
+                        })(),
+                      )
+                    }
                   }
                 }
               }
@@ -542,36 +587,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        // for each encountered asset url, rewrite original html so that it
-        // references the post-build location, ignoring empty attributes and
-        // attributes that directly reference named output.
-        const namedOutput = Object.keys(
-          config?.build?.rollupOptions?.input || {},
-        )
-        for (const { attr, sourceCodeLocation } of assetUrls) {
-          // assetsUrl may be encodeURI
-          const content = decodeURI(attr.value)
-          if (
-            content !== '' && // Empty attribute
-            !namedOutput.includes(content) && // Direct reference to named output
-            !namedOutput.includes(removeLeadingSlash(content)) // Allow for absolute references as named output can't be an absolute path
-          ) {
-            try {
-              const url =
-                attr.prefix === undefined && attr.name === 'srcset'
-                  ? await processSrcSet(content, ({ url }) =>
-                      urlToBuiltUrl(url, id, config, this),
-                    )
-                  : await urlToBuiltUrl(content, id, config, this)
-
-              overwriteAttrValue(s, sourceCodeLocation, url)
-            } catch (e) {
-              if (e.code !== 'ENOENT') {
-                throw e
-              }
-            }
+        try {
+          await Promise.all(assetUrlsPromises)
+        } catch (e) {
+          if (e.code !== 'ENOENT') {
+            throw e
           }
         }
+
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (checkPublicFile(url, config)) {
@@ -1329,4 +1352,11 @@ function incrementIndent(indent: string = '') {
 
 export function getAttrKey(attr: Token.Attribute): string {
   return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
+}
+
+function getAttrSourceCodeLocation(
+  node: DefaultTreeAdapterMap['element'],
+  attrKey: string,
+) {
+  return node.sourceCodeLocation!.attrs![attrKey]
 }
