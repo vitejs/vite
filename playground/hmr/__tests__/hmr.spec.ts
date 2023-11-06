@@ -877,7 +877,10 @@ if (import.meta.hot) {
     editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
-    await untilUpdated(() => el.textContent(), 'cc')
+    await untilUpdated(
+      () => page.textContent('.self-accept-within-circular'),
+      'cc',
+    )
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {
