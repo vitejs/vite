@@ -58,19 +58,29 @@ interface InlineStyleAttribute {
 }
 
 export function createDevHtmlTransformFn(
+  config: ResolvedConfig,
+): (
   server: ViteDevServer,
-): (url: string, html: string, originalUrl: string) => Promise<string> {
+  url: string,
+  html: string,
+  originalUrl?: string,
+) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
-    server.config.plugins,
-    server.config.logger,
+    config.plugins,
+    config.logger,
   )
-  return (url: string, html: string, originalUrl: string): Promise<string> => {
+  return (
+    server: ViteDevServer,
+    url: string,
+    html: string,
+    originalUrl?: string,
+  ): Promise<string> => {
     return applyHtmlTransforms(
       html,
       [
-        preImportMapHook(server.config),
+        preImportMapHook(config),
         ...preHooks,
-        htmlEnvHook(server.config),
+        htmlEnvHook(config),
         devHtmlHook,
         ...normalHooks,
         ...postHooks,

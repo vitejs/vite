@@ -308,6 +308,10 @@ export interface ViteDevServer extends AsyncDisposable {
   /**
    * @internal
    */
+  _setInternalServer(server: ViteDevServer): void
+  /**
+   * @internal
+   */
   _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
    * @internal
@@ -393,7 +397,9 @@ export async function _createServer(
 
   let exitProcess: () => void
 
-  const server: ViteDevServer = {
+  const devHtmlTransformFn = createDevHtmlTransformFn(config)
+
+  let server: ViteDevServer = {
     config,
     middlewares,
     httpServer,
@@ -402,6 +408,9 @@ export async function _createServer(
     ws,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
+    _setInternalServer(_server: ViteDevServer) {
+      server = _server
+    },
     ssrTransform(
       code: string,
       inMap: SourceMap | { mappings: '' } | null,
@@ -429,7 +438,9 @@ export async function _createServer(
         })
       })
     },
-    transformIndexHtml: null!, // to be immediately set
+    transformIndexHtml(url, html, originalUrl) {
+      return devHtmlTransformFn(server, url, html, originalUrl)
+    },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       if (isDepsOptimizerEnabled(config, true)) {
         await initDevSsrDepsOptimizer(config, server)
@@ -577,8 +588,6 @@ export async function _createServer(
     _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
     _shortcutsOptions: undefined,
   }
-
-  server.transformIndexHtml = createDevHtmlTransformFn(server)
 
   if (!middlewareMode) {
     exitProcess = async () => {
@@ -918,6 +927,8 @@ async function restartServer(server: ViteDevServer) {
 
   // Assign new server props to existing server instance
   Object.assign(server, newServer)
+  // Rebind internal server variable so functions reference the user server
+  newServer._setInternalServer(server)
 
   const {
     logger,
