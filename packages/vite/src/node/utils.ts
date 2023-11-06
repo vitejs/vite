@@ -155,7 +155,7 @@ export function isOptimizable(
   )
 }
 
-export const bareImportRE = /^(?![a-zA-Z]:)[\w@](?!.*:\/\/)/
+export const bareImportRE = /^[\w@][^:]/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
@@ -991,10 +991,10 @@ export function arraify<T>(target: T | T[]): T[] {
 // Taken from https://stackoverflow.com/a/36328890
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
-export const requestQuerySplitRE = /\?(?!.*[/|}])/
+export const requestQuerySplitRE = /\?[^/|}]*$/
 
 export function parseRequest(id: string): Record<string, string> | null {
-  const [_, search] = id.split(requestQuerySplitRE, 2)
+  const search = requestQuerySplitRE.exec(id)?.[0]
   if (!search) {
     return null
   }
