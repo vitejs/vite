@@ -294,11 +294,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
+
   const isExcludedUrl = (url: string) =>
-    url[0] === '#' ||
-    isExternalUrl(url) ||
-    isDataUrl(url) ||
-    checkPublicFile(url, config)
+    url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
+
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
@@ -404,7 +403,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
             if (isModule) {
               inlineModuleIndex++
-              if (url && !isExcludedUrl(url)) {
+              if (url && !isExcludedUrl(url) && !isPublicFile) {
                 // <script type="module" src="..."/>
                 // add it as an import
                 js += `\nimport ${JSON.stringify(url)}`
@@ -451,7 +450,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   node.sourceCodeLocation!.attrs![attrKey]
                 // assetsUrl may be encodeURI
                 const url = decodeURI(p.value)
-                if (!isExcludedUrl(url)) {
+                if (checkPublicFile(url, config)) {
+                  overwriteAttrValue(
+                    s,
+                    attrSourceCodeLocation,
+                    toOutputPublicFilePath(url),
+                  )
+                } else if (!isExcludedUrl(url)) {
                   if (
                     node.nodeName === 'link' &&
                     isCSSRequest(url) &&
@@ -476,12 +481,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       sourceCodeLocation: attrSourceCodeLocation,
                     })
                   }
-                } else if (checkPublicFile(url, config)) {
-                  overwriteAttrValue(
-                    s,
-                    attrSourceCodeLocation,
-                    toOutputPublicFilePath(url),
-                  )
                 }
               }
             }
@@ -575,10 +574,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
-          if (!isExcludedUrl(url)) {
-            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
-          } else if (checkPublicFile(url, config)) {
+          if (checkPublicFile(url, config)) {
             s.update(start, end, toOutputPublicFilePath(url))
+          } else if (!isExcludedUrl(url)) {
+            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
           }
         }
 
