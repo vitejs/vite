@@ -5,6 +5,7 @@ import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
+import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
@@ -54,45 +55,50 @@ const sirvOptions = ({
   }
 }
 
-export function servePublicMiddleware(
-  dir: string,
-  headers?: OutgoingHttpHeaders,
-): Connect.NextHandleFunction {
-  const serve = sirv(
-    dir,
+const getServePublic = createSirvCache((config: ResolvedConfig) => {
+  const {
+    publicDir,
+    server: { headers },
+  } = config
+  return sirv(
+    publicDir,
     sirvOptions({
       headers,
-      shouldServe: (filePath) => shouldServeFile(filePath, dir),
+      shouldServe: (filePath) => shouldServeFile(filePath, publicDir),
     }),
   )
-
+})
+export function servePublicMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
     // skip import request and internal requests `/@fs/ /@vite-client` etc...
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
-    serve(req, res, next)
+    getServePublic(server.config)(req, res, next)
   }
 }
 
+const getServeStatic = createSirvCache((config: ResolvedConfig) =>
+  sirv(
+    config.root,
+    sirvOptions({
+      headers: config.server.headers,
+    }),
+  ),
+)
 export function serveStaticMiddleware(
-  dir: string,
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const serve = sirv(
-    dir,
-    sirvOptions({
-      headers: server.config.server.headers,
-    }),
-  )
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
     // only serve the file if it's not an html request or ends with `/`
     // so that html requests can fallthrough to our html middleware for
     // special processing
     // also skip internal requests `/@fs/ /@vite-client` etc...
+    const dir = server.config.root
     const cleanedUrl = cleanUrl(req.url!)
     if (
       cleanedUrl[cleanedUrl.length - 1] === '/' ||
@@ -141,7 +147,7 @@ export function serveStaticMiddleware(
       req.url = url.href.slice(url.origin.length)
     }
 
-    serve(req, res, next)
+    getServeStatic(server.config)(req, res, next)
   }
 }
 
@@ -254,4 +260,21 @@ function renderRestrictedErrorHTML(msg: string): string {
       </style>
     </body>
   `
+}
+
+function createSirvCache(
+  createSirv: (config: ResolvedConfig) => Connect.NextHandleFunction,
+) {
+  const serveStaticCache = new WeakMap<
+    ResolvedConfig,
+    Connect.NextHandleFunction
+  >()
+  return function getServeStatic(config: ResolvedConfig) {
+    let serveStatic = serveStaticCache.get(config)
+    if (!serveStatic) {
+      ;(serveStatic = createSirv(config)),
+        serveStaticCache.set(config, serveStatic)
+    }
+    return serveStatic
+  }
 }
