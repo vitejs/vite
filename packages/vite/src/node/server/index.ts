@@ -336,6 +336,14 @@ export interface ViteDevServer extends AsyncDisposable {
    * @internal
    */
   _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
+  /**
+   * @internal
+   */
+  _currentServerPort?: number | undefined
+  /**
+   * @internal
+   */
+  _configServerPort?: number | undefined
 }
 
 export interface ResolvedServerUrls {
@@ -779,11 +787,6 @@ export async function _createServer(
   return server
 }
 
-// When using non strict port for the dev server, the running port can be different from the config one.
-// When restarting, the original port may be available but to avoid a switch of URL for the running
-// browser tabs, we enforce the previously used port, expect if the config port changed.
-let _currentServerPort: number | undefined
-let _configServerPort: number | undefined
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
@@ -796,11 +799,14 @@ async function startServer(
   const options = server.config.server
   const hostname = await resolveHostname(options.host)
   const configPort = inlinePort ?? options.port
+  // When using non strict port for the dev server, the running port can be different from the config one.
+  // When restarting, the original port may be available but to avoid a switch of URL for the running
+  // browser tabs, we enforce the previously used port, expect if the config port changed.
   const port =
-    (!configPort || configPort === _configServerPort
-      ? _currentServerPort
+    (!configPort || configPort === server._configServerPort
+      ? server._currentServerPort
       : configPort) ?? DEFAULT_DEV_PORT
-  _configServerPort = configPort
+  server._configServerPort = configPort
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -808,7 +814,7 @@ async function startServer(
     host: hostname.host,
     logger: server.config.logger,
   })
-  _currentServerPort = serverPort
+  server._currentServerPort = serverPort
 }
 
 function createServerCloseFn(server: HttpServer | null) {
@@ -928,6 +934,8 @@ async function restartServer(server: ViteDevServer) {
   await server.close()
 
   // Assign new server props to existing server instance
+  newServer._configServerPort = server._configServerPort
+  newServer._currentServerPort = server._currentServerPort
   Object.assign(server, newServer)
 
   const {
