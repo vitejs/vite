@@ -1,3 +1,18 @@
+## 5.0.0-beta.17 (2023-11-07)
+
+* fix: file link in overlay with custom backend (#14879) ([1bfb584](https://github.com/vitejs/vite/commit/1bfb584)), closes [#14879](https://github.com/vitejs/vite/issues/14879)
+* fix: processNodeUrl for srcset (#14870) ([0873bae](https://github.com/vitejs/vite/commit/0873bae)), closes [#14870](https://github.com/vitejs/vite/issues/14870)
+* fix: resovedUrls is null after server restart (#14890) ([bd4d29f](https://github.com/vitejs/vite/commit/bd4d29f)), closes [#14890](https://github.com/vitejs/vite/issues/14890)
+* fix: use latest module graph in transform middleware (#14892) ([b6b382c](https://github.com/vitejs/vite/commit/b6b382c)), closes [#14892](https://github.com/vitejs/vite/issues/14892)
+* fix(assets): use base64 when inlining SVG with foreignObject tag (#14875) ([9e20ed6](https://github.com/vitejs/vite/commit/9e20ed6)), closes [#14875](https://github.com/vitejs/vite/issues/14875)
+* fix(build): mixed external and transpiled srcset  (#14888) ([b5653d3](https://github.com/vitejs/vite/commit/b5653d3)), closes [#14888](https://github.com/vitejs/vite/issues/14888)
+* fix(css): fix sourcemap warning in build with lightningCSS (#14871) ([11b1796](https://github.com/vitejs/vite/commit/11b1796)), closes [#14871](https://github.com/vitejs/vite/issues/14871)
+* fix(css): initialize lightningCSS targets when not using options (#14872) ([12f9230](https://github.com/vitejs/vite/commit/12f9230)), closes [#14872](https://github.com/vitejs/vite/issues/14872)
+* build: strip internal parameters ([1168e57](https://github.com/vitejs/vite/commit/1168e57))
+* chore: refactor as functions ([5684382](https://github.com/vitejs/vite/commit/5684382))
+
+
+
 ## 5.0.0-beta.16 (2023-11-03)
 
 * feat!: add isPreview to ConfigEnv and resolveConfig (#14855) ([d195860](https://github.com/vitejs/vite/commit/d195860)), closes [#14855](https://github.com/vitejs/vite/issues/14855)
