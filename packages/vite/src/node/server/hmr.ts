@@ -377,13 +377,16 @@ function isNodeWithinCircularImports(
   // `node`         : ACCEPTED
   // `nodeChain`    : [NODE, E, D, ACCEPTED]
   // `currentChain` : [ACCEPTED, C, B]
+  //
+  // It works by checking if any `node` importers are within `nodeChain`, which
+  // means there's an import loop with a HMR-accepted module in it.
 
   for (const importer of node.importers) {
     // Node may import itself which is safe
     if (importer === node) continue
 
     // Check circular imports
-    const importerIndex = currentChain.indexOf(importer)
+    const importerIndex = nodeChain.indexOf(importer)
     if (importerIndex > -1) {
       // Log extra debug information so users can fix and remove the circular imports
       if (debugHmr) {
