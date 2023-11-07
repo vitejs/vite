@@ -409,8 +409,14 @@ function isNodeWithinCircularImports(
     }
 
     // Continue recursively
-    const subChain = currentChain.concat(importer)
-    if (isNodeWithinCircularImports(importer, nodeChain, subChain)) {
+    if (
+      !currentChain.includes(importer) &&
+      isNodeWithinCircularImports(
+        importer,
+        nodeChain,
+        currentChain.concat(importer),
+      )
+    ) {
       return true
     }
   }
