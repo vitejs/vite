@@ -284,8 +284,7 @@ describe('image', () => {
     })
   })
 
-  // TODO: fix build
-  test.runIf(!isBuild)('srcset (mixed)', async () => {
+  test('srcset (mixed)', async () => {
     const img = await page.$('.img-src-set-mixed')
     const srcset = await img.getAttribute('srcset')
     const srcs = srcset.split(', ')
