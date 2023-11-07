@@ -47,11 +47,6 @@ const knownIgnoreList = new Set(['/', '/favicon.ico'])
 export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const {
-    config: { root, logger },
-    moduleGraph,
-  } = server
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteTransformMiddleware(req, res, next) {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
@@ -80,7 +75,7 @@ export function transformMiddleware(
           // means that the dependency has already been pre-bundled and loaded
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
-            : normalizePath(path.resolve(root, url.slice(1)))
+            : normalizePath(path.resolve(server.config.root, url.slice(1)))
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
@@ -90,7 +85,7 @@ export function transformMiddleware(
               map,
               sourcemapPath,
               server.config.server.sourcemapIgnoreList,
-              logger,
+              server.config.logger,
             )
 
             return send(req, res, JSON.stringify(map), 'json', {
@@ -115,8 +110,9 @@ export function transformMiddleware(
           }
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
-          const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
-            ?.transformResult?.map
+          const map = (
+            await server.moduleGraph.getModuleByUrl(originalUrl, false)
+          )?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
@@ -162,7 +158,7 @@ export function transformMiddleware(
               )}.`
           }
 
-          logger.warn(colors.yellow(warning))
+          server.config.logger.warn(colors.yellow(warning))
         }
       }
 
@@ -192,10 +188,10 @@ export function transformMiddleware(
         const ifNoneMatch = req.headers['if-none-match']
         if (
           ifNoneMatch &&
-          (await moduleGraph.getModuleByUrl(url, false))?.transformResult
+          (await server.moduleGraph.getModuleByUrl(url, false))?.transformResult
             ?.etag === ifNoneMatch
         ) {
-          debugCache?.(`[304] ${prettifyUrl(url, root)}`)
+          debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
           res.statusCode = 304
           return res.end()
         }
@@ -227,7 +223,7 @@ export function transformMiddleware(
           res.end()
         }
         // This timeout is unexpected
-        logger.error(e.message)
+        server.config.logger.error(e.message)
         return
       }
       if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
