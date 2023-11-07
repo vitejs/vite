@@ -388,7 +388,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             !namedOutput.includes(url) && // Direct reference to named output
             !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
           ) {
-            return await urlToBuiltUrl(url, id, config, this)
+            try {
+              return await urlToBuiltUrl(url, id, config, this)
+            } catch (e) {
+              if (e.code !== 'ENOENT') {
+                throw e
+              }
+            }
           }
           return url
         }
@@ -587,13 +593,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        try {
-          await Promise.all(assetUrlsPromises)
-        } catch (e) {
-          if (e.code !== 'ENOENT') {
-            throw e
-          }
-        }
+        await Promise.all(assetUrlsPromises)
 
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
