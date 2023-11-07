@@ -131,9 +131,7 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 }
 ```
 
-::: warning If you use other `@types` definitions that describe global objects, you'll need to include them here, as [they will be overriden when you specify `"types"`](https://www.typescriptlang.org/tsconfig#types).
-
-For instance, `@types/some-other-global-lib` should be added as `"some-other-global-lib"`.
+::: warning Note that [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) will override any existing global types.
 :::
 
 `vite/client` provides the following type shims:
