@@ -108,6 +108,8 @@ Vite also supports replacing env variables in HTML files. Any properties in `imp
 
 If the env doesn't exist in `import.meta.env`, e.g. `%NON_EXISTENT%`, it will be ignored and not replaced, unlike `import.meta.env.NON_EXISTENT` in JS where it's replaced as `undefined`.
 
+Given that Vite is used by many frameworks, it is intentionally unopinionated about complex replacements like conditionals. Vite can be extended using [an existing userland plugin](https://github.com/vitejs/awesome-vite#transformers) or a custom plugin that implements the [`transformIndexHtml` hook](./api-plugin#transformindexhtml).
+
 ## Modes
 
 By default, the dev server (`dev` command) runs in `development` mode and the `build` command runs in `production` mode.
