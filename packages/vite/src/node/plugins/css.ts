@@ -24,6 +24,7 @@ import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { WorkerWithFallback } from 'artichokie'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -58,7 +59,6 @@ import {
   stripBomTag,
 } from '../utils'
 import type { Logger } from '../logger'
-import { WorkerWithFallback } from '../okie'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,

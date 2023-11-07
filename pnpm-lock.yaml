@@ -279,6 +279,9 @@ importers:
       acorn-walk:
         specifier: ^8.3.0
         version: 8.3.0(acorn@8.11.2)
+      artichokie:
+        specifier: ^0.1.0
+        version: 0.1.0
       cac:
         specifier: ^6.7.14
         version: 6.7.14
@@ -346,9 +349,6 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
       mrmime:
-        specifier: ^1.0.1
-        version: 1.0.1
-      okie:
         specifier: ^1.0.1
         version: 1.0.1
       open:
@@ -4581,6 +4581,11 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
+  /artichokie@0.1.0:
+    resolution: {integrity: sha512-a1aMGGXwENT6PKlAcMGuc18mGIf+BoZ5zecvuJxVga6UTjiiMq8LSaT9FIni06YmBLIhP4l1u9jES4uZ97WE9w==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    dev: true
+
   /as-table@1.0.55:
     resolution: {integrity: sha512-xvsWESUJn0JN421Xb9MQw6AsMHRCUknCe0Wjlxvjud80mU4E6hQf1A6NzQKcYNmYw62MfzEtXc+badstZP3JpQ==}
     dependencies:
@@ -7825,11 +7830,6 @@ packages:
       call-bind: 1.0.2
       define-properties: 1.2.0
       es-abstract: 1.22.1
-    dev: true
-
-  /okie@1.0.1:
-    resolution: {integrity: sha512-JQh5TdSYhzXSuKN3zzX8Rw9Q/Tec1fm0jwP/k9+cBDk6tyLjlARVu936MLY//2NZp76UGHH+5gXPzRejU1bTjQ==}
-    engines: {node: '>=12.0.0'}
     dev: true
 
   /on-finished@2.3.0:

@@ -1,5 +1,5 @@
 import type { Terser } from 'dep-types/terser'
-import { Worker } from '../okie'
+import { Worker } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
