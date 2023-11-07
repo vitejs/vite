@@ -43,7 +43,7 @@ type ResolveModulePreloadDependenciesFn = (
   context: {
     importer: string
   },
-) => (string | { runtime?: string })[]
+) => string[]
 ```
 
 The `resolveDependencies` function will be called for each dynamic import with a list of the chunks it depends on, and it will also be called for each chunk imported in entry HTML files. A new dependencies array can be returned with these filtered or more dependencies injected, and their paths modified. The `deps` paths are relative to the `build.outDir`. Returning a relative path to the `hostId` for `hostType === 'js'` is allowed, in which case `new URL(dep, import.meta.url)` is used to get an absolute path when injecting this module preload in the HTML head.
@@ -83,7 +83,7 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 ## build.assetsInlineLimit
 
 - **Type:** `number`
-- **Default:** `4096` (4kb)
+- **Default:** `4096` (4 KiB)
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
 
@@ -163,7 +163,7 @@ Build as a library. `entry` is required since the library cannot use HTML as ent
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
+When set to `true`, the build will also generate a `.vite/manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
 
 ## build.ssrManifest
 
@@ -180,6 +180,13 @@ When set to `true`, the build will also generate an SSR manifest for determining
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
 Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
+
+## build.ssrEmitAssets
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+During the SSR build, static assets aren't emitted as it is assumed they would be emitted as part of the client build. This option allows frameworks to force emitting them in both the client and SSR build. It is responsibility of the framework to merge the assets with a post build step.
 
 ## build.minify
 
@@ -202,6 +209,8 @@ npm add -D terser
 
 Additional [minify options](https://terser.org/docs/api-reference#minify-options) to pass on to Terser.
 
+In addition, you can also pass a `maxWorkers: number` option to specify the max number of workers to spawn. Defaults to the number of CPUs minus 1.
+
 ## build.write
 
 - **Type:** `boolean`
@@ -218,7 +227,6 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.copyPublicDir
 
-- **Experimental:** [Give feedback](https://github.com/vitejs/vite/discussions/13807)
 - **Type:** `boolean`
 - **Default:** `true`
 
@@ -236,7 +244,7 @@ Enable/disable gzip-compressed size reporting. Compressing large output files ca
 - **Type:** `number`
 - **Default:** `500`
 
-Limit for chunk size warnings (in kbs). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
+Limit for chunk size warnings (in kB). It is compared against the uncompressed chunk size as the [JavaScript size itself is related to the execution time](https://v8.dev/blog/cost-of-javascript-2019).
 
 ## build.watch
 

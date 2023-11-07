@@ -13,6 +13,7 @@ export default defineConfig({
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
           server.ws.send('custom:foo', { msg })
+          server.ws.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
@@ -22,6 +23,7 @@ export default defineConfig({
       },
     },
     virtualPlugin(),
+    transformCountPlugin(),
   ],
 })
 
@@ -49,6 +51,18 @@ export const virtual = _virtual + '${num}';`
           server.reloadModule(mod)
         }
       })
+    },
+  }
+}
+
+function transformCountPlugin(): Plugin {
+  let num = 0
+  return {
+    name: 'transform-count',
+    transform(code) {
+      if (code.includes('__TRANSFORM_COUNT__')) {
+        return code.replace('__TRANSFORM_COUNT__', String(++num))
+      }
     },
   }
 }

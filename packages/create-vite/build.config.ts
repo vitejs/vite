@@ -11,17 +11,19 @@ export default defineBuildConfig({
   rollup: {
     inlineDependencies: true,
     esbuild: {
+      target: 'node18',
       minify: true,
     },
   },
   alias: {
-    // we can always use non-transpiled code since we support 14.18.0+
+    // we can always use non-transpiled code since we support node 18+
     prompts: 'prompts/lib/index.js',
   },
   hooks: {
     'rollup:options'(ctx, options) {
       options.plugins = [
         options.plugins,
+        // @ts-expect-error TODO: unbuild uses rollup v3 and Vite uses rollup v4
         licensePlugin(
           path.resolve(__dirname, './LICENSE'),
           'create-vite license',

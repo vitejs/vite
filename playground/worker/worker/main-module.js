@@ -21,10 +21,28 @@ worker.addEventListener('message', (e) => {
   text('.asset-url', e.data.viteSvg)
 })
 
+const namedWorker = new myWorker({ name: 'namedWorker' })
+namedWorker.postMessage('ping')
+namedWorker.addEventListener('message', (e) => {
+  text('.pong-named', e.data.name)
+})
+
 const inlineWorker = new InlineWorker()
 inlineWorker.postMessage('ping')
 inlineWorker.addEventListener('message', (e) => {
   text('.pong-inline', e.data.msg)
+})
+
+const namedInlineWorker = new InlineWorker({ name: 'namedInlineWorker' })
+namedInlineWorker.postMessage('ping')
+namedInlineWorker.addEventListener('message', (e) => {
+  text('.pong-inline-named', e.data.name)
+})
+
+const inlineWorkerUrl = new InlineWorker()
+inlineWorkerUrl.postMessage('ping')
+inlineWorkerUrl.addEventListener('message', (e) => {
+  text('.pong-inline-url', e.data.metaUrl)
 })
 
 const startSharedWorker = () => {
@@ -36,6 +54,16 @@ const startSharedWorker = () => {
 }
 startSharedWorker()
 startSharedWorker()
+
+const startNamedSharedWorker = () => {
+  const sharedWorker = new mySharedWorker({ name: 'namedSharedWorker' })
+  sharedWorker.port.addEventListener('message', (event) => {
+    text('.tick-count-named', event.data)
+  })
+  sharedWorker.port.start()
+}
+startNamedSharedWorker()
+startNamedSharedWorker()
 
 const startInlineSharedWorker = () => {
   const inlineSharedWorker = new InlineSharedWorker()

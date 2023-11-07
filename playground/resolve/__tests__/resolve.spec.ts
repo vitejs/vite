@@ -1,5 +1,8 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
-import { isBuild, isWindows, page } from '~utils'
+import { isBuild, isWindows, page, testDir, viteTestUrl } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -198,4 +201,29 @@ test('Resolving slash with imports filed', async () => {
 
 test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
+})
+
+test('Resolve doesnt interrupt page request with trailing query and .css', async () => {
+  await page.goto(viteTestUrl + '/?test.css')
+  expect(await page.locator('vite-error-overlay').count()).toBe(0)
+  expect(await page.textContent('h1')).toBe('Resolve')
+})
+
+test.runIf(!isWindows)(
+  'Resolve doesnt interrupt page request that clashes with local project package.json',
+  async () => {
+    // Sometimes request path may point to a different project's package.json, but for testing
+    // we point to Vite's own monorepo which always exists, and the package.json is not a library
+    const pathToViteMonorepoRoot = new URL('../../../', import.meta.url)
+    const urlPath = fileURLToPath(pathToViteMonorepoRoot).replace(/\/$/, '')
+    await page.goto(viteTestUrl + urlPath)
+    expect(await page.locator('vite-error-overlay').count()).toBe(0)
+    expect(await page.textContent('h1')).toBe('Resolve')
+  },
+)
+
+test.runIf(isBuild)('public dir is not copied', async () => {
+  expect(
+    fs.existsSync(path.resolve(testDir, 'dist/should-not-be-copied')),
+  ).toBe(false)
 })

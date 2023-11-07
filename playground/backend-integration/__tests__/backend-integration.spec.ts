@@ -13,7 +13,7 @@ import {
 } from '~utils'
 
 const outerAssetMatch = isBuild
-  ? /\/dev\/assets\/logo-\w{8}\.png/
+  ? /\/dev\/assets\/logo-[-\w]{8}\.png/
   : /\/dev\/@fs\/.+?\/images\/logo\.png/
 
 test('should have no 404s', () => {
@@ -37,7 +37,7 @@ describe.runIf(isBuild)('build', () => {
     const cssAssetEntry = manifest['global.css']
     const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
-    const dirFooAssetEntry = manifest['../../dir/foo.css'] // '\\' should not be used even on windows
+    const dirFooAssetEntry = manifest['../dynamic/foo.css'] // '\\' should not be used even on windows
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(cssAssetEntry?.file).not.toBeUndefined()
@@ -48,6 +48,9 @@ describe.runIf(isBuild)('build', () => {
     expect(imgAssetEntry?.file).not.toBeUndefined()
     expect(imgAssetEntry?.isEntry).toBeUndefined()
     expect(dirFooAssetEntry).not.toBeUndefined()
+    // use the entry name
+    expect(manifest['bar.css']).not.toBeUndefined()
+    expect(manifest['foo.css']).toBeUndefined()
   })
 })
 

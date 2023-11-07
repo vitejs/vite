@@ -18,14 +18,13 @@ vite [root]
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `--host [host]`          | Specify hostname (`string`)                                                                                        |
 | `--port <port>`          | Specify port (`number`)                                                                                            |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                                                                                       |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)                                                                      |
 | `--cors`                 | Enable CORS (`boolean`)                                                                                            |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`)                                                               |
 | `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                  |
 | `-c, --config <file>`    | Use specified config file (`string`)                                                                               |
 | `--base <path>`          | Public base path (default: `/`) (`string`)                                                                         |
-| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                                                                         |
+| `-l, --logLevel <level>` | info \| warn \| error \| silent (`string`)                                                                         |
 | `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)                                                                |
 | `--profile`              | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) |
 | `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                                                                              |
@@ -115,7 +114,6 @@ vite preview [root]
 | `--host [host]`          | Specify hostname (`string`)                          |
 | `--port <port>`          | Specify port (`number`)                              |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`) |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                         |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)        |
 | `--outDir <dir>`         | Output directory (default: `dist`)(`string`)         |
 | `-c, --config <file>`    | Use specified config file (`string`)                 |

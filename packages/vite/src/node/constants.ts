@@ -9,6 +9,7 @@ const { version } = JSON.parse(
 export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
+  'browser',
   'module',
   'jsnext:main', // moment still uses this...
   'jsnext',
@@ -151,3 +152,6 @@ export const wildcardHosts = new Set([
 export const DEFAULT_DEV_PORT = 5173
 
 export const DEFAULT_PREVIEW_PORT = 4173
+
+export const ASYNC_DISPOSE: typeof Symbol.asyncDispose =
+  Symbol.asyncDispose || Symbol.for('Symbol.asyncDispose')

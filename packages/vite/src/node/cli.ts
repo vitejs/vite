@@ -5,11 +5,11 @@ import { cac } from 'cac'
 import colors from 'picocolors'
 import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
+import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
-import { bindShortcuts } from './shortcuts'
-import { resolveConfig } from '.'
+import { resolveConfig } from './config'
 
 const cli = cac('vite')
 
@@ -102,9 +102,31 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   return ret
 }
 
+/**
+ * host may be a number (like 0), should convert to string
+ */
+const convertHost = (v: any) => {
+  if (typeof v === 'number') {
+    return String(v)
+  }
+  return v
+}
+
+/**
+ * base may be a number (like 0), should convert to empty string
+ */
+const convertBase = (v: any) => {
+  if (v === 0) {
+    return ''
+  }
+  return v
+}
+
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('--base <path>', `[string] public base path (default: /)`)
+  .option('--base <path>', `[string] public base path (default: /)`, {
+    type: [convertBase],
+  })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
@@ -116,9 +138,8 @@ cli
   .command('[root]', 'start dev server') // default command
   .alias('serve') // the command is called 'serve' in Vite's API
   .alias('dev') // alias to align with the script name
-  .option('--host [host]', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
@@ -164,38 +185,41 @@ cli
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
         )}  ${startupDurationString}\n`,
-        { clear: !server.config.logger.hasWarned },
+        {
+          clear:
+            !server.config.logger.hasWarned &&
+            !(globalThis as any).__vite_cjs_skip_clear_screen,
+        },
       )
 
       server.printUrls()
-      bindShortcuts(server, {
-        print: true,
-        customShortcuts: [
-          profileSession && {
-            key: 'p',
-            description: 'start/stop the profiler',
-            async action(server) {
-              if (profileSession) {
-                await stopProfiler(server.config.logger.info)
-              } else {
-                const inspector = await import('node:inspector').then(
-                  (r) => r.default,
-                )
-                await new Promise<void>((res) => {
-                  profileSession = new inspector.Session()
-                  profileSession.connect()
-                  profileSession.post('Profiler.enable', () => {
-                    profileSession!.post('Profiler.start', () => {
-                      server.config.logger.info('Profiler started')
-                      res()
-                    })
+      const customShortcuts: CLIShortcut<typeof server>[] = []
+      if (profileSession) {
+        customShortcuts.push({
+          key: 'p',
+          description: 'start/stop the profiler',
+          async action(server) {
+            if (profileSession) {
+              await stopProfiler(server.config.logger.info)
+            } else {
+              const inspector = await import('node:inspector').then(
+                (r) => r.default,
+              )
+              await new Promise<void>((res) => {
+                profileSession = new inspector.Session()
+                profileSession.connect()
+                profileSession.post('Profiler.enable', () => {
+                  profileSession!.post('Profiler.start', () => {
+                    server.config.logger.info('Profiler started')
+                    res()
                   })
                 })
-              }
-            },
+              })
+            }
           },
-        ],
-      })
+        })
+      }
+      server.bindCLIShortcuts({ print: true, customShortcuts })
     } catch (e) {
       const logger = createLogger(options.logLevel)
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
@@ -306,10 +330,9 @@ cli
 // preview
 cli
   .command('preview [root]', 'locally preview production build')
-  .option('--host [host]', `[string] specify hostname`)
+  .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .action(
@@ -318,7 +341,6 @@ cli
       options: {
         host?: string | boolean
         port?: number
-        https?: boolean
         open?: boolean | string
         strictPort?: boolean
         outDir?: string
@@ -340,12 +362,11 @@ cli
             port: options.port,
             strictPort: options.strictPort,
             host: options.host,
-            https: options.https,
             open: options.open,
           },
         })
         server.printUrls()
-        bindShortcuts(server, { print: true })
+        server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when starting preview server:\n${e.stack}`),

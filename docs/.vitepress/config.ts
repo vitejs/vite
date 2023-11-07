@@ -93,6 +93,7 @@ export default defineConfig({
     es: { label: 'Español', link: 'https://es.vitejs.dev' },
     pt: { label: 'Português', link: 'https://pt.vitejs.dev' },
     ko: { label: '한국어', link: 'https://ko.vitejs.dev' },
+    de: { label: 'Deutsch', link: 'https://de.vitejs.dev' },
   },
 
   themeConfig: {
@@ -153,6 +154,10 @@ export default defineConfig({
                 link: 'https://github.com/vitejs/awesome-vite',
               },
               {
+                text: 'ViteConf',
+                link: 'https://viteconf.org',
+              },
+              {
                 text: 'DEV Community',
                 link: 'https://dev.to/t/vite',
               },
@@ -163,6 +168,10 @@ export default defineConfig({
               {
                 text: 'Changelog',
                 link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
+              },
+              {
+                text: 'Contributing',
+                link: 'https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md',
               },
             ],
           },
@@ -236,11 +245,15 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
+              text: 'Performance',
+              link: '/guide/performance',
+            },
+            {
               text: 'Philosophy',
               link: '/guide/philosophy',
             },
             {
-              text: 'Migration from v3',
+              text: 'Migration from v4',
               link: '/guide/migration',
             },
           ],
@@ -306,6 +319,10 @@ export default defineConfig({
           ],
         },
       ],
+    },
+
+    outline: {
+      level: [2, 3],
     },
   },
 })

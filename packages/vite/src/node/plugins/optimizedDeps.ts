@@ -51,7 +51,6 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
             // something unexpected has happened. In this case, Vite
             // returns an empty response that will error.
             throwProcessingError(id)
-            return
           }
           const newMetadata = depsOptimizer.metadata
           if (metadata !== newMetadata) {
@@ -102,10 +101,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
           // When a optimized dep is aliased, we need to avoid waiting for it before optimizing
           return
         }
-        const resolved = await this.resolve(id, importer, {
-          ...options,
-          skipSelf: true,
-        })
+        const resolved = await this.resolve(id, importer, options)
         if (resolved && !resolved.external) {
           depsOptimizer.delayDepsOptimizerUntil(resolved.id, async () => {
             await this.load(resolved)

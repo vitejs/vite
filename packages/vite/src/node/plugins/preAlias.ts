@@ -14,6 +14,7 @@ import {
   isInNodeModules,
   isOptimizable,
   moduleListContains,
+  withTrailingSlash,
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
@@ -55,7 +56,6 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           const resolved = await this.resolve(id, importer, {
             ...options,
             custom: { ...options.custom, 'vite:pre-alias': true },
-            skipSelf: true,
           })
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
             const optimizeDeps = depsOptimizer.options
@@ -114,7 +114,7 @@ function matches(pattern: string | RegExp, importee: string) {
   if (importee === pattern) {
     return true
   }
-  return importee.startsWith(pattern + '/')
+  return importee.startsWith(withTrailingSlash(pattern))
 }
 
 function getAliasPatterns(

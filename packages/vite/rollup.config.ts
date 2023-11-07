@@ -161,13 +161,14 @@ function createNodeConfig(isProduction: boolean) {
     external: [
       'fsevents',
       'lightningcss',
+      'rollup/parseAst',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
-      // in production we use api-extractor for dts generation
+      // in production we use rollup.dts.config.ts for dts generation
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : './dist/node',
     ),
@@ -195,7 +196,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
   })
 }
 
@@ -317,7 +318,7 @@ const __require = require;
 /**
  * Guard the bundle size
  *
- * @param limit size in KB
+ * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
   return {
@@ -329,10 +330,10 @@ function bundleSizeLimit(limit: number): Plugin {
           .join(''),
         'utf-8',
       )
-      const kb = size / 1024
+      const kb = size / 1000
       if (kb > limit) {
         throw new Error(
-          `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(
+          `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,
         )

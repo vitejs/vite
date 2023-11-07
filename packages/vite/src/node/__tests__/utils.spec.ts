@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
   bareImportRE,
+  flattenId,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
@@ -258,5 +259,24 @@ describe('processSrcSetSync', () => {
         ({ url }) => path.posix.join(devBase, url),
       ),
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
+})
+
+describe('flattenId', () => {
+  test('should limit id to 170 characters', () => {
+    const tenChars = '1234567890'
+    let id = ''
+
+    for (let i = 0; i < 17; i++) {
+      id += tenChars
+    }
+    expect(id).toHaveLength(170)
+
+    const result = flattenId(id)
+    expect(result).toHaveLength(170)
+
+    id += tenChars
+    const result2 = flattenId(id)
+    expect(result2).toHaveLength(170)
   })
 })

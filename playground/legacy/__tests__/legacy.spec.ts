@@ -52,22 +52,22 @@ test('generates assets', async () => {
     () => page.textContent('#assets'),
     isBuild
       ? [
-          'index: 404',
-          'index-legacy: 404',
-          'chunk-async: 404',
-          'chunk-async-legacy: 404',
-          'immutable-chunk: 200',
-          'immutable-chunk-legacy: 200',
-          'polyfills-legacy: 404',
+          'index: text/html',
+          'index-legacy: text/html',
+          'chunk-async: text/html',
+          'chunk-async-legacy: text/html',
+          'immutable-chunk: application/javascript',
+          'immutable-chunk-legacy: application/javascript',
+          'polyfills-legacy: text/html',
         ].join('\n')
       : [
-          'index: 404',
-          'index-legacy: 404',
-          'chunk-async: 404',
-          'chunk-async-legacy: 404',
-          'immutable-chunk: 404',
-          'immutable-chunk-legacy: 404',
-          'polyfills-legacy: 404',
+          'index: text/html',
+          'index-legacy: text/html',
+          'chunk-async: text/html',
+          'chunk-async-legacy: text/html',
+          'immutable-chunk: text/html',
+          'immutable-chunk-legacy: text/html',
+          'polyfills-legacy: text/html',
         ].join('\n'),
     true,
   )
@@ -85,7 +85,7 @@ test('should load dynamic import with css', async () => {
 
 test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild ? /\/assets\/vite-\w+\.svg/ : '/vite.svg',
+    isBuild ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
 })
 
@@ -96,6 +96,15 @@ describe.runIf(isBuild)('build', () => {
     expect(manifest['../../vite/legacy-polyfills-legacy']).toBeDefined()
     expect(manifest['../../vite/legacy-polyfills-legacy'].src).toBe(
       '../../vite/legacy-polyfills-legacy',
+    )
+    expect(manifest['custom0-legacy.js'].file).toMatch(
+      /chunk-X-legacy\.[-\w]{8}.js/,
+    )
+    expect(manifest['custom1-legacy.js'].file).toMatch(
+      /chunk-X-legacy-[-\w]{8}.js/,
+    )
+    expect(manifest['custom2-legacy.js'].file).toMatch(
+      /chunk-X-legacy[-\w]{8}.js/,
     )
     // modern polyfill
     expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
@@ -127,7 +136,7 @@ describe.runIf(isBuild)('build', () => {
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills-\w{8}\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('"structuredClone"')
   })
 
   test('should generate legacy sourcemap file', async () => {

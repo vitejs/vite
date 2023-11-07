@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import type {
   Loader,
@@ -10,8 +9,8 @@ import type {
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
-import type { TSConfckParseOptions } from 'tsconfck'
-import { TSConfckParseError, findAll, parse } from 'tsconfck'
+import type { TSConfckParseResult } from 'tsconfck'
+import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
 import {
   cleanUrl,
   combineSourcemaps,
@@ -19,19 +18,17 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
-  timeFrom,
 } from '../utils'
 import type { ViteDevServer } from '../server'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { searchForWorkspaceRoot } from '../server/searchRoot'
 
 const debug = createDebugger('vite:esbuild')
 
-const INJECT_HELPERS_IIFE_RE =
-  /^(.*?)((?:const|var)\s+\S+\s*=\s*function\s*\([^)]*\)\s*\{\s*"use strict";)/s
-const INJECT_HELPERS_UMD_RE =
-  /^(.*?)(\(function\([^)]*\)\s*\{.+?amd.+?function\([^)]*\)\s*\{\s*"use strict";)/s
+// IIFE content looks like `var MyLib = function() {`.
+// Spaces are removed and parameters are mangled when minified
+const IIFE_BEGIN_RE =
+  /(const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -96,7 +93,6 @@ export async function transformWithEsbuild(
   }
 
   let tsconfigRaw = options?.tsconfigRaw
-  const fallbackSupported: Record<string, boolean> = {}
 
   // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
@@ -143,23 +139,6 @@ export async function transformWithEsbuild(
       compilerOptions.useDefineForClassFields = false
     }
 
-    // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
-    // To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
-    // `true` by default if it's unset.
-    // TODO: Remove this in Vite 5
-    if (compilerOptions.experimentalDecorators === undefined) {
-      compilerOptions.experimentalDecorators = true
-    }
-
-    // Compat with esbuild 0.17 where static properties are transpiled to
-    // static blocks when `useDefineForClassFields` is false. Its support
-    // is not great yet, so temporarily disable it for now.
-    // TODO: Remove this in Vite 5, don't pass hardcoded `esnext` target
-    // to `transformWithEsbuild` in the esbuild plugin.
-    if (compilerOptions.useDefineForClassFields !== true) {
-      fallbackSupported['class-static-blocks'] = false
-    }
-
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
@@ -182,10 +161,6 @@ export async function transformWithEsbuild(
     ...options,
     loader,
     tsconfigRaw,
-    supported: {
-      ...fallbackSupported,
-      ...options?.supported,
-    },
   }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions
@@ -223,9 +198,13 @@ export async function transformWithEsbuild(
     if (e.errors) {
       e.frame = ''
       e.errors.forEach((m: Message) => {
-        if (m.text === 'Experimental decorators are not currently enabled') {
+        if (
+          m.text === 'Experimental decorators are not currently enabled' ||
+          m.text ===
+            'Parameter decorators only work when experimental decorators are enabled'
+        ) {
           m.text +=
-            '. Vite 4.4+ now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
+            '. Vite 5 now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
         }
         e.frame += `\n` + prettifyMessage(m, code)
       })
@@ -257,8 +236,6 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     // tree-shaking. (#9164)
     keepNames: false,
   }
-
-  initTSConfck(config.root)
 
   return {
     name: 'vite:esbuild',
@@ -312,8 +289,6 @@ const rollupToEsbuildFormatMap: Record<
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
-  initTSConfck(config.root)
-
   return {
     name: 'vite:esbuild-transpile',
     async renderChunk(code, chunk, opts) {
@@ -333,22 +308,30 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
         // names are minified potentially causing collision with other globals.
-        // We use a regex to inject the helpers inside the wrappers.
+        // We inject the helpers inside the wrappers.
+        // e.g. turn:
+        //    <esbuild helpers> (function(){ /*actual content/* })()
+        // into:
+        //    (function(){ <esbuild helpers> /*actual content/* })()
+        // Not using regex because it's too hard to rule out performance issues like #8738 #8099 #10900 #14065
+        // Instead, using plain string index manipulation (indexOf, slice) which is simple and performant
         // We don't need to create a MagicString here because both the helpers and
         // the headers don't modify the sourcemap
-        const injectHelpers =
-          opts.format === 'umd'
-            ? INJECT_HELPERS_UMD_RE
-            : opts.format === 'iife'
-            ? INJECT_HELPERS_IIFE_RE
-            : undefined
-        if (injectHelpers) {
-          res.code = res.code.replace(
-            injectHelpers,
-            (_, helpers, header) => header + helpers,
-          )
+        const esbuildCode = res.code
+        const contentIndex =
+          opts.format === 'iife'
+            ? esbuildCode.match(IIFE_BEGIN_RE)?.index || 0
+            : opts.format === 'umd'
+            ? esbuildCode.indexOf(`(function(`) // same for minified or not
+            : 0
+        if (contentIndex > 0) {
+          const esbuildHelpers = esbuildCode.slice(0, contentIndex)
+          res.code = esbuildCode
+            .slice(contentIndex)
+            .replace(`"use strict";`, `"use strict";` + esbuildHelpers)
         }
       }
+
       return res
     },
   }
@@ -462,53 +445,28 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckRoot: string | undefined
-let tsconfckParseOptions: TSConfckParseOptions | Promise<TSConfckParseOptions> =
-  { resolveWithEmptyIfConfigNotFound: true }
-
-function initTSConfck(root: string, force = false) {
-  // bail if already cached
-  if (!force && root === tsconfckRoot) return
-
-  const workspaceRoot = searchForWorkspaceRoot(root)
-
-  tsconfckRoot = root
-  tsconfckParseOptions = initTSConfckParseOptions(workspaceRoot)
-
-  // cached as the options value itself when promise is resolved
-  tsconfckParseOptions.then((options) => {
-    if (root === tsconfckRoot) {
-      tsconfckParseOptions = options
-    }
-  })
-}
-
-async function initTSConfckParseOptions(workspaceRoot: string) {
-  const start = debug ? performance.now() : 0
-
-  const options: TSConfckParseOptions = {
-    cache: new Map(),
-    root: workspaceRoot,
-    tsConfigPaths: new Set(
-      await findAll(workspaceRoot, {
-        skip: (dir) => dir === 'node_modules' || dir === '.git',
-      }),
-    ),
-    resolveWithEmptyIfConfigNotFound: true,
-  }
-
-  debug?.(timeFrom(start), 'tsconfck init', colors.dim(workspaceRoot))
-
-  return options
-}
+let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 
 async function loadTsconfigJsonForFile(
   filename: string,
 ): Promise<TSConfigJSON> {
   try {
-    const result = await parse(filename, await tsconfckParseOptions)
+    if (tsconfckCache) {
+      // shortcut, the cache stores resolved TSConfckParseResult
+      // so getting it from the cache directly we bypass async fn call wrapping it in a promise again
+      if (tsconfckCache.hasParseResult(filename)) {
+        const result = await tsconfckCache.getParseResult(filename)
+        return result.tsconfig
+      }
+    } else {
+      tsconfckCache = new TSConfckCache<TSConfckParseResult>()
+    }
+    const result = await parse(filename, {
+      cache: tsconfckCache,
+      ignoreNodeModules: true,
+    })
     // tsconfig could be out of root, make sure it is watched on dev
-    if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
+    if (server && result.tsconfigFile) {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
     }
     return result.tsconfig
@@ -531,7 +489,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
     (changedFile.endsWith('.json') &&
-      (await tsconfckParseOptions)?.cache?.has(changedFile))
+      tsconfckCache?.hasParseResult(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
@@ -542,7 +500,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    initTSConfck(server.config.root, true)
+    tsconfckCache?.clear()
 
     // server may not be available if vite config is updated at the same time
     if (server) {

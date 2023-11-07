@@ -7,6 +7,7 @@ export default defineConfig({
     supported: {
       // Force esbuild inject helpers to test regex
       'object-rest-spread': false,
+      'optional-chain': false,
     },
   },
   build: {

@@ -3,9 +3,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
-
-const process_env_NODE_ENV_RE =
-  /(\bglobal(This)?\.)?\bprocess\.env\.NODE_ENV\b/g
+import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -35,6 +33,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const timeout = hmrConfig?.timeout || 30000
       const overlay = hmrConfig?.overlay !== false
       const isHmrServerSpecified = !!hmrConfig?.server
+      const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
       // hmr.clientPort -> hmr.port
       // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
@@ -52,7 +51,14 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         hmrBase = path.posix.join(hmrBase, hmrConfig.path)
       }
 
-      const serializedDefines = serializeDefine(config.define || {})
+      const userDefine: Record<string, any> = {}
+      for (const key in config.define) {
+        // import.meta.env.* is handled in `importAnalysis` plugin
+        if (!key.startsWith('import.meta.env.')) {
+          userDefine[key] = config.define[key]
+        }
+      }
+      const serializedDefines = serializeDefine(userDefine)
 
       const modeReplacement = escapeReplacement(config.mode)
       const baseReplacement = escapeReplacement(devBase)
@@ -65,6 +71,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const hmrBaseReplacement = escapeReplacement(hmrBase)
       const hmrTimeoutReplacement = escapeReplacement(timeout)
       const hmrEnableOverlayReplacement = escapeReplacement(overlay)
+      const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
 
       injectConfigValues = (code: string) => {
         return code
@@ -79,19 +86,28 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_BASE__`, hmrBaseReplacement)
           .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
           .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
+          .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       }
     },
-    transform(code, id, options) {
+    async transform(code, id, options) {
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         return injectConfigValues(code)
       } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV instead of defining a global
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
-        return code.replace(
-          process_env_NODE_ENV_RE,
+        const nodeEnv =
           config.define?.['process.env.NODE_ENV'] ||
-            JSON.stringify(process.env.NODE_ENV || config.mode),
+          JSON.stringify(process.env.NODE_ENV || config.mode)
+        return await replaceDefine(
+          code,
+          id,
+          {
+            'process.env.NODE_ENV': nodeEnv,
+            'global.process.env.NODE_ENV': nodeEnv,
+            'globalThis.process.env.NODE_ENV': nodeEnv,
+          },
+          config,
         )
       }
     },
@@ -101,15 +117,4 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 function escapeReplacement(value: string | number | boolean | null) {
   const jsonValue = JSON.stringify(value)
   return () => jsonValue
-}
-
-function serializeDefine(define: Record<string, any>): string {
-  let res = `{`
-  for (const key in define) {
-    const val = define[key]
-    res += `${JSON.stringify(key)}: ${
-      typeof val === 'string' ? `(${val})` : JSON.stringify(val)
-    }, `
-  }
-  return res + `}`
 }

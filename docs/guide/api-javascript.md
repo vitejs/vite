@@ -30,6 +30,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
   await server.listen()
 
   server.printUrls()
+  server.bindCLIShortcuts({ print: true })
 })()
 ```
 
@@ -74,7 +75,8 @@ interface ViteDevServer {
    */
   httpServer: http.Server | null
   /**
-   * Chokidar watcher instance.
+   * Chokidar watcher instance. If `config.server.watch` is set to `null`,
+   * returns a noop event emitter.
    * https://github.com/paulmillr/chokidar#api
    */
   watcher: FSWatcher
@@ -138,6 +140,10 @@ interface ViteDevServer {
    * Stop the server.
    */
   close(): Promise<void>
+  /**
+   * Bind CLI shortcuts
+   */
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
 }
 ```
 
@@ -195,21 +201,14 @@ import { preview } from 'vite'
   })
 
   previewServer.printUrls()
+  previewServer.bindCLIShortcuts({ print: true })
 })()
 ```
 
 ## `PreviewServer`
 
 ```ts
-interface PreviewServer extends PreviewServerForHook {
-  resolvedUrls: ResolvedServerUrls
-}
-```
-
-## `PreviewServerForHook`
-
-```ts
-interface PreviewServerForHook {
+interface PreviewServer {
   /**
    * The resolved vite config object
    */
@@ -228,13 +227,18 @@ interface PreviewServerForHook {
    */
   httpServer: http.Server
   /**
-   * The resolved urls Vite prints on the CLI
+   * The resolved urls Vite prints on the CLI.
+   * null before server is listening.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
    * Print server urls
    */
   printUrls(): void
+  /**
+   * Bind CLI shortcuts
+   */
+  bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
 }
 ```
 
@@ -247,10 +251,12 @@ async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
   defaultMode = 'development',
+  defaultNodeEnv = 'development',
+  isPreview = false,
 ): Promise<ResolvedConfig>
 ```
 
-The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
+The `command` value is `serve` in dev and preview, and `build` in build.
 
 ## `mergeConfig`
 
@@ -268,6 +274,15 @@ Deeply merge two Vite configs. `isRoot` represents the level within the Vite con
 
 ::: tip NOTE
 `mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
+
+You can use the `defineConfig` helper to merge a config in callback form with another config:
+
+```ts
+export default defineConfig((configEnv) =>
+  mergeConfig(configAsCallback(configEnv), configAsObject),
+)
+```
+
 :::
 
 ## `searchForWorkspaceRoot`

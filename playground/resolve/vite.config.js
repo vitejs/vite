@@ -27,7 +27,7 @@ const generatedContentImports = [
 export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
-    mainFields: ['custom', 'module'],
+    mainFields: ['browser', 'custom', 'module'],
     conditions: ['custom'],
   },
   define: {
@@ -106,5 +106,8 @@ export default defineConfig({
       '@vitejs/test-require-pkg-with-module-field',
       '@vitejs/test-resolve-sharp-dir',
     ],
+  },
+  build: {
+    copyPublicDir: false,
   },
 })

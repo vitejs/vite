@@ -2,6 +2,7 @@ import colors from 'picocolors'
 import { createDebugger, getHash } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
+import { ASYNC_DISPOSE } from '../constants'
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
@@ -119,6 +120,9 @@ async function createDepsOptimizer(
     resetRegisteredIds,
     ensureFirstRun,
     close,
+    [ASYNC_DISPOSE]() {
+      return this.close()
+    },
     options: getDepOptimizationConfig(config, ssr),
   }
 
@@ -619,8 +623,6 @@ async function createDepsOptimizer(
       return
     }
 
-    const crawlDeps = Object.keys(metadata.discovered)
-
     // Await for the scan+optimize step running in the background
     // It normally should be over by the time crawling of user code ended
     await depsOptimizer.scanProcessing
@@ -630,6 +632,7 @@ async function createDepsOptimizer(
       optimizationResult = undefined
       currentlyProcessing = false
 
+      const crawlDeps = Object.keys(metadata.discovered)
       const scanDeps = Object.keys(result.metadata.optimized)
 
       if (scanDeps.length === 0 && crawlDeps.length === 0) {
@@ -680,6 +683,7 @@ async function createDepsOptimizer(
         runOptimizer(result)
       }
     } else {
+      const crawlDeps = Object.keys(metadata.discovered)
       currentlyProcessing = false
 
       if (crawlDeps.length === 0) {
@@ -832,6 +836,7 @@ async function createDevSsrDepsOptimizer(
     ensureFirstRun: () => {},
 
     close: async () => {},
+    [ASYNC_DISPOSE]: async () => {},
     options: config.ssr.optimizeDeps,
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)

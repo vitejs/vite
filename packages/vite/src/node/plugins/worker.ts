@@ -41,30 +41,7 @@ function saveEmitWorkerAsset(
   workerMap.assets.set(fileName, asset)
 }
 
-// Ensure that only one rollup build is called at the same time to avoid
-// leaking state in plugins between worker builds.
-// TODO: Review if we can parallelize the bundling of workers.
-const workerConfigSemaphore = new WeakMap<
-  ResolvedConfig,
-  Promise<OutputChunk>
->()
-export async function bundleWorkerEntry(
-  config: ResolvedConfig,
-  id: string,
-  query: Record<string, string> | null,
-): Promise<OutputChunk> {
-  const processing = workerConfigSemaphore.get(config)
-  if (processing) {
-    await processing
-    return bundleWorkerEntry(config, id, query)
-  }
-  const promise = serialBundleWorkerEntry(config, id, query)
-  workerConfigSemaphore.set(config, promise)
-  promise.then(() => workerConfigSemaphore.delete(config))
-  return promise
-}
-
-async function serialBundleWorkerEntry(
+async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
@@ -75,7 +52,7 @@ async function serialBundleWorkerEntry(
   const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
-    plugins,
+    plugins: await plugins(),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -241,7 +218,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     shouldTransformCachedModule({ id }) {
-      if (isBuild && isWorkerQueryId(id) && config.build.watch) {
+      if (isBuild && config.build.watch && isWorkerQueryId(id)) {
         return true
       }
     },
@@ -274,9 +251,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-        return {
-          code: injectEnv + raw,
+        if (injectEnv) {
+          const s = new MagicString(raw)
+          s.prepend(injectEnv)
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary' }),
+          }
         }
+        return
       }
       if (
         query == null ||
@@ -295,7 +278,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           ? 'module'
           : 'classic'
         : 'module'
-      const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
+      const workerTypeOption = `{
+        ${workerType === 'module' ? `type: "module",` : ''}
+        name: options?.name
+      }`
 
       if (isBuild) {
         getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
@@ -309,22 +295,43 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
               ? `${encodedJs}
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper() {
+          const blob = typeof window !== "undefined" && window.Blob && new Blob([${
+            workerType === 'classic'
+              ? ''
+              : // `URL` is always available, in `Worker[type="module"]`
+                `'URL.revokeObjectURL(import.meta.url);'+`
+          }atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper(options) {
             let objURL;
             try {
               objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
-              return new ${workerConstructor}(objURL)
+              const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
+              worker.addEventListener("error", () => {
+                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              });
+              return worker;
             } catch(e) {
-              return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
-            } finally {
-              objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+              return new ${workerConstructor}(
+                "data:application/javascript;base64," + encodedJs,
+                ${workerTypeOption}
+              );
+            }${
+              // For module workers, we should not revoke the URL until the worker runs,
+              // otherwise the worker fails to run
+              workerType === 'classic'
+                ? ` finally {
+                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                  }`
+                : ''
             }
           }`
               : `${encodedJs}
-          export default function WorkerWrapper() {
-            return new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+          export default function WorkerWrapper(options) {
+            return new ${workerConstructor}(
+              "data:application/javascript;base64," + encodedJs,
+              ${workerTypeOption}
+            );
           }
           `
 
@@ -350,10 +357,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       return {
-        code: `export default function WorkerWrapper() {
-          return new ${workerConstructor}(${JSON.stringify(
-            url,
-          )}${workerOptions})
+        code: `export default function WorkerWrapper(options) {
+          return new ${workerConstructor}(
+            ${JSON.stringify(url)},
+            ${workerTypeOption}
+          );
         }`,
         map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
       }
