@@ -408,9 +408,6 @@ export async function _createServer(
     ws,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
-    _setInternalServer(_server: ViteDevServer) {
-      server = _server
-    },
     ssrTransform(
       code: string,
       inMap: SourceMap | { mappings: '' } | null,
@@ -581,6 +578,11 @@ export async function _createServer(
       return server._restartPromise
     },
 
+    _setInternalServer(_server: ViteDevServer) {
+      // Rebind internal the server variable so functions reference the user
+      // server instance after a restart
+      server = _server
+    },
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
