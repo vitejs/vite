@@ -11,7 +11,6 @@ import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import { ASYNC_DISPOSE } from '../constants'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { HttpServer } from '.'
@@ -31,7 +30,7 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
-export interface WebSocketServer extends AsyncDisposable {
+export interface WebSocketServer {
   /**
    * Listen on port and host
    */
@@ -309,9 +308,6 @@ export function createWebSocketServer(
           }
         })
       })
-    },
-    [ASYNC_DISPOSE]() {
-      return this.close()
     },
   }
 }
