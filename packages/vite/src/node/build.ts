@@ -500,6 +500,19 @@ export async function build(
         `Please specify a dedicated SSR entry.`,
     )
   }
+  if (config.build.cssCodeSplit === false) {
+    const inputs =
+      typeof input === 'string'
+        ? [input]
+        : Array.isArray(input)
+        ? input
+        : Object.values(input)
+    if (inputs.some((input) => input.endsWith('.css'))) {
+      throw new Error(
+        `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
+      )
+    }
+  }
 
   const outDir = resolve(options.outDir)
 
@@ -550,6 +563,20 @@ export async function build(
           `You've set "rollupOptions.output.output" in your config. ` +
             `This is deprecated and will override all Vite.js default output options. ` +
             `Please use "rollupOptions.output" instead.`,
+        )
+      }
+      if (output.file) {
+        throw new Error(
+          `Vite does not support "rollupOptions.output.file". ` +
+            `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+        )
+      }
+      if (output.sourcemap) {
+        config.logger.warnOnce(
+          colors.yellow(
+            `Vite does not support "rollupOptions.output.sourcemap". ` +
+              `Please use "build.sourcemap" instead.`,
+          ),
         )
       }
 
