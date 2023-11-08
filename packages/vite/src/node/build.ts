@@ -500,6 +500,19 @@ export async function build(
         `Please specify a dedicated SSR entry.`,
     )
   }
+  if (config.build.cssCodeSplit === false) {
+    const inputs =
+      typeof input === 'string'
+        ? [input]
+        : Array.isArray(input)
+        ? input
+        : Object.values(input)
+    if (inputs.some((input) => input.endsWith('.css'))) {
+      throw new Error(
+        `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
+      )
+    }
+  }
 
   const outDir = resolve(options.outDir)
 
