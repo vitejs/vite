@@ -153,8 +153,6 @@ export class ModuleGraph {
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     /** @internal */
-    hmrBoundaries: ModuleNode[] = [],
-    /** @internal */
     softInvalidate = false,
   ): void {
     const prevInvalidationState = mod.invalidationState
@@ -199,14 +197,6 @@ export class ModuleGraph {
     mod.ssrModule = null
     mod.ssrError = null
 
-    // https://github.com/vitejs/vite/issues/3033
-    // Given b.js -> c.js -> b.js (arrow means top-level import), if c.js self-accepts
-    // and refetches itself, the execution order becomes c.js -> b.js -> c.js. The import
-    // order matters here as it will fail. The workaround for now is to not hmr invalidate
-    // b.js so that c.js refetches the already cached b.js, skipping the import loop.
-    if (hmrBoundaries.includes(mod)) {
-      return
-    }
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
         // If the importer statically imports the current module, we can soft-invalidate the importer
@@ -220,7 +210,6 @@ export class ModuleGraph {
           seen,
           timestamp,
           isHmr,
-          undefined,
           shouldSoftInvalidateImporter,
         )
       }
