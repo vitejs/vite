@@ -393,9 +393,6 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const headers = isDev
-    ? server.config.server.headers
-    : server.config.preview.headers
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -414,6 +411,10 @@ export function indexHtmlMiddleware(
       }
 
       if (fs.existsSync(filePath)) {
+        const headers = isDev
+          ? server.config.server.headers
+          : server.config.preview.headers
+
         try {
           let html = await fsp.readFile(filePath, 'utf-8')
           if (isDev) {
