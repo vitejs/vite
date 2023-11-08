@@ -552,6 +552,12 @@ export async function build(
             `Please use "rollupOptions.output" instead.`,
         )
       }
+      if (output.file) {
+        throw new Error(
+          `Vite does not support "rollupOptions.output.file". ` +
+            `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+        )
+      }
 
       const ssrNodeBuild = ssr && config.ssr.target === 'node'
       const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
