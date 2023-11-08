@@ -711,9 +711,7 @@ export async function _createServer(
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
   if (config.publicDir) {
-    middlewares.use(
-      servePublicMiddleware(config.publicDir, config.server.headers),
-    )
+    middlewares.use(servePublicMiddleware(server))
   }
 
   // main transform middleware
@@ -721,7 +719,7 @@ export async function _createServer(
 
   // serve static files
   middlewares.use(serveRawFsMiddleware(server))
-  middlewares.use(serveStaticMiddleware(root, server))
+  middlewares.use(serveStaticMiddleware(server))
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {

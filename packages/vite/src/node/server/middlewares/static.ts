@@ -25,10 +25,10 @@ import {
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
 
 const sirvOptions = ({
-  headers,
+  getHeaders,
   shouldServe,
 }: {
-  headers?: OutgoingHttpHeaders
+  getHeaders: () => OutgoingHttpHeaders | undefined
   shouldServe?: (p: string) => void
 }): Options => {
   return {
@@ -44,6 +44,7 @@ const sirvOptions = ({
       if (knownJavascriptExtensionRE.test(pathname)) {
         res.setHeader('Content-Type', 'application/javascript')
       }
+      const headers = getHeaders()
       if (headers) {
         for (const name in headers) {
           res.setHeader(name, headers[name]!)
@@ -55,13 +56,13 @@ const sirvOptions = ({
 }
 
 export function servePublicMiddleware(
-  dir: string,
-  headers?: OutgoingHttpHeaders,
+  server: ViteDevServer,
 ): Connect.NextHandleFunction {
+  const dir = server.config.publicDir
   const serve = sirv(
     dir,
     sirvOptions({
-      headers,
+      getHeaders: () => server.config.server.headers,
       shouldServe: (filePath) => shouldServeFile(filePath, dir),
     }),
   )
@@ -77,13 +78,13 @@ export function servePublicMiddleware(
 }
 
 export function serveStaticMiddleware(
-  dir: string,
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
+  const dir = server.config.root
   const serve = sirv(
     dir,
     sirvOptions({
-      headers: server.config.server.headers,
+      getHeaders: () => server.config.server.headers,
     }),
   )
 
@@ -150,7 +151,7 @@ export function serveRawFsMiddleware(
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv(
     '/',
-    sirvOptions({ headers: server.config.server.headers }),
+    sirvOptions({ getHeaders: () => server.config.server.headers }),
   )
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
