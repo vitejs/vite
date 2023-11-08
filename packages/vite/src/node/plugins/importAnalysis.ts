@@ -6,6 +6,7 @@ import MagicString from 'magic-string'
 import type { ExportSpecifier, ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
+import { stripLiteral } from 'strip-literal'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
@@ -74,7 +75,7 @@ const hasImportInQueryParamsRE = /[?&]import=?\b/
 
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
-const cleanUpRawUrlRE = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm
+const cleanedUpRawUrlRE = /^(\s*)(\S|\S[\s\S]*\S)\s*$/
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
 const templateLiteralRE = /^\s*`(.*)`\s*$/
@@ -650,16 +651,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (!ssr) {
-              const url = rawUrl.replace(cleanUpRawUrlRE, '').trim()
+              // Remove comments and trim whitespace
+              const cleanedUrl = stripLiteral(rawUrl)
+              const match = cleanedUpRawUrlRE.exec(cleanedUrl)
+              const url = match
+                ? rawUrl.slice(match[1].length, match[2].length)
+                : rawUrl
               if (
                 !urlIsStringRE.test(url) ||
                 isExplicitImportRequired(url.slice(1, -1))
               ) {
                 needQueryInjectHelper = true
+                // Use rawUrl to avoid removing comments like @vite-ignore
                 str().overwrite(
                   start,
                   end,
-                  `__vite__injectQuery(${url}, 'import')`,
+                  `__vite__injectQuery(${rawUrl}, 'import')`,
                   { contentOnly: true },
                 )
               }
