@@ -149,7 +149,7 @@ If you are running Vite with WSL2, Vite cannot watch file changes in some condit
 
 If HMR is not handled by Vite or a plugin, a full reload will happen as it's the only way to refresh the state.
 
-If HMR is handled but it is within a circular dependency, a full reload will also happen to recover the execution order. To solve this, try breaking the loop. You can run `DEBUG="vite:hmr" vite` to log the circular dependency path if a file change triggered it.
+If HMR is handled but it is within a circular dependency, a full reload will also happen to recover the execution order. To solve this, try breaking the loop. You can run `vite --debug hmr` to log the circular dependency path if a file change triggered it.
 
 ## Build
 
