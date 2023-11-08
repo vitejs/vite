@@ -13,11 +13,12 @@ See [Project Root](/guide/#index-html-and-project-root) for more details.
 
 - **Type:** `string`
 - **Default:** `/`
+- **Related:** [`server.origin`](/config/server-options.md#server-origin)
 
 Base public path when served in development or production. Valid values include:
 
 - Absolute URL pathname, e.g. `/foo/`
-- Full URL, e.g. `https://foo.com/`
+- Full URL, e.g. `https://foo.com/` (The origin part won't be used in development)
 - Empty string or `./` (for embedded deployment)
 
 See [Public Base Path](/guide/build#public-base-path) for more details.
