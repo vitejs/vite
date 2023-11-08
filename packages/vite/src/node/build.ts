@@ -558,6 +558,14 @@ export async function build(
             `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
         )
       }
+      if (output.sourcemap) {
+        config.logger.warnOnce(
+          colors.yellow(
+            `Vite does not support "rollupOptions.output.sourcemap". ` +
+              `Please use "build.sourcemap" instead.`,
+          ),
+        )
+      }
 
       const ssrNodeBuild = ssr && config.ssr.target === 'node'
       const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
