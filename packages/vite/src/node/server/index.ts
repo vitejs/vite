@@ -340,6 +340,14 @@ export interface ViteDevServer extends AsyncDisposable {
    * @internal
    */
   _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
+  /**
+   * @internal
+   */
+  _currentServerPort?: number | undefined
+  /**
+   * @internal
+   */
+  _configServerPort?: number | undefined
 }
 
 export interface ResolvedServerUrls {
@@ -798,15 +806,24 @@ async function startServer(
   }
 
   const options = server.config.server
-  const port = inlinePort ?? options.port ?? DEFAULT_DEV_PORT
   const hostname = await resolveHostname(options.host)
+  const configPort = inlinePort ?? options.port
+  // When using non strict port for the dev server, the running port can be different from the config one.
+  // When restarting, the original port may be available but to avoid a switch of URL for the running
+  // browser tabs, we enforce the previously used port, expect if the config port changed.
+  const port =
+    (!configPort || configPort === server._configServerPort
+      ? server._currentServerPort
+      : configPort) ?? DEFAULT_DEV_PORT
+  server._configServerPort = configPort
 
-  await httpServerStart(httpServer, {
+  const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger: server.config.logger,
   })
+  server._currentServerPort = serverPort
 }
 
 function createServerCloseFn(server: HttpServer | null) {
@@ -926,6 +943,8 @@ async function restartServer(server: ViteDevServer) {
   await server.close()
 
   // Assign new server props to existing server instance
+  newServer._configServerPort = server._configServerPort
+  newServer._currentServerPort = server._currentServerPort
   Object.assign(server, newServer)
   // Rebind internal server variable so functions reference the user server
   newServer._setInternalServer(server)
