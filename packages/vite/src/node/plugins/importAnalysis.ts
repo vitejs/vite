@@ -75,7 +75,13 @@ const hasImportInQueryParamsRE = /[?&]import=?\b/
 
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
-const cleanedUpRawUrlRE = /^(\s*)(\S|\S[\s\S]*\S)\s*$/
+const trimWhitespaceRE = /^(\s*)(\S|\S[\s\S]*\S)\s*$/
+const trimWhitespaceAndComments = (code: string) => {
+  const cleanedCode = stripLiteral(code)
+  const match = trimWhitespaceRE.exec(cleanedCode)
+  return match ? code.slice(match[1].length, match[2].length) : code
+}
+
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
 const templateLiteralRE = /^\s*`(.*)`\s*$/
@@ -651,12 +657,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (!ssr) {
-              // Remove comments and trim whitespace
-              const cleanedUrl = stripLiteral(rawUrl)
-              const match = cleanedUpRawUrlRE.exec(cleanedUrl)
-              const url = match
-                ? rawUrl.slice(match[1].length, match[2].length)
-                : rawUrl
+              const url = trimWhitespaceAndComments(rawUrl)
               if (
                 !urlIsStringRE.test(url) ||
                 isExplicitImportRequired(url.slice(1, -1))
