@@ -44,7 +44,9 @@ export async function createServer(
       },
       appType: 'custom',
     })
-    app.use(vite.middlewares)
+    app.use((req, res, next) => {
+      vite.middlewares.handle(req, res, next)
+    })
   }
 
   app.use('*', async (req, res) => {
