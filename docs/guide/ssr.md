@@ -90,10 +90,10 @@ async function createServer() {
   // Use vite's connect instance as middleware. If you use your own
   // express router (express.Router()), you should use router.use
   app.use((req, res, next) => {
-    // Once the server restarts (for example after the user modifies
-    // vite.config.js), vite.middlewares is reasigned. Using vite's
-    // connect instance inside a wrapper handlers ensures the updated
-    // version of Vite middlewares are always used.
+    // When the server restarts (for example after the user modifies
+    // vite.config.js), `vite.middlewares` will be reassigned. Calling
+    // `vite.middlewares` inside a wrapper handler ensures that the
+    // latest Vite middlewares are always used.
     vite.middlewares.handle(req, res, next)
   })
 
