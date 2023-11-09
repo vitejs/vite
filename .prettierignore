@@ -8,5 +8,4 @@ pnpm-workspace.yaml
 playground/tsconfig-json-load-error/has-error/tsconfig.json
 playground/html/invalid.html
 playground/html/valid.html
-playground/worker/classic-worker.js
 playground/external/public/slash@3.0.0.js
