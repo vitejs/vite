@@ -59,6 +59,7 @@ import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
+import { WORKER_FILE_ID } from './worker'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -685,12 +686,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
-      if (hasEnv) {
+      // While we always expect to work with ESM, a classic worker is the only
+      // case where it's not ESM and we need to avoid injecting ESM-specific code
+      const isClassicWorker =
+        importer.includes(WORKER_FILE_ID) && importer.includes('type=classic')
+
+      if (hasEnv && !isClassicWorker) {
         // inject import.meta.env
         str().prepend(getEnv(ssr))
       }
 
-      if (hasHMR && !ssr) {
+      if (hasHMR && !ssr && !isClassicWorker) {
         debugHmr?.(
           `${
             isSelfAccepting
@@ -712,9 +718,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (needQueryInjectHelper) {
-        str().prepend(
-          `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`,
-        )
+        if (isClassicWorker) {
+          str().append('\n' + __vite__injectQuery.toString())
+        } else {
+          str().prepend(
+            `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`,
+          )
+        }
       }
 
       // normalize and rewrite accepted urls
@@ -1008,4 +1018,20 @@ export function transformCjsImport(
 
     return lines.join('; ')
   }
+}
+
+// Copied from `client/client.ts`. Only needed so we can inline inject this function for classic workers.
+function __vite__injectQuery(url: string, queryToInject: string): string {
+  // skip urls that won't be handled by vite
+  if (url[0] !== '.' && url[0] !== '/') {
+    return url
+  }
+
+  // can't use pathname from URL since it may be relative like ../
+  const pathname = url.replace(/[?#].*$/s, '')
+  const { search, hash } = new URL(url, 'http://vitejs.dev')
+
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+    hash || ''
+  }`
 }
