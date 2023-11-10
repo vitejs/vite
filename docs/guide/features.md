@@ -111,7 +111,9 @@ As such, it is recommended to set `target` to `ESNext` or `ES2022` or newer, or 
 - [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators)
 - [`alwaysStrict`](https://www.typescriptlang.org/tsconfig#alwaysStrict)
 
-If migrating your codebase to `"isolatedModules": true` is an insurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
+::: tip `skipLibCheck`
+Vite starter templates have `"skipLibCheck": "true"` by default to avoid typechecking dependencies, as they may choose to only support specific versions and configurations of TypeScript. You can learn more at [vuejs/vue-cli#5688](https://github.com/vuejs/vue-cli/pull/5688).
+:::
 
 ### Client Types
 
