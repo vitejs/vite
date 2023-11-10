@@ -1034,10 +1034,6 @@ export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
-export function removeComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
-}
-
 function backwardCompatibleWorkerPlugins(plugins: any) {
   if (Array.isArray(plugins)) {
     return plugins
