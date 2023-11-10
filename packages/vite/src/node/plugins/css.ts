@@ -70,6 +70,7 @@ import {
   renderAssetUrlInJS,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
+import { getChunkOriginalFileName } from './manifest'
 
 // const debug = createDebugger('vite:css')
 
@@ -615,6 +616,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               ? path.relative(config.root, chunk.facadeModuleId)
               : chunk.name,
           )
+          const originalFilename = getChunkOriginalFileName(
+            chunk,
+            config.root,
+            opts.format,
+          )
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
@@ -643,7 +649,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           })
           generatedAssets
             .get(config)!
-            .set(referenceId, { originalName: cssAssetName, isEntry })
+            .set(referenceId, { originalName: originalFilename, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
 
           if (emitTasksLength === emitTasks.length) {
