@@ -722,6 +722,9 @@ export async function createPluginContainer(
           return result
         }
       }
+
+      watchFiles.add(id)
+      if (watcher) ensureWatchedFile(watcher, id, root)
       return null
     },
 
