@@ -36,7 +36,6 @@ import {
   withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
-import { buildBreakInfo } from './logger'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
@@ -538,7 +537,6 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
-    buildBreakInfo.break = true
     clearLine()
     config.logger.error(msg, { error: e })
   }
