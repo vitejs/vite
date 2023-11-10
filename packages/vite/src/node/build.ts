@@ -551,6 +551,7 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
+    clearLine()
     config.logger.error(msg, { error: e })
   }
 
@@ -882,6 +883,14 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`,
 ]
 
+function clearLine() {
+  const tty = process.stdout.isTTY && !process.env.CI
+  if (tty) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+  }
+}
+
 export function onRollupWarning(
   warning: RollupLog,
   warn: LoggingFunction,
@@ -938,11 +947,7 @@ export function onRollupWarning(
     warn(warnLog)
   }
 
-  const tty = process.stdout.isTTY && !process.env.CI
-  if (tty) {
-    process.stdout.clearLine(0)
-    process.stdout.cursorTo(0)
-  }
+  clearLine()
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
