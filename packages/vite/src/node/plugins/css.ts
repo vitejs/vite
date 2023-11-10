@@ -616,9 +616,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               : chunk.name,
           )
 
-          const lang = path.extname(cssAssetName).slice(1)
-          const cssFileName = ensureFileExt(cssAssetName, '.css')
-
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
           const previousTask = emitTasks[emitTasks.length - 1]
@@ -638,15 +635,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           await thisTask
 
           // emit corresponding css file
+          const cssFileName = ensureFileExt(cssAssetName, '.css')
           const referenceId = this.emitFile({
             name: path.basename(cssFileName),
             type: 'asset',
             source: chunkCSS,
           })
-          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
           generatedAssets
             .get(config)!
-            .set(referenceId, { originalName, isEntry })
+            .set(referenceId, { originalName: cssAssetName, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
 
           if (emitTasksLength === emitTasks.length) {
