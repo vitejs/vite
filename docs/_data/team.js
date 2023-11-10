@@ -83,7 +83,7 @@ export const core = [
     desc: 'Passionate TypeScript enthusiast working extensively with Vue SPA and pug.',
     links: [
       { icon: 'github', link: 'https://github.com/Shinigami92' },
-      { icon: 'twitter', link: 'https://twitter.com/Shini_92' },
+      { icon: 'mastodon', link: 'https://elk.zone/mas.to/@Shini92' },
     ],
     sponsor: 'https://github.com/sponsors/Shinigami92',
   },
