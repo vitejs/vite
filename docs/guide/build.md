@@ -219,7 +219,7 @@ If the `package.json` does not contain `"type": "module"`, Vite will generate di
 :::
 
 ::: tip Environment Variables
-In library mode, [`import.meta.env.*`](./env-and-mode.md) references are statically replaced to specify that the output is being built for the client in production mode. However, `process.env.*` usage are not. It should be noted that consumers of your library can dynamically change it. If this is undesirable, you can use `define: { 'process.env.NODE_ENV': '"production"' }` for example to statically replace them, or use [`esm-env`](https://github.com/benmccann/esm-env) for better compatibility with bundlers and runtimes.
+In library mode, [`import.meta.env.*`](./env-and-mode.md) references are statically replaced to specify that the output is being built for the client in production mode. However, `process.env.*` usage are not, so that consumers of your library can dynamically change it. If this is undesirable, you can use `define: { 'process.env.NODE_ENV': '"production"' }` for example to statically replace them, or use [`esm-env`](https://github.com/benmccann/esm-env) for better compatibility with bundlers and runtimes.
 :::
 
 ::: warning Advanced Usage
