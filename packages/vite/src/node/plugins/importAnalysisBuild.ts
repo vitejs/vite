@@ -1,6 +1,9 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type {
+  ParseError as EsModuleLexerParseError,
+  ImportSpecifier,
+} from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
@@ -222,7 +225,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
+      } catch (_e: unknown) {
+        const e = _e as EsModuleLexerParseError
         const { message, showCodeFrame } = createParseErrorInfo(
           importer,
           source,
