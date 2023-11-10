@@ -844,4 +844,6 @@ export const cspHashes = [
   dynamicFallbackInlineCode,
 ].map((i) => createHash('sha256').update(i).digest('base64'))
 
+export type { Options }
+
 export default viteLegacyPlugin
