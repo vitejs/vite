@@ -27,7 +27,6 @@ asyncFunctions.forEach((name) => {
 
 function warnCjsUsage() {
   if (process.env.VITE_CJS_IGNORE_WARNING) return
-  globalThis.__vite_cjs_skip_clear_screen = true
   const yellow = (str) => `\u001b[33m${str}\u001b[39m`
   const log = process.env.VITE_CJS_TRACE ? console.trace : console.warn
   log(
