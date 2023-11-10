@@ -7,6 +7,7 @@ import {
   isBuild,
   page,
   removeFile,
+  serverLogs,
   untilBrowserLogAfter,
   untilUpdated,
   viteTestUrl,
@@ -881,6 +882,10 @@ if (import.meta.hot) {
       () => page.textContent('.self-accept-within-circular'),
       'cc',
     )
+    expect(serverLogs.length).greaterThanOrEqual(1)
+    // Match on full log not possible because of color markers
+    expect(serverLogs.at(-1)!).toContain('page reload')
+    expect(serverLogs.at(-1)!).toContain('(circular imports)')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {

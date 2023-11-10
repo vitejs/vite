@@ -142,6 +142,7 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
+type HasDeadEnd = boolean | string
 export function updateModules(
   file: string,
   modules: ModuleNode[],
@@ -152,7 +153,7 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   const traversedModules = new Set<ModuleNode>()
-  let needFullReload = false
+  let needFullReload: HasDeadEnd = false
 
   for (const mod of modules) {
     const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
@@ -165,7 +166,7 @@ export function updateModules(
     }
 
     if (hasDeadEnd) {
-      needFullReload = true
+      needFullReload = hasDeadEnd
       continue
     }
 
@@ -184,10 +185,14 @@ export function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
-      clear: !afterInvalidation,
-      timestamp: true,
-    })
+    const reason =
+      typeof needFullReload === 'string'
+        ? colors.dim(` (${needFullReload})`)
+        : ''
+    config.logger.info(
+      colors.green(`page reload `) + colors.dim(file) + reason,
+      { clear: !afterInvalidation, timestamp: true },
+    )
     ws.send({
       type: 'full-reload',
     })
@@ -254,7 +259,7 @@ function propagateUpdate(
   traversedModules: Set<ModuleNode>,
   boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[],
   currentChain: ModuleNode[] = [node],
-): boolean /* hasDeadEnd */ {
+): HasDeadEnd {
   if (traversedModules.has(node)) {
     return false
   }
@@ -274,9 +279,8 @@ function propagateUpdate(
 
   if (node.isSelfAccepting) {
     boundaries.push({ boundary: node, acceptedVia: node })
-    if (isNodeWithinCircularImports(node, currentChain)) {
-      return true
-    }
+    const result = isNodeWithinCircularImports(node, currentChain)
+    if (result) return result
 
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
@@ -301,9 +305,8 @@ function propagateUpdate(
   // so that they do get the fresh imported module when/if they are reloaded.
   if (node.acceptedHmrExports) {
     boundaries.push({ boundary: node, acceptedVia: node })
-    if (isNodeWithinCircularImports(node, currentChain)) {
-      return true
-    }
+    const result = isNodeWithinCircularImports(node, currentChain)
+    if (result) return result
   } else {
     if (!node.importers.size) {
       return true
@@ -325,9 +328,8 @@ function propagateUpdate(
 
     if (importer.acceptedHmrDeps.has(node)) {
       boundaries.push({ boundary: importer, acceptedVia: node })
-      if (isNodeWithinCircularImports(importer, subChain)) {
-        return true
-      }
+      const result = isNodeWithinCircularImports(importer, subChain)
+      if (result) return result
       continue
     }
 
@@ -364,7 +366,7 @@ function isNodeWithinCircularImports(
   node: ModuleNode,
   nodeChain: ModuleNode[],
   currentChain: ModuleNode[] = [node],
-) {
+): HasDeadEnd {
   // To help visualize how each parameters work, imagine this import graph:
   //
   // A -> B -> C -> ACCEPTED -> D -> E -> NODE
@@ -405,19 +407,17 @@ function isNodeWithinCircularImports(
             importChain.map((m) => colors.dim(m.url)).join(' -> '),
         )
       }
-      return true
+      return 'circular imports'
     }
 
     // Continue recursively
-    if (
-      !currentChain.includes(importer) &&
-      isNodeWithinCircularImports(
+    if (!currentChain.includes(importer)) {
+      const result = isNodeWithinCircularImports(
         importer,
         nodeChain,
         currentChain.concat(importer),
       )
-    ) {
-      return true
+      if (result) return result
     }
   }
   return false
