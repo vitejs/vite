@@ -3,7 +3,11 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
-import type { ExportSpecifier, ImportSpecifier } from 'es-module-lexer'
+import type {
+  ParseError as EsModuleLexerParseError,
+  ExportSpecifier,
+  ImportSpecifier,
+} from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { stripLiteral } from 'strip-literal'
@@ -236,7 +240,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       source = stripBomTag(source)
       try {
         ;[imports, exports] = parseImports(source)
-      } catch (e: any) {
+      } catch (_e: unknown) {
+        const e = _e as EsModuleLexerParseError
         const { message, showCodeFrame } = createParseErrorInfo(
           importer,
           source,
