@@ -611,11 +611,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
           const isEntry = chunk.isEntry && isPureCssChunk
-          const cssAssetName = normalizePath(
-            !isEntry && chunk.facadeModuleId
-              ? path.relative(config.root, chunk.facadeModuleId)
-              : chunk.name,
-          )
+          const cssAssetName = ensureFileExt(chunk.name, '.css')
           const originalFilename = getChunkOriginalFileName(
             chunk,
             config.root,
@@ -641,9 +637,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           await thisTask
 
           // emit corresponding css file
-          const cssFileName = ensureFileExt(cssAssetName, '.css')
           const referenceId = this.emitFile({
-            name: path.basename(cssFileName),
+            name: cssAssetName,
             type: 'asset',
             source: chunkCSS,
           })
