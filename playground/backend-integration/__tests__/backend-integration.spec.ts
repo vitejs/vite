@@ -37,7 +37,7 @@ describe.runIf(isBuild)('build', () => {
     const cssAssetEntry = manifest['global.css']
     const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
-    const dirFooAssetEntry = manifest['../dynamic/foo.css'] // '\\' should not be used even on windows
+    const dirFooAssetEntry = manifest['../../dir/foo.css']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(cssAssetEntry?.file).not.toBeUndefined()
@@ -47,10 +47,9 @@ describe.runIf(isBuild)('build', () => {
     expect(scssAssetEntry?.isEntry).toEqual(true)
     expect(imgAssetEntry?.file).not.toBeUndefined()
     expect(imgAssetEntry?.isEntry).toBeUndefined()
-    expect(dirFooAssetEntry).not.toBeUndefined()
+    expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
     // use the entry name
-    expect(manifest['bar.css']).not.toBeUndefined()
-    expect(manifest['foo.css']).toBeUndefined()
+    expect(dirFooAssetEntry.file).toMatch('assets/bar-')
   })
 })
 
