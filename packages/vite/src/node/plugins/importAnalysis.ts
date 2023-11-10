@@ -10,7 +10,6 @@ import type {
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
-import { stripLiteral } from 'strip-literal'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
@@ -79,13 +78,6 @@ const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 const hasImportInQueryParamsRE = /[?&]import=?\b/
 
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
-
-const trimWhitespaceRE = /^(\s*)(\S|\S[\s\S]*\S)\s*$/
-const trimWhitespaceAndComments = (code: string) => {
-  const cleanedCode = stripLiteral(code)
-  const match = trimWhitespaceRE.exec(cleanedCode)
-  return match ? code.slice(match[1].length, match[2].length) : code
-}
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
 
@@ -663,13 +655,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (!ssr) {
-              const url = trimWhitespaceAndComments(rawUrl)
               if (
-                !urlIsStringRE.test(url) ||
-                isExplicitImportRequired(url.slice(1, -1))
+                !urlIsStringRE.test(rawUrl) ||
+                isExplicitImportRequired(rawUrl.slice(1, -1))
               ) {
                 needQueryInjectHelper = true
-                // Use rawUrl to avoid removing comments like @vite-ignore
                 str().overwrite(
                   start,
                   end,
