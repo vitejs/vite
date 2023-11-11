@@ -1,3 +1,21 @@
+## 5.0.0-beta.18 (2023-11-11)
+
+* fix: `server.headers` after restart in middleware mode (#14905) ([f9ce9db](https://github.com/vitejs/vite/commit/f9ce9db)), closes [#14905](https://github.com/vitejs/vite/issues/14905)
+* fix: add watch in fallback file load (#14938) ([b24b951](https://github.com/vitejs/vite/commit/b24b951)), closes [#14938](https://github.com/vitejs/vite/issues/14938)
+* fix: injectQuery check with double slash in the url (#14910) ([84c5ff6](https://github.com/vitejs/vite/commit/84c5ff6)), closes [#14910](https://github.com/vitejs/vite/issues/14910)
+* fix(build): make build error message clearer (#14761) ([350b4b2](https://github.com/vitejs/vite/commit/350b4b2)), closes [#14761](https://github.com/vitejs/vite/issues/14761)
+* fix(css): correctly set manifest source name and emit CSS file (#14945) ([28ccede](https://github.com/vitejs/vite/commit/28ccede)), closes [#14945](https://github.com/vitejs/vite/issues/14945)
+* fix(server): the server restart port should remain unchanged (#14418) ([8b96e97](https://github.com/vitejs/vite/commit/8b96e97)), closes [#14418](https://github.com/vitejs/vite/issues/14418)
+* fix(worker): prevent inject esm in classic workers (#14918) ([2687dbb](https://github.com/vitejs/vite/commit/2687dbb)), closes [#14918](https://github.com/vitejs/vite/issues/14918)
+* feat: add invalid `rollupOptions` warnings (#14909) ([7c240a0](https://github.com/vitejs/vite/commit/7c240a0)), closes [#14909](https://github.com/vitejs/vite/issues/14909)
+* feat: skip initial clear screen if has logs (#14936) ([a92bc61](https://github.com/vitejs/vite/commit/a92bc61)), closes [#14936](https://github.com/vitejs/vite/issues/14936)
+* feat(hmr): add full reload reason (#14914) ([60a020e](https://github.com/vitejs/vite/commit/60a020e)), closes [#14914](https://github.com/vitejs/vite/issues/14914)
+* feat(hmr): improve circular import updates (#14867) ([b479055](https://github.com/vitejs/vite/commit/b479055)), closes [#14867](https://github.com/vitejs/vite/issues/14867)
+* refactor: update es-module-lexer to 1.4.0 (#14937) ([374e6fd](https://github.com/vitejs/vite/commit/374e6fd)), closes [#14937](https://github.com/vitejs/vite/issues/14937)
+* revert: remove AsyncDisposable (#14908) ([b953b0d](https://github.com/vitejs/vite/commit/b953b0d)), closes [#14908](https://github.com/vitejs/vite/issues/14908)
+
+
+
 ## 5.0.0-beta.17 (2023-11-07)
 
 * fix: file link in overlay with custom backend (#14879) ([1bfb584](https://github.com/vitejs/vite/commit/1bfb584)), closes [#14879](https://github.com/vitejs/vite/issues/14879)
