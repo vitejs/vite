@@ -4,6 +4,7 @@ import './sugarss.sss'
 import './sass.scss'
 import './less.less'
 import './stylus.styl'
+import './manual-chunk.css'
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)

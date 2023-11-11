@@ -1,5 +1,4 @@
 import 'vite/modulepreload-polyfill'
-import('../dynamic/foo') // should be dynamic import to split chunks
 
 export const colorClass = 'text-black'
 

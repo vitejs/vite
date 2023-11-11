@@ -508,3 +508,10 @@ test('async css order with css modules', async () => {
 test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
+
+test.runIf(isBuild)('manual chunk path', async () => {
+  // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
+  expect(
+    findAssetFile(/dir\/dir2\/manual-chunk-[-\w]{8}\.css$/),
+  ).not.toBeUndefined()
+})
