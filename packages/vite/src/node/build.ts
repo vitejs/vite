@@ -264,6 +264,11 @@ export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export interface ModulePreloadOptions {
   /**
+   * Whether to add crossorigin attribute to dynamic imported JS link preloads, accepts boolean or string value used by link tag
+   * @default true
+   */
+  crossOrigin?: boolean | 'anonymous' | 'use-credentials'
+  /**
    * Whether to inject a module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
@@ -276,6 +281,7 @@ export interface ModulePreloadOptions {
   resolveDependencies?: ResolveModulePreloadDependenciesFn
 }
 export interface ResolvedModulePreloadOptions {
+  crossOrigin: boolean | 'anonymous' | 'use-credentials'
   polyfill: boolean
   resolveDependencies?: ResolveModulePreloadDependenciesFn
 }
@@ -318,6 +324,7 @@ export function resolveBuildOptions(
 
   const modulePreload = raw?.modulePreload
   const defaultModulePreload = {
+    crossOrigin: true,
     polyfill: true,
   }
 
