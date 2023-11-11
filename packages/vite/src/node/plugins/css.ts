@@ -70,6 +70,7 @@ import {
   renderAssetUrlInJS,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
+import { getChunkOriginalFileName } from './manifest'
 
 // const debug = createDebugger('vite:css')
 
@@ -610,14 +611,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
           const isEntry = chunk.isEntry && isPureCssChunk
-          const cssAssetName = normalizePath(
-            !isEntry && chunk.facadeModuleId
-              ? path.relative(config.root, chunk.facadeModuleId)
-              : chunk.name,
+          const cssAssetName = ensureFileExt(chunk.name, '.css')
+          const originalFilename = getChunkOriginalFileName(
+            chunk,
+            config.root,
+            opts.format,
           )
-
-          const lang = path.extname(cssAssetName).slice(1)
-          const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
@@ -639,14 +638,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           // emit corresponding css file
           const referenceId = this.emitFile({
-            name: path.basename(cssFileName),
+            name: cssAssetName,
             type: 'asset',
             source: chunkCSS,
           })
-          const originalName = isPreProcessor(lang) ? cssAssetName : cssFileName
           generatedAssets
             .get(config)!
-            .set(referenceId, { originalName, isEntry })
+            .set(referenceId, { originalName: originalFilename, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
 
           if (emitTasksLength === emitTasks.length) {
