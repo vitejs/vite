@@ -701,6 +701,7 @@ export async function build(
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
+    fs.rmSync(outDir, { recursive: true, force: true })
     throw e
   } finally {
     if (bundle) await bundle.close()
