@@ -126,6 +126,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           const assetMeta = fileNameToAssetMeta.get(chunk.fileName)
           const src = assetMeta?.originalName ?? chunk.name
           const asset = createAsset(chunk, src, assetMeta?.isEntry)
+
+          // If JS chunk and asset chunk are both generated from the same source file,
+          // prioritize JS chunk as it contains more information
+          if (manifest[src]?.file.endsWith('.js')) continue
           manifest[src] = asset
           fileNameToAsset.set(chunk.fileName, asset)
         }
