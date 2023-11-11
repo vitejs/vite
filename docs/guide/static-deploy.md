@@ -118,6 +118,14 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
            uses: actions/deploy-pages@v2
    ```
 
+3. If you're deploying to GitHub Pages with a custom domain (eg. `www.example.com`), the following steps may need to be taken to avoid errors.
+
+   Set the `base` in `vite.config.js` to `'/'`.
+
+   Ensure that your `index.html` correctly points to the root file by adding a `.` in front of the path (eg. `./src/main.jsx`).
+
+   Set the `homepage` property in your `package.json` to `https://<USERNAME>.github.io/<REPO>/`.
+
 ## GitLab Pages and GitLab CI
 
 1. Set the correct `base` in `vite.config.js`.
