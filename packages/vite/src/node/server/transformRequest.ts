@@ -12,6 +12,7 @@ import {
   blankReplacer,
   cleanUrl,
   createDebugger,
+  ensureWatchedFile,
   injectQuery,
   isObject,
   prettifyUrl,
@@ -220,6 +221,7 @@ async function loadAndTransform(
           throw e
         }
       }
+      ensureWatchedFile(server.watcher, file, config.root)
     }
     if (code) {
       try {
