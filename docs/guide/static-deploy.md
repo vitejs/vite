@@ -58,9 +58,9 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 1. Set the correct `base` in `vite.config.js`.
 
-   If you are deploying to `https://<USERNAME>.github.io/`, you can omit `base` as it defaults to `'/'`.
+   If you are deploying to `https://<USERNAME>.github.io/`, or to a custom domain through GitHub Pages (eg. `www.example.com`), set `base` to `'/'`.
 
-   If you are deploying to `https://<USERNAME>.github.io/<REPO>/`, for example your repository is at `https://github.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
+   If you are deploying to `https://<USERNAME>.github.io/<REPO>/` (eg. your repository is at `https://github.com/<USERNAME>/<REPO>`), then set `base` to `'/<REPO>/'`.
 
 2. Go to your GitHub Pages configuration in the repository settings page and choose the source of deployment as "GitHub Actions", this will lead you to create a workflow that builds and deploys your project, a sample workflow that installs dependencies and builds using npm is provided:
 
@@ -117,14 +117,6 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
            id: deployment
            uses: actions/deploy-pages@v2
    ```
-
-3. If you're deploying to GitHub Pages with a custom domain (eg. `www.example.com`), the following steps may need to be taken to avoid errors.
-
-   Set the `base` in `vite.config.js` to `'/'`.
-
-   Ensure that your `index.html` correctly points to the root file by adding a `.` in front of the path (eg. `./src/main.jsx`).
-
-   Set the `homepage` property in your `package.json` to `https://<USERNAME>.github.io/<REPO>/`.
 
 ## GitLab Pages and GitLab CI
 
