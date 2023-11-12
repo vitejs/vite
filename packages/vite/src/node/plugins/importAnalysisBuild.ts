@@ -54,7 +54,7 @@ const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
-  const relPath = path.relative(path.dirname(importer), filename)
+  const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
@@ -477,13 +477,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               return index
             }
           }
-          const getFileDep = (index: number): FileDep => {
-            const fileDep = fileDeps[index]
-            if (!fileDep) {
-              throw new Error(`Cannot find file dep at index ${index}`)
-            }
-            return fileDep
-          }
 
           if (imports.length) {
             for (let index = 0; index < imports.length; index++) {
@@ -502,7 +495,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<number> = new Set()
+              const deps: Set<string> = new Set()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined
@@ -522,12 +515,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(addFileDep(chunk.fileName))
+                    deps.add(chunk.fileName)
                     chunk.imports.forEach(addDeps)
                     // Ensure that the css imported by current chunk is loaded after the dependencies.
                     // So the style of current chunk won't be overwritten unexpectedly.
                     chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.add(addFileDep(file))
+                      deps.add(file)
                     })
                   } else {
                     const removedPureCssFiles =
@@ -536,7 +529,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     if (chunk) {
                       if (chunk.viteMetadata!.importedCss.size) {
                         chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(addFileDep(file))
+                          deps.add(file)
                         })
                         hasRemovedPureCssChunk = true
                       }
@@ -570,9 +563,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ? modulePreload === false
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
                         // we still need to pass these deps to the preload helper in dynamic imports.
-                        [...deps].filter((d) =>
-                          getFileDep(d).url.endsWith('.css'),
-                        )
+                        [...deps].filter((d) => d.endsWith('.css'))
                       : [...deps]
                     : []
 
@@ -582,37 +573,29 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   const resolveDependencies = modulePreload
                     ? modulePreload.resolveDependencies
                     : undefined
-                  let resolvedDeps: number[]
+                  let resolvedDeps: string[]
                   if (resolveDependencies) {
                     // We can't let the user remove css deps as these aren't really preloads, they are just using
                     // the same mechanism as module preloads for this chunk
-                    const cssDeps: number[] = []
-                    const otherDeps: number[] = []
+                    const cssDeps: string[] = []
+                    const otherDeps: string[] = []
                     for (const dep of depsArray) {
-                      if (getFileDep(dep).url.endsWith('.css')) {
-                        cssDeps.push(dep)
-                      } else {
-                        otherDeps.push(dep)
-                      }
+                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                     }
                     resolvedDeps = [
-                      ...resolveDependencies(
-                        normalizedFile,
-                        otherDeps.map((otherDep) => getFileDep(otherDep).url),
-                        {
-                          hostId: file,
-                          hostType: 'js',
-                        },
-                      ).map((otherDep) => addFileDep(otherDep)),
+                      ...resolveDependencies(normalizedFile, otherDeps, {
+                        hostId: file,
+                        hostType: 'js',
+                      }),
                       ...cssDeps,
                     ]
                   } else {
                     resolvedDeps = depsArray
                   }
 
-                  renderedDeps = resolvedDeps.map((dep: number) => {
+                  renderedDeps = resolvedDeps.map((dep) => {
                     const replacement = toOutputFilePathInJS(
-                      getFileDep(dep).url,
+                      dep,
                       'asset',
                       chunk.fileName,
                       'js',
@@ -631,8 +614,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
                     optimizeModulePreloadRelativePaths
-                      ? addFileDep(toRelativePath(getFileDep(d).url, file))
-                      : d,
+                      ? addFileDep(toRelativePath(d, file))
+                      : addFileDep(d),
                   )
                 }
 
