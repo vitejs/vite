@@ -141,6 +141,17 @@ export const assetAttrsConfig: Record<string, string[]> = {
   use: ['xlink:href', 'href'],
 }
 
+// Some `<link rel>` elements should not be inlined in build. Excluding:
+// - `shortcut icon`                : deprecated, use `icon` only
+// - `mask-icon`                    : deprecated since Safari 12 (for pinned tabs)
+// - `apple-touch-icon-precomposed` : only valid for iOS <7 (for avoiding gloss effect)
+const noInlineLinkRels = new Set([
+  'icon',
+  'apple-touch-icon',
+  'apple-touch-startup-image',
+  'manifest',
+])
+
 export const isAsyncScriptMap = new WeakMap<
   ResolvedConfig,
   Map<string, boolean>
@@ -382,14 +393,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const namedOutput = Object.keys(
           config?.build?.rollupOptions?.input || {},
         )
-        const processAssetUrl = async (url: string) => {
+        const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
             !namedOutput.includes(url) && // Direct reference to named output
             !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
-              return await urlToBuiltUrl(url, id, config, this)
+              return await urlToBuiltUrl(url, id, config, this, shouldInline)
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e
@@ -518,9 +529,21 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       })
                       js += importExpression
                     } else {
+                      // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+                      // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+                      const isNoInlineLink =
+                        node.nodeName === 'link' &&
+                        node.attrs.some(
+                          (p) =>
+                            p.name === 'rel' && noInlineLinkRels.has(p.value),
+                        )
+                      const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(
                         (async () => {
-                          const processedUrl = await processAssetUrl(url)
+                          const processedUrl = await processAssetUrl(
+                            url,
+                            shouldInline,
+                          )
                           if (processedUrl !== url) {
                             overwriteAttrValue(
                               s,
