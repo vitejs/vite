@@ -82,7 +82,7 @@ import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
-import type { ModuleGraph } from './moduleGraph'
+import type { ModuleGraph, ModuleNode } from './moduleGraph'
 
 const noop = () => {}
 
@@ -182,6 +182,11 @@ export async function createPluginContainer(
   // ---------------------------------------------------------------------------
 
   const watchFiles = new Set<string>()
+  // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
+  const moduleNodeToLoadAddedImports = new WeakMap<
+    ModuleNode,
+    Set<string> | null
+  >()
 
   const minimalContext: MinimalPluginContext = {
     meta: {
@@ -270,6 +275,13 @@ export async function createPluginContainer(
       if (moduleInfo) {
         moduleInfo.meta = { ...moduleInfo.meta, ...meta }
       }
+    }
+  }
+
+  function updateModuleLoadAddedImports(id: string, ctx: Context) {
+    const module = moduleGraph?.getModuleById(id)
+    if (module) {
+      moduleNodeToLoadAddedImports.set(module, ctx._addedImports)
     }
   }
 
@@ -526,9 +538,9 @@ export async function createPluginContainer(
     sourcemapChain: NonNullable<SourceDescription['map']>[] = []
     combinedMap: SourceMap | { mappings: '' } | null = null
 
-    constructor(filename: string, code: string, inMap?: SourceMap | string) {
+    constructor(id: string, code: string, inMap?: SourceMap | string) {
       super()
-      this.filename = filename
+      this.filename = id
       this.originalCode = code
       if (inMap) {
         if (debugSourcemapCombine) {
@@ -536,6 +548,11 @@ export async function createPluginContainer(
           inMap.name = '$inMap'
         }
         this.sourcemapChain.push(inMap)
+      }
+      // Inherit `_addedImports` from the `load()` hook
+      const node = moduleGraph?.getModuleById(id)
+      if (node) {
+        this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
     }
 
@@ -725,9 +742,11 @@ export async function createPluginContainer(
           if (isObject(result)) {
             updateModuleInfo(id, result)
           }
+          updateModuleLoadAddedImports(id, ctx)
           return result
         }
       }
+      updateModuleLoadAddedImports(id, ctx)
       return null
     },
 
