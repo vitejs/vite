@@ -82,7 +82,7 @@ import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
-import type { ModuleGraph } from './moduleGraph'
+import type { ModuleGraph, ModuleNode } from './moduleGraph'
 
 const noop = () => {}
 
@@ -183,7 +183,10 @@ export async function createPluginContainer(
 
   const watchFiles = new Set<string>()
   // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
-  const idToAddedImports = new Map<string, Set<string> | null>()
+  const moduleNodeToLoadAddedImports = new WeakMap<
+    ModuleNode,
+    Set<string> | null
+  >()
 
   const minimalContext: MinimalPluginContext = {
     meta: {
@@ -272,6 +275,13 @@ export async function createPluginContainer(
       if (moduleInfo) {
         moduleInfo.meta = { ...moduleInfo.meta, ...meta }
       }
+    }
+  }
+
+  function updateModuleLoadAddedImports(id: string, ctx: Context) {
+    const module = moduleGraph?.getModuleById(id)
+    if (module) {
+      moduleNodeToLoadAddedImports.set(module, ctx._addedImports)
     }
   }
 
@@ -533,6 +543,11 @@ export async function createPluginContainer(
         }
         this.sourcemapChain.push(inMap)
       }
+      // Inherit `_addedImports` from the `load()` hook
+      const node = moduleGraph?.getModuleById(id)
+      if (node) {
+        this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
+      }
     }
 
     _getCombinedSourcemap() {
@@ -699,7 +714,6 @@ export async function createPluginContainer(
 
       if (id) {
         partial.id = isExternalUrl(id) ? id : normalizePath(id)
-        idToAddedImports.set(partial.id, ctx._addedImports)
         return partial as PartialResolvedId
       } else {
         return null
@@ -710,8 +724,6 @@ export async function createPluginContainer(
       const ssr = options?.ssr
       const ctx = new Context()
       ctx.ssr = !!ssr
-      // Inherit `_addedImports` from `resolveId()` hook
-      ctx._addedImports = idToAddedImports.get(id) ?? null
       for (const plugin of getSortedPlugins('load')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
@@ -724,11 +736,11 @@ export async function createPluginContainer(
           if (isObject(result)) {
             updateModuleInfo(id, result)
           }
-          idToAddedImports.set(id, ctx._addedImports)
+          updateModuleLoadAddedImports(id, ctx)
           return result
         }
       }
-      idToAddedImports.set(id, ctx._addedImports)
+      updateModuleLoadAddedImports(id, ctx)
       return null
     },
 
@@ -737,8 +749,6 @@ export async function createPluginContainer(
       const ssr = options?.ssr
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
-      // Inherit `_addedImports` from `load()` hook
-      ctx._addedImports = idToAddedImports.get(id) ?? null
       for (const plugin of getSortedPlugins('transform')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue

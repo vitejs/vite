@@ -9,7 +9,4 @@ test('should re-run transform when dependencies are edited', async () => {
 
   editFile('plugin-dep-load.js', (str) => str)
   await untilUpdated(() => page.textContent('#transform-count'), '3')
-
-  editFile('plugin-dep-resolve-id.js', (str) => str)
-  await untilUpdated(() => page.textContent('#transform-count'), '3')
 })
