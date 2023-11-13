@@ -8,7 +8,7 @@ export const systemJSInlineCode = `System.import(document.getElementById('${lega
 
 const detectModernBrowserVarName = '__vite_is_modern_browser'
 export const detectModernBrowserDetector =
-  'import.meta.url;import("_").catch(()=>1);async function* g(){};'
+  'import.meta.url;import("_").catch(()=>1);(async function* g(){})();'
 export const detectModernBrowserCode = `${detectModernBrowserDetector}if(location.protocol!="file:"){window.${detectModernBrowserVarName}=true}`
 export const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
