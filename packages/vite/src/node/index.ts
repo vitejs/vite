@@ -83,6 +83,8 @@ export type {
   LogType,
   LoggerOptions,
 } from './logger'
+export type { Options as WatchOptions } from '@parcel/watcher'
+export type { Watcher, Watcher as FSWatcher } from './watch'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
@@ -155,11 +157,6 @@ export type {
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
 export type { HttpProxy } from 'dep-types/http-proxy'
-export type {
-  FSWatcher,
-  WatchOptions,
-  AwaitWriteFinishOptions,
-} from 'dep-types/chokidar'
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
