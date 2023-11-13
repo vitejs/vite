@@ -32,7 +32,7 @@ describe('plugin container', () => {
         },
         load(id) {
           if (id === entryUrl) {
-            const { meta } = this.getModuleInfo(entryUrl)
+            const { meta } = this.getModuleInfo(entryUrl) ?? {}
             metaArray.push(meta)
 
             return { code: 'export {}', meta: { x: 2 } }
@@ -40,14 +40,14 @@ describe('plugin container', () => {
         },
         transform(code, id) {
           if (id === entryUrl) {
-            const { meta } = this.getModuleInfo(entryUrl)
+            const { meta } = this.getModuleInfo(entryUrl) ?? {}
             metaArray.push(meta)
 
             return { meta: { x: 3 } }
           }
         },
         buildEnd() {
-          const { meta } = this.getModuleInfo(entryUrl)
+          const { meta } = this.getModuleInfo(entryUrl) ?? {}
           metaArray.push(meta)
         },
       }
@@ -84,7 +84,7 @@ describe('plugin container', () => {
         name: 'p2',
         load(id) {
           if (id === entryUrl) {
-            const { meta } = this.getModuleInfo(entryUrl)
+            const { meta } = this.getModuleInfo(entryUrl) ?? {}
             expect(meta).toEqual({ x: 1 })
             return null
           }
