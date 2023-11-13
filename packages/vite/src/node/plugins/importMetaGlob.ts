@@ -386,8 +386,8 @@ export async function transformGlobImport(
           let query = !options.query
             ? ''
             : typeof options.query === 'string'
-            ? options.query
-            : stringifyQuery(options.query as any)
+              ? options.query
+              : stringifyQuery(options.query as any)
 
           if (query && query[0] !== '?') query = `?${query}`
 

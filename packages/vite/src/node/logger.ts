@@ -80,8 +80,8 @@ export function createLogger(
             type === 'info'
               ? colors.cyan(colors.bold(prefix))
               : type === 'warn'
-              ? colors.yellow(colors.bold(prefix))
-              : colors.red(colors.bold(prefix))
+                ? colors.yellow(colors.bold(prefix))
+                : colors.red(colors.bold(prefix))
           return `${colors.dim(timeFormatter.format(new Date()))} ${tag} ${msg}`
         } else {
           return msg

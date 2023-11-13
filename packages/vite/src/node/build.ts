@@ -367,11 +367,11 @@ export function resolveBuildOptions(
       modulePreload === false
         ? false
         : typeof modulePreload === 'object'
-        ? {
-            ...defaultModulePreload,
-            ...modulePreload,
-          }
-        : defaultModulePreload,
+          ? {
+              ...defaultModulePreload,
+              ...modulePreload,
+            }
+          : defaultModulePreload,
   }
 
   // handle special build targets
@@ -483,16 +483,16 @@ export async function build(
       (typeof libOptions.entry === 'string'
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
-        ? libOptions.entry.map(resolve)
-        : Object.fromEntries(
-            Object.entries(libOptions.entry).map(([alias, file]) => [
-              alias,
-              resolve(file),
-            ]),
-          ))
+          ? libOptions.entry.map(resolve)
+          : Object.fromEntries(
+              Object.entries(libOptions.entry).map(([alias, file]) => [
+                alias,
+                resolve(file),
+              ]),
+            ))
     : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
+      ? resolve(options.ssr)
+      : options.rollupOptions?.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
@@ -505,8 +505,8 @@ export async function build(
       typeof input === 'string'
         ? [input]
         : Array.isArray(input)
-        ? input
-        : Object.values(input)
+          ? input
+          : Object.values(input)
     if (inputs.some((input) => input.endsWith('.css'))) {
       throw new Error(
         `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
@@ -529,8 +529,8 @@ export async function build(
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
-      ? 'strict'
-      : false,
+        ? 'strict'
+        : false,
     cache: config.build.watch ? undefined : false,
     ...options.rollupOptions,
     input,
@@ -607,16 +607,16 @@ export async function build(
         entryFileNames: ssr
           ? `[name].${jsExt}`
           : libOptions
-          ? ({ name }) =>
-              resolveLibFilename(
-                libOptions,
-                format,
-                name,
-                config.root,
-                jsExt,
-                config.packageCache,
-              )
-          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+            ? ({ name }) =>
+                resolveLibFilename(
+                  libOptions,
+                  format,
+                  name,
+                  config.root,
+                  jsExt,
+                  config.packageCache,
+                )
+            : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name]-[hash].${jsExt}`
           : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
