@@ -605,6 +605,24 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       addToMap(newListeners)
     },
 
+    // remove a custom event
+    off(event, cb) {
+      const removeFromMap = (map: Map<string, any[]>) => {
+        const existing = map.get(event)
+        if (existing === undefined) {
+          return
+        }
+        const pruned = existing.filter((l) => l !== cb)
+        if (pruned.length === 0) {
+          map.delete(event)
+          return
+        }
+        map.set(event, pruned)
+      }
+      removeFromMap(customListenersMap)
+      removeFromMap(newListeners)
+    },
+
     send(event, data) {
       messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
       sendMessageBuffer()
@@ -624,7 +642,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
+  const pathname = url.replace(/[?#].*$/s, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${

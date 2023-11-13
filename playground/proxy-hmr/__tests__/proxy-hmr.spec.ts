@@ -1,8 +1,19 @@
 import { test } from 'vitest'
-import { editFile, page, untilUpdated, viteTestUrl } from '~utils'
+import {
+  editFile,
+  page,
+  untilBrowserLogAfter,
+  untilUpdated,
+  viteTestUrl,
+} from '~utils'
 
 test('proxy-hmr', async () => {
-  await page.goto(viteTestUrl)
+  await untilBrowserLogAfter(
+    () => page.goto(viteTestUrl),
+    // wait for both main and sub app HMR connection
+    [/connected/, /connected/],
+  )
+
   const otherAppTextLocator = page.frameLocator('iframe').locator('.content')
   await untilUpdated(() => otherAppTextLocator.textContent(), 'other app')
   editFile('other-app/index.html', (code) =>
