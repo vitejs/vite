@@ -1,4 +1,4 @@
-import aliasPlugin from '@rollup/plugin-alias'
+import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
@@ -51,7 +51,10 @@ export async function resolvePlugins(
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
-    aliasPlugin({ entries: config.resolve.alias }),
+    aliasPlugin({
+      entries: config.resolve.alias,
+      customResolver: viteAliasCustomResolver,
+    }),
     ...prePlugins,
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
@@ -160,4 +163,15 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+// Same as `@rollup/plugin-alias` default resolver, but we attach additional meta
+// if we can't resolve to something, which will error in `importAnalysis`
+export const viteAliasCustomResolver: ResolverFunction = async function (
+  id,
+  importer,
+  options,
+) {
+  const resolved = await this.resolve(id, importer, options)
+  return resolved || { id, meta: { 'vite:alias': { noResolved: true } } }
 }
