@@ -192,13 +192,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
       `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
-    ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-      // The importerUrl is passed as third parameter to __vitePreload in this case
-      `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-    : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appended inside __vitePreload too.
-      `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
+        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+        // The importerUrl is passed as third parameter to __vitePreload in this case
+        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+        // is appended inside __vitePreload too.
+        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {

@@ -697,10 +697,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             isSelfAccepting
               ? `[self-accepts]`
               : isPartiallySelfAccepting
-              ? `[accepts-exports]`
-              : acceptedUrls.size
-              ? `[accepts-deps]`
-              : `[detected api usage]`
+                ? `[accepts-exports]`
+                : acceptedUrls.size
+                  ? `[accepts-deps]`
+                  : `[detected api usage]`
           } ${prettyImporter}`,
         )
         // inject hot context
@@ -819,14 +819,14 @@ export function createParseErrorInfo(
   const msg = isVue
     ? `Install @vitejs/plugin-vue to handle .vue files.`
     : maybeJSX
-    ? isJsx
-      ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
-      : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
-    : `You may need to install appropriate plugins to handle the ${path.extname(
-        importer,
-      )} file format, or if it's an asset, add "**/*${path.extname(
-        importer,
-      )}" to \`assetsInclude\` in your configuration.`
+      ? isJsx
+        ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
+        : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
+      : `You may need to install appropriate plugins to handle the ${path.extname(
+          importer,
+        )} file format, or if it's an asset, add "**/*${path.extname(
+          importer,
+        )}" to \`assetsInclude\` in your configuration.`
 
   return {
     message:
