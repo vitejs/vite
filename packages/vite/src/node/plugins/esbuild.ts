@@ -322,8 +322,8 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
           opts.format === 'iife'
             ? esbuildCode.match(IIFE_BEGIN_RE)?.index || 0
             : opts.format === 'umd'
-            ? esbuildCode.indexOf(`(function(`) // same for minified or not
-            : 0
+              ? esbuildCode.indexOf(`(function(`) // same for minified or not
+              : 0
         if (contentIndex > 0) {
           const esbuildHelpers = esbuildCode.slice(0, contentIndex)
           res.code = esbuildCode
