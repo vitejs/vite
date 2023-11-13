@@ -172,6 +172,6 @@ export const viteAliasCustomResolver: ResolverFunction = async function (
   importer,
   options,
 ) {
-  const resolved = this.resolve(id, importer, options)
+  const resolved = await this.resolve(id, importer, options)
   return resolved || { id, meta: { 'vite:alias': { noResolved: true } } }
 }
