@@ -184,6 +184,38 @@ describe('plugin container', () => {
       const result: any = await container.transform(loadResult.code, entryUrl)
       expect(result.code).equals('2')
     })
+
+    it('will load and transform the module', async () => {
+      const entryUrl = '/x.js'
+      const otherUrl = '/y.js'
+
+      const plugin: Plugin = {
+        name: 'p1',
+        resolveId(id) {
+          return id
+        },
+        load(id) {
+          if (id === entryUrl) return { code: '1' }
+          else if (id === otherUrl) return { code: '2', meta: { code: '2' } }
+        },
+        async transform(code, id) {
+          if (id === entryUrl) {
+            // NOTE: ModuleInfo.code not implemented, used `.meta.code` for now
+            return (await this.load({ id: otherUrl }))?.meta.code
+          } else if (id === otherUrl) {
+            return { code: '3', meta: { code: '3' } }
+          }
+        },
+      }
+
+      const container = await getPluginContainer({
+        plugins: [plugin],
+      })
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await container.load(entryUrl)
+      const result: any = await container.transform(loadResult.code, entryUrl)
+      expect(result.code).equals('3')
+    })
   })
 })
 
