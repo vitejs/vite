@@ -81,6 +81,10 @@ pre.frame::-webkit-scrollbar-thumb {
   border-radius: 5px;
 }
 
+pre.frame {
+  scrollbar-width: thin;
+}
+
 .message {
   line-height: 1.3;
   font-weight: 600;
@@ -160,7 +164,7 @@ kbd {
 </div>
 `
 
-const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+const fileRE = /(?:[a-z]:\\|\/).*?:\d+:\d+/gi
 const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
