@@ -357,6 +357,7 @@ export function resolveEsbuildTranspileOptions(
   const options: TransformOptions = {
     charset: 'utf8',
     ...esbuildOptions,
+    loader: 'js',
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],
     // the final build should always support dynamic import and import.meta.
