@@ -57,10 +57,10 @@ Barrel files are files that re-export the APIs of other files in the same direct
 // src/utils/index.js
 export * from './color.js'
 export * from './dom.js'
-export * from './string.js'
+export * from './slash.js'
 ```
 
-When you only import an individual API, e.g. `import { slash } from './utils.js'`, all the files in that barrel file need to be fetched and transformed as they may contain the `slash` API and may also contain side-effects that run on initialization. This means you're loading more files than required on the initial page load, resulting in a slower page load.
+When you only import an individual API, e.g. `import { slash } from './utils'`, all the files in that barrel file need to be fetched and transformed as they may contain the `slash` API and may also contain side-effects that run on initialization. This means you're loading more files than required on the initial page load, resulting in a slower page load.
 
 If possible, you should avoid barrel files and import the individual APIs directly, e.g. `import { slash } from './utils/slash.js'`. You can read [issue #8237](https://github.com/vitejs/vite/issues/8237) for more information.
 
