@@ -1,3 +1,18 @@
+## 5.0.0-beta.19 (2023-11-14)
+
+* style(client): overlay frame show scrollbar (#14701) ([8aa4134](https://github.com/vitejs/vite/commit/8aa4134)), closes [#14701](https://github.com/vitejs/vite/issues/14701)
+* fix: don't watch SPA fallback paths (#14953) ([24c2c57](https://github.com/vitejs/vite/commit/24c2c57)), closes [#14953](https://github.com/vitejs/vite/issues/14953)
+* fix: handle addWatchFile in load hooks (#14967) ([a0ab85b](https://github.com/vitejs/vite/commit/a0ab85b)), closes [#14967](https://github.com/vitejs/vite/issues/14967)
+* fix: preload marker duplicate deps (#14955) ([55335cc](https://github.com/vitejs/vite/commit/55335cc)), closes [#14955](https://github.com/vitejs/vite/issues/14955)
+* fix: relax overlay frame regex (#14979) ([0b325bb](https://github.com/vitejs/vite/commit/0b325bb)), closes [#14979](https://github.com/vitejs/vite/issues/14979)
+* fix(deps): update all non-major dependencies (#14961) ([0bb3995](https://github.com/vitejs/vite/commit/0bb3995)), closes [#14961](https://github.com/vitejs/vite/issues/14961)
+* fix(esbuild): set js loader for build transpile (#14980) ([80beede](https://github.com/vitejs/vite/commit/80beede)), closes [#14980](https://github.com/vitejs/vite/issues/14980)
+* fix(pluginContainer): run transform in this.load (#14965) ([3f57b05](https://github.com/vitejs/vite/commit/3f57b05)), closes [#14965](https://github.com/vitejs/vite/issues/14965)
+* feat: error when failed to resolve aliased import (#14973) ([6a564fa](https://github.com/vitejs/vite/commit/6a564fa)), closes [#14973](https://github.com/vitejs/vite/issues/14973)
+* build: dont strip single line comments (#14969) ([ea9ccb7](https://github.com/vitejs/vite/commit/ea9ccb7)), closes [#14969](https://github.com/vitejs/vite/issues/14969)
+
+
+
 ## 5.0.0-beta.18 (2023-11-11)
 
 * fix: `server.headers` after restart in middleware mode (#14905) ([f9ce9db](https://github.com/vitejs/vite/commit/f9ce9db)), closes [#14905](https://github.com/vitejs/vite/issues/14905)
