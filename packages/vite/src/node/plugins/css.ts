@@ -1207,6 +1207,7 @@ async function compileCSS(
     e.message = `[postcss] ${e.message}`
     e.code = code
     e.loc = {
+      file: e.file,
       column: e.column,
       line: e.line,
     }
