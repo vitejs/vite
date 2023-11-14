@@ -511,7 +511,7 @@ export function generateCodeFrame(
   let count = 0
   const res: string[] = []
   for (let i = 0; i < lines.length; i++) {
-    count += lines[i].length + 1
+    count += lines[i].length
     if (count >= start) {
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
@@ -524,7 +524,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength) + 1, 0)
+          const pad = Math.max(start - (count - lineLength), 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start,
@@ -540,6 +540,7 @@ export function generateCodeFrame(
       }
       break
     }
+    count++
   }
   return res.join('\n')
 }
