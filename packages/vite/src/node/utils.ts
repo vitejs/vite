@@ -460,10 +460,14 @@ export function pad(source: string, n = 2): string {
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
 
-export function posToNumber(
-  source: string,
-  pos: number | { line: number; column: number },
-): number {
+type Pos = {
+  /** 1-based */
+  line: number
+  /** 0-based */
+  column: number
+}
+
+export function posToNumber(source: string, pos: number | Pos): number {
   if (typeof pos === 'number') return pos
   const lines = source.split(splitRE)
   const { line, column } = pos
@@ -474,10 +478,7 @@ export function posToNumber(
   return start + column
 }
 
-export function numberToPos(
-  source: string,
-  offset: number | { line: number; column: number },
-): { line: number; column: number } {
+export function numberToPos(source: string, offset: number | Pos): Pos {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error(
@@ -501,7 +502,7 @@ export function numberToPos(
 
 export function generateCodeFrame(
   source: string,
-  start: number | { line: number; column: number } = 0,
+  start: number | Pos = 0,
   end?: number,
 ): string {
   start = posToNumber(source, start)
