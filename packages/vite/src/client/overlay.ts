@@ -164,7 +164,7 @@ kbd {
 </div>
 `
 
-const fileRE = /(?:[a-z]:\\|\/).*?:\d+:\d+/gi
+const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
