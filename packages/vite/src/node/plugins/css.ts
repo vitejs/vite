@@ -1191,12 +1191,12 @@ async function compileCSS(
           code,
           {
             line: warning.line,
-            column: warning.column,
+            column: warning.column - 1, // 1-based
           },
           warning.endLine !== undefined && warning.endColumn !== undefined
             ? {
                 line: warning.endLine,
-                column: warning.endColumn,
+                column: warning.endColumn - 1, // 1-based
               }
             : undefined,
         )}`
@@ -1208,8 +1208,8 @@ async function compileCSS(
     e.code = code
     e.loc = {
       file: e.file,
-      column: e.column,
       line: e.line,
+      column: e.column - 1, // 1-based
     }
     throw e
   }
