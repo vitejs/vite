@@ -80,9 +80,9 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
-import { createPluginHookUtils } from '../plugins'
+import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
-import type { ModuleGraph } from './moduleGraph'
+import type { ModuleGraph, ModuleNode } from './moduleGraph'
 
 const noop = () => {}
 
@@ -138,6 +138,10 @@ export interface PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null>
+  watchChange(
+    id: string,
+    change: { event: 'create' | 'update' | 'delete' },
+  ): Promise<void>
   close(): Promise<void>
 }
 
@@ -178,6 +182,11 @@ export async function createPluginContainer(
   // ---------------------------------------------------------------------------
 
   const watchFiles = new Set<string>()
+  // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
+  const moduleNodeToLoadAddedImports = new WeakMap<
+    ModuleNode,
+    Set<string> | null
+  >()
 
   const minimalContext: MinimalPluginContext = {
     meta: {
@@ -213,9 +222,8 @@ export async function createPluginContainer(
       // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
       const hook = plugin[hookName]
       if (!hook) continue
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore hook is not a primitive
-      const handler: Function = 'handler' in hook ? hook.handler : hook
+
+      const handler: Function = getHookHandler(hook)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
@@ -267,6 +275,13 @@ export async function createPluginContainer(
       if (moduleInfo) {
         moduleInfo.meta = { ...moduleInfo.meta, ...meta }
       }
+    }
+  }
+
+  function updateModuleLoadAddedImports(id: string, ctx: Context) {
+    const module = moduleGraph?.getModuleById(id)
+    if (module) {
+      moduleNodeToLoadAddedImports.set(module, ctx._addedImports)
     }
   }
 
@@ -330,7 +345,13 @@ export async function createPluginContainer(
       // but we can at least update the module info properties we support
       updateModuleInfo(options.id, options)
 
-      await container.load(options.id, { ssr: this.ssr })
+      const loadResult = await container.load(options.id, { ssr: this.ssr })
+      const code =
+        typeof loadResult === 'object' ? loadResult?.code : loadResult
+      if (code != null) {
+        await container.transform(code, options.id, { ssr: this.ssr })
+      }
+
       const moduleInfo = this.getModuleInfo(options.id)
       // This shouldn't happen due to calling ensureEntryFromUrl, but 1) our types can't ensure that
       // and 2) moduleGraph may not have been provided (though in the situations where that happens,
@@ -517,9 +538,9 @@ export async function createPluginContainer(
     sourcemapChain: NonNullable<SourceDescription['map']>[] = []
     combinedMap: SourceMap | { mappings: '' } | null = null
 
-    constructor(filename: string, code: string, inMap?: SourceMap | string) {
+    constructor(id: string, code: string, inMap?: SourceMap | string) {
       super()
-      this.filename = filename
+      this.filename = id
       this.originalCode = code
       if (inMap) {
         if (debugSourcemapCombine) {
@@ -527,6 +548,11 @@ export async function createPluginContainer(
           inMap.name = '$inMap'
         }
         this.sourcemapChain.push(inMap)
+      }
+      // Inherit `_addedImports` from the `load()` hook
+      const node = moduleGraph?.getModuleById(id)
+      if (node) {
+        this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
     }
 
@@ -650,10 +676,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
 
         const pluginResolveStart = debugPluginResolve ? performance.now() : 0
-        const handler =
-          'handler' in plugin.resolveId
-            ? plugin.resolveId.handler
-            : plugin.resolveId
+        const handler = getHookHandler(plugin.resolveId)
         const result = await handleHookPromise(
           handler.call(ctx as any, rawId, importer, {
             attributes: options?.attributes ?? {},
@@ -711,8 +734,7 @@ export async function createPluginContainer(
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const handler =
-          'handler' in plugin.load ? plugin.load.handler : plugin.load
+        const handler = getHookHandler(plugin.load)
         const result = await handleHookPromise(
           handler.call(ctx as any, id, { ssr }),
         )
@@ -720,9 +742,11 @@ export async function createPluginContainer(
           if (isObject(result)) {
             updateModuleInfo(id, result)
           }
+          updateModuleLoadAddedImports(id, ctx)
           return result
         }
       }
+      updateModuleLoadAddedImports(id, ctx)
       return null
     },
 
@@ -739,10 +763,7 @@ export async function createPluginContainer(
         ctx._activeCode = code
         const start = debugPluginTransform ? performance.now() : 0
         let result: TransformResult | string | undefined
-        const handler =
-          'handler' in plugin.transform
-            ? plugin.transform.handler
-            : plugin.transform
+        const handler = getHookHandler(plugin.transform)
         try {
           result = await handleHookPromise(
             handler.call(ctx as any, code, id, { ssr }),
@@ -776,6 +797,15 @@ export async function createPluginContainer(
         code,
         map: ctx._getCombinedSourcemap(),
       }
+    },
+
+    async watchChange(id, change) {
+      const ctx = new Context()
+      await hookParallel(
+        'watchChange',
+        () => ctx,
+        () => [id, change],
+      )
     },
 
     async close() {

@@ -27,7 +27,7 @@ const generatedContentImports = [
 export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
-    mainFields: ['custom', 'module'],
+    mainFields: ['browser', 'custom', 'module'],
     conditions: ['custom'],
   },
   define: {

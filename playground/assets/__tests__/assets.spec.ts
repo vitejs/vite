@@ -43,17 +43,13 @@ test('should get a 404 when using incorrect case', async () => {
   )
   // fallback to index.html
   const iconPngResult = await fetchPath('ICON.png')
-  expect(iconPngResult.headers.get('Content-Type')).toBe(
-    isBuild ? 'text/html;charset=utf-8' : 'text/html',
-  )
+  expect(iconPngResult.headers.get('Content-Type')).toBe('text/html')
   expect(iconPngResult.status).toBe(200)
 
   expect((await fetchPath('bar')).headers.get('Content-Type')).toBe('')
   // fallback to index.html
   const barResult = await fetchPath('BAR')
-  expect(barResult.headers.get('Content-Type')).toContain(
-    isBuild ? 'text/html;charset=utf-8' : 'text/html',
-  )
+  expect(barResult.headers.get('Content-Type')).toContain('text/html')
   expect(barResult.status).toBe(200)
 })
 
@@ -253,6 +249,18 @@ describe('css url() references', () => {
     // generate non-relative base for public path in CSS
     expect(css).not.toMatch(`../icon.png`)
   })
+
+  test('url() with svg', async () => {
+    expect(await getBg('.css-url-svg')).toMatch(
+      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
+    )
+  })
+
+  test('image-set() with svg', async () => {
+    expect(await getBg('.css-image-set-svg')).toMatch(
+      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
+    )
+  })
 })
 
 describe('image', () => {
@@ -274,6 +282,17 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(/\/foo\/bar\/icon\.png \dx/)
     })
+  })
+
+  test('srcset (mixed)', async () => {
+    const img = await page.$('.img-src-set-mixed')
+    const srcset = await img.getAttribute('srcset')
+    const srcs = srcset.split(', ')
+    expect(srcs[1]).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
+        : /\/foo\/bar\/nested\/asset.png \dx/,
+    )
   })
 })
 
@@ -499,6 +518,11 @@ test('url() contains file in publicDir, in <style> tag', async () => {
 
 test('url() contains file in publicDir, as inline style', async () => {
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
+})
+
+test('should not rewrite non-relative urls in html', async () => {
+  const link = page.locator('.data-href')
+  expect(await link.getAttribute('href')).toBe('data:,')
 })
 
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {

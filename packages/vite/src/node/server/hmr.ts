@@ -18,6 +18,7 @@ import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import type { ModuleNode } from './moduleGraph'
+import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -77,7 +78,7 @@ export async function handleHMRUpdate(
       { clear: true, timestamp: true },
     )
     try {
-      await server.restart()
+      await restartServerWithUrls(server)
     } catch (e) {
       config.logger.error(colors.red(e))
     }
@@ -141,6 +142,7 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
+type HasDeadEnd = boolean | string
 export function updateModules(
   file: string,
   modules: ModuleNode[],
@@ -151,26 +153,20 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   const traversedModules = new Set<ModuleNode>()
-  let needFullReload = false
+  let needFullReload: HasDeadEnd = false
 
   for (const mod of modules) {
     const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
     const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
 
-    moduleGraph.invalidateModule(
-      mod,
-      invalidatedModules,
-      timestamp,
-      true,
-      boundaries.map((b) => b.boundary),
-    )
+    moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
 
     if (needFullReload) {
       continue
     }
 
     if (hasDeadEnd) {
-      needFullReload = true
+      needFullReload = hasDeadEnd
       continue
     }
 
@@ -189,10 +185,14 @@ export function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
-      clear: !afterInvalidation,
-      timestamp: true,
-    })
+    const reason =
+      typeof needFullReload === 'string'
+        ? colors.dim(` (${needFullReload})`)
+        : ''
+    config.logger.info(
+      colors.green(`page reload `) + colors.dim(file) + reason,
+      { clear: !afterInvalidation, timestamp: true },
+    )
     ws.send({
       type: 'full-reload',
     })
@@ -259,7 +259,7 @@ function propagateUpdate(
   traversedModules: Set<ModuleNode>,
   boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[],
   currentChain: ModuleNode[] = [node],
-): boolean /* hasDeadEnd */ {
+): HasDeadEnd {
   if (traversedModules.has(node)) {
     return false
   }
@@ -279,6 +279,8 @@ function propagateUpdate(
 
   if (node.isSelfAccepting) {
     boundaries.push({ boundary: node, acceptedVia: node })
+    const result = isNodeWithinCircularImports(node, currentChain)
+    if (result) return result
 
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
@@ -303,6 +305,8 @@ function propagateUpdate(
   // so that they do get the fresh imported module when/if they are reloaded.
   if (node.acceptedHmrExports) {
     boundaries.push({ boundary: node, acceptedVia: node })
+    const result = isNodeWithinCircularImports(node, currentChain)
+    if (result) return result
   } else {
     if (!node.importers.size) {
       return true
@@ -321,8 +325,11 @@ function propagateUpdate(
 
   for (const importer of node.importers) {
     const subChain = currentChain.concat(importer)
+
     if (importer.acceptedHmrDeps.has(node)) {
       boundaries.push({ boundary: importer, acceptedVia: node })
+      const result = isNodeWithinCircularImports(importer, subChain)
+      if (result) return result
       continue
     }
 
@@ -336,13 +343,81 @@ function propagateUpdate(
       }
     }
 
-    if (currentChain.includes(importer)) {
-      // circular deps is considered dead end
+    if (
+      !currentChain.includes(importer) &&
+      propagateUpdate(importer, traversedModules, boundaries, subChain)
+    ) {
       return true
     }
+  }
+  return false
+}
 
-    if (propagateUpdate(importer, traversedModules, boundaries, subChain)) {
-      return true
+/**
+ * Check importers recursively if it's an import loop. An accepted module within
+ * an import loop cannot recover its execution order and should be reloaded.
+ *
+ * @param node The node that accepts HMR and is a boundary
+ * @param nodeChain The chain of nodes/imports that lead to the node.
+ *   (The last node in the chain imports the `node` parameter)
+ * @param currentChain The current chain tracked from the `node` parameter
+ */
+function isNodeWithinCircularImports(
+  node: ModuleNode,
+  nodeChain: ModuleNode[],
+  currentChain: ModuleNode[] = [node],
+): HasDeadEnd {
+  // To help visualize how each parameters work, imagine this import graph:
+  //
+  // A -> B -> C -> ACCEPTED -> D -> E -> NODE
+  //      ^--------------------------|
+  //
+  // ACCEPTED: the node that accepts HMR. the `node` parameter.
+  // NODE    : the initial node that triggered this HMR.
+  //
+  // This function will return true in the above graph, which:
+  // `node`         : ACCEPTED
+  // `nodeChain`    : [NODE, E, D, ACCEPTED]
+  // `currentChain` : [ACCEPTED, C, B]
+  //
+  // It works by checking if any `node` importers are within `nodeChain`, which
+  // means there's an import loop with a HMR-accepted module in it.
+
+  for (const importer of node.importers) {
+    // Node may import itself which is safe
+    if (importer === node) continue
+
+    // Check circular imports
+    const importerIndex = nodeChain.indexOf(importer)
+    if (importerIndex > -1) {
+      // Log extra debug information so users can fix and remove the circular imports
+      if (debugHmr) {
+        // Following explanation above:
+        // `importer`                    : E
+        // `currentChain` reversed       : [B, C, ACCEPTED]
+        // `nodeChain` sliced & reversed : [D, E]
+        // Combined                      : [E, B, C, ACCEPTED, D, E]
+        const importChain = [
+          importer,
+          ...[...currentChain].reverse(),
+          ...nodeChain.slice(importerIndex, -1).reverse(),
+        ]
+        debugHmr(
+          colors.yellow(`circular imports detected: `) +
+            importChain.map((m) => colors.dim(m.url)).join(' -> '),
+        )
+      }
+      return 'circular imports'
+    }
+
+    // Continue recursively
+    if (!currentChain.includes(importer)) {
+      const result = isNodeWithinCircularImports(
+        importer,
+        nodeChain,
+        currentChain.concat(importer),
+      )
+      if (result) return result
     }
   }
   return false

@@ -19,8 +19,8 @@
 
 ### Before submitting the PR, please make sure you do the following
 
-- [ ] Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
-- [ ] Read the [Pull Request Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md#pull-request-guidelines) and follow the [PR Title Convention](https://github.com/vitejs/vite/blob/main/.github/commit-convention.md).
+- [ ] Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md), especially the [Pull Request Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md#pull-request-guidelines).
 - [ ] Check that there isn't already a PR that solves the problem the same way to avoid creating a duplicate.
 - [ ] Provide a description in this PR that addresses **what** the PR is solving, or reference the issue that it solves (e.g. `fixes #123`).
+- [ ] Update the corresponding documentation if needed.
 - [ ] Ideally, include relevant tests that fail without this PR but pass with it.

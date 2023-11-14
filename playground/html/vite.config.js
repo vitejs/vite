@@ -30,6 +30,10 @@ export default defineConfig({
         env: resolve(__dirname, 'env.html'),
         sideEffects: resolve(__dirname, 'side-effects/index.html'),
         'a á': resolve(__dirname, 'a á.html'),
+        serveFile: resolve(__dirname, 'serve/file.html'),
+        serveFolder: resolve(__dirname, 'serve/folder/index.html'),
+        serveBothFile: resolve(__dirname, 'serve/both.html'),
+        serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
       },
     },
   },
@@ -44,7 +48,6 @@ export default defineConfig({
     'import.meta.env.VITE_NUMBER': 5173,
     'import.meta.env.VITE_STRING': JSON.stringify('string'),
     'import.meta.env.VITE_OBJECT_STRING': '{ "foo": "bar" }',
-    'import.meta.env.VITE_TEMPLATE_LITERAL': '`template literal`',
     'import.meta.env.VITE_NULL_STRING': 'null',
   },
 

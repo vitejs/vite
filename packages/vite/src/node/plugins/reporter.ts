@@ -48,6 +48,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   let chunkCount = 0
   let compressedCount = 0
   let startTime = Date.now()
+  let buildFailed = false
 
   async function getCompressedSize(
     code: string | Uint8Array,
@@ -108,7 +109,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       transformedCount = 0
     },
 
-    buildEnd() {
+    buildEnd(error?: Error) {
+      buildFailed = !!error
       if (shouldLogInfo) {
         if (tty) {
           clearLine()
@@ -301,7 +303,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     closeBundle() {
-      if (shouldLogInfo && !config.build.watch) {
+      if (shouldLogInfo && !config.build.watch && !buildFailed) {
         config.logger.info(
           `${colors.green(
             `✓ built in ${displayTime(Date.now() - startTime)}`,
