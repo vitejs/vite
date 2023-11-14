@@ -220,6 +220,7 @@ foo()
   })
 
   test('end', () => {
+    expectSnapshot(generateCodeFrame(source, 0, 0))
     expectSnapshot(generateCodeFrame(source, 0, 23))
     expectSnapshot(generateCodeFrame(source, 0, 29))
   })
