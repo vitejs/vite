@@ -147,13 +147,9 @@ If you are running Vite with WSL2, Vite cannot watch file changes in some condit
 
 ### A full reload happens instead of HMR
 
-If HMR is not handled by Vite or a plugin, a full reload will happen.
+If HMR is not handled by Vite or a plugin, a full reload will happen as it's the only way to refresh the state.
 
-Also if there is a dependency loop, a full reload will happen. To solve this, try removing the loop.
-
-### High number of HMR updates in console
-
-This can be caused by a circular dependency. To solve this, try breaking the loop.
+If HMR is handled but it is within a circular dependency, a full reload will also happen to recover the execution order. To solve this, try breaking the loop. You can run `vite --debug hmr` to log the circular dependency path if a file change triggered it.
 
 ## Build
 

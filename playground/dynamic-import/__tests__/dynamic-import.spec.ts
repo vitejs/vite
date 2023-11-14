@@ -83,6 +83,14 @@ test('should load dynamic import with vars ignored', async () => {
   ).toBe(false)
 })
 
+test('should load dynamic import with double slash ignored', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-double-slash-ignored'),
+    'hello',
+    true,
+  )
+})
+
 test('should load dynamic import with vars multiline', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-multiline'),

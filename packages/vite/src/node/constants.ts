@@ -9,6 +9,7 @@ const { version } = JSON.parse(
 export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
+  'browser',
   'module',
   'jsnext:main', // moment still uses this...
   'jsnext',

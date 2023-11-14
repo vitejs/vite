@@ -32,7 +32,12 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
-import { resolvePackageData } from './packages'
+import type { PreviewServer } from './preview'
+import {
+  type PackageCache,
+  findNearestPackageData,
+  resolvePackageData,
+} from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -424,6 +429,25 @@ export function lookupFile(
     if (parentDir === dir) return
 
     dir = parentDir
+  }
+}
+
+export function isFilePathESM(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
+  if (/\.m[jt]s$/.test(filePath)) {
+    return true
+  } else if (/\.c[jt]s$/.test(filePath)) {
+    return false
+  } else {
+    // check package.json for type: "module"
+    try {
+      const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+      return pkg?.data.type === 'module'
+    } catch {
+      return false
+    }
   }
 }
 
@@ -979,8 +1003,10 @@ export function parseRequest(id: string): Record<string, string> | null {
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-export function getHash(text: Buffer | string): string {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+export function getHash(text: Buffer | string, length = 8): string {
+  const h = createHash('sha256').update(text).digest('hex').substring(0, length)
+  if (length <= 64) return h
+  return h.padEnd(length, '_')
 }
 
 const _dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -1008,8 +1034,14 @@ export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
-export function removeComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
+function backwardCompatibleWorkerPlugins(plugins: any) {
+  if (Array.isArray(plugins)) {
+    return plugins
+  }
+  if (typeof plugins === 'function') {
+    return plugins()
+  }
+  return []
 }
 
 function mergeConfigRecursively(
@@ -1044,6 +1076,12 @@ function mergeConfigRecursively(
       (existing === true || value === true)
     ) {
       merged[key] = true
+      continue
+    } else if (key === 'plugins' && rootPath === 'worker') {
+      merged[key] = () => [
+        ...backwardCompatibleWorkerPlugins(existing),
+        ...backwardCompatibleWorkerPlugins(value),
+      ]
       continue
     }
 
@@ -1280,4 +1318,10 @@ export function getPackageManagerCommand(
     default:
       throw new TypeError(`Unknown command type: ${type}`)
   }
+}
+
+export function isDevServer(
+  server: ViteDevServer | PreviewServer,
+): server is ViteDevServer {
+  return 'pluginContainer' in server
 }

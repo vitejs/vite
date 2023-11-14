@@ -1,20 +1,24 @@
 import type { Connect } from 'dep-types/connect'
-import type { ViteDevServer } from '..'
-import { joinUrlSegments, stripBase, withTrailingSlash } from '../../utils'
+import {
+  cleanUrl,
+  joinUrlSegments,
+  stripBase,
+  withTrailingSlash,
+} from '../../utils'
 
 // this middleware is only active when (base !== '/')
 
-export function baseMiddleware({
-  config,
-}: ViteDevServer): Connect.NextHandleFunction {
+export function baseMiddleware(
+  rawBase: string,
+  middlewareMode: boolean,
+): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
-    const parsed = new URL(url, 'http://vitejs.dev')
-    const path = parsed.pathname || '/'
-    const base = config.rawBase
+    const pathname = cleanUrl(url)
+    const base = rawBase
 
-    if (path.startsWith(base)) {
+    if (pathname.startsWith(base)) {
       // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
       req.url = stripBase(url, base)
@@ -22,14 +26,14 @@ export function baseMiddleware({
     }
 
     // skip redirect and error fallback on middleware mode, #4057
-    if (config.server.middlewareMode) {
+    if (middlewareMode) {
       return next()
     }
 
-    if (path === '/' || path === '/index.html') {
+    if (pathname === '/' || pathname === '/index.html') {
       // redirect root visit to based url with search and hash
       res.writeHead(302, {
-        Location: base + (parsed.search || '') + (parsed.hash || ''),
+        Location: base + url.slice(pathname.length),
       })
       res.end()
       return
