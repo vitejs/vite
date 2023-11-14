@@ -79,7 +79,7 @@
     "rollup": "^4.2.0",
     "simple-git-hooks": "^2.9.0",
     "tslib": "^2.6.2",
-    "tsx": "^3.14.0",
+    "tsx": "^4.1.2",
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
