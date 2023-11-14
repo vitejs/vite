@@ -58,7 +58,6 @@ Barrel files are files that re-export the APIs of other files in the same direct
 export * from './color.js'
 export * from './dom.js'
 export * from './slash.js'
-export * from './string.js'
 ```
 
 When you only import an individual API, e.g. `import { slash } from './utils'`, all the files in that barrel file need to be fetched and transformed as they may contain the `slash` API and may also contain side-effects that run on initialization. This means you're loading more files than required on the initial page load, resulting in a slower page load.
