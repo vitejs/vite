@@ -1185,13 +1185,21 @@ async function compileCSS(
           deps.add(files[i])
         }
       } else if (message.type === 'warning') {
-        let msg = `[vite:css] ${message.text}`
-        if (message.line && message.column) {
-          msg += `\n${generateCodeFrame(code, {
-            line: message.line,
-            column: message.column,
-          })}`
-        }
+        const warning = message as PostCSS.Warning
+        let msg = `[vite:css] ${warning.text}`
+        msg += `\n${generateCodeFrame(
+          code,
+          {
+            line: warning.line,
+            column: warning.column,
+          },
+          warning.endLine !== undefined && warning.endColumn !== undefined
+            ? {
+                line: warning.endLine,
+                column: warning.endColumn,
+              }
+            : undefined,
+        )}`
         config.logger.warn(colors.yellow(msg))
       }
     }

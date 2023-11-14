@@ -503,10 +503,10 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
 export function generateCodeFrame(
   source: string,
   start: number | Pos = 0,
-  end?: number,
+  end?: number | Pos,
 ): string {
   start = posToNumber(source, start)
-  end = end || start
+  end = end !== undefined ? posToNumber(source, end) : start
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []

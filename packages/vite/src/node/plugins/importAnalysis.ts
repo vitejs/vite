@@ -640,7 +640,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   `\n` +
                     colors.cyan(importerModule.file) +
                     `\n` +
-                    colors.reset(generateCodeFrame(source, start)) +
+                    colors.reset(generateCodeFrame(source, start, end)) +
                     colors.yellow(
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
                         `See ${colors.blue(
