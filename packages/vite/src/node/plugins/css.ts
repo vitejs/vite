@@ -72,6 +72,7 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
+import { tryNodeResolve} from "./resolve";
 
 // const debug = createDebugger('vite:css')
 
@@ -296,12 +297,20 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         return url
       }
 
+      console.log("compile?")
+      console.log(id)
+      console.log(raw)
+      console.log(options)
+
       const {
         code: css,
         modules,
         deps,
         map,
       } = await compileCSS(id, raw, config, urlReplacer)
+
+      console.log("code?")
+      console.log(css)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -1022,6 +1031,9 @@ async function compileCSS(
   const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
   const postcssConfig = await resolvePostcssConfig(config)
 
+  console.log("compilecss?")
+  console.log(id)
+
   // 1. plain css that needs no processing
   if (
     lang === 'css' &&
@@ -1049,6 +1061,9 @@ async function compileCSS(
     preprocessorMap = preprocessorResult.map
     preprocessorResult.deps?.forEach((dep) => deps.add(dep))
   }
+
+  console.log("preprocessed?")
+  console.log(code)
 
   // 3. postcss
   const atImportResolvers = getAtImportResolvers(config)
@@ -1814,6 +1829,8 @@ function cleanScssBugUrl(url: string) {
 function fixScssBugImportValue(
   data: Sass.ImporterReturnType,
 ): Sass.ImporterReturnType {
+  console.log("fixscssbug?")
+  console.log(data)
   // the scss bug doesn't load files properly so we have to load it ourselves
   // to prevent internal error when it loads itself
   if (
@@ -1842,7 +1859,12 @@ const scss: SassStylePreprocessor = async (
   // the `importer` option when it can't resolve a path
   const internalImporter: Sass.Importer = (url, importer, done) => {
     importer = cleanScssBugUrl(importer)
+    console.log("internalImporter?")
+    console.log(url)
+    console.log(importer)
     resolvers.sass(url, importer).then((resolved) => {
+      console.log(resolved)
+      console.log(options)
       if (resolved) {
         rebaseUrls(resolved, options.filename, options.alias, '$')
           .then((data) => done?.(fixScssBugImportValue(data)))
@@ -1951,6 +1973,9 @@ async function rebaseUrls(
     return { file }
   }
 
+  console.log("rebaseurls?")
+  console.log(file)
+
   let rebased
   const rebaseFn = (url: string) => {
     if (url[0] === '/') return url
@@ -1964,8 +1989,27 @@ async function rebaseUrls(
         return url
       }
     }
-    const absolute = path.resolve(fileDir, url)
-    const relative = path.relative(rootDir, absolute)
+    //const absolute = path.resolve(fileDir, url)
+    const absolute = tryNodeResolve(url, file, {
+      isBuild: false,
+      isProduction: false,
+      dedupe: [],
+      preserveSymlinks: true,
+      root: rootDir,
+      extensions: ['.scss', '.sass', '.css'],
+      mainFields: ['sass', 'style'],
+      conditions: ['sass', 'style']
+    }, true)
+    const relative = path.relative(rootDir, absolute?.id as string)
+    console.log("rebasefn?")
+    console.log(fileDir)
+    console.log(url)
+    console.log(absolute)
+    console.log(rootDir)
+    console.log(relative)
+    console.log(normalizePath(relative))
+
+
     return normalizePath(relative)
   }
 
