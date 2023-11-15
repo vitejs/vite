@@ -5,6 +5,7 @@ import {
   asyncFlatten,
   bareImportRE,
   flattenId,
+  generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
@@ -173,6 +174,59 @@ describe('posToNumber', () => {
   test('out of range', () => {
     const actual = posToNumber('a\nb', { line: 4, column: 0 })
     expect(actual).toBe(4)
+  })
+})
+
+describe('generateCodeFrames', () => {
+  const source = `
+import foo from './foo'
+foo()
+`.trim()
+  const sourceCrLf = source.replace(/\n/, '\r\n')
+  const longSource = `
+import foo from './foo'
+
+foo()
+
+// bar
+// baz
+  `
+
+  const expectSnapshot = (value: string) => {
+    try {
+      // add new line to make snapshot easier to read
+      expect('\n' + value + '\n').toMatchSnapshot()
+    } catch (e) {
+      // don't include this function in stacktrace
+      Error.captureStackTrace(e, expectSnapshot)
+      throw e
+    }
+  }
+
+  test('start with number', () => {
+    expectSnapshot(generateCodeFrame(source, 0))
+    expectSnapshot(generateCodeFrame(source, 1))
+    expectSnapshot(generateCodeFrame(source, 24))
+  })
+
+  test('start with postion', () => {
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 0 }))
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 1 }))
+    expectSnapshot(generateCodeFrame(source, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF', () => {
+    expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('end', () => {
+    expectSnapshot(generateCodeFrame(source, 0, 0))
+    expectSnapshot(generateCodeFrame(source, 0, 23))
+    expectSnapshot(generateCodeFrame(source, 0, 29))
+  })
+
+  test('range', () => {
+    expectSnapshot(generateCodeFrame(longSource, { line: 3, column: 0 }))
   })
 })
 

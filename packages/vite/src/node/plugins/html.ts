@@ -244,7 +244,11 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
   const formattedError = {
     code: parserError.code,
     message: `parse5 error code ${parserError.code}`,
-    frame: generateCodeFrame(html, parserError.startOffset),
+    frame: generateCodeFrame(
+      html,
+      parserError.startOffset,
+      parserError.endOffset,
+    ),
     loc: {
       file: id,
       line: parserError.startLine,
