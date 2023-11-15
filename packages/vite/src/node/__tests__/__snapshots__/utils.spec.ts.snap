@@ -1,0 +1,93 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateCodeFrames > end 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > end 2`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > end 3`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
+exports[`generateCodeFrames > range 1`] = `
+"
+1  |  
+2  |  import foo from './foo'
+3  |  
+   |  ^
+4  |  foo()
+5  |  
+"
+`;
+
+exports[`generateCodeFrames > start with number 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with number 2`] = `
+"
+1  |  import foo from './foo'
+   |   ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with number 3`] = `
+"
+1  |  import foo from './foo'
+2  |  foo()
+   |  ^
+"
+`;
+
+exports[`generateCodeFrames > start with postion 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with postion 2`] = `
+"
+1  |  import foo from './foo'
+   |   ^
+2  |  foo()
+"
+`;
+
+exports[`generateCodeFrames > start with postion 3`] = `
+"
+1  |  import foo from './foo'
+2  |  foo()
+   |  ^
+"
+`;
+
+exports[`generateCodeFrames > works with CRLF 1`] = `
+"
+1  |  import foo from './foo'
+2  |  foo()
+   |  ^
+"
+`;

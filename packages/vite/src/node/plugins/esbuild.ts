@@ -433,15 +433,7 @@ export function resolveEsbuildTranspileOptions(
 function prettifyMessage(m: Message, code: string): string {
   let res = colors.yellow(m.text)
   if (m.location) {
-    const lines = code.split(/\r?\n/g)
-    const line = Number(m.location.line)
-    const column = Number(m.location.column)
-    const offset =
-      lines
-        .slice(0, line - 1)
-        .map((l) => l.length)
-        .reduce((total, l) => total + l + 1, 0) + column
-    res += `\n` + generateCodeFrame(code, offset, offset + 1)
+    res += `\n` + generateCodeFrame(code, m.location)
   }
   return res + `\n`
 }

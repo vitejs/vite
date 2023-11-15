@@ -460,10 +460,14 @@ export function pad(source: string, n = 2): string {
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
 
-export function posToNumber(
-  source: string,
-  pos: number | { line: number; column: number },
-): number {
+type Pos = {
+  /** 1-based */
+  line: number
+  /** 0-based */
+  column: number
+}
+
+export function posToNumber(source: string, pos: number | Pos): number {
   if (typeof pos === 'number') return pos
   const lines = source.split(splitRE)
   const { line, column } = pos
@@ -474,10 +478,7 @@ export function posToNumber(
   return start + column
 }
 
-export function numberToPos(
-  source: string,
-  offset: number | { line: number; column: number },
-): { line: number; column: number } {
+export function numberToPos(source: string, offset: number | Pos): Pos {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error(
@@ -501,16 +502,16 @@ export function numberToPos(
 
 export function generateCodeFrame(
   source: string,
-  start: number | { line: number; column: number } = 0,
-  end?: number,
+  start: number | Pos = 0,
+  end?: number | Pos,
 ): string {
   start = posToNumber(source, start)
-  end = end || start
+  end = end !== undefined ? posToNumber(source, end) : start
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
   for (let i = 0; i < lines.length; i++) {
-    count += lines[i].length + 1
+    count += lines[i].length
     if (count >= start) {
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
@@ -523,7 +524,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength) + 1, 0)
+          const pad = Math.max(start - (count - lineLength), 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start,
@@ -539,6 +540,7 @@ export function generateCodeFrame(
       }
       break
     }
+    count++
   }
   return res.join('\n')
 }
