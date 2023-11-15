@@ -414,7 +414,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
             } else if (isProduction) {
               this.warn(
                 `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
-                  `See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
+                  `See https://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
               )
             }
             return isProduction
@@ -436,7 +436,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return `\
 export default new Proxy({}, {
   get(_, key) {
-    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See http://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See https://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
   }
 })`
         }
