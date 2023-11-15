@@ -74,10 +74,10 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/iife/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(16)
+    expect(files.length).toBe(20)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
-    const worker = files.find((f) => f.includes('my-worker'))
+    const worker = files.find((f) => f.includes('worker_entry-my-worker'))
     const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
       'utf-8',
@@ -136,6 +136,10 @@ test('module worker', async () => {
 
 test('classic worker', async () => {
   await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  await untilUpdated(
+    () => page.textContent('.classic-worker-import'),
+    '[success] classic-esm',
+  )
   await untilUpdated(
     () => page.textContent('.classic-shared-worker'),
     'A classic',

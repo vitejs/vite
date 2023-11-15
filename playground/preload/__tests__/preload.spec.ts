@@ -19,10 +19,10 @@ describe.runIf(isBuild)('build', () => {
 
     const html = await page.content()
     expect(html).toMatch(
-      /link rel="modulepreload".*?href=".*?\/assets\/hello-\w{8}\.js"/,
+      /link rel="modulepreload".*?href=".*?\/assets\/hello-[-\w]{8}\.js"/,
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href=".*?\/assets\/hello-\w{8}\.css"/,
+      /link rel="stylesheet".*?href=".*?\/assets\/hello-[-\w]{8}\.css"/,
     )
   })
 })

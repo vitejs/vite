@@ -1,16 +1,21 @@
 import readline from 'node:readline'
 import colors from 'picocolors'
+import { restartServerWithUrls } from './server'
 import type { ViteDevServer } from './server'
-import { isDefined } from './utils'
+import { isDevServer } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
 export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
-   * Print a one line hint to the terminal.
+   * Print a one-line shortcuts "help" hint to the terminal
    */
   print?: boolean
-  customShortcuts?: (CLIShortcut<Server> | undefined | null)[]
+  /**
+   * Custom shortcuts to run when a key is pressed. These shortcuts take priority
+   * over the default shortcuts if they have the same keys (except the `h` key).
+   */
+  customShortcuts?: CLIShortcut<Server>[]
 }
 
 export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
@@ -42,10 +47,11 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? [])
-    .filter(isDefined)
-    // @ts-expect-error passing the right types, but typescript can't detect it
-    .concat(isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS)
+  const shortcuts = (opts?.customShortcuts ?? []).concat(
+    (isDev
+      ? BASE_DEV_SHORTCUTS
+      : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
+  )
 
   let actionRunning = false
 
@@ -53,18 +59,21 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     if (actionRunning) return
 
     if (input === 'h') {
-      server.config.logger.info(
-        [
-          '',
-          colors.bold('  Shortcuts'),
-          ...shortcuts.map(
-            (shortcut) =>
-              colors.dim('  press ') +
-              colors.bold(`${shortcut.key} + enter`) +
-              colors.dim(` to ${shortcut.description}`),
-          ),
-        ].join('\n'),
-      )
+      const loggedKeys = new Set<string>()
+      server.config.logger.info('\n  Shortcuts')
+
+      for (const shortcut of shortcuts) {
+        if (loggedKeys.has(shortcut.key)) continue
+        loggedKeys.add(shortcut.key)
+
+        server.config.logger.info(
+          colors.dim('  press ') +
+            colors.bold(`${shortcut.key} + enter`) +
+            colors.dim(` to ${shortcut.description}`),
+        )
+      }
+
+      return
     }
 
     const shortcut = shortcuts.find((shortcut) => shortcut.key === input)
@@ -80,18 +89,12 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server.httpServer.on('close', () => rl.close())
 }
 
-function isDevServer(
-  server: ViteDevServer | PreviewServer,
-): server is ViteDevServer {
-  return 'pluginContainer' in server
-}
-
 const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
   {
     key: 'r',
     description: 'restart the server',
     async action(server) {
-      await server.restart()
+      await restartServerWithUrls(server)
     },
   },
   {

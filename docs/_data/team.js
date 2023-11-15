@@ -53,10 +53,11 @@ export const core = [
     avatar: 'https://github.com/sapphi-red.png',
     name: 'green',
     title: 'Web Developer',
-    desc: 'Vite team member. Call me sapphi or green or midori ;)',
+    desc: 'Vite core team member. Call me sapphi or green or midori ;)',
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
       { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
     ],
     sponsor: 'https://github.com/sponsors/sapphi-red',
   },
@@ -82,7 +83,7 @@ export const core = [
     desc: 'Passionate TypeScript enthusiast working extensively with Vue SPA and pug.',
     links: [
       { icon: 'github', link: 'https://github.com/Shinigami92' },
-      { icon: 'twitter', link: 'https://twitter.com/Shini_92' },
+      { icon: 'mastodon', link: 'https://elk.zone/mas.to/@Shini92' },
     ],
     sponsor: 'https://github.com/sponsors/Shinigami92',
   },

@@ -6,6 +6,7 @@ import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
 import { createDebugger } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
+import type { HttpServer } from '..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -29,7 +30,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 }
 
 export function proxyMiddleware(
-  httpServer: http.Server | null,
+  httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig,
 ): Connect.NextHandleFunction {

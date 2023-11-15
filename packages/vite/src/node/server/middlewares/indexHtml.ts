@@ -23,7 +23,7 @@ import {
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
-import type { ResolvedConfig, ViteDevServer } from '../..'
+import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
@@ -32,6 +32,7 @@ import {
   fsPathFromId,
   getHash,
   injectQuery,
+  isDevServer,
   isJSRequest,
   joinUrlSegments,
   normalizePath,
@@ -40,8 +41,6 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
-import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../plugins/optimizedDeps'
 import { isCSSRequest } from '../../plugins/css'
 import { checkPublicFile } from '../../plugins/asset'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
@@ -59,18 +58,29 @@ interface InlineStyleAttribute {
 }
 
 export function createDevHtmlTransformFn(
+  config: ResolvedConfig,
+): (
   server: ViteDevServer,
-): (url: string, html: string, originalUrl: string) => Promise<string> {
+  url: string,
+  html: string,
+  originalUrl?: string,
+) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
-    server.config.plugins,
+    config.plugins,
+    config.logger,
   )
-  return (url: string, html: string, originalUrl: string): Promise<string> => {
+  return (
+    server: ViteDevServer,
+    url: string,
+    html: string,
+    originalUrl?: string,
+  ): Promise<string> => {
     return applyHtmlTransforms(
       html,
       [
-        preImportMapHook(server.config),
+        preImportMapHook(config),
         ...preHooks,
-        htmlEnvHook(server.config),
+        htmlEnvHook(config),
         devHtmlHook,
         ...normalHooks,
         ...postHooks,
@@ -102,7 +112,7 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
   )
 }
 
-const startsWithWordCharRE = /^\w/
+const wordCharRE = /\w/
 
 const isSrcSet = (attr: Token.Attribute) =>
   attr.name === 'srcset' && attr.prefix === undefined
@@ -113,46 +123,46 @@ const processNodeUrl = (
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
-): string | undefined => {
-  if (server?.moduleGraph) {
-    const mod = server.moduleGraph.urlToModuleMap.get(url)
-    if (mod && mod.lastHMRTimestamp > 0) {
-      url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+): string => {
+  // prefix with base (dev only, base is never relative)
+  const replacer = (url: string) => {
+    if (server?.moduleGraph) {
+      const mod = server.moduleGraph.urlToModuleMap.get(url)
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+      }
     }
-  }
-  const devBase = config.base
-  if (url[0] === '/' && url[1] !== '/') {
-    // prefix with base (dev only, base is never relative)
-    const fullUrl = path.posix.join(devBase, url)
-    if (server && shouldPreTransform(url, config)) {
-      preTransformRequest(server, fullUrl, devBase)
-    }
-    return fullUrl
-  } else if (
-    (url[0] === '.' || startsWithWordCharRE.test(url)) &&
-    originalUrl &&
-    originalUrl !== '/' &&
-    htmlPath === '/index.html'
-  ) {
-    // prefix with base (dev only, base is never relative)
-    const replacer = (url: string) => {
+
+    if (
+      (url[0] === '/' && url[1] !== '/') ||
+      // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
+      // path will add `/a/` prefix, it will caused 404.
+      //
+      // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace.
+      //
+      // rewrite `./index.js` -> `localhost:5173/a/index.js`.
+      // rewrite `../index.js` -> `localhost:5173/index.js`.
+      // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
+      ((url[0] === '.' || (wordCharRE.test(url[0]) && !url.includes(':'))) &&
+        originalUrl &&
+        originalUrl !== '/' &&
+        htmlPath === '/index.html')
+    ) {
+      const devBase = config.base
       const fullUrl = path.posix.join(devBase, url)
       if (server && shouldPreTransform(url, config)) {
         preTransformRequest(server, fullUrl, devBase)
       }
       return fullUrl
+    } else {
+      return url
     }
-
-    // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
-    // path will add `/a/` prefix, it will caused 404.
-    // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
-    // rewrite after `../index.js` -> `localhost:5173/index.js`.
-
-    const processedUrl = useSrcSetReplacer
-      ? processSrcSetSync(url, ({ url }) => replacer(url))
-      : replacer(url)
-    return processedUrl
   }
+
+  const processedUrl = useSrcSetReplacer
+    ? processSrcSetSync(url, ({ url }) => replacer(url))
+    : replacer(url)
+  return processedUrl
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
@@ -248,7 +258,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           originalUrl,
           server,
         )
-        if (processedUrl) {
+        if (processedUrl !== src.value) {
           overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
         }
       } else if (isModule && node.childNodes.length) {
@@ -269,7 +279,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             htmlPath,
             originalUrl,
           )
-          if (processedUrl) {
+          if (processedUrl !== url) {
             s.update(start, end, processedUrl)
           }
         }
@@ -308,7 +318,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             htmlPath,
             originalUrl,
           )
-          if (processedUrl) {
+          if (processedUrl !== p.value) {
             overwriteAttrValue(
               s,
               node.sourceCodeLocation!.attrs![attrKey],
@@ -379,8 +389,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 }
 
 export function indexHtmlMiddleware(
-  server: ViteDevServer,
+  root: string,
+  server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
+  const isDev = isDevServer(server)
+
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
     if (res.writableEnded) {
@@ -390,14 +403,24 @@ export function indexHtmlMiddleware(
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
-      const filename = getHtmlFilename(url, server)
-      if (fs.existsSync(filename)) {
+      let filePath: string
+      if (isDev && url.startsWith(FS_PREFIX)) {
+        filePath = decodeURIComponent(fsPathFromId(url))
+      } else {
+        filePath = path.join(root, decodeURIComponent(url))
+      }
+
+      if (fs.existsSync(filePath)) {
+        const headers = isDev
+          ? server.config.server.headers
+          : server.config.preview.headers
+
         try {
-          let html = await fsp.readFile(filename, 'utf-8')
-          html = await server.transformIndexHtml(url, html, req.originalUrl)
-          return send(req, res, html, 'html', {
-            headers: server.config.server.headers,
-          })
+          let html = await fsp.readFile(filePath, 'utf-8')
+          if (isDev) {
+            html = await server.transformIndexHtml(url, html, req.originalUrl)
+          }
+          return send(req, res, html, 'html', { headers })
         } catch (e) {
           return next(e)
         }
@@ -410,21 +433,7 @@ export function indexHtmlMiddleware(
 function preTransformRequest(server: ViteDevServer, url: string, base: string) {
   if (!server.config.server.preTransformRequests) return
 
-  url = unwrapId(stripBase(url, base))
-
   // transform all url as non-ssr as html includes client-side assets only
-  server.transformRequest(url).catch((e) => {
-    if (
-      e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-      e?.code === ERR_CLOSED_SERVER
-    ) {
-      // these are expected errors
-      return
-    }
-    // Unexpected error, log the issue but avoid an unhandled exception
-    server.config.logger.error(`Pre-transform error: ${e.message}`, {
-      error: e,
-      timestamp: true,
-    })
-  })
+  url = unwrapId(stripBase(url, base))
+  server.warmupRequest(url)
 }
