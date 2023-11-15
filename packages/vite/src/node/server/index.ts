@@ -1,6 +1,7 @@
 import path from 'node:path'
 import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
+import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
@@ -497,7 +498,9 @@ export async function _createServer(
         // preTransformRequests needs to be enabled for this optimization.
         if (server.config.server.preTransformRequests) {
           setTimeout(() => {
-            httpGet(
+            const getMethod = path.startsWith('https:') ? httpsGet : httpGet
+
+            getMethod(
               path,
               {
                 headers: {
