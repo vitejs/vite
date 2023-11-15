@@ -25,6 +25,7 @@ import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   isInNodeModules,
+  isObject,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -92,7 +93,18 @@ export interface ServerOptions extends CommonServerOptions {
    * Create Vite dev server to be used as a middleware in an existing server
    * @default false
    */
-  middlewareMode?: boolean | 'html' | 'ssr'
+  middlewareMode?:
+    | boolean
+    | 'html'
+    | 'ssr'
+    | {
+        /**
+         * Parent server instance to attach to
+         *
+         * This is needed to proxy WebSocket connections to the parent server.
+         */
+        server: http.Server
+      }
   /**
    * Options for files served via '/\@fs/'.
    */
@@ -316,32 +328,15 @@ export interface ResolvedServerUrls {
   network: string[]
 }
 
-export interface CreateServerOptions {
-  /**
-   * Provide the parent http server instance for middleware mode.
-   *
-   * It's required when using proxy for WebSocket.
-   */
-  middlewareModeHttpServer?: http.Server | null
-  /**
-   * Initialize WebSocket server
-   */
-  ws?: boolean
-}
-
 export function createServer(
   inlineConfig: InlineConfig = {},
-  options: CreateServerOptions = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, {
-    ws: true,
-    ...options,
-  })
+  return _createServer(inlineConfig, { ws: true })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: CreateServerOptions = {},
+  options: { ws: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -616,13 +611,11 @@ export async function _createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(
-      proxyMiddleware(
-        httpServer ? httpServer : options.middlewareModeHttpServer || null,
-        proxy,
-        config,
-      ),
-    )
+    const middlewareServer =
+      (isObject(serverConfig.middlewareMode)
+        ? serverConfig.middlewareMode.server
+        : null) || httpServer
+    middlewares.use(proxyMiddleware(middlewareServer, proxy, config))
   }
 
   // base

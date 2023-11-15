@@ -7,10 +7,7 @@ Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript o
 **Type Signature:**
 
 ```ts
-async function createServer(
-  inlineConfig?: InlineConfig,
-  options?: CreateServerOptions,
-): Promise<ViteDevServer>
+async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 ```
 
 **Example Usage:**
@@ -42,7 +39,7 @@ When using `createServer` and `build` in the same Node.js process, both function
 :::
 
 ::: tip NOTE
-When using [middleware mode](/config/server-options.html#server-middlewaremode) combined with [proxy config for WebSocket](/config/server-options.html#server-proxy), the parent http server should be provided in the second argument to bind the proxy correctly.
+When using [middleware mode](/config/server-options.html#server-middlewaremode) combined with [proxy config for WebSocket](/config/server-options.html#server-proxy), the parent http server should be provided in `middlewareMode` to bind the proxy correctly.
 
 <details>
 <summary>Example</summary>
@@ -51,27 +48,24 @@ When using [middleware mode](/config/server-options.html#server-middlewaremode) 
 import http from 'http'
 import { createServer } from 'vite'
 
-const server = http.createServer() // or express, koa, etc.
+const parentServer = http.createServer() // or express, koa, etc.
 
-const vite = await createServer(
-  {
-    server: {
-      // Enable middleware mode
-      middlewareMode: true,
-    },
-    proxy: {
-      '/ws': {
-        target: 'ws://localhost:3000',
-        // Proxying WebSocket
-        ws: true,
-      },
+const vite = await createServer({
+  server: {
+    // Enable middleware mode
+    middlewareMode: {
+      // Provide the parent http server for proxy WebSocket
+      server: parentServer,
     },
   },
-  {
-    // Provide the parent http server
-    middlewareModeHttpServer: server,
+  proxy: {
+    '/ws': {
+      target: 'ws://localhost:3000',
+      // Proxying WebSocket
+      ws: true,
+    },
   },
-)
+})
 
 server.use(vite.middlewares)
 ```
