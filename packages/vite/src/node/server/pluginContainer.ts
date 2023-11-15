@@ -62,7 +62,6 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
-import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
 import {
   cleanUrl,
@@ -429,14 +428,9 @@ export async function createPluginContainer(
     position: number | { column: number; line: number } | undefined,
     ctx: Context,
   ) {
-    const err = (
-      typeof e === 'string' ? new Error(e) : e
-    ) as postcss.CssSyntaxError & RollupError
+    const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
-    }
-    if (err.file && err.name === 'CssSyntaxError') {
-      err.id = normalizePath(err.file)
     }
     if (ctx._activePlugin) err.plugin = ctx._activePlugin.name
     if (ctx._activeId && !err.id) err.id = ctx._activeId
@@ -483,7 +477,7 @@ export async function createPluginContainer(
           line: (err as any).line,
           column: (err as any).column,
         }
-        err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
+        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
       }
 
       if (
