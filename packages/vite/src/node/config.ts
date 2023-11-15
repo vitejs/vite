@@ -591,8 +591,8 @@ export async function resolveConfig(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
       : pkgDir
-      ? path.join(pkgDir, `node_modules/.vite`)
-      : path.join(resolvedRoot, `.vite`),
+        ? path.join(pkgDir, `node_modules/.vite`)
+        : path.join(resolvedRoot, `.vite`),
   )
 
   const assetsFilter =
