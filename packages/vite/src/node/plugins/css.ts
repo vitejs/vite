@@ -72,7 +72,7 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
-import { tryNodeResolve} from "./resolve";
+//import { tryNodeResolve} from "./resolve";
 
 // const debug = createDebugger('vite:css')
 
@@ -1866,7 +1866,7 @@ const scss: SassStylePreprocessor = async (
       console.log(resolved)
       console.log(options)
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias, '$')
+        rebaseUrls(resolved, options.filename, options.alias, '$', resolvers.sass)
           .then((data) => done?.(fixScssBugImportValue(data)))
           .catch((data) => done?.(data))
       } else {
@@ -1952,6 +1952,7 @@ async function rebaseUrls(
   rootFile: string,
   alias: Alias[],
   variablePrefix: string,
+  resolver: ResolveFn,
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1977,7 +1978,7 @@ async function rebaseUrls(
   console.log(file)
 
   let rebased
-  const rebaseFn = (url: string) => {
+  const rebaseFn = async (url: string) => {
     if (url[0] === '/') return url
     // ignore url's starting with variable
     if (url.startsWith(variablePrefix)) return url
@@ -1990,17 +1991,18 @@ async function rebaseUrls(
       }
     }
     //const absolute = path.resolve(fileDir, url)
-    const absolute = tryNodeResolve(url, file, {
-      isBuild: false,
-      isProduction: false,
-      dedupe: [],
-      preserveSymlinks: true,
-      root: rootDir,
-      extensions: ['.scss', '.sass', '.css'],
-      mainFields: ['sass', 'style'],
-      conditions: ['sass', 'style']
-    }, true)
-    const relative = path.relative(rootDir, absolute?.id as string)
+    // const absolute = tryNodeResolve(url, file, {
+    //   isBuild: false,
+    //   isProduction: false,
+    //   dedupe: [],
+    //   preserveSymlinks: true,
+    //   root: rootDir,
+    //   extensions: ['.scss', '.sass', '.css'],
+    //   mainFields: ['sass', 'style'],
+    //   conditions: ['sass', 'style']
+    // }, true)
+    const absolute = await resolver(url, file);
+    const relative = path.relative(rootDir, absolute as string)
     console.log("rebasefn?")
     console.log(fileDir)
     console.log(url)
@@ -2137,6 +2139,7 @@ function createViteLessPlugin(
             this.rootFile,
             this.alias,
             '@',
+            this.resolvers.less
           )
           let contents: string
           if (result && 'contents' in result) {
