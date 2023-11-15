@@ -170,6 +170,7 @@ Enabling this setting causes vite to determine file identity by the original fil
   interface CSSModulesOptions {
     scopeBehaviour?: 'global' | 'local'
     globalModulePaths?: RegExp[]
+    exportGlobals: boolean
     generateScopedName?:
       | string
       | ((name: string, filename: string, css: string) => string)
