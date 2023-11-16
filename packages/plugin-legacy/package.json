@@ -51,7 +51,7 @@
   },
   "peerDependencies": {
     "terser": "^5.4.0",
-    "vite": "^4.0.0"
+    "vite": "^5.0.0"
   },
   "devDependencies": {
     "acorn": "^8.11.2",
