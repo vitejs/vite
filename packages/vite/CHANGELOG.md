@@ -1,31 +1,26 @@
 ## 5.0.0-beta.20 (2023-11-15)
 
-* feat: allow providing parent httpServer on middleware mode (#14632) ([e0c86d4](https://github.com/vitejs/vite/commit/e0c86d4)), closes [#14632](https://github.com/vitejs/vite/issues/14632)
-* fix: caret position was incorrect (#14984) ([2b4e793](https://github.com/vitejs/vite/commit/2b4e793)), closes [#14984](https://github.com/vitejs/vite/issues/14984)
-* fix: code frame was not generated for postcss errors (#14986) ([bedfcfa](https://github.com/vitejs/vite/commit/bedfcfa)), closes [#14986](https://github.com/vitejs/vite/issues/14986)
-* fix: don't append `/@fs/` for bare imports (#14995) ([2a519a1](https://github.com/vitejs/vite/commit/2a519a1)), closes [#14995](https://github.com/vitejs/vite/issues/14995)
-* fix: server.preTransformRequests https error (#14991) (#14993) ([58ff849](https://github.com/vitejs/vite/commit/58ff849)), closes [#14991](https://github.com/vitejs/vite/issues/14991) [#14993](https://github.com/vitejs/vite/issues/14993)
-* fix(ssr): skip esm proxy guard for namespace imports (#14988) ([82a5b11](https://github.com/vitejs/vite/commit/82a5b11)), closes [#14988](https://github.com/vitejs/vite/issues/14988)
-* docs: point links in messages at https: (#14992) ([d3af879](https://github.com/vitejs/vite/commit/d3af879)), closes [#14992](https://github.com/vitejs/vite/issues/14992)
+Vite 5 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite5)
 
+[![Announcing Vite 5](https://vitejs.dev/og-image-announcing-vite5.png)](https://vitejs.dev/blog/announcing-vite5)
 
+Today, we mark another big milestone in Vite's path. The Vite [team](/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners, are excited to announce the release of Vite 5. Vite is now using [Rollup 4](https://github.com/vitejs/vite/pull/14508), which already represents a big boost in build performance. And there are also new options to improve your dev server performance profile. This version cleans up Vite's API (removing deprecated features) and streamlines several features closing long-standing issues, for example switching `define` to use proper AST replacements instead of being regex-based. We also continue to take steps to simplify Vite further in the future (Node.js 18+ is now required, and [the CJS Node API has been deprecated](/guide/migration#deprecate-cjs-node-api)).
 
-## 5.0.0-beta.19 (2023-11-14)
+Quick links:
 
-* style(client): overlay frame show scrollbar (#14701) ([8aa4134](https://github.com/vitejs/vite/commit/8aa4134)), closes [#14701](https://github.com/vitejs/vite/issues/14701)
-* fix: don't watch SPA fallback paths (#14953) ([24c2c57](https://github.com/vitejs/vite/commit/24c2c57)), closes [#14953](https://github.com/vitejs/vite/issues/14953)
-* fix: handle addWatchFile in load hooks (#14967) ([a0ab85b](https://github.com/vitejs/vite/commit/a0ab85b)), closes [#14967](https://github.com/vitejs/vite/issues/14967)
-* fix: preload marker duplicate deps (#14955) ([55335cc](https://github.com/vitejs/vite/commit/55335cc)), closes [#14955](https://github.com/vitejs/vite/issues/14955)
-* fix: relax overlay frame regex (#14979) ([0b325bb](https://github.com/vitejs/vite/commit/0b325bb)), closes [#14979](https://github.com/vitejs/vite/issues/14979)
-* fix(deps): update all non-major dependencies (#14961) ([0bb3995](https://github.com/vitejs/vite/commit/0bb3995)), closes [#14961](https://github.com/vitejs/vite/issues/14961)
-* fix(esbuild): set js loader for build transpile (#14980) ([80beede](https://github.com/vitejs/vite/commit/80beede)), closes [#14980](https://github.com/vitejs/vite/issues/14980)
-* fix(pluginContainer): run transform in this.load (#14965) ([3f57b05](https://github.com/vitejs/vite/commit/3f57b05)), closes [#14965](https://github.com/vitejs/vite/issues/14965)
-* feat: error when failed to resolve aliased import (#14973) ([6a564fa](https://github.com/vitejs/vite/commit/6a564fa)), closes [#14973](https://github.com/vitejs/vite/issues/14973)
-* build: dont strip single line comments (#14969) ([ea9ccb7](https://github.com/vitejs/vite/commit/ea9ccb7)), closes [#14969](https://github.com/vitejs/vite/issues/14969)
+- [Docs](https://vitejs.dev)
+- [Migration Guide](https://vitejs.dev/guide/migration)
 
+Docs in other languages:
 
+- [简体中文](https://cn.vitejs.dev/)
+- [日本語](https://ja.vitejs.dev/)
+- [Español](https://es.vitejs.dev/)
+- [Português](https://pt.vitejs.dev/)
+- [한국어](https://ko.vitejs.dev/)
+- [Deutsch](https://de.vitejs.dev/) (new translation!)
 
-## 5.0.0-beta.18 (2023-11-11)
+Learn more at [the Vite 5 announcement blog post](https://vitejs.dev/blog/announcing-vite5).
 
 
 ### Breaking changes
@@ -64,6 +59,9 @@
 
 ### Features
 
+* feat: allow providing parent httpServer on middleware mode (#14632) ([e0c86d4](https://github.com/vitejs/vite/commit/e0c86d4)), closes [#14632](https://github.com/vitejs/vite/issues/14632)
+* style(client): overlay frame show scrollbar (#14701) ([8aa4134](https://github.com/vitejs/vite/commit/8aa4134)), closes [#14701](https://github.com/vitejs/vite/issues/14701)
+* feat: error when failed to resolve aliased import (#14973) ([6a564fa](https://github.com/vitejs/vite/commit/6a564fa)), closes [#14973](https://github.com/vitejs/vite/issues/14973)
 * feat: add invalid `rollupOptions` warnings (#14909) ([7c240a0](https://github.com/vitejs/vite/commit/7c240a0)), closes [#14909](https://github.com/vitejs/vite/issues/14909)
 * feat: skip initial clear screen if has logs (#14936) ([a92bc61](https://github.com/vitejs/vite/commit/a92bc61)), closes [#14936](https://github.com/vitejs/vite/issues/14936)
 * feat(hmr): add full reload reason (#14914) ([60a020e](https://github.com/vitejs/vite/commit/60a020e)), closes [#14914](https://github.com/vitejs/vite/issues/14914)
@@ -114,6 +112,18 @@
 
 ### Fixes
 
+* fix: caret position was incorrect (#14984) ([2b4e793](https://github.com/vitejs/vite/commit/2b4e793)), closes [#14984](https://github.com/vitejs/vite/issues/14984)
+* fix: code frame was not generated for postcss errors (#14986) ([bedfcfa](https://github.com/vitejs/vite/commit/bedfcfa)), closes [#14986](https://github.com/vitejs/vite/issues/14986)
+* fix: don't append `/@fs/` for bare imports (#14995) ([2a519a1](https://github.com/vitejs/vite/commit/2a519a1)), closes [#14995](https://github.com/vitejs/vite/issues/14995)
+* fix: server.preTransformRequests https error (#14991) (#14993) ([58ff849](https://github.com/vitejs/vite/commit/58ff849)), closes [#14991](https://github.com/vitejs/vite/issues/14991) [#14993](https://github.com/vitejs/vite/issues/14993)
+* fix(ssr): skip esm proxy guard for namespace imports (#14988) ([82a5b11](https://github.com/vitejs/vite/commit/82a5b11)), closes [#14988](https://github.com/vitejs/vite/issues/14988)
+* fix: don't watch SPA fallback paths (#14953) ([24c2c57](https://github.com/vitejs/vite/commit/24c2c57)), closes [#14953](https://github.com/vitejs/vite/issues/14953)
+* fix: handle addWatchFile in load hooks (#14967) ([a0ab85b](https://github.com/vitejs/vite/commit/a0ab85b)), closes [#14967](https://github.com/vitejs/vite/issues/14967)
+* fix: preload marker duplicate deps (#14955) ([55335cc](https://github.com/vitejs/vite/commit/55335cc)), closes [#14955](https://github.com/vitejs/vite/issues/14955)
+* fix: relax overlay frame regex (#14979) ([0b325bb](https://github.com/vitejs/vite/commit/0b325bb)), closes [#14979](https://github.com/vitejs/vite/issues/14979)
+* fix(deps): update all non-major dependencies (#14961) ([0bb3995](https://github.com/vitejs/vite/commit/0bb3995)), closes [#14961](https://github.com/vitejs/vite/issues/14961)
+* fix(esbuild): set js loader for build transpile (#14980) ([80beede](https://github.com/vitejs/vite/commit/80beede)), closes [#14980](https://github.com/vitejs/vite/issues/14980)
+* fix(pluginContainer): run transform in this.load (#14965) ([3f57b05](https://github.com/vitejs/vite/commit/3f57b05)), closes [#14965](https://github.com/vitejs/vite/issues/14965)
 * fix: `server.headers` after restart in middleware mode (#14905) ([f9ce9db](https://github.com/vitejs/vite/commit/f9ce9db)), closes [#14905](https://github.com/vitejs/vite/issues/14905)
 * fix: add watch in fallback file load (#14938) ([b24b951](https://github.com/vitejs/vite/commit/b24b951)), closes [#14938](https://github.com/vitejs/vite/issues/14938)
 * fix: injectQuery check with double slash in the url (#14910) ([84c5ff6](https://github.com/vitejs/vite/commit/84c5ff6)), closes [#14910](https://github.com/vitejs/vite/issues/14910)
@@ -204,6 +214,8 @@
 
 ### Cleanup
 
+* docs: point links in messages at https: (#14992) ([d3af879](https://github.com/vitejs/vite/commit/d3af879)), closes [#14992](https://github.com/vitejs/vite/issues/14992)
+* build: dont strip single line comments (#14969) ([ea9ccb7](https://github.com/vitejs/vite/commit/ea9ccb7)), closes [#14969](https://github.com/vitejs/vite/issues/14969)
 * build: strip internal parameters ([1168e57](https://github.com/vitejs/vite/commit/1168e57))
 * chore: refactor as functions ([5684382](https://github.com/vitejs/vite/commit/5684382))
 * chore: add `PluginWithRequiredHook` type & extract `getHookHandler` function  (#14845) ([997f2d5](https://github.com/vitejs/vite/commit/997f2d5)), closes [#14845](https://github.com/vitejs/vite/issues/14845)
@@ -239,6 +251,14 @@
 
 
 ### Previous Changelogs
+
+
+#### [5.0.0-beta.19](https://github.com/vitejs/vite/compare/v5.0.0-beta.18...v5.0.0-beta.19) (2023-11-14)
+See [5.0.0-beta.19 changelog](https://github.com/vitejs/vite/blob/v5.0.0-beta.19/packages/vite/CHANGELOG.md)
+
+
+#### [5.0.0-beta.18](https://github.com/vitejs/vite/compare/v5.0.0-beta.17...v5.0.0-beta.18) (2023-11-11)
+See [5.0.0-beta.18 changelog](https://github.com/vitejs/vite/blob/v5.0.0-beta.18/packages/vite/CHANGELOG.md)
 
 
 #### [5.0.0-beta.17](https://github.com/vitejs/vite/compare/v5.0.0-beta.16...v5.0.0-beta.17) (2023-11-07)
