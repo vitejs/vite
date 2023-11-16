@@ -527,15 +527,6 @@ importers:
 
   playground/css-dynamic-import: {}
 
-  playground/css-entrypoint:
-    devDependencies:
-      '@vitejs/plugin-legacy':
-        specifier: workspace:*
-        version: link:../../packages/plugin-legacy
-      terser:
-        specifier: ^5.19.4
-        version: 5.24.0
-
   playground/css-lightningcss:
     devDependencies:
       lightningcss:
