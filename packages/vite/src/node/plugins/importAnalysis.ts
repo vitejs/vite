@@ -335,7 +335,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          fs.existsSync(cleanUrl(resolved.id))
+          (path.isAbsolute(cleanUrl(resolved.id)) &&
+            fs.existsSync(cleanUrl(resolved.id)))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
@@ -640,7 +641,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   `\n` +
                     colors.cyan(importerModule.file) +
                     `\n` +
-                    colors.reset(generateCodeFrame(source, start)) +
+                    colors.reset(generateCodeFrame(source, start, end)) +
                     colors.yellow(
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
                         `See ${colors.blue(

@@ -1,3 +1,30 @@
+## 5.0.0-beta.20 (2023-11-15)
+
+* feat: allow providing parent httpServer on middleware mode (#14632) ([e0c86d4](https://github.com/vitejs/vite/commit/e0c86d4)), closes [#14632](https://github.com/vitejs/vite/issues/14632)
+* fix: caret position was incorrect (#14984) ([2b4e793](https://github.com/vitejs/vite/commit/2b4e793)), closes [#14984](https://github.com/vitejs/vite/issues/14984)
+* fix: code frame was not generated for postcss errors (#14986) ([bedfcfa](https://github.com/vitejs/vite/commit/bedfcfa)), closes [#14986](https://github.com/vitejs/vite/issues/14986)
+* fix: don't append `/@fs/` for bare imports (#14995) ([2a519a1](https://github.com/vitejs/vite/commit/2a519a1)), closes [#14995](https://github.com/vitejs/vite/issues/14995)
+* fix: server.preTransformRequests https error (#14991) (#14993) ([58ff849](https://github.com/vitejs/vite/commit/58ff849)), closes [#14991](https://github.com/vitejs/vite/issues/14991) [#14993](https://github.com/vitejs/vite/issues/14993)
+* fix(ssr): skip esm proxy guard for namespace imports (#14988) ([82a5b11](https://github.com/vitejs/vite/commit/82a5b11)), closes [#14988](https://github.com/vitejs/vite/issues/14988)
+* docs: point links in messages at https: (#14992) ([d3af879](https://github.com/vitejs/vite/commit/d3af879)), closes [#14992](https://github.com/vitejs/vite/issues/14992)
+
+
+
+## 5.0.0-beta.19 (2023-11-14)
+
+* style(client): overlay frame show scrollbar (#14701) ([8aa4134](https://github.com/vitejs/vite/commit/8aa4134)), closes [#14701](https://github.com/vitejs/vite/issues/14701)
+* fix: don't watch SPA fallback paths (#14953) ([24c2c57](https://github.com/vitejs/vite/commit/24c2c57)), closes [#14953](https://github.com/vitejs/vite/issues/14953)
+* fix: handle addWatchFile in load hooks (#14967) ([a0ab85b](https://github.com/vitejs/vite/commit/a0ab85b)), closes [#14967](https://github.com/vitejs/vite/issues/14967)
+* fix: preload marker duplicate deps (#14955) ([55335cc](https://github.com/vitejs/vite/commit/55335cc)), closes [#14955](https://github.com/vitejs/vite/issues/14955)
+* fix: relax overlay frame regex (#14979) ([0b325bb](https://github.com/vitejs/vite/commit/0b325bb)), closes [#14979](https://github.com/vitejs/vite/issues/14979)
+* fix(deps): update all non-major dependencies (#14961) ([0bb3995](https://github.com/vitejs/vite/commit/0bb3995)), closes [#14961](https://github.com/vitejs/vite/issues/14961)
+* fix(esbuild): set js loader for build transpile (#14980) ([80beede](https://github.com/vitejs/vite/commit/80beede)), closes [#14980](https://github.com/vitejs/vite/issues/14980)
+* fix(pluginContainer): run transform in this.load (#14965) ([3f57b05](https://github.com/vitejs/vite/commit/3f57b05)), closes [#14965](https://github.com/vitejs/vite/issues/14965)
+* feat: error when failed to resolve aliased import (#14973) ([6a564fa](https://github.com/vitejs/vite/commit/6a564fa)), closes [#14973](https://github.com/vitejs/vite/issues/14973)
+* build: dont strip single line comments (#14969) ([ea9ccb7](https://github.com/vitejs/vite/commit/ea9ccb7)), closes [#14969](https://github.com/vitejs/vite/issues/14969)
+
+
+
 ## 5.0.0-beta.18 (2023-11-11)
 
 
