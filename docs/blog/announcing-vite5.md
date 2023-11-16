@@ -70,7 +70,7 @@ Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.j
 
 On top of the build performance improvements thanks to Rollup 4, there is a new guide to help you identify and fix common performance issues at [https://vitejs.dev/guide/performance](/guide/performance).
 
-Vite 5 also introduced [server.warmup](/guide/performance.html#warm-up-frequently-used-files), a new feature to improve startup time. It lets you define a list of modules that should be pre-transformed as soon as the server starts. When using [`--open` or `server.open`](/config/server-options.html#server-open), Vite will also automatically warm up the entry point of your app or the provided URL to open.
+Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequently-used-files), a new feature to improve startup time. It lets you define a list of modules that should be pre-transformed as soon as the server starts. When using [`--open` or `server.open`](/config/server-options.html#server-open), Vite will also automatically warm up the entry point of your app or the provided URL to open.
 
 ## Main Changes
 
