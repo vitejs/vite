@@ -39,7 +39,7 @@ Quick links:
 
 - [Docs](/)
 - [Migration Guide](/guide/migration)
-- TODO: update link [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#400-2023-11-10)
+- [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#500-2023-11-16)
 
 Docs in other languages:
 
