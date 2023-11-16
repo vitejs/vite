@@ -4,12 +4,6 @@ Vite releases follow [Semantic Versioning](https://semver.org/). You can see the
 
 A full changelog of past releases is [available on GitHub](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md).
 
-::: tip note
-The next Vite Major release will happen after the Node 16 EOL in September.
-
-Check out the [Vite 5 discussion](https://github.com/vitejs/vite/discussions/12466) for more information.
-:::
-
 ## Release Cycle​
 
 Vite does not have a fixed release cycle.
