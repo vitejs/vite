@@ -1,3 +1,9 @@
+## 5.0.0 (2023-11-16)
+
+* feat(plugin-legacy)!: bump vite peer dep (#15004) ([3c92c7b](https://github.com/vitejs/vite/commit/3c92c7b)), closes [#15004](https://github.com/vitejs/vite/issues/15004)
+
+
+
 ## 5.0.0-beta.3 (2023-11-14)
 
 * fix(deps): update all non-major dependencies (#14635) ([21017a9](https://github.com/vitejs/vite/commit/21017a9)), closes [#14635](https://github.com/vitejs/vite/issues/14635)
