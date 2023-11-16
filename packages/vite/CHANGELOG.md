@@ -1,3 +1,8 @@
+## 5.0.0 (2023-11-16)
+
+
+
+
 ## 5.0.0-beta.20 (2023-11-15)
 
 * feat: allow providing parent httpServer on middleware mode (#14632) ([e0c86d4](https://github.com/vitejs/vite/commit/e0c86d4)), closes [#14632](https://github.com/vitejs/vite/issues/14632)
