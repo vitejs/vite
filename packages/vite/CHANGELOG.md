@@ -1,10 +1,5 @@
 ## 5.0.0 (2023-11-16)
 
-
-
-
-## 5.0.0-beta.20 (2023-11-15)
-
 Vite 5 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite5)
 
 [![Announcing Vite 5](https://vitejs.dev/og-image-announcing-vite5.png)](https://vitejs.dev/blog/announcing-vite5)
@@ -258,6 +253,10 @@ Learn more at [the Vite 5 announcement blog post](https://vitejs.dev/blog/announ
 
 
 ### Previous Changelogs
+
+
+#### [5.0.0-beta.20](https://github.com/vitejs/vite/compare/v5.0.0-beta.19...v5.0.0-beta.20) (2023-11-15)
+See [5.0.0-beta.20 changelog](https://github.com/vitejs/vite/blob/v5.0.0-beta.20/packages/vite/CHANGELOG.md)
 
 
 #### [5.0.0-beta.19](https://github.com/vitejs/vite/compare/v5.0.0-beta.18...v5.0.0-beta.19) (2023-11-14)
