@@ -87,6 +87,14 @@ Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequentl
 - [Removes previously deprecated APIs](/guide/migration#removed-deprecated-apis)
 - [Read more about advanced changes affecting plugin and tool authors](/guide/migration#advanced)
 
+## Migrating to Vite 5
+
+We have worked with ecosystem partners to ensure a smooth migration to this new major. Once again, [vite-ecosystem-ci](https://www.youtube.com/watch?v=7L4I4lDzO48) has been crucial to help us make bolder changes while avoiding regressions. We're thrilled to see other ecosystems adopt similar schemes to improve the collaboration between their projects and downstream maintainers.
+
+For most projects, the update to Vite 5 should be straight forward. But we advice reviewing the [detailed Migration Guide](/guide/migration) before upgrading.
+
+A low level breakdown with the full list of changes to Vite core can be found at the [Vite 5 Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#500-2023-11-16).
+
 ## Acknowledgments
 
 Vite 5 is the result of long hours of work by our community of contributors, downstream maintainers, plugins authors, and the [Vite Team](/team). A big shoutout to [Bjorn Lu](https://twitter.com/bluwyoo) for leading the release process for this major.
