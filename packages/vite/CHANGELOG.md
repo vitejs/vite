@@ -1,3 +1,8 @@
+## 5.0.0 (2023-11-16)
+
+
+
+
 ## 5.0.0-beta.20 (2023-11-15)
 
 Vite 5 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite5)
