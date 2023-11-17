@@ -12,5 +12,6 @@ export default defineConfig({
       },
     },
     watch: {},
+    outDir: 'dist/watch',
   },
 })
