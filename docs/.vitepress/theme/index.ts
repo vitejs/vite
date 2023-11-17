@@ -5,6 +5,9 @@ import './styles/vars.css'
 import HomeSponsors from './components/HomeSponsors.vue'
 import AsideSponsors from './components/AsideSponsors.vue'
 import SvgImage from './components/SvgImage.vue'
+// temporary fix for vitepress not including component css when only
+// imported in a single page
+import './components/BlogIndex.vue'
 
 export default {
   extends: DefaultTheme,
