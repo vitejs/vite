@@ -22,7 +22,7 @@ The CJS Node API of Vite is deprecated. When calling `require('vite')`, a deprec
 In a basic Vite project, make sure:
 
 1. The `vite.config.js` file content is using the ESM syntax.
-2. The closest `package.json` file has `"type": "module"`, or use the `.mjs` extension, e.g. `vite.config.mjs`.
+2. The closest `package.json` file has `"type": "module"`, or use the `.mjs`/`.mts` extension, e.g. `vite.config.mjs` or `vite.config.mts`.
 
 For other projects, there are a few general approaches:
 
