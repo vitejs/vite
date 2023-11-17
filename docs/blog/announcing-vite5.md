@@ -95,7 +95,7 @@ Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequentl
 
 We have worked with ecosystem partners to ensure a smooth migration to this new major. Once again, [vite-ecosystem-ci](https://www.youtube.com/watch?v=7L4I4lDzO48) has been crucial to help us make bolder changes while avoiding regressions. We're thrilled to see other ecosystems adopt similar schemes to improve the collaboration between their projects and downstream maintainers.
 
-For most projects, the update to Vite 5 should be straight forward. But we advice reviewing the [detailed Migration Guide](/guide/migration) before upgrading.
+For most projects, the update to Vite 5 should be straight forward. But we advise reviewing the [detailed Migration Guide](/guide/migration) before upgrading.
 
 A low level breakdown with the full list of changes to Vite core can be found at the [Vite 5 Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#500-2023-11-16).
 
