@@ -137,6 +137,7 @@ export default defineConfig({
         text: 'Resources',
         items: [
           { text: 'Team', link: '/team' },
+          { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           {
             items: [
