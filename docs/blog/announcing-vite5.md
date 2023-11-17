@@ -1,5 +1,6 @@
 ---
 sidebar: false
+date: 2023-11-16
 head:
   - - meta
     - property: og:type
