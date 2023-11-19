@@ -361,11 +361,13 @@ function propagateUpdate(
  * @param nodeChain The chain of nodes/imports that lead to the node.
  *   (The last node in the chain imports the `node` parameter)
  * @param currentChain The current chain tracked from the `node` parameter
+ * @param traversedModules The set of modules that have been traversed
  */
 function isNodeWithinCircularImports(
   node: ModuleNode,
   nodeChain: ModuleNode[],
   currentChain: ModuleNode[] = [node],
+  traversedModules = new Set<ModuleNode>(),
 ): HasDeadEnd {
   // To help visualize how each parameters work, imagine this import graph:
   //
@@ -382,6 +384,12 @@ function isNodeWithinCircularImports(
   //
   // It works by checking if any `node` importers are within `nodeChain`, which
   // means there's an import loop with a HMR-accepted module in it.
+
+  if (traversedModules.has(node)) {
+    // To avoid infinite recursion, we only check each module once.
+    return false
+  }
+  traversedModules.add(node)
 
   for (const importer of node.importers) {
     // Node may import itself which is safe
@@ -416,6 +424,7 @@ function isNodeWithinCircularImports(
         importer,
         nodeChain,
         currentChain.concat(importer),
+        traversedModules,
       )
       if (result) return result
     }
