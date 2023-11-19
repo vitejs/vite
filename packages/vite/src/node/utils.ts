@@ -879,13 +879,13 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
 }
 
 export function diffDnsOrderChange(
-  prevDnsOrder: 'verbatim' | 'ipv4first',
+  prevDnsOrder: 'verbatim' | 'ipv4first' | undefined,
   oldUrls: ViteDevServer['resolvedUrls'],
   newUrls: ViteDevServer['resolvedUrls'],
 ): boolean {
-  // dns.getDefaultResultOrder is available from Node.js v20.1.0 and v18.17.0
-  const result = dns.getDefaultResultOrder?.()
-  if (result) {
+  if (prevDnsOrder) {
+    // dns.getDefaultResultOrder is available from Node.js v20.1.0 and v18.17.0
+    const result = dns.getDefaultResultOrder()
     return prevDnsOrder !== result
   }
   return !(
