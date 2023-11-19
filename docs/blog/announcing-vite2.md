@@ -1,4 +1,7 @@
 ---
+title: Announcing Vite 2.0
+author:
+  - name: Evan You
 sidebar: false
 date: 2021-02-16
 head:
