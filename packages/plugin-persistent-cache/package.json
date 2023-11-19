@@ -43,7 +43,7 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {},
   "peerDependencies": {
-    "vite": "^4.0.0"
+    "vite": "^5.0.0"
   },
   "devDependencies": {
     "debug": "^4.3.4",
