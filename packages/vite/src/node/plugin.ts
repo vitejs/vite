@@ -44,7 +44,7 @@ import type { DepOptimizationMetadata } from './optimizer'
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
  */
-export interface Plugin extends RollupPlugin {
+export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
@@ -78,7 +78,11 @@ export interface Plugin extends RollupPlugin {
       this: void,
       config: UserConfig,
       env: ConfigEnv,
-    ) => UserConfig | null | void | Promise<UserConfig | null | void>
+    ) =>
+      | Omit<UserConfig, 'plugins'>
+      | null
+      | void
+      | Promise<Omit<UserConfig, 'plugins'> | null | void>
   >
   /**
    * Use this hook to read and store the final resolved vite config.
@@ -208,7 +212,7 @@ export interface Plugin extends RollupPlugin {
       source: string,
       importer: string | undefined,
       options: {
-        assertions: Record<string, string>
+        attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
@@ -237,3 +241,7 @@ export interface Plugin extends RollupPlugin {
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
+
+export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
+  [P in K]: NonNullable<Plugin[P]>
+}

@@ -4,6 +4,8 @@ import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
   bareImportRE,
+  flattenId,
+  generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
@@ -175,6 +177,59 @@ describe('posToNumber', () => {
   })
 })
 
+describe('generateCodeFrames', () => {
+  const source = `
+import foo from './foo'
+foo()
+`.trim()
+  const sourceCrLf = source.replace(/\n/, '\r\n')
+  const longSource = `
+import foo from './foo'
+
+foo()
+
+// bar
+// baz
+  `
+
+  const expectSnapshot = (value: string) => {
+    try {
+      // add new line to make snapshot easier to read
+      expect('\n' + value + '\n').toMatchSnapshot()
+    } catch (e) {
+      // don't include this function in stacktrace
+      Error.captureStackTrace(e, expectSnapshot)
+      throw e
+    }
+  }
+
+  test('start with number', () => {
+    expectSnapshot(generateCodeFrame(source, 0))
+    expectSnapshot(generateCodeFrame(source, 1))
+    expectSnapshot(generateCodeFrame(source, 24))
+  })
+
+  test('start with postion', () => {
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 0 }))
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 1 }))
+    expectSnapshot(generateCodeFrame(source, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF', () => {
+    expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('end', () => {
+    expectSnapshot(generateCodeFrame(source, 0, 0))
+    expectSnapshot(generateCodeFrame(source, 0, 23))
+    expectSnapshot(generateCodeFrame(source, 0, 29))
+  })
+
+  test('range', () => {
+    expectSnapshot(generateCodeFrame(longSource, { line: 3, column: 0 }))
+  })
+})
+
 describe('getHash', () => {
   test('8-digit hex', () => {
     const hash = getHash(Buffer.alloc(0))
@@ -258,5 +313,24 @@ describe('processSrcSetSync', () => {
         ({ url }) => path.posix.join(devBase, url),
       ),
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
+})
+
+describe('flattenId', () => {
+  test('should limit id to 170 characters', () => {
+    const tenChars = '1234567890'
+    let id = ''
+
+    for (let i = 0; i < 17; i++) {
+      id += tenChars
+    }
+    expect(id).toHaveLength(170)
+
+    const result = flattenId(id)
+    expect(result).toHaveLength(170)
+
+    id += tenChars
+    const result2 = flattenId(id)
+    expect(result2).toHaveLength(170)
   })
 })

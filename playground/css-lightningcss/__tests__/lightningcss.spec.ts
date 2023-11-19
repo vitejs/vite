@@ -62,7 +62,7 @@ test('inline css modules', async () => {
 
 test.runIf(isBuild)('minify css', async () => {
   // should keep the rgba() syntax
-  const cssFile = findAssetFile(/index-\w+\.css$/)
+  const cssFile = findAssetFile(/index-[-\w]+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
 })

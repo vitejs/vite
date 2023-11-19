@@ -23,7 +23,7 @@ test('normal', async () => {
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
 })
 
 test('TS output', async () => {
@@ -35,7 +35,19 @@ test('inlined', async () => {
 })
 
 test('named inlined', async () => {
-  await untilUpdated(() => page.textContent('.pong-inline-named'), 'pong', true)
+  await untilUpdated(
+    () => page.textContent('.pong-inline-named'),
+    'namedInlineWorker',
+    true,
+  )
+})
+
+test('import meta url', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-url'),
+    /^(blob|http):/,
+    true,
+  )
 })
 
 test('shared worker', async () => {
@@ -68,12 +80,30 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   )
 })
 
+test('deeply nested workers', async () => {
+  await untilUpdated(
+    async () => page.textContent('.deeply-nested-worker'),
+    /Hello\sfrom\sroot.*\/es\/.+deeply-nested-worker\.js/,
+    true,
+  )
+  await untilUpdated(
+    async () => page.textContent('.deeply-nested-second-worker'),
+    /Hello\sfrom\ssecond.*\/es\/.+second-worker\.js/,
+    true,
+  )
+  await untilUpdated(
+    async () => page.textContent('.deeply-nested-third-worker'),
+    /Hello\sfrom\sthird.*\/es\/.+third-worker\.js/,
+    true,
+  )
+})
+
 describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(28)
+    expect(files.length).toBe(32)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -83,7 +113,7 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(`import`)
+    expect(workerContent).not.toMatch(/import[^.]/)
     expect(workerContent).not.toMatch(`export`)
     // chunk
     expect(content).toMatch(`new Worker("/es/assets`)
@@ -142,6 +172,10 @@ test('classic worker', async () => {
     () => page.textContent('.classic-worker'),
     'A classic',
     true,
+  )
+  await untilUpdated(
+    () => page.textContent('.classic-worker-import'),
+    '[success] classic-esm',
   )
   await untilUpdated(
     () => page.textContent('.classic-shared-worker'),

@@ -58,9 +58,9 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 1. Set the correct `base` in `vite.config.js`.
 
-   If you are deploying to `https://<USERNAME>.github.io/`, you can omit `base` as it defaults to `'/'`.
+   If you are deploying to `https://<USERNAME>.github.io/`, or to a custom domain through GitHub Pages (eg. `www.example.com`), set `base` to `'/'`. Alternatively, you can remove `base` from the configuration, as it defaults to `'/'`.
 
-   If you are deploying to `https://<USERNAME>.github.io/<REPO>/`, for example your repository is at `https://github.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
+   If you are deploying to `https://<USERNAME>.github.io/<REPO>/` (eg. your repository is at `https://github.com/<USERNAME>/<REPO>`), then set `base` to `'/<REPO>/'`.
 
 2. Go to your GitHub Pages configuration in the repository settings page and choose the source of deployment as "GitHub Actions", this will lead you to create a workflow that builds and deploys your project, a sample workflow that installs dependencies and builds using npm is provided:
 
@@ -96,7 +96,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
        runs-on: ubuntu-latest
        steps:
          - name: Checkout
-           uses: actions/checkout@v3
+           uses: actions/checkout@v4
          - name: Set up Node
            uses: actions/setup-node@v3
            with:
@@ -109,13 +109,13 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
          - name: Setup Pages
            uses: actions/configure-pages@v3
          - name: Upload artifact
-           uses: actions/upload-pages-artifact@v1
+           uses: actions/upload-pages-artifact@v2
            with:
              # Upload dist repository
              path: './dist'
          - name: Deploy to GitHub Pages
            id: deployment
-           uses: actions/deploy-pages@v1
+           uses: actions/deploy-pages@v2
    ```
 
 ## GitLab Pages and GitLab CI
@@ -220,7 +220,7 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
 3. Run your build command.
-4. Deploy using `npx wrangler pages publish dist`.
+4. Deploy using `npx wrangler pages deploy dist`.
 
 ```bash
 # Install Wrangler CLI
@@ -233,7 +233,7 @@ $ wrangler login
 $ npm run build
 
 # Create new deployment
-$ npx wrangler pages publish dist
+$ npx wrangler pages deploy dist
 ```
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
@@ -341,3 +341,7 @@ Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref
 ## AWS Amplify Hosting
 
 Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)
+
+## Kinsta Static Site Hosting
+
+You can deploy your Vite app as a Static Site on [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).

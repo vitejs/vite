@@ -1,6 +1,9 @@
 import { basename, dirname, join, relative } from 'node:path'
 import { parse as parseImports } from 'es-module-lexer'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type {
+  ParseError as EsModuleLexerParseError,
+  ImportSpecifier,
+} from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
 import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
@@ -46,7 +49,8 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             let imports: ImportSpecifier[] = []
             try {
               imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
-            } catch (e: any) {
+            } catch (_e: unknown) {
+              const e = _e as EsModuleLexerParseError
               const loc = numberToPos(code, e.idx)
               this.error({
                 name: e.name,
@@ -94,7 +98,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
         fileName:
           typeof config.build.ssrManifest === 'string'
             ? config.build.ssrManifest
-            : 'ssr-manifest.json',
+            : '.vite/ssr-manifest.json',
         type: 'asset',
         source: jsonStableStringify(ssrManifest, { space: 2 }),
       })

@@ -23,7 +23,7 @@ test('normal', async () => {
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
 })
 
 test('TS output', async () => {
@@ -121,6 +121,10 @@ test.runIf(isBuild)('classic worker', async () => {
     () => page.textContent('.classic-worker'),
     'A classic',
     true,
+  )
+  await untilUpdated(
+    () => page.textContent('.classic-worker-import'),
+    '[success] classic-esm',
   )
   await untilUpdated(
     () => page.textContent('.classic-shared-worker'),

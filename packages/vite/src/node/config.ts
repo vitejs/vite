@@ -10,7 +10,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
-import type { HookHandler, Plugin } from './plugin'
+import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
   BuildOptions,
   RenderBuiltAssetUrl,
@@ -30,11 +30,11 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
-  dynamicImport,
   isBuiltin,
   isExternalUrl,
+  isFilePathESM,
+  isNodeBuiltin,
   isObject,
-  lookupFile,
   mergeAlias,
   mergeConfig,
   normalizeAlias,
@@ -43,6 +43,7 @@ import {
 } from './utils'
 import {
   createPluginHookUtils,
+  getHookHandler,
   getSortedPluginsByHook,
   resolvePlugins,
 } from './plugins'
@@ -73,23 +74,11 @@ import { resolveSSROptions } from './ssr'
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
 
-export type {
-  RenderBuiltAssetUrl,
-  ModulePreloadOptions,
-  ResolvedModulePreloadOptions,
-  ResolveModulePreloadDependenciesFn,
-} from './build'
-
-// NOTE: every export in this file is re-exported from ./index.ts so it will
-// be part of the public API.
-
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
-  /**
-   * @experimental
-   */
-  ssrBuild?: boolean
+  isSsrBuild?: boolean
+  isPreview?: boolean
 }
 
 /**
@@ -269,9 +258,11 @@ export interface UserConfig {
      */
     format?: 'es' | 'iife'
     /**
-     * Vite plugins that apply to worker bundle
+     * Vite plugins that apply to worker bundle. The plugins returned by this function
+     * should be new instances every time it is called, because they are used for each
+     * rollup worker bundling process.
      */
-    plugins?: PluginOption[]
+    plugins?: () => PluginOption[]
     /**
      * Rollup options to build worker bundle
      */
@@ -322,18 +313,21 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
+   * In Vite 4, SSR-externalized modules (modules not bundled and loaded by Node.js at runtime)
+   * are implicitly proxied in dev to automatically handle `default` and `__esModule` access.
+   * However, this does not correctly reflect how it works in the Node.js runtime, causing
+   * inconsistencies between dev and prod.
    *
-   * @experimental
-   * @deprecated
-   * @default false
+   * In Vite 5, the proxy is removed so dev and prod are consistent, but if you still require
+   * the old behaviour, you can enable this option. If so, please leave your feedback at
+   * https://github.com/vitejs/vite/discussions/14697.
    */
-  buildSsrCjsExternalHeuristics?: boolean
+  proxySsrExternalModules?: boolean
 }
 
-export interface ResolveWorkerOptions extends PluginHookUtils {
+export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: Plugin[]
+  plugins: () => Promise<Plugin[]>
   rollupOptions: RollupOptions
 }
 
@@ -369,7 +363,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
-    css: ResolvedCSSOptions | undefined
+    css: ResolvedCSSOptions
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
@@ -381,14 +375,16 @@ export type ResolvedConfig = Readonly<
     optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
-    worker: ResolveWorkerOptions
+    worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
   } & PluginHookUtils
 >
 
 export interface PluginHookUtils {
-  getSortedPlugins: (hookName: keyof Plugin) => Plugin[]
+  getSortedPlugins: <K extends keyof Plugin>(
+    hookName: K,
+  ) => PluginWithRequiredHook<K>[]
   getSortedPluginHooks: <K extends keyof Plugin>(
     hookName: K,
   ) => NonNullable<HookHandler<Plugin[K]>>[]
@@ -406,6 +402,7 @@ export async function resolveConfig(
   command: 'build' | 'serve',
   defaultMode = 'development',
   defaultNodeEnv = 'development',
+  isPreview = false,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
@@ -419,10 +416,11 @@ export async function resolveConfig(
     process.env.NODE_ENV = defaultNodeEnv
   }
 
-  const configEnv = {
+  const configEnv: ConfigEnv = {
     mode,
     command,
-    ssrBuild: !!config.build?.ssr,
+    isSsrBuild: !!config.build?.ssr,
+    isPreview,
   }
 
   let { configFile } = config
@@ -455,12 +453,6 @@ export async function resolveConfig(
       return p.apply === command
     }
   }
-  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
-  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
-  // So we need to separate the worker plugin from the plugin that vite needs to run.
-  const rawWorkerUserPlugins = (
-    (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
-  ).filter(filterPlugin)
 
   // resolve plugins
   const rawUserPlugins = (
@@ -498,6 +490,15 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
+  if (resolvedRoot.includes('#')) {
+    logger.warn(
+      colors.yellow(
+        `The project root contains the "#" character (${colors.cyan(
+          resolvedRoot,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
+      ),
+    )
+  }
 
   const clientAlias = [
     {
@@ -517,12 +518,25 @@ export async function resolveConfig(
 
   const resolveOptions: ResolvedConfig['resolve'] = {
     mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    browserField: config.resolve?.browserField ?? true,
     conditions: config.resolve?.conditions ?? [],
     extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: config.resolve?.dedupe ?? [],
     preserveSymlinks: config.resolve?.preserveSymlinks ?? false,
     alias: resolvedAlias,
+  }
+
+  if (
+    // @ts-expect-error removed field
+    config.resolve?.browserField === false &&
+    resolveOptions.mainFields.includes('browser')
+  ) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
+          `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
+          `to remove the 'browser' string and preserve the previous browser behaviour.`,
+      ),
+    )
   }
 
   // load .env files
@@ -577,8 +591,8 @@ export async function resolveConfig(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
       : pkgDir
-      ? path.join(pkgDir, `node_modules/.vite`)
-      : path.join(resolvedRoot, `.vite`),
+        ? path.join(pkgDir, `node_modules/.vite`)
+        : path.join(resolvedRoot, `.vite`),
   )
 
   const assetsFilter =
@@ -642,39 +656,80 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(
-    config.ssr,
-    resolveOptions.preserveSymlinks,
-    config.legacy?.buildSsrCjsExternalHeuristics,
-  )
-
-  const middlewareMode = config?.server?.middlewareMode
+  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
 
   const optimizeDeps = config.optimizeDeps || {}
 
   const BASE_URL = resolvedBase
 
-  // resolve worker
-  let workerConfig = mergeConfig({}, config)
-  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(rawWorkerUserPlugins)
+  let resolved: ResolvedConfig
 
-  // run config hooks
-  const workerUserPlugins = [
-    ...workerPrePlugins,
-    ...workerNormalPlugins,
-    ...workerPostPlugins,
-  ]
-  workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
-  const resolvedWorkerOptions: ResolveWorkerOptions = {
-    format: workerConfig.worker?.format || 'iife',
-    plugins: [],
-    rollupOptions: workerConfig.worker?.rollupOptions || {},
-    getSortedPlugins: undefined!,
-    getSortedPluginHooks: undefined!,
+  let createUserWorkerPlugins = config.worker?.plugins
+  if (Array.isArray(createUserWorkerPlugins)) {
+    // @ts-expect-error backward compatibility
+    createUserWorkerPlugins = () => config.worker?.plugins
+
+    logger.warn(
+      colors.yellow(
+        `worker.plugins is now a function that returns an array of plugins. ` +
+          `Please update your Vite config accordingly.\n`,
+      ),
+    )
   }
 
-  const resolvedConfig: ResolvedConfig = {
+  const createWorkerPlugins = async function () {
+    // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+    // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+    // So we need to separate the worker plugin from the plugin that vite needs to run.
+    const rawWorkerUserPlugins = (
+      (await asyncFlatten(createUserWorkerPlugins?.() || [])) as Plugin[]
+    ).filter(filterPlugin)
+
+    // resolve worker
+    let workerConfig = mergeConfig({}, config)
+    const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+      sortUserPlugins(rawWorkerUserPlugins)
+
+    // run config hooks
+    const workerUserPlugins = [
+      ...workerPrePlugins,
+      ...workerNormalPlugins,
+      ...workerPostPlugins,
+    ]
+    workerConfig = await runConfigHook(
+      workerConfig,
+      workerUserPlugins,
+      configEnv,
+    )
+
+    const workerResolved: ResolvedConfig = {
+      ...workerConfig,
+      ...resolved,
+      isWorker: true,
+      mainConfig: resolved,
+    }
+    const resolvedWorkerPlugins = await resolvePlugins(
+      workerResolved,
+      workerPrePlugins,
+      workerNormalPlugins,
+      workerPostPlugins,
+    )
+
+    // run configResolved hooks
+    createPluginHookUtils(resolvedWorkerPlugins)
+      .getSortedPluginHooks('configResolved')
+      .map((hook) => hook(workerResolved))
+
+    return resolvedWorkerPlugins
+  }
+
+  const resolvedWorkerOptions: ResolvedWorkerOptions = {
+    format: config.worker?.format || 'iife',
+    plugins: createWorkerPlugins,
+    rollupOptions: config.worker?.rollupOptions || {},
+  }
+
+  resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name)),
@@ -727,7 +782,7 @@ export async function resolveConfig(
       },
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? (middlewareMode === 'ssr' ? 'custom' : 'spa'),
+    appType: config.appType ?? 'spa',
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
@@ -736,11 +791,10 @@ export async function resolveConfig(
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
   }
-  const resolved: ResolvedConfig = {
+  resolved = {
     ...config,
-    ...resolvedConfig,
+    ...resolved,
   }
-
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
@@ -749,73 +803,23 @@ export async function resolveConfig(
   )
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
-  const workerResolved: ResolvedConfig = {
-    ...workerConfig,
-    ...resolvedConfig,
-    isWorker: true,
-    mainConfig: resolved,
-  }
-  resolvedConfig.worker.plugins = await resolvePlugins(
-    workerResolved,
-    workerPrePlugins,
-    workerNormalPlugins,
-    workerPostPlugins,
-  )
-  Object.assign(
-    resolvedConfig.worker,
-    createPluginHookUtils(resolvedConfig.worker.plugins),
-  )
-
   // call configResolved hooks
-  await Promise.all([
-    ...resolved
+  await Promise.all(
+    resolved
       .getSortedPluginHooks('configResolved')
       .map((hook) => hook(resolved)),
-    ...resolvedConfig.worker
-      .getSortedPluginHooks('configResolved')
-      .map((hook) => hook(workerResolved)),
-  ])
-
-  // validate config
-
-  if (middlewareMode === 'ssr') {
-    logger.warn(
-      colors.yellow(
-        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
-          config.appType === 'custom' ? '' : ` and appType to 'custom'`
-        } instead`,
-      ),
-    )
-  }
-  if (middlewareMode === 'html') {
-    logger.warn(
-      colors.yellow(
-        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`,
-      ),
-    )
-  }
-
-  if (
-    config.server?.force &&
-    !isBuild &&
-    config.optimizeDeps?.force === undefined
-  ) {
-    resolved.optimizeDeps.force = true
-    logger.warn(
-      colors.yellow(
-        `server.force is deprecated, use optimizeDeps.force instead`,
-      ),
-    )
-  }
+  )
 
   debug?.(`using resolved config: %O`, {
     ...resolved,
     plugins: resolved.plugins.map((p) => p.name),
     worker: {
       ...resolved.worker,
-      plugins: resolved.worker.plugins.map((p) => p.name),
+      plugins: `() => plugins`,
     },
   })
+
+  // validate config
 
   if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
@@ -852,13 +856,15 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 
   // Warn about removal of experimental features
   if (
+    // @ts-expect-error Option removed
     config.legacy?.buildSsrCjsExternalHeuristics ||
+    // @ts-expect-error Option removed
     config.ssr?.format === 'cjs'
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format: 'cjs' are going to be removed in Vite 5.
-    Find more information and give feedback at https://github.com/vitejs/vite/discussions/13816.
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
+    The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
 `),
     )
   }
@@ -879,8 +885,8 @@ export function resolveBaseUrl(
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-            `URL, ./, or an empty string.`,
+          `(!) invalid "base" option: "${base}". The value can only be an absolute ` +
+            `URL, "./", or an empty string.`,
         ),
       ),
     )
@@ -963,19 +969,7 @@ export async function loadConfigFromFile(
     return null
   }
 
-  let isESM = false
-  if (/\.m[jt]s$/.test(resolvedPath)) {
-    isESM = true
-  } else if (/\.c[jt]s$/.test(resolvedPath)) {
-    isESM = false
-  } else {
-    // check package.json for type: "module" and set `isESM` to true
-    try {
-      const pkg = lookupFile(configRoot, ['package.json'])
-      isESM =
-        !!pkg && JSON.parse(fs.readFileSync(pkg, 'utf-8')).type === 'module'
-    } catch (e) {}
-  }
+  const isESM = isFilePathESM(resolvedPath)
 
   try {
     const bundled = await bundleConfigFile(resolvedPath, isESM)
@@ -1016,7 +1010,6 @@ async function bundleConfigFile(
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
-    outfile: 'out.js',
     write: false,
     target: ['node18'],
     platform: 'node',
@@ -1050,7 +1043,6 @@ async function bundleConfigFile(
                 preferRelative: false,
                 tryIndex: true,
                 mainFields: [],
-                browserField: false,
                 conditions: [],
                 overrideConditions: ['node'],
                 dedupe: [],
@@ -1062,18 +1054,6 @@ async function bundleConfigFile(
               false,
             )?.id
           }
-          const isESMFile = (id: string): boolean => {
-            if (id.endsWith('.mjs')) return true
-            if (id.endsWith('.cjs')) return false
-
-            const nearestPackageJson = findNearestPackageData(
-              path.dirname(id),
-              packageCache,
-            )
-            return (
-              !!nearestPackageJson && nearestPackageJson.data.type === 'module'
-            )
-          }
 
           // externalize bare imports
           build.onResolve(
@@ -1082,13 +1062,15 @@ async function bundleConfigFile(
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
-                isBuiltin(id)
+                isNodeBuiltin(id)
               ) {
                 return
               }
 
-              // partial deno support as `npm:` does not work with esbuild
-              if (id.startsWith('npm:')) {
+              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
+              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
+              // externalize it so the non-node runtime handles it instead.
+              if (isBuiltin(id)) {
                 return { external: true }
               }
 
@@ -1110,7 +1092,7 @@ async function bundleConfigFile(
                     throw new Error(
                       `Failed to resolve ${JSON.stringify(
                         id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                     )
                   }
                 }
@@ -1119,11 +1101,15 @@ async function bundleConfigFile(
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
-              if (idFsPath && !isImport && isESMFile(idFsPath)) {
+              if (
+                idFsPath &&
+                !isImport &&
+                isFilePathESM(idFsPath, packageCache)
+              ) {
                 throw new Error(
                   `${JSON.stringify(
                     id,
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See http://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                 )
               }
               return {
@@ -1185,7 +1171,7 @@ async function loadConfigFromBundledFile(
     const fileUrl = `${pathToFileURL(fileBase)}.mjs`
     await fsp.writeFile(fileNameTmp, bundledCode)
     try {
-      return (await dynamicImport(fileUrl)).default
+      return (await import(fileUrl)).default
     } finally {
       fs.unlink(fileNameTmp, () => {}) // Ignore errors
     }
@@ -1224,7 +1210,7 @@ async function runConfigHook(
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
+    const handler = getHookHandler(hook)
     if (handler) {
       const res = await handler(conf, configEnv)
       if (res) {

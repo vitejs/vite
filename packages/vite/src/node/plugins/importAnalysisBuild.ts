@@ -1,13 +1,15 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type {
+  ParseError as EsModuleLexerParseError,
+  ImportSpecifier,
+} from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
-  bareImportRE,
   cleanUrl,
   combineSourcemaps,
   generateCodeFrame,
@@ -24,9 +26,13 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { SPECIAL_QUERY_RE } from '../constants'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
-import { interopNamedImports } from './importAnalysis'
+import { removedPureCssFilesCache } from './css'
+import { createParseErrorInfo, interopNamedImports } from './importAnalysis'
+
+type FileDep = {
+  url: string
+  runtime: boolean
+}
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -38,7 +44,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
-export const preloadHelperId = '\0vite/preload-helper'
+export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
 
 const dynamicImportPrefixRE = /import\s*\(/
@@ -48,7 +54,7 @@ const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
-  const relPath = path.relative(path.dirname(importer), filename)
+  const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
@@ -186,13 +192,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
       `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
-    ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-      // The importerUrl is passed as third parameter to __vitePreload in this case
-      `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-    : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appended inside __vitePreload too.
-      `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
+        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+        // The importerUrl is passed as third parameter to __vitePreload in this case
+        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+        // is appended inside __vitePreload too.
+        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -219,8 +225,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
-        this.error(e, e.idx)
+      } catch (_e: unknown) {
+        const e = _e as EsModuleLexerParseError
+        const { message, showCodeFrame } = createParseErrorInfo(
+          importer,
+          source,
+        )
+        this.error(message, showCodeFrame ? e.idx : undefined)
       }
 
       if (!imports.length) {
@@ -254,7 +265,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const resolved = await this.resolve(url, importerFile)
+        const resolved = await this.resolve(url, importerFile, {
+          skipSelf: false,
+        })
 
         if (!resolved) {
           // in ssr, we should let node handle the missing modules
@@ -298,13 +311,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           se: expEnd,
           n: specifier,
           d: dynamicIndex,
-          a: assertIndex,
+          a: attributeIndex,
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
 
-        // strip import assertions as we can process them ourselves
-        if (!isDynamicImport && assertIndex > -1) {
+        // strip import attributes as we can process them ourselves
+        if (!isDynamicImport && attributeIndex > -1) {
           str().remove(end + 1, expEnd)
         }
 
@@ -380,27 +393,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
         }
-
-        // Differentiate CSS imports that use the default export from those that
-        // do not by injecting a ?used query - this allows us to avoid including
-        // the CSS string when unnecessary (esbuild has trouble tree-shaking
-        // them)
-        if (
-          specifier &&
-          isCSSRequest(specifier) &&
-          // always inject ?used query when it is a dynamic import
-          // because there is no way to check whether the default export is used
-          (source.slice(expStart, start).includes('from') || isDynamicImport) &&
-          // already has ?used query (by import.meta.glob)
-          !specifier.match(/\?used(&|$)/) &&
-          // don't append ?used when SPECIAL_QUERY_RE exists
-          !specifier.match(SPECIAL_QUERY_RE) &&
-          // edge case for package names ending with .css (e.g normalize.css)
-          !(bareImportRE.test(specifier) && !specifier.includes('/'))
-        ) {
-          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().update(start, end, isDynamicImport ? `'${url}'` : url)
-        }
       }
 
       if (
@@ -472,6 +464,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
+
+          const fileDeps: FileDep[] = []
+          const addFileDep = (
+            url: string,
+            runtime: boolean = false,
+          ): number => {
+            const index = fileDeps.findIndex((dep) => dep.url === url)
+            if (index === -1) {
+              return fileDeps.push({ url, runtime }) - 1
+            } else {
+              return index
+            }
+          }
 
           if (imports.length) {
             for (let index = 0; index < imports.length; index++) {
@@ -562,7 +567,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       : [...deps]
                     : []
 
-                let renderedDeps: string[]
+                let renderedDeps: number[]
                 if (normalizedFile && customModulePreloadPaths) {
                   const { modulePreload } = config.build
                   const resolveDependencies = modulePreload
@@ -588,7 +593,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     resolvedDeps = depsArray
                   }
 
-                  renderedDeps = resolvedDeps.map((dep: string) => {
+                  renderedDeps = resolvedDeps.map((dep) => {
                     const replacement = toOutputFilePathInJS(
                       dep,
                       'asset',
@@ -597,34 +602,46 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       config,
                       toRelativePath,
                     )
-                    const replacementString =
-                      typeof replacement === 'string'
-                        ? JSON.stringify(replacement)
-                        : replacement.runtime
 
-                    return replacementString
+                    if (typeof replacement === 'string') {
+                      return addFileDep(replacement)
+                    }
+
+                    return addFileDep(replacement.runtime, true)
                   })
                 } else {
                   renderedDeps = depsArray.map((d) =>
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
-                    JSON.stringify(
-                      optimizeModulePreloadRelativePaths
-                        ? toRelativePath(d, file)
-                        : d,
-                    ),
+                    optimizeModulePreloadRelativePaths
+                      ? addFileDep(toRelativePath(d, file))
+                      : addFileDep(d),
                   )
                 }
 
                 s.update(
                   markerStartPos,
                   markerStartPos + preloadMarker.length + 2,
-                  `[${renderedDeps.join(',')}]`,
+                  `__vite__mapDeps([${renderedDeps.join(',')}])`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
             }
           }
+
+          const fileDepsCode = `[${fileDeps
+            .map((fileDep) =>
+              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
+            )
+            .join(',')}]`
+
+          s.append(`\
+function __vite__mapDeps(indexes) {
+  if (!__vite__mapDeps.viteFileDeps) {
+    __vite__mapDeps.viteFileDeps = ${fileDepsCode}
+  }
+  return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
+}`)
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless

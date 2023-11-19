@@ -5,7 +5,7 @@
   <link class="ico" rel="icon" type="image/svg+xml" href="favicon.ico" />
 </head>
 
-<link rel="icon" href="data:," />
+<link class="data-href" rel="icon" href="data:," />
 <link rel="stylesheet" href="/raw.css" />
 
 <h1>Assets</h1>
@@ -115,6 +115,14 @@
   <span style="background: #fff">CSS background (aliased)</span>
 </div>
 
+<div class="css-url-svg">
+  <span style="background: #fff">CSS SVG background</span>
+</div>
+
+<div class="css-image-set-svg">
+  <span style="background: #fff">CSS SVG background with image-set</span>
+</div>
+
 <h2>Unicode URL</h2>
 <div>
   <code class="unicode-url"></code>
@@ -137,6 +145,23 @@
     srcset="./nested/asset.png 1x, ./nested/asset.png 2x"
     alt=""
   />
+  <img
+    class="img-src-set-public"
+    src="/icon space.png"
+    srcset="/icon.png 1x, /icon.png 2x"
+    alt=""
+  />
+  <img
+    class="img-src-set-mixed"
+    src="/icon.png"
+    srcset="https://vitejs.dev/logo-with-shadow.png 1x, ./nested/asset.png 2x"
+    alt=""
+  />
+</div>
+
+<h2>HTML only asset</h2>
+<div>
+  <img src="./nested/html-only-asset.jpg" alt="" />
 </div>
 
 <h2>SVG Fragments</h2>
@@ -418,7 +443,7 @@
   document.querySelector('.import-meta-url-dep-img').src = metaUrlDep
 
   // testing URLs for public assets served at the public base path
-  // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, self.location)
+  // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, import.meta.url)
   const metaUrlBasePath = new URL('/icon.png', import.meta.url)
   text('.import-meta-url-base-path', metaUrlBasePath)
   document.querySelector('.import-meta-url-base-path-img').src = metaUrlBasePath

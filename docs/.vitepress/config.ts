@@ -30,34 +30,33 @@ const additionalTitle = ((): string => {
   }
 })()
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
+  const oldVersions: DefaultTheme.NavItemWithLink[] = [
+    {
+      text: 'Vite 4 Docs',
+      link: 'https://v4.vitejs.dev',
+    },
+    {
+      text: 'Vite 3 Docs',
+      link: 'https://v3.vitejs.dev',
+    },
+    {
+      text: 'Vite 2 Docs',
+      link: 'https://v2.vitejs.dev',
+    },
+  ]
+
   switch (deployType) {
     case 'main':
     case 'local':
       return [
         {
-          text: 'Vite 4 Docs (release)',
+          text: 'Vite 5 Docs (release)',
           link: 'https://vitejs.dev',
         },
-        {
-          text: 'Vite 3 Docs',
-          link: 'https://v3.vitejs.dev',
-        },
-        {
-          text: 'Vite 2 Docs',
-          link: 'https://v2.vitejs.dev',
-        },
+        ...oldVersions,
       ]
     case 'release':
-      return [
-        {
-          text: 'Vite 3 Docs',
-          link: 'https://v3.vitejs.dev',
-        },
-        {
-          text: 'Vite 2 Docs',
-          link: 'https://v2.vitejs.dev',
-        },
-      ]
+      return oldVersions
   }
 })()
 
@@ -93,6 +92,7 @@ export default defineConfig({
     es: { label: 'Español', link: 'https://es.vitejs.dev' },
     pt: { label: 'Português', link: 'https://pt.vitejs.dev' },
     ko: { label: '한국어', link: 'https://ko.vitejs.dev' },
+    de: { label: 'Deutsch', link: 'https://de.vitejs.dev' },
   },
 
   themeConfig: {
@@ -137,6 +137,7 @@ export default defineConfig({
         text: 'Resources',
         items: [
           { text: 'Team', link: '/team' },
+          { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           {
             items: [
@@ -151,6 +152,10 @@ export default defineConfig({
               {
                 text: 'Awesome Vite',
                 link: 'https://github.com/vitejs/awesome-vite',
+              },
+              {
+                text: 'ViteConf',
+                link: 'https://viteconf.org',
               },
               {
                 text: 'DEV Community',
@@ -240,11 +245,15 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
+              text: 'Performance',
+              link: '/guide/performance',
+            },
+            {
               text: 'Philosophy',
               link: '/guide/philosophy',
             },
             {
-              text: 'Migration from v3',
+              text: 'Migration from v4',
               link: '/guide/migration',
             },
           ],
@@ -310,6 +319,10 @@ export default defineConfig({
           ],
         },
       ],
+    },
+
+    outline: {
+      level: [2, 3],
     },
   },
 })

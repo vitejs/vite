@@ -1,14 +1,18 @@
 import { h } from 'vue'
-import Theme from 'vitepress/theme'
+import type { Theme } from 'vitepress'
+import DefaultTheme from 'vitepress/theme'
 import './styles/vars.css'
 import HomeSponsors from './components/HomeSponsors.vue'
 import AsideSponsors from './components/AsideSponsors.vue'
 import SvgImage from './components/SvgImage.vue'
+// temporary fix for vitepress not including component css when only
+// imported in a single page
+import './components/BlogIndex.vue'
 
 export default {
-  ...Theme,
+  extends: DefaultTheme,
   Layout() {
-    return h(Theme.Layout, null, {
+    return h(DefaultTheme.Layout, null, {
       'home-features-after': () => h(HomeSponsors),
       'aside-ads-before': () => h(AsideSponsors),
     })
@@ -16,4 +20,4 @@ export default {
   enhanceApp({ app }) {
     app.component('SvgImage', SvgImage)
   },
-}
+} satisfies Theme

@@ -42,7 +42,14 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
       img: '/astro.svg',
     },
   ],
-  gold: [],
+  gold: [
+    // through GitHub -> OpenCollective
+    {
+      name: 'Remix',
+      url: 'https://remix.run/',
+      img: '/remix.svg',
+    },
+  ],
 }
 
 export function useSponsor() {

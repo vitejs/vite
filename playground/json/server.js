@@ -7,7 +7,7 @@ import express from 'express'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
-export async function createServer(root = process.cwd()) {
+export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
   const app = express()
 
@@ -27,6 +27,9 @@ export async function createServer(root = process.cwd()) {
         usePolling: true,
         interval: 100,
       },
+      hmr: {
+        port: hmrPort,
+      },
     },
     appType: 'custom',
     json: {
@@ -34,7 +37,9 @@ export async function createServer(root = process.cwd()) {
     },
   })
   // use vite's connect instance as middleware
-  app.use(vite.middlewares)
+  app.use((req, res, next) => {
+    vite.middlewares.handle(req, res, next)
+  })
 
   app.use('*', async (req, res) => {
     try {

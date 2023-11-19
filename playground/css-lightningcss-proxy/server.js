@@ -29,9 +29,6 @@ export async function createServer(root = process.cwd(), hmrPort) {
     logLevel: isTest ? 'error' : 'info',
     css: {
       transformer: 'lightningcss',
-      lightningcss: {
-        drafts: { nesting: true },
-      },
     },
     server: {
       middlewareMode: true,
@@ -48,7 +45,9 @@ export async function createServer(root = process.cwd(), hmrPort) {
     appType: 'custom',
   })
   // use vite's connect instance as middleware
-  app.use(vite.middlewares)
+  app.use((req, res, next) => {
+    vite.middlewares.handle(req, res, next)
+  })
 
   app.use('*', async (req, res, next) => {
     try {

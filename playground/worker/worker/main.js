@@ -2,3 +2,4 @@
 import('./main-module')
 import('./main-classic')
 import('./main-url')
+import('./main-deeply-nested')

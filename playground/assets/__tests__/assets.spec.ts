@@ -8,6 +8,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isServe,
   listAssets,
   notifyRebuildComplete,
   page,
@@ -19,10 +20,10 @@ import {
 } from '~utils'
 
 const assetMatch = isBuild
-  ? /\/foo\/assets\/asset-\w{8}\.png/
-  : '/foo/nested/asset.png'
+  ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
+  : '/foo/bar/nested/asset.png'
 
-const iconMatch = `/foo/icon.png`
+const iconMatch = `/foo/bar/icon.png`
 
 const fetchPath = (p: string) => {
   return fetch(path.posix.join(viteTestUrl, p), {
@@ -41,21 +42,41 @@ test('should get a 404 when using incorrect case', async () => {
     'image/png',
   )
   // fallback to index.html
-  expect((await fetchPath('ICON.png')).headers.get('Content-Type')).toBe(
-    isBuild ? 'text/html; charset=utf-8' : 'text/html',
-  )
+  const iconPngResult = await fetchPath('ICON.png')
+  expect(iconPngResult.headers.get('Content-Type')).toBe('text/html')
+  expect(iconPngResult.status).toBe(200)
 
   expect((await fetchPath('bar')).headers.get('Content-Type')).toBe('')
   // fallback to index.html
-  expect((await fetchPath('BAR')).headers.get('Content-Type')).toContain(
-    isBuild ? 'text/html;charset=utf-8' : 'text/html',
-  )
+  const barResult = await fetchPath('BAR')
+  expect(barResult.headers.get('Content-Type')).toContain('text/html')
+  expect(barResult.status).toBe(200)
+})
+
+test('should fallback to index.html when accessing non-existant html file', async () => {
+  expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
+})
+
+describe.runIf(isServe)('outside base', () => {
+  test('should get a 404 with html', async () => {
+    const res = await fetch(new URL('/baz', viteTestUrl), {
+      headers: { Accept: 'text/html,*/*' },
+    })
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toBe('text/html')
+  })
+
+  test('should get a 404 with text', async () => {
+    const res = await fetch(new URL('/baz', viteTestUrl))
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toBe('text/plain')
+  })
 })
 
 describe('injected scripts', () => {
   test('@vite/client', async () => {
     const hasClient = await page.$(
-      'script[type="module"][src="/foo/@vite/client"]',
+      'script[type="module"][src="/foo/bar/@vite/client"]',
     )
     if (isBuild) {
       expect(hasClient).toBeFalsy()
@@ -66,7 +87,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src^="/foo/index.html?html-proxy"]',
+      'script[type="module"][src^="/foo/bar/index.html?html-proxy"]',
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
@@ -107,7 +128,7 @@ describe('asset imports from js', () => {
 
   test('from /public (json)', async () => {
     expect(await page.textContent('.public-json-import')).toMatch(
-      '/foo/foo.json',
+      '/foo/bar/foo.json',
     )
     expect(await page.textContent('.public-json-import-content'))
       .toMatchInlineSnapshot(`
@@ -199,7 +220,7 @@ describe('css url() references', () => {
   })
 
   test('base64 inline', async () => {
-    const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
+    const match = isBuild ? `data:image/png;base64` : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
     const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
@@ -228,6 +249,18 @@ describe('css url() references', () => {
     // generate non-relative base for public path in CSS
     expect(css).not.toMatch(`../icon.png`)
   })
+
+  test('url() with svg', async () => {
+    expect(await getBg('.css-url-svg')).toMatch(
+      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
+    )
+  })
+
+  test('image-set() with svg', async () => {
+    expect(await getBg('.css-image-set-svg')).toMatch(
+      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
+    )
+  })
 })
 
 describe('image', () => {
@@ -237,10 +270,29 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset-\w{8}\.png \dx/
-          : /\/foo\/nested\/asset.png \dx/,
+          ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
+          : /\/foo\/bar\/nested\/asset.png \dx/,
       )
     })
+  })
+
+  test('srcset (public)', async () => {
+    const img = await page.$('.img-src-set-public')
+    const srcset = await img.getAttribute('srcset')
+    srcset.split(', ').forEach((s) => {
+      expect(s).toMatch(/\/foo\/bar\/icon\.png \dx/)
+    })
+  })
+
+  test('srcset (mixed)', async () => {
+    const img = await page.$('.img-src-set-mixed')
+    const srcset = await img.getAttribute('srcset')
+    const srcs = srcset.split(', ')
+    expect(srcs[1]).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
+        : /\/foo\/bar\/nested\/asset.png \dx/,
+    )
   })
 })
 
@@ -260,7 +312,12 @@ describe('svg fragments', () => {
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-heart-view$/)
+    expect(await img.getAttribute('src')).toMatch(
+      isBuild
+        ? // Assert trimmed (data URI starts with < and ends with >)
+          /^data:image\/svg\+xml,%3c.*%3e#icon-heart-view$/
+        : /svg#icon-heart-view$/,
+    )
   })
 })
 
@@ -281,7 +338,7 @@ test('?url import', async () => {
       ? `data:application/javascript;base64,${Buffer.from(src).toString(
           'base64',
         )}`
-      : `/foo/foo.js`,
+      : `/foo/bar/foo.js`,
   )
 })
 
@@ -291,7 +348,7 @@ test('?url import on css', async () => {
   expect(txt).toEqual(
     isBuild
       ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
-      : '/foo/css/icons.css',
+      : '/foo/bar/css/icons.css',
   )
 })
 
@@ -303,7 +360,7 @@ describe('unicode url', () => {
         ? `data:application/javascript;base64,${Buffer.from(src).toString(
             'base64',
           )}`
-        : `/foo/テスト-測試-white space.js`,
+        : `/foo/bar/テスト-測試-white space.js`,
     )
   })
 })
@@ -342,41 +399,46 @@ test('new URL(..., import.meta.url) without extension', async () => {
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png',
+    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
     assetMatch,
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:application/javascript;base64' : '/foo/nested/test.js',
+    isBuild ? 'data:application/javascript;base64' : '/foo/bar/nested/test.js',
   )
 })
 
 test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
     isBuild
-      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
-      : '/foo/nested/asset.png?abc',
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
+      : '/foo/bar/nested/asset.png?abc',
   )
 })
 
 test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1-ternary')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/nested/icon.png?abc',
+    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
     isBuild
-      ? /\/foo\/assets\/asset-\w{8}\.png\?abc/
-      : '/foo/nested/asset.png?abc',
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
+      : '/foo/bar/nested/asset.png?abc',
   )
 })
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
+  // the inlined script tag is extracted in a separate file
+  const importMetaUrl = new URL(
+    isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
+    page.url(),
+  )
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    new URL('non-existent', page.url()).pathname,
+    new URL('non-existent', importMetaUrl).pathname,
   )
 })
 
@@ -397,7 +459,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
     await notifyRebuildComplete(watcher)
-    const cssFile = findAssetFile(/index-\w+\.css$/, 'foo')
+    const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
   })
@@ -454,16 +516,18 @@ test('url() contains file in publicDir, in <style> tag', async () => {
   expect(await getBg('.style-public-assets')).toContain(iconMatch)
 })
 
-test.skip('url() contains file in publicDir, as inline style', async () => {
-  // TODO: To investigate why `await getBg('.inline-style-public') === "url("http://localhost:5173/icon.png")"`
-  // It supposes to be `url("http://localhost:5173/foo/icon.png")`
-  // (I built the playground to verify)
+test('url() contains file in publicDir, as inline style', async () => {
   expect(await getBg('.inline-style-public')).toContain(iconMatch)
+})
+
+test('should not rewrite non-relative urls in html', async () => {
+  const link = page.locator('.data-href')
+  expect(await link.getAttribute('href')).toBe('data:,')
 })
 
 test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
-    /<img class="noscript" src="\/foo\/assets\/asset-\w+\.png" \/>/,
+    /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })
