@@ -5,6 +5,7 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
+import dns from 'node:dns'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -993,6 +994,7 @@ export async function restartServerWithUrls(
 
   const { port: prevPort, host: prevHost } = server.config.server
   const prevUrls = server.resolvedUrls
+  const prevDnsOrder = dns.getDefaultResultOrder?.()
 
   await server.restart()
 
@@ -1003,7 +1005,7 @@ export async function restartServerWithUrls(
   if (
     (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
     host !== prevHost ||
-    diffDnsOrderChange(prevUrls, server.resolvedUrls)
+    diffDnsOrderChange(prevDnsOrder, prevUrls, server.resolvedUrls)
   ) {
     logger.info('')
     server.printUrls()

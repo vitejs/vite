@@ -5,7 +5,7 @@ import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { URL, URLSearchParams, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
-import { promises as dns } from 'node:dns'
+import dns from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import type { FSWatcher } from 'chokidar'
@@ -869,8 +869,8 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   string | undefined
 > {
   const [nodeResult, dnsResult] = await Promise.all([
-    dns.lookup('localhost'),
-    dns.lookup('localhost', { verbatim: true }),
+    dns.promises.lookup('localhost'),
+    dns.promises.lookup('localhost', { verbatim: true }),
   ])
   const isSame =
     nodeResult.family === dnsResult.family &&
@@ -879,9 +879,15 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
 }
 
 export function diffDnsOrderChange(
+  prevDnsOrder: 'verbatim' | 'ipv4first',
   oldUrls: ViteDevServer['resolvedUrls'],
   newUrls: ViteDevServer['resolvedUrls'],
 ): boolean {
+  // dns.getDefaultResultOrder is available from Node.js v20.1.0 and v18.17.0
+  const result = dns.getDefaultResultOrder?.()
+  if (result) {
+    return prevDnsOrder !== result
+  }
   return !(
     oldUrls === newUrls ||
     (oldUrls &&
