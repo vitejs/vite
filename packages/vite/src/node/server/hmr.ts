@@ -593,8 +593,8 @@ function error(pos: number) {
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = await fsp.readFile(file, 'utf-8')
-  if (!content) {
+  const content = await fsp.readFile(file)
+  if (!content.length) {
     const mtime = (await fsp.stat(file)).mtimeMs
     await new Promise((r) => {
       let n = 0
@@ -611,6 +611,6 @@ async function readModifiedFile(file: string): Promise<string> {
     })
     return await fsp.readFile(file, 'utf-8')
   } else {
-    return content
+    return content.toString()
   }
 }
