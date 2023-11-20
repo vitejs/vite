@@ -1,7 +1,7 @@
 ---
 title: Vite 5.0 is out!
 author:
-  name: patak
+  name: The Vite Team
 date: 2023-11-16
 sidebar: false
 head:

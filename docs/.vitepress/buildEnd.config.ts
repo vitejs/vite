@@ -30,7 +30,6 @@ export const onBuildEnd = () => async (config: SiteConfig) => {
   )
 
   for (const { url, excerpt, frontmatter, html } of posts) {
-    console.log({ url, excerpt, frontmatter, html })
     feed.addItem({
       title: frontmatter.title,
       id: `${siteUrl}${url}`,

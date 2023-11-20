@@ -1,7 +1,7 @@
 ---
 title: Vite 3.0 is out!
 author:
-  name: patak
+  name: The Vite Team
 date: 2022-07-23
 sidebar: false
 head:
