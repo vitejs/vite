@@ -675,6 +675,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         attrs: {
           ...(isAsync ? { async: true } : {}),
           type: 'module',
+          // crossorigin must be set not only for serving assets in a different origin
+          // but also to make it possible to preload the script using `<link rel="preload">`.
+          // `<script type="module">` used to fetch the script with credential mode `omit`,
+          // however `crossorigin` attribute cannot specify that value.
+          // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
+          // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
           src: toOutputPath(chunk.fileName),
         },
