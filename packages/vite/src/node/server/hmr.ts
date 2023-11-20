@@ -361,7 +361,7 @@ function propagateUpdate(
  * @param nodeChain The chain of nodes/imports that lead to the node.
  *   (The last node in the chain imports the `node` parameter)
  * @param currentChain The current chain tracked from the `node` parameter
- * @param traversedModules The set of modules that have been traversed
+ * @param traversedModules The set of modules that have traversed
  */
 function isNodeWithinCircularImports(
   node: ModuleNode,
@@ -386,7 +386,6 @@ function isNodeWithinCircularImports(
   // means there's an import loop with a HMR-accepted module in it.
 
   if (traversedModules.has(node)) {
-    // To avoid infinite recursion, we only check each module once.
     return false
   }
   traversedModules.add(node)
