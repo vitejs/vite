@@ -1,5 +1,5 @@
 import { defineConfig, DefaultTheme } from 'vitepress'
-import { onBuildEnd } from './buildEnd.config'
+import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vitejs.dev/og-image.png'
@@ -330,5 +330,5 @@ export default defineConfig({
       level: [2, 3],
     },
   },
-  buildEnd: onBuildEnd(),
+  buildEnd,
 })

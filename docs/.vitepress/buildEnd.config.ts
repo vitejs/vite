@@ -6,7 +6,7 @@ import { createContentLoader, type SiteConfig } from 'vitepress'
 const siteUrl = 'https://vitejs.dev'
 const blogUrl = `${siteUrl}/blog`
 
-export const onBuildEnd = () => async (config: SiteConfig) => {
+export const buildEnd = async (config: SiteConfig) => {
   const feed = new Feed({
     title: 'Vite',
     description: 'Next Generation Frontend Tooling',
