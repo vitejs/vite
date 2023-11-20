@@ -242,13 +242,14 @@ describe('isFileReadable', () => {
       fs.chmodSync(testFile, '400')
       expect(isFileReadable(testFile)).toBe(true)
     })
-    test('file without read permission', async () => {
-      if (process.getuid && process.getuid() !== 0) {
+    test.runIf(process.getuid && process.getuid() !== 0)(
+      'file without read permission',
+      async () => {
         fs.chmodSync(testFile, '044')
         expect(isFileReadable(testFile)).toBe(false)
-      }
-      fs.chmodSync(testFile, '644')
-    })
+        fs.chmodSync(testFile, '644')
+      },
+    )
   }
 })
 
