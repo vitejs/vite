@@ -606,11 +606,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (config.build.cssCodeSplit) {
-        if (isPureCssChunk) {
-          // this is a shared CSS-only chunk that is empty.
-          pureCssChunks.add(chunk)
-        }
         if (opts.format === 'es' || opts.format === 'cjs') {
+          if (isPureCssChunk) {
+            // this is a shared CSS-only chunk that is empty.
+            pureCssChunks.add(chunk)
+          }
+
           const isEntry = chunk.isEntry && isPureCssChunk
           const cssAssetName = ensureFileExt(chunk.name, '.css')
           const originalFilename = getChunkOriginalFileName(

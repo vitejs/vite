@@ -111,8 +111,14 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const fileNameToAssetMeta = new Map<string, GeneratedAssetMeta>()
       const assets = generatedAssets.get(config)!
       assets.forEach((asset, referenceId) => {
-        const fileName = this.getFileName(referenceId)
-        fileNameToAssetMeta.set(fileName, asset)
+        try {
+          const fileName = this.getFileName(referenceId)
+          fileNameToAssetMeta.set(fileName, asset)
+        } catch (error: unknown) {
+          // The asset was generated as part of a different output option.
+          // It was already handled during the previous run of this plugin.
+          assets.delete(referenceId)
+        }
       })
 
       const fileNameToAsset = new Map<string, ManifestChunk>()
