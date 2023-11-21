@@ -152,10 +152,12 @@ describe.runIf(isBuild)('build', () => {
     ).toBeFalsy()
   })
 
-  test('should have only entry files guarded', async () => {
+  test('should have only modern entry files guarded', async () => {
     const guard = /(import\s*\()|(import.meta)|(async\s*function\*)/
     expect(findAssetFile(/index(?!-legacy)/)).toMatch(guard)
     expect(findAssetFile(/polyfills(?!-legacy)/)).toMatch(guard)
+
+    expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(guard)
     expect(findAssetFile(/index-legacy/)).not.toMatch(guard)
   })
 })
