@@ -414,3 +414,19 @@ test('html serve behavior', async () => {
   expect(bothSlashIndexHtml.status).toBe(200)
   expect(await bothSlashIndexHtml.text()).toContain('both/index.html')
 })
+
+test('html fallback works non browser accept header', async () => {
+  expect((await fetch(viteTestUrl, { headers: { Accept: '' } })).status).toBe(
+    200,
+  )
+  // defaults to "Accept: */*"
+  expect((await fetch(viteTestUrl)).status).toBe(200)
+  // wait-on uses axios and axios sends this accept header
+  expect(
+    (
+      await fetch(viteTestUrl, {
+        headers: { Accept: 'application/json, text/plain, */*' },
+      })
+    ).status,
+  ).toBe(200)
+})
