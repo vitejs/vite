@@ -31,12 +31,12 @@ if (!isBuild) {
     `)
   })
 
-  test('plugin return sourcemap without sources', async () => {
+  test('plugin return sourcemap with `sources: [""]`', async () => {
     const res = await page.request.get(new URL('./zoo.js', page.url()).href)
     const js = await res.text()
     expect(js).toContain('// add comment')
+
     const map = extractSourcemap(js)
-    console.log('map', map)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
