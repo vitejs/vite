@@ -11,6 +11,8 @@ export default defineConfig({
           ms.append('// add comment')
           return {
             code: ms.toString(),
+            // NOTE: MagicString without `filename` option generates
+            //            a sourcemap with `sources: ['']` or `sources: [null]`
             map: ms.generateMap({ hires: true }),
           }
         }
