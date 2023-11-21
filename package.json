@@ -42,6 +42,8 @@
   },
   "devDependencies": {
     "@babel/types": "^7.23.3",
+    "@eslint-types/import": "^2.29.0-1",
+    "@eslint-types/typescript-eslint": "^6.11.0",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/babel__core": "^7.20.4",
     "@types/babel__preset-env": "^7.9.5",
@@ -64,7 +66,7 @@
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^3.0.0",
     "eslint": "^8.53.0",
-    "eslint-define-config": "^1.24.1",
+    "eslint-define-config": "^2.0.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-n": "^16.3.1",
     "eslint-plugin-regexp": "^2.1.1",

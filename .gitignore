@@ -1,6 +1,7 @@
 !**/glob-import/dir/node_modules
 .DS_Store
 .idea
+.pnpm-store
 *.cpuprofile
 *.local
 *.log

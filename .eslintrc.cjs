@@ -3,6 +3,9 @@ const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
 const pkg = require('./package.json')
 
+/// <reference types="@eslint-types/typescript-eslint" />
+/// <reference types="@eslint-types/import" />
+
 module.exports = defineConfig({
   root: true,
   extends: [

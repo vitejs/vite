@@ -30,6 +30,12 @@ importers:
       '@babel/types':
         specifier: ^7.23.3
         version: 7.23.3
+      '@eslint-types/import':
+        specifier: ^2.29.0-1
+        version: 2.29.0-1
+      '@eslint-types/typescript-eslint':
+        specifier: ^6.11.0
+        version: 6.11.0
       '@rollup/plugin-typescript':
         specifier: ^11.1.5
         version: 11.1.5(rollup@4.2.0)(tslib@2.6.2)(typescript@5.2.2)
@@ -97,8 +103,8 @@ importers:
         specifier: ^8.53.0
         version: 8.53.0
       eslint-define-config:
-        specifier: ^1.24.1
-        version: 1.24.1
+        specifier: ^2.0.0
+        version: 2.0.0
       eslint-plugin-import:
         specifier: ^2.29.0
         version: 2.29.0(@typescript-eslint/parser@6.10.0)(eslint@8.53.0)
@@ -3274,6 +3280,14 @@ packages:
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
     dev: true
 
+  /@eslint-types/import@2.29.0-1:
+    resolution: {integrity: sha512-cmlKmWLY9PKmsxKdb5DlXZBe6SV3fIyhoMj+lBVUeW5d9Dvqs62Hk+jskz4D9B3x+dEwDez29ScTog04K8WpUQ==}
+    dev: true
+
+  /@eslint-types/typescript-eslint@6.11.0:
+    resolution: {integrity: sha512-6IpcTD2brrOtSvvjmHvLHqubrmqj1wFhGWda+lA5fPlPIqhJYccL/mz2yONKQfQdh9kV7xd2tuVq7O2ylZd3iA==}
+    dev: true
+
   /@eslint/eslintrc@2.1.3:
     resolution: {integrity: sha512-yZzuIG+jnVu6hNSzFEN07e8BxF3uAzYtQb6uDkaYZLo6oYZDCq454c5kB8zxnzfCYyP4MIuyBn10L0DqwujTmA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -5675,9 +5689,9 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /eslint-define-config@1.24.1:
-    resolution: {integrity: sha512-o36vBhPSWyIQlHoMqGhhcGmOOm2A2ccBVIdLTG/AWdm9YmjpsLpf+5ntf9LlHR6dduLREgxtGwvwPwSt7vnXJg==}
-    engines: {node: '>=18.0.0', npm: '>=9.0.0', pnpm: '>= 8.6.0'}
+  /eslint-define-config@2.0.0:
+    resolution: {integrity: sha512-M8ao9mAE35BGwjZeT8ZlsRA42wcJHWS29Avd0qfeclRXig6uTnGXcaO7UxVyFzUA1VJtxeV/acw4KrhJA3JqxQ==}
+    engines: {node: '>=18.0.0', npm: '>=9.0.0', pnpm: '>=8.6.0'}
     dev: true
 
   /eslint-import-resolver-node@0.3.9:
