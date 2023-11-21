@@ -1,3 +1,9 @@
+## <small>5.0.2 (2023-11-21)</small>
+
+* fix: make htmlFallback more permissive (#15059) ([6fcceeb](https://github.com/vitejs/vite/commit/6fcceeb)), closes [#15059](https://github.com/vitejs/vite/issues/15059)
+
+
+
 ## <small>5.0.1 (2023-11-21)</small>
 
 * test: avoid read check when running as root (#14884) ([1d9516c](https://github.com/vitejs/vite/commit/1d9516c)), closes [#14884](https://github.com/vitejs/vite/issues/14884)
