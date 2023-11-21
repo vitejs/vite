@@ -12,7 +12,6 @@ import {
   createFilter,
   normalizePath,
   parseRequest,
-  removeComments,
   requestQuerySplitRE,
   transformStableResult,
 } from '../utils'
@@ -29,6 +28,8 @@ const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
   as?: keyof KnownAsTypeMap
+  query?: Record<string, string>
+  import?: string
 }
 
 interface DynamicImportPattern {
@@ -55,6 +56,7 @@ function parseDynamicImportPattern(
   const filename = strings.slice(1, -1)
   const rawQuery = parseRequest(filename)
   let globParams: DynamicImportRequest | null = null
+
   const ast = (
     parseJS(strings, {
       ecmaVersion: 'latest',
@@ -70,16 +72,19 @@ function parseDynamicImportPattern(
   const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  if (rawQuery?.raw !== undefined) {
-    globParams = { as: 'raw' }
-  }
+  const as = (['worker', 'url', 'raw'] as const).find(
+    (key) => rawQuery && key in rawQuery,
+  )
 
-  if (rawQuery?.url !== undefined) {
-    globParams = { as: 'url' }
-  }
-
-  if (rawQuery?.worker !== undefined) {
-    globParams = { as: 'worker' }
+  if (as) {
+    globParams = {
+      as,
+      import: '*',
+    }
+  } else if (rawQuery) {
+    globParams = {
+      query: rawQuery,
+    }
   }
 
   return {
@@ -121,9 +126,7 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams
-    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
-    : ''
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
 
   let newRawPattern = posix.relative(
     posix.dirname(importer),
@@ -214,14 +217,8 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s ||= new MagicString(source)
         let result
         try {
-          // When import string is using backticks, es-module-lexer `end` captures
-          // until the closing parenthesis, instead of the closing backtick.
-          // There may be inline comments between the backtick and the closing
-          // parenthesis, so we manually remove them for now.
-          // See https://github.com/guybedford/es-module-lexer/issues/118
-          const importSource = removeComments(source.slice(start, end)).trim()
           result = await transformDynamicImport(
-            importSource,
+            source.slice(start, end),
             importer,
             resolve,
             config.root,

@@ -1,4 +1,8 @@
 ---
+title: Vite 4.0 is out!
+author:
+  name: The Vite Team
+date: 2022-12-09
 sidebar: false
 head:
   - - meta
@@ -23,7 +27,7 @@ head:
 
 # Vite 4.0 is out!
 
-_December 9, 2022_
+_December 9, 2022_ - Check out the [Vite 5.0 announcement](./announcing-vite5.md)
 
 Vite 3 [was released](./announcing-vite3.md) five months ago. npm downloads per week have gone from 1 million to 2.5 million since then. The ecosystem has matured too, and continues to grow. In this year's [Jamstack Conf survey](https://twitter.com/vite_js/status/1589665610119585793), usage among the community jumped from 14% to 32% while keeping a high 9.7 satisfaction score. We saw the stable releases of [Astro 1.0](https://astro.build/), [Nuxt 3](https://v3.nuxtjs.org/), and other Vite-powered frameworks that are innovating and collaborating: [SvelteKit](https://kit.svelte.dev/), [Solid Start](https://www.solidjs.com/blog/introducing-solidstart), [Qwik City](https://qwik.builder.io/qwikcity/overview/). Storybook announced first-class support for Vite as one of its main features for [Storybook 7.0](https://storybook.js.org/blog/first-class-vite-support-in-storybook/). Deno now [supports Vite](https://www.youtube.com/watch?v=Zjojo9wdvmY). [Vitest](https://vitest.dev) adoption is exploding, it will soon represent half of Vite's npm downloads. Nx is also investing in the ecosystem, and [officially supports Vite](https://nx.dev/packages/vite).
 
@@ -38,7 +42,7 @@ Today, the Vite [team](https://vitejs.dev/team) with the help of our ecosystem p
 Quick links:
 
 - [Docs](/)
-- [Migration Guide](/guide/migration)
+- [Migration Guide](https://v4.vitejs.dev/guide/migration.html)
 - [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#400-2022-12-09)
 
 Docs in other languages:
@@ -87,7 +91,7 @@ This double loading could occur since a `.css` file will be emitted and it's lik
 import stuff from './global.css?inline'
 ```
 
-Learn more in the [Migration Guide](/guide/migration).
+Learn more in the [Migration Guide](https://v4.vitejs.dev/guide/migration.html).
 
 ## Environment Variables
 

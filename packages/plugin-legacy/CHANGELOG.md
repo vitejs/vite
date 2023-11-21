@@ -1,3 +1,21 @@
+## 5.0.0 (2023-11-16)
+
+* feat(plugin-legacy)!: bump vite peer dep (#15004) ([3c92c7b](https://github.com/vitejs/vite/commit/3c92c7b)), closes [#15004](https://github.com/vitejs/vite/issues/15004)
+
+
+
+## 5.0.0-beta.3 (2023-11-14)
+
+* fix(deps): update all non-major dependencies (#14635) ([21017a9](https://github.com/vitejs/vite/commit/21017a9)), closes [#14635](https://github.com/vitejs/vite/issues/14635)
+* fix(deps): update all non-major dependencies (#14729) ([d5d96e7](https://github.com/vitejs/vite/commit/d5d96e7)), closes [#14729](https://github.com/vitejs/vite/issues/14729)
+* fix(deps): update all non-major dependencies (#14883) ([e5094e5](https://github.com/vitejs/vite/commit/e5094e5)), closes [#14883](https://github.com/vitejs/vite/issues/14883)
+* fix(deps): update all non-major dependencies (#14961) ([0bb3995](https://github.com/vitejs/vite/commit/0bb3995)), closes [#14961](https://github.com/vitejs/vite/issues/14961)
+* fix(plugin-legacy): add invoke to modern detector to avoid terser treeshaking (#14968) ([4033a32](https://github.com/vitejs/vite/commit/4033a32)), closes [#14968](https://github.com/vitejs/vite/issues/14968)
+* feat(legacy): export `Options` (#14933) ([071bfc8](https://github.com/vitejs/vite/commit/071bfc8)), closes [#14933](https://github.com/vitejs/vite/issues/14933)
+* chore(deps): update dependency eslint-plugin-regexp to v2 (#14730) ([0a7c753](https://github.com/vitejs/vite/commit/0a7c753)), closes [#14730](https://github.com/vitejs/vite/issues/14730)
+
+
+
 ## 5.0.0-beta.2 (2023-10-09)
 
 * fix(legacy)!: should rename `x.[hash].js` to `x-legacy.[hash].js` (#11599) ([e7d7a6f](https://github.com/vitejs/vite/commit/e7d7a6f)), closes [#11599](https://github.com/vitejs/vite/issues/11599)

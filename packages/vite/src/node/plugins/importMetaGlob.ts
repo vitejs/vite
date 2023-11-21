@@ -386,8 +386,8 @@ export async function transformGlobImport(
           let query = !options.query
             ? ''
             : typeof options.query === 'string'
-            ? options.query
-            : stringifyQuery(options.query as any)
+              ? options.query
+              : stringifyQuery(options.query as any)
 
           if (query && query[0] !== '?') query = `?${query}`
 
@@ -486,7 +486,7 @@ type IdResolver = (
   id: string,
   importer?: string,
   options?: {
-    assertions?: Record<string, string>
+    attributes?: Record<string, string>
     custom?: CustomPluginOptions
     isEntry?: boolean
     skipSelf?: boolean

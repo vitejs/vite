@@ -10,34 +10,19 @@ export default defineConfig({
   },
   worker: {
     format: 'iife',
-    plugins: [
-      workerPluginTestPlugin(),
-      {
-        name: 'config-test',
-        config() {
-          return {
-            worker: {
-              rollupOptions: {
-                output: {
-                  entryFileNames: 'assets/worker_entry-[name].js',
-                },
-              },
-            },
-          }
-        },
-      },
-    ],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
         assetFileNames: 'assets/worker_asset-[name].[ext]',
         chunkFileNames: 'assets/worker_chunk-[name].js',
-        // should fix by config-test plugin
+        // should be overwritten to worker_entry-[name] by the config-test plugin
         entryFileNames: 'assets/worker_-[name].js',
       },
     },
   },
   build: {
     outDir: 'dist/iife',
+    assetsInlineLimit: 100, // keep SVG as assets URL
     manifest: true,
     rollupOptions: {
       output: {
@@ -47,6 +32,22 @@ export default defineConfig({
       },
     },
   },
-  plugins: [workerPluginTestPlugin()],
+  plugins: [
+    workerPluginTestPlugin(),
+    {
+      name: 'config-test',
+      config() {
+        return {
+          worker: {
+            rollupOptions: {
+              output: {
+                entryFileNames: 'assets/worker_entry-[name].js',
+              },
+            },
+          },
+        }
+      },
+    },
+  ],
   cacheDir: 'node_modules/.vite-iife',
 })

@@ -1,6 +1,7 @@
 import type * as Rollup from 'rollup'
 
 export type { Rollup }
+export { parseAst, parseAstAsync } from 'rollup/parseAst'
 export {
   defineConfig,
   loadConfigFromFile,

@@ -3,6 +3,9 @@ const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
 const pkg = require('./package.json')
 
+/// <reference types="@eslint-types/typescript-eslint" />
+/// <reference types="@eslint-types/import" />
+
 module.exports = defineConfig({
   root: true,
   extends: [
@@ -108,6 +111,8 @@ module.exports = defineConfig({
     ],
 
     'regexp/no-contradiction-with-assertion': 'error',
+    // in some cases using explicit letter-casing is more performant than the `i` flag
+    'regexp/use-ignore-case': 'off',
   },
   overrides: [
     {

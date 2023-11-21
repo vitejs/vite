@@ -118,3 +118,11 @@
 .vp-sponsor.aside .vp-sponsor-grid.mini .vp-sponsor-grid-image {
   max-width: 124px;
 }
+
+.vp-sponsor.aside .vp-sponsor-grid.mini .vp-sponsor-grid-image[alt='Bit'] {
+  max-height: 44px;
+}
+
+.vp-sponsor-grid.big .vp-sponsor-grid-image {
+  max-height: 96px;
+}

@@ -26,6 +26,7 @@ import {
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
+import type { Logger } from '../logger'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -243,7 +244,11 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
   const formattedError = {
     code: parserError.code,
     message: `parse5 error code ${parserError.code}`,
-    frame: generateCodeFrame(html, parserError.startOffset),
+    frame: generateCodeFrame(
+      html,
+      parserError.startOffset,
+      parserError.endOffset,
+    ),
     loc: {
       file: id,
       line: parserError.startLine,
@@ -287,16 +292,16 @@ function handleParseError(
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
+    config.logger,
   )
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
+
   const isExcludedUrl = (url: string) =>
-    url[0] === '#' ||
-    isExternalUrl(url) ||
-    isDataUrl(url) ||
-    checkPublicFile(url, config)
+    url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
+
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
@@ -365,10 +370,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         let js = ''
         const s = new MagicString(html)
-        const assetUrls: {
-          attr: Token.Attribute
-          sourceCodeLocation: Token.Location
-        }[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
         const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
@@ -376,6 +377,31 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let everyScriptIsAsync = true
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
+
+        const assetUrlsPromises: Promise<void>[] = []
+
+        // for each encountered asset url, rewrite original html so that it
+        // references the post-build location, ignoring empty attributes and
+        // attributes that directly reference named output.
+        const namedOutput = Object.keys(
+          config?.build?.rollupOptions?.input || {},
+        )
+        const processAssetUrl = async (url: string) => {
+          if (
+            url !== '' && // Empty attribute
+            !namedOutput.includes(url) && // Direct reference to named output
+            !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
+          ) {
+            try {
+              return await urlToBuiltUrl(url, id, config, this)
+            } catch (e) {
+              if (e.code !== 'ENOENT') {
+                throw e
+              }
+            }
+          }
+          return url
+        }
 
         await traverseHtml(html, id, (node) => {
           if (!nodeIsElement(node)) {
@@ -402,7 +428,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
             if (isModule) {
               inlineModuleIndex++
-              if (url && !isExcludedUrl(url)) {
+              if (url && !isExcludedUrl(url) && !isPublicFile) {
                 // <script type="module" src="..."/>
                 // add it as an import
                 js += `\nimport ${JSON.stringify(url)}`
@@ -445,41 +471,71 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             for (const p of node.attrs) {
               const attrKey = getAttrKey(p)
               if (p.value && assetAttrs.includes(attrKey)) {
-                const attrSourceCodeLocation =
-                  node.sourceCodeLocation!.attrs![attrKey]
-                // assetsUrl may be encodeURI
-                const url = decodeURI(p.value)
-                if (!isExcludedUrl(url)) {
-                  if (
-                    node.nodeName === 'link' &&
-                    isCSSRequest(url) &&
-                    // should not be converted if following attributes are present (#6748)
-                    !node.attrs.some(
-                      (p) =>
-                        p.prefix === undefined &&
-                        (p.name === 'media' || p.name === 'disabled'),
-                    )
-                  ) {
-                    // CSS references, convert to import
-                    const importExpression = `\nimport ${JSON.stringify(url)}`
-                    styleUrls.push({
-                      url,
-                      start: nodeStartWithLeadingWhitespace(node),
-                      end: node.sourceCodeLocation!.endOffset,
-                    })
-                    js += importExpression
-                  } else {
-                    assetUrls.push({
-                      attr: p,
-                      sourceCodeLocation: attrSourceCodeLocation,
-                    })
-                  }
-                } else if (checkPublicFile(url, config)) {
-                  overwriteAttrValue(
-                    s,
-                    attrSourceCodeLocation,
-                    toOutputPublicFilePath(url),
+                if (attrKey === 'srcset') {
+                  assetUrlsPromises.push(
+                    (async () => {
+                      const processedUrl = await processSrcSet(
+                        p.value,
+                        async ({ url }) => {
+                          const decodedUrl = decodeURI(url)
+                          if (!isExcludedUrl(decodedUrl)) {
+                            const result = await processAssetUrl(url)
+                            return result !== decodedUrl ? result : url
+                          }
+                          return url
+                        },
+                      )
+                      if (processedUrl !== p.value) {
+                        overwriteAttrValue(
+                          s,
+                          getAttrSourceCodeLocation(node, attrKey),
+                          processedUrl,
+                        )
+                      }
+                    })(),
                   )
+                } else {
+                  const url = decodeURI(p.value)
+                  if (checkPublicFile(url, config)) {
+                    overwriteAttrValue(
+                      s,
+                      getAttrSourceCodeLocation(node, attrKey),
+                      toOutputPublicFilePath(url),
+                    )
+                  } else if (!isExcludedUrl(url)) {
+                    if (
+                      node.nodeName === 'link' &&
+                      isCSSRequest(url) &&
+                      // should not be converted if following attributes are present (#6748)
+                      !node.attrs.some(
+                        (p) =>
+                          p.prefix === undefined &&
+                          (p.name === 'media' || p.name === 'disabled'),
+                      )
+                    ) {
+                      // CSS references, convert to import
+                      const importExpression = `\nimport ${JSON.stringify(url)}`
+                      styleUrls.push({
+                        url,
+                        start: nodeStartWithLeadingWhitespace(node),
+                        end: node.sourceCodeLocation!.endOffset,
+                      })
+                      js += importExpression
+                    } else {
+                      assetUrlsPromises.push(
+                        (async () => {
+                          const processedUrl = await processAssetUrl(url)
+                          if (processedUrl !== url) {
+                            overwriteAttrValue(
+                              s,
+                              getAttrSourceCodeLocation(node, attrKey),
+                              processedUrl,
+                            )
+                          }
+                        })(),
+                      )
+                    }
+                  }
                 }
               }
             }
@@ -541,42 +597,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        // for each encountered asset url, rewrite original html so that it
-        // references the post-build location, ignoring empty attributes and
-        // attributes that directly reference named output.
-        const namedOutput = Object.keys(
-          config?.build?.rollupOptions?.input || {},
-        )
-        for (const { attr, sourceCodeLocation } of assetUrls) {
-          // assetsUrl may be encodeURI
-          const content = decodeURI(attr.value)
-          if (
-            content !== '' && // Empty attribute
-            !namedOutput.includes(content) && // Direct reference to named output
-            !namedOutput.includes(removeLeadingSlash(content)) // Allow for absolute references as named output can't be an absolute path
-          ) {
-            try {
-              const url =
-                attr.prefix === undefined && attr.name === 'srcset'
-                  ? await processSrcSet(content, ({ url }) =>
-                      urlToBuiltUrl(url, id, config, this),
-                    )
-                  : await urlToBuiltUrl(content, id, config, this)
+        await Promise.all(assetUrlsPromises)
 
-              overwriteAttrValue(s, sourceCodeLocation, url)
-            } catch (e) {
-              if (e.code !== 'ENOENT') {
-                throw e
-              }
-            }
-          }
-        }
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
-          if (!isExcludedUrl(url)) {
-            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
-          } else if (checkPublicFile(url, config)) {
+          if (checkPublicFile(url, config)) {
             s.update(start, end, toOutputPublicFilePath(url))
+          } else if (!isExcludedUrl(url)) {
+            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
           }
         }
 
@@ -647,6 +675,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         attrs: {
           ...(isAsync ? { async: true } : {}),
           type: 'module',
+          // crossorigin must be set not only for serving assets in a different origin
+          // but also to make it possible to preload the script using `<link rel="preload">`.
+          // `<script type="module">` used to fetch the script with credential mode `omit`,
+          // however `crossorigin` attribute cannot specify that value.
+          // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
+          // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
           src: toOutputPath(chunk.fileName),
         },
@@ -687,6 +721,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'link',
               attrs: {
                 rel: 'stylesheet',
+                crossorigin: true,
                 href: toOutputPath(file),
               },
             })
@@ -794,6 +829,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
+                  crossorigin: true,
                   href: toOutputAssetFilePath(cssChunk.fileName),
                 },
               },
@@ -826,7 +862,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return toOutputAssetFilePath(this.getFileName(fileHash)) + postfix
+          const file = this.getFileName(fileHash)
+          if (chunk) {
+            chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+          }
+          return toOutputAssetFilePath(file) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
@@ -1060,6 +1100,7 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[],
+  logger: Logger,
 ): [
   IndexHtmlTransformHook[],
   IndexHtmlTransformHook[],
@@ -1076,6 +1117,21 @@ export function resolveHtmlTransforms(
     if (typeof hook === 'function') {
       normalHooks.push(hook)
     } else {
+      if (!('order' in hook) && 'enforce' in hook) {
+        logger.warnOnce(
+          colors.yellow(
+            `plugin '${plugin.name}' uses deprecated 'enforce' option. Use 'order' option instead.`,
+          ),
+        )
+      }
+      if (!('handler' in hook) && 'transform' in hook) {
+        logger.warnOnce(
+          colors.yellow(
+            `plugin '${plugin.name}' uses deprecated 'transform' option. Use 'handler' option instead.`,
+          ),
+        )
+      }
+
       // `enforce` had only two possible values for the `transformIndexHtml` hook
       // `'pre'` and `'post'` (the default). `order` now works with three values
       // to align with other hooks (`'pre'`, normal, and `'post'`). We map
@@ -1306,4 +1362,11 @@ function incrementIndent(indent: string = '') {
 
 export function getAttrKey(attr: Token.Attribute): string {
   return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
+}
+
+function getAttrSourceCodeLocation(
+  node: DefaultTreeAdapterMap['element'],
+  attrKey: string,
+) {
+  return node.sourceCodeLocation!.attrs![attrKey]
 }
