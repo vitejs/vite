@@ -1,5 +1,6 @@
 import MagicString from 'magic-string'
-import { Plugin } from 'vite'
+import type { Plugin } from 'vite'
+
 export const transformZooWithSourcemapPlugin: () => Plugin = () => ({
   name: 'sourcemap',
   transform(code, id) {
