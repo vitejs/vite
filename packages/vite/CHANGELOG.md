@@ -1,3 +1,15 @@
+## <small>5.0.1 (2023-11-21)</small>
+
+* test: avoid read check when running as root (#14884) ([1d9516c](https://github.com/vitejs/vite/commit/1d9516c)), closes [#14884](https://github.com/vitejs/vite/issues/14884)
+* perf(hmr): skip traversed modules when checking circular imports (#15034) ([41e437f](https://github.com/vitejs/vite/commit/41e437f)), closes [#15034](https://github.com/vitejs/vite/issues/15034)
+* fix: run htmlFallbackMiddleware for no accept header requests (#15025) ([b93dfe3](https://github.com/vitejs/vite/commit/b93dfe3)), closes [#15025](https://github.com/vitejs/vite/issues/15025)
+* fix: update type CSSModulesOptions interface (#14987) ([d0b2153](https://github.com/vitejs/vite/commit/d0b2153)), closes [#14987](https://github.com/vitejs/vite/issues/14987)
+* fix(legacy): error in build with --watch and manifest enabled (#14450) ([b9ee620](https://github.com/vitejs/vite/commit/b9ee620)), closes [#14450](https://github.com/vitejs/vite/issues/14450)
+* chore: add comment about crossorigin attribute for script module (#15040) ([03c371e](https://github.com/vitejs/vite/commit/03c371e)), closes [#15040](https://github.com/vitejs/vite/issues/15040)
+* chore: cleanup v5 beta changelog (#14694) ([531d3cb](https://github.com/vitejs/vite/commit/531d3cb)), closes [#14694](https://github.com/vitejs/vite/issues/14694)
+
+
+
 ## 5.0.0 (2023-11-16)
 
 Vite 5 is out! Read the [announcement blog post here](https://vitejs.dev/blog/announcing-vite5)
