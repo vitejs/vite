@@ -64,7 +64,7 @@
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/release-scripts": "^1.3.1",
-    "conventional-changelog-cli": "^3.0.0",
+    "conventional-changelog-cli": "^4.1.0",
     "eslint": "^8.53.0",
     "eslint-define-config": "^2.0.0",
     "eslint-plugin-import": "^2.29.0",
