@@ -416,15 +416,15 @@ test('html serve behavior', async () => {
 })
 
 test('html fallback works non browser accept header', async () => {
-  expect(
-    (await fetch(viteTestUrl + '/', { headers: { Accept: '' } })).status,
-  ).toBe(200)
+  expect((await fetch(viteTestUrl, { headers: { Accept: '' } })).status).toBe(
+    200,
+  )
   // defaults to "Accept: */*"
-  expect((await fetch(viteTestUrl + '/')).status).toBe(200)
+  expect((await fetch(viteTestUrl)).status).toBe(200)
   // wait-on uses axios and axios sends this accept header
   expect(
     (
-      await fetch(viteTestUrl + '/', {
+      await fetch(viteTestUrl, {
         headers: { Accept: 'application/json, text/plain, */*' },
       })
     ).status,
