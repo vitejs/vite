@@ -163,6 +163,8 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 Run `node --input-type=module -e "import {cspHashes} from '@vitejs/plugin-legacy'; console.log(cspHashes.map(h => 'sha256-'+h))"` to retrieve the value.
 -->
 
+Note that these values could change between minor versions. If you rely on these values, we recommend pinning the minor version using `~`.
+
 These values (without the `sha256-` prefix) can also be retrieved via
 
 ```js
