@@ -1,3 +1,10 @@
+## 5.1.0 (2023-11-21)
+
+* docs(legacy): clarify that csp hashes could change between minors (#15057) ([cd35330](https://github.com/vitejs/vite/commit/cd35330)), closes [#15057](https://github.com/vitejs/vite/issues/15057)
+* fix(legacy): preserve async generator function invocation (#15021) ([47551a6](https://github.com/vitejs/vite/commit/47551a6)), closes [#15021](https://github.com/vitejs/vite/issues/15021)
+
+
+
 ## 5.0.0 (2023-11-16)
 
 * feat(plugin-legacy)!: bump vite peer dep (#15004) ([3c92c7b](https://github.com/vitejs/vite/commit/3c92c7b)), closes [#15004](https://github.com/vitejs/vite/issues/15004)
