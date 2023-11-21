@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/test-importee-pkg": "file:importee-pkg"
+    "@vitejs/test-importee-pkg": "file:importee-pkg",
+    "magic-string": "^0.30.5"
   }
 }
