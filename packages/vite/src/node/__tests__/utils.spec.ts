@@ -204,6 +204,7 @@ foo()
   }
 
   test('start with number', () => {
+    expectSnapshot(generateCodeFrame(source, -1))
     expectSnapshot(generateCodeFrame(source, 0))
     expectSnapshot(generateCodeFrame(source, 1))
     expectSnapshot(generateCodeFrame(source, 24))
@@ -223,6 +224,8 @@ foo()
     expectSnapshot(generateCodeFrame(source, 0, 0))
     expectSnapshot(generateCodeFrame(source, 0, 23))
     expectSnapshot(generateCodeFrame(source, 0, 29))
+    expectSnapshot(generateCodeFrame(source, 0, source.length))
+    expectSnapshot(generateCodeFrame(source, 0, source.length + 1))
   })
 
   test('range', () => {

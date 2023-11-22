@@ -530,6 +530,7 @@ export function generateCodeFrame(
             end > count ? lineLength - pad : end - start,
           )
           res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
+          count++
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)
