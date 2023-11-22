@@ -7,7 +7,7 @@
 
 ## 5.1.0 (2023-11-21)
 
-* docs(legacy): clarify that csp hashes could change between minors (#15057) ([cd35330](https://github.com/vitejs/vite/commit/cd35330)), closes [#15057](https://github.com/vitejs/vite/issues/15057)
+* docs(legacy): clarify that csp hashes could change between minors (#15057) ([cd353306](https://github.com/vitejs/vite/commit/cd353306)), closes [#15057](https://github.com/vitejs/vite/issues/15057)
 * fix(legacy): preserve async generator function invocation (#15021) ([47551a6](https://github.com/vitejs/vite/commit/47551a6)), closes [#15021](https://github.com/vitejs/vite/issues/15021)
 
 
