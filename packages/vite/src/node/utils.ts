@@ -505,8 +505,11 @@ export function generateCodeFrame(
   start: number | Pos = 0,
   end?: number | Pos,
 ): string {
-  start = posToNumber(source, start)
-  end = end !== undefined ? posToNumber(source, end) : start
+  start = Math.max(posToNumber(source, start), 0)
+  end = Math.min(
+    end !== undefined ? posToNumber(source, end) : start,
+    source.length,
+  )
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -530,7 +533,6 @@ export function generateCodeFrame(
             end > count ? lineLength - pad : end - start,
           )
           res.push(`   |  ` + ' '.repeat(pad) + '^'.repeat(length))
-          count++
         } else if (j > i) {
           if (end > count) {
             const length = Math.max(Math.min(end - count, lineLength), 1)

@@ -187,10 +187,10 @@ foo()
 import foo from './foo'
 
 foo()
-
-// bar
-// baz
-  `
+// 1
+// 2
+// 3
+`.trim()
 
   const expectSnapshot = (value: string) => {
     try {
@@ -226,10 +226,22 @@ foo()
     expectSnapshot(generateCodeFrame(source, 0, 29))
     expectSnapshot(generateCodeFrame(source, 0, source.length))
     expectSnapshot(generateCodeFrame(source, 0, source.length + 1))
+    expectSnapshot(generateCodeFrame(source, 0, source.length + 100))
   })
 
   test('range', () => {
     expectSnapshot(generateCodeFrame(longSource, { line: 3, column: 0 }))
+    expectSnapshot(
+      generateCodeFrame(
+        longSource,
+        { line: 3, column: 0 },
+        { line: 4, column: 0 },
+      ),
+    )
+  })
+
+  test('invalid start > end', () => {
+    expectSnapshot(generateCodeFrame(source, 2, 0))
   })
 })
 
