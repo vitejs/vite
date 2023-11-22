@@ -164,7 +164,7 @@ The current values are:
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-6gxDO54HJkJNWi7H6ipFpWWSkWSRpyuZYMGDyG6bcNE=`
+- `sha256-VA8O2hAdooB288EpSTrGLl7z3QikbWU9wwoebO/QaYk=`
 - `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--
