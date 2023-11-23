@@ -340,7 +340,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // custom-[hash].[format] -> custom-[hash]-legacy.[format]
           // custom.[hash].[format] -> custom.[hash]-legacy.[format]
           // [hash].min.[format] -> [hash]-legacy.min.[format]
-          return fileName.replace(/(\.min\.|\.)[^.]*$/, "-legacy$&")
+          return fileName.replace(/(\.min\.|\.)[^.]*$/, '-legacy$&')
         }
       }
 
