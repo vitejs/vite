@@ -6,7 +6,7 @@ test.runIf(isBuild)('includes only a single script tag', async () => {
 
   await untilUpdated(
     () => page.getAttribute('#vite-legacy-entry', 'data-src'),
-    /.\/assets\/index-legacy-(.+)\.js/,
+    /.\/assets\/index-[-\w]{8}-legacy\.js/,
     true,
   )
 

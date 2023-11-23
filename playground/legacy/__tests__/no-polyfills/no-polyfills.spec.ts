@@ -9,12 +9,12 @@ test('should load and execute the JS file', async () => {
 test.runIf(isBuild)('includes a script tag for SystemJS', async () => {
   await untilUpdated(
     () => page.getAttribute('#vite-legacy-polyfill', 'src'),
-    /.\/assets\/polyfills-legacy-(.+)\.js/,
+    /.\/assets\/polyfills-[-\w]{8}-legacy\.js/,
     true,
   )
   await untilUpdated(
     () => page.getAttribute('#vite-legacy-entry', 'data-src'),
-    /.\/assets\/index-legacy-(.+)\.js/,
+    /.\/assets\/index-[-\w]{8}-legacy\.js/,
     true,
   )
 })
