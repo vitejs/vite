@@ -540,25 +540,13 @@ export function runOptimizeDeps(
       // is safer than a delete-rename operation.
       const temporalPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
-      if (isWindows) {
-        if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
-          await safeRename(depsCacheDir, temporalPath)
-        }
-        debug?.(
-          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
-        )
-        await safeRename(processingCacheDir, depsCacheDir)
-      } else {
-        if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
-          fs.renameSync(depsCacheDir, temporalPath)
-        }
-        debug?.(
-          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
-        )
-        fs.renameSync(processingCacheDir, depsCacheDir)
+      const renameFn = isWindows ? safeRename : fsp.rename
+      if (depsCacheDirPresent) {
+        debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
+        await renameFn(depsCacheDir, temporalPath)
       }
+      debug?.(colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`))
+      await renameFn(processingCacheDir, depsCacheDir)
 
       // Delete temporal path in the background
       if (depsCacheDirPresent) {
