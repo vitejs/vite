@@ -324,23 +324,31 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           | string
           | ((chunkInfo: PreRenderedChunk) => string)
           | undefined,
-        defaultFileName = '[name]-[hash]-legacy.js',
+        defaultFileName = '[name]-legacy-[hash].js',
       ): string | ((chunkInfo: PreRenderedChunk) => string) => {
         if (!fileNames) {
           return path.posix.join(config.build.assetsDir, defaultFileName)
         }
 
         return (chunkInfo) => {
-          const fileName =
+          let fileName =
             typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
 
-          // [name]-[hash].[format] -> [name]-[hash]-legacy.[format]
-          // [hash].[format] -> [hash]-legacy.[format]
-          // custom[hash].[format] -> custom[hash]-legacy.[format]
-          // custom-[hash].[format] -> custom-[hash]-legacy.[format]
-          // custom.[hash].[format] -> custom.[hash]-legacy.[format]
-          // [hash].min.[format] -> [hash]-legacy.min.[format]
-          return fileName.replace(/(\.min\.|\.)[^.]*$/, "-legacy$&")
+          if (fileName.includes('[name]')) {
+            // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
+            fileName = fileName.replace('[name]', '[name]-legacy')
+          } else if (fileName.includes('[hash]')) {
+            // custom[hash].[format] -> [name]-legacy[hash].[format]
+            // custom-[hash].[format] -> [name]-legacy-[hash].[format]
+            // custom.[hash].[format] -> [name]-legacy.[hash].[format]
+            fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
+          } else {
+            // entry.js -> entry-legacy.js
+            // entry.min.js -> entry-legacy.min.js
+            fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
+          }
+
+          return fileName
         }
       }
 
