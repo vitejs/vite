@@ -435,6 +435,7 @@ async function fetchUpdate({
   acceptedPath,
   timestamp,
   explicitImportRequired,
+  isWithinCircularImport,
 }: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
@@ -467,6 +468,12 @@ async function fetchUpdate({
       )
     } catch (e) {
       warnFailedFetch(e, acceptedPath)
+      if (isWithinCircularImport) {
+        console.debug(
+          `[hmr] ${acceptedPath} is within a circular import. Reloading page to reset the execution order.`,
+        )
+        pageReload()
+      }
     }
   }
 
