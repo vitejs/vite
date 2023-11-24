@@ -205,12 +205,14 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
-          const filepath =
-            result.map == null
-              ? (await server.moduleGraph.getModuleByUrl(url, false))?.file
-              : undefined
-          const originalContent =
-            filepath != null ? await getOriginalContent(filepath) : undefined
+          let originalContent: string | undefined
+          if (type === 'js' && result.map == null) {
+            const filepath = (
+              await server.moduleGraph.getModuleByUrl(url, false)
+            )?.file
+            originalContent =
+              filepath != null ? await getOriginalContent(filepath) : undefined
+          }
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
