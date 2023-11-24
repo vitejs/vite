@@ -91,7 +91,7 @@ See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite)
 
 create-vite is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks.
 
-For a template at `https://github/user/project`, you can try it out online using `https://stackblitz.com/github/user/project`.
+For a template at `https://github.com/user/project`, you can try it out online using `https://stackblitz.com/github/user/project`.
 
 You can also use a tool like [degit](https://github.com/Rich-Harris/degit) to scaffold your project with one of the templates. Assuming the project is in GitHub and uses `main` as the default branch, you can create a local copy using:
 
