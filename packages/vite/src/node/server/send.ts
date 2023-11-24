@@ -27,6 +27,7 @@ export interface SendOptions {
   cacheControl?: string
   headers?: OutgoingHttpHeaders
   map?: SourceMap | { mappings: '' } | null
+  /** only used when map == null (when the fallback sourcemap is used) */
   originalContent?: string
 }
 
