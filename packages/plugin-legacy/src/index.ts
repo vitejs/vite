@@ -321,6 +321,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
 
+      excludeLegacyPolyfills = options.excludeLegacyPolyfills
+      isDebug &&
+        excludeLegacyPolyfills &&
+        console.log(
+          `[@vitejs/plugin-legacy] excludeLegacyPolyfills:`,
+          excludeLegacyPolyfills,
+        )
+
       const getLegacyOutputFileName = (
         fileNames:
           | string
