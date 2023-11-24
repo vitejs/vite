@@ -20,7 +20,7 @@ import {
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
-import { applySourcemapIgnoreList } from '../sourcemap'
+import { applySourcemapIgnoreList, getOriginalContent } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
 import {
   DEP_VERSION_RE,
@@ -205,12 +205,21 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
+          let originalContent: string | undefined
+          if (type === 'js' && result.map == null) {
+            const filepath = (
+              await server.moduleGraph.getModuleByUrl(url, false)
+            )?.file
+            originalContent =
+              filepath != null ? await getOriginalContent(filepath) : undefined
+          }
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,
+            originalContent,
           })
         }
       }
