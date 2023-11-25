@@ -486,6 +486,21 @@ function esbuildScanPlugin(
         }
       }
 
+      const globImportOnLoadCallback: (
+        args: OnLoadArgs,
+      ) => Promise<OnLoadResult | null | undefined> = async ({ path: p }) => {
+        const externalLoadResult: OnLoadResult = {
+          loader: 'js',
+          contents: '\nexport default {}',
+        }
+        if (!entries.includes(p)) {
+          return externalLoadResult
+        }
+        if (SPECIAL_QUERY_RE.test(p)) {
+          return externalLoadResult
+        }
+      }
+
       // extract scripts inside HTML-like files and treat it as a js module
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'html' },
@@ -497,6 +512,29 @@ function esbuildScanPlugin(
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'file' },
         htmlTypeOnLoadCallback,
+      )
+      // css
+      build.onLoad(
+        { filter: CSS_LANGS_RE, namespace: 'file' },
+        globImportOnLoadCallback,
+      )
+      // json & wasm
+      build.onLoad(
+        { filter: /\.(json|json5|wasm)$/, namespace: 'file' },
+        globImportOnLoadCallback,
+      )
+      // known asset types
+      build.onLoad(
+        {
+          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
+          namespace: 'file',
+        },
+        globImportOnLoadCallback,
+      )
+      // known vite query types: ?worker, ?raw
+      build.onLoad(
+        { filter: SPECIAL_QUERY_RE, namespace: 'file' },
+        globImportOnLoadCallback,
       )
 
       // bare imports: record and externalize ----------------------------------
