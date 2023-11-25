@@ -339,14 +339,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
-          } else if (
-            fileName.includes('[hash]') &&
-            !fileName.startsWith('[hash]')
-          ) {
-            // custom[hash].[format] -> [name]-legacy[hash].[format]
-            // custom-[hash].[format] -> [name]-legacy-[hash].[format]
-            // custom.[hash].[format] -> [name]-legacy.[hash].[format]
-            fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
+          } else if (/.+\[hash(?::\d+)?\]/.test(fileName)) {
+            // custom[hash].[format] -> custom-legacy[hash].[format]
+            // custom-[hash].[format] -> custom-legacy-[hash].[format]
+            // custom.[hash].[format] -> custom-legacy.[hash].[format]
+            // custom.[hash:10].[format] -> custom-legacy.[hash:10].[format]
+            fileName = fileName.replace(/[.-]?\[hash(:\d+)?\]/, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
             // entry.min.js -> entry-legacy.min.js
