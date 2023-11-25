@@ -990,8 +990,7 @@ export function resolvePackageEntry(
           if (entryPoint) {
             break
           }
-        }
-        if (typeof data[field] === 'string') {
+        } else if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
         }
