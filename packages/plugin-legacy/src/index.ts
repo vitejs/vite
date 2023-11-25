@@ -339,19 +339,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
+          } else if (
+            fileName.includes('[hash]') &&
+            !fileName.startsWith('[hash]')
+          ) {
+            // custom[hash].[format] -> [name]-legacy[hash].[format]
+            // custom-[hash].[format] -> [name]-legacy-[hash].[format]
+            // custom.[hash].[format] -> [name]-legacy.[hash].[format]
+            fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
           } else {
-            if (fileName.includes('[hash]') && !fileName.startsWith('[hash]')) {
-              // custom[hash].[format] -> [name]-legacy[hash].[format]
-              // custom-[hash].[format] -> [name]-legacy-[hash].[format]
-              // custom.[hash].[format] -> [name]-legacy.[hash].[format]
-              fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
-            } else {
-              // entry.js -> entry-legacy.js
-              // entry.min.js -> entry-legacy.min.js
-              // [hash].[format] -> [hash]-legacy.[format]
-              // [hash]custom.[format] -> [hash]custom-legacy.[format]
-              fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
-            }
+            // entry.js -> entry-legacy.js
+            // entry.min.js -> entry-legacy.min.js
+            // [hash].[format] -> [hash]-legacy.[format]
+            // [hash]custom.[format] -> [hash]custom-legacy.[format]
+            fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
           }
 
           return [...fileArr, fileName].join('/')
