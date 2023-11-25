@@ -1,6 +1,9 @@
 ---
-sidebar: false
+title: Vite 4.0 is out!
+author:
+  name: The Vite Team
 date: 2022-12-09
+sidebar: false
 head:
   - - meta
     - property: og:type

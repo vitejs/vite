@@ -1,3 +1,17 @@
+## 5.2.0 (2023-11-22)
+
+* test(legacy): add a test to checks all inline snippets are valid JS (#15098) ([1b9ca66](https://github.com/vitejs/vite/commit/1b9ca66)), closes [#15098](https://github.com/vitejs/vite/issues/15098)
+* fix(plugin-legacy): syntax error in variable `detectModernBrowserCode` (#15095) ([1c605ff](https://github.com/vitejs/vite/commit/1c605ff)), closes [#15095](https://github.com/vitejs/vite/issues/15095)
+
+
+
+## 5.1.0 (2023-11-21)
+
+* docs(legacy): clarify that csp hashes could change between minors (#15057) ([cd353306](https://github.com/vitejs/vite/commit/cd353306)), closes [#15057](https://github.com/vitejs/vite/issues/15057)
+* fix(legacy): preserve async generator function invocation (#15021) ([47551a6](https://github.com/vitejs/vite/commit/47551a6)), closes [#15021](https://github.com/vitejs/vite/issues/15021)
+
+
+
 ## 5.0.0 (2023-11-16)
 
 * feat(plugin-legacy)!: bump vite peer dep (#15004) ([3c92c7b](https://github.com/vitejs/vite/commit/3c92c7b)), closes [#15004](https://github.com/vitejs/vite/issues/15004)
