@@ -985,10 +985,12 @@ export function resolvePackageEntry(
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
       for (const field of options.mainFields) {
-        if (field === 'browser' && targetWeb) {
-          entryPoint = tryResolveBrowserEntry(dir, data, options)
-          if (entryPoint) {
-            break
+        if (field === 'browser') {
+          if (targetWeb) {
+            entryPoint = tryResolveBrowserEntry(dir, data, options)
+            if (entryPoint) {
+              break
+            }
           }
         } else if (typeof data[field] === 'string') {
           entryPoint = data[field]
