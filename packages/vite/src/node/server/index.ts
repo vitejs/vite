@@ -976,7 +976,7 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindCLIShortcuts(newServer, shortcutsOptions)
+    bindCLIShortcuts(server, shortcutsOptions)
   }
 }
 
