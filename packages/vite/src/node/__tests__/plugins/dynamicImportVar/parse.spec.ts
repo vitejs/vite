@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
-import { normalizePath } from '../../../utils'
+import { isWindows, normalizePath } from '../../../utils'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -42,11 +42,13 @@ describe('parse positives', () => {
     expect(await run('`./mods/${base ?? foo}.js?raw`')).toMatchSnapshot()
   })
 
-  it('? in url', async () => {
+  // ? is not escaped on windows (? cannot be used as a filename on windows)
+  it.skipIf(isWindows)('? in url', async () => {
     expect(await run('`./mo?ds/${base ?? foo}.js?url`')).toMatchSnapshot()
   })
 
-  it('? in worker', async () => {
+  // ? is not escaped on windows (? cannot be used as a filename on windows)
+  it.skipIf(isWindows)('? in worker', async () => {
     expect(await run('`./mo?ds/${base ?? foo}.js?worker`')).toMatchSnapshot()
   })
 

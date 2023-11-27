@@ -1,6 +1,9 @@
 ---
-sidebar: false
+title: Vite 4.3 is out!
+author:
+  name: The Vite Team
 date: 2023-04-20
+sidebar: false
 head:
   - - meta
     - property: og:type

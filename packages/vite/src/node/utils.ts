@@ -505,8 +505,11 @@ export function generateCodeFrame(
   start: number | Pos = 0,
   end?: number | Pos,
 ): string {
-  start = posToNumber(source, start)
-  end = end !== undefined ? posToNumber(source, end) : start
+  start = Math.max(posToNumber(source, start), 0)
+  end = Math.min(
+    end !== undefined ? posToNumber(source, end) : start,
+    source.length,
+  )
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
@@ -1000,6 +1003,7 @@ export function arraify<T>(target: T | T[]): T[] {
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
+export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)

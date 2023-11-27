@@ -14,11 +14,10 @@ export function htmlFallbackMiddleware(
     if (
       // Only accept GET or HEAD
       (req.method !== 'GET' && req.method !== 'HEAD') ||
-      // Ignore JSON requests
-      req.headers.accept?.includes('application/json') ||
       // Require Accept: text/html or */*
       !(
         req.headers.accept === undefined || // equivalent to `Accept: */*`
+        req.headers.accept === '' || // equivalent to `Accept: */*`
         req.headers.accept.includes('text/html') ||
         req.headers.accept.includes('*/*')
       )

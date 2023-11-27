@@ -1,5 +1,6 @@
 import { readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import semver from 'semver'
 import colors from 'picocolors'
 import type { Options as ExecaOptions, ExecaReturnValue } from 'execa'
 import { execa } from 'execa'
@@ -20,8 +21,9 @@ export async function getLatestTag(pkgName: string): Promise<string> {
   const prefix = pkgName === 'vite' ? 'v' : `${pkgName}@`
   return tags
     .filter((tag) => tag.startsWith(prefix))
-    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
-    .reverse()[0]
+    .sort((a, b) =>
+      semver.rcompare(a.slice(prefix.length), b.slice(prefix.length)),
+    )[0]
 }
 
 export async function logRecentCommits(pkgName: string): Promise<void> {

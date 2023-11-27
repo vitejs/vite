@@ -65,6 +65,13 @@ export async function injectSourcesContent(
   }
 }
 
+export async function getOriginalContent(
+  filepath: string,
+): Promise<string | undefined> {
+  if (virtualSourceRE.test(filepath)) return undefined
+  return await fsp.readFile(filepath, 'utf-8').catch(() => undefined)
+}
+
 export function genSourceMapUrl(map: SourceMap | string): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
