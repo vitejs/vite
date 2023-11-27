@@ -17,7 +17,7 @@
     "slash3": "npm:slash@^3.0.0",
     "slash5": "npm:slash@^5.1.0",
     "vite": "workspace:*",
-    "vue": "^3.3.8",
+    "vue": "^3.3.9",
     "vue32": "npm:vue@~3.2.0"
   }
 }

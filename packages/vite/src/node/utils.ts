@@ -997,6 +997,7 @@ export function arraify<T>(target: T | T[]): T[] {
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
+export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)

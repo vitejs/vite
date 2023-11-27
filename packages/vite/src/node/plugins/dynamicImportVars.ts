@@ -12,6 +12,7 @@ import {
   createFilter,
   normalizePath,
   parseRequest,
+  requestQueryMaybeEscapedSplitRE,
   requestQuerySplitRE,
   transformStableResult,
 } from '../utils'
@@ -69,7 +70,11 @@ function parseDynamicImportPattern(
     return null
   }
 
-  const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
+  const [userPattern] = userPatternQuery.split(
+    // ? is escaped on posix OS
+    requestQueryMaybeEscapedSplitRE,
+    2,
+  )
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
   const as = (['worker', 'url', 'raw'] as const).find(
