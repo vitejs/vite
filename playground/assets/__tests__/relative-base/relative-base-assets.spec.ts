@@ -132,6 +132,11 @@ describe('css url() references', () => {
     const bg = await getBg('.css-url-aliased')
     expect(bg).toMatch(cssBgAssetMatch)
   })
+
+  test('nested manual chunks', async () => {
+    const bg = await getBg('.css-manual-chunks-relative')
+    expect(bg).toMatch(cssBgAssetMatch)
+  })
 })
 
 describe.runIf(isBuild)('index.css URLs', () => {

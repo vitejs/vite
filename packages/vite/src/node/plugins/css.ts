@@ -54,6 +54,7 @@ import {
   processSrcSet,
   removeDirectQuery,
   requireResolveFromRootWithFallback,
+  slash,
   stripBase,
   stripBomTag,
 } from '../utils'
@@ -388,10 +389,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       : rollupOptionsOutput
   )?.assetFileNames
   const getCssAssetDirname = (cssAssetName: string) => {
+    const cssAssetNameDir = path.dirname(cssAssetName)
     if (!assetFileNames) {
-      return config.build.assetsDir
+      return path.join(config.build.assetsDir, cssAssetNameDir)
     } else if (typeof assetFileNames === 'string') {
-      return path.dirname(assetFileNames)
+      return path.join(path.dirname(assetFileNames), cssAssetNameDir)
     } else {
       return path.dirname(
         assetFileNames({
@@ -556,7 +558,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const relative = config.base === './' || config.base === ''
         const cssAssetDirname =
           encodedPublicUrls || relative
-            ? getCssAssetDirname(cssAssetName)
+            ? slash(getCssAssetDirname(cssAssetName))
             : undefined
 
         const toRelative = (filename: string) => {
