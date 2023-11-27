@@ -613,7 +613,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
 
           const isEntry = chunk.isEntry && isPureCssChunk
-          const cssAssetName = ensureFileExt(chunk.name, '.css')
+          const cssFullAssetName = ensureFileExt(chunk.name, '.css')
+          const cssAssetName =
+            chunk.facadeModuleId && isCSSRequest(chunk.facadeModuleId)
+              ? cssFullAssetName
+              : path.basename(cssFullAssetName)
           const originalFilename = getChunkOriginalFileName(
             chunk,
             config.root,
