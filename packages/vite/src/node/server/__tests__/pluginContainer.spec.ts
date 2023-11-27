@@ -21,11 +21,16 @@ describe('plugin container', () => {
         expect(this.load.prototype).equals(undefined)
         expect(this.parse.prototype).equals(undefined)
         expect(this.resolve.prototype).equals(undefined)
+        expect(this.getModuleInfo.prototype).equals(undefined)
+        expect(this.getModuleIds.prototype).equals(undefined)
         expect(this.addWatchFile.prototype).equals(undefined)
+        expect(this.getWatchFiles.prototype).equals(undefined)
         expect(this.setAssetSource.prototype).equals(undefined)
         expect(this.getFileName.prototype).equals(undefined)
         expect(this.warn.prototype).equals(undefined)
         expect(this.error.prototype).equals(undefined)
+        expect(this.debug.prototype).equals(undefined)
+        expect(this.info.prototype).equals(undefined)
       },
     }
 
