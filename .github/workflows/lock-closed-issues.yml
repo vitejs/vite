@@ -12,7 +12,7 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/lock-threads@v4
+      - uses: dessant/lock-threads@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           issue-inactive-days: "14"
