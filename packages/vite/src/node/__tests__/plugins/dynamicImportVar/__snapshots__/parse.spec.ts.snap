@@ -1,10 +1,10 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parse positives > ? in url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mo?ds/*.js\\", {\\"as\\":\\"url\\",\\"import\\":\\"*\\"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
+exports[`parse positives > ? in url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mo\\\\\\\\?ds/*.js\\", {\\"as\\":\\"url\\",\\"import\\":\\"*\\"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
 
 exports[`parse positives > ? in variables 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base ?? foo}.js\`)"`;
 
-exports[`parse positives > ? in worker 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mo?ds/*.js\\", {\\"as\\":\\"worker\\",\\"import\\":\\"*\\"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
+exports[`parse positives > ? in worker 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mo\\\\\\\\?ds/*.js\\", {\\"as\\":\\"worker\\",\\"import\\":\\"*\\"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
 
 exports[`parse positives > alias path 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
 
