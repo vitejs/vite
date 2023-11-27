@@ -5,7 +5,7 @@ import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { URL, URLSearchParams, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
-import dns from 'node:dns'
+import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import type { FSWatcher } from 'chokidar'
@@ -872,8 +872,8 @@ export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   string | undefined
 > {
   const [nodeResult, dnsResult] = await Promise.all([
-    dns.promises.lookup('localhost'),
-    dns.promises.lookup('localhost', { verbatim: true }),
+    dns.lookup('localhost'),
+    dns.lookup('localhost', { verbatim: true }),
   ])
   const isSame =
     nodeResult.family === dnsResult.family &&
