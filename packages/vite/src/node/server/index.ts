@@ -933,6 +933,33 @@ async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
   const shortcutsOptions = server._shortcutsOptions
 
+  await closeAndReinitServer(server)
+
+  const {
+    logger,
+    server: { port, middlewareMode },
+  } = server.config
+  if (!middlewareMode) {
+    await server.listen(port, true)
+  } else {
+    server.ws.listen()
+  }
+  logger.info('server restarted.', { timestamp: true })
+
+  if (shortcutsOptions) {
+    shortcutsOptions.print = false
+    bindCLIShortcuts(server, shortcutsOptions)
+  }
+}
+
+/**
+ * Reinit the server by creating a new instance using the same inlineConfig
+ * This will triger a reload of the config file and re-create the plugins and
+ * middlewares. We then assign all properties of the new server to the existing
+ * server instance and set the user instance to be used in the new server.
+ * This allows us to keep the same server instance for the user.
+ */
+async function closeAndReinitServer(server: ViteDevServer) {
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
@@ -962,22 +989,6 @@ async function restartServer(server: ViteDevServer) {
   Object.assign(server, newServer)
   // Rebind internal server variable so functions reference the user server
   newServer._setInternalServer(server)
-
-  const {
-    logger,
-    server: { port, middlewareMode },
-  } = server.config
-  if (!middlewareMode) {
-    await server.listen(port, true)
-  } else {
-    server.ws.listen()
-  }
-  logger.info('server restarted.', { timestamp: true })
-
-  if (shortcutsOptions) {
-    shortcutsOptions.print = false
-    bindCLIShortcuts(server, shortcutsOptions)
-  }
 }
 
 /**
