@@ -11,7 +11,7 @@ let moduleGraph: ModuleGraph
 
 describe('plugin container', () => {
   it('has bound methods', async () => {
-    expect.assertions(8)
+    expect.assertions(13)
     const entryUrl = '/x.js'
 
     const plugin: Plugin = {
