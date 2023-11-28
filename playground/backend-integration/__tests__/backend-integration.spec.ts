@@ -54,6 +54,13 @@ describe.runIf(isBuild)('build', () => {
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
   })
+
+  test('CSS imported from JS entry should have a non-nested chunk name', () => {
+    const manifest = readManifest('dev')
+    const mainTsEntryCss = manifest['nested/sub.ts'].css
+    expect(mainTsEntryCss.length).toBe(1)
+    expect(mainTsEntryCss[0].replace('assets/', '')).not.toContain('/')
+  })
 })
 
 describe.runIf(isServe)('serve', () => {
