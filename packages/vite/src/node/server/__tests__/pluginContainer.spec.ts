@@ -18,9 +18,9 @@ describe('plugin container', () => {
       name: 'p1',
       load(id) {
         // bound functions and bound arrow functions do not have prototype
-        expect(this.load.prototype).equals(undefined)
         expect(this.parse.prototype).equals(undefined)
         expect(this.resolve.prototype).equals(undefined)
+        expect(this.load.prototype).equals(undefined)
         expect(this.getModuleInfo.prototype).equals(undefined)
         expect(this.getModuleIds.prototype).equals(undefined)
         expect(this.addWatchFile.prototype).equals(undefined)
