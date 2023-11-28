@@ -614,10 +614,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const isEntry = chunk.isEntry && isPureCssChunk
           const cssFullAssetName = ensureFileExt(chunk.name, '.css')
+          // if facadeModuleId doesn't exist or doesn't have a CSS extension,
+          // that means a JS entry file imports a CSS file.
+          // in this case, only use the filename for the CSS chunk name like JS chunks.
           const cssAssetName =
-            chunk.facadeModuleId && isCSSRequest(chunk.facadeModuleId)
-              ? cssFullAssetName
-              : path.basename(cssFullAssetName)
+            chunk.isEntry &&
+            (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
+              ? path.basename(cssFullAssetName)
+              : cssFullAssetName
           const originalFilename = getChunkOriginalFileName(
             chunk,
             config.root,
