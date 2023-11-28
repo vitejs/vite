@@ -11,7 +11,7 @@ let moduleGraph: ModuleGraph
 
 describe('plugin container', () => {
   it('has bound methods', async () => {
-    expect.assertions(13)
+    expect.assertions(14)
     const entryUrl = '/x.js'
 
     const plugin: Plugin = {
@@ -25,6 +25,7 @@ describe('plugin container', () => {
         expect(this.getModuleIds.prototype).equals(undefined)
         expect(this.addWatchFile.prototype).equals(undefined)
         expect(this.getWatchFiles.prototype).equals(undefined)
+        expect(this.emitFile.prototype).equals(undefined)
         expect(this.setAssetSource.prototype).equals(undefined)
         expect(this.getFileName.prototype).equals(undefined)
         expect(this.warn.prototype).equals(undefined)
