@@ -119,6 +119,9 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
+const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
+const prefixedHashInFileNameRE = /[.-]?\[hash(:\d+)?\]/
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
@@ -337,11 +340,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
-          } else if (fileName.includes('[hash]')) {
+          } else if (nonLeadingHashInFileNameRE.test(fileName)) {
             // custom[hash].[format] -> [name]-legacy[hash].[format]
             // custom-[hash].[format] -> [name]-legacy-[hash].[format]
             // custom.[hash].[format] -> [name]-legacy.[hash].[format]
-            fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
+            // custom.[hash:10].[format] -> custom-legacy.[hash:10].[format]
+            fileName = fileName.replace(prefixedHashInFileNameRE, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
             // entry.min.js -> entry-legacy.min.js
