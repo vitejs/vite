@@ -331,29 +331,25 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
 
         return (chunkInfo) => {
-          const file =
+          let fileName =
             typeof fileNames === 'function' ? fileNames(chunkInfo) : fileNames
-          const fileArr = file.split('/')
-          let fileName = fileArr.pop()!
 
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
-          } else if (/.+\[hash(?::\d+)?\]/.test(fileName)) {
-            // custom[hash].[format] -> custom-legacy[hash].[format]
-            // custom-[hash].[format] -> custom-legacy-[hash].[format]
-            // custom.[hash].[format] -> custom-legacy.[hash].[format]
+          } else if (/[^/]+\[hash(?::\d+)?\]/.test(fileName)) {
+            // custom[hash].[format] -> [name]-legacy[hash].[format]
+            // custom-[hash].[format] -> [name]-legacy-[hash].[format]
+            // custom.[hash].[format] -> [name]-legacy.[hash].[format]
             // custom.[hash:10].[format] -> custom-legacy.[hash:10].[format]
             fileName = fileName.replace(/[.-]?\[hash(:\d+)?\]/, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
             // entry.min.js -> entry-legacy.min.js
-            // [hash].[format] -> [hash]-legacy.[format]
-            // [hash]custom.[format] -> [hash]custom-legacy.[format]
             fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
           }
 
-          return [...fileArr, fileName].join('/')
+          return fileName
         }
       }
 
