@@ -136,10 +136,10 @@ From Vite 5, they will be generated in the `.vite` directory in the `build.outDi
 
 ### Corresponding CSS files are not listed as top level entry in manifest.json file
 
-In Vite 4, the corresponding CSS file for a JavaScript entry point was also listed as top level entry in the manifest.json file.
+In Vite 4, the corresponding CSS file for a JavaScript entry point was also listed as top level entry in the manifest file ([`build.manifest`](/config/build-options.md#build-manifest)). These entries was unintentionally added and only works for simple cases.
 
 In Vite 5, corresponding CSS files can only be found within the JavaScript entry file section.
-When injecting the JS file, the corresponding CSS files [should be injected](https://vitejs.dev/guide/backend-integration.html#:~:text=%3C!%2D%2D%20if%20production%20%2D%2D%3E%0A%3Clink%20rel%3D%22stylesheet%22%20href%3D%22/assets/%7B%7B%20manifest%5B%27main.js%27%5D.css%20%7D%7D%22%20/%3E%0A%3Cscript%20type%3D%22module%22%20src%3D%22/assets/%7B%7B%20manifest%5B%27main.js%27%5D.file%20%7D%7D%22%3E%3C/script%3E).
+When injecting the JS file, the corresponding CSS files [should be injected](/guide/backend-integration.md#:~:text=%3C!%2D%2D%20if%20production%20%2D%2D%3E%0A%3Clink%20rel%3D%22stylesheet%22%20href%3D%22/assets/%7B%7B%20manifest%5B%27main.js%27%5D.css%20%7D%7D%22%20/%3E%0A%3Cscript%20type%3D%22module%22%20src%3D%22/assets/%7B%7B%20manifest%5B%27main.js%27%5D.file%20%7D%7D%22%3E%3C/script%3E).
 When the CSS should be injected separately, it must be added as separate entry point.
 
 ### CLI shortcuts require an additional `Enter` press
