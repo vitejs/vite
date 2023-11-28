@@ -238,6 +238,8 @@ Also there are other breaking changes which only affect few users.
   - `resolve.browserField` has been deprecated since Vite 3 in favour of an updated default of `['browser', 'module', 'jsnext:main', 'jsnext']` for [`resolve.mainFields`](/config/shared-options.md#resolve-mainfields).
 - [[#14855] feat!: add isPreview to ConfigEnv and resolveConfig](https://github.com/vitejs/vite/pull/14855)
   - Renamed `ssrBuild` to `isSsrBuild` in the `ConfigEnv` object.
+- [[#14945] fix(css): correctly set manifest source name and emit CSS file](https://github.com/vitejs/vite/pull/14945)
+  - CSS file names are now generated based on the chunk name.
 
 ## Migration from v3
 
