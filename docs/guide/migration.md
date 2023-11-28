@@ -134,6 +134,14 @@ In Vite 4, the manifest files ([`build.manifest`](/config/build-options.md#build
 
 From Vite 5, they will be generated in the `.vite` directory in the `build.outDir` by default. This change helps deconflict public files with the same manifest file names when they are copied to the `build.outDir`.
 
+### Corresponding CSS files are not listed as top level entry in manifest.json file
+
+In Vite 4, the corresponding CSS file for a JavaScript entry point was also listed as a top-level entry in the manifest file ([`build.manifest`](/config/build-options.md#build-manifest)). These entries were unintentionally added and only worked for simple cases.
+
+In Vite 5, corresponding CSS files can only be found within the JavaScript entry file section.
+When injecting the JS file, the corresponding CSS files [should be injected](/guide/backend-integration.md#:~:text=%3C!%2D%2D%20if%20production%20%2D%2D%3E%0A%3Clink%20rel%3D%22stylesheet%22%20href%3D%22/assets/%7B%7B%20manifest%5B%27main.js%27%5D.css%20%7D%7D%22%20/%3E%0A%3Cscript%20type%3D%22module%22%20src%3D%22/assets/%7B%7B%20manifest%5B%27main.js%27%5D.file%20%7D%7D%22%3E%3C/script%3E).
+When the CSS should be injected separately, it must be added as a separate entry point.
+
 ### CLI shortcuts require an additional `Enter` press
 
 CLI shortcuts, like `r` to restart the dev server, now require an additional `Enter` press to trigger the shortcut. For example, `r + Enter` to restart the dev server.
@@ -230,6 +238,8 @@ Also there are other breaking changes which only affect few users.
   - `resolve.browserField` has been deprecated since Vite 3 in favour of an updated default of `['browser', 'module', 'jsnext:main', 'jsnext']` for [`resolve.mainFields`](/config/shared-options.md#resolve-mainfields).
 - [[#14855] feat!: add isPreview to ConfigEnv and resolveConfig](https://github.com/vitejs/vite/pull/14855)
   - Renamed `ssrBuild` to `isSsrBuild` in the `ConfigEnv` object.
+- [[#14945] fix(css): correctly set manifest source name and emit CSS file](https://github.com/vitejs/vite/pull/14945)
+  - CSS file names are now generated based on the chunk name.
 
 ## Migration from v3
 
