@@ -292,13 +292,14 @@ export async function createPluginContainer(
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
-      this.load = this.load.bind(this)
       this.parse = this.parse.bind(this)
       this.resolve = this.resolve.bind(this)
+      this.load = this.load.bind(this)
       this.getModuleInfo = this.getModuleInfo.bind(this)
       this.getModuleIds = this.getModuleIds.bind(this)
       this.addWatchFile = this.addWatchFile.bind(this)
       this.getWatchFiles = this.getWatchFiles.bind(this)
+      this.emitFile = this.emitFile.bind(this)
       this.setAssetSource = this.setAssetSource.bind(this)
       this.getFileName = this.getFileName.bind(this)
       this.warn = this.warn.bind(this)
