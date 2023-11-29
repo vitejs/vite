@@ -166,11 +166,6 @@ export interface DepOptimizationResult {
   cancel: () => void
 }
 
-export interface DepOptimizationProcessing {
-  promise: Promise<void>
-  resolve: () => void
-}
-
 export interface OptimizedDepInfo {
   id: string
   file: string
@@ -883,14 +878,6 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
-}
-
-export function newDepOptimizationProcessing(): DepOptimizationProcessing {
-  let resolve: () => void
-  const promise = new Promise((_resolve) => {
-    resolve = _resolve
-  }) as Promise<void>
-  return { promise, resolve: resolve! }
 }
 
 // Convert to { id: src }
