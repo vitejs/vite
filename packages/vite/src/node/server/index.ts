@@ -963,9 +963,16 @@ async function restartServer(server: ViteDevServer) {
     await server.close()
 
     // Assign new server props to existing server instance
+    const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
     Object.assign(server, newServer)
+
+    // Keep the same connect instance so app.use(vite.middlewares) works
+    // after a restart in middlewareMode (.route is always '/')
+    middlewares.stack = newServer.middlewares.stack
+    server.middlewares = middlewares
+
     // Rebind internal server variable so functions reference the user server
     newServer._setInternalServer(server)
   }
