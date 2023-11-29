@@ -5,7 +5,6 @@ process.env.NODE_ENV = ''
 
 export default defineConfig({
   optimizeDeps: {
-    disabled: false,
     noDiscovery: true,
     include: ['@vitejs/test-dep-no-discovery'],
   },
