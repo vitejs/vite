@@ -41,10 +41,7 @@ export function getDepsOptimizer(
   config: ResolvedConfig,
   ssr?: boolean,
 ): DepsOptimizer | undefined {
-  // Workers compilation shares the DepsOptimizer from the main build
-  return (ssr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(
-    config.mainConfig || config,
-  )
+  return (ssr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(config)
 }
 
 export async function initDepsOptimizer(
