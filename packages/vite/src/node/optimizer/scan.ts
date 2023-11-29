@@ -8,6 +8,8 @@ import type {
   Loader,
   OnLoadArgs,
   OnLoadResult,
+  OnResolveArgs,
+  OnResolveResult,
   Plugin,
 } from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
@@ -486,19 +488,28 @@ function esbuildScanPlugin(
         }
       }
 
-      const globImportOnLoadCallback: (
-        args: OnLoadArgs,
-      ) => Promise<OnLoadResult | null | undefined> = async ({ path: p }) => {
-        const externalLoadResult: OnLoadResult = {
+      const globImportCallback: (
+        args: OnResolveArgs | OnLoadArgs,
+      ) => Promise<OnResolveResult | OnLoadResult | null | undefined> = async (
+        args,
+      ) => {
+        const { path } = args
+        const externalOnLoadResult: OnLoadResult = {
           loader: 'js',
           contents: '\nexport default {}',
         }
-        if (!entries.includes(p)) {
-          return externalLoadResult
+        // The onLoad hook is triggered
+        if (!('kind' in args)) {
+          return externalOnLoadResult
         }
-        if (SPECIAL_QUERY_RE.test(p)) {
-          return externalLoadResult
+        // The onResolve hook is triggered
+        if (SPECIAL_QUERY_RE.test(path)) {
+          return {
+            path,
+            external: true,
+          }
         }
+        return externalUnlessEntry({ path })
       }
 
       // extract scripts inside HTML-like files and treat it as a js module
@@ -516,12 +527,12 @@ function esbuildScanPlugin(
       // css
       build.onLoad(
         { filter: CSS_LANGS_RE, namespace: 'file' },
-        globImportOnLoadCallback,
+        globImportCallback,
       )
       // json & wasm
       build.onLoad(
         { filter: /\.(json|json5|wasm)$/, namespace: 'file' },
-        globImportOnLoadCallback,
+        globImportCallback,
       )
       // known asset types
       build.onLoad(
@@ -529,12 +540,12 @@ function esbuildScanPlugin(
           filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
           namespace: 'file',
         },
-        globImportOnLoadCallback,
+        globImportCallback,
       )
       // known vite query types: ?worker, ?raw
       build.onLoad(
         { filter: SPECIAL_QUERY_RE, namespace: 'file' },
-        globImportOnLoadCallback,
+        globImportCallback,
       )
 
       // bare imports: record and externalize ----------------------------------
@@ -588,24 +599,21 @@ function esbuildScanPlugin(
       // may end with these extensions
 
       // css
-      build.onResolve({ filter: CSS_LANGS_RE }, externalUnlessEntry)
+      build.onResolve({ filter: CSS_LANGS_RE }, globImportCallback)
 
       // json & wasm
-      build.onResolve({ filter: /\.(json|json5|wasm)$/ }, externalUnlessEntry)
+      build.onResolve({ filter: /\.(json|json5|wasm)$/ }, globImportCallback)
 
       // known asset types
       build.onResolve(
         {
           filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
         },
-        externalUnlessEntry,
+        globImportCallback,
       )
 
       // known vite query types: ?worker, ?raw
-      build.onResolve({ filter: SPECIAL_QUERY_RE }, ({ path }) => ({
-        path,
-        external: true,
-      }))
+      build.onResolve({ filter: SPECIAL_QUERY_RE }, globImportCallback)
 
       // catch all -------------------------------------------------------------
 
