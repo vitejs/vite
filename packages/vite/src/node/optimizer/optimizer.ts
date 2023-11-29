@@ -690,7 +690,6 @@ interface CrawlEndFinder {
 function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   const registeredIds = new Set<string>()
   const seenIds = new Set<string>()
-  const workersSources = new Set<string>()
   let timeoutHandle: NodeJS.Timeout | undefined
 
   let cancelled = false
@@ -709,12 +708,10 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
     if (!seenIds.has(id)) {
       seenIds.add(id)
-      if (!workersSources.has(id)) {
-        registeredIds.add(id)
-        done()
-          .catch(() => {})
-          .finally(() => markIdAsDone(id))
-      }
+      registeredIds.add(id)
+      done()
+        .catch(() => {})
+        .finally(() => markIdAsDone(id))
     }
   }
   function markIdAsDone(id: string): void {
