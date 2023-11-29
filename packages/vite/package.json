@@ -57,7 +57,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://github.com/vitejs/vite/tree/main/#readme",
+  "homepage": "https://vitejs.dev",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "rimraf dist && pnpm run build-bundle -w",
