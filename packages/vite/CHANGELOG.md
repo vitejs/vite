@@ -1,3 +1,14 @@
+## <small>5.0.4 (2023-11-29)</small>
+
+* fix: bindCLIShortcuts to proper server (#15162) ([67ac572](https://github.com/vitejs/vite/commit/67ac572)), closes [#15162](https://github.com/vitejs/vite/issues/15162)
+* fix: revert "fix: js fallback sourcemap content should be using original content (#15135)" (#15178) ([d2a2493](https://github.com/vitejs/vite/commit/d2a2493)), closes [#15135](https://github.com/vitejs/vite/issues/15135) [#15178](https://github.com/vitejs/vite/issues/15178)
+* fix(define): allow define process.env (#15173) ([ec401da](https://github.com/vitejs/vite/commit/ec401da)), closes [#15173](https://github.com/vitejs/vite/issues/15173)
+* fix(resolve): respect order of browser in mainFields when resolving (#15137) ([4a111aa](https://github.com/vitejs/vite/commit/4a111aa)), closes [#15137](https://github.com/vitejs/vite/issues/15137)
+* feat: preserve vite.middlewares connect instance after restarts (#15166) ([9474c4b](https://github.com/vitejs/vite/commit/9474c4b)), closes [#15166](https://github.com/vitejs/vite/issues/15166)
+* refactor: align with Promise.withResolvers() (#15171) ([642f9bc](https://github.com/vitejs/vite/commit/642f9bc)), closes [#15171](https://github.com/vitejs/vite/issues/15171)
+
+
+
 ## <small>5.0.3 (2023-11-28)</small>
 
 * fix: `generateCodeFrame` infinite loop (#15093) ([6619de7](https://github.com/vitejs/vite/commit/6619de7)), closes [#15093](https://github.com/vitejs/vite/issues/15093)
