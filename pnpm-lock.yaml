@@ -1071,6 +1071,9 @@ importers:
       '@vitejs/test-resolve-browser-module-field3':
         specifier: link:./browser-module-field3
         version: link:browser-module-field3
+      '@vitejs/test-resolve-custom-browser-main-field':
+        specifier: link:./custom-browser-main-field
+        version: link:custom-browser-main-field
       '@vitejs/test-resolve-custom-condition':
         specifier: link:./custom-condition
         version: link:custom-condition
@@ -1139,6 +1142,8 @@ importers:
   playground/resolve/browser-module-field2: {}
 
   playground/resolve/browser-module-field3: {}
+
+  playground/resolve/custom-browser-main-field: {}
 
   playground/resolve/custom-condition: {}
 
