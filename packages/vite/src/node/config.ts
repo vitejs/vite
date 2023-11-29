@@ -466,20 +466,6 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
-  // If there are custom commonjsOptions, don't force optimized deps for this test
-  // even if the env var is set as it would interfere with the playground specs.
-  if (
-    !config.build?.commonjsOptions &&
-    process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS
-  ) {
-    config = mergeConfig(config, {
-      optimizeDeps: { disabled: false },
-      ssr: { optimizeDeps: { disabled: false } },
-    })
-    config.build ??= {}
-    config.build.commonjsOptions = { include: [] }
-  }
-
   // Define logger
   const logger = createLogger(config.logLevel, {
     allowClearScreen: config.clearScreen,
@@ -774,7 +760,6 @@ export async function resolveConfig(
     packageCache,
     createResolver,
     optimizeDeps: {
-      disabled: 'build',
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: resolveOptions.preserveSymlinks,
@@ -1232,11 +1217,6 @@ export function isDepsOptimizerEnabled(
   config: ResolvedConfig,
   ssr: boolean,
 ): boolean {
-  const { command } = config
-  const { disabled } = getDepOptimizationConfig(config, ssr)
-  return !(
-    disabled === true ||
-    (command === 'build' && disabled === 'build') ||
-    (command === 'serve' && disabled === 'dev')
-  )
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  return !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
 }
