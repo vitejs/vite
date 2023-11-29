@@ -27,8 +27,6 @@ export interface SendOptions {
   cacheControl?: string
   headers?: OutgoingHttpHeaders
   map?: SourceMap | { mappings: '' } | null
-  /** only used when type === 'js' && map == null (when the fallback sourcemap is used) */
-  originalContent?: string
 }
 
 export function send(
@@ -73,9 +71,7 @@ export function send(
   }
   // inject fallback sourcemap for js for improved debugging
   // https://github.com/vitejs/vite/pull/13514#issuecomment-1592431496
-  // for { mappings: "" }, we don't inject fallback sourcemap
-  // because it indicates generating a sourcemap is meaningless
-  else if (type === 'js' && map == null) {
+  else if (type === 'js' && (!map || map.mappings !== '')) {
     const code = content.toString()
     // if the code has existing inline sourcemap, assume it's correct and skip
     if (convertSourceMap.mapFileCommentRegex.test(code)) {
@@ -83,15 +79,15 @@ export function send(
     } else {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
       const ms = new MagicString(code)
-      const map = ms.generateMap({
-        source: path.basename(urlWithoutTimestamp),
-        hires: 'boundary',
-        includeContent: !options.originalContent,
-      })
-      if (options.originalContent != null) {
-        map.sourcesContent = [options.originalContent]
-      }
-      content = getCodeWithSourcemap(type, code, map)
+      content = getCodeWithSourcemap(
+        type,
+        code,
+        ms.generateMap({
+          source: path.basename(urlWithoutTimestamp),
+          hires: 'boundary',
+          includeContent: true,
+        }),
+      )
     }
   }
 
