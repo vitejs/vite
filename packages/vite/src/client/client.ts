@@ -1,7 +1,7 @@
 import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import { ClientHMR, ClientHMRContext } from '../shared/hmr'
+import { HMRClient, HMRContext } from '../shared/hmr'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -134,7 +134,7 @@ const debounceReload = (time: number) => {
 }
 const pageReload = debounceReload(50)
 
-const hmr = new ClientHMR(console, async function importUpdatedModule({
+const hmrClient = new HMRClient(console, async function importUpdatedModule({
   acceptedPath,
   timestamp,
   explicitImportRequired,
@@ -179,7 +179,7 @@ async function handleMessage(payload: HMRPayload) {
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
           if (update.type === 'js-update') {
-            return queueUpdate(hmr.fetchUpdate(update))
+            return queueUpdate(hmrClient.fetchUpdate(update))
           }
 
           // css-update
@@ -256,9 +256,9 @@ async function handleMessage(payload: HMRPayload) {
       // (.e.g style injections)
       // TODO Trigger their dispose callbacks.
       payload.paths.forEach((path) => {
-        const fn = hmr.pruneMap.get(path)
+        const fn = hmrClient.pruneMap.get(path)
         if (fn) {
-          fn(hmr.dataMap.get(path))
+          fn(hmrClient.dataMap.get(path))
         }
       })
       break
@@ -286,7 +286,7 @@ function notifyListeners<T extends string>(
   data: InferCustomEventPayload<T>,
 ): void
 function notifyListeners(event: string, data: any): void {
-  hmr.notifyListeners(event, data)
+  hmrClient.notifyListeners(event, data)
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
@@ -441,7 +441,7 @@ function sendMessageBuffer() {
 }
 
 export function createHotContext(ownerPath: string): ViteHotContext {
-  return new ClientHMRContext(ownerPath, hmr, {
+  return new HMRContext(ownerPath, hmrClient, {
     addBuffer(message) {
       messageBuffer.push(message)
     },

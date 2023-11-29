@@ -20,32 +20,32 @@ interface Connection {
   send(): unknown
 }
 
-export class ClientHMRContext implements ViteHotContext {
+export class HMRContext implements ViteHotContext {
   private newListeners: CustomListenersMap
 
   constructor(
     private ownerPath: string,
-    private hmr: ClientHMR,
+    private hmrClient: HMRClient,
     private connection: Connection,
   ) {
-    if (!hmr.dataMap.has(ownerPath)) {
-      hmr.dataMap.set(ownerPath, {})
+    if (!hmrClient.dataMap.has(ownerPath)) {
+      hmrClient.dataMap.set(ownerPath, {})
     }
 
     // when a file is hot updated, a new context is created
     // clear its stale callbacks
-    const mod = hmr.hotModulesMap.get(ownerPath)
+    const mod = hmrClient.hotModulesMap.get(ownerPath)
     if (mod) {
       mod.callbacks = []
     }
 
     // clear stale custom event listeners
-    const staleListeners = hmr.ctxToListenersMap.get(ownerPath)
+    const staleListeners = hmrClient.ctxToListenersMap.get(ownerPath)
     if (staleListeners) {
       for (const [event, staleFns] of staleListeners) {
-        const listeners = hmr.customListenersMap.get(event)
+        const listeners = hmrClient.customListenersMap.get(event)
         if (listeners) {
-          hmr.customListenersMap.set(
+          hmrClient.customListenersMap.set(
             event,
             listeners.filter((l) => !staleFns.includes(l)),
           )
@@ -54,11 +54,11 @@ export class ClientHMRContext implements ViteHotContext {
     }
 
     this.newListeners = new Map()
-    hmr.ctxToListenersMap.set(ownerPath, this.newListeners)
+    hmrClient.ctxToListenersMap.set(ownerPath, this.newListeners)
   }
 
   get data(): any {
-    return this.hmr.dataMap.get(this.ownerPath)
+    return this.hmrClient.dataMap.get(this.ownerPath)
   }
 
   accept(deps?: any, callback?: any): void {
@@ -85,11 +85,11 @@ export class ClientHMRContext implements ViteHotContext {
   }
 
   dispose(cb: (data: any) => void): void {
-    this.hmr.disposeMap.set(this.ownerPath, cb)
+    this.hmrClient.disposeMap.set(this.ownerPath, cb)
   }
 
   prune(cb: (data: any) => void): void {
-    this.hmr.pruneMap.set(this.ownerPath, cb)
+    this.hmrClient.pruneMap.set(this.ownerPath, cb)
   }
 
   // Kept for backward compatibility (#11036)
@@ -97,12 +97,12 @@ export class ClientHMRContext implements ViteHotContext {
   decline(): void {}
 
   invalidate(message: string): void {
-    this.hmr.notifyListeners('vite:invalidate', {
+    this.hmrClient.notifyListeners('vite:invalidate', {
       path: this.ownerPath,
       message,
     })
     this.send('vite:invalidate', { path: this.ownerPath, message })
-    this.hmr.logger.debug(
+    this.hmrClient.logger.debug(
       `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
     )
   }
@@ -116,7 +116,7 @@ export class ClientHMRContext implements ViteHotContext {
       existing.push(cb)
       map.set(event, existing)
     }
-    addToMap(this.hmr.customListenersMap)
+    addToMap(this.hmrClient.customListenersMap)
     addToMap(this.newListeners)
   }
 
@@ -136,7 +136,7 @@ export class ClientHMRContext implements ViteHotContext {
       }
       map.set(event, pruned)
     }
-    removeFromMap(this.hmr.customListenersMap)
+    removeFromMap(this.hmrClient.customListenersMap)
     removeFromMap(this.newListeners)
   }
 
@@ -149,7 +149,7 @@ export class ClientHMRContext implements ViteHotContext {
     deps: string[],
     callback: HotCallback['fn'] = () => {},
   ): void {
-    const mod: HotModule = this.hmr.hotModulesMap.get(this.ownerPath) || {
+    const mod: HotModule = this.hmrClient.hotModulesMap.get(this.ownerPath) || {
       id: this.ownerPath,
       callbacks: [],
     }
@@ -157,11 +157,11 @@ export class ClientHMRContext implements ViteHotContext {
       deps,
       fn: callback,
     })
-    this.hmr.hotModulesMap.set(this.ownerPath, mod)
+    this.hmrClient.hotModulesMap.set(this.ownerPath, mod)
   }
 }
 
-export class ClientHMR {
+export class HMRClient {
   public hotModulesMap = new Map<string, HotModule>()
   public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
   public pruneMap = new Map<string, (data: any) => void | Promise<void>>()
@@ -171,6 +171,7 @@ export class ClientHMR {
 
   constructor(
     public logger: Console,
+    // this allows up to implement reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
   ) {}
 
