@@ -942,26 +942,33 @@ async function restartServer(server: ViteDevServer) {
     })
   }
 
-  let newServer = null
-  try {
-    // delay ws server listen
-    newServer = await _createServer(inlineConfig, { ws: false })
-  } catch (err: any) {
-    server.config.logger.error(err.message, {
-      timestamp: true,
-    })
-    server.config.logger.error('server restart failed', { timestamp: true })
-    return
+  // Reinit the server by creating a new instance using the same inlineConfig
+  // This will triger a reload of the config file and re-create the plugins and
+  // middlewares. We then assign all properties of the new server to the existing
+  // server instance and set the user instance to be used in the new server.
+  // This allows us to keep the same server instance for the user.
+  {
+    let newServer = null
+    try {
+      // delay ws server listen
+      newServer = await _createServer(inlineConfig, { ws: false })
+    } catch (err: any) {
+      server.config.logger.error(err.message, {
+        timestamp: true,
+      })
+      server.config.logger.error('server restart failed', { timestamp: true })
+      return
+    }
+
+    await server.close()
+
+    // Assign new server props to existing server instance
+    newServer._configServerPort = server._configServerPort
+    newServer._currentServerPort = server._currentServerPort
+    Object.assign(server, newServer)
+    // Rebind internal server variable so functions reference the user server
+    newServer._setInternalServer(server)
   }
-
-  await server.close()
-
-  // Assign new server props to existing server instance
-  newServer._configServerPort = server._configServerPort
-  newServer._currentServerPort = server._currentServerPort
-  Object.assign(server, newServer)
-  // Rebind internal server variable so functions reference the user server
-  newServer._setInternalServer(server)
 
   const {
     logger,
@@ -976,7 +983,7 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindCLIShortcuts(newServer, shortcutsOptions)
+    bindCLIShortcuts(server, shortcutsOptions)
   }
 }
 
