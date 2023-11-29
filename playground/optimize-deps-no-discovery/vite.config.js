@@ -13,9 +13,5 @@ export default defineConfig({
   build: {
     // to make tests faster
     minify: false,
-    // Avoid @rollup/plugin-commonjs
-    commonjsOptions: {
-      include: [],
-    },
   },
 })

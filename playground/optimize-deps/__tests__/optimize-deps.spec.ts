@@ -141,7 +141,7 @@ test('vue + vuex', async () => {
 
 // When we use the Rollup CommonJS plugin instead of esbuild prebundling,
 // the esbuild plugins won't apply to dependencies
-test('esbuild-plugin', async () => {
+test.runIf(isServe)('esbuild-plugin', async () => {
   expect(await page.textContent('.esbuild-plugin')).toMatch(
     `Hello from an esbuild plugin`,
   )
