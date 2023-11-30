@@ -1,4 +1,4 @@
 import { msg } from './shared'
 import './common.css'
 
-console.log(msg + ' from main')
+console.log(msg + ' from main 2')

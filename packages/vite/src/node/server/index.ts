@@ -32,6 +32,7 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
+  recursiveReaddir,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -323,6 +324,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _publicFiles: Set<string>
+  /**
+   * @internal
+   */
   _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
    * @internal
@@ -601,6 +606,7 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
+    _publicFiles: new Set(await recursiveReaddir(config.publicDir)),
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
@@ -639,17 +645,23 @@ export async function _createServer(
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
-    await handleFileAddUnlink(file, server, isUnlink)
-    await onHMRUpdate(file, true)
+
+    if (config.publicDir && file.startsWith(config.publicDir)) {
+      server._publicFiles[isUnlink ? 'delete' : 'add'](file)
+    } else {
+      await handleFileAddUnlink(file, server, isUnlink)
+      await onHMRUpdate(file, true)
+    }
   }
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
-    // invalidate module graph cache on file change
-    moduleGraph.onFileChange(file)
-
-    await onHMRUpdate(file, false)
+    if (!(config.publicDir && file.startsWith(config.publicDir))) {
+      // invalidate module graph cache on file change
+      moduleGraph.onFileChange(file)
+      await onHMRUpdate(file, false)
+    }
   })
 
   watcher.on('add', (file) => onFileAddUnlink(file, false))

@@ -1,6 +1,4 @@
 import path from 'node:path'
-import fs from 'node:fs'
-import fsp from 'node:fs/promises'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
@@ -20,7 +18,6 @@ import {
   isWindows,
   normalizePath,
   removeLeadingSlash,
-  shouldServeFile,
   slash,
   withTrailingSlash,
 } from '../../utils'
@@ -29,10 +26,8 @@ const knownJavascriptExtensionRE = /\.[tj]sx?$/
 
 const sirvOptions = ({
   getHeaders,
-  shouldServe,
 }: {
   getHeaders: () => OutgoingHttpHeaders | undefined
-  shouldServe?: (p: string) => void
 }): Options => {
   return {
     dev: true,
@@ -54,22 +49,7 @@ const sirvOptions = ({
         }
       }
     },
-    shouldServe,
   }
-}
-
-async function recursiveReaddir(dir: string): Promise<string[]> {
-  if (!fs.existsSync(dir)) {
-    return []
-  }
-  const dirents = await fsp.readdir(dir, { withFileTypes: true })
-  const files = await Promise.all(
-    dirents.map((dirent) => {
-      const res = path.resolve(dir, dirent.name)
-      return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
-    }),
-  )
-  return Array.prototype.concat(...files)
 }
 
 export async function servePublicMiddleware(
@@ -80,10 +60,9 @@ export async function servePublicMiddleware(
     dir,
     sirvOptions({
       getHeaders: () => server.config.server.headers,
-      shouldServe: (filePath) => shouldServeFile(filePath, dir),
     }),
   )
-  const publicFiles = new Set(await recursiveReaddir(dir))
+
   const toFilePath = (url: string) => {
     let filePath = cleanUrl(url)
     if (filePath.indexOf('%') !== -1) {
@@ -102,7 +81,7 @@ export async function servePublicMiddleware(
     // in-memory set of known public files. This set is updated on restarts.
     // also skip import request and internal requests `/@fs/ /@vite-client` etc...
     if (
-      !publicFiles.has(toFilePath(req.url!)) ||
+      !server._publicFiles.has(toFilePath(req.url!)) ||
       isImportRequest(req.url!) ||
       isInternalRequest(req.url!)
     ) {
