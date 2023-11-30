@@ -186,6 +186,19 @@ export class HMRClient {
     }
   }
 
+  // After an HMR update, some modules are no longer imported on the page
+  // but they may have left behind side effects that need to be cleaned up
+  // (.e.g style injections)
+  // TODO Trigger their dispose callbacks.
+  public prunePaths(paths: string[]): void {
+    paths.forEach((path) => {
+      const fn = this.pruneMap.get(path)
+      if (fn) {
+        fn(this.dataMap.get(path))
+      }
+    })
+  }
+
   protected warnFailedUpdate(err: Error, path: string | string[]): void {
     if (!err.message.match('fetch')) {
       this.logger.error(err)

@@ -251,16 +251,7 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'prune':
       notifyListeners('vite:beforePrune', payload)
-      // After an HMR update, some modules are no longer imported on the page
-      // but they may have left behind side effects that need to be cleaned up
-      // (.e.g style injections)
-      // TODO Trigger their dispose callbacks.
-      payload.paths.forEach((path) => {
-        const fn = hmrClient.pruneMap.get(path)
-        if (fn) {
-          fn(hmrClient.dataMap.get(path))
-        }
-      })
+      hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
       notifyListeners('vite:error', payload)
