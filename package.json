@@ -89,7 +89,7 @@
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
     "vitepress": "1.0.0-rc.31",
-    "vitest": "^0.34.6",
+    "vitest": "^1.0.0-beta.6",
     "vue": "^3.3.9"
   },
   "simple-git-hooks": {
