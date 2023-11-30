@@ -8,8 +8,6 @@ import type {
   Loader,
   OnLoadArgs,
   OnLoadResult,
-  OnResolveArgs,
-  OnResolveResult,
   Plugin,
 } from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
@@ -302,9 +300,11 @@ function esbuildScanPlugin(
     '@vite/env',
   ]
 
+  const isUnlessEntry = (path: string) => !entries.includes(path)
+
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
-    external: !entries.includes(path),
+    external: isUnlessEntry(path),
   })
 
   const doTransformGlobImport = async (
@@ -488,30 +488,6 @@ function esbuildScanPlugin(
         }
       }
 
-      const globImportCallback: (
-        args: OnResolveArgs | OnLoadArgs,
-      ) => Promise<OnResolveResult | OnLoadResult | null | undefined> = async (
-        args,
-      ) => {
-        const { path } = args
-        const externalOnLoadResult: OnLoadResult = {
-          loader: 'js',
-          contents: '\nexport default {}',
-        }
-        // The onLoad hook is triggered
-        if (!('kind' in args)) {
-          return externalOnLoadResult
-        }
-        // The onResolve hook is triggered
-        if (SPECIAL_QUERY_RE.test(path)) {
-          return {
-            path,
-            external: true,
-          }
-        }
-        return externalUnlessEntry({ path })
-      }
-
       // extract scripts inside HTML-like files and treat it as a js module
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'html' },
@@ -524,29 +500,44 @@ function esbuildScanPlugin(
         { filter: htmlTypesRE, namespace: 'file' },
         htmlTypeOnLoadCallback,
       )
+
+      const setupExternalize = (
+        filter: RegExp,
+        doExternalize: (path: string) => boolean,
+      ) => {
+        // Externalized file types -----------------------------------------------
+        // these are done on raw ids using esbuild's native regex filter so it
+        // should be faster than doing it in the catch-all via js
+        // they are done after the bare import resolve because a package name
+        // may end with these extensions
+        build.onResolve({ filter }, ({ path }) => {
+          return {
+            path,
+            external: doExternalize(path),
+          }
+        })
+        // onResolve is not called for glob imports.
+        // we need to add that here as well until esbuild calls onResolve for glob imports.
+        // https://github.com/evanw/esbuild/issues/3317
+        build.onLoad({ filter, namespace: 'file' }, () => {
+          const externalOnLoadResult: OnLoadResult = {
+            loader: 'js',
+            contents: 'export default {}',
+          }
+          return externalOnLoadResult
+        })
+      }
       // css
-      build.onLoad(
-        { filter: CSS_LANGS_RE, namespace: 'file' },
-        globImportCallback,
-      )
+      setupExternalize(CSS_LANGS_RE, isUnlessEntry)
       // json & wasm
-      build.onLoad(
-        { filter: /\.(json|json5|wasm)$/, namespace: 'file' },
-        globImportCallback,
-      )
+      setupExternalize(/\.(json|json5|wasm)$/, isUnlessEntry)
       // known asset types
-      build.onLoad(
-        {
-          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
-          namespace: 'file',
-        },
-        globImportCallback,
+      setupExternalize(
+        new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
+        isUnlessEntry,
       )
       // known vite query types: ?worker, ?raw
-      build.onLoad(
-        { filter: SPECIAL_QUERY_RE, namespace: 'file' },
-        globImportCallback,
-      )
+      setupExternalize(SPECIAL_QUERY_RE, () => true)
 
       // bare imports: record and externalize ----------------------------------
       build.onResolve(
@@ -591,29 +582,6 @@ function esbuildScanPlugin(
           }
         },
       )
-
-      // Externalized file types -----------------------------------------------
-      // these are done on raw ids using esbuild's native regex filter so it
-      // should be faster than doing it in the catch-all via js
-      // they are done after the bare import resolve because a package name
-      // may end with these extensions
-
-      // css
-      build.onResolve({ filter: CSS_LANGS_RE }, globImportCallback)
-
-      // json & wasm
-      build.onResolve({ filter: /\.(json|json5|wasm)$/ }, globImportCallback)
-
-      // known asset types
-      build.onResolve(
-        {
-          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
-        },
-        globImportCallback,
-      )
-
-      // known vite query types: ?worker, ?raw
-      build.onResolve({ filter: SPECIAL_QUERY_RE }, globImportCallback)
 
       // catch all -------------------------------------------------------------
 
