@@ -178,11 +178,11 @@ export class HMRClient {
   public notifyListeners<T extends string>(
     event: T,
     data: InferCustomEventPayload<T>,
-  ): void
-  public notifyListeners(event: string, data: any): void {
+  ): unknown
+  public notifyListeners(event: string, data: any): unknown {
     const cbs = this.customListenersMap.get(event)
     if (cbs) {
-      cbs.forEach((cb) => cb(data))
+      return cbs.map((cb) => cb(data))
     }
   }
 
