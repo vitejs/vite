@@ -175,14 +175,14 @@ export class HMRClient {
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
   ) {}
 
-  public notifyListeners<T extends string>(
+  public async notifyListeners<T extends string>(
     event: T,
     data: InferCustomEventPayload<T>,
-  ): unknown
-  public notifyListeners(event: string, data: any): unknown {
+  ): Promise<void>
+  public async notifyListeners(event: string, data: any): Promise<void> {
     const cbs = this.customListenersMap.get(event)
     if (cbs) {
-      return cbs.map((cb) => cb(data))
+      await Promise.allSettled(cbs.map((cb) => cb(data)))
     }
   }
 
