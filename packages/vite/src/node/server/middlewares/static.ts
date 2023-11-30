@@ -1,4 +1,6 @@
 import path from 'node:path'
+import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
@@ -16,6 +18,7 @@ import {
   isParentDirectory,
   isSameFileUri,
   isWindows,
+  normalizePath,
   removeLeadingSlash,
   shouldServeFile,
   slash,
@@ -55,9 +58,23 @@ const sirvOptions = ({
   }
 }
 
-export function servePublicMiddleware(
+async function recursiveReaddir(dir: string): Promise<string[]> {
+  if (!fs.existsSync(dir)) {
+    return []
+  }
+  const dirents = await fsp.readdir(dir, { withFileTypes: true })
+  const files = await Promise.all(
+    dirents.map((dirent) => {
+      const res = path.resolve(dir, dirent.name)
+      return dirent.isDirectory() ? recursiveReaddir(res) : res
+    }),
+  )
+  return Array.prototype.concat(...files)
+}
+
+export async function servePublicMiddleware(
   server: ViteDevServer,
-): Connect.NextHandleFunction {
+): Promise<Connect.NextHandleFunction> {
   const dir = server.config.publicDir
   const serve = sirv(
     dir,
@@ -66,11 +83,29 @@ export function servePublicMiddleware(
       shouldServe: (filePath) => shouldServeFile(filePath, dir),
     }),
   )
+  const publicFiles = new Set(await recursiveReaddir(dir))
+  const toFilePath = (url: string) => {
+    let filePath = cleanUrl(url)
+    if (filePath.indexOf('%') !== -1) {
+      try {
+        filePath = decodeURI(filePath)
+      } catch (err) {
+        /* malform uri */
+      }
+    }
+    return normalizePath(path.join(dir, filePath.slice(1)))
+  }
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
-    // skip import request and internal requests `/@fs/ /@vite-client` etc...
-    if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
+    // To avoid the performance impact of `existsSync` on every request, we check against an
+    // in-memory set of known public files. This set is updated on restarts.
+    // also skip import request and internal requests `/@fs/ /@vite-client` etc...
+    if (
+      !publicFiles.has(toFilePath(req.url!)) ||
+      isImportRequest(req.url!) ||
+      isInternalRequest(req.url!)
+    ) {
       return next()
     }
     serve(req, res, next)
