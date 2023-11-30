@@ -13,7 +13,10 @@ const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()
 export async function initPublicFiles(
   config: ResolvedConfig,
 ): Promise<Set<string>> {
-  const publicFiles = new Set(await recursiveReaddir(config.publicDir))
+  const fileNames = await recursiveReaddir(config.publicDir)
+  const publicFiles = new Set(
+    fileNames.map((fileName) => fileName.slice(config.publicDir.length)),
+  )
   publicFilesMap.set(config, publicFiles)
   return publicFiles
 }
@@ -33,14 +36,17 @@ export function checkPublicFile(
     return
   }
 
-  const publicFile = normalizePath(path.join(publicDir, cleanUrl(url)))
+  const fileName = cleanUrl(url)
 
   // short-circuit if we have an in-memory publicFiles cache
   const publicFiles = getPublicFiles(config)
   if (publicFiles) {
-    return publicFiles.has(publicFile) ? publicFile : undefined
+    return publicFiles.has(fileName)
+      ? normalizePath(path.join(publicDir, fileName))
+      : undefined
   }
 
+  const publicFile = normalizePath(path.join(publicDir, fileName))
   if (!publicFile.startsWith(withTrailingSlash(normalizePath(publicDir)))) {
     // can happen if URL starts with '../'
     return

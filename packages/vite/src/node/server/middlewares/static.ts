@@ -73,7 +73,7 @@ export function servePublicMiddleware(
         /* malform uri */
       }
     }
-    return normalizePath(path.join(dir, filePath.slice(1)))
+    return normalizePath(filePath)
   }
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
