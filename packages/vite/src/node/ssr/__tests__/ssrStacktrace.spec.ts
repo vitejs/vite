@@ -12,6 +12,7 @@ async function createDevServer() {
     optimizeDeps: {
       disabled: true,
     },
+    publicDir: false,
   })
   server.pluginContainer.buildStart({})
   return server
