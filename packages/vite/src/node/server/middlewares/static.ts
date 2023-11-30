@@ -66,7 +66,7 @@ async function recursiveReaddir(dir: string): Promise<string[]> {
   const files = await Promise.all(
     dirents.map((dirent) => {
       const res = path.resolve(dir, dirent.name)
-      return dirent.isDirectory() ? recursiveReaddir(res) : res
+      return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
     }),
   )
   return Array.prototype.concat(...files)
