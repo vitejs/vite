@@ -84,7 +84,7 @@
     "semver": "^7.5.4",
     "simple-git-hooks": "^2.9.0",
     "tslib": "^2.6.2",
-    "tsx": "^4.5.0",
+    "tsx": "^4.6.1",
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
