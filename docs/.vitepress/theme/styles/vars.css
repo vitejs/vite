@@ -119,10 +119,18 @@
   max-width: 124px;
 }
 
-.vp-sponsor.aside .vp-sponsor-grid.mini .vp-sponsor-grid-image[alt='Bit'] {
-  max-height: 44px;
-}
-
 .vp-sponsor-grid.big .vp-sponsor-grid-image {
   max-height: 96px;
+}
+
+.vp-sponsor-grid.mini .vp-sponsor-grid-image[alt='Bit'] {
+  max-height: 48px;
+}
+
+.vp-sponsor-grid.xmini .vp-sponsor-grid-image[alt='JetBrains'] {
+  max-height: 54px;
+}
+
+.vp-sponsor-grid.medium .vp-sponsor-grid-image[alt='JetBrains'] {
+  max-height: 100px;
 }
