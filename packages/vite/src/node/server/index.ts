@@ -32,7 +32,6 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
-  recursiveReaddir,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -51,6 +50,7 @@ import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
+import { initPublicFiles } from '../publicDir'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -324,10 +324,6 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _publicFiles: Set<string>
-  /**
-   * @internal
-   */
   _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
    * @internal
@@ -382,6 +378,8 @@ export async function _createServer(
   options: { ws: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
+
+  const initPublicFilesPromise = initPublicFiles(config)
 
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
@@ -606,7 +604,6 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
-    _publicFiles: new Set(await recursiveReaddir(config.publicDir)),
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
@@ -629,6 +626,8 @@ export async function _createServer(
     }
   }
 
+  const publicFiles = await initPublicFilesPromise
+
   const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
@@ -647,7 +646,7 @@ export async function _createServer(
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
 
     if (config.publicDir && file.startsWith(config.publicDir)) {
-      server._publicFiles[isUnlink ? 'delete' : 'add'](file)
+      publicFiles[isUnlink ? 'delete' : 'add'](file)
     } else {
       await handleFileAddUnlink(file, server, isUnlink)
       await onHMRUpdate(file, true)
@@ -745,7 +744,7 @@ export async function _createServer(
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
   if (config.publicDir) {
-    middlewares.use(await servePublicMiddleware(server))
+    middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
   // main transform middleware

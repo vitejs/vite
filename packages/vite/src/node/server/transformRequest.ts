@@ -22,7 +22,7 @@ import {
   timeFrom,
   unwrapId,
 } from '../utils'
-import { checkPublicFile } from '../plugins/asset'
+import { checkPublicFile } from '../publicDir'
 import { getDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'

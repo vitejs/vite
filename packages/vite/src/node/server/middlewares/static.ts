@@ -52,9 +52,10 @@ const sirvOptions = ({
   }
 }
 
-export async function servePublicMiddleware(
+export function servePublicMiddleware(
   server: ViteDevServer,
-): Promise<Connect.NextHandleFunction> {
+  publicFiles: Set<string>,
+): Connect.NextHandleFunction {
   const dir = server.config.publicDir
   const serve = sirv(
     dir,
@@ -81,7 +82,7 @@ export async function servePublicMiddleware(
     // in-memory set of known public files. This set is updated on restarts.
     // also skip import request and internal requests `/@fs/ /@vite-client` etc...
     if (
-      !server._publicFiles.has(toFilePath(req.url!)) ||
+      !publicFiles.has(toFilePath(req.url!)) ||
       isImportRequest(req.url!) ||
       isInternalRequest(req.url!)
     ) {

@@ -24,12 +24,12 @@ import {
   urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
+import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import {
   assetUrlRE,
-  checkPublicFile,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,

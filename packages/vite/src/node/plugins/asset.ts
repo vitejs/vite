@@ -1,6 +1,5 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
-import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -17,6 +16,7 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import { checkPublicFile } from '../publicDir'
 import {
   cleanUrl,
   getHash,
@@ -249,32 +249,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function checkPublicFile(
-  url: string,
-  { publicDir }: ResolvedConfig,
-): string | undefined {
-  // note if the file is in /public, the resolver would have returned it
-  // as-is so it's not going to be a fully resolved path.
-  if (!publicDir || url[0] !== '/') {
-    return
-  }
-  const publicFile = path.join(publicDir, cleanUrl(url))
-  if (
-    !normalizePath(publicFile).startsWith(
-      withTrailingSlash(normalizePath(publicDir)),
-    )
-  ) {
-    // can happen if URL starts with '../'
-    return
-  }
-  if (fs.existsSync(publicFile)) {
-    return publicFile
-  } else {
-    return
-  }
-}
-
-export async function fileToUrl(
+export async function fileToUrl( // TODO
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext,
@@ -287,6 +262,7 @@ export async function fileToUrl(
 }
 
 function fileToDevUrl(id: string, config: ResolvedConfig) {
+  // TODO
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
