@@ -249,7 +249,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export async function fileToUrl( // TODO
+export async function fileToUrl(
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext,
@@ -262,7 +262,6 @@ export async function fileToUrl( // TODO
 }
 
 function fileToDevUrl(id: string, config: ResolvedConfig) {
-  // TODO
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
