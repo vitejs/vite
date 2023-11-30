@@ -67,9 +67,7 @@ const vite = await createServer({
   },
 })
 
-server.use((req, res, next) => {
-  vite.middlewares.handle(req, res, next)
-})
+parentServer.use(vite.middlewares)
 ```
 
 </details>

@@ -982,53 +982,17 @@ export function resolvePackageEntry(
       )
     }
 
-    // handle edge case with browser and module field semantics
-    if (!entryPoint && targetWeb && options.mainFields.includes('browser')) {
-      // check browser field
-      // https://github.com/defunctzombie/package-browser-field-spec
-      const browserEntry =
-        typeof data.browser === 'string'
-          ? data.browser
-          : isObject(data.browser) && data.browser['.']
-      if (browserEntry) {
-        // check if the package also has a "module" field.
-        if (
-          !options.isRequire &&
-          options.mainFields.includes('module') &&
-          typeof data.module === 'string' &&
-          data.module !== browserEntry
-        ) {
-          // if both are present, we may have a problem: some package points both
-          // to ESM, with "module" targeting Node.js, while some packages points
-          // "module" to browser ESM and "browser" to UMD/IIFE.
-          // the heuristics here is to actually read the browser entry when
-          // possible and check for hints of ESM. If it is not ESM, prefer "module"
-          // instead; Otherwise, assume it's ESM and use it.
-          const resolvedBrowserEntry = tryFsResolve(
-            path.join(dir, browserEntry),
-            options,
-          )
-          if (resolvedBrowserEntry) {
-            const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
-            if (hasESMSyntax(content)) {
-              // likely ESM, prefer browser
-              entryPoint = browserEntry
-            } else {
-              // non-ESM, UMD or IIFE or CJS(!!! e.g. firebase 7.x), prefer module
-              entryPoint = data.module
-            }
-          }
-        } else {
-          entryPoint = browserEntry
-        }
-      }
-    }
-
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
       for (const field of options.mainFields) {
-        if (field === 'browser') continue // already checked above
-        if (typeof data[field] === 'string') {
+        if (field === 'browser') {
+          if (targetWeb) {
+            entryPoint = tryResolveBrowserEntry(dir, data, options)
+            if (entryPoint) {
+              break
+            }
+          }
+        } else if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
         }
@@ -1253,6 +1217,53 @@ function tryResolveBrowserMapping(
       }
     } else if (browserMappedPath === false) {
       return browserExternalId
+    }
+  }
+}
+
+function tryResolveBrowserEntry(
+  dir: string,
+  data: PackageData['data'],
+  options: InternalResolveOptions,
+) {
+  // handle edge case with browser and module field semantics
+
+  // check browser field
+  // https://github.com/defunctzombie/package-browser-field-spec
+  const browserEntry =
+    typeof data.browser === 'string'
+      ? data.browser
+      : isObject(data.browser) && data.browser['.']
+  if (browserEntry) {
+    // check if the package also has a "module" field.
+    if (
+      !options.isRequire &&
+      options.mainFields.includes('module') &&
+      typeof data.module === 'string' &&
+      data.module !== browserEntry
+    ) {
+      // if both are present, we may have a problem: some package points both
+      // to ESM, with "module" targeting Node.js, while some packages points
+      // "module" to browser ESM and "browser" to UMD/IIFE.
+      // the heuristics here is to actually read the browser entry when
+      // possible and check for hints of ESM. If it is not ESM, prefer "module"
+      // instead; Otherwise, assume it's ESM and use it.
+      const resolvedBrowserEntry = tryFsResolve(
+        path.join(dir, browserEntry),
+        options,
+      )
+      if (resolvedBrowserEntry) {
+        const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
+        if (hasESMSyntax(content)) {
+          // likely ESM, prefer browser
+          return browserEntry
+        } else {
+          // non-ESM, UMD or IIFE or CJS(!!! e.g. firebase 7.x), prefer module
+          return data.module
+        }
+      }
+    } else {
+      return browserEntry
     }
   }
 }

@@ -28,6 +28,7 @@
     "@vitejs/test-resolve-browser-module-field3": "link:./browser-module-field3",
     "@vitejs/test-resolve-custom-condition": "link:./custom-condition",
     "@vitejs/test-resolve-custom-main-field": "link:./custom-main-field",
+    "@vitejs/test-resolve-custom-browser-main-field": "link:./custom-browser-main-field",
     "@vitejs/test-resolve-exports-and-nested-scope": "link:./exports-and-nested-scope",
     "@vitejs/test-resolve-exports-env": "link:./exports-env",
     "@vitejs/test-resolve-exports-from-root": "link:./exports-from-root",

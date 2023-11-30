@@ -167,6 +167,12 @@ test('resolve.mainFields', async () => {
   expect(await page.textContent('.custom-main-fields')).toMatch('[success]')
 })
 
+test('resolve.mainFields.browser-first', async () => {
+  expect(await page.textContent('.custom-browser-main-field')).toBe(
+    'resolved browser field',
+  )
+})
+
 test('resolve.conditions', async () => {
   expect(await page.textContent('.custom-condition')).toMatch('[success]')
 })
