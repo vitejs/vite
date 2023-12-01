@@ -19,11 +19,7 @@ interface SourceMapLike {
   sourceRoot?: string
 }
 
-export async function injectSourcesContent(
-  map: SourceMapLike,
-  file: string,
-  logger: Logger,
-): Promise<void> {
+async function computeSourceRoute(map: SourceMapLike, file: string) {
   let sourceRoot: string | undefined
   try {
     // The source root is undefined for virtual modules and permission errors.
@@ -31,27 +27,41 @@ export async function injectSourcesContent(
       path.resolve(path.dirname(file), map.sourceRoot || ''),
     )
   } catch {}
+  return sourceRoot
+}
+
+export async function injectSourcesContent(
+  map: SourceMapLike,
+  file: string,
+  logger: Logger,
+): Promise<void> {
+  let sourceRootPromise: Promise<string | undefined>
 
   const missingSources: string[] = []
   const sourcesContent = map.sourcesContent || []
   await Promise.all(
-    map.sources.map(async (sourcePath, index) => {
-      let content = null
-      if (sourcePath && !virtualSourceRE.test(sourcePath)) {
+    map.sources
+      .filter(
+        (sourcePath, index) =>
+          !sourcesContent[index] &&
+          sourcePath &&
+          !virtualSourceRE.test(sourcePath),
+      )
+      .map(async (sourcePath, index) => {
+        // inject content from source file when sourcesContent is null
+        sourceRootPromise ??= computeSourceRoute(map, file)
+        const sourceRoot = await sourceRootPromise
         sourcePath = decodeURI(sourcePath)
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
-        // inject content from source file when sourcesContent is null
-        content =
-          sourcesContent[index] ??
-          (await fsp.readFile(sourcePath, 'utf-8').catch(() => {
+        sourcesContent[index] = await fsp
+          .readFile(sourcePath, 'utf-8')
+          .catch(() => {
             missingSources.push(sourcePath)
             return null
-          }))
-      }
-      sourcesContent[index] = content
-    }),
+          })
+      }),
   )
 
   map.sourcesContent = sourcesContent
