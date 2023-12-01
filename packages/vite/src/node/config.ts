@@ -586,7 +586,7 @@ export async function resolveConfig(
   )
 
   // resolve cache directory
-  const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
+  const pkgDir = (await findNearestPackageData(resolvedRoot, packageCache))?.dir
   const cacheDir = normalizePath(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
@@ -969,7 +969,7 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM = isFilePathESM(resolvedPath)
+  const isESM = await isFilePathESM(resolvedPath)
 
   try {
     const bundled = await bundleConfigFile(resolvedPath, isESM)
@@ -1028,30 +1028,32 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         setup(build) {
           const packageCache = new Map()
-          const resolveByViteResolver = (
+          const resolveByViteResolver = async (
             id: string,
             importer: string,
             isRequire: boolean,
           ) => {
-            return tryNodeResolve(
-              id,
-              importer,
-              {
-                root: path.dirname(fileName),
-                isBuild: true,
-                isProduction: true,
-                preferRelative: false,
-                tryIndex: true,
-                mainFields: [],
-                conditions: [],
-                overrideConditions: ['node'],
-                dedupe: [],
-                extensions: DEFAULT_EXTENSIONS,
-                preserveSymlinks: false,
-                packageCache,
-                isRequire,
-              },
-              false,
+            return (
+              await tryNodeResolve(
+                id,
+                importer,
+                {
+                  root: path.dirname(fileName),
+                  isBuild: true,
+                  isProduction: true,
+                  preferRelative: false,
+                  tryIndex: true,
+                  mainFields: [],
+                  conditions: [],
+                  overrideConditions: ['node'],
+                  dedupe: [],
+                  extensions: DEFAULT_EXTENSIONS,
+                  preserveSymlinks: false,
+                  packageCache,
+                  isRequire,
+                },
+                false,
+              )
             )?.id
           }
 
@@ -1077,16 +1079,16 @@ async function bundleConfigFile(
               const isImport = isESM || kind === 'dynamic-import'
               let idFsPath: string | undefined
               try {
-                idFsPath = resolveByViteResolver(id, importer, !isImport)
+                idFsPath = await resolveByViteResolver(id, importer, !isImport)
               } catch (e) {
                 if (!isImport) {
                   let canResolveWithImport = false
                   try {
-                    canResolveWithImport = !!resolveByViteResolver(
+                    canResolveWithImport = !!(await resolveByViteResolver(
                       id,
                       importer,
                       false,
-                    )
+                    ))
                   } catch {}
                   if (canResolveWithImport) {
                     throw new Error(
@@ -1104,7 +1106,7 @@ async function bundleConfigFile(
               if (
                 idFsPath &&
                 !isImport &&
-                isFilePathESM(idFsPath, packageCache)
+                (await isFilePathESM(idFsPath, packageCache))
               ) {
                 throw new Error(
                   `${JSON.stringify(

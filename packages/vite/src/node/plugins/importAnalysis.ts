@@ -488,7 +488,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr) {
-              if (shouldExternalizeForSSR(specifier, importer, config)) {
+              if (await shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
               if (isBuiltin(specifier)) {

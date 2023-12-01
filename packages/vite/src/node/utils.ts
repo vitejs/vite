@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
@@ -432,10 +433,10 @@ export function lookupFile(
   }
 }
 
-export function isFilePathESM(
+export async function isFilePathESM(
   filePath: string,
   packageCache?: PackageCache,
-): boolean {
+): Promise<boolean> {
   if (/\.m[jt]s$/.test(filePath)) {
     return true
   } else if (/\.c[jt]s$/.test(filePath)) {
@@ -443,7 +444,10 @@ export function isFilePathESM(
   } else {
     // check package.json for type: "module"
     try {
-      const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+      const pkg = await findNearestPackageData(
+        path.dirname(filePath),
+        packageCache,
+      )
       return pkg?.data.type === 'module'
     } catch {
       return false
@@ -625,15 +629,17 @@ export function copyDir(srcDir: string, destDir: string): void {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export let safeRealpathSync = isWindows
-  ? windowsSafeRealPathSync
-  : fs.realpathSync.native
+export let safeRealpath = isWindows ? windowsSafeRealPath : fsp.realpath
+
+async function realpathFallback(path: string) {
+  return fs.realpathSync(path)
+}
 
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
-function windowsMappedRealpathSync(path: string) {
-  const realPath = fs.realpathSync.native(path)
+async function windowsMappedRealpath(path: string) {
+  const realPath = await fsp.realpath(path)
   if (realPath.startsWith('\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
       if (realPath.startsWith(network)) return realPath.replace(network, volume)
@@ -642,31 +648,31 @@ function windowsMappedRealpathSync(path: string) {
   return realPath
 }
 const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
-let firstSafeRealPathSyncRun = false
+let firstSafeRealPathRun = false
 
-function windowsSafeRealPathSync(path: string): string {
-  if (!firstSafeRealPathSyncRun) {
-    optimizeSafeRealPathSync()
-    firstSafeRealPathSyncRun = true
+async function windowsSafeRealPath(path: string): Promise<string> {
+  if (!firstSafeRealPathRun) {
+    await optimizeSafeRealPath()
+    firstSafeRealPathRun = true
   }
   return fs.realpathSync(path)
 }
 
-function optimizeSafeRealPathSync() {
+async function optimizeSafeRealPath() {
   // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
   const nodeVersion = process.versions.node.split('.').map(Number)
   if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
-    safeRealpathSync = fs.realpathSync
+    safeRealpath = realpathFallback
     return
   }
   // Check the availability `fs.realpathSync.native`
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
   try {
-    fs.realpathSync.native(path.resolve('./'))
+    await fsp.realpath(path.resolve('./'))
   } catch (error) {
     if (error.message.includes('EISDIR: illegal operation on a directory')) {
-      safeRealpathSync = fs.realpathSync
+      safeRealpath = realpathFallback
       return
     }
   }
@@ -680,9 +686,9 @@ function optimizeSafeRealPathSync() {
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
     if (windowsNetworkMap.size === 0) {
-      safeRealpathSync = fs.realpathSync.native
+      safeRealpath = fsp.realpath
     } else {
-      safeRealpathSync = windowsMappedRealpathSync
+      safeRealpath = windowsMappedRealpath
     }
   })
 }

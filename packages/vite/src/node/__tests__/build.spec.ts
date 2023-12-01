@@ -4,7 +4,7 @@ import colors from 'picocolors'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
+import { build, createResolveLibFilename, resolveBuildOutputs } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 
@@ -205,75 +205,71 @@ describe('resolveBuildOutputs', () => {
 })
 
 describe('resolveLibFilename', () => {
-  test('custom filename function', () => {
-    const filename = resolveLibFilename(
+  test('custom filename function', async () => {
+    const resolveLibFilename = await createResolveLibFilename(
       {
         fileName: (format) => `custom-filename-function.${format}.js`,
         entry: 'mylib.js',
       },
       'es',
-      'myLib',
       resolve(__dirname, 'packages/name'),
     )
-
+    const filename = resolveLibFilename({ name: 'myLib' })
     expect(filename).toBe('custom-filename-function.es.js')
   })
 
-  test('custom filename string', () => {
-    const filename = resolveLibFilename(
+  test('custom filename string', async () => {
+    const resolveLibFilename = await createResolveLibFilename(
       {
         fileName: 'custom-filename',
         entry: 'mylib.js',
       },
       'es',
-      'myLib',
       resolve(__dirname, 'packages/name'),
     )
-
+    const filename = resolveLibFilename({ name: 'myLib' })
     expect(filename).toBe('custom-filename.mjs')
   })
 
-  test('package name as filename', () => {
-    const filename = resolveLibFilename(
+  test('package name as filename', async () => {
+    const resolveLibFilename = await createResolveLibFilename(
       {
         entry: 'mylib.js',
       },
       'es',
-      'myLib',
       resolve(__dirname, 'packages/name'),
     )
-
+    const filename = resolveLibFilename({ name: 'myLib' })
     expect(filename).toBe('mylib.mjs')
   })
 
-  test('custom filename and no package name', () => {
-    const filename = resolveLibFilename(
+  test('custom filename and no package name', async () => {
+    const resolveLibFilename = await createResolveLibFilename(
       {
         fileName: 'custom-filename',
         entry: 'mylib.js',
       },
       'es',
-      'myLib',
       resolve(__dirname, 'packages/noname'),
     )
-
+    const filename = resolveLibFilename({ name: 'myLib' })
     expect(filename).toBe('custom-filename.mjs')
   })
 
-  test('missing filename', () => {
+  test('missing filename', async () => {
+    const resolveLibFilename = await createResolveLibFilename(
+      {
+        entry: 'mylib.js',
+      },
+      'es',
+      resolve(__dirname, 'packages/noname'),
+    )
     expect(() => {
-      resolveLibFilename(
-        {
-          entry: 'mylib.js',
-        },
-        'es',
-        'myLib',
-        resolve(__dirname, 'packages/noname'),
-      )
+      resolveLibFilename({ name: 'myLib' })
     }).toThrow()
   })
 
-  test('commonjs package extensions', () => {
+  test('commonjs package extensions', async () => {
     const formatsToFilenames: FormatsToFileNames = [
       ['es', 'my-lib.mjs'],
       ['umd', 'my-lib.umd.js'],
@@ -282,18 +278,17 @@ describe('resolveLibFilename', () => {
     ]
 
     for (const [format, expectedFilename] of formatsToFilenames) {
-      const filename = resolveLibFilename(
+      const resolveLibFilename = await createResolveLibFilename(
         baseLibOptions,
         format,
-        'myLib',
         resolve(__dirname, 'packages/noname'),
       )
-
+      const filename = resolveLibFilename({ name: 'myLib' })
       expect(filename).toBe(expectedFilename)
     }
   })
 
-  test('module package extensions', () => {
+  test('module package extensions', async () => {
     const formatsToFilenames: FormatsToFileNames = [
       ['es', 'my-lib.js'],
       ['umd', 'my-lib.umd.cjs'],
@@ -302,39 +297,37 @@ describe('resolveLibFilename', () => {
     ]
 
     for (const [format, expectedFilename] of formatsToFilenames) {
-      const filename = resolveLibFilename(
+      const resolveLibFilename = await createResolveLibFilename(
         baseLibOptions,
         format,
-        'myLib',
         resolve(__dirname, 'packages/module'),
       )
-
+      const filename = resolveLibFilename({ name: 'myLib' })
       expect(expectedFilename).toBe(filename)
     }
   })
 
-  test('multiple entries with aliases', () => {
+  test('multiple entries with aliases', async () => {
     const libOptions: LibraryOptions = {
       entry: {
         entryA: 'entryA.js',
         entryB: 'entryB.js',
       },
     }
-
+    const resolveLibFilename = await createResolveLibFilename(
+      libOptions,
+      'es',
+      resolve(__dirname, 'packages/name'),
+    )
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
-      resolveLibFilename(
-        libOptions,
-        'es',
-        entryAlias,
-        resolve(__dirname, 'packages/name'),
-      ),
+      resolveLibFilename({ name: entryAlias }),
     )
 
     expect(fileName1).toBe('entryA.mjs')
     expect(fileName2).toBe('entryB.mjs')
   })
 
-  test('multiple entries with aliases: custom filename function', () => {
+  test('multiple entries with aliases: custom filename function', async () => {
     const libOptions: LibraryOptions = {
       entry: {
         entryA: 'entryA.js',
@@ -343,21 +336,20 @@ describe('resolveLibFilename', () => {
       fileName: (format, entryAlias) =>
         `custom-filename-function.${entryAlias}.${format}.js`,
     }
-
+    const resolveLibFilename = await createResolveLibFilename(
+      libOptions,
+      'es',
+      resolve(__dirname, 'packages/name'),
+    )
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
-      resolveLibFilename(
-        libOptions,
-        'es',
-        entryAlias,
-        resolve(__dirname, 'packages/name'),
-      ),
+      resolveLibFilename({ name: entryAlias }),
     )
 
     expect(fileName1).toBe('custom-filename-function.entryA.es.js')
     expect(fileName2).toBe('custom-filename-function.entryB.es.js')
   })
 
-  test('multiple entries with aliases: custom filename string', () => {
+  test('multiple entries with aliases: custom filename string', async () => {
     const libOptions: LibraryOptions = {
       entry: {
         entryA: 'entryA.js',
@@ -365,71 +357,68 @@ describe('resolveLibFilename', () => {
       },
       fileName: 'custom-filename',
     }
-
+    const resolveLibFilename = await createResolveLibFilename(
+      libOptions,
+      'es',
+      resolve(__dirname, 'packages/name'),
+    )
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
-      resolveLibFilename(
-        libOptions,
-        'es',
-        entryAlias,
-        resolve(__dirname, 'packages/name'),
-      ),
+      resolveLibFilename({ name: entryAlias }),
     )
 
     expect(fileName1).toBe('custom-filename.mjs')
     expect(fileName2).toBe('custom-filename.mjs')
   })
 
-  test('multiple entries as array', () => {
+  test('multiple entries as array', async () => {
     const libOptions: LibraryOptions = {
       entry: ['entryA.js', 'entryB.js'],
     }
-
+    const resolveLibFilename = await createResolveLibFilename(
+      libOptions,
+      'es',
+      resolve(__dirname, 'packages/name'),
+    )
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
-      resolveLibFilename(
-        libOptions,
-        'es',
-        entryAlias,
-        resolve(__dirname, 'packages/name'),
-      ),
+      resolveLibFilename({ name: entryAlias }),
     )
 
     expect(fileName1).toBe('entryA.mjs')
     expect(fileName2).toBe('entryB.mjs')
   })
 
-  test('multiple entries as array: custom filename function', () => {
+  test('multiple entries as array: custom filename function', async () => {
     const libOptions: LibraryOptions = {
       entry: ['entryA.js', 'entryB.js'],
       fileName: (format, entryAlias) =>
         `custom-filename-function.${entryAlias}.${format}.js`,
     }
-
+    const resolveLibFilename = await createResolveLibFilename(
+      libOptions,
+      'es',
+      resolve(__dirname, 'packages/name'),
+    )
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
-      resolveLibFilename(
-        libOptions,
-        'es',
-        entryAlias,
-        resolve(__dirname, 'packages/name'),
-      ),
+      resolveLibFilename({ name: entryAlias }),
     )
 
     expect(fileName1).toBe('custom-filename-function.entryA.es.js')
     expect(fileName2).toBe('custom-filename-function.entryB.es.js')
   })
 
-  test('multiple entries as array: custom filename string', () => {
+  test('multiple entries as array: custom filename string', async () => {
     const libOptions: LibraryOptions = {
       entry: ['entryA.js', 'entryB.js'],
       fileName: 'custom-filename',
     }
+    const resolveLibFilename = await createResolveLibFilename(
+      libOptions,
+      'es',
+      resolve(__dirname, 'packages/name'),
+    )
 
     const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
-      resolveLibFilename(
-        libOptions,
-        'es',
-        entryAlias,
-        resolve(__dirname, 'packages/name'),
-      ),
+      resolveLibFilename({ name: entryAlias }),
     )
 
     expect(fileName1).toBe('custom-filename.mjs')

@@ -109,7 +109,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
-            file = tryFsResolve(file, fsResolveOptions) ?? file
+            file = (await tryFsResolve(file, fsResolveOptions)) ?? file
           } else {
             assetResolver ??= config.createResolver({
               extensions: [],
