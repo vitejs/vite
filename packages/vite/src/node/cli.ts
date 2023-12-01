@@ -95,8 +95,8 @@ function cleanOptions<Options extends GlobalCLIOptions>(
       sourcemap === 'true'
         ? true
         : sourcemap === 'false'
-        ? false
-        : ret.sourcemap
+          ? false
+          : ret.sourcemap
   }
 
   return ret
@@ -180,15 +180,15 @@ cli
             )} ms`,
           )
         : ''
+      const hasExistingLogs =
+        process.stdout.bytesWritten > 0 || process.stderr.bytesWritten > 0
 
       info(
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
         )}  ${startupDurationString}\n`,
         {
-          clear:
-            !server.config.logger.hasWarned &&
-            !(globalThis as any).__vite_cjs_skip_clear_screen,
+          clear: !hasExistingLogs,
         },
       )
 

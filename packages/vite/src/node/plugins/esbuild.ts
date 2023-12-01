@@ -322,8 +322,8 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
           opts.format === 'iife'
             ? esbuildCode.match(IIFE_BEGIN_RE)?.index || 0
             : opts.format === 'umd'
-            ? esbuildCode.indexOf(`(function(`) // same for minified or not
-            : 0
+              ? esbuildCode.indexOf(`(function(`) // same for minified or not
+              : 0
         if (contentIndex > 0) {
           const esbuildHelpers = esbuildCode.slice(0, contentIndex)
           res.code = esbuildCode
@@ -357,6 +357,7 @@ export function resolveEsbuildTranspileOptions(
   const options: TransformOptions = {
     charset: 'utf8',
     ...esbuildOptions,
+    loader: 'js',
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],
     // the final build should always support dynamic import and import.meta.
@@ -432,15 +433,7 @@ export function resolveEsbuildTranspileOptions(
 function prettifyMessage(m: Message, code: string): string {
   let res = colors.yellow(m.text)
   if (m.location) {
-    const lines = code.split(/\r?\n/g)
-    const line = Number(m.location.line)
-    const column = Number(m.location.column)
-    const offset =
-      lines
-        .slice(0, line - 1)
-        .map((l) => l.length)
-        .reduce((total, l) => total + l + 1, 0) + column
-    res += `\n` + generateCodeFrame(code, offset, offset + 1)
+    res += `\n` + generateCodeFrame(code, m.location)
   }
   return res + `\n`
 }

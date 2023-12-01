@@ -48,7 +48,7 @@ export type ExportsData = {
   jsxLoader?: boolean
 }
 
-export interface DepsOptimizer extends AsyncDisposable {
+export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
@@ -164,11 +164,6 @@ export interface DepOptimizationResult {
    */
   commit: () => Promise<void>
   cancel: () => void
-}
-
-export interface DepOptimizationProcessing {
-  promise: Promise<void>
-  resolve: () => void
 }
 
 export interface OptimizedDepInfo {
@@ -883,14 +878,6 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
-}
-
-export function newDepOptimizationProcessing(): DepOptimizationProcessing {
-  let resolve: () => void
-  const promise = new Promise((_resolve) => {
-    resolve = _resolve
-  }) as Promise<void>
-  return { promise, resolve: resolve! }
 }
 
 // Convert to { id: src }

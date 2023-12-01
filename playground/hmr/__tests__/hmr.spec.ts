@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
+import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
   browserLogs,
@@ -7,6 +8,7 @@ import {
   isBuild,
   page,
   removeFile,
+  serverLogs,
   untilBrowserLogAfter,
   untilUpdated,
   viteTestUrl,
@@ -204,21 +206,24 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
   })
 
-  test('full-reload encodeURI path', async () => {
-    await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-    )
-    const el = await page.$('#app')
-    expect(await el.textContent()).toBe('title')
-    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-      code.replace('title', 'title2'),
-    )
-    await page.waitForEvent('load')
-    await untilUpdated(
-      async () => (await page.$('#app')).textContent(),
-      'title2',
-    )
-  })
+  test.skipIf(hasWindowsUnicodeFsBug)(
+    'full-reload encodeURI path',
+    async () => {
+      await page.goto(
+        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+      )
+      const el = await page.$('#app')
+      expect(await el.textContent()).toBe('title')
+      editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+        code.replace('title', 'title2'),
+      )
+      await page.waitForEvent('load')
+      await untilUpdated(
+        async () => (await page.$('#app')).textContent(),
+        'title2',
+      )
+    },
+  )
 
   test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
@@ -877,7 +882,29 @@ if (import.meta.hot) {
     editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
-    await untilUpdated(() => el.textContent(), 'cc')
+    await untilUpdated(
+      () => page.textContent('.self-accept-within-circular'),
+      'cc',
+    )
+    expect(serverLogs.length).greaterThanOrEqual(1)
+    // Match on full log not possible because of color markers
+    expect(serverLogs.at(-1)!).toContain('page reload')
+    expect(serverLogs.at(-1)!).toContain('(circular imports)')
+  })
+
+  test('hmr should not reload if no accepted within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/circular/index.html')
+    const el = await page.$('.circular')
+    expect(await el.textContent()).toBe(
+      'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
+    )
+    editFile('circular/mod-b.js', (code) =>
+      code.replace(`mod-b ->`, `mod-b (edited) ->`),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)',
+    )
   })
 
   test('assets HMR', async () => {

@@ -1,8 +1,8 @@
 import colors from 'picocolors'
-import { createDebugger, getHash } from '../utils'
+import { createDebugger, getHash, promiseWithResolvers } from '../utils'
+import type { PromiseWithResolvers } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
-import { ASYNC_DISPOSE } from '../constants'
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
@@ -15,17 +15,11 @@ import {
   getOptimizedDepPath,
   initDepsOptimizerMetadata,
   loadCachedDepOptimizationMetadata,
-  newDepOptimizationProcessing,
   optimizeServerSsrDeps,
   runOptimizeDeps,
   toDiscoveredDependencies,
 } from '.'
-import type {
-  DepOptimizationProcessing,
-  DepOptimizationResult,
-  DepsOptimizer,
-  OptimizedDepInfo,
-} from '.'
+import type { DepOptimizationResult, DepsOptimizer, OptimizedDepInfo } from '.'
 
 const debug = createDebugger('vite:deps')
 
@@ -120,9 +114,6 @@ async function createDepsOptimizer(
     resetRegisteredIds,
     ensureFirstRun,
     close,
-    [ASYNC_DISPOSE]() {
-      return this.close()
-    },
     options: getDepOptimizationConfig(config, ssr),
   }
 
@@ -146,8 +137,8 @@ async function createDepsOptimizer(
     }
   }
 
-  let depOptimizationProcessing = newDepOptimizationProcessing()
-  let depOptimizationProcessingQueue: DepOptimizationProcessing[] = []
+  let depOptimizationProcessing = promiseWithResolvers<void>()
+  let depOptimizationProcessingQueue: PromiseWithResolvers<void>[] = []
   const resolveEnqueuedProcessingPromises = () => {
     // Resolve all the processings (including the ones which were delayed)
     for (const processing of depOptimizationProcessingQueue) {
@@ -273,7 +264,7 @@ async function createDepsOptimizer(
 
     // Create a new promise for the next rerun, discovered missing
     // dependencies will be assigned this promise from this point
-    depOptimizationProcessing = newDepOptimizationProcessing()
+    depOptimizationProcessing = promiseWithResolvers()
   }
 
   function prepareKnownDeps() {
@@ -836,7 +827,6 @@ async function createDevSsrDepsOptimizer(
     ensureFirstRun: () => {},
 
     close: async () => {},
-    [ASYNC_DISPOSE]: async () => {},
     options: config.ssr.optimizeDeps,
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)

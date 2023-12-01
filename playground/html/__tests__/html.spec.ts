@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest'
+import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
@@ -218,7 +219,7 @@ describe('noBody', () => {
   })
 })
 
-describe('Unicode path', () => {
+describe.skipIf(hasWindowsUnicodeFsBug)('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -413,4 +414,20 @@ test('html serve behavior', async () => {
   expect(await bothDotHtml.text()).toContain('both.html')
   expect(bothSlashIndexHtml.status).toBe(200)
   expect(await bothSlashIndexHtml.text()).toContain('both/index.html')
+})
+
+test('html fallback works non browser accept header', async () => {
+  expect((await fetch(viteTestUrl, { headers: { Accept: '' } })).status).toBe(
+    200,
+  )
+  // defaults to "Accept: */*"
+  expect((await fetch(viteTestUrl)).status).toBe(200)
+  // wait-on uses axios and axios sends this accept header
+  expect(
+    (
+      await fetch(viteTestUrl, {
+        headers: { Accept: 'application/json, text/plain, */*' },
+      })
+    ).status,
+  ).toBe(200)
 })

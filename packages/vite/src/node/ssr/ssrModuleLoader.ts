@@ -31,7 +31,16 @@ interface NodeImportResolveOptions
 
 interface SSRImportMetadata {
   isDynamicImport?: boolean
-  namedImportSpecifiers?: string[]
+  /**
+   * Imported names before being transformed to `ssrImportKey`
+   *
+   * import foo, { bar as baz, qux } from 'hello'
+   * => ['default', 'bar', 'qux']
+   *
+   * import * as namespace from 'world
+   * => undefined
+   */
+  importedNames?: string[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -367,15 +376,13 @@ function analyzeImportedModDifference(
 
   // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
   // If the user named imports a specifier that can't be analyzed, error.
-  if (metadata?.namedImportSpecifiers?.length) {
-    const missingBindings = metadata.namedImportSpecifiers.filter(
-      (s) => !(s in mod),
-    )
+  if (metadata?.importedNames?.length) {
+    const missingBindings = metadata.importedNames.filter((s) => !(s in mod))
     if (missingBindings.length) {
       const lastBinding = missingBindings[missingBindings.length - 1]
       // Copied from Node.js
       throw new SyntaxError(`\
-Named export '${lastBinding}' not found. The requested module '${rawId}' is a CommonJS module, which may not support all module.exports as named exports.
+[vite] Named export '${lastBinding}' not found. The requested module '${rawId}' is a CommonJS module, which may not support all module.exports as named exports.
 CommonJS modules can always be imported via the default export, for example using:
 
 import pkg from '${rawId}';
@@ -389,12 +396,20 @@ const {${missingBindings.join(', ')}} = pkg;
  * Guard invalid named exports only, similar to how Node.js errors for top-level imports.
  * But since we transform as dynamic imports, we need to emulate the error manually.
  */
-function proxyGuardOnlyEsm(mod: any, rawId: string) {
+function proxyGuardOnlyEsm(
+  mod: any,
+  rawId: string,
+  metadata?: SSRImportMetadata,
+) {
+  // If the module doesn't import anything explicitly, e.g. `import 'foo'` or
+  // `import * as foo from 'foo'`, we can skip the proxy guard.
+  if (!metadata?.importedNames?.length) return mod
+
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop !== 'then' && !(prop in mod)) {
         throw new SyntaxError(
-          `The requested module '${rawId}' does not provide an export named '${prop.toString()}'`,
+          `[vite] The requested module '${rawId}' does not provide an export named '${prop.toString()}'`,
         )
       }
       return mod[prop]

@@ -31,7 +31,6 @@ export default defineConfig({
 
 // Taken from https://stackoverflow.com/a/36328890
 const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
-const singlelineCommentsRE = /\/\/[^/].*/g
 const licenseCommentsRE = /MIT License|MIT license|BSD license/
 const consecutiveNewlinesRE = /\n{2,}/g
 const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
@@ -239,7 +238,6 @@ function removeInternal(s: MagicString, node: any): boolean {
 
 function cleanUnnecessaryComments(code: string) {
   return code
-    .replace(singlelineCommentsRE, '')
     .replace(multilineCommentsRE, (m) => {
       return licenseCommentsRE.test(m) ? '' : m
     })

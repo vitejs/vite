@@ -10,6 +10,7 @@
 <p>Object <span class="pre object"></span></p>
 <p>Env Var <code class="env-var"></code></p>
 <p>process node env: <code class="process-node-env"></code></p>
+<p>process env: <code class="process-env"></code></p>
 <p>process as property: <code class="process-as-property"></code></p>
 <p>spread object: <code class="spread-object"></code></p>
 <p>spread array: <code class="spread-array"></code></p>
@@ -68,6 +69,7 @@
   text('.undefined', __UNDEFINED__)
   text('.object', JSON.stringify(__OBJ__, null, 2))
   text('.process-node-env', process.env.NODE_ENV)
+  text('.process-env', JSON.stringify(process.env, null, 2))
   text('.env-var', process.env.SOMEVAR)
   text('.process-as-property', __OBJ__.process.env.SOMEVAR)
   text(

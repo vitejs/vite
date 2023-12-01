@@ -14,15 +14,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   // ignore replace process.env in lib build
   const processEnv: Record<string, string> = {}
-  const processNodeEnv: Record<string, string> = {}
   if (!isBuildLib) {
     const nodeEnv = process.env.NODE_ENV || config.mode
     Object.assign(processEnv, {
       'process.env': `{}`,
       'global.process.env': `{}`,
       'globalThis.process.env': `{}`,
-    })
-    Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
@@ -60,11 +57,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
     const define: Record<string, string> = {
-      ...(replaceProcessEnv ? processNodeEnv : {}),
+      ...(replaceProcessEnv ? processEnv : {}),
       ...importMetaKeys,
       ...userDefine,
       ...importMetaFallbackKeys,
-      ...(replaceProcessEnv ? processEnv : {}),
     }
 
     // Additional define fixes based on `ssr` value

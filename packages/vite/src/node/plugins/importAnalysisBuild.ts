@@ -1,6 +1,9 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type {
+  ParseError as EsModuleLexerParseError,
+  ImportSpecifier,
+} from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
@@ -51,7 +54,7 @@ const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
-  const relPath = path.relative(path.dirname(importer), filename)
+  const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
@@ -189,13 +192,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
       `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
-    ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-      // The importerUrl is passed as third parameter to __vitePreload in this case
-      `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-    : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appended inside __vitePreload too.
-      `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
+        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+        // The importerUrl is passed as third parameter to __vitePreload in this case
+        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+        // is appended inside __vitePreload too.
+        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -222,7 +225,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
+      } catch (_e: unknown) {
+        const e = _e as EsModuleLexerParseError
         const { message, showCodeFrame } = createParseErrorInfo(
           importer,
           source,
@@ -473,13 +477,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               return index
             }
           }
-          const getFileDep = (index: number): FileDep => {
-            const fileDep = fileDeps[index]
-            if (!fileDep) {
-              throw new Error(`Cannot find file dep at index ${index}`)
-            }
-            return fileDep
-          }
 
           if (imports.length) {
             for (let index = 0; index < imports.length; index++) {
@@ -498,7 +495,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<number> = new Set()
+              const deps: Set<string> = new Set()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined
@@ -518,12 +515,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(addFileDep(chunk.fileName))
+                    deps.add(chunk.fileName)
                     chunk.imports.forEach(addDeps)
                     // Ensure that the css imported by current chunk is loaded after the dependencies.
                     // So the style of current chunk won't be overwritten unexpectedly.
                     chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.add(addFileDep(file))
+                      deps.add(file)
                     })
                   } else {
                     const removedPureCssFiles =
@@ -532,7 +529,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     if (chunk) {
                       if (chunk.viteMetadata!.importedCss.size) {
                         chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(addFileDep(file))
+                          deps.add(file)
                         })
                         hasRemovedPureCssChunk = true
                       }
@@ -566,9 +563,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ? modulePreload === false
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
                         // we still need to pass these deps to the preload helper in dynamic imports.
-                        [...deps].filter((d) =>
-                          getFileDep(d).url.endsWith('.css'),
-                        )
+                        [...deps].filter((d) => d.endsWith('.css'))
                       : [...deps]
                     : []
 
@@ -578,37 +573,29 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   const resolveDependencies = modulePreload
                     ? modulePreload.resolveDependencies
                     : undefined
-                  let resolvedDeps: number[]
+                  let resolvedDeps: string[]
                   if (resolveDependencies) {
                     // We can't let the user remove css deps as these aren't really preloads, they are just using
                     // the same mechanism as module preloads for this chunk
-                    const cssDeps: number[] = []
-                    const otherDeps: number[] = []
+                    const cssDeps: string[] = []
+                    const otherDeps: string[] = []
                     for (const dep of depsArray) {
-                      if (getFileDep(dep).url.endsWith('.css')) {
-                        cssDeps.push(dep)
-                      } else {
-                        otherDeps.push(dep)
-                      }
+                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                     }
                     resolvedDeps = [
-                      ...resolveDependencies(
-                        normalizedFile,
-                        otherDeps.map((otherDep) => getFileDep(otherDep).url),
-                        {
-                          hostId: file,
-                          hostType: 'js',
-                        },
-                      ).map((otherDep) => addFileDep(otherDep)),
+                      ...resolveDependencies(normalizedFile, otherDeps, {
+                        hostId: file,
+                        hostType: 'js',
+                      }),
                       ...cssDeps,
                     ]
                   } else {
                     resolvedDeps = depsArray
                   }
 
-                  renderedDeps = resolvedDeps.map((dep: number) => {
+                  renderedDeps = resolvedDeps.map((dep) => {
                     const replacement = toOutputFilePathInJS(
-                      getFileDep(dep).url,
+                      dep,
                       'asset',
                       chunk.fileName,
                       'js',
@@ -627,8 +614,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
                     optimizeModulePreloadRelativePaths
-                      ? addFileDep(toRelativePath(getFileDep(d).url, file))
-                      : d,
+                      ? addFileDep(toRelativePath(d, file))
+                      : addFileDep(d),
                   )
                 }
 
