@@ -218,10 +218,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
-      const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
         return null
       }
 
@@ -258,7 +257,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+          `${timeFrom(start)} ${colors.dim(
+            `[no imports] ${prettifyUrl(importer, root)}`,
+          )}`,
         )
         return source
       }
@@ -702,7 +703,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 : acceptedUrls.size
                   ? `[accepts-deps]`
                   : `[detected api usage]`
-          } ${prettyImporter}`,
+          } ${prettifyUrl(importer, root)}`,
         )
         // inject hot context
         str().prepend(
@@ -784,7 +785,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       debug?.(
         `${timeFrom(start)} ${colors.dim(
-          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+          `[${importedUrls.size} imports rewritten] ${prettifyUrl(
+            importer,
+            root,
+          )}`,
         )}`,
       )
 
