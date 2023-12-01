@@ -9,7 +9,6 @@ describe('watcher configuration', () => {
       server: {
         watch: null,
       },
-      publicDir: false,
     })
     expect(server.watcher.getWatched.toString()).toMatch(stubGetWatchedCode)
   })
@@ -19,7 +18,6 @@ describe('watcher configuration', () => {
       server: {
         watch: {},
       },
-      publicDir: false,
     })
     expect(server.watcher.getWatched.toString()).not.toMatch(stubGetWatchedCode)
   })
