@@ -606,12 +606,15 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
 
-            const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
-
-            return {
-              path: path.resolve(cleanUrl(resolved)),
-              namespace,
+            if (htmlTypesRE.test(resolved)) {
+              return {
+                path: path.resolve(cleanUrl(resolved)),
+                namespace: 'html',
+              }
             }
+
+            // make esbuild handle js/ts/jsx/tsx
+            // so that tsconfig.json is respected by esbuild
           } else {
             // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
