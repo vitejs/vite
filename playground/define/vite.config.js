@@ -20,6 +20,11 @@ export default defineConfig({
     },
     'process.env.NODE_ENV': '"dev"',
     'process.env.SOMEVAR': '"SOMEVAR"',
+    'process.env': {
+      NODE_ENV: 'dev',
+      SOMEVAR: 'SOMEVAR',
+      OTHER: 'works',
+    },
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789,
     __VAR_NAME__: false,
