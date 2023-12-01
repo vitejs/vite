@@ -90,6 +90,16 @@ export interface CSSOptions {
    * https://github.com/css-modules/postcss-modules
    */
   modules?: CSSModulesOptions | false
+  /**
+   * Options for preprocessors.
+   *
+   * In addition to options specific to each processors,
+   * Vite supports `additionalData` option and `maxWorkers` option.
+   *
+   * The `additionalData` option can be used to inject extra code for each style content.
+   *
+   * The experimental `maxWorkers: number | true` option specify the max number of workers to spawn.
+   */
   preprocessorOptions?: Record<string, any>
   postcss?:
     | string

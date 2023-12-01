@@ -261,6 +261,14 @@ export default defineConfig({
 })
 ```
 
+### css.preprocessorOptions[extension].maxWorkers
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
+- **Type:** `number | true`
+- **Default:** `0` (does not create any workers and run in the main thread)
+
+If this option is set, preprocessors will run in workers when possible. `true` means the number of CPUs minus 1.
+
 ## css.devSourcemap
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
