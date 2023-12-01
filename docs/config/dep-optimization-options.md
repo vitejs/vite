@@ -71,7 +71,7 @@ Set to `true` to force dependency pre-bundling, ignoring previously cached optim
 
 This option is deprecated. As of Vite 5.1, pre-bundling of dependencies during build have been removed. Setting `optimizeDeps.disabled` to `true` or `'dev'` disables the optimizer, and configured to `false` or `'build'` leaves the optimizer during dev enabled.
 
-Use `optimizeDeps.noDiscovery` instead to disallow automatic discovery of dependencies and leave `optimizeDeps.include` undefined or empty to disable completely the optimizer instead.
+To disable the optimizer completely, use `optimizeDeps.noDiscovery: true` to disallow automatic discovery of dependencies and leave `optimizeDeps.include` undefined or empty.
 
 :::warning
 Optimizing dependencies during build time was an **experimental** feature. Projects trying out this strategy also removed `@rollup/plugin-commonjs` using `build.commonjsOptions: { include: [] }`. If you did so, a warning will guide you to re-enable it to support CJS only packages while bundling.
