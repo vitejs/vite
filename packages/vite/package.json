@@ -96,7 +96,7 @@
     "@types/pnpapi": "^0.0.5",
     "acorn": "^8.11.2",
     "acorn-walk": "^8.3.0",
-    "artichokie": "^0.1.0",
+    "artichokie": "^0.2.0",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",

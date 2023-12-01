@@ -1756,6 +1756,7 @@ type PreprocessorAdditionalData =
 type StylePreprocessorOptions = {
   [key: string]: any
   additionalData?: PreprocessorAdditionalData
+  maxWorkers?: number | true
   filename: string
   alias: Alias[]
   enableSourcemap: boolean
@@ -1884,7 +1885,11 @@ function fixScssBugImportValue(
 }
 
 // .scss/.sass processor
-const makeScssWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
+const makeScssWorker = (
+  resolvers: CSSAtImportResolvers,
+  alias: Alias[],
+  maxWorkers: number | true | undefined,
+) => {
   const internalImporter = async (
     url: string,
     importer: string,
@@ -1972,6 +1977,7 @@ const makeScssWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
             (!Array.isArray(options.importer) || options.importer.length > 0))
         )
       },
+      max: normalizeMaxWorkers(maxWorkers),
     },
   )
   return worker
@@ -1990,7 +1996,10 @@ const scssProcessor = (): SassStylePreprocessor => {
       const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
 
       if (!workerMap.has(options.alias)) {
-        workerMap.set(options.alias, makeScssWorker(resolvers, options.alias))
+        workerMap.set(
+          options.alias,
+          makeScssWorker(resolvers, options.alias, options.maxWorkers),
+        )
       }
       const worker = workerMap.get(options.alias)!
 
@@ -2101,7 +2110,11 @@ async function rebaseUrls(
 }
 
 // .less
-const makeLessWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
+const makeLessWorker = (
+  resolvers: CSSAtImportResolvers,
+  alias: Alias[],
+  maxWorkers: number | true | undefined,
+) => {
   const viteLessResolve = async (
     filename: string,
     dir: string,
@@ -2205,6 +2218,7 @@ const makeLessWorker = (resolvers: CSSAtImportResolvers, alias: Alias[]) => {
       shouldUseFake(_lessPath, _content, options) {
         return options.plugins?.length > 0
       },
+      max: normalizeMaxWorkers(maxWorkers),
     },
   )
   return worker
@@ -2223,7 +2237,10 @@ const lessProcessor = (): StylePreprocessor => {
       const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
 
       if (!workerMap.has(options.alias)) {
-        workerMap.set(options.alias, makeLessWorker(resolvers, options.alias))
+        workerMap.set(
+          options.alias,
+          makeLessWorker(resolvers, options.alias, options.maxWorkers),
+        )
       }
       const worker = workerMap.get(options.alias)!
 
@@ -2275,7 +2292,7 @@ const lessProcessor = (): StylePreprocessor => {
 }
 
 // .styl
-const makeStylWorker = () => {
+const makeStylWorker = (maxWorkers: number | true | undefined) => {
   const worker = new WorkerWithFallback(
     () => {
       return async (
@@ -2317,6 +2334,7 @@ const makeStylWorker = () => {
           Object.values(options.define).some((d) => typeof d === 'function')
         )
       },
+      max: normalizeMaxWorkers(maxWorkers),
     },
   )
   return worker
@@ -2335,7 +2353,7 @@ const stylProcessor = (): StylusStylePreprocessor => {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
 
       if (!workerMap.has(options.alias)) {
-        workerMap.set(options.alias, makeStylWorker())
+        workerMap.set(options.alias, makeStylWorker(options.maxWorkers))
       }
       const worker = workerMap.get(options.alias)!
 
@@ -2466,6 +2484,12 @@ const createPreprocessorWorkerController = () => {
     [PreprocessLang.stylus]: styl.process,
     close,
   } as const satisfies { [K in PreprocessLang | 'close']: unknown }
+}
+
+const normalizeMaxWorkers = (maxWorker: number | true | undefined) => {
+  if (maxWorker === undefined) return 0
+  if (maxWorker === true) return undefined
+  return maxWorker
 }
 
 type PreprocessorWorkerController = ReturnType<

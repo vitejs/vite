@@ -59,6 +59,9 @@ export default defineConfig({
       // },
     },
     preprocessorOptions: {
+      less: {
+        maxWorkers: true,
+      },
       scss: {
         additionalData: `$injectedColor: orange;`,
         importer: [
@@ -69,6 +72,7 @@ export default defineConfig({
             return url.endsWith('.wxss') ? { contents: '' } : null
           },
         ],
+        maxWorkers: true,
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,
@@ -80,6 +84,7 @@ export default defineConfig({
           $definedColor: new stylus.nodes.RGBA(51, 197, 255, 1),
           definedFunction: () => new stylus.nodes.RGBA(255, 0, 98, 1),
         },
+        maxWorkers: true,
       },
     },
   },
