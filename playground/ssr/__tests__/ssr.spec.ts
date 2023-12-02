@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
-import { editFile, page, withRetry } from '~utils'
+import { browserLogs, editFile, isServe, page, withRetry } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -28,4 +28,12 @@ test('should restart ssr', async () => {
       expect.arrayContaining([expect.stringMatching('error')]),
     )
   })
+})
+
+test.runIf(isServe)('html proxy is encoded', async () => {
+  await page.goto(
+    `${url}?%22%3E%3C/script%3E%3Cscript%3Econsole.log(%27html proxy is not encoded%27)%3C/script%3E`,
+  )
+
+  expect(browserLogs).not.toContain('html proxy is not encoded')
 })
