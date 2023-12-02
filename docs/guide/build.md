@@ -66,7 +66,7 @@ You should use `build.rollupOptions.output.manualChunks` function form when usin
 
 ## Load Error Handling
 
-Vite emits `vite:preloadError` event when it fails to load dynamic imports. If you call `event.preventDefault()`, the error will not be thrown.
+Vite emits `vite:preloadError` event when it fails to load dynamic imports. `event.payload` contains the original import error. If you call `event.preventDefault()`, the error will not be thrown.
 
 ```js
 window.addEventListener('vite:preloadError', (event) => {
