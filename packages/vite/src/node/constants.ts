@@ -111,6 +111,7 @@ export const KNOWN_ASSET_TYPES = [
 
   // media
   'mp4',
+  'mov',
   'webm',
   'ogg',
   'mp3',
