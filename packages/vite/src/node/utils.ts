@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { exec } from 'node:child_process'
+// import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { URL, URLSearchParams, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
@@ -629,12 +629,13 @@ export function copyDir(srcDir: string, destDir: string): void {
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
-export let safeRealpath = isWindows ? windowsSafeRealPath : fsp.realpath
+export const safeRealpath = isWindows ? realpathFallback : fsp.realpath
 
 async function realpathFallback(path: string) {
   return fs.realpathSync(path)
 }
 
+/*
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
@@ -692,6 +693,7 @@ async function optimizeSafeRealPath() {
     }
   })
 }
+*/
 
 export function ensureWatchedFile(
   watcher: FSWatcher,
