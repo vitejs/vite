@@ -627,7 +627,16 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
   if (!fs.existsSync(dir)) {
     return []
   }
-  const dirents = await fsp.readdir(dir, { withFileTypes: true })
+  let dirents: fs.Dirent[]
+  try {
+    dirents = await fsp.readdir(dir, { withFileTypes: true })
+  } catch (e) {
+    if (e.code === 'EACCES') {
+      // Ignore permission errors
+      return []
+    }
+    throw e
+  }
   const files = await Promise.all(
     dirents.map((dirent) => {
       const res = path.resolve(dir, dirent.name)
