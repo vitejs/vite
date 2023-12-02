@@ -98,10 +98,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
-        const encodedUrl = url.startsWith('\0')
-          ? '\0' + encodeURI(url.slice(1))
-          : encodeURI(url)
-        const result = htmlProxyMap.get(config)!.get(encodedUrl)?.[index]
+        const result = htmlProxyMap.get(config)!.get(url)?.[index]
         if (result) {
           return result
         } else {
