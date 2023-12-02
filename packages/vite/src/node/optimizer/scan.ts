@@ -300,9 +300,11 @@ function esbuildScanPlugin(
     '@vite/env',
   ]
 
+  const isUnlessEntry = (path: string) => !entries.includes(path)
+
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
-    external: !entries.includes(path),
+    external: isUnlessEntry(path),
   })
 
   const doTransformGlobImport = async (
@@ -549,25 +551,39 @@ function esbuildScanPlugin(
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
+      const setupExternalize = (
+        filter: RegExp,
+        doExternalize: (path: string) => boolean,
+      ) => {
+        build.onResolve({ filter }, ({ path }) => {
+          return {
+            path,
+            external: doExternalize(path),
+          }
+        })
+        // onResolve is not called for glob imports.
+        // we need to add that here as well until esbuild calls onResolve for glob imports.
+        // https://github.com/evanw/esbuild/issues/3317
+        build.onLoad({ filter, namespace: 'file' }, () => {
+          const externalOnLoadResult: OnLoadResult = {
+            loader: 'js',
+            contents: 'export default {}',
+          }
+          return externalOnLoadResult
+        })
+      }
+
       // css
-      build.onResolve({ filter: CSS_LANGS_RE }, externalUnlessEntry)
-
+      setupExternalize(CSS_LANGS_RE, isUnlessEntry)
       // json & wasm
-      build.onResolve({ filter: /\.(json|json5|wasm)$/ }, externalUnlessEntry)
-
+      setupExternalize(/\.(json|json5|wasm)$/, isUnlessEntry)
       // known asset types
-      build.onResolve(
-        {
-          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
-        },
-        externalUnlessEntry,
+      setupExternalize(
+        new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
+        isUnlessEntry,
       )
-
       // known vite query types: ?worker, ?raw
-      build.onResolve({ filter: SPECIAL_QUERY_RE }, ({ path }) => ({
-        path,
-        external: true,
-      }))
+      setupExternalize(SPECIAL_QUERY_RE, () => true)
 
       // catch all -------------------------------------------------------------
 

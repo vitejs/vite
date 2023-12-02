@@ -12,6 +12,7 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ExecaChildProcess } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
@@ -230,6 +231,25 @@ export async function withRetry(
     await timeout(50)
   }
   await func()
+}
+
+export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
+  type A = Assertion<T>
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        return async (...args) => {
+          await withRetry(
+            async () => expect(await getActual())[key](...args),
+            true,
+          )
+        }
+      },
+    },
+  ) as {
+    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
+  }
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
