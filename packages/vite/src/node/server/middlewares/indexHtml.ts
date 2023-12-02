@@ -170,7 +170,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
-  htmlPath = decodeURI(htmlPath)
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -434,6 +433,11 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
   if (!server.config.server.preTransformRequests) return
 
   // transform all url as non-ssr as html includes client-side assets only
-  url = unwrapId(stripBase(url, base))
+  try {
+    url = unwrapId(stripBase(decodeURI(url), base))
+  } catch {
+    // ignore
+    return
+  }
   server.warmupRequest(url)
 }
