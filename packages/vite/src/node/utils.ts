@@ -634,7 +634,7 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
       return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
     }),
   )
-  return Array.prototype.concat(...files)
+  return files.flat(1)
 }
 
 // `fs.realpathSync.native` resolves differently in Windows network drive,
