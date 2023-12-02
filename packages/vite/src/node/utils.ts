@@ -652,7 +652,7 @@ let firstSafeRealPathRun = false
 
 async function windowsSafeRealPath(path: string): Promise<string> {
   if (!firstSafeRealPathRun) {
-    await optimizeSafeRealPath()
+    optimizeSafeRealPath()
     firstSafeRealPathRun = true
   }
   return fs.realpathSync(path)
