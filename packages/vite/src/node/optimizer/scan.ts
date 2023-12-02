@@ -485,6 +485,7 @@ function esbuildScanPlugin(
         return {
           loader: 'js',
           contents: js,
+          resolveDir: normalizePath(path.dirname(p)),
         }
       }
 
