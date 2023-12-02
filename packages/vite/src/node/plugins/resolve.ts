@@ -573,7 +573,7 @@ async function tryCleanFsResolve(
   targetWeb = true,
   skipPackageJson = false,
 ): Promise<string | undefined> {
-  const { tryPrefix, extensions, preserveSymlinks } = options
+  const { tryPrefix, extensions } = options
 
   const fileStat = tryStatSync(file)
 
@@ -592,44 +592,24 @@ async function tryCleanFsResolve(
         // try resolve .js, .mjs, .cjs or .jsx import to typescript file
         const fileExt = path.extname(file)
         const fileName = file.slice(0, -fileExt.length)
-        if (
-          (res = await tryResolveRealFile(
-            fileName + fileExt.replace('js', 'ts'),
-            preserveSymlinks,
-          ))
-        )
-          return res
+        if ((res = tryResolveFile(fileName + fileExt.replace('js', 'ts'))))
+          return getRealPath(res, options.preserveSymlinks)
         // for .js, also try .tsx
-        if (
-          fileExt === '.js' &&
-          (res = await tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
-        )
-          return res
+        if (fileExt === '.js' && (res = tryResolveFile(fileName + '.tsx')))
+          return getRealPath(res, options.preserveSymlinks)
       }
 
-      if (
-        (res = await tryResolveRealFileWithExtensions(
-          file,
-          extensions,
-          preserveSymlinks,
-        ))
-      )
-        return res
+      if ((res = tryResolveFileWithExtensions(file, extensions)))
+        return getRealPath(res, options.preserveSymlinks)
 
       if (tryPrefix) {
         const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
 
-        if ((res = await tryResolveRealFile(prefixed, preserveSymlinks)))
-          return res
+        if ((res = tryResolveFile(prefixed)))
+          return getRealPath(res, options.preserveSymlinks)
 
-        if (
-          (res = await tryResolveRealFileWithExtensions(
-            prefixed,
-            extensions,
-            preserveSymlinks,
-          ))
-        )
-          return res
+        if ((res = tryResolveFileWithExtensions(prefixed, extensions)))
+          return getRealPath(res, options.preserveSymlinks)
       }
     }
   }
@@ -656,43 +636,32 @@ async function tryCleanFsResolve(
       }
     }
 
-    if (
-      (res = await tryResolveRealFileWithExtensions(
-        `${dirPath}/index`,
-        extensions,
-        preserveSymlinks,
-      ))
-    )
-      return res
+    if ((res = tryResolveFileWithExtensions(`${dirPath}/index`, extensions)))
+      return getRealPath(res, options.preserveSymlinks)
 
     if (tryPrefix) {
       if (
-        (res = await tryResolveRealFileWithExtensions(
+        (res = tryResolveFileWithExtensions(
           `${dirPath}/${options.tryPrefix}index`,
           extensions,
-          preserveSymlinks,
         ))
       )
-        return res
+        return getRealPath(res, options.preserveSymlinks)
     }
   }
 }
 
-async function tryResolveRealFile(
-  file: string,
-  preserveSymlinks: boolean,
-): Promise<string | undefined> {
+function tryResolveFile(file: string): string | undefined {
   const stat = tryStatSync(file)
-  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
+  if (stat?.isFile()) return file
 }
 
-async function tryResolveRealFileWithExtensions(
+function tryResolveFileWithExtensions(
   filePath: string,
   extensions: string[],
-  preserveSymlinks: boolean,
-): Promise<string | undefined> {
+): string | undefined {
   for (const ext of extensions) {
-    const res = await tryResolveRealFile(filePath + ext, preserveSymlinks)
+    const res = tryResolveFile(filePath + ext)
     if (res) return res
   }
 }
