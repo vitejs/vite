@@ -39,30 +39,36 @@ export async function injectSourcesContent(
 
   const missingSources: string[] = []
   const sourcesContent = map.sourcesContent || []
-  await Promise.all(
-    map.sources
-      .filter(
-        (sourcePath, index) =>
-          !sourcesContent[index] &&
-          sourcePath &&
-          !virtualSourceRE.test(sourcePath),
+  const sourcesContentPromises: Promise<void>[] = []
+  for (let index = 0; index < map.sources.length; index++) {
+    const sourcePath = map.sources[index]
+    if (
+      !sourcesContent[index] &&
+      sourcePath &&
+      !virtualSourceRE.test(sourcePath)
+    ) {
+      sourcesContentPromises.push(
+        (async () => {
+          // inject content from source file when sourcesContent is null
+          sourceRootPromise ??= computeSourceRoute(map, file)
+          const sourceRoot = await sourceRootPromise
+          let resolvedSourcePath = decodeURI(sourcePath)
+          if (sourceRoot) {
+            resolvedSourcePath = path.resolve(sourceRoot, resolvedSourcePath)
+          }
+
+          sourcesContent[index] = await fsp
+            .readFile(resolvedSourcePath, 'utf-8')
+            .catch(() => {
+              missingSources.push(resolvedSourcePath)
+              return null
+            })
+        })(),
       )
-      .map(async (sourcePath, index) => {
-        // inject content from source file when sourcesContent is null
-        sourceRootPromise ??= computeSourceRoute(map, file)
-        const sourceRoot = await sourceRootPromise
-        sourcePath = decodeURI(sourcePath)
-        if (sourceRoot) {
-          sourcePath = path.resolve(sourceRoot, sourcePath)
-        }
-        sourcesContent[index] = await fsp
-          .readFile(sourcePath, 'utf-8')
-          .catch(() => {
-            missingSources.push(sourcePath)
-            return null
-          })
-      }),
-  )
+    }
+  }
+
+  await Promise.all(sourcesContentPromises)
 
   map.sourcesContent = sourcesContent
 
