@@ -235,7 +235,7 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
+  return fsPath[0] === '/' || VOLUME_RE.test(fsPath) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {

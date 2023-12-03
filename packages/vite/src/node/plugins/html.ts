@@ -48,7 +48,8 @@ const htmlProxyRE =
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-  /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/g
+  // eslint-disable-next-line regexp/no-unused-capturing-group -- https://github.com/ota-meshi/eslint-plugin-regexp/issues/675
+  /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
 
 const importMapRE =
@@ -926,10 +927,9 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const { 1: url, index } = match
-    const startUrl = cleanCode.indexOf(url, index)
-    const start = startUrl + 1
-    const end = start + url.length - 2
+    const [, [urlStart, urlEnd]] = match.indices!
+    const start = urlStart + 1
+    const end = urlEnd - 1
     scriptUrls.push({
       start: start + startOffset,
       end: end + startOffset,
@@ -1004,11 +1004,11 @@ export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   return (html, ctx) => {
-    const importMapIndex = html.match(importMapRE)?.index
-    if (importMapIndex === undefined) return
+    const importMapIndex = html.search(importMapRE)
+    if (importMapIndex < 0) return
 
-    const importMapAppendIndex = html.match(importMapAppendRE)?.index
-    if (importMapAppendIndex === undefined) return
+    const importMapAppendIndex = html.search(importMapAppendRE)
+    if (importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(

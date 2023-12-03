@@ -35,7 +35,7 @@ export async function setup(): Promise<void> {
           return !hasWindowsUnicodeFsBug
         }
         file = file.replace(/\\/g, '/')
-        return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
+        return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
       },
     })
     .catch(async (error) => {

@@ -379,7 +379,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         )
       }
-      if (code.match(workerAssetUrlRE)) {
+      workerAssetUrlRE.lastIndex = 0
+      if (workerAssetUrlRE.test(code)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
           config.isWorker,

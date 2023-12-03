@@ -45,7 +45,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
+const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -63,13 +63,9 @@ function indexOfMatchInSlice(
   reg: RegExp,
   pos: number = 0,
 ): number {
-  if (pos !== 0) {
-    str = str.slice(pos)
-  }
-
-  const matcher = str.match(reg)
-
-  return matcher?.index !== undefined ? matcher.index + pos : -1
+  reg.lastIndex = pos
+  const result = reg.exec(str)
+  return result?.index ?? -1
 }
 
 /**
@@ -351,7 +347,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== specifier) {
             if (
               depsOptimizer.isOptimizedDepFile(resolvedId) &&
-              !resolvedId.match(optimizedDepChunkRE)
+              !optimizedDepChunkRE.test(resolvedId)
             ) {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
@@ -368,7 +364,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // Non-entry dynamic imports from dependencies will reach here as there isn't
                 // optimize info for them, but they don't need es interop. If the request isn't
                 // a dynamic import, then it is an internal Vite error
-                if (!file.match(optimizedDepDynamicRE)) {
+                if (!optimizedDepDynamicRE.test(file)) {
                   config.logger.error(
                     colors.red(
                       `Vite Error, ${url} optimized info should be defined`,

@@ -1288,8 +1288,6 @@ export async function preprocessCSS(
   return await compileCSS(filename, code, config)
 }
 
-const postcssReturnsVirtualFilesRE = /^<.+>$/
-
 export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string,
@@ -1299,7 +1297,8 @@ export async function formatPostcssSourceMap(
   const sources = rawMap.sources.map((source) => {
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
-    if (postcssReturnsVirtualFilesRE.test(cleanSource)) {
+    // postcss virtual files
+    if (cleanSource[0] === '<' && cleanSource[cleanSource.length - 1] === '>') {
       return `\0${cleanSource}`
     }
 
@@ -1373,7 +1372,7 @@ async function resolvePostcssConfig(
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     result = postcssrc({}, searchPath).catch((e) => {
-      if (!/No PostCSS Config found/.test(e.message)) {
+      if (!e.message.includes('No PostCSS Config found')) {
         if (e instanceof Error) {
           const { name, message, stack } = e
           e.name = 'Failed to load PostCSS config'
@@ -1654,6 +1653,11 @@ function resolveMinifyCssEsbuildOptions(
   }
 }
 
+const atImportRE =
+  /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+const atCharsetRE =
+  /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+
 export async function hoistAtRules(css: string): Promise<string> {
   const s = new MagicString(css)
   const cleanCss = emptyCssComments(css)
@@ -1663,8 +1667,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // CSS @import can only appear at top of the file. We need to hoist all @import
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
-  const atImportRE =
-    /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+  atImportRE.lastIndex = 0
   while ((match = atImportRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
     // Use `appendLeft` instead of `prepend` to preserve original @import order
@@ -1673,8 +1676,7 @@ export async function hoistAtRules(css: string): Promise<string> {
 
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
-  const atCharsetRE =
-    /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+  atCharsetRE.lastIndex = 0
   let foundCharset = false
   while ((match = atCharsetRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
@@ -2406,8 +2408,8 @@ export const convertTargets = (
 
   for (const entry of entriesWithoutES) {
     if (entry === 'esnext') continue
-    const index = entry.match(versionRE)?.index
-    if (index) {
+    const index = entry.search(versionRE)
+    if (index >= 0) {
       const browser = map[entry.slice(0, index)]
       if (browser === false) continue // No mapping available
       if (browser) {

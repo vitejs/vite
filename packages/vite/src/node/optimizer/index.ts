@@ -642,7 +642,7 @@ export function runOptimizeDeps(
         }
 
         for (const o of Object.keys(meta.outputs)) {
-          if (!o.match(jsMapExtensionRE)) {
+          if (!jsMapExtensionRE.test(o)) {
             const id = path
               .relative(processingCacheDirOutputPath, o)
               .replace(jsExtensionRE, '')
