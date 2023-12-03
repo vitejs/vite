@@ -53,15 +53,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
+          // eslint-disable-next-line regexp/no-unused-capturing-group -- https://github.com/ota-meshi/eslint-plugin-regexp/issues/675
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-          const { 0: exp, 1: emptyUrl, index } = match
-
-          const urlStart = cleanString.indexOf(emptyUrl, index)
-          const urlEnd = urlStart + emptyUrl.length
+          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
@@ -93,8 +91,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 query: injectQuery(queryString, 'url'),
               }
               s.update(
-                index,
-                index + exp.length,
+                startIndex,
+                endIndex,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
                 )}, ${JSON.stringify(
@@ -141,15 +139,15 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             }
           }
           if (!builtUrl) {
-            const rawExp = code.slice(index, index + exp.length)
+            const rawExp = code.slice(startIndex, endIndex)
             config.logger.warnOnce(
               `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
             )
             builtUrl = url
           }
           s.update(
-            index,
-            index + exp.length,
+            startIndex,
+            endIndex,
             `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }
