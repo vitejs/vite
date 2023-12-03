@@ -631,11 +631,15 @@ export function copyDir(srcDir: string, destDir: string): void {
 // https://github.com/nodejs/node/issues/37737
 export let safeRealpath = isWindows ? windowsSafeRealPath : fsp.realpath
 
+async function realpathFallback(path: string) {
+  return fs.realpathSync(path)
+}
+
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
-function windowsMappedRealpath(path: string) {
-  const realPath = fs.realpathSync.native(path)
+async function windowsMappedRealpath(path: string) {
+  const realPath = await fsp.realpath(path)
   if (realPath.startsWith('\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
       if (realPath.startsWith(network)) return realPath.replace(network, volume)
@@ -646,7 +650,7 @@ function windowsMappedRealpath(path: string) {
 const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
 let firstSafeRealPathRun = false
 
-function windowsSafeRealPath(path: string): string {
+async function windowsSafeRealPath(path: string): Promise<string> {
   if (!firstSafeRealPathRun) {
     optimizeSafeRealPath()
     firstSafeRealPathRun = true
@@ -658,7 +662,7 @@ async function optimizeSafeRealPath() {
   // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
   const nodeVersion = process.versions.node.split('.').map(Number)
   if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
-    safeRealpath = fs.realpathSync
+    safeRealpath = realpathFallback
     return
   }
   // Check the availability `fs.realpathSync.native`
@@ -668,7 +672,7 @@ async function optimizeSafeRealPath() {
     await fsp.realpath(path.resolve('./'))
   } catch (error) {
     if (error.message.includes('EISDIR: illegal operation on a directory')) {
-      safeRealpath = fs.realpathSync
+      safeRealpath = realpathFallback
       return
     }
   }
@@ -682,7 +686,7 @@ async function optimizeSafeRealPath() {
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
     if (windowsNetworkMap.size === 0) {
-      safeRealpath = fs.realpathSync.native
+      safeRealpath = fsp.realpath
     } else {
       safeRealpath = windowsMappedRealpath
     }
