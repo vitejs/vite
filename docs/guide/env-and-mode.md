@@ -46,9 +46,17 @@ DB_PASSWORD=foobar
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
 
 ```js
-console.log(import.meta.env.VITE_SOME_KEY) // 123
+console.log(import.meta.env.VITE_SOME_KEY) // "123"
 console.log(import.meta.env.DB_PASSWORD) // undefined
 ```
+
+:::tip Env parsing
+
+As seen in example above `VITE_SOME_KEY` is a number.  
+But when parsed, Env properties are strings even if they are numbers or booleans in the Env file.  
+User has to convert them to desired types in the code.
+A recommandation is to wrap all the Env properties in quotes to make that explicit.
+:::
 
 Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
 
@@ -74,7 +82,7 @@ If you want to customize the env variables prefix, see the [envPrefix](/config/s
 
 By default, Vite provides type definitions for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables that are prefixed with `VITE_`.
 
-To achieve this, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
 /// <reference types="vite/client" />
@@ -96,6 +104,11 @@ If your code relies on types from browser environments such as [DOM](https://git
   "lib": ["WebWorker"]
 }
 ```
+
+:::warning Imports will break augumentation in `vite-env.d.ts`
+
+If `ImportMetaEnv` augumentation does not work, make sure you do not have any `import` statements in `vite-env.d.ts`
+:::
 
 ## HTML Env Replacement
 
