@@ -9,6 +9,7 @@ import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
+import { promisify } from 'node:util'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -630,6 +631,9 @@ export function copyDir(srcDir: string, destDir: string): void {
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
 export let safeRealpath = isWindows ? windowsSafeRealPath : fsp.realpath
+// use this instead of fsp.realpath for Windows
+// it seems there's a bug in Node: https://github.com/nodejs/node/issues/51031
+const realpathAsync = promisify(fs.realpath.native)
 
 async function realpathFallback(path: string) {
   return fs.realpathSync(path)
@@ -639,7 +643,7 @@ async function realpathFallback(path: string) {
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
 async function windowsMappedRealpath(path: string) {
-  const realPath = await fsp.realpath(path)
+  const realPath = await realpathAsync(path)
   if (realPath.startsWith('\\\\')) {
     for (const [network, volume] of windowsNetworkMap) {
       if (realPath.startsWith(network)) return realPath.replace(network, volume)
@@ -669,7 +673,7 @@ async function optimizeSafeRealPath() {
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
   try {
-    await fsp.realpath(path.resolve('./'))
+    await realpathAsync(path.resolve('./'))
   } catch (error) {
     if (error.message.includes('EISDIR: illegal operation on a directory')) {
       safeRealpath = realpathFallback
@@ -686,7 +690,7 @@ async function optimizeSafeRealPath() {
       if (m) windowsNetworkMap.set(m[3], m[2])
     }
     if (windowsNetworkMap.size === 0) {
-      safeRealpath = fsp.realpath
+      safeRealpath = realpathAsync
     } else {
       safeRealpath = windowsMappedRealpath
     }
