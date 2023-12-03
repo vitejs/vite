@@ -170,7 +170,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
-  htmlPath = decodeURI(htmlPath)
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -192,9 +191,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
-  const proxyCacheUrl = cleanUrl(proxyModulePath).replace(
-    normalizePath(config.root),
-    '',
+  // The key to the proxyHtml cache is decoded, as it will be compared
+  // against decoded URLs by the HTML plugins.
+  const proxyCacheUrl = decodeURI(
+    cleanUrl(proxyModulePath).replace(normalizePath(config.root), ''),
   )
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
@@ -434,6 +434,11 @@ function preTransformRequest(server: ViteDevServer, url: string, base: string) {
   if (!server.config.server.preTransformRequests) return
 
   // transform all url as non-ssr as html includes client-side assets only
-  url = unwrapId(stripBase(url, base))
+  try {
+    url = unwrapId(stripBase(decodeURI(url), base))
+  } catch {
+    // ignore
+    return
+  }
   server.warmupRequest(url)
 }
