@@ -218,10 +218,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
-      const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
         return null
       }
 
@@ -258,7 +257,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+          `${timeFrom(start)} ${colors.dim(
+            `[no imports] ${prettifyUrl(importer, root)}`,
+          )}`,
         )
         return source
       }
@@ -305,7 +306,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         const resolved = await this.resolve(url, importerFile)
 
-        if (!resolved) {
+        if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
             return [url, url]
@@ -335,7 +336,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          fs.existsSync(cleanUrl(resolved.id))
+          (path.isAbsolute(cleanUrl(resolved.id)) &&
+            fs.existsSync(cleanUrl(resolved.id)))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
@@ -364,7 +366,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (
             (isRelative || isSelfImport) &&
             !hasImportInQueryParamsRE.test(url) &&
-            !url.match(DEP_VERSION_RE)
+            !DEP_VERSION_RE.test(url)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
@@ -533,7 +535,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               let rewriteDone = false
               if (
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
-                !resolvedId.match(optimizedDepChunkRE)
+                !optimizedDepChunkRE.test(resolvedId)
               ) {
                 // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
                 // internal optimized chunks don't need es interop and are excluded
@@ -553,7 +555,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // Non-entry dynamic imports from dependencies will reach here as there isn't
                   // optimize info for them, but they don't need es interop. If the request isn't
                   // a dynamic import, then it is an internal Vite error
-                  if (!file.match(optimizedDepDynamicRE)) {
+                  if (!optimizedDepDynamicRE.test(file)) {
                     config.logger.error(
                       colors.red(
                         `Vite Error, ${url} optimized info should be defined`,
@@ -640,7 +642,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   `\n` +
                     colors.cyan(importerModule.file) +
                     `\n` +
-                    colors.reset(generateCodeFrame(source, start)) +
+                    colors.reset(generateCodeFrame(source, start, end)) +
                     colors.yellow(
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
                         `See ${colors.blue(
@@ -697,11 +699,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             isSelfAccepting
               ? `[self-accepts]`
               : isPartiallySelfAccepting
-              ? `[accepts-exports]`
-              : acceptedUrls.size
-              ? `[accepts-deps]`
-              : `[detected api usage]`
-          } ${prettyImporter}`,
+                ? `[accepts-exports]`
+                : acceptedUrls.size
+                  ? `[accepts-deps]`
+                  : `[detected api usage]`
+          } ${prettifyUrl(importer, root)}`,
         )
         // inject hot context
         str().prepend(
@@ -783,7 +785,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       debug?.(
         `${timeFrom(start)} ${colors.dim(
-          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+          `[${importedUrls.size} imports rewritten] ${prettifyUrl(
+            importer,
+            root,
+          )}`,
         )}`,
       )
 
@@ -819,14 +824,14 @@ export function createParseErrorInfo(
   const msg = isVue
     ? `Install @vitejs/plugin-vue to handle .vue files.`
     : maybeJSX
-    ? isJsx
-      ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
-      : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
-    : `You may need to install appropriate plugins to handle the ${path.extname(
-        importer,
-      )} file format, or if it's an asset, add "**/*${path.extname(
-        importer,
-      )}" to \`assetsInclude\` in your configuration.`
+      ? isJsx
+        ? `If you use tsconfig.json, make sure to not set jsx to preserve.`
+        : `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
+      : `You may need to install appropriate plugins to handle the ${path.extname(
+          importer,
+        )} file format, or if it's an asset, add "**/*${path.extname(
+          importer,
+        )}" to \`assetsInclude\` in your configuration.`
 
   return {
     message:

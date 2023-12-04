@@ -95,8 +95,8 @@ function cleanOptions<Options extends GlobalCLIOptions>(
       sourcemap === 'true'
         ? true
         : sourcemap === 'false'
-        ? false
-        : ret.sourcemap
+          ? false
+          : ret.sourcemap
   }
 
   return ret

@@ -1,3 +1,14 @@
+## 5.0.0 (2023-11-16)
+
+* feat(create-vite): update templates for vite 5 (#15007) ([e208697](https://github.com/vitejs/vite/commit/e208697)), closes [#15007](https://github.com/vitejs/vite/issues/15007)
+* fix(create-vite): remove repeated styles in vue-template (#14766) ([0fed210](https://github.com/vitejs/vite/commit/0fed210)), closes [#14766](https://github.com/vitejs/vite/issues/14766)
+* fix(deps): update all non-major dependencies (#14729) ([d5d96e7](https://github.com/vitejs/vite/commit/d5d96e7)), closes [#14729](https://github.com/vitejs/vite/issues/14729)
+* fix(deps): update all non-major dependencies (#14883) ([e5094e5](https://github.com/vitejs/vite/commit/e5094e5)), closes [#14883](https://github.com/vitejs/vite/issues/14883)
+* fix(deps): update all non-major dependencies (#14961) ([0bb3995](https://github.com/vitejs/vite/commit/0bb3995)), closes [#14961](https://github.com/vitejs/vite/issues/14961)
+* chore(deps): update dependency eslint-plugin-react-refresh to ^0.4.4 (#14795) ([7881457](https://github.com/vitejs/vite/commit/7881457)), closes [#14795](https://github.com/vitejs/vite/issues/14795)
+
+
+
 ## 5.0.0-beta.1 (2023-10-19)
 
 * chore(create-vite): update dependencies (#14698) ([bd82c30](https://github.com/vitejs/vite/commit/bd82c30)), closes [#14698](https://github.com/vitejs/vite/issues/14698)

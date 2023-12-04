@@ -45,7 +45,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`)
+const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -63,13 +63,9 @@ function indexOfMatchInSlice(
   reg: RegExp,
   pos: number = 0,
 ): number {
-  if (pos !== 0) {
-    str = str.slice(pos)
-  }
-
-  const matcher = str.match(reg)
-
-  return matcher?.index !== undefined ? matcher.index + pos : -1
+  reg.lastIndex = pos
+  const result = reg.exec(str)
+  return result?.index ?? -1
 }
 
 /**
@@ -92,57 +88,60 @@ function preload(
   deps?: string[],
   importerUrl?: string,
 ) {
+  let promise: Promise<unknown> = Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
-  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
-    return baseModule()
+  if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
+    const links = document.getElementsByTagName('link')
+
+    promise = Promise.all(
+      deps.map((dep) => {
+        // @ts-expect-error assetsURL is declared before preload.toString()
+        dep = assetsURL(dep, importerUrl)
+        if (dep in seen) return
+        seen[dep] = true
+        const isCss = dep.endsWith('.css')
+        const cssSelector = isCss ? '[rel="stylesheet"]' : ''
+        const isBaseRelative = !!importerUrl
+
+        // check if the file is already preloaded by SSR markup
+        if (isBaseRelative) {
+          // When isBaseRelative is true then we have `importerUrl` and `dep` is
+          // already converted to an absolute URL by the `assetsURL` function
+          for (let i = links.length - 1; i >= 0; i--) {
+            const link = links[i]
+            // The `links[i].href` is an absolute URL thanks to browser doing the work
+            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+              return
+            }
+          }
+        } else if (
+          document.querySelector(`link[href="${dep}"]${cssSelector}`)
+        ) {
+          return
+        }
+
+        const link = document.createElement('link')
+        link.rel = isCss ? 'stylesheet' : scriptRel
+        if (!isCss) {
+          link.as = 'script'
+          link.crossOrigin = ''
+        }
+        link.href = dep
+        document.head.appendChild(link)
+        if (isCss) {
+          return new Promise((res, rej) => {
+            link.addEventListener('load', res)
+            link.addEventListener('error', () =>
+              rej(new Error(`Unable to preload CSS for ${dep}`)),
+            )
+          })
+        }
+      }),
+    )
   }
 
-  const links = document.getElementsByTagName('link')
-
-  return Promise.all(
-    deps.map((dep) => {
-      // @ts-expect-error assetsURL is declared before preload.toString()
-      dep = assetsURL(dep, importerUrl)
-      if (dep in seen) return
-      seen[dep] = true
-      const isCss = dep.endsWith('.css')
-      const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      const isBaseRelative = !!importerUrl
-
-      // check if the file is already preloaded by SSR markup
-      if (isBaseRelative) {
-        // When isBaseRelative is true then we have `importerUrl` and `dep` is
-        // already converted to an absolute URL by the `assetsURL` function
-        for (let i = links.length - 1; i >= 0; i--) {
-          const link = links[i]
-          // The `links[i].href` is an absolute URL thanks to browser doing the work
-          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-            return
-          }
-        }
-      } else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
-        return
-      }
-
-      const link = document.createElement('link')
-      link.rel = isCss ? 'stylesheet' : scriptRel
-      if (!isCss) {
-        link.as = 'script'
-        link.crossOrigin = ''
-      }
-      link.href = dep
-      document.head.appendChild(link)
-      if (isCss) {
-        return new Promise((res, rej) => {
-          link.addEventListener('load', res)
-          link.addEventListener('error', () =>
-            rej(new Error(`Unable to preload CSS for ${dep}`)),
-          )
-        })
-      }
-    }),
-  )
+  return promise
     .then(() => baseModule())
     .catch((err) => {
       const e = new Event('vite:preloadError', { cancelable: true })
@@ -192,13 +191,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
       `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
-    ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-      // The importerUrl is passed as third parameter to __vitePreload in this case
-      `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-    : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appended inside __vitePreload too.
-      `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
+        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+        // The importerUrl is passed as third parameter to __vitePreload in this case
+        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+        // is appended inside __vitePreload too.
+        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -348,7 +347,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== specifier) {
             if (
               depsOptimizer.isOptimizedDepFile(resolvedId) &&
-              !resolvedId.match(optimizedDepChunkRE)
+              !optimizedDepChunkRE.test(resolvedId)
             ) {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
@@ -365,7 +364,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // Non-entry dynamic imports from dependencies will reach here as there isn't
                 // optimize info for them, but they don't need es interop. If the request isn't
                 // a dynamic import, then it is an internal Vite error
-                if (!file.match(optimizedDepDynamicRE)) {
+                if (!optimizedDepDynamicRE.test(file)) {
                   config.logger.error(
                     colors.red(
                       `Vite Error, ${url} optimized info should be defined`,

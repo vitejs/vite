@@ -5,6 +5,7 @@ import {
   asyncFlatten,
   bareImportRE,
   flattenId,
+  generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
@@ -176,6 +177,74 @@ describe('posToNumber', () => {
   })
 })
 
+describe('generateCodeFrames', () => {
+  const source = `
+import foo from './foo'
+foo()
+`.trim()
+  const sourceCrLf = source.replace(/\n/, '\r\n')
+  const longSource = `
+import foo from './foo'
+
+foo()
+// 1
+// 2
+// 3
+`.trim()
+
+  const expectSnapshot = (value: string) => {
+    try {
+      // add new line to make snapshot easier to read
+      expect('\n' + value + '\n').toMatchSnapshot()
+    } catch (e) {
+      // don't include this function in stacktrace
+      Error.captureStackTrace(e, expectSnapshot)
+      throw e
+    }
+  }
+
+  test('start with number', () => {
+    expectSnapshot(generateCodeFrame(source, -1))
+    expectSnapshot(generateCodeFrame(source, 0))
+    expectSnapshot(generateCodeFrame(source, 1))
+    expectSnapshot(generateCodeFrame(source, 24))
+  })
+
+  test('start with postion', () => {
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 0 }))
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 1 }))
+    expectSnapshot(generateCodeFrame(source, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF', () => {
+    expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('end', () => {
+    expectSnapshot(generateCodeFrame(source, 0, 0))
+    expectSnapshot(generateCodeFrame(source, 0, 23))
+    expectSnapshot(generateCodeFrame(source, 0, 29))
+    expectSnapshot(generateCodeFrame(source, 0, source.length))
+    expectSnapshot(generateCodeFrame(source, 0, source.length + 1))
+    expectSnapshot(generateCodeFrame(source, 0, source.length + 100))
+  })
+
+  test('range', () => {
+    expectSnapshot(generateCodeFrame(longSource, { line: 3, column: 0 }))
+    expectSnapshot(
+      generateCodeFrame(
+        longSource,
+        { line: 3, column: 0 },
+        { line: 4, column: 0 },
+      ),
+    )
+  })
+
+  test('invalid start > end', () => {
+    expectSnapshot(generateCodeFrame(source, 2, 0))
+  })
+})
+
 describe('getHash', () => {
   test('8-digit hex', () => {
     const hash = getHash(Buffer.alloc(0))
@@ -242,11 +311,14 @@ describe('isFileReadable', () => {
       fs.chmodSync(testFile, '400')
       expect(isFileReadable(testFile)).toBe(true)
     })
-    test('file without read permission', async () => {
-      fs.chmodSync(testFile, '044')
-      expect(isFileReadable(testFile)).toBe(false)
-      fs.chmodSync(testFile, '644')
-    })
+    test.runIf(process.getuid && process.getuid() !== 0)(
+      'file without read permission',
+      async () => {
+        fs.chmodSync(testFile, '044')
+        expect(isFileReadable(testFile)).toBe(false)
+        fs.chmodSync(testFile, '644')
+      },
+    )
   }
 })
 

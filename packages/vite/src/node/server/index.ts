@@ -1,6 +1,7 @@
 import path from 'node:path'
 import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
+import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
@@ -27,6 +28,7 @@ import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   isInNodeModules,
+  isObject,
   isParentDirectory,
   mergeConfig,
   normalizePath,
@@ -111,7 +113,16 @@ export interface ServerOptions extends CommonServerOptions {
    * Create Vite dev server to be used as a middleware in an existing server
    * @default false
    */
-  middlewareMode?: boolean
+  middlewareMode?:
+    | boolean
+    | {
+        /**
+         * Parent server instance to attach to
+         *
+         * This is needed to proxy WebSocket connections to the parent server.
+         */
+        server: http.Server
+      }
   /**
    * Options for files served via '/\@fs/'.
    */
@@ -497,7 +508,9 @@ export async function _createServer(
         // preTransformRequests needs to be enabled for this optimization.
         if (server.config.server.preTransformRequests) {
           setTimeout(() => {
-            httpGet(
+            const getMethod = path.startsWith('https:') ? httpsGet : httpGet
+
+            getMethod(
               path,
               {
                 headers: {
@@ -691,7 +704,11 @@ export async function _createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(httpServer, proxy, config))
+    const middlewareServer =
+      (isObject(serverConfig.middlewareMode)
+        ? serverConfig.middlewareMode.server
+        : null) || httpServer
+    middlewares.use(proxyMiddleware(middlewareServer, proxy, config))
   }
 
   // base
@@ -925,26 +942,40 @@ async function restartServer(server: ViteDevServer) {
     })
   }
 
-  let newServer = null
-  try {
-    // delay ws server listen
-    newServer = await _createServer(inlineConfig, { ws: false })
-  } catch (err: any) {
-    server.config.logger.error(err.message, {
-      timestamp: true,
-    })
-    server.config.logger.error('server restart failed', { timestamp: true })
-    return
+  // Reinit the server by creating a new instance using the same inlineConfig
+  // This will triger a reload of the config file and re-create the plugins and
+  // middlewares. We then assign all properties of the new server to the existing
+  // server instance and set the user instance to be used in the new server.
+  // This allows us to keep the same server instance for the user.
+  {
+    let newServer = null
+    try {
+      // delay ws server listen
+      newServer = await _createServer(inlineConfig, { ws: false })
+    } catch (err: any) {
+      server.config.logger.error(err.message, {
+        timestamp: true,
+      })
+      server.config.logger.error('server restart failed', { timestamp: true })
+      return
+    }
+
+    await server.close()
+
+    // Assign new server props to existing server instance
+    const middlewares = server.middlewares
+    newServer._configServerPort = server._configServerPort
+    newServer._currentServerPort = server._currentServerPort
+    Object.assign(server, newServer)
+
+    // Keep the same connect instance so app.use(vite.middlewares) works
+    // after a restart in middlewareMode (.route is always '/')
+    middlewares.stack = newServer.middlewares.stack
+    server.middlewares = middlewares
+
+    // Rebind internal server variable so functions reference the user server
+    newServer._setInternalServer(server)
   }
-
-  await server.close()
-
-  // Assign new server props to existing server instance
-  newServer._configServerPort = server._configServerPort
-  newServer._currentServerPort = server._currentServerPort
-  Object.assign(server, newServer)
-  // Rebind internal server variable so functions reference the user server
-  newServer._setInternalServer(server)
 
   const {
     logger,
@@ -959,7 +990,7 @@ async function restartServer(server: ViteDevServer) {
 
   if (shortcutsOptions) {
     shortcutsOptions.print = false
-    bindCLIShortcuts(newServer, shortcutsOptions)
+    bindCLIShortcuts(server, shortcutsOptions)
   }
 }
 

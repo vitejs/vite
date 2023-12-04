@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
+import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
   browserLogs,
@@ -22,7 +23,7 @@ test('should render', async () => {
 if (!isBuild) {
   test('should connect', async () => {
     expect(browserLogs.length).toBe(3)
-    expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
+    expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
   })
 
@@ -205,21 +206,24 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
   })
 
-  test('full-reload encodeURI path', async () => {
-    await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-    )
-    const el = await page.$('#app')
-    expect(await el.textContent()).toBe('title')
-    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-      code.replace('title', 'title2'),
-    )
-    await page.waitForEvent('load')
-    await untilUpdated(
-      async () => (await page.$('#app')).textContent(),
-      'title2',
-    )
-  })
+  test.skipIf(hasWindowsUnicodeFsBug)(
+    'full-reload encodeURI path',
+    async () => {
+      await page.goto(
+        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+      )
+      const el = await page.$('#app')
+      expect(await el.textContent()).toBe('title')
+      editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+        code.replace('title', 'title2'),
+      )
+      await page.waitForEvent('load')
+      await untilUpdated(
+        async () => (await page.$('#app')).textContent(),
+        'title2',
+      )
+    },
+  )
 
   test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
