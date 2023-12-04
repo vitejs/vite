@@ -16,9 +16,6 @@ patchedDependencies:
   dotenv-expand@10.0.0:
     hash: weuqf2vlv5b5g6cikeo4slurbm
     path: patches/dotenv-expand@10.0.0.patch
-  postcss-load-config@5.0.0:
-    hash: rda3ea6fdeevgwsmvju6v34rua
-    path: patches/postcss-load-config@5.0.0.patch
   sirv@2.0.3:
     hash: z45f224eewh2pgpijxcc3aboqm
     path: patches/sirv@2.0.3.patch
@@ -385,8 +382,8 @@ importers:
         specifier: ^15.1.0
         version: 15.1.0(postcss@8.4.31)
       postcss-load-config:
-        specifier: ^5.0.0
-        version: 5.0.0(patch_hash=rda3ea6fdeevgwsmvju6v34rua)(postcss@8.4.31)
+        specifier: ^5.0.1
+        version: 5.0.1(postcss@8.4.31)
       postcss-modules:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.31)
@@ -8114,8 +8111,8 @@ packages:
       postcss: 8.4.31
       yaml: 2.3.4
 
-  /postcss-load-config@5.0.0(patch_hash=rda3ea6fdeevgwsmvju6v34rua)(postcss@8.4.31):
-    resolution: {integrity: sha512-i069VOAUi6mpTsToA+qPAAfD7m7dfjm9Yhaqma7KEMJcQFM9jerKBU6rTGNcYLErj4sjR9fZ1q30TpFm2K7PSg==}
+  /postcss-load-config@5.0.1(postcss@8.4.31):
+    resolution: {integrity: sha512-d7kcvvpqQpCeC8DkmiKFiOK1sH8Rv8Sei3O0it+o4ixd+jIllmUfVBe8qOZOorMrlSwd4Ke3I7UAE1bOU7u40A==}
     engines: {node: '>= 18'}
     peerDependencies:
       jiti: '>=1.21.0'
@@ -8130,7 +8127,6 @@ packages:
       postcss: 8.4.31
       yaml: 2.3.4
     dev: true
-    patched: true
 
   /postcss-modules-extract-imports@3.0.0(postcss@8.4.31):
     resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
