@@ -102,9 +102,9 @@ If your code relies on types from browser environments such as [DOM](https://git
 }
 ```
 
-:::warning Imports will break augumentation in `vite-env.d.ts`
+:::warning Imports will break type augmentation
 
-If `ImportMetaEnv` augumentation does not work, make sure you do not have any `import` statements in `vite-env.d.ts`
+If the `ImportMetaEnv` augmentation does not work, make sure you do not have any `import` statements in `vite-env.d.ts`. See the [TypeScript documentation](https://www.typescriptlang.org/docs/handbook/2/modules.html#how-javascript-modules-are-defined) for more information.
 :::
 
 ## HTML Env Replacement
