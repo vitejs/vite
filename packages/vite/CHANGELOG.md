@@ -1,3 +1,23 @@
+## <small>5.0.5 (2023-12-04)</small>
+
+* fix: emit `vite:preloadError` for chunks without deps (#15203) ([d8001c5](https://github.com/vitejs/vite/commit/d8001c5)), closes [#15203](https://github.com/vitejs/vite/issues/15203)
+* fix: esbuild glob import resolve error (#15140) ([676804d](https://github.com/vitejs/vite/commit/676804d)), closes [#15140](https://github.com/vitejs/vite/issues/15140)
+* fix: json error with position (#15225) ([14be75f](https://github.com/vitejs/vite/commit/14be75f)), closes [#15225](https://github.com/vitejs/vite/issues/15225)
+* fix: proxy html path should be encoded (#15223) ([5b85040](https://github.com/vitejs/vite/commit/5b85040)), closes [#15223](https://github.com/vitejs/vite/issues/15223)
+* fix(deps): update all non-major dependencies (#15233) ([ad3adda](https://github.com/vitejs/vite/commit/ad3adda)), closes [#15233](https://github.com/vitejs/vite/issues/15233)
+* fix(hmr): don't consider CSS dep as a circular dep (#15229) ([5f2cdec](https://github.com/vitejs/vite/commit/5f2cdec)), closes [#15229](https://github.com/vitejs/vite/issues/15229)
+* feat: add '*.mov' to client.d.ts (#15189) ([d93a211](https://github.com/vitejs/vite/commit/d93a211)), closes [#15189](https://github.com/vitejs/vite/issues/15189)
+* feat(server): allow disabling built-in shortcuts (#15218) ([7fd7c6c](https://github.com/vitejs/vite/commit/7fd7c6c)), closes [#15218](https://github.com/vitejs/vite/issues/15218)
+* chore: replace 'some' with 'includes' in resolveEnvPrefix (#15220) ([ee12f30](https://github.com/vitejs/vite/commit/ee12f30)), closes [#15220](https://github.com/vitejs/vite/issues/15220)
+* chore: update the website url for homepage in package.json (#15181) ([282bd8f](https://github.com/vitejs/vite/commit/282bd8f)), closes [#15181](https://github.com/vitejs/vite/issues/15181)
+* chore: update vitest to 1.0.0-beta.6 (#15194) ([2fce647](https://github.com/vitejs/vite/commit/2fce647)), closes [#15194](https://github.com/vitejs/vite/issues/15194)
+* refactor: make HMR agnostic to environment (#15179) ([0571b7c](https://github.com/vitejs/vite/commit/0571b7c)), closes [#15179](https://github.com/vitejs/vite/issues/15179)
+* refactor: use dedicated regex methods (#15228) ([0348137](https://github.com/vitejs/vite/commit/0348137)), closes [#15228](https://github.com/vitejs/vite/issues/15228)
+* perf: remove debug only prettifyUrl call (#15204) ([73e971f](https://github.com/vitejs/vite/commit/73e971f)), closes [#15204](https://github.com/vitejs/vite/issues/15204)
+* perf: skip computing sourceRoot in injectSourcesContent (#15207) ([1df1fd1](https://github.com/vitejs/vite/commit/1df1fd1)), closes [#15207](https://github.com/vitejs/vite/issues/15207)
+
+
+
 ## <small>5.0.4 (2023-11-29)</small>
 
 * fix: bindCLIShortcuts to proper server (#15162) ([67ac572](https://github.com/vitejs/vite/commit/67ac572)), closes [#15162](https://github.com/vitejs/vite/issues/15162)
