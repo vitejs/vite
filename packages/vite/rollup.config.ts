@@ -108,14 +108,18 @@ function createNodePlugins(
           src: 'require("sugarss")',
           replacement: `__require('sugarss')`,
         },
-        'lilconfig/dist/index.js': {
+        'lilconfig/src/index.js': {
           pattern: /: require,/g,
           replacement: `: __require,`,
         },
-        // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
-          pattern: /require(?=\((configFile|'ts-node')\))/g,
-          replacement: `__require`,
+          src: "await import('yaml')",
+          replacement: `__require('yaml')`,
+        },
+        'postcss-load-config/src/req.js': {
+          pattern:
+            /\(await import\('(jiti)'\)\).default|await import\('(tsx\/cjs\/api)'\)/g,
+          replacement: `__require('$1$2')`,
         },
         // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
         // However, we always pass the `resolve` option. Remove this import to avoid
@@ -282,7 +286,11 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
               transformed[file] = true
               const start = match.index
               const end = start + match[0].length
-              magicString.overwrite(start, end, replacement)
+              let _replacement = replacement
+              for (let i = 1; i <= match.length; i++) {
+                _replacement = _replacement.replace(`$${i}`, match[i] || '')
+              }
+              magicString.overwrite(start, end, _replacement)
             }
             if (!transformed[file]) {
               this.error(
