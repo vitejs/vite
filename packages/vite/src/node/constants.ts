@@ -118,6 +118,7 @@ export const KNOWN_ASSET_TYPES = [
   'flac',
   'aac',
   'opus',
+  'mov',
 
   // fonts
   'woff2?',
