@@ -781,8 +781,8 @@ async function createDepsOptimizer(
         debouncedProcessing(0)
       }
     } else {
-      currentlyProcessing = false
       const crawlDeps = Object.keys(metadata.discovered)
+      currentlyProcessing = false
       if (crawlDeps.length === 0) {
         debug?.(
           colors.green(
