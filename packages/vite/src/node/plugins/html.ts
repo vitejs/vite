@@ -48,7 +48,6 @@ const htmlProxyRE =
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-   
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
