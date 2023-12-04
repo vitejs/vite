@@ -649,20 +649,17 @@ export async function _createServer(
       publicFiles[isUnlink ? 'delete' : 'add'](
         file.slice(config.publicDir.length),
       )
-    } else {
-      await handleFileAddUnlink(file, server, isUnlink)
-      await onHMRUpdate(file, true)
     }
+    await handleFileAddUnlink(file, server, isUnlink)
+    await onHMRUpdate(file, true)
   }
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
-    if (!(config.publicDir && file.startsWith(config.publicDir))) {
-      // invalidate module graph cache on file change
-      moduleGraph.onFileChange(file)
-      await onHMRUpdate(file, false)
-    }
+    // invalidate module graph cache on file change
+    moduleGraph.onFileChange(file)
+    await onHMRUpdate(file, false)
   })
 
   watcher.on('add', (file) => onFileAddUnlink(file, false))
