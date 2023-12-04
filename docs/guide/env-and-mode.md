@@ -52,10 +52,7 @@ console.log(import.meta.env.DB_PASSWORD) // undefined
 
 :::tip Env parsing
 
-As seen in example above `VITE_SOME_KEY` is a number.  
-But when parsed, Env properties are strings even if they are numbers or booleans in the Env file.  
-User has to convert them to desired types in the code.
-A recommandation is to wrap all the Env properties in quotes to make that explicit.
+As shown above, `VITE_SOME_KEY` is a number but returns a string when parsed. The same would also happen for boolean env variables. Make sure to convert to the desired type when using it in your code.
 :::
 
 Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
