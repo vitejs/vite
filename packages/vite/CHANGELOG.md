@@ -1,3 +1,9 @@
+## <small>4.5.1 (2023-12-04)</small>
+
+* fix: backport #15223, proxy html path should be encoded (#15226) ([41bb354](https://github.com/vitejs/vite/commit/41bb354)), closes [#15223](https://github.com/vitejs/vite/issues/15223) [#15226](https://github.com/vitejs/vite/issues/15226)
+
+
+
 ## 4.5.0 (2023-10-18)
 
 * feat: backport mdx as known js source (#14560) (#14670) ([45595ef](https://github.com/vitejs/vite/commit/45595ef)), closes [#14560](https://github.com/vitejs/vite/issues/14560) [#14670](https://github.com/vitejs/vite/issues/14670)
