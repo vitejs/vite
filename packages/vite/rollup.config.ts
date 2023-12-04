@@ -111,10 +111,9 @@ function createNodePlugins(
           pattern: /: require,/g,
           replacement: `: __require,`,
         },
-        // postcss-load-config calls require after register ts-node
-        'postcss-load-config/src/index.js': {
-          pattern: /require(?=\((configFile|'ts-node')\))/g,
-          replacement: `__require`,
+        'postcss-load-config/src/req.js': {
+          src: "(await import('jiti')).default",
+          replacement: `__require('jiti')`,
         },
         'json-stable-stringify/index.js': {
           src: "require('jsonify')",
