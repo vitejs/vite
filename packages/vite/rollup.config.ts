@@ -111,6 +111,10 @@ function createNodePlugins(
           pattern: /: require,/g,
           replacement: `: __require,`,
         },
+        'postcss-load-config/src/req.js': {
+          src: "(await import('jiti')).default",
+          replacement: `__require('jiti')`,
+        },
         'json-stable-stringify/index.js': {
           src: "require('jsonify')",
           replacement: 'JSON',

@@ -382,8 +382,8 @@ importers:
         specifier: ^15.1.0
         version: 15.1.0(postcss@8.4.31)
       postcss-load-config:
-        specifier: ^5.0.1
-        version: 5.0.1(postcss@8.4.31)
+        specifier: ^5.0.2
+        version: 5.0.2(postcss@8.4.31)
       postcss-modules:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.31)
@@ -8111,8 +8111,8 @@ packages:
       postcss: 8.4.31
       yaml: 2.3.4
 
-  /postcss-load-config@5.0.1(postcss@8.4.31):
-    resolution: {integrity: sha512-d7kcvvpqQpCeC8DkmiKFiOK1sH8Rv8Sei3O0it+o4ixd+jIllmUfVBe8qOZOorMrlSwd4Ke3I7UAE1bOU7u40A==}
+  /postcss-load-config@5.0.2(postcss@8.4.31):
+    resolution: {integrity: sha512-Q8QR3FYbqOKa0bnC1UQ2bFq9/ulHX5Bi34muzitMr8aDtUelO5xKeJEYC/5smE0jNE9zdB/NBnOwXKexELbRlw==}
     engines: {node: '>= 18'}
     peerDependencies:
       jiti: '>=1.21.0'
