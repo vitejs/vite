@@ -1,3 +1,9 @@
+## <small>4.4.12 (2023-12-04)</small>
+
+* fix: backport #15223, proxy html path should be encoded (#15226) (#15227) ([fe8b209](https://github.com/vitejs/vite/commit/fe8b209)), closes [#15223](https://github.com/vitejs/vite/issues/15223) [#15226](https://github.com/vitejs/vite/issues/15226) [#15227](https://github.com/vitejs/vite/issues/15227)
+
+
+
 ## <small>4.4.11 (2023-10-05)</small>
 
 * revert: "fix: use string manipulation instead of regex to inject esbuild helpers ([54e1275](https://github.com/vitejs/vite/commit/54e1275)), closes [#14094](https://github.com/vitejs/vite/issues/14094)
