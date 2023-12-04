@@ -1,3 +1,26 @@
+## <small>5.0.4 (2023-11-29)</small>
+
+* fix: bindCLIShortcuts to proper server (#15162) ([67ac572](https://github.com/vitejs/vite/commit/67ac572)), closes [#15162](https://github.com/vitejs/vite/issues/15162)
+* fix: revert "fix: js fallback sourcemap content should be using original content (#15135)" (#15178) ([d2a2493](https://github.com/vitejs/vite/commit/d2a2493)), closes [#15135](https://github.com/vitejs/vite/issues/15135) [#15178](https://github.com/vitejs/vite/issues/15178)
+* fix(define): allow define process.env (#15173) ([ec401da](https://github.com/vitejs/vite/commit/ec401da)), closes [#15173](https://github.com/vitejs/vite/issues/15173)
+* fix(resolve): respect order of browser in mainFields when resolving (#15137) ([4a111aa](https://github.com/vitejs/vite/commit/4a111aa)), closes [#15137](https://github.com/vitejs/vite/issues/15137)
+* feat: preserve vite.middlewares connect instance after restarts (#15166) ([9474c4b](https://github.com/vitejs/vite/commit/9474c4b)), closes [#15166](https://github.com/vitejs/vite/issues/15166)
+* refactor: align with Promise.withResolvers() (#15171) ([642f9bc](https://github.com/vitejs/vite/commit/642f9bc)), closes [#15171](https://github.com/vitejs/vite/issues/15171)
+
+
+
+## <small>5.0.3 (2023-11-28)</small>
+
+* fix: `generateCodeFrame` infinite loop (#15093) ([6619de7](https://github.com/vitejs/vite/commit/6619de7)), closes [#15093](https://github.com/vitejs/vite/issues/15093)
+* fix: js fallback sourcemap content should be using original content (#15135) ([227d56d](https://github.com/vitejs/vite/commit/227d56d)), closes [#15135](https://github.com/vitejs/vite/issues/15135)
+* fix(css): render correct asset url when CSS chunk name is nested (#15154) ([ef403c0](https://github.com/vitejs/vite/commit/ef403c0)), closes [#15154](https://github.com/vitejs/vite/issues/15154)
+* fix(css): use non-nested chunk name if facadeModule is not CSS file (#15155) ([811e392](https://github.com/vitejs/vite/commit/811e392)), closes [#15155](https://github.com/vitejs/vite/issues/15155)
+* fix(dev): bind plugin context functions (#14569) ([cb3243c](https://github.com/vitejs/vite/commit/cb3243c)), closes [#14569](https://github.com/vitejs/vite/issues/14569)
+* chore(deps): update all non-major dependencies (#15145) ([7ff2c0a](https://github.com/vitejs/vite/commit/7ff2c0a)), closes [#15145](https://github.com/vitejs/vite/issues/15145)
+* build: handle latest json-stable-stringify replacement (#15049) ([bcc4a61](https://github.com/vitejs/vite/commit/bcc4a61)), closes [#15049](https://github.com/vitejs/vite/issues/15049)
+
+
+
 ## <small>5.0.2 (2023-11-21)</small>
 
 * fix: make htmlFallback more permissive (#15059) ([6fcceeb](https://github.com/vitejs/vite/commit/6fcceeb)), closes [#15059](https://github.com/vitejs/vite/issues/15059)

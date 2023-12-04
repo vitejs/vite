@@ -132,11 +132,11 @@ describe('asset imports from js', () => {
     )
     expect(await page.textContent('.public-json-import-content'))
       .toMatchInlineSnapshot(`
-      "{
-        \\"foo\\": \\"bar\\"
-      }
-      "
-    `)
+        "{
+          "foo": "bar"
+        }
+        "
+      `)
   })
 })
 

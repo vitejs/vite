@@ -910,7 +910,7 @@ export function onRollupWarning(
         const id = warning.id
         const exporter = warning.exporter
         // throw unless it's commonjs external...
-        if (!id || !/\?commonjs-external$/.test(id)) {
+        if (!id || !id.endsWith('?commonjs-external')) {
           throw new Error(
             `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
               `This is most likely unintended because it can break your application at runtime.\n` +

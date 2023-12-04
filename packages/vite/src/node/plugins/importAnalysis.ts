@@ -218,10 +218,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
-      const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
         return null
       }
 
@@ -258,7 +257,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+          `${timeFrom(start)} ${colors.dim(
+            `[no imports] ${prettifyUrl(importer, root)}`,
+          )}`,
         )
         return source
       }
@@ -365,7 +366,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (
             (isRelative || isSelfImport) &&
             !hasImportInQueryParamsRE.test(url) &&
-            !url.match(DEP_VERSION_RE)
+            !DEP_VERSION_RE.test(url)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
@@ -534,7 +535,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               let rewriteDone = false
               if (
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
-                !resolvedId.match(optimizedDepChunkRE)
+                !optimizedDepChunkRE.test(resolvedId)
               ) {
                 // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
                 // internal optimized chunks don't need es interop and are excluded
@@ -554,7 +555,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // Non-entry dynamic imports from dependencies will reach here as there isn't
                   // optimize info for them, but they don't need es interop. If the request isn't
                   // a dynamic import, then it is an internal Vite error
-                  if (!file.match(optimizedDepDynamicRE)) {
+                  if (!optimizedDepDynamicRE.test(file)) {
                     config.logger.error(
                       colors.red(
                         `Vite Error, ${url} optimized info should be defined`,
@@ -702,7 +703,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 : acceptedUrls.size
                   ? `[accepts-deps]`
                   : `[detected api usage]`
-          } ${prettyImporter}`,
+          } ${prettifyUrl(importer, root)}`,
         )
         // inject hot context
         str().prepend(
@@ -784,7 +785,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       debug?.(
         `${timeFrom(start)} ${colors.dim(
-          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+          `[${importedUrls.size} imports rewritten] ${prettifyUrl(
+            importer,
+            root,
+          )}`,
         )}`,
       )
 

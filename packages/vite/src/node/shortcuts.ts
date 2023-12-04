@@ -14,6 +14,7 @@ export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
   /**
    * Custom shortcuts to run when a key is pressed. These shortcuts take priority
    * over the default shortcuts if they have the same keys (except the `h` key).
+   * To disable a default shortcut, define the same key but with `action: undefined`.
    */
   customShortcuts?: CLIShortcut<Server>[]
 }
@@ -21,7 +22,7 @@ export type BindCLIShortcutsOptions<Server = ViteDevServer | PreviewServer> = {
 export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   key: string
   description: string
-  action(server: Server): void | Promise<void>
+  action?(server: Server): void | Promise<void>
 }
 
 export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
@@ -66,6 +67,8 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
         if (loggedKeys.has(shortcut.key)) continue
         loggedKeys.add(shortcut.key)
 
+        if (shortcut.action == null) continue
+
         server.config.logger.info(
           colors.dim('  press ') +
             colors.bold(`${shortcut.key} + enter`) +
@@ -77,7 +80,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     }
 
     const shortcut = shortcuts.find((shortcut) => shortcut.key === input)
-    if (!shortcut) return
+    if (!shortcut || shortcut.action == null) return
 
     actionRunning = true
     await shortcut.action(server)
