@@ -1,0 +1,20 @@
+diff --git a/src/req.js b/src/req.js
+index 1a1cf9ea1f0694f6715f8f3cb522abb3ef011991..2e445793a5b8c880edd0299b3c3b18c900af7046 100644
+--- a/src/req.js
++++ b/src/req.js
+@@ -1,5 +1,6 @@
+ // @ts-check
+ const { createRequire } = require('node:module')
++const { pathToFileURL } = require('node:url')
+ 
+ const TS_EXT_RE = /\.(c|m)?ts$/
+ 
+@@ -16,7 +17,7 @@ async function req(name, rootFile = __filename) {
+   let url = __require.resolve(name)
+ 
+   try {
+-    return (await import(url)).default
++    return (await import(pathToFileURL(url).href)).default
+   } catch (err) {
+     if (!TS_EXT_RE.test(url)) {
+       /* c8 ignore start */
