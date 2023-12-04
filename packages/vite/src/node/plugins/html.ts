@@ -48,9 +48,10 @@ const htmlProxyRE =
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-  // eslint-disable-next-line regexp/no-unused-capturing-group -- https://github.com/ota-meshi/eslint-plugin-regexp/issues/675
+   
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
+const spaceRe = /[\t\n\f\r ]/
 
 const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
@@ -143,7 +144,7 @@ export const assetAttrsConfig: Record<string, string[]> = {
 }
 
 // Some `<link rel>` elements should not be inlined in build. Excluding:
-// - `shortcut icon`                : deprecated, use `icon` only
+// - `shortcut`                     : only valid for IE <9, use `icon`
 // - `mask-icon`                    : deprecated since Safari 12 (for pinned tabs)
 // - `apple-touch-icon-precomposed` : only valid for iOS <7 (for avoiding gloss effect)
 const noInlineLinkRels = new Set([
@@ -540,7 +541,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         node.nodeName === 'link' &&
                         node.attrs.some(
                           (p) =>
-                            p.name === 'rel' && noInlineLinkRels.has(p.value),
+                            p.name === 'rel' &&
+                            p.value
+                              .split(spaceRe)
+                              .some((v) =>
+                                noInlineLinkRels.has(v.toLowerCase()),
+                              ),
                         )
                       const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(
