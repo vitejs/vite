@@ -325,7 +325,7 @@ require("other-module");`
       `"require("some-module"),/* empty css               */require("other-module");"`,
     )
     // So there should be no pure css chunk anymore
-    expect(newCode.match(/pure_css_chunk\.js/)).toBeNull()
+    expect(newCode).not.toContain('pure_css_chunk.js')
   })
 
   test('replaces require call in minified code that uses comma operator followed by assignment', () => {

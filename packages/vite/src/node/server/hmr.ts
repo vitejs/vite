@@ -394,6 +394,11 @@ function isNodeWithinCircularImports(
     // Node may import itself which is safe
     if (importer === node) continue
 
+    // a PostCSS plugin like Tailwind JIT may register
+    // any file as a dependency to a CSS file.
+    // But in that case, the actual dependency chain is separate.
+    if (isCSSRequest(importer.url)) continue
+
     // Check circular imports
     const importerIndex = nodeChain.indexOf(importer)
     if (importerIndex > -1) {
