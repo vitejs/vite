@@ -75,7 +75,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.19.3",
-    "postcss": "^8.4.31",
+    "postcss": "^8.4.32",
     "rollup": "^4.2.0"
   },
   "optionalDependencies": {
@@ -83,15 +83,15 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
-    "@babel/parser": "^7.23.4",
+    "@babel/parser": "^7.23.5",
     "@jridgewell/trace-mapping": "^0.3.20",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-dynamic-import-vars": "^2.1.1",
+    "@rollup/plugin-dynamic-import-vars": "^2.1.2",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "15.2.3",
     "@rollup/plugin-typescript": "^11.1.5",
-    "@rollup/pluginutils": "^5.0.5",
+    "@rollup/pluginutils": "^5.1.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "acorn": "^8.11.2",

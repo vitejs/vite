@@ -41,9 +41,9 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.23.3",
-    "@babel/preset-env": "^7.23.3",
-    "browserslist": "^4.22.1",
+    "@babel/core": "^7.23.5",
+    "@babel/preset-env": "^7.23.5",
+    "browserslist": "^4.22.2",
     "core-js": "^3.33.3",
     "magic-string": "^0.30.5",
     "regenerator-runtime": "^0.14.0",
