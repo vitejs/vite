@@ -295,7 +295,7 @@ async function nodeImport(
   if (isRuntimeHandled) {
     url = id
   } else {
-    const resolved = tryNodeResolve(
+    const resolved = await tryNodeResolve(
       id,
       importer,
       { ...resolveOptions, tryEsmOnly: true },
@@ -320,7 +320,7 @@ async function nodeImport(
   } else if (isRuntimeHandled) {
     return mod
   } else {
-    analyzeImportedModDifference(
+    await analyzeImportedModDifference(
       mod,
       url,
       id,
@@ -362,7 +362,7 @@ function isPrimitive(value: any) {
  * Top-level imports and dynamic imports work slightly differently in Node.js.
  * This function normalizes the differences so it matches prod behaviour.
  */
-function analyzeImportedModDifference(
+async function analyzeImportedModDifference(
   mod: any,
   filePath: string,
   rawId: string,
@@ -372,7 +372,7 @@ function analyzeImportedModDifference(
   // No normalization needed if the user already dynamic imports this module
   if (metadata?.isDynamicImport) return
   // If file path is ESM, everything should be fine
-  if (isFilePathESM(filePath, packageCache)) return
+  if (await isFilePathESM(filePath, packageCache)) return
 
   // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
   // If the user named imports a specifier that can't be analyzed, error.

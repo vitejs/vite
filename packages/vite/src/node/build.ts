@@ -557,7 +557,9 @@ export async function build(
 
   let bundle: RollupBuild | undefined
   try {
-    const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+    const buildOutputOptions = async (
+      output: OutputOptions = {},
+    ): Promise<OutputOptions> => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
       if (output.output) {
         config.logger.warn(
@@ -589,10 +591,21 @@ export async function build(
         ssrNodeBuild || libOptions
           ? resolveOutputJsExtension(
               format,
-              findNearestPackageData(config.root, config.packageCache)?.data
-                .type,
+              (await findNearestPackageData(config.root, config.packageCache))
+                ?.data.type,
             )
           : 'js'
+
+      const resolveLibFilename = libOptions
+        ? await createResolveLibFilename(
+            libOptions,
+            format,
+            config.root,
+            jsExt,
+            config.packageCache,
+          )
+        : undefined
+
       return {
         dir: outDir,
         // Default format is 'es' for regular and for SSR builds
@@ -607,15 +620,7 @@ export async function build(
         entryFileNames: ssr
           ? `[name].${jsExt}`
           : libOptions
-            ? ({ name }) =>
-                resolveLibFilename(
-                  libOptions,
-                  format,
-                  name,
-                  config.root,
-                  jsExt,
-                  config.packageCache,
-                )
+            ? resolveLibFilename
             : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name]-[hash].${jsExt}`
@@ -642,10 +647,10 @@ export async function build(
 
     if (Array.isArray(outputs)) {
       for (const resolvedOutput of outputs) {
-        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
+        normalizedOutputs.push(await buildOutputOptions(resolvedOutput))
       }
     } else {
-      normalizedOutputs.push(buildOutputOptions(outputs))
+      normalizedOutputs.push(await buildOutputOptions(outputs))
     }
 
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
@@ -792,37 +797,37 @@ function resolveOutputJsExtension(
   }
 }
 
-export function resolveLibFilename(
+export async function createResolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  entryName: string,
   root: string,
   extension?: JsExt,
   packageCache?: PackageCache,
-): string {
-  if (typeof libOptions.fileName === 'function') {
-    return libOptions.fileName(format, entryName)
+): Promise<(entry: { name: string }) => string> {
+  const packageJson = (await findNearestPackageData(root, packageCache))?.data
+  return (entry: { name: string }) => {
+    if (typeof libOptions.fileName === 'function') {
+      return libOptions.fileName(format, entry.name)
+    }
+    const name =
+      libOptions.fileName ||
+      (packageJson && typeof libOptions.entry === 'string'
+        ? getPkgName(packageJson.name)
+        : entry.name)
+
+    if (!name)
+      throw new Error(
+        'Name in package.json is required if option "build.lib.fileName" is not provided.',
+      )
+
+    extension ??= resolveOutputJsExtension(format, packageJson?.type)
+
+    if (format === 'cjs' || format === 'es') {
+      return `${name}.${extension}`
+    }
+
+    return `${name}.${format}.${extension}`
   }
-
-  const packageJson = findNearestPackageData(root, packageCache)?.data
-  const name =
-    libOptions.fileName ||
-    (packageJson && typeof libOptions.entry === 'string'
-      ? getPkgName(packageJson.name)
-      : entryName)
-
-  if (!name)
-    throw new Error(
-      'Name in package.json is required if option "build.lib.fileName" is not provided.',
-    )
-
-  extension ??= resolveOutputJsExtension(format, packageJson?.type)
-
-  if (format === 'cjs' || format === 'es') {
-    return `${name}.${extension}`
-  }
-
-  return `${name}.${format}.${extension}`
 }
 
 export function resolveBuildOutputs(

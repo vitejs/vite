@@ -12,16 +12,17 @@ import type { ResolvedConfig } from '..'
 
 const debug = createDebugger('vite:ssr-external')
 
-const isSsrExternalCache = new WeakMap<
-  ResolvedConfig,
-  (id: string, importer?: string) => boolean | undefined
->()
+type IsSsrExternalFunction = (
+  id: string,
+  importer?: string,
+) => Promise<boolean | undefined>
+const isSsrExternalCache = new WeakMap<ResolvedConfig, IsSsrExternalFunction>()
 
 export function shouldExternalizeForSSR(
   id: string,
   importer: string | undefined,
   config: ResolvedConfig,
-): boolean | undefined {
+): Promise<boolean | undefined> {
   let isSsrExternal = isSsrExternalCache.get(config)
   if (!isSsrExternal) {
     isSsrExternal = createIsSsrExternal(config)
@@ -32,7 +33,7 @@ export function shouldExternalizeForSSR(
 
 export function createIsConfiguredAsSsrExternal(
   config: ResolvedConfig,
-): (id: string, importer?: string) => boolean {
+): (id: string, importer?: string) => Promise<boolean> {
   const { ssr, root } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
@@ -50,30 +51,32 @@ export function createIsConfiguredAsSsrExternal(
     conditions: targetConditions,
   }
 
-  const isExternalizable = (
+  const isExternalizable = async (
     id: string,
     importer?: string,
     configuredAsExternal?: boolean,
-  ): boolean => {
+  ): Promise<boolean> => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
     try {
-      return !!tryNodeResolve(
-        id,
-        // Skip passing importer in build to avoid externalizing non-hoisted dependencies
-        // unresolvable from root (which would be unresolvable from output bundles also)
-        config.command === 'build' ? undefined : importer,
-        resolveOptions,
-        ssr?.target === 'webworker',
-        undefined,
-        true,
-        // try to externalize, will return undefined or an object without
-        // a external flag if it isn't externalizable
-        true,
-        // Allow linked packages to be externalized if they are explicitly
-        // configured as external
-        !!configuredAsExternal,
+      return !!(
+        await tryNodeResolve(
+          id,
+          // Skip passing importer in build to avoid externalizing non-hoisted dependencies
+          // unresolvable from root (which would be unresolvable from output bundles also)
+          config.command === 'build' ? undefined : importer,
+          resolveOptions,
+          ssr?.target === 'webworker',
+          undefined,
+          true,
+          // try to externalize, will return undefined or an object without
+          // a external flag if it isn't externalizable
+          true,
+          // Allow linked packages to be externalized if they are explicitly
+          // configured as external
+          !!configuredAsExternal,
+        )
       )?.external
     } catch (e) {
       debug?.(
@@ -86,7 +89,7 @@ export function createIsConfiguredAsSsrExternal(
 
   // Returns true if it is configured as external, false if it is filtered
   // by noExternal and undefined if it isn't affected by the explicit config
-  return (id: string, importer?: string) => {
+  return async (id: string, importer?: string) => {
     const { ssr } = config
     if (ssr) {
       if (
@@ -120,18 +123,18 @@ export function createIsConfiguredAsSsrExternal(
 
 function createIsSsrExternal(
   config: ResolvedConfig,
-): (id: string, importer?: string) => boolean | undefined {
+): (id: string, importer?: string) => Promise<boolean | undefined> {
   const processedIds = new Map<string, boolean | undefined>()
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
-  return (id: string, importer?: string) => {
+  return async (id: string, importer?: string) => {
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
     let external = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
-      external = isBuiltin(id) || isConfiguredAsExternal(id, importer)
+      external = isBuiltin(id) || (await isConfiguredAsExternal(id, importer))
     }
     processedIds.set(id, external)
     return external

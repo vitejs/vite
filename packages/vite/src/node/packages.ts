@@ -1,10 +1,11 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import {
   createFilter,
   isInNodeModules,
-  safeRealpathSync,
+  safeRealpath,
   tryStatSync,
 } from './utils'
 import type { Plugin } from './plugin'
@@ -52,12 +53,12 @@ function invalidatePackageData(
   })
 }
 
-export function resolvePackageData(
+export async function resolvePackageData(
   pkgName: string,
   basedir: string,
   preserveSymlinks = false,
   packageCache?: PackageCache,
-): PackageData | null {
+): Promise<PackageData | null> {
   if (pnp) {
     const cacheKey = getRpdCacheKey(pkgName, basedir, preserveSymlinks)
     if (packageCache?.has(cacheKey)) return packageCache.get(cacheKey)!
@@ -68,7 +69,7 @@ export function resolvePackageData(
       })
       if (!pkg) return null
 
-      const pkgData = loadPackageData(path.join(pkg, 'package.json'))
+      const pkgData = await loadPackageData(path.join(pkg, 'package.json'))
       packageCache?.set(cacheKey, pkgData)
       return pkgData
     } catch {
@@ -92,8 +93,8 @@ export function resolvePackageData(
     const pkg = path.join(basedir, 'node_modules', pkgName, 'package.json')
     try {
       if (fs.existsSync(pkg)) {
-        const pkgPath = preserveSymlinks ? pkg : safeRealpathSync(pkg)
-        const pkgData = loadPackageData(pkgPath)
+        const pkgPath = preserveSymlinks ? pkg : await safeRealpath(pkg)
+        const pkgData = await loadPackageData(pkgPath)
 
         if (packageCache) {
           setRpdCache(
@@ -118,10 +119,10 @@ export function resolvePackageData(
   return null
 }
 
-export function findNearestPackageData(
+export async function findNearestPackageData(
   basedir: string,
   packageCache?: PackageCache,
-): PackageData | null {
+): Promise<PackageData | null> {
   const originalBasedir = basedir
   while (basedir) {
     if (packageCache) {
@@ -132,7 +133,7 @@ export function findNearestPackageData(
     const pkgPath = path.join(basedir, 'package.json')
     if (tryStatSync(pkgPath)?.isFile()) {
       try {
-        const pkgData = loadPackageData(pkgPath)
+        const pkgData = await loadPackageData(pkgPath)
 
         if (packageCache) {
           setFnpdCache(packageCache, pkgData, basedir, originalBasedir)
@@ -151,11 +152,11 @@ export function findNearestPackageData(
 }
 
 // Finds the nearest package.json with a `name` field
-export function findNearestMainPackageData(
+export async function findNearestMainPackageData(
   basedir: string,
   packageCache?: PackageCache,
-): PackageData | null {
-  const nearestPackage = findNearestPackageData(basedir, packageCache)
+): Promise<PackageData | null> {
+  const nearestPackage = await findNearestPackageData(basedir, packageCache)
   return (
     nearestPackage &&
     (nearestPackage.data.name
@@ -167,8 +168,8 @@ export function findNearestMainPackageData(
   )
 }
 
-export function loadPackageData(pkgPath: string): PackageData {
-  const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+export async function loadPackageData(pkgPath: string): Promise<PackageData> {
+  const data = JSON.parse(await fsp.readFile(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean
