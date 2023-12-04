@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { page } from '~utils'
 
-// FIXME: flaky
 describe('syntax preserve', () => {
   test('import.meta.url', async () => {
     expect(await page.textContent('.import-meta-url')).toBe('string')
