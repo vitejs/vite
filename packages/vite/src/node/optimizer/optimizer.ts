@@ -101,6 +101,10 @@ async function createDepsOptimizer(
   let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, ssr, sessionTimestamp)
 
+  const options = getDepOptimizationConfig(config, ssr)
+
+  const { noDiscovery, holdUntilCrawlEnd } = options
+
   const depsOptimizer: DepsOptimizer = {
     metadata,
     registerMissingImport,
@@ -114,7 +118,7 @@ async function createDepsOptimizer(
     resetRegisteredIds,
     ensureFirstRun,
     close,
-    options: getDepOptimizationConfig(config, ssr),
+    options,
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
@@ -137,6 +141,23 @@ async function createDepsOptimizer(
     }
   }
 
+  let discoveredDepsWhileScanning: string[] = []
+  const logDiscoveredDepsWhileScanning = () => {
+    if (discoveredDepsWhileScanning.length) {
+      config.logger.info(
+        colors.green(
+          `✨ discovered while scanning: ${depsLogString(
+            discoveredDepsWhileScanning,
+          )}`,
+        ),
+        {
+          timestamp: true,
+        },
+      )
+      discoveredDepsWhileScanning = []
+    }
+  }
+
   let depOptimizationProcessing = promiseWithResolvers<void>()
   let depOptimizationProcessingQueue: PromiseWithResolvers<void>[] = []
   const resolveEnqueuedProcessingPromises = () => {
@@ -151,6 +172,7 @@ async function createDepsOptimizer(
   let currentlyProcessing = false
 
   let firstRunCalled = !!cachedMetadata
+  let warnAboutMissedDependencies = false
 
   // During build, we wait for every module to be scanned before resolving
   // optimized deps loading for rollup on each rebuild. It will be recreated
@@ -160,7 +182,7 @@ async function createDepsOptimizer(
   // On warm start or after the first optimization is run, we use a simpler
   // debounce strategy each time a new dep is discovered.
   let crawlEndFinder: CrawlEndFinder | undefined
-  if (isBuild || !cachedMetadata) {
+  if ((!noDiscovery && isBuild) || !cachedMetadata) {
     crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
   }
 
@@ -194,17 +216,17 @@ async function createDepsOptimizer(
 
     // Initialize discovered deps with manually added optimizeDeps.include info
 
-    const deps: Record<string, string> = {}
-    await addManuallyIncludedOptimizeDeps(deps, config, ssr)
+    const manuallyIncludedDeps: Record<string, string> = {}
+    await addManuallyIncludedOptimizeDeps(manuallyIncludedDeps, config, ssr)
 
-    const discovered = toDiscoveredDependencies(
+    const manuallyIncludedDepsInfo = toDiscoveredDependencies(
       config,
-      deps,
+      manuallyIncludedDeps,
       ssr,
       sessionTimestamp,
     )
 
-    for (const depInfo of Object.values(discovered)) {
+    for (const depInfo of Object.values(manuallyIncludedDepsInfo)) {
       addOptimizedDepInfo(metadata, 'discovered', {
         ...depInfo,
         processing: depOptimizationProcessing.promise,
@@ -212,7 +234,7 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
-    if (config.optimizeDeps.noDiscovery) {
+    if (noDiscovery) {
       // We don't need to scan for dependencies or wait for the static crawl to end
       // Run the first optimization run immediately
       runOptimizer()
@@ -228,6 +250,13 @@ async function createDepsOptimizer(
             const deps = await discover.result
             discover = undefined
 
+            const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
+            discoveredDepsWhileScanning.push(
+              ...Object.keys(metadata.discovered).filter(
+                (dep) => !deps[dep] && !manuallyIncluded.includes(dep),
+              ),
+            )
+
             // Add these dependencies to the discovered list, as these are currently
             // used by the preAliasPlugin to support aliased and optimized deps.
             // This is also used by the CJS externalization heuristics in legacy mode
@@ -238,12 +267,31 @@ async function createDepsOptimizer(
             }
 
             const knownDeps = prepareKnownDeps()
+            startNextDiscoveredBatch()
 
             // For dev, we run the scanner and the first optimization
-            // run on the background, but we wait until crawling has ended
-            // to decide if we send this result to the browser or we need to
-            // do another optimize step
+            // run on the background
             optimizationResult = runOptimizeDeps(config, knownDeps)
+
+            // If the holdUntilCrawlEnd stratey is used, we wait until crawling has
+            // ended to decide if we send this result to the browser or we need to
+            // do another optimize step
+            if (!holdUntilCrawlEnd) {
+              // If not, we release the result to the browser as soon as the scanner
+              // is done. If the scanner missed any dependency, and a new dependency
+              // is discovered while crawling static imports, then there will be a
+              // full-page reload if new common chunks are generated between the old
+              // and new optimized deps.
+              optimizationResult.result.then((result) => {
+                // Check if the crawling of static imports has already finished. In that
+                // case, the result is handled by the onCrawlEnd callback
+                if (!crawlEndFinder) return
+
+                optimizationResult = undefined // signal that we'll be using the result
+
+                runOptimizer(result)
+              })
+            }
           } catch (e) {
             logger.error(e.stack || e.message)
           } finally {
@@ -408,6 +456,16 @@ async function createDepsOptimizer(
           newDepsToLogHandle = setTimeout(() => {
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()
+            if (warnAboutMissedDependencies) {
+              logDiscoveredDepsWhileScanning()
+              config.logger.info(
+                colors.magenta(
+                  `❗ add these dependencies to optimizeDeps.include to speed up cold start`,
+                ),
+                { timestamp: true },
+              )
+              warnAboutMissedDependencies = false
+            }
           }, 2 * debounceMs)
         } else {
           debug(
@@ -440,6 +498,16 @@ async function createDepsOptimizer(
             if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
             newDepsToLogHandle = undefined
             logNewlyDiscoveredDeps()
+            if (warnAboutMissedDependencies) {
+              logDiscoveredDepsWhileScanning()
+              config.logger.info(
+                colors.magenta(
+                  `❗ add these dependencies to optimizeDeps.include to avoid a full page reload during cold start`,
+                ),
+                { timestamp: true },
+              )
+              warnAboutMissedDependencies = false
+            }
           }
 
           logger.info(
@@ -584,7 +652,7 @@ async function createDepsOptimizer(
       return
     }
     // Debounced rerun, let other missing dependencies be discovered before
-    // the running next optimizeDeps
+    // the next optimizeDeps run
     enqueuedRerun = undefined
     if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
     if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
@@ -614,13 +682,38 @@ async function createDepsOptimizer(
       return
     }
 
+    if (isBuild) {
+      currentlyProcessing = false
+      const crawlDeps = Object.keys(metadata.discovered)
+      if (crawlDeps.length === 0) {
+        debug?.(
+          colors.green(
+            `✨ no dependencies found while processing user modules`,
+          ),
+        )
+        firstRunCalled = true
+      } else {
+        runOptimizer()
+      }
+      return
+    }
+
     // Await for the scan+optimize step running in the background
     // It normally should be over by the time crawling of user code ended
     await depsOptimizer.scanProcessing
 
-    if (!isBuild && optimizationResult && !config.optimizeDeps.noDiscovery) {
-      const result = await optimizationResult.result
-      optimizationResult = undefined
+    if (optimizationResult) {
+      // In the holdUntilCrawlEnd strategy, we don't release the result of the
+      // post-scanner optimize step to the browser until we reach this point
+      // If there are new dependencies, we do another optimize run, if not, we
+      // use the post-scanner optimize result
+      // If holdUntilCrawlEnd is false and we reach here, it means that the
+      // scan+optimize step finished after crawl end. We follow the same
+      // process as in the holdUntilCrawlEnd in this case.
+      const afterScanResult = optimizationResult.result
+      optimizationResult = undefined // signal that we'll be using the result
+
+      const result = await afterScanResult
       currentlyProcessing = false
 
       const crawlDeps = Object.keys(metadata.discovered)
@@ -673,10 +766,23 @@ async function createDepsOptimizer(
         startNextDiscoveredBatch()
         runOptimizer(result)
       }
+    } else if (!holdUntilCrawlEnd) {
+      // The post-scanner optimize result has been released to the browser
+      // If new deps have been discovered, issue a regular rerun of the
+      // optimizer. A full page reload may still be avoided if the new
+      // optimize result is compatible in this case
+      if (newDepsDiscovered) {
+        debug?.(
+          colors.green(
+            `✨ new dependencies were found while crawling static imports, re-running optimizer`,
+          ),
+        )
+        warnAboutMissedDependencies = true
+        debouncedProcessing(0)
+      }
     } else {
-      const crawlDeps = Object.keys(metadata.discovered)
       currentlyProcessing = false
-
+      const crawlDeps = Object.keys(metadata.discovered)
       if (crawlDeps.length === 0) {
         debug?.(
           colors.green(
