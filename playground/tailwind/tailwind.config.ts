@@ -1,8 +1,8 @@
-import path from 'node:path'
-import url from 'node:url'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Config } from 'tailwindcss'
 
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default {
   content: [
