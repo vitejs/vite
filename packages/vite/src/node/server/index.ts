@@ -50,6 +50,7 @@ import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
+import { initPublicFiles } from '../publicDir'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -378,6 +379,8 @@ export async function _createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
+  const initPublicFilesPromise = initPublicFiles(config)
+
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -623,6 +626,8 @@ export async function _createServer(
     }
   }
 
+  const publicFiles = await initPublicFilesPromise
+
   const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
@@ -639,6 +644,12 @@ export async function _createServer(
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
+
+    if (config.publicDir && file.startsWith(config.publicDir)) {
+      publicFiles[isUnlink ? 'delete' : 'add'](
+        file.slice(config.publicDir.length),
+      )
+    }
     await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
   }
@@ -648,7 +659,6 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-
     await onHMRUpdate(file, false)
   })
 
@@ -733,7 +743,7 @@ export async function _createServer(
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
   if (config.publicDir) {
-    middlewares.use(servePublicMiddleware(server))
+    middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
   // main transform middleware

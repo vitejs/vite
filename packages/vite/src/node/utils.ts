@@ -8,6 +8,7 @@ import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
+import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -620,6 +621,29 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
+}
+
+export async function recursiveReaddir(dir: string): Promise<string[]> {
+  if (!fs.existsSync(dir)) {
+    return []
+  }
+  let dirents: fs.Dirent[]
+  try {
+    dirents = await fsp.readdir(dir, { withFileTypes: true })
+  } catch (e) {
+    if (e.code === 'EACCES') {
+      // Ignore permission errors
+      return []
+    }
+    throw e
+  }
+  const files = await Promise.all(
+    dirents.map((dirent) => {
+      const res = path.resolve(dir, dirent.name)
+      return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
+    }),
+  )
+  return files.flat(1)
 }
 
 // `fs.realpathSync.native` resolves differently in Windows network drive,
