@@ -41,8 +41,8 @@ import {
   unwrapId,
   wrapId,
 } from '../../utils'
+import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
-import { checkPublicFile } from '../../plugins/asset'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 
 interface AssetNode {
