@@ -48,7 +48,6 @@ const htmlProxyRE =
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-  // eslint-disable-next-line regexp/no-unused-capturing-group -- https://github.com/ota-meshi/eslint-plugin-regexp/issues/675
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
 
