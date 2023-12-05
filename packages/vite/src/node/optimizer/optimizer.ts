@@ -303,7 +303,7 @@ async function createDepsOptimizer(
     // Ensure that a rerun will not be issued for current discovered deps
     if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
 
-    if (closed || Object.keys(metadata.discovered).length === 0) {
+    if (closed) {
       currentlyProcessing = false
       return
     }
@@ -580,9 +580,6 @@ async function createDepsOptimizer(
   }
 
   function debouncedProcessing(timeout = debounceMs) {
-    if (!newDepsDiscovered) {
-      return
-    }
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
     enqueuedRerun = undefined
@@ -632,8 +629,10 @@ async function createDepsOptimizer(
             `✨ no dependencies found by the scanner or crawling static imports`,
           ),
         )
-        result.cancel()
-        firstRunCalled = true
+        // We still commit the result so the scanner isn't run on the next cold start
+        // for projects without dependencies
+        startNextDiscoveredBatch()
+        runOptimizer(result)
         return
       }
 
@@ -684,10 +683,10 @@ async function createDepsOptimizer(
           ),
         )
         firstRunCalled = true
-      } else {
-        // queue the first optimizer run
-        debouncedProcessing(0)
       }
+
+      // queue the first optimizer run, even without deps so the result is cached
+      debouncedProcessing(0)
     }
   }
 
