@@ -281,18 +281,25 @@ function notifyListeners(event: string, data: any): void {
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
+const hasDocument = typeof document !== 'undefined'
 
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()
-  document.body.appendChild(new ErrorOverlay(err))
+  if (hasDocument) {
+    document.body.appendChild(new ErrorOverlay(err))
+  }
 }
 
 function clearErrorOverlay() {
-  document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
+  if (hasDocument) {
+    document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
+  }
 }
 
 function hasErrorOverlay() {
-  return document.querySelectorAll(overlayId).length
+  if (hasDocument) {
+    return document.querySelectorAll(overlayId).length
+  }
 }
 
 let pending = false
@@ -378,7 +385,7 @@ const sheetsMap = new Map<string, HTMLStyleElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
-if ('document' in globalThis) {
+if (hasDocument) {
   document
     .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')
     .forEach((el) => {
