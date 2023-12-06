@@ -300,6 +300,8 @@ function hasErrorOverlay() {
   if (hasDocument) {
     return document.querySelectorAll(overlayId).length
   }
+  
+  return false
 }
 
 let pending = false
