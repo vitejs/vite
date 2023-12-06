@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { ResolvedConfig } from './config'
 import {
+  ERR_SYMLINK_IN_RECURSIVE_READDIR,
   cleanUrl,
   normalizePath,
   recursiveReaddir,
@@ -12,8 +13,16 @@ const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()
 
 export async function initPublicFiles(
   config: ResolvedConfig,
-): Promise<Set<string>> {
-  const fileNames = await recursiveReaddir(config.publicDir)
+): Promise<Set<string> | undefined> {
+  let fileNames: string[]
+  try {
+    fileNames = await recursiveReaddir(config.publicDir)
+  } catch (e) {
+    if (e.code === ERR_SYMLINK_IN_RECURSIVE_READDIR) {
+      return
+    }
+    throw e
+  }
   const publicFiles = new Set(
     fileNames.map((fileName) => fileName.slice(config.publicDir.length)),
   )

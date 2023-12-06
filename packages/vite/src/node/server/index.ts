@@ -645,7 +645,7 @@ export async function _createServer(
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
 
-    if (config.publicDir && file.startsWith(config.publicDir)) {
+    if (publicFiles && config.publicDir && file.startsWith(config.publicDir)) {
       publicFiles[isUnlink ? 'delete' : 'add'](
         file.slice(config.publicDir.length),
       )
