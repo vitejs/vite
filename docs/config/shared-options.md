@@ -13,11 +13,12 @@ See [Project Root](/guide/#index-html-and-project-root) for more details.
 
 - **Type:** `string`
 - **Default:** `/`
+- **Related:** [`server.origin`](/config/server-options.md#server-origin)
 
 Base public path when served in development or production. Valid values include:
 
 - Absolute URL pathname, e.g. `/foo/`
-- Full URL, e.g. `https://foo.com/`
+- Full URL, e.g. `https://foo.com/` (The origin part won't be used in development)
 - Empty string or `./` (for embedded deployment)
 
 See [Public Base Path](/guide/build#public-base-path) for more details.
@@ -33,21 +34,22 @@ See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ## define
 
-- **Type:** `Record<string, string>`
+- **Type:** `Record<string, any>`
 
 Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
-- Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
+Vite uses [esbuild defines](https://esbuild.github.io/api/#define) to perform replacements, so value expressions must be a string that contains a JSON-serializable value (null, boolean, number, string, array, or object) or a single identifier. For non-string values, Vite will automatically convert it to a string with `JSON.stringify`.
 
-- To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
+**Example:**
 
-- Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
-
-::: warning
-Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
-
-For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
-:::
+```js
+export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify('v1.0.0'),
+    __API_URL__: 'window.__backend_api_url',
+  },
+})
+```
 
 ::: tip NOTE
 For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
@@ -57,20 +59,6 @@ Example:
 ```ts
 // vite-env.d.ts
 declare const __APP_VERSION__: string
-```
-
-:::
-
-::: tip NOTE
-Since dev and build implement `define` differently, we should avoid some use cases to avoid inconsistency.
-
-Example:
-
-```js
-const obj = {
-  __NAME__, // Don't define object shorthand property names
-  __KEY__: value // Don't define object key
-}
 ```
 
 :::
@@ -111,7 +99,7 @@ When aliasing to file system paths, always use absolute paths. Relative alias va
 More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
 
 ::: warning Using with SSR
-If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.io/aliases/) support aliasing via the `npm:` prefix.
 :::
 
 ## resolve.dedupe
@@ -154,24 +142,14 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 ## resolve.mainFields
 
 - **Type:** `string[]`
-- **Default:** `['module', 'jsnext:main', 'jsnext']`
+- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']`
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
-
-## resolve.browserField
-
-- **Type:** `boolean`
-- **Default:** `true`
-- **Deprecated**
-
-Whether to enable resolving to `browser` field.
-
-In future, `resolve.mainFields`'s default value will be `['browser', 'module', 'jsnext:main', 'jsnext']` and this option will be removed.
 
 ## resolve.extensions
 
 - **Type:** `string[]`
-- **Default:** `['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']`
+- **Default:** `['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']`
 
 List of file extensions to try for imports that omit extensions. Note it is **NOT** recommended to omit extensions for custom import types (e.g. `.vue`) since it can interfere with IDE and type support.
 
@@ -190,25 +168,37 @@ Enabling this setting causes vite to determine file identity by the original fil
 - **Type:**
   ```ts
   interface CSSModulesOptions {
+    getJSON?: (
+      cssFileName: string,
+      json: Record<string, string>,
+      outputFileName: string,
+    ) => void
     scopeBehaviour?: 'global' | 'local'
     globalModulePaths?: RegExp[]
+    exportGlobals?: boolean
     generateScopedName?:
       | string
       | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
-     * default: null
+     * default: undefined
      */
     localsConvention?:
       | 'camelCase'
       | 'camelCaseOnly'
       | 'dashes'
       | 'dashesOnly'
-      | null
+      | ((
+          originalClassName: string,
+          generatedClassName: string,
+          inputFile: string,
+        ) => string)
   }
   ```
 
 Configure CSS modules behavior. The options are passed on to [postcss-modules](https://github.com/css-modules/postcss-modules).
+
+This option doesn't have any effect when using [Lightning CSS](../guide/features.md#lightning-css). If enabled, [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) should be used instead.
 
 ## css.postcss
 
@@ -226,30 +216,83 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 - **Type:** `Record<string, object>`
 
-Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. Example:
+Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
+
+- `sass`/`scss` - [Options](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
+- `less` - [Options](https://lesscss.org/usage/#less-options).
+- `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
+
+All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
+
+Example:
 
 ```js
 export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `$injectedColor: orange;`
+        additionalData: `$injectedColor: orange;`,
+      },
+      less: {
+        math: 'parens-division',
       },
       styl: {
-        additionalData: `$injectedColor ?= orange`
-      }
-    }
-  }
+        define: {
+          $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
+        },
+      },
+    },
+  },
 })
 ```
 
 ## css.devSourcemap
 
-- **Experimental**
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
 - **Type:** `boolean`
 - **Default:** `false`
 
 Whether to enable sourcemaps during dev.
+
+## css.transformer
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
+- **Type:** `'postcss' | 'lightningcss'`
+- **Default:** `'postcss'`
+
+Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/features.md#lightning-css) for more information.
+
+## css.lightningcss
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
+- **Type:**
+
+```js
+import type {
+  CSSModulesConfig,
+  Drafts,
+  Features,
+  NonStandard,
+  PseudoClasses,
+  Targets,
+} from 'lightningcss'
+```
+
+```js
+{
+  targets?: Targets
+  include?: Features
+  exclude?: Features
+  drafts?: Drafts
+  nonStandard?: NonStandard
+  pseudoClasses?: PseudoClasses
+  unusedSymbols?: string[]
+  cssModules?: CSSModulesConfig,
+  // ...
+}
+```
+
+Configures Lightning CSS. Full transform options can be found in [the Lightning CSS repo](https://github.com/parcel-bundler/lightningcss/blob/master/node/index.d.ts).
 
 ## json.namedExports
 
@@ -271,14 +314,14 @@ Enabling this disables named imports.
 
 - **Type:** `ESBuildOptions | false`
 
-`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+`ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform). The most common use case is customizing JSX:
 
 ```js
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
-    jsxFragment: 'Fragment'
-  }
+    jsxFragment: 'Fragment',
+  },
 })
 ```
 
@@ -289,8 +332,8 @@ In addition, you can also use `esbuild.jsxInject` to automatically inject JSX he
 ```js
 export default defineConfig({
   esbuild: {
-    jsxInject: `import React from 'react'`
-  }
+    jsxInject: `import React from 'react'`,
+  },
 })
 ```
 
@@ -315,7 +358,7 @@ The built-in asset type list can be found [here](https://github.com/vitejs/vite/
 
 ```js
 export default defineConfig({
-  assetsInclude: ['**/*.gltf']
+  assetsInclude: ['**/*.gltf'],
 })
 ```
 
@@ -324,6 +367,40 @@ export default defineConfig({
 - **Type:** `'info' | 'warn' | 'error' | 'silent'`
 
 Adjust console output verbosity. Default is `'info'`.
+
+## customLogger
+
+- **Type:**
+  ```ts
+  interface Logger {
+    info(msg: string, options?: LogOptions): void
+    warn(msg: string, options?: LogOptions): void
+    warnOnce(msg: string, options?: LogOptions): void
+    error(msg: string, options?: LogErrorOptions): void
+    clearScreen(type: LogType): void
+    hasErrorLogged(error: Error | RollupError): boolean
+    hasWarned: boolean
+  }
+  ```
+
+Use a custom logger to log messages. You can use Vite's `createLogger` API to get the default logger and customize it to, for example, change the message or filter out certain warnings.
+
+```js
+import { createLogger, defineConfig } from 'vite'
+
+const logger = createLogger()
+const loggerWarn = logger.warn
+
+logger.warn = (msg, options) => {
+  // Ignore empty CSS files warning
+  if (msg.includes('vite:css') && msg.includes(' is empty')) return
+  loggerWarn(msg, options)
+}
+
+export default defineConfig({
+  customLogger: logger,
+})
+```
 
 ## clearScreen
 
@@ -350,6 +427,15 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 
 :::warning SECURITY NOTES
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
+
+If you would like to expose an unprefixed variable, you can use [define](#define) to expose it:
+
+```js
+define: {
+  'import.meta.env.ENV_VARIABLE': JSON.stringify(process.env.ENV_VARIABLE)
+}
+```
+
 :::
 
 ## appType
@@ -359,8 +445,8 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 
 Whether your application is a Single Page Application (SPA), a [Multi Page Application (MPA)](../guide/build#multi-page-app), or Custom Application (SSR and frameworks with custom HTML handling):
 
-- `'spa'`: include SPA fallback middleware and configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
-- `'mpa'`: only include non-SPA HTML middlewares
+- `'spa'`: include HTML middlewares and use SPA fallback. Configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
+- `'mpa'`: include HTML middlewares
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).

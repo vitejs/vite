@@ -57,7 +57,7 @@ document.querySelector('.issue-2658-1').addEventListener('click', async () => {
 // data URLs (`data:`)
 const code2 = 'export const msg = "data";'
 const dataURL = `data:text/javascript;charset=utf-8,${encodeURIComponent(
-  code2
+  code2,
 )}`
 document.querySelector('.issue-2658-2').addEventListener('click', async () => {
   const { msg } = await import(/*@vite-ignore*/ dataURL)
@@ -82,6 +82,16 @@ let base = 'hello'
 
 import(`../alias/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars', mod.hello())
+})
+
+import(/*@vite-ignore*/ `https://localhost`).catch((mod) => {
+  console.log(mod)
+  text('.dynamic-import-with-vars-ignored', 'hello')
+})
+
+import(/*@vite-ignore*/ `https://localhost//${'test'}`).catch((mod) => {
+  console.log(mod)
+  text('.dynamic-import-with-double-slash-ignored', 'hello')
 })
 
 // prettier-ignore
@@ -124,6 +134,10 @@ import(`../nested/${base}.js`).then((mod) => {
 
 import(`../nested/nested/${base}.js`).then((mod) => {
   text('.dynamic-import-nested-self', mod.self)
+})
+
+import(`../nested/static.js`).then((mod) => {
+  text('.dynamic-import-static', mod.self)
 })
 
 console.log('index.js')

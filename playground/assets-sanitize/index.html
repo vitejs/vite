@@ -6,6 +6,35 @@
     margin-bottom: 1rem;
   }
 </style>
-<h1>test elements below should show circles and their url</h1>
+<h3>test elements below should show circles and their url</h3>
 <div class="test-el plus-circle"></div>
 <div class="test-el underscore-circle"></div>
+
+<h3>Denied .env</h3>
+<div class="unsafe-dotenv"></div>
+<div class="unsafe-dotenv-double-slash"></div>
+
+<script type="module">
+  // .env, denied by default. See fs-serve playground for other fs tests
+  // these checks ensure that a project without a custom root respects fs.deny
+
+  fetch('/.env')
+    .then((r) => {
+      text('.unsafe-dotenv', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  fetch(window.location + '/.env')
+    .then((r) => {
+      text('.unsafe-dotenv-double-slash', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>

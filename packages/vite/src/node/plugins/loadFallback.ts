@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs'
+import fsp from 'node:fs/promises'
 import type { Plugin } from '..'
 import { cleanUrl } from '../utils'
 
@@ -10,11 +10,15 @@ export function loadFallbackPlugin(): Plugin {
     name: 'vite:load-fallback',
     async load(id) {
       try {
-        // if we don't add `await` here, we couldn't catch the error in readFile
-        return await fs.readFile(cleanUrl(id), 'utf-8')
+        const cleanedId = cleanUrl(id)
+        const content = await fsp.readFile(cleanedId, 'utf-8')
+        this.addWatchFile(cleanedId)
+        return content
       } catch (e) {
-        return fs.readFile(id, 'utf-8')
+        const content = await fsp.readFile(id, 'utf-8')
+        this.addWatchFile(id)
+        return content
       }
-    }
+    },
   }
 }

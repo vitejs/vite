@@ -4,17 +4,27 @@ function text(el, text) {
 }
 
 let classicWorker = new Worker(
-  new URL('../classic-worker.js', import.meta.url) /* , */
+  new URL('../classic-worker.js', import.meta.url) /* , */,
   // test comment
 )
 
-// just test for case: ') ... ,' mean no worker options parmas
+// just test for case: ') ... ,' mean no worker options params
 classicWorker = new Worker(new URL('../classic-worker.js', import.meta.url))
 
 classicWorker.addEventListener('message', ({ data }) => {
-  text('.classic-worker', JSON.stringify(data))
+  switch (data.message) {
+    case 'ping': {
+      text('.classic-worker', data.result)
+      break
+    }
+    case 'test-import': {
+      text('.classic-worker-import', data.result)
+      break
+    }
+  }
 })
 classicWorker.postMessage('ping')
+classicWorker.postMessage('test-import')
 
 // prettier-ignore
 // test trailing comma

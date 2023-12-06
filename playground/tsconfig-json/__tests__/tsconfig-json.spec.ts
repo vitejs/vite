@@ -28,9 +28,9 @@ describe('transformWithEsbuild', () => {
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: {
         compilerOptions: {
-          useDefineForClassFields: false
-        }
-      }
+          useDefineForClassFields: false,
+        },
+      },
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
     expect(result.code).toContain('import "./not-used-type";')
@@ -44,7 +44,7 @@ describe('transformWithEsbuild', () => {
         "compilerOptions": {
           "useDefineForClassFields": false
         }
-      }`
+      }`,
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should not be read
     // and defaults to "remove"
@@ -58,13 +58,24 @@ describe('transformWithEsbuild', () => {
       tsconfigRaw: {
         compilerOptions: {
           useDefineForClassFields: false,
-          preserveValueImports: true
-        }
-      }
+          preserveValueImports: true,
+        },
+      },
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
     expect(result.code).toContain(
-      'import { MainTypeOnlyClass } from "./not-used-type";'
+      'import { MainTypeOnlyClass } from "./not-used-type";',
     )
+  })
+
+  test('experimentalDecorators', async () => {
+    const main = path.resolve(__dirname, '../src/decorator.ts')
+    const mainContent = fs.readFileSync(main, 'utf-8')
+    // Should not error when transpiling decorators as nearest tsconfig.json
+    // has "experimentalDecorators": true
+    const result = await transformWithEsbuild(mainContent, main, {
+      target: 'es2020',
+    })
+    expect(result.code).toContain('__decorateClass')
   })
 })

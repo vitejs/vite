@@ -1,5 +1,5 @@
-//@ts-nocheck
 /* eslint-disable */
+//@ts-nocheck
 //TODO: replace this code with https://github.com/lukeed/polka/pull/148 once it's released
 
 // This is based on https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/polkompress.js
@@ -25,7 +25,7 @@ export default function compression() {
   // disable Brotli on Node<12.7 where it is unsupported:
   if (!zlib.createBrotliCompress) brotli = false
 
-  return (req, res, next = noop) => {
+  return function viteCompressionMiddleware(req, res, next = noop) {
     const accept = req.headers['accept-encoding'] + ''
     const encoding = ((brotli && accept.match(/\bbr\b/)) ||
       (gzip && accept.match(/\bgzip\b/)) ||
@@ -44,10 +44,9 @@ export default function compression() {
 
     function start() {
       started = true
-      // @ts-ignore
       size = res.getHeader('Content-Length') | 0 || size
       const compressible = mimes.test(
-        String(res.getHeader('Content-Type') || 'text/plain')
+        String(res.getHeader('Content-Type') || 'text/plain'),
       )
       const cleartext = !res.getHeader('Content-Encoding')
       const listeners = pendingListeners || []
@@ -57,10 +56,10 @@ export default function compression() {
         if (encoding === 'br') {
           const params = {
             [zlib.constants.BROTLI_PARAM_QUALITY]: level,
-            [zlib.constants.BROTLI_PARAM_SIZE_HINT]: size
+            [zlib.constants.BROTLI_PARAM_SIZE_HINT]: size,
           }
           compress = zlib.createBrotliCompress({
-            params: Object.assign(params, brotliOpts)
+            params: Object.assign(params, brotliOpts),
           })
         } else {
           compress = zlib.createGzip(Object.assign({ level }, gzipOpts))
@@ -68,7 +67,7 @@ export default function compression() {
         // backpressure
         compress.on(
           'data',
-          (chunk) => write.call(res, chunk) === false && compress.pause()
+          (chunk) => write.call(res, chunk) === false && compress.pause(),
         )
         on.call(res, 'drain', () => compress.resume())
         compress.on('end', () => end.call(res))

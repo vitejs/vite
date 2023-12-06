@@ -1,21 +1,22 @@
 // @ts-check
-const fs = require('node:fs')
-const path = require('node:path')
-const express = require('express')
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import express from 'express'
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const isTest = process.env.VITEST
 
-async function createServer(
-  root = process.cwd(),
-  isProd = process.env.NODE_ENV === 'production'
-) {
+export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
   const app = express()
 
   /**
    * @type {import('vite').ViteDevServer}
    */
-  const vite = await require('vite').createServer({
+  const vite = await (
+    await import('vite')
+  ).createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -24,13 +25,16 @@ async function createServer(
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
-      }
+        interval: 100,
+      },
+      hmr: {
+        port: hmrPort,
+      },
     },
     appType: 'custom',
     json: {
-      stringify: true
-    }
+      stringify: true,
+    },
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -49,14 +53,17 @@ async function createServer(
       }
 
       if (url === '/json-fs') {
-        console.time('transform module')
-        const source = fs.readFileSync('./test.json', { encoding: 'utf-8' })
+        // console.time('transform module')
+        const source = fs.readFileSync(path.resolve(__dirname, './test.json'), {
+          encoding: 'utf-8',
+        })
         const json = await vite.ssrTransform(
           `export default ${source}`,
           null,
-          './output.json'
+          './output.json',
         )
-        console.timeEnd('transform module')
+        // console.timeEnd('transform module')
+        // @ts-expect-error ignore in test
         res.status(200).end(String(json.code.length))
         return
       }
@@ -80,9 +87,6 @@ if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(5173, () => {
       console.log('http://localhost:5173')
-    })
+    }),
   )
 }
-
-// for test use
-exports.createServer = createServer

@@ -37,43 +37,23 @@ declare module '*.module.sss' {
 }
 
 // CSS
-declare module '*.css' {
-  const css: string
-  export default css
-}
-declare module '*.scss' {
-  const css: string
-  export default css
-}
-declare module '*.sass' {
-  const css: string
-  export default css
-}
-declare module '*.less' {
-  const css: string
-  export default css
-}
-declare module '*.styl' {
-  const css: string
-  export default css
-}
-declare module '*.stylus' {
-  const css: string
-  export default css
-}
-declare module '*.pcss' {
-  const css: string
-  export default css
-}
-declare module '*.sss' {
-  const css: string
-  export default css
-}
+declare module '*.css' {}
+declare module '*.scss' {}
+declare module '*.sass' {}
+declare module '*.less' {}
+declare module '*.styl' {}
+declare module '*.stylus' {}
+declare module '*.pcss' {}
+declare module '*.sss' {}
 
 // Built-in asset types
 // see `src/node/constants.ts`
 
 // images
+declare module '*.apng' {
+  const src: string
+  export default src
+}
 declare module '*.png' {
   const src: string
   export default src
@@ -148,6 +128,14 @@ declare module '*.aac' {
   const src: string
   export default src
 }
+declare module '*.opus' {
+  const src: string
+  export default src
+}
+declare module '*.mov' {
+  const src: string
+  export default src
+}
 
 // fonts
 declare module '*.woff' {
@@ -188,7 +176,7 @@ declare module '*.txt' {
 // wasm?init
 declare module '*.wasm?init' {
   const initWasm: (
-    options: WebAssembly.Imports
+    options?: WebAssembly.Imports,
   ) => Promise<WebAssembly.Instance>
   export default initWasm
 }
@@ -196,14 +184,14 @@ declare module '*.wasm?init' {
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
 
 declare module '*?worker&inline' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
@@ -215,14 +203,14 @@ declare module '*?worker&url' {
 
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
 }
 
 declare module '*?sharedworker&inline' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
 }

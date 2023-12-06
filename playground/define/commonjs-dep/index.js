@@ -1,1 +1,3 @@
-module.exports = { defined: __STRINGIFIED_OBJ__ }
+module.exports = {
+  defined: __STRINGIFIED_OBJ__,
+}

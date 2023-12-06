@@ -1,25 +1,32 @@
-import { promises as fs } from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
-import type { SourceDescription, SourceMap } from 'rollup'
+import MagicString from 'magic-string'
+import { init, parse as parseImports } from 'es-module-lexer'
+import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
+import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
+  injectQuery,
   isObject,
   prettifyUrl,
+  removeImportQuery,
   removeTimestampQuery,
-  timeFrom
+  stripBase,
+  timeFrom,
+  unwrapId,
 } from '../utils'
-import { checkPublicFile } from '../plugins/asset'
+import { checkPublicFile } from '../publicDir'
 import { getDepsOptimizer } from '../optimizer'
-import { injectSourcesContent } from './sourcemap'
+import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
+import { throwClosedServerError } from './pluginContainer'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -27,11 +34,10 @@ export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
 const debugCache = createDebugger('vite:cache')
-const isDebug = !!process.env.DEBUG
 
 export interface TransformResult {
   code: string
-  map: SourceMap | null
+  map: SourceMap | { mappings: '' } | null
   etag?: string
   deps?: string[]
   dynamicDeps?: string[]
@@ -45,8 +51,10 @@ export interface TransformOptions {
 export function transformRequest(
   url: string,
   server: ViteDevServer,
-  options: TransformOptions = {}
+  options: TransformOptions = {},
 ): Promise<TransformResult | null> {
+  if (server._restartPromise && !options.ssr) throwClosedServerError()
+
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
   // This module may get invalidated while we are processing it. For example
@@ -107,46 +115,60 @@ export function transformRequest(
   server._pendingRequests.set(cacheKey, {
     request,
     timestamp,
-    abort: clearCache
+    abort: clearCache,
   })
-  request.then(clearCache, clearCache)
 
-  return request
+  return request.finally(clearCache)
 }
 
 async function doTransform(
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
-  timestamp: number
+  timestamp: number,
 ) {
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
-  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
+  const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
+
+  // tries to handle soft invalidation of the module if available,
+  // returns a boolean true is successful, or false if no handling is needed
+  const softInvalidatedTransformResult =
+    module &&
+    (await handleModuleSoftInvalidation(module, ssr, timestamp, server))
+  if (softInvalidatedTransformResult) {
+    debugCache?.(`[memory-hmr] ${prettyUrl}`)
+    return softInvalidatedTransformResult
+  }
 
   // check if we have a fresh cache
   const cached =
     module && (ssr ? module.ssrTransformResult : module.transformResult)
   if (cached) {
-    // TODO: check if the module is "partially invalidated" - i.e. an import
-    // down the chain has been fully invalidated, but this current module's
-    // content has not changed.
-    // in this case, we can reuse its previous cached result and only update
-    // its import timestamps.
-
-    isDebug && debugCache(`[memory] ${prettyUrl}`)
+    debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
 
-  // resolve
-  const id =
-    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
+  const resolved = module
+    ? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
 
-  const result = loadAndTransform(id, url, server, options, timestamp)
+  // resolve
+  const id = module?.id ?? resolved?.id ?? url
+
+  const result = loadAndTransform(
+    id,
+    url,
+    server,
+    options,
+    timestamp,
+    module,
+    resolved,
+  )
 
   getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
 
@@ -158,11 +180,14 @@ async function loadAndTransform(
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
-  timestamp: number
+  timestamp: number,
+  mod?: ModuleNode,
+  resolved?: PartialResolvedId,
 ) {
-  const { config, pluginContainer, moduleGraph, watcher } = server
-  const { root, logger } = config
-  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
+  const { config, pluginContainer, moduleGraph } = server
+  const { logger } = config
+  const prettyUrl =
+    debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const file = cleanUrl(id)
@@ -171,7 +196,7 @@ async function loadAndTransform(
   let map: SourceDescription['map'] = null
 
   // load
-  const loadStart = isDebug ? performance.now() : 0
+  const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, { ssr })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
@@ -186,30 +211,37 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (options.ssr || isFileServingAllowed(file, server)) {
       try {
-        code = await fs.readFile(file, 'utf-8')
-        isDebug && debugLoad(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
+        code = await fsp.readFile(file, 'utf-8')
+        debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT') {
+          if (e.code === 'EISDIR') {
+            e.message = `${e.message} ${file}`
+          }
           throw e
         }
       }
+      ensureWatchedFile(server.watcher, file, config.root)
     }
     if (code) {
       try {
         map = (
           convertSourceMap.fromSource(code) ||
-          convertSourceMap.fromMapFileSource(code, path.dirname(file))
+          (await convertSourceMap.fromMapFileSource(
+            code,
+            createConvertSourceMapReadMap(file),
+          ))
         )?.toObject()
 
         code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
         logger.warn(`Failed to load source map for ${url}.`, {
-          timestamp: true
+          timestamp: true,
         })
       }
     }
   } else {
-    isDebug && debugLoad(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
+    debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
@@ -219,26 +251,38 @@ async function loadAndTransform(
   }
   if (code == null) {
     const isPublicFile = checkPublicFile(url, config)
+    let publicDirName = path.relative(config.root, config.publicDir)
+    if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
     const msg = isPublicFile
-      ? `This file is in /public and will be copied as-is during build without ` +
-        `going through the plugin transforms, and therefore should not be ` +
-        `imported from source code. It can only be referenced via HTML tags.`
+      ? `This file is in ${publicDirName} and will be copied as-is during ` +
+        `build without going through the plugin transforms, and therefore ` +
+        `should not be imported from source code. It can only be referenced ` +
+        `via HTML tags.`
       : `Does the file exist?`
+    const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
+      .get(id)
+      ?.importers.values()
+      .next().value
+    const importer = importerMod?.file || importerMod?.url
     const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id}). ${msg}`
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
     throw err
   }
+
+  if (server._restartPromise && !ssr) throwClosedServerError()
+
   // ensure module in graph after successful load
-  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
-  ensureWatchedFile(watcher, mod.file, root)
+  mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
 
   // transform
-  const transformStart = isDebug ? performance.now() : 0
+  const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
-    ssr
+    ssr,
   })
   const originalCode = code
   if (
@@ -246,30 +290,173 @@ async function loadAndTransform(
     (isObject(transformResult) && transformResult.code == null)
   ) {
     // no transform applied, keep code as-is
-    isDebug &&
-      debugTransform(
-        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
-      )
+    debugTransform?.(
+      timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
+    )
   } else {
-    isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
+    debugTransform?.(`${timeFrom(transformStart)} ${prettyUrl}`)
     code = transformResult.code!
     map = transformResult.map
   }
 
-  if (map && mod.file) {
-    map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
+  let normalizedMap: SourceMap | { mappings: '' } | null
+  if (typeof map === 'string') {
+    normalizedMap = JSON.parse(map)
+  } else if (map) {
+    normalizedMap = map as SourceMap | { mappings: '' }
+  } else {
+    normalizedMap = null
+  }
+
+  if (normalizedMap && 'version' in normalizedMap && mod.file) {
+    if (normalizedMap.mappings) {
+      await injectSourcesContent(normalizedMap, mod.file, logger)
+    }
+
+    const sourcemapPath = `${mod.file}.map`
+    applySourcemapIgnoreList(
+      normalizedMap,
+      sourcemapPath,
+      config.server.sourcemapIgnoreList,
+      logger,
+    )
+
+    if (path.isAbsolute(mod.file)) {
+      for (
+        let sourcesIndex = 0;
+        sourcesIndex < normalizedMap.sources.length;
+        ++sourcesIndex
+      ) {
+        const sourcePath = normalizedMap.sources[sourcesIndex]
+        if (sourcePath) {
+          // Rewrite sources to relative paths to give debuggers the chance
+          // to resolve and display them in a meaningful way (rather than
+          // with absolute paths).
+          if (path.isAbsolute(sourcePath)) {
+            normalizedMap.sources[sourcesIndex] = path.relative(
+              path.dirname(mod.file),
+              sourcePath,
+            )
+          }
+        }
+      }
     }
   }
 
-  const result = ssr
-    ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
-    : ({
-        code,
-        map,
-        etag: getEtag(code, { weak: true })
-      } as TransformResult)
+  if (server._restartPromise && !ssr) throwClosedServerError()
+
+  const result =
+    ssr && !server.config.experimental.skipSsrTransform
+      ? await server.ssrTransform(code, normalizedMap, url, originalCode)
+      : ({
+          code,
+          map: normalizedMap,
+          etag: getEtag(code, { weak: true }),
+        } satisfies TransformResult)
+
+  // Only cache the result if the module wasn't invalidated while it was
+  // being processed, so it is re-processed next time if it is stale
+  if (timestamp > mod.lastInvalidationTimestamp) {
+    if (ssr) mod.ssrTransformResult = result
+    else mod.transformResult = result
+  }
+
+  return result
+}
+
+function createConvertSourceMapReadMap(originalFileName: string) {
+  return (filename: string) => {
+    return fsp.readFile(
+      path.resolve(path.dirname(originalFileName), filename),
+      'utf-8',
+    )
+  }
+}
+
+/**
+ * When a module is soft-invalidated, we can preserve its previous `transformResult` and
+ * return similar code to before:
+ *
+ * - Client: We need to transform the import specifiers with new timestamps
+ * - SSR: We don't need to change anything as `ssrLoadModule` controls it
+ */
+async function handleModuleSoftInvalidation(
+  mod: ModuleNode,
+  ssr: boolean,
+  timestamp: number,
+  server: ViteDevServer,
+) {
+  const transformResult = ssr ? mod.ssrInvalidationState : mod.invalidationState
+
+  // Reset invalidation state
+  if (ssr) mod.ssrInvalidationState = undefined
+  else mod.invalidationState = undefined
+
+  // Skip if not soft-invalidated
+  if (!transformResult || transformResult === 'HARD_INVALIDATED') return
+
+  if (ssr ? mod.ssrTransformResult : mod.transformResult) {
+    throw new Error(
+      `Internal server error: Soft-invalidated module "${mod.url}" should not have existing transform result`,
+    )
+  }
+
+  let result: TransformResult
+  // For SSR soft-invalidation, no transformation is needed
+  if (ssr) {
+    result = transformResult
+  }
+  // For client soft-invalidation, we need to transform each imports with new timestamps if available
+  else {
+    await init
+    const source = transformResult.code
+    const s = new MagicString(source)
+    const [imports] = parseImports(source)
+
+    for (const imp of imports) {
+      let rawUrl = source.slice(imp.s, imp.e)
+      if (rawUrl === 'import.meta') continue
+
+      const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
+      if (hasQuotes) {
+        rawUrl = rawUrl.slice(1, -1)
+      }
+
+      const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
+      // hmrUrl must be derived the same way as importAnalysis
+      const hmrUrl = unwrapId(
+        stripBase(removeImportQuery(urlWithoutTimestamp), server.config.base),
+      )
+      for (const importedMod of mod.clientImportedModules) {
+        if (importedMod.url !== hmrUrl) continue
+        if (importedMod.lastHMRTimestamp > 0) {
+          const replacedUrl = injectQuery(
+            urlWithoutTimestamp,
+            `t=${importedMod.lastHMRTimestamp}`,
+          )
+          const start = hasQuotes ? imp.s + 1 : imp.s
+          const end = hasQuotes ? imp.e - 1 : imp.e
+          s.overwrite(start, end, replacedUrl)
+        }
+
+        if (imp.d === -1 && server.config.server.preTransformRequests) {
+          // pre-transform known direct imports
+          server.warmupRequest(hmrUrl, { ssr })
+        }
+
+        break
+      }
+    }
+
+    // Update `transformResult` with new code. We don't have to update the sourcemap
+    // as the timestamp changes doesn't affect the code lines (stable).
+    const code = s.toString()
+    result = {
+      ...transformResult,
+      code,
+      etag: getEtag(code, { weak: true }),
+    }
+  }
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale

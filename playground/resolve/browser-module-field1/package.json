@@ -1,5 +1,5 @@
 {
-  "name": "resolve-browser-module-field1",
+  "name": "@vitejs/test-resolve-browser-module-field1",
   "private": true,
   "version": "1.0.0",
   "//": "real world example: https://github.com/aws/aws-sdk-js-v3/blob/59cdfd81452bce16bb26d07668e5550ed05d9d06/packages/credential-providers/package.json#L6-L7",

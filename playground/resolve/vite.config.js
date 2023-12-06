@@ -1,5 +1,6 @@
-const path = require('node:path')
-const { normalizePath } = require('vite')
+import path from 'node:path'
+import { defineConfig, normalizePath } from 'vite'
+import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
@@ -8,30 +9,29 @@ const virtualFile9036 = 'virtual:file-9036.js'
 const virtualId9036 = '\0' + virtualFile9036
 
 const customVirtualFile = '@custom-virtual-file'
-const { a } = require('./config-dep')
 
 const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
   {
     specifier: normalizePath(
-      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, '')
+      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, ''),
     ),
-    elementQuery: '.drive-relative'
+    elementQuery: '.drive-relative',
   },
   {
     specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
-    elementQuery: '.absolute'
-  }
+    elementQuery: '.absolute',
+  },
 ]
 
-module.exports = {
+export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
-    mainFields: ['custom', 'module'],
-    conditions: ['custom']
+    mainFields: ['browser', 'custom', 'module'],
+    conditions: ['custom'],
   },
   define: {
-    VITE_CONFIG_DEP_TEST: a
+    VITE_CONFIG_DEP_TEST: a,
   },
   plugins: [
     {
@@ -45,7 +45,7 @@ module.exports = {
         if (id === virtualId) {
           return `export const msg = "[success] from conventional virtual file"`
         }
-      }
+      },
     },
     {
       name: 'virtual-module-9036',
@@ -58,7 +58,7 @@ module.exports = {
         if (id === virtualId9036) {
           return `export const msg = "[success] from virtual file #9036"`
         }
-      }
+      },
     },
     {
       name: 'custom-resolve',
@@ -71,7 +71,7 @@ module.exports = {
         if (id === customVirtualFile) {
           return `export const msg = "[success] from custom virtual file"`
         }
-      }
+      },
     },
     {
       name: 'generated-content',
@@ -86,7 +86,7 @@ module.exports = {
             .map(
               ({ specifier, elementQuery }, i) =>
                 `import content${i} from ${JSON.stringify(specifier)}\n` +
-                `text(${JSON.stringify(elementQuery)}, content${i})`
+                `text(${JSON.stringify(elementQuery)}, content${i})`,
             )
             .join('\n')
 
@@ -97,10 +97,17 @@ module.exports = {
             tests
           )
         }
-      }
-    }
+      },
+    },
   ],
   optimizeDeps: {
-    include: ['require-pkg-with-module-field']
-  }
-}
+    include: [
+      '@vitejs/test-resolve-exports-with-module-condition-required',
+      '@vitejs/test-require-pkg-with-module-field',
+      '@vitejs/test-resolve-sharp-dir',
+    ],
+  },
+  build: {
+    copyPublicDir: false,
+  },
+})

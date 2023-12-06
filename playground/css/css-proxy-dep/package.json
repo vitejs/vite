@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-css-proxy-dep",
+  "private": true,
+  "version": "1.0.0",
+  "style": "index.css",
+  "dependencies": {
+    "@vitejs/test-css-proxy-dep-nested": "file:../css-proxy-dep-nested"
+  }
+}

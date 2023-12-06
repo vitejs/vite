@@ -1,8 +1,8 @@
-import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
-import type { ModuleNamespace, ViteHotContext } from 'types/hot'
+import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
+import { HMRClient, HMRContext } from '../shared/hmr'
 import { ErrorOverlay, overlayId } from './overlay'
-// eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -23,7 +23,7 @@ const importMetaUrl = new URL(import.meta.url)
 // use server configuration, then fallback to inference
 const serverHost = __SERVER_HOST__
 const socketProtocol =
-  __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
+  __HMR_PROTOCOL__ || (importMetaUrl.protocol === 'https:' ? 'wss' : 'ws')
 const hmrPort = __HMR_PORT__
 const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
   hmrPort || importMetaUrl.port
@@ -50,17 +50,17 @@ try {
             'your current setup:\n' +
             `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
             `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .'
+            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .',
         )
       })
       socket.addEventListener(
         'open',
         () => {
           console.info(
-            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.'
+            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.',
           )
         },
-        { once: true }
+        { once: true },
       )
     }
   }
@@ -73,7 +73,7 @@ try {
 function setupWebSocket(
   protocol: string,
   hostAndPath: string,
-  onCloseWithoutOpen?: () => void
+  onCloseWithoutOpen?: () => void,
 ) {
   const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
   let isOpened = false
@@ -82,8 +82,9 @@ function setupWebSocket(
     'open',
     () => {
       isOpened = true
+      notifyListeners('vite:ws:connect', { webSocket: socket })
     },
-    { once: true }
+    { once: true },
   )
 
   // Listen for messages
@@ -100,23 +101,14 @@ function setupWebSocket(
       return
     }
 
+    notifyListeners('vite:ws:disconnect', { webSocket: socket })
+
     console.log(`[vite] server connection lost. polling for restart...`)
     await waitForSuccessfulPing(protocol, hostAndPath)
     location.reload()
   })
 
   return socket
-}
-
-function warnFailedFetch(err: Error, path: string | string[]) {
-  if (!err.message.match('fetch')) {
-    console.error(err)
-  }
-  console.error(
-    `[hmr] Failed to reload ${path}. ` +
-      `This could be due to syntax errors or importing non-existent ` +
-      `modules. (see errors above)`
-  )
 }
 
 function cleanUrl(pathname: string): string {
@@ -127,6 +119,36 @@ function cleanUrl(pathname: string): string {
 
 let isFirstUpdate = true
 const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
+
+const debounceReload = (time: number) => {
+  let timer: ReturnType<typeof setTimeout> | null
+  return () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    timer = setTimeout(() => {
+      location.reload()
+    }, time)
+  }
+}
+const pageReload = debounceReload(50)
+
+const hmrClient = new HMRClient(console, async function importUpdatedModule({
+  acceptedPath,
+  timestamp,
+  explicitImportRequired,
+}) {
+  const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
+  return await import(
+    /* @vite-ignore */
+    base +
+      acceptedPathWithoutQuery.slice(1) +
+      `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+        query ? `&${query}` : ''
+      }`
+  )
+})
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -157,7 +179,7 @@ async function handleMessage(payload: HMRPayload) {
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
           if (update.type === 'js-update') {
-            return queueUpdate(fetchUpdate(update))
+            return queueUpdate(hmrClient.fetchUpdate(update))
           }
 
           // css-update
@@ -168,10 +190,10 @@ async function handleMessage(payload: HMRPayload) {
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
           const el = Array.from(
-            document.querySelectorAll<HTMLLinkElement>('link')
+            document.querySelectorAll<HTMLLinkElement>('link'),
           ).find(
             (e) =>
-              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
+              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl),
           )
 
           if (!el) {
@@ -200,7 +222,7 @@ async function handleMessage(payload: HMRPayload) {
             outdatedLinkTags.add(el)
             el.after(newLinkTag)
           })
-        })
+        }),
       )
       notifyListeners('vite:afterUpdate', payload)
       break
@@ -220,25 +242,16 @@ async function handleMessage(payload: HMRPayload) {
           payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
-          location.reload()
+          pageReload()
         }
         return
       } else {
-        location.reload()
+        pageReload()
       }
       break
     case 'prune':
       notifyListeners('vite:beforePrune', payload)
-      // After an HMR update, some modules are no longer imported on the page
-      // but they may have left behind side effects that need to be cleaned up
-      // (.e.g style injections)
-      // TODO Trigger their dispose callbacks.
-      payload.paths.forEach((path) => {
-        const fn = pruneMap.get(path)
-        if (fn) {
-          fn(dataMap.get(path))
-        }
-      })
+      hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
       notifyListeners('vite:error', payload)
@@ -247,7 +260,7 @@ async function handleMessage(payload: HMRPayload) {
         createErrorOverlay(err)
       } else {
         console.error(
-          `[vite] Internal Server Error\n${err.message}\n${err.stack}`
+          `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
         )
       }
       break
@@ -261,27 +274,21 @@ async function handleMessage(payload: HMRPayload) {
 
 function notifyListeners<T extends string>(
   event: T,
-  data: InferCustomEventPayload<T>
+  data: InferCustomEventPayload<T>,
 ): void
 function notifyListeners(event: string, data: any): void {
-  const cbs = customListenersMap.get(event)
-  if (cbs) {
-    cbs.forEach((cb) => cb(data))
-  }
+  hmrClient.notifyListeners(event, data)
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
 
 function createErrorOverlay(err: ErrorPayload['err']) {
-  if (!enableOverlay) return
   clearErrorOverlay()
   document.body.appendChild(new ErrorOverlay(err))
 }
 
 function clearErrorOverlay() {
-  document
-    .querySelectorAll(overlayId)
-    .forEach((n) => (n as ErrorOverlay).close())
+  document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
 }
 
 function hasErrorOverlay() {
@@ -311,76 +318,100 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
 async function waitForSuccessfulPing(
   socketProtocol: string,
   hostAndPath: string,
-  ms = 1000
+  ms = 1000,
 ) {
   const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
 
+  const ping = async () => {
+    // A fetch on a websocket URL will return a successful promise with status 400,
+    // but will reject a networking error.
+    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
+    try {
+      await fetch(`${pingHostProtocol}://${hostAndPath}`, {
+        mode: 'no-cors',
+        headers: {
+          // Custom headers won't be included in a request with no-cors so (ab)use one of the
+          // safelisted headers to identify the ping request
+          Accept: 'text/x-vite-ping',
+        },
+      })
+      return true
+    } catch {}
+    return false
+  }
+
+  if (await ping()) {
+    return
+  }
+  await wait(ms)
+
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    try {
-      // A fetch on a websocket URL will return a successful promise with status 400,
-      // but will reject a networking error.
-      // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
-      await fetch(`${pingHostProtocol}://${hostAndPath}`, {
-        mode: 'no-cors'
-      })
-      break
-    } catch (e) {
-      // wait ms before attempting to ping again
-      await new Promise((resolve) => setTimeout(resolve, ms))
+    if (document.visibilityState === 'visible') {
+      if (await ping()) {
+        break
+      }
+      await wait(ms)
+    } else {
+      await waitForWindowShow()
     }
   }
 }
 
-// https://wicg.github.io/construct-stylesheets
-const supportsConstructedSheet = (() => {
-  // TODO: re-enable this try block once Chrome fixes the performance of
-  // rule insertion in really big stylesheets
-  // try {
-  //   new CSSStyleSheet()
-  //   return true
-  // } catch (e) {}
-  return false
-})()
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
-const sheetsMap = new Map<
-  string,
-  HTMLStyleElement | CSSStyleSheet | undefined
->()
+function waitForWindowShow() {
+  return new Promise<void>((resolve) => {
+    const onChange = async () => {
+      if (document.visibilityState === 'visible') {
+        resolve()
+        document.removeEventListener('visibilitychange', onChange)
+      }
+    }
+    document.addEventListener('visibilitychange', onChange)
+  })
+}
+
+const sheetsMap = new Map<string, HTMLStyleElement>()
+
+// collect existing style elements that may have been inserted during SSR
+// to avoid FOUC or duplicate styles
+if ('document' in globalThis) {
+  document
+    .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')
+    .forEach((el) => {
+      sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
+    })
+}
+
+// all css imports should be inserted at the same position
+// because after build it will be a single css file
+let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
-  if (supportsConstructedSheet && !content.includes('@import')) {
-    if (style && !(style instanceof CSSStyleSheet)) {
-      removeStyle(id)
-      style = undefined
-    }
+  if (!style) {
+    style = document.createElement('style')
+    style.setAttribute('type', 'text/css')
+    style.setAttribute('data-vite-dev-id', id)
+    style.textContent = content
 
-    if (!style) {
-      style = new CSSStyleSheet()
-      // @ts-expect-error: using experimental API
-      style.replaceSync(content)
-      // @ts-expect-error: using experimental API
-      document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
-    } else {
-      // @ts-expect-error: using experimental API
-      style.replaceSync(content)
-    }
-  } else {
-    if (style && !(style instanceof HTMLStyleElement)) {
-      removeStyle(id)
-      style = undefined
-    }
-
-    if (!style) {
-      style = document.createElement('style')
-      style.setAttribute('type', 'text/css')
-      style.setAttribute('data-vite-dev-id', id)
-      style.textContent = content
+    if (!lastInsertedStyle) {
       document.head.appendChild(style)
+
+      // reset lastInsertedStyle after async
+      // because dynamically imported css will be splitted into a different file
+      setTimeout(() => {
+        lastInsertedStyle = undefined
+      }, 0)
     } else {
-      style.textContent = content
+      lastInsertedStyle.insertAdjacentElement('afterend', style)
     }
+    lastInsertedStyle = style
+  } else {
+    style.textContent = content
   }
   sheetsMap.set(id, style)
 }
@@ -388,66 +419,8 @@ export function updateStyle(id: string, content: string): void {
 export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
-    if (style instanceof CSSStyleSheet) {
-      // @ts-expect-error: using experimental API
-      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
-        (s: CSSStyleSheet) => s !== style
-      )
-    } else {
-      document.head.removeChild(style)
-    }
+    document.head.removeChild(style)
     sheetsMap.delete(id)
-  }
-}
-
-async function fetchUpdate({
-  path,
-  acceptedPath,
-  timestamp,
-  explicitImportRequired
-}: Update) {
-  const mod = hotModulesMap.get(path)
-  if (!mod) {
-    // In a code-splitting project,
-    // it is common that the hot-updating module is not loaded yet.
-    // https://github.com/vitejs/vite/issues/721
-    return
-  }
-
-  const moduleMap = new Map<string, ModuleNamespace>()
-  const isSelfUpdate = path === acceptedPath
-
-  // determine the qualified callbacks before we re-import the modules
-  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) =>
-    deps.includes(acceptedPath)
-  )
-
-  if (isSelfUpdate || qualifiedCallbacks.length > 0) {
-    const dep = acceptedPath
-    const disposer = disposeMap.get(dep)
-    if (disposer) await disposer(dataMap.get(dep))
-    const [path, query] = dep.split(`?`)
-    try {
-      const newMod: ModuleNamespace = await import(
-        /* @vite-ignore */
-        base +
-          path.slice(1) +
-          `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
-            query ? `&${query}` : ''
-          }`
-      )
-      moduleMap.set(dep, newMod)
-    } catch (e) {
-      warnFailedFetch(e, dep)
-    }
-  }
-
-  return () => {
-    for (const { deps, fn } of qualifiedCallbacks) {
-      fn(deps.map((dep) => moduleMap.get(dep)))
-    }
-    const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-    console.debug(`[vite] hot updated: ${loggedPath}`)
   }
 }
 
@@ -458,129 +431,15 @@ function sendMessageBuffer() {
   }
 }
 
-interface HotModule {
-  id: string
-  callbacks: HotCallback[]
-}
-
-interface HotCallback {
-  // the dependencies must be fetchable paths
-  deps: string[]
-  fn: (modules: Array<ModuleNamespace | undefined>) => void
-}
-
-type CustomListenersMap = Map<string, ((data: any) => void)[]>
-
-const hotModulesMap = new Map<string, HotModule>()
-const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
-const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
-const dataMap = new Map<string, any>()
-const customListenersMap: CustomListenersMap = new Map()
-const ctxToListenersMap = new Map<string, CustomListenersMap>()
-
 export function createHotContext(ownerPath: string): ViteHotContext {
-  if (!dataMap.has(ownerPath)) {
-    dataMap.set(ownerPath, {})
-  }
-
-  // when a file is hot updated, a new context is created
-  // clear its stale callbacks
-  const mod = hotModulesMap.get(ownerPath)
-  if (mod) {
-    mod.callbacks = []
-  }
-
-  // clear stale custom event listeners
-  const staleListeners = ctxToListenersMap.get(ownerPath)
-  if (staleListeners) {
-    for (const [event, staleFns] of staleListeners) {
-      const listeners = customListenersMap.get(event)
-      if (listeners) {
-        customListenersMap.set(
-          event,
-          listeners.filter((l) => !staleFns.includes(l))
-        )
-      }
-    }
-  }
-
-  const newListeners: CustomListenersMap = new Map()
-  ctxToListenersMap.set(ownerPath, newListeners)
-
-  function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
-    const mod: HotModule = hotModulesMap.get(ownerPath) || {
-      id: ownerPath,
-      callbacks: []
-    }
-    mod.callbacks.push({
-      deps,
-      fn: callback
-    })
-    hotModulesMap.set(ownerPath, mod)
-  }
-
-  const hot: ViteHotContext = {
-    get data() {
-      return dataMap.get(ownerPath)
+  return new HMRContext(ownerPath, hmrClient, {
+    addBuffer(message) {
+      messageBuffer.push(message)
     },
-
-    accept(deps?: any, callback?: any) {
-      if (typeof deps === 'function' || !deps) {
-        // self-accept: hot.accept(() => {})
-        acceptDeps([ownerPath], ([mod]) => deps && deps(mod))
-      } else if (typeof deps === 'string') {
-        // explicit deps
-        acceptDeps([deps], ([mod]) => callback && callback(mod))
-      } else if (Array.isArray(deps)) {
-        acceptDeps(deps, callback)
-      } else {
-        throw new Error(`invalid hot.accept() usage.`)
-      }
-    },
-
-    // export names (first arg) are irrelevant on the client side, they're
-    // extracted in the server for propagation
-    acceptExports(_: string | readonly string[], callback?: any) {
-      acceptDeps([ownerPath], callback && (([mod]) => callback(mod)))
-    },
-
-    dispose(cb) {
-      disposeMap.set(ownerPath, cb)
-    },
-
-    // @ts-expect-error untyped
-    prune(cb: (data: any) => void) {
-      pruneMap.set(ownerPath, cb)
-    },
-
-    // TODO
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    decline() {},
-
-    // tell the server to re-perform hmr propagation from this module as root
-    invalidate() {
-      notifyListeners('vite:invalidate', { path: ownerPath })
-      this.send('vite:invalidate', { path: ownerPath })
-    },
-
-    // custom events
-    on(event, cb) {
-      const addToMap = (map: Map<string, any[]>) => {
-        const existing = map.get(event) || []
-        existing.push(cb)
-        map.set(event, existing)
-      }
-      addToMap(customListenersMap)
-      addToMap(newListeners)
-    },
-
-    send(event, data) {
-      messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
+    send() {
       sendMessageBuffer()
-    }
-  }
-
-  return hot
+    },
+  })
 }
 
 /**
@@ -588,12 +447,12 @@ export function createHotContext(ownerPath: string): ViteHotContext {
  */
 export function injectQuery(url: string, queryToInject: string): string {
   // skip urls that won't be handled by vite
-  if (!url.startsWith('.') && !url.startsWith('/')) {
+  if (url[0] !== '.' && url[0] !== '/') {
     return url
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/#.*$/, '').replace(/\?.*$/, '')
+  const pathname = url.replace(/[?#].*$/s, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${

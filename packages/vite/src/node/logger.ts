@@ -30,7 +30,7 @@ export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
-  info: 3
+  info: 3,
 }
 
 let lastType: LogType | undefined
@@ -53,12 +53,17 @@ export interface LoggerOptions {
 
 export function createLogger(
   level: LogLevel = 'info',
-  options: LoggerOptions = {}
+  options: LoggerOptions = {},
 ): Logger {
   if (options.customLogger) {
     return options.customLogger
   }
 
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
   const loggedErrors = new WeakSet<Error | RollupError>()
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
@@ -75,9 +80,9 @@ export function createLogger(
             type === 'info'
               ? colors.cyan(colors.bold(prefix))
               : type === 'warn'
-              ? colors.yellow(colors.bold(prefix))
-              : colors.red(colors.bold(prefix))
-          return `${colors.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
+                ? colors.yellow(colors.bold(prefix))
+                : colors.red(colors.bold(prefix))
+          return `${colors.dim(timeFormatter.format(new Date()))} ${tag} ${msg}`
         } else {
           return msg
         }
@@ -133,7 +138,7 @@ export function createLogger(
     },
     hasErrorLogged(error) {
       return loggedErrors.has(error)
-    }
+    },
   }
 
   return logger
@@ -142,7 +147,7 @@ export function createLogger(
 export function printServerUrls(
   urls: ResolvedServerUrls,
   optionsHost: string | boolean | undefined,
-  info: Logger['info']
+  info: Logger['info'],
 ): void {
   const colorUrl = (url: string) =>
     colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
@@ -153,9 +158,10 @@ export function printServerUrls(
     info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
   }
   if (urls.network.length === 0 && optionsHost === undefined) {
-    const note = `use ${colors.reset(colors.bold('--host'))} to expose`
     info(
-      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${note}`)
+      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +
+        colors.bold('--host') +
+        colors.dim(' to expose'),
     )
   }
 }

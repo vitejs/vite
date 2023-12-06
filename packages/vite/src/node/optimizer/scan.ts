@@ -1,17 +1,30 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
-import type { Loader, OnLoadResult, Plugin } from 'esbuild'
-import { build, transform } from 'esbuild'
+import type {
+  BuildContext,
+  Loader,
+  OnLoadArgs,
+  OnLoadResult,
+  Plugin,
+} from 'esbuild'
+import esbuild, { formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import { JS_TYPES_RE, KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
+import {
+  CSS_LANGS_RE,
+  JS_TYPES_RE,
+  KNOWN_ASSET_TYPES,
+  SPECIAL_QUERY_RE,
+} from '../constants'
 import {
   cleanUrl,
   createDebugger,
   dataUrlRE,
   externalRE,
+  isInNodeModules,
   isObject,
   isOptimizable,
   moduleListContains,
@@ -19,7 +32,7 @@ import {
   normalizePath,
   singlelineCommentsRE,
   virtualModulePrefix,
-  virtualModuleRE
+  virtualModuleRE,
 } from '../utils'
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
@@ -42,14 +55,118 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
-export async function scanImports(config: ResolvedConfig): Promise<{
-  deps: Record<string, string>
-  missing: Record<string, string>
-}> {
+export function scanImports(config: ResolvedConfig): {
+  cancel: () => Promise<void>
+  result: Promise<{
+    deps: Record<string, string>
+    missing: Record<string, string>
+  }>
+} {
   // Only used to scan non-ssr code
 
   const start = performance.now()
+  const deps: Record<string, string> = {}
+  const missing: Record<string, string> = {}
+  let entries: string[]
 
+  const scanContext = { cancelled: false }
+
+  const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
+    config,
+  ).then((computedEntries) => {
+    entries = computedEntries
+
+    if (!entries.length) {
+      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
+        config.logger.warn(
+          colors.yellow(
+            '(!) Could not auto-determine entry point from rollupOptions or html files ' +
+              'and there are no explicit optimizeDeps.include patterns. ' +
+              'Skipping dependency pre-bundling.',
+          ),
+        )
+      }
+      return
+    }
+    if (scanContext.cancelled) return
+
+    debug?.(
+      `Crawling dependencies using entries: ${entries
+        .map((entry) => `\n  ${colors.dim(entry)}`)
+        .join('')}`,
+    )
+    return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
+  })
+
+  const result = esbuildContext
+    .then((context) => {
+      function disposeContext() {
+        return context?.dispose().catch((e) => {
+          config.logger.error('Failed to dispose esbuild context', { error: e })
+        })
+      }
+      if (!context || scanContext?.cancelled) {
+        disposeContext()
+        return { deps: {}, missing: {} }
+      }
+      return context
+        .rebuild()
+        .then(() => {
+          return {
+            // Ensure a fixed order so hashes are stable and improve logs
+            deps: orderedDependencies(deps),
+            missing,
+          }
+        })
+        .finally(() => {
+          return disposeContext()
+        })
+    })
+    .catch(async (e) => {
+      if (e.errors && e.message.includes('The build was canceled')) {
+        // esbuild logs an error when cancelling, but this is expected so
+        // return an empty result instead
+        return { deps: {}, missing: {} }
+      }
+
+      const prependMessage = colors.red(`\
+  Failed to scan for dependencies from entries:
+  ${entries.join('\n')}
+
+  `)
+      if (e.errors) {
+        const msgs = await formatMessages(e.errors, {
+          kind: 'error',
+          color: true,
+        })
+        e.message = prependMessage + msgs.join('\n')
+      } else {
+        e.message = prependMessage + e.message
+      }
+      throw e
+    })
+    .finally(() => {
+      if (debug) {
+        const duration = (performance.now() - start).toFixed(2)
+        const depsStr =
+          Object.keys(orderedDependencies(deps))
+            .sort()
+            .map((id) => `\n  ${colors.cyan(id)} -> ${colors.dim(deps[id])}`)
+            .join('') || colors.dim('no dependencies found')
+        debug(`Scan completed in ${duration}ms: ${depsStr}`)
+      }
+    })
+
+  return {
+    cancel: async () => {
+      scanContext.cancelled = true
+      return esbuildContext.then((context) => context?.cancel())
+    },
+    result,
+  }
+}
+
+async function computeEntries(config: ResolvedConfig) {
   let entries: string[] = []
 
   const explicitEntryPatterns = config.optimizeDeps.entries
@@ -75,54 +192,43 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
   entries = entries.filter(
-    (entry) => isScannable(entry) && fs.existsSync(entry)
+    (entry) =>
+      isScannable(entry, config.optimizeDeps.extensions) &&
+      fs.existsSync(entry),
   )
 
-  if (!entries.length) {
-    if (!explicitEntryPatterns && !config.optimizeDeps.include) {
-      config.logger.warn(
-        colors.yellow(
-          '(!) Could not auto-determine entry point from rollupOptions or html files ' +
-            'and there are no explicit optimizeDeps.include patterns. ' +
-            'Skipping dependency pre-bundling.'
-        )
-      )
-    }
-    return { deps: {}, missing: {} }
-  } else {
-    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
-  }
+  return entries
+}
 
-  const deps: Record<string, string> = {}
-  const missing: Record<string, string> = {}
+async function prepareEsbuildScanner(
+  config: ResolvedConfig,
+  entries: string[],
+  deps: Record<string, string>,
+  missing: Record<string, string>,
+  scanContext?: { cancelled: boolean },
+): Promise<BuildContext | undefined> {
   const container = await createPluginContainer(config)
+
+  if (scanContext?.cancelled) return
+
   const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await Promise.all(
-    entries.map((entry) =>
-      build({
-        absWorkingDir: process.cwd(),
-        write: false,
-        entryPoints: [entry],
-        bundle: true,
-        format: 'esm',
-        logLevel: 'error',
-        plugins: [...plugins, plugin],
-        ...esbuildOptions
-      })
-    )
-  )
-
-  debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
-
-  return {
-    // Ensure a fixed order so hashes are stable and improve logs
-    deps: orderedDependencies(deps),
-    missing
-  }
+  return await esbuild.context({
+    absWorkingDir: process.cwd(),
+    write: false,
+    stdin: {
+      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
+      loader: 'js',
+    },
+    bundle: true,
+    format: 'esm',
+    logLevel: 'silent',
+    plugins: [...plugins, plugin],
+    ...esbuildOptions,
+  })
 }
 
 function orderedDependencies(deps: Record<string, string>) {
@@ -141,16 +247,15 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
       // if there aren't explicit entries, also ignore other common folders
       ...(config.optimizeDeps.entries
         ? []
-        : [`**/__tests__/**`, `**/coverage/**`])
+        : [`**/__tests__/**`, `**/coverage/**`]),
     ],
     absolute: true,
-    suppressErrors: true // suppress EACCES errors
+    suppressErrors: true, // suppress EACCES errors
   })
 }
 
-const scriptModuleRE =
-  /(<script\b[^>]+type\s*=\s*(?:"module"|'module')[^>]*>)(.*?)<\/script>/gis
-export const scriptRE = /(<script(?:\s[^>]*>|>))(.*?)<\/script>/gis
+export const scriptRE =
+  /(<script(?:\s+[a-z_:][-\w:]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^"'<>=\s]+))?)*\s*>)(.*?)<\/script>/gis
 export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
@@ -162,14 +267,14 @@ function esbuildScanPlugin(
   container: PluginContainer,
   depImports: Record<string, string>,
   missing: Record<string, string>,
-  entries: string[]
+  entries: string[],
 ): Plugin {
   const seen = new Map<string, string | undefined>()
 
   const resolve = async (
     id: string,
     importer?: string,
-    options?: ResolveIdOptions
+    options?: ResolveIdOptions,
   ) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
@@ -180,8 +285,8 @@ function esbuildScanPlugin(
       importer && normalizePath(importer),
       {
         ...options,
-        scan: true
-      }
+        scan: true,
+      },
     )
     const res = resolved?.id
     seen.set(key, res)
@@ -192,18 +297,20 @@ function esbuildScanPlugin(
   const exclude = [
     ...(config.optimizeDeps?.exclude || []),
     '@vite/client',
-    '@vite/env'
+    '@vite/env',
   ]
+
+  const isUnlessEntry = (path: string) => !entries.includes(path)
 
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
-    external: !entries.includes(path)
+    external: isUnlessEntry(path),
   })
 
   const doTransformGlobImport = async (
     contents: string,
     id: string,
-    loader: Loader
+    loader: Loader,
   ) => {
     let transpiledContents
     // transpile because `transformGlobImport` only expects js
@@ -217,7 +324,7 @@ function esbuildScanPlugin(
       transpiledContents,
       id,
       config.root,
-      resolve
+      resolve,
     )
 
     return result?.s.toString() || transpiledContents
@@ -231,13 +338,13 @@ function esbuildScanPlugin(
       // external urls
       build.onResolve({ filter: externalRE }, ({ path }) => ({
         path,
-        external: true
+        external: true,
       }))
 
       // data urls
       build.onResolve({ filter: dataUrlRE }, ({ path }) => ({
         path,
-        external: true
+        external: true,
       }))
 
       // local scripts (`<script>` in Svelte and `<script setup>` in Vue)
@@ -245,7 +352,7 @@ function esbuildScanPlugin(
         return {
           // strip prefix to get valid filesystem path so esbuild can resolve imports in the file
           path: path.replace(virtualModulePrefix, ''),
-          namespace: 'script'
+          namespace: 'script',
         }
       })
 
@@ -261,130 +368,144 @@ function esbuildScanPlugin(
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
         if (
-          resolved.includes('node_modules') &&
+          isInNodeModules(resolved) &&
           isOptimizable(resolved, config.optimizeDeps)
         )
           return
         return {
           path: resolved,
-          namespace: 'html'
+          namespace: 'html',
         }
       })
+
+      const htmlTypeOnLoadCallback: (
+        args: OnLoadArgs,
+      ) => Promise<OnLoadResult | null | undefined> = async ({ path: p }) => {
+        let raw = await fsp.readFile(p, 'utf-8')
+        // Avoid matching the content of the comment
+        raw = raw.replace(commentRE, '<!---->')
+        const isHtml = p.endsWith('.html')
+        scriptRE.lastIndex = 0
+        let js = ''
+        let scriptId = 0
+        let match: RegExpExecArray | null
+        while ((match = scriptRE.exec(raw))) {
+          const [, openTag, content] = match
+          const typeMatch = openTag.match(typeRE)
+          const type =
+            typeMatch && (typeMatch[1] || typeMatch[2] || typeMatch[3])
+          const langMatch = openTag.match(langRE)
+          const lang =
+            langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
+          // skip non type module script
+          if (isHtml && type !== 'module') {
+            continue
+          }
+          // skip type="application/ld+json" and other non-JS types
+          if (
+            type &&
+            !(
+              type.includes('javascript') ||
+              type.includes('ecmascript') ||
+              type === 'module'
+            )
+          ) {
+            continue
+          }
+          let loader: Loader = 'js'
+          if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
+            loader = lang
+          } else if (p.endsWith('.astro')) {
+            loader = 'ts'
+          }
+          const srcMatch = openTag.match(srcRE)
+          if (srcMatch) {
+            const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
+            js += `import ${JSON.stringify(src)}\n`
+          } else if (content.trim()) {
+            // The reason why virtual modules are needed:
+            // 1. There can be module scripts (`<script context="module">` in Svelte and `<script>` in Vue)
+            // or local scripts (`<script>` in Svelte and `<script setup>` in Vue)
+            // 2. There can be multiple module scripts in html
+            // We need to handle these separately in case variable names are reused between them
+
+            // append imports in TS to prevent esbuild from removing them
+            // since they may be used in the template
+            const contents =
+              content +
+              (loader.startsWith('ts') ? extractImportPaths(content) : '')
+
+            const key = `${p}?id=${scriptId++}`
+            if (contents.includes('import.meta.glob')) {
+              scripts[key] = {
+                loader: 'js', // since it is transpiled
+                contents: await doTransformGlobImport(contents, p, loader),
+                resolveDir: normalizePath(path.dirname(p)),
+                pluginData: {
+                  htmlType: { loader },
+                },
+              }
+            } else {
+              scripts[key] = {
+                loader,
+                contents,
+                resolveDir: normalizePath(path.dirname(p)),
+                pluginData: {
+                  htmlType: { loader },
+                },
+              }
+            }
+
+            const virtualModulePath = JSON.stringify(virtualModulePrefix + key)
+
+            const contextMatch = openTag.match(contextRE)
+            const context =
+              contextMatch &&
+              (contextMatch[1] || contextMatch[2] || contextMatch[3])
+
+            // Especially for Svelte files, exports in <script context="module"> means module exports,
+            // exports in <script> means component props. To avoid having two same export name from the
+            // star exports, we need to ignore exports in <script>
+            if (p.endsWith('.svelte') && context !== 'module') {
+              js += `import ${virtualModulePath}\n`
+            } else {
+              js += `export * from ${virtualModulePath}\n`
+            }
+          }
+        }
+
+        // This will trigger incorrectly if `export default` is contained
+        // anywhere in a string. Svelte and Astro files can't have
+        // `export default` as code so we know if it's encountered it's a
+        // false positive (e.g. contained in a string)
+        if (!p.endsWith('.vue') || !js.includes('export default')) {
+          js += '\nexport default {}'
+        }
+
+        return {
+          loader: 'js',
+          contents: js,
+        }
+      }
 
       // extract scripts inside HTML-like files and treat it as a js module
       build.onLoad(
         { filter: htmlTypesRE, namespace: 'html' },
-        async ({ path }) => {
-          let raw = fs.readFileSync(path, 'utf-8')
-          // Avoid matching the content of the comment
-          raw = raw.replace(commentRE, '<!---->')
-          const isHtml = path.endsWith('.html')
-          const regex = isHtml ? scriptModuleRE : scriptRE
-          regex.lastIndex = 0
-          let js = ''
-          let scriptId = 0
-          let match: RegExpExecArray | null
-          while ((match = regex.exec(raw))) {
-            const [, openTag, content] = match
-            const typeMatch = openTag.match(typeRE)
-            const type =
-              typeMatch && (typeMatch[1] || typeMatch[2] || typeMatch[3])
-            const langMatch = openTag.match(langRE)
-            const lang =
-              langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
-            // skip type="application/ld+json" and other non-JS types
-            if (
-              type &&
-              !(
-                type.includes('javascript') ||
-                type.includes('ecmascript') ||
-                type === 'module'
-              )
-            ) {
-              continue
-            }
-            let loader: Loader = 'js'
-            if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
-              loader = lang
-            } else if (path.endsWith('.astro')) {
-              loader = 'ts'
-            }
-            const srcMatch = openTag.match(srcRE)
-            if (srcMatch) {
-              const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
-              js += `import ${JSON.stringify(src)}\n`
-            } else if (content.trim()) {
-              // The reason why virtual modules are needed:
-              // 1. There can be module scripts (`<script context="module">` in Svelte and `<script>` in Vue)
-              // or local scripts (`<script>` in Svelte and `<script setup>` in Vue)
-              // 2. There can be multiple module scripts in html
-              // We need to handle these separately in case variable names are reused between them
-
-              // append imports in TS to prevent esbuild from removing them
-              // since they may be used in the template
-              const contents =
-                content +
-                (loader.startsWith('ts') ? extractImportPaths(content) : '')
-
-              const key = `${path}?id=${scriptId++}`
-              if (contents.includes('import.meta.glob')) {
-                scripts[key] = {
-                  loader: 'js', // since it is transpiled
-                  contents: await doTransformGlobImport(contents, path, loader),
-                  pluginData: {
-                    htmlType: { loader }
-                  }
-                }
-              } else {
-                scripts[key] = {
-                  loader,
-                  contents,
-                  pluginData: {
-                    htmlType: { loader }
-                  }
-                }
-              }
-
-              const virtualModulePath = JSON.stringify(
-                virtualModulePrefix + key
-              )
-
-              const contextMatch = openTag.match(contextRE)
-              const context =
-                contextMatch &&
-                (contextMatch[1] || contextMatch[2] || contextMatch[3])
-
-              // Especially for Svelte files, exports in <script context="module"> means module exports,
-              // exports in <script> means component props. To avoid having two same export name from the
-              // star exports, we need to ignore exports in <script>
-              if (path.endsWith('.svelte') && context !== 'module') {
-                js += `import ${virtualModulePath}\n`
-              } else {
-                js += `export * from ${virtualModulePath}\n`
-              }
-            }
-          }
-
-          // This will trigger incorrectly if `export default` is contained
-          // anywhere in a string. Svelte and Astro files can't have
-          // `export default` as code so we know if it's encountered it's a
-          // false positive (e.g. contained in a string)
-          if (!path.endsWith('.vue') || !js.includes('export default')) {
-            js += '\nexport default {}'
-          }
-
-          return {
-            loader: 'js',
-            contents: js
-          }
-        }
+        htmlTypeOnLoadCallback,
+      )
+      // the onResolve above will use namespace=html but esbuild doesn't
+      // call onResolve for glob imports and those will use namespace=file
+      // https://github.com/evanw/esbuild/issues/3317
+      build.onLoad(
+        { filter: htmlTypesRE, namespace: 'file' },
+        htmlTypeOnLoadCallback,
       )
 
       // bare imports: record and externalize ----------------------------------
       build.onResolve(
         {
           // avoid matching windows volume
-          filter: /^[\w@][^:]/
+          filter: /^[\w@][^:]/,
         },
         async ({ path: id, importer, pluginData }) => {
           if (moduleListContains(exclude, id)) {
@@ -395,25 +516,25 @@ function esbuildScanPlugin(
           }
           const resolved = await resolve(id, importer, {
             custom: {
-              depScan: { loader: pluginData?.htmlType?.loader }
-            }
+              depScan: { loader: pluginData?.htmlType?.loader },
+            },
           })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
             }
-            if (resolved.includes('node_modules') || include?.includes(id)) {
+            if (isInNodeModules(resolved) || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
               if (isOptimizable(resolved, config.optimizeDeps)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
-            } else if (isScannable(resolved)) {
+            } else if (isScannable(resolved, config.optimizeDeps.extensions)) {
               const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
                 path: path.resolve(resolved),
-                namespace
+                namespace,
               }
             } else {
               return externalUnlessEntry({ path: id })
@@ -421,7 +542,7 @@ function esbuildScanPlugin(
           } else {
             missing[id] = normalizePath(importer)
           }
-        }
+        },
       )
 
       // Externalized file types -----------------------------------------------
@@ -430,44 +551,58 @@ function esbuildScanPlugin(
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
-      // css & json & wasm
-      build.onResolve(
-        {
-          filter:
-            /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss|json|wasm)$/
-        },
-        externalUnlessEntry
-      )
+      const setupExternalize = (
+        filter: RegExp,
+        doExternalize: (path: string) => boolean,
+      ) => {
+        build.onResolve({ filter }, ({ path }) => {
+          return {
+            path,
+            external: doExternalize(path),
+          }
+        })
+        // onResolve is not called for glob imports.
+        // we need to add that here as well until esbuild calls onResolve for glob imports.
+        // https://github.com/evanw/esbuild/issues/3317
+        build.onLoad({ filter, namespace: 'file' }, () => {
+          const externalOnLoadResult: OnLoadResult = {
+            loader: 'js',
+            contents: 'export default {}',
+          }
+          return externalOnLoadResult
+        })
+      }
 
+      // css
+      setupExternalize(CSS_LANGS_RE, isUnlessEntry)
+      // json & wasm
+      setupExternalize(/\.(json|json5|wasm)$/, isUnlessEntry)
       // known asset types
-      build.onResolve(
-        {
-          filter: new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`)
-        },
-        externalUnlessEntry
+      setupExternalize(
+        new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`),
+        isUnlessEntry,
       )
-
       // known vite query types: ?worker, ?raw
-      build.onResolve({ filter: SPECIAL_QUERY_RE }, ({ path }) => ({
-        path,
-        external: true
-      }))
+      setupExternalize(SPECIAL_QUERY_RE, () => true)
 
       // catch all -------------------------------------------------------------
 
       build.onResolve(
         {
-          filter: /.*/
+          filter: /.*/,
         },
         async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer, {
             custom: {
-              depScan: { loader: pluginData?.htmlType?.loader }
-            }
+              depScan: { loader: pluginData?.htmlType?.loader },
+            },
           })
           if (resolved) {
-            if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
+            if (
+              shouldExternalizeDep(resolved, id) ||
+              !isScannable(resolved, config.optimizeDeps.extensions)
+            ) {
               return externalUnlessEntry({ path: id })
             }
 
@@ -475,13 +610,13 @@ function esbuildScanPlugin(
 
             return {
               path: path.resolve(cleanUrl(resolved)),
-              namespace
+              namespace,
             }
           } else {
             // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
           }
-        }
+        },
       )
 
       // for jsx/tsx, we need to access the content and check for
@@ -491,7 +626,7 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
-        let contents = fs.readFileSync(id, 'utf-8')
+        let contents = await fsp.readFile(id, 'utf-8')
         if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
           contents = config.esbuild.jsxInject + `\n` + contents
         }
@@ -503,16 +638,16 @@ function esbuildScanPlugin(
         if (contents.includes('import.meta.glob')) {
           return {
             loader: 'js', // since it is transpiled,
-            contents: await doTransformGlobImport(contents, id, loader)
+            contents: await doTransformGlobImport(contents, id, loader),
           }
         }
 
         return {
           loader,
-          contents
+          contents,
         }
       })
-    }
+    },
   }
 }
 
@@ -531,11 +666,8 @@ function extractImportPaths(code: string) {
 
   let js = ''
   let m
+  importsRE.lastIndex = 0
   while ((m = importsRE.exec(code)) != null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if (m.index === importsRE.lastIndex) {
-      importsRE.lastIndex++
-    }
     js += `\nimport ${m[1]}`
   }
   return js
@@ -553,6 +685,11 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
   return false
 }
 
-function isScannable(id: string): boolean {
-  return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
+function isScannable(id: string, extensions: string[] | undefined): boolean {
+  return (
+    JS_TYPES_RE.test(id) ||
+    htmlTypesRE.test(id) ||
+    extensions?.includes(path.extname(id)) ||
+    false
+  )
 }

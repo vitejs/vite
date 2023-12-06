@@ -3,18 +3,24 @@ import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
-import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
+import {
+  convertTargets,
+  cssPlugin,
+  cssUrlRE,
+  getEmptyChunkReplacer,
+  hoistAtRules,
+} from '../../plugins/css'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
     expect(
-      cssUrlRE.test("list-style-image: url('../images/bullet.jpg');")
+      cssUrlRE.test("list-style-image: url('../images/bullet.jpg');"),
     ).toBe(true)
   })
 
   test('no space after colon', () => {
     expect(cssUrlRE.test("list-style-image:url('../images/bullet.jpg');")).toBe(
-      true
+      true,
     )
   })
 
@@ -26,23 +32,23 @@ describe('search css url function', () => {
     expect(
       cssUrlRE.test(`@function svg-url($string) {
       @return "";
-    }`)
+    }`),
     ).toBe(false)
   })
 
   test('after parenthesis', () => {
     expect(
       cssUrlRE.test(
-        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
-      )
+        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
+      ),
     ).toBe(true)
   })
 
   test('after comma', () => {
     expect(
       cssUrlRE.test(
-        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
-      )
+        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
+      ),
     ).toBe(true)
   })
 })
@@ -56,18 +62,18 @@ describe('css modules', () => {
 .bar {
 display: block;
 background: #f0f;
-}`
+}`,
       },
       {
         resolve: {
           alias: [
             {
               find: '@',
-              replacement: mockedProjectPath
-            }
-          ]
-        }
-      }
+              replacement: mockedProjectPath,
+            },
+          ],
+        },
+      },
     )
 
     const result = await transform(
@@ -76,7 +82,7 @@ background: #f0f;
 position: fixed;
 composes: bar from '@/css/bar.module.css';
 }`,
-      '/css/foo.module.css'
+      '/css/foo.module.css',
     )
 
     expect(result.code).toBe(
@@ -87,7 +93,7 @@ background: #f0f;
 }
 ._foo_86148_1 {
 position: fixed;
-}`
+}`,
     )
 
     resetMock()
@@ -97,9 +103,9 @@ position: fixed;
     const { transform, resetMock } = await createCssPluginTransform(undefined, {
       css: {
         modules: {
-          generateScopedName: 'custom__[hash:base64:5]'
-        }
-      }
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+      },
     })
     const css = `\
 .foo {
@@ -129,7 +135,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}@import url(data:image/png;base64,iRxVB0);`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`
+      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`,
     )
   })
 
@@ -155,7 +161,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}@import "bla";@charset "utf-8";.bar{color:green;}@import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`
+      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`,
     )
   })
 
@@ -169,7 +175,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}/* @charset "utf-8"; */@charset "utf-8";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`
+      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`,
     )
   })
 
@@ -187,15 +193,15 @@ describe('hoist @ rules', () => {
 @import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toMatchInlineSnapshot(`
-      "@charset \\"utf-8\\";@import \\"baz\\";
+      "@charset "utf-8";@import "baz";
       .foo{color:red;}
       /*
-        @import \\"bla\\";
+        @import "bla";
       */
 
       /*
-        @charset \\"utf-8\\";
-        @import \\"bar\\";
+        @charset "utf-8";
+        @import "bar";
       */
       "
     `)
@@ -204,12 +210,12 @@ describe('hoist @ rules', () => {
 
 async function createCssPluginTransform(
   files?: Record<string, string>,
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
 ) {
   const config = await resolveConfig(inlineConfig, 'serve')
   const { transform, buildStart } = cssPlugin(config)
 
-  // @ts-expect-error
+  // @ts-expect-error buildStart is function
   await buildStart.call({})
 
   const mockFs = vi
@@ -221,19 +227,114 @@ async function createCssPluginTransform(
 
   return {
     async transform(code: string, id: string) {
-      // @ts-expect-error
+      // @ts-expect-error transform is function
       return await transform.call(
         {
           addWatchFile() {
             return
-          }
+          },
         },
         code,
-        id
+        id,
       )
     },
     resetMock() {
       mockFs.mockReset()
-    }
+    },
   }
 }
+
+describe('convertTargets', () => {
+  test('basic cases', () => {
+    expect(convertTargets('es2018')).toStrictEqual({
+      chrome: 4128768,
+      edge: 5177344,
+      firefox: 3801088,
+      safari: 786432,
+      opera: 3276800,
+    })
+    expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
+      ios_saf: 851968,
+      safari: 852224,
+    })
+  })
+})
+
+describe('getEmptyChunkReplacer', () => {
+  test('replaces import call', () => {
+    const code = `\
+import "some-module";
+import "pure_css_chunk.js";
+import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "import "some-module";
+      /* empty css             */
+      import "other-module";"
+    `)
+  })
+
+  test('replaces import call without new lines', () => {
+    const code = `import "some-module";import "pure_css_chunk.js";import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      `"import "some-module";/* empty css             */import "other-module";"`,
+    )
+  })
+
+  test('replaces require call', () => {
+    const code = `\
+require("some-module");
+require("pure_css_chunk.js");
+require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "require("some-module");
+      ;/* empty css              */
+      require("other-module");"
+    `)
+  })
+
+  test('replaces require call in minified code without new lines', () => {
+    const code = `require("some-module");require("pure_css_chunk.js");require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      `"require("some-module");;/* empty css              */require("other-module");"`,
+    )
+  })
+
+  test('replaces require call in minified code that uses comma operator', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js"),require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode).toMatchInlineSnapshot(
+      `"require("some-module"),/* empty css               */require("other-module");"`,
+    )
+    // So there should be no pure css chunk anymore
+    expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('replaces require call in minified code that uses comma operator followed by assignment', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchInlineSnapshot(
+      `"require("some-module");/* empty css               */const v=require("other-module");"`,
+    )
+  })
+})

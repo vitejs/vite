@@ -1,7 +1,8 @@
 {
-  "name": "test-worker",
+  "name": "@vitejs/test-worker",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite --config ./vite.config-iife.js",
     "build": "vite --config ./vite.config-iife.js build",
@@ -21,12 +22,12 @@
     "dev:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js dev",
     "build:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js build",
     "preview:relative-base": "WORKER_MODE=inline vite --config ./vite.config-relative-base.js preview",
+    "dev:relative-base-iife": "WORKER_MODE=inline vite --config ./vite.config-relative-base-iife.js dev",
+    "build:relative-base-iife": "WORKER_MODE=inline vite --config ./vite.config-relative-base-iife.js build",
+    "preview:relative-base-iife": "WORKER_MODE=inline vite --config ./vite.config-relative-base-iife.js preview",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "dependencies": {
-    "dep-to-optimize": "file:./dep-to-optimize"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue-jsx": "workspace:*"
+    "@vitejs/test-dep-to-optimize": "file:./dep-to-optimize"
   }
 }

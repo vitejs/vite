@@ -2,11 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import type { SSROptions } from '..'
 import { resolveConfig } from '../../config'
-import { createIsConfiguredAsSsrExternal, stripNesting } from '../ssrExternal'
-
-test('stripNesting', async () => {
-  expect(stripNesting(['c', 'p1>c1', 'p2 > c2'])).toEqual(['c', 'c1', 'c2'])
-})
+import { createIsConfiguredAsSsrExternal } from '../ssrExternal'
 
 describe('createIsConfiguredAsSsrExternal', () => {
   test('default', async () => {

@@ -4,19 +4,20 @@ import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
+  ConfigEnv,
   InlineConfig,
   Logger,
   PluginOption,
   ResolvedConfig,
   UserConfig,
-  ViteDevServer
+  ViteDevServer,
 } from 'vite'
 import {
   build,
   createServer,
   loadConfigFromFile,
   mergeConfig,
-  preview
+  preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
@@ -32,7 +33,7 @@ export const isServe = !isBuild
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
   workspaceRoot,
-  'packages/vite/bin/vite.js'
+  'packages/vite/bin/vite.js',
 )
 
 // #endregion
@@ -61,11 +62,6 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
-/**
- * current test using vite inline config
- * when using server.js is not possible to get the config
- */
-export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -77,16 +73,6 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
-
-declare module 'vite' {
-  interface InlineConfig {
-    testConfig?: {
-      // relative base output use relative path
-      // rewrite the url to truth file path
-      baseRoute: string
-    }
-  }
-}
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -151,7 +137,7 @@ beforeAll(async (s) => {
 
       const testCustomServe = [
         resolve(dirname(testPath), 'serve.ts'),
-        resolve(dirname(testPath), 'serve.js')
+        resolve(dirname(testPath), 'serve.js'),
       ].find((i) => fs.existsSync(i))
 
       if (testCustomServe) {
@@ -165,7 +151,6 @@ beforeAll(async (s) => {
         if (serve) {
           server = await serve()
           viteServer = mod.viteServer
-          return
         }
       } else {
         await startDefaultServe()
@@ -192,27 +177,26 @@ beforeAll(async (s) => {
   }
 })
 
-function loadConfigFromDir(dir: string) {
-  return loadConfigFromFile(
-    {
-      command: isBuild ? 'build' : 'serve',
-      mode: isBuild ? 'production' : 'development'
-    },
-    undefined,
-    dir
-  )
-}
-
-export async function startDefaultServe(): Promise<void> {
+async function loadConfig(configEnv: ConfigEnv) {
   let config: UserConfig | null = null
-  // config file near the *.spec.ts
-  const res = await loadConfigFromDir(dirname(testPath))
-  if (res) {
-    config = res.config
+
+  // config file named by convention as the *.spec.ts folder
+  const variantName = path.basename(dirname(testPath))
+  if (variantName !== '__tests__') {
+    const configVariantPath = path.resolve(
+      rootDir,
+      `vite.config-${variantName}.js`,
+    )
+    if (fs.existsSync(configVariantPath)) {
+      const res = await loadConfigFromFile(configEnv, configVariantPath)
+      if (res) {
+        config = res.config
+      }
+    }
   }
   // config file from test root dir
   if (!config) {
-    const res = await loadConfigFromDir(rootDir)
+    const res = await loadConfigFromFile(configEnv, undefined, rootDir)
     if (res) {
       config = res.config
     }
@@ -227,35 +211,35 @@ export async function startDefaultServe(): Promise<void> {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
         usePolling: true,
-        interval: 100
+        interval: 100,
       },
-      host: true,
       fs: {
-        strict: !isBuild
-      }
+        strict: !isBuild,
+      },
     },
     build: {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
       // skip transpilation during tests to make it faster
       target: 'esnext',
       // tests are flaky when `emptyOutDir` is `true`
-      emptyOutDir: false
+      emptyOutDir: false,
     },
-    customLogger: createInMemoryLogger(serverLogs)
+    customLogger: createInMemoryLogger(serverLogs),
   }
+  return mergeConfig(options, config || {})
+}
 
+export async function startDefaultServe(): Promise<void> {
   setupConsoleWarnCollector(serverLogs)
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
-    viteServer = server = await (await createServer(testConfig)).listen()
-    // use resolved port/base from server
-    const devBase = server.config.base
-    viteTestUrl = `http://localhost:${server.config.server.port}${
-      devBase === '/' ? '' : devBase
-    }`
+    const config = await loadConfig({ command: 'serve', mode: 'development' })
+    viteServer = server = await (await createServer(config)).listen()
+    viteTestUrl = server.resolvedUrls.local[0]
+    if (server.config.base === '/') {
+      viteTestUrl = viteTestUrl.replace(/\/$/, '')
+    }
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
@@ -264,25 +248,32 @@ export async function startDefaultServe(): Promise<void> {
       name: 'vite-plugin-watcher',
       configResolved(config) {
         resolvedConfig = config
-      }
+      },
     })
-    options.plugins = [resolvedPlugin()]
-    const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
-    const rollupOutput = await build(testConfig)
+    const buildConfig = mergeConfig(
+      await loadConfig({ command: 'build', mode: 'production' }),
+      {
+        plugins: [resolvedPlugin()],
+      },
+    )
+    const rollupOutput = await build(buildConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
     if (isWatch) {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    // @ts-ignore
-    if (config && config.__test__) {
-      // @ts-ignore
-      config.__test__()
+    if (buildConfig.__test__) {
+      buildConfig.__test__()
     }
+
+    const previewConfig = await loadConfig({
+      command: 'serve',
+      mode: 'development',
+      isPreview: true,
+    })
     const _nodeEnv = process.env.NODE_ENV
-    const previewServer = await preview(testConfig)
+    const previewServer = await preview(previewConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
     viteTestUrl = previewServer.resolvedUrls.local[0]
@@ -294,7 +285,7 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher
+  watcher: RollupWatcher,
 ): Promise<RollupWatcher> {
   let resolveFn: undefined | (() => void)
   const callback = (event: RollupWatcherEvent): void => {
@@ -309,7 +300,7 @@ export async function notifyRebuildComplete(
   return watcher.off('event', callback)
 }
 
-function createInMemoryLogger(logs: string[]): Logger {
+export function createInMemoryLogger(logs: string[]): Logger {
   const loggedErrors = new WeakSet<Error | RollupError>()
   const warnedMessages = new Set<string>()
 
@@ -335,7 +326,7 @@ function createInMemoryLogger(logs: string[]): Logger {
       if (opts?.error) {
         loggedErrors.add(opts.error)
       }
-    }
+    },
   }
 
   return logger
@@ -351,4 +342,15 @@ function setupConsoleWarnCollector(logs: string[]) {
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
+}
+
+declare module 'vite' {
+  export interface UserConfig {
+    /**
+     * special test only hook
+     *
+     * runs after build and before preview
+     */
+    __test__?: () => void
+  }
 }

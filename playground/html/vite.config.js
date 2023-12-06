@@ -1,9 +1,8 @@
-const { resolve } = require('node:path')
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
+import { hasWindowsUnicodeFsBug } from '../hasWindowsUnicodeFsBug'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
@@ -22,25 +21,54 @@ module.exports = {
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html'),
-        unicodePath: resolve(
-          __dirname,
-          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
-        ),
+        ...(hasWindowsUnicodeFsBug
+          ? {}
+          : {
+              unicodePath: resolve(
+                __dirname,
+                'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+              ),
+            }),
         linkProps: resolve(__dirname, 'link-props/index.html'),
-        valid: resolve(__dirname, 'valid.html')
-      }
-    }
+        valid: resolve(__dirname, 'valid.html'),
+        importmapOrder: resolve(__dirname, 'importmapOrder.html'),
+        env: resolve(__dirname, 'env.html'),
+        sideEffects: resolve(__dirname, 'side-effects/index.html'),
+        'a á': resolve(__dirname, 'a á.html'),
+        serveFile: resolve(__dirname, 'serve/file.html'),
+        serveFolder: resolve(__dirname, 'serve/folder/index.html'),
+        serveBothFile: resolve(__dirname, 'serve/both.html'),
+        serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
+      },
+    },
+  },
+
+  server: {
+    warmup: {
+      clientFiles: ['./warmup/*'],
+    },
+  },
+
+  define: {
+    'import.meta.env.VITE_NUMBER': 5173,
+    'import.meta.env.VITE_STRING': JSON.stringify('string'),
+    'import.meta.env.VITE_OBJECT_STRING': '{ "foo": "bar" }',
+    'import.meta.env.VITE_NULL_STRING': 'null',
   },
 
   plugins: [
     {
       name: 'pre-transform',
       transformIndexHtml: {
-        enforce: 'pre',
-        transform(html, { filename }) {
+        order: 'pre',
+        handler(html, { filename }) {
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
+
+          const doctypeRE = /<!doctype html>/i
+          if (doctypeRE.test(html)) return
+
           const head = `
   <head lang="en">
     <meta charset="UTF-8">
@@ -58,14 +86,14 @@ ${
 }
 </html>
   `
-        }
-      }
+        },
+      },
     },
     {
       name: 'string-transform',
       transformIndexHtml(html) {
         return html.replace('Hello', 'Transformed')
-      }
+      },
     },
     {
       name: 'tags-transform',
@@ -73,16 +101,16 @@ ${
         return [
           {
             tag: 'meta',
-            attrs: { name: 'description', content: 'a vite app' }
+            attrs: { name: 'description', content: 'a vite app' },
             // default injection is head-prepend
           },
           {
             tag: 'meta',
             attrs: { name: 'keywords', content: 'es modules' },
-            injectTo: 'head'
-          }
+            injectTo: 'head',
+          },
         ]
-      }
+      },
     },
     {
       name: 'combined-transform',
@@ -94,11 +122,11 @@ ${
               tag: 'p',
               attrs: { class: 'inject' },
               children: 'This is injected',
-              injectTo: 'body'
-            }
-          ]
+              injectTo: 'body',
+            },
+          ],
         }
-      }
+      },
     },
     {
       name: 'serve-only-transform',
@@ -109,11 +137,11 @@ ${
               tag: 'p',
               attrs: { class: 'server' },
               children: 'This is injected only during dev',
-              injectTo: 'body'
-            }
+              injectTo: 'body',
+            },
           ]
         }
-      }
+      },
     },
     {
       name: 'build-only-transform',
@@ -124,11 +152,11 @@ ${
               tag: 'p',
               attrs: { class: 'build' },
               children: 'This is injected only during build',
-              injectTo: 'body'
-            }
+              injectTo: 'body',
+            },
           ]
         }
-      }
+      },
     },
     {
       name: 'path-conditional-transform',
@@ -139,11 +167,11 @@ ${
               tag: 'p',
               attrs: { class: 'conditional' },
               children: 'This is injected only for /nested/index.html',
-              injectTo: 'body'
-            }
+              injectTo: 'body',
+            },
           ]
         }
-      }
+      },
     },
     {
       name: 'body-prepend-transform',
@@ -152,19 +180,21 @@ ${
           {
             tag: 'noscript',
             children: '<!-- this is appended to body -->',
-            injectTo: 'body'
+            injectTo: 'body',
           },
           {
             tag: 'noscript',
             children: '<!-- this is prepended to body -->',
-            injectTo: 'body-prepend'
-          }
+            injectTo: 'body-prepend',
+          },
         ]
-      }
+      },
     },
     {
       name: 'head-prepend-importmap',
-      transformIndexHtml() {
+      transformIndexHtml(_, ctx) {
+        if (ctx.path.includes('importmapOrder')) return
+
         return [
           {
             tag: 'script',
@@ -176,10 +206,10 @@ ${
                 }
               }
             `,
-            injectTo: 'head'
-          }
+            injectTo: 'head',
+          },
         ]
-      }
-    }
-  ]
-}
+      },
+    },
+  ],
+})

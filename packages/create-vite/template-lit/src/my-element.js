@@ -1,5 +1,6 @@
 import { LitElement, css, html } from 'lit'
 import litLogo from './assets/lit.svg'
+import viteLogo from '/vite.svg'
 
 /**
  * An example element.
@@ -18,7 +19,7 @@ export class MyElement extends LitElement {
       /**
        * The number of times the button has been clicked.
        */
-      count: { type: Number }
+      count: { type: Number },
     }
   }
 
@@ -32,7 +33,7 @@ export class MyElement extends LitElement {
     return html`
       <div>
         <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" class="logo" alt="Vite logo" />
+          <img src=${viteLogo} class="logo" alt="Vite logo" />
         </a>
         <a href="https://lit.dev" target="_blank">
           <img src=${litLogo} class="logo lit" alt="Lit logo" />
@@ -65,6 +66,7 @@ export class MyElement extends LitElement {
         height: 6em;
         padding: 1.5em;
         will-change: filter;
+        transition: filter 300ms;
       }
       .logo:hover {
         filter: drop-shadow(0 0 2em #646cffaa);
@@ -90,7 +92,7 @@ export class MyElement extends LitElement {
         color: #535bf2;
       }
 
-      h1 {
+      ::slotted(h1) {
         font-size: 3.2em;
         line-height: 1.1;
       }

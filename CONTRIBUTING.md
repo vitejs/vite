@@ -1,10 +1,14 @@
 # Vite Contributing Guide
 
-Hi! We're really excited that you're interested in contributing to Vite! Before submitting your contribution, please read through the following guide.
+Hi! We're really excited that you're interested in contributing to Vite! Before submitting your contribution, please read through the following guide. We also suggest you read the [Project Philosophy](https://vitejs.dev/guide/philosophy) in our documentation.
+
+You can use [StackBlitz Codeflow](https://stackblitz.com/codeflow) to fix bugs or implement features. You'll see a Codeflow button on issues to start a PR to fix them. A button will also appear on PRs to review them without needing to check out the branch locally. When using Codeflow, the Vite repository will be cloned for you in an online editor, with the Vite package built in watch mode ready to test your changes. If you'd like to learn more, check out the [Codeflow docs](https://developer.stackblitz.com/codeflow/what-is-codeflow).
+
+[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/vitejs/vite)
 
 ## Repo Setup
 
-The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
+To develop locally, fork the Vite repository and clone it in your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
 
 To develop and test the core `vite` package:
 
@@ -16,7 +20,16 @@ To develop and test the core `vite` package:
 
 You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
-> Vite uses pnpm v7. If you are working on multiple projects with different versions of pnpm, it's recommended to enable [Corepack](https://github.com/nodejs/corepack) by running `corepack enable`.
+> Vite uses pnpm v8. If you are working on multiple projects with different versions of pnpm, it's recommended to enable [Corepack](https://github.com/nodejs/corepack) by running `corepack enable`.
+
+### Ignoring commits when running `git blame`
+
+We have a `.git-blame-ignore-revs` file to ignore formatting changes.
+To make this file used by `git blame`, you need to run the following command.
+
+```sh
+git config --local blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 ## Debugging
 
@@ -55,7 +68,7 @@ You may wish to test your locally modified copy of Vite against another package 
 ```json
 {
   "dependencies": {
-    "vite": "^2.0.0"
+    "vite": "^4.0.0"
   },
   "pnpm": {
     "overrides": {
@@ -72,6 +85,8 @@ And re-run `pnpm install` to link the package.
 ### Integration Tests
 
 Each package under `playground/` contains a `__tests__` directory. The tests are run using [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `vitest.config.e2e.js` and `playground/vitest*` files.
+
+Some playgrounds define variants to run the same app using different config setups. By convention, when running a test spec file in a nested folder in `__tests__`, the setup will try to use a config file named `vite.config-{folderName}.js` at the playground's root. You can see an example of variants in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets).
 
 Before running the tests, make sure that [Vite has been built](#repo-setup). On Windows, you may want to [activate Developer Mode](https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) to resolve [issues with symlink creation for non-admins](https://github.com/vitejs/vite/issues/7390). Also, you may want to [set git `core.symlinks` to `true` to resolve issues with symlinks in git](https://github.com/vitejs/vite/issues/5242).
 
@@ -147,6 +162,8 @@ test('?raw import', async () => {
 
 In many test cases, we need to mock dependencies using `link:` and `file:` protocols. `pnpm` treats `link:` as symlinks and `file:` as hardlinks. To test dependencies as if they were copied into `node_modules`, use the `file:` protocol. Otherwise, use the `link:` protocol.
 
+For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package name. This will avoid possible issues like false-positive alerts.
+
 ## Debug Logging
 
 You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DEBUG="vite:resolve"`). To see all debug logs, you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
@@ -170,9 +187,9 @@ You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DE
 
 - Make sure tests pass!
 
-- Commit messages must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated. Commit messages are automatically validated before commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)).
-
 - No need to worry about code style as long as you have installed the dev dependencies. Modified files are automatically formatted with Prettier on commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)).
+
+- PR title must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated.
 
 ## Maintenance Guidelines
 
@@ -220,7 +237,7 @@ Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it sh
 
 To get around this, we inline some of these dependencies' types in `packages/vite/src/types`. This way, we can still expose the typing but bundle the dependency's source code.
 
-Use `pnpm run check-dist-types` to check that the bundled types do not rely on types in `devDependencies`. If you are adding `dependencies`, make sure to configure `tsconfig.check.json`.
+Use `pnpm run build-types-check` to check that the bundled types do not rely on types in `devDependencies`.
 
 For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal). Dependency types within this directory (e.g. `packages/vite/types/chokidar.d.ts`) are deprecated and should be added to `packages/vite/src/types` instead.
 
@@ -232,6 +249,26 @@ We already have many config options, and we should avoid fixing an issue by addi
 - can be fixed with a smarter default
 - has workaround using existing options
 - can be addressed with a plugin instead
+
+## Release
+
+If you have publish access, the steps below explain how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
+
+"Release" is done locally to generate the changelogs and git tags:
+
+1. Make sure the git remote for https://github.com/vitejs/vite is set as `origin`.
+2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date. Then run `pnpm build`.
+3. Run `pnpm release` and follow the prompts to cut a release for a package. It will generate the changelog, a git release tag, and push them to `origin`. You can run with the `--dry` flag to test it out.
+4. When the command finishes, it will provide a link to https://github.com/vitejs/vite/actions/workflows/publish.yml.
+5. Click the link to visit the page, and follow the next steps below.
+
+"Publish" is done on GitHub Actions to publish the package to npm:
+
+1. Shortly in the workflows page, a new workflow will appear for the released package and is waiting for approval to publish to npm.
+2. Click on the workflow to open its page.
+3. Click on the "Review deployments" button in the yellow box, a popup will appear.
+4. Check "Release" and click "Approve and deploy".
+5. The package will start publishing to npm.
 
 ## Docs Translation Contribution
 

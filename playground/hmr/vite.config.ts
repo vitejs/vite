@@ -3,7 +3,7 @@ import type { Plugin } from 'vite'
 
 export default defineConfig({
   experimental: {
-    hmrPartialAccept: true
+    hmrPartialAccept: true,
   },
   plugins: [
     {
@@ -13,16 +13,18 @@ export default defineConfig({
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
           server.ws.send('custom:foo', { msg })
+          server.ws.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
         server.ws.on('custom:remote-add', ({ a, b }, client) => {
           client.send('custom:remote-add-result', { result: a + b })
         })
-      }
+      },
     },
-    virtualPlugin()
-  ]
+    virtualPlugin(),
+    transformCountPlugin(),
+  ],
 })
 
 function virtualPlugin(): Plugin {
@@ -49,6 +51,18 @@ export const virtual = _virtual + '${num}';`
           server.reloadModule(mod)
         }
       })
-    }
+    },
+  }
+}
+
+function transformCountPlugin(): Plugin {
+  let num = 0
+  return {
+    name: 'transform-count',
+    transform(code) {
+      if (code.includes('__TRANSFORM_COUNT__')) {
+        return code.replace('__TRANSFORM_COUNT__', String(++num))
+      }
+    },
   }
 }

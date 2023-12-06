@@ -4,15 +4,17 @@ import type {
   Alias,
   AliasOptions,
   DepOptimizationOptions,
-  ResolvedConfig
+  ResolvedConfig,
 } from '..'
 import type { Plugin } from '../plugin'
 import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import {
   bareImportRE,
   cleanUrl,
+  isInNodeModules,
   isOptimizable,
-  moduleListContains
+  moduleListContains,
+  withTrailingSlash,
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
@@ -41,15 +43,19 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           const optimizedId = await tryOptimizedResolve(
             depsOptimizer,
             id,
-            importer
+            importer,
+            config.resolve.preserveSymlinks,
+            config.packageCache,
           )
           if (optimizedId) {
             return optimizedId // aliased dep already optimized
           }
-
+          if (depsOptimizer.options.noDiscovery) {
+            return
+          }
           const resolved = await this.resolve(id, importer, {
-            skipSelf: true,
-            ...options
+            ...options,
+            custom: { ...options.custom, 'vite:pre-alias': true },
           })
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
             const optimizeDeps = depsOptimizer.options
@@ -60,16 +66,16 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
               fs.existsSync(resolvedId) &&
               !moduleListContains(optimizeDeps.exclude, id) &&
               path.isAbsolute(resolvedId) &&
-              (resolvedId.includes('node_modules') ||
+              (isInNodeModules(resolvedId) ||
                 optimizeDeps.include?.includes(id)) &&
               isOptimizable(resolvedId, optimizeDeps) &&
-              !(isBuild && ssr && isConfiguredAsExternal(id)) &&
+              !(isBuild && ssr && isConfiguredAsExternal(id, importer)) &&
               (!ssr || optimizeAliasReplacementForSSR(resolvedId, optimizeDeps))
             ) {
               // aliased dep has not yet been optimized
               const optimizedInfo = depsOptimizer!.registerMissingImport(
                 id,
-                resolvedId
+                resolvedId,
               )
               return { id: depsOptimizer!.getOptimizedDepId(optimizedInfo) }
             }
@@ -77,13 +83,13 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           return resolved
         }
       }
-    }
+    },
   }
 }
 
 function optimizeAliasReplacementForSSR(
   id: string,
-  optimizeDeps: DepOptimizationOptions
+  optimizeDeps: DepOptimizationOptions,
 ) {
   if (optimizeDeps.include?.includes(id)) {
     return true
@@ -108,11 +114,11 @@ function matches(pattern: string | RegExp, importee: string) {
   if (importee === pattern) {
     return true
   }
-  return importee.startsWith(pattern + '/')
+  return importee.startsWith(withTrailingSlash(pattern))
 }
 
 function getAliasPatterns(
-  entries: (AliasOptions | undefined) & Alias[]
+  entries: (AliasOptions | undefined) & Alias[],
 ): (string | RegExp)[] {
   if (!entries) {
     return []

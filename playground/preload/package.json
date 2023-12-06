@@ -1,7 +1,8 @@
 {
-  "name": "test-preload",
+  "name": "@vitejs/test-preload",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -16,14 +17,9 @@
     "debug:preload-disabled": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-disabled.ts",
     "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
   },
-  "dependencies": {
-    "vue": "^3.2.45",
-    "vue-router": "^4.1.6"
-  },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
-    "terser": "^5.15.1",
-    "dep-a": "file:./dep-a",
-    "dep-including-a": "file:./dep-including-a"
+    "terser": "^5.24.0",
+    "@vitejs/test-dep-a": "file:./dep-a",
+    "@vitejs/test-dep-including-a": "file:./dep-including-a"
   }
 }

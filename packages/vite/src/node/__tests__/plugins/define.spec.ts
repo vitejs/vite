@@ -5,11 +5,15 @@ import { resolveConfig } from '../../config'
 async function createDefinePluginTransform(
   define: Record<string, any> = {},
   build = true,
-  ssr = false
+  ssr = false,
 ) {
-  const config = await resolveConfig({ define }, build ? 'build' : 'serve')
+  const config = await resolveConfig(
+    { configFile: false, define },
+    build ? 'build' : 'serve',
+  )
   const instance = definePlugin(config)
   return async (code: string) => {
+    // @ts-expect-error transform should exist
     const result = await instance.transform.call({}, code, 'foo.ts', { ssr })
     return result?.code || result
   }
@@ -18,23 +22,54 @@ async function createDefinePluginTransform(
 describe('definePlugin', () => {
   test('replaces custom define', async () => {
     const transform = await createDefinePluginTransform({
-      __APP_VERSION__: JSON.stringify('1.0')
+      __APP_VERSION__: JSON.stringify('1.0'),
     })
     expect(await transform('const version = __APP_VERSION__ ;')).toBe(
-      'const version = "1.0" ;'
+      'const version = "1.0";\n',
     )
     expect(await transform('const version = __APP_VERSION__;')).toBe(
-      'const version = "1.0";'
+      'const version = "1.0";\n',
+    )
+  })
+
+  test('should not replace if not defined', async () => {
+    const transform = await createDefinePluginTransform({
+      __APP_VERSION__: JSON.stringify('1.0'),
+    })
+    expect(await transform('const version = "1.0";')).toBe(undefined)
+    expect(await transform('const version = import.meta.SOMETHING')).toBe(
+      undefined,
     )
   })
 
   test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const isSSR = import.meta.env.SSR ;')).toBe(
-      'const isSSR = false ;'
-    )
     expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
-      'const isSSR = false;'
+      'const isSSR = false;\n',
+    )
+  })
+
+  test('preserve import.meta.hot with override', async () => {
+    // assert that the default behavior is to replace import.meta.hot with undefined
+    const transform = await createDefinePluginTransform()
+    expect(await transform('const hot = import.meta.hot;')).toBe(
+      'const hot = void 0;\n',
+    )
+    // assert that we can specify a user define to preserve import.meta.hot
+    const overrideTransform = await createDefinePluginTransform({
+      'import.meta.hot': 'import.meta.hot',
+    })
+    expect(await overrideTransform('const hot = import.meta.hot;')).toBe(
+      'const hot = import.meta.hot;\n',
+    )
+  })
+
+  test('preserve import.meta.env.UNKNOWN with override', async () => {
+    const transform = await createDefinePluginTransform({
+      'import.meta.env.UNKNOWN': 'import.meta.env.UNKNOWN',
+    })
+    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
+      'const foo = import.meta.env.UNKNOWN;\n',
     )
   })
 })

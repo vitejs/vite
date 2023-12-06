@@ -1,8 +1,27 @@
 ---
+title: Announcing Vite 2.0
+author:
+  - name: The Vite Team
 sidebar: false
+date: 2021-02-16
+head:
+  - - meta
+    - property: og:type
+      content: website
+  - - meta
+    - property: og:title
+      content: Announcing Vite 2.0
+  - - meta
+    - property: og:url
+      content: https://vitejs.dev/blog/announcing-vite2
+  - - meta
+    - property: og:description
+      content: Vite 2 Release Announcement
 ---
 
 # Announcing Vite 2.0
+
+_February 16, 2021_ - Check out the [Vite 3.0 announcement](./announcing-vite3.md)
 
 <p style="text-align:center">
   <img src="/logo.svg" style="height:200px">

@@ -4,10 +4,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
-import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
-import type { Manifest } from 'vite'
+import type {
+  ConsoleMessage,
+  ElementHandle,
+  Locator,
+} from 'playwright-chromium'
+import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ExecaChildProcess } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
@@ -18,27 +23,36 @@ export * from './vitestSetup'
 export const ports = {
   cli: 9510,
   'cli-module': 9511,
+  json: 9512,
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,
   'legacy/client-and-ssr': 9523,
-  'ssr-deps': 9600,
-  'ssr-html': 9601,
-  'ssr-pug': 9602,
-  'ssr-react': 9603,
-  'ssr-vue': 9604,
+  'assets/url-base': 9524, // not imported but used in `assets/vite.config-url-base.js`
+  ssr: 9600,
+  'ssr-deps': 9601,
+  'ssr-html': 9602,
+  'ssr-noexternal': 9603,
+  'ssr-pug': 9604,
   'ssr-webworker': 9605,
+  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-conditions': 9608,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
-  'css/dynamic-import': 5007
+  'css/dynamic-import': 5007,
+  'css/lightningcss-proxy': 5008,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
-  'ssr-deps': 24681,
-  'ssr-html': 24682,
-  'ssr-pug': 24683,
-  'ssr-react': 24684,
-  'ssr-vue': 24685
+  ssr: 24681,
+  'ssr-deps': 24682,
+  'ssr-html': 24683,
+  'ssr-noexternal': 24684,
+  'ssr-pug': 24685,
+  'css/lightningcss-proxy': 24686,
+  json: 24687,
+  'ssr-conditions': 24688,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -68,25 +82,40 @@ function rgbToHex(rgb: string): string {
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
-async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
+async function toEl(
+  el: string | ElementHandle | Locator,
+): Promise<ElementHandle> {
   if (typeof el === 'string') {
-    return await page.$(el)
+    const realEl = await page.$(el)
+    if (realEl == null) {
+      throw new Error(`Cannot find element: "${el}"`)
+    }
+    return realEl
+  }
+  if ('elementHandle' in el) {
+    return el.elementHandle()
   }
   return el
 }
 
-export async function getColor(el: string | ElementHandle): Promise<string> {
+export async function getColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
   return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
-export async function getBg(el: string | ElementHandle): Promise<string> {
+export async function getBg(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
-export async function getBgColor(el: string | ElementHandle): Promise<string> {
+export async function getBgColor(
+  el: string | ElementHandle | Locator,
+): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
 }
@@ -98,7 +127,7 @@ export function readFile(filename: string): string {
 export function editFile(
   filename: string,
   replacer: (str: string) => string,
-  runInBuild: boolean = false
+  runInBuild: boolean = false,
 ): void {
   if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
@@ -123,7 +152,7 @@ export function listAssets(base = ''): string[] {
 export function findAssetFile(
   match: string | RegExp,
   base = '',
-  assets = 'assets'
+  assets = 'assets',
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
@@ -143,7 +172,19 @@ export function findAssetFile(
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8')
+    fs.readFileSync(
+      path.join(testDir, 'dist', base, '.vite/manifest.json'),
+      'utf-8',
+    ),
+  )
+}
+
+export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      'utf-8',
+    ),
   )
 }
 
@@ -152,14 +193,19 @@ export function readManifest(base = ''): Manifest {
  */
 export async function untilUpdated(
   poll: () => string | Promise<string>,
-  expected: string,
-  runInBuild = false
+  expected: string | RegExp,
+  runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
-    if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
+    if (
+      (typeof expected === 'string'
+        ? actual.indexOf(expected) > -1
+        : actual.match(expected)) ||
+      tries === maxTries - 1
+    ) {
       expect(actual).toMatch(expected)
       break
     } else {
@@ -173,7 +219,7 @@ export async function untilUpdated(
  */
 export async function withRetry(
   func: () => Promise<void>,
-  runInBuild = false
+  runInBuild = false,
 ): Promise<void> {
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
@@ -187,12 +233,48 @@ export async function withRetry(
   await func()
 }
 
+export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
+  type A = Assertion<T>
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        return async (...args) => {
+          await withRetry(
+            async () => expect(await getActual())[key](...args),
+            true,
+          )
+        }
+      },
+    },
+  ) as {
+    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
+  }
+}
+
+type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
+
 export async function untilBrowserLogAfter(
   operation: () => any,
   target: string | RegExp | Array<string | RegExp>,
-  callback?: (logs: string[]) => PromiseLike<void> | void
+  expectOrder?: boolean,
+  callback?: UntilBrowserLogAfterCallback,
+): Promise<string[]>
+export async function untilBrowserLogAfter(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  callback?: UntilBrowserLogAfterCallback,
+): Promise<string[]>
+export async function untilBrowserLogAfter(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  arg3?: boolean | UntilBrowserLogAfterCallback,
+  arg4?: UntilBrowserLogAfterCallback,
 ): Promise<string[]> {
-  const promise = untilBrowserLog(target, false)
+  const expectOrder = typeof arg3 === 'boolean' ? arg3 : false
+  const callback = typeof arg3 === 'boolean' ? arg4 : arg3
+
+  const promise = untilBrowserLog(target, expectOrder)
   await operation()
   const logs = await promise
   if (callback) {
@@ -203,14 +285,9 @@ export async function untilBrowserLogAfter(
 
 async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
-  expectOrder = true
+  expectOrder = true,
 ): Promise<string[]> {
-  let resolve: () => void
-  let reject: (reason: any) => void
-  const promise = new Promise<void>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
+  const { promise, resolve, reject } = promiseWithResolvers<void>()
 
   const logs = []
 
@@ -234,7 +311,7 @@ async function untilBrowserLog(
         const remainingMatchers = target.map(isMatch)
         processMsg = (text: string) => {
           const nextIndex = remainingMatchers.findIndex((matcher) =>
-            matcher(text)
+            matcher(text),
           )
           if (nextIndex >= 0) {
             remainingMatchers.splice(nextIndex, 1)
@@ -280,12 +357,15 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   delete m.file
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  if (m.sourceRoot) {
+    m.sourceRoot = m.sourceRoot.replace(root, '/root')
+  }
   return m
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaChildProcess
+  serverProcess: ExecaChildProcess,
 ): Promise<void> {
   if (isWindows) {
     try {
@@ -297,4 +377,19 @@ export async function killProcess(
   } else {
     serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
   }
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
 }

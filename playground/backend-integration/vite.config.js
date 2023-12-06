@@ -1,6 +1,6 @@
-const path = require('node:path')
-const glob = require('fast-glob')
-const normalizePath = require('vite').normalizePath
+import path from 'node:path'
+import glob from 'fast-glob'
+import { defineConfig, normalizePath } from 'vite'
 
 /**
  * @returns {import('vite').Plugin}
@@ -19,31 +19,28 @@ function BackendIntegrationExample() {
         .map((filename) => [path.relative(root, filename), filename])
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
-      entrypoints.push(['foo.css', path.resolve(__dirname, './dir/foo.css')])
+      entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
 
       return {
         build: {
           manifest: true,
           outDir,
           rollupOptions: {
-            input: Object.fromEntries(entrypoints)
-          }
+            input: Object.fromEntries(entrypoints),
+          },
         },
         root,
         resolve: {
           alias: {
-            '~': sourceCodeDir
-          }
-        }
+            '~': sourceCodeDir,
+          },
+        },
       }
-    }
+    },
   }
 }
 
-/**
- * @returns {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   base: '/dev/',
-  plugins: [BackendIntegrationExample()]
-}
+  plugins: [BackendIntegrationExample()],
+})

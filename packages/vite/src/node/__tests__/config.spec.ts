@@ -1,49 +1,49 @@
 import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
 import type { PluginOption, UserConfig, UserConfigExport } from '../config'
-import { resolveConfig } from '../config'
+import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { mergeConfig } from '../publicUtils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
-    const baseConfig: UserConfigExport = {
+    const baseConfig = defineConfig({
       resolve: {
         alias: [
           {
             find: 'foo',
-            replacement: 'foo-value'
-          }
-        ]
-      }
-    }
+            replacement: 'foo-value',
+          },
+        ],
+      },
+    })
 
-    const newConfig: UserConfigExport = {
+    const newConfig = defineConfig({
       resolve: {
         alias: {
           bar: 'bar-value',
-          baz: 'baz-value'
-        }
-      }
-    }
+          baz: 'baz-value',
+        },
+      },
+    })
 
     const mergedConfig: UserConfigExport = {
       resolve: {
         alias: [
           {
             find: 'bar',
-            replacement: 'bar-value'
+            replacement: 'bar-value',
           },
           {
             find: 'baz',
-            replacement: 'baz-value'
+            replacement: 'baz-value',
           },
           {
             find: 'foo',
-            replacement: 'foo-value'
-          }
-        ]
-      }
+            replacement: 'foo-value',
+          },
+        ],
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -54,18 +54,18 @@ describe('mergeConfig', () => {
       resolve: {
         alias: {
           bar: 'bar-value',
-          baz: 'baz-value'
-        }
-      }
+          baz: 'baz-value',
+        },
+      },
     }
 
     const newConfig = {
       resolve: {
         alias: {
           bar: 'bar-value-2',
-          foo: 'foo-value'
-        }
-      }
+          foo: 'foo-value',
+        },
+      },
     }
 
     const mergedConfig = {
@@ -73,9 +73,9 @@ describe('mergeConfig', () => {
         alias: {
           bar: 'bar-value-2',
           baz: 'baz-value',
-          foo: 'foo-value'
-        }
-      }
+          foo: 'foo-value',
+        },
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -83,15 +83,15 @@ describe('mergeConfig', () => {
 
   test('handles arrays', () => {
     const baseConfig: UserConfigExport = {
-      envPrefix: 'string1'
+      envPrefix: 'string1',
     }
 
     const newConfig: UserConfigExport = {
-      envPrefix: ['string2', 'string3']
+      envPrefix: ['string2', 'string3'],
     }
 
     const mergedConfig: UserConfigExport = {
-      envPrefix: ['string1', 'string2', 'string3']
+      envPrefix: ['string1', 'string2', 'string3'],
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -99,15 +99,15 @@ describe('mergeConfig', () => {
 
   test('handles assetsInclude', () => {
     const baseConfig: UserConfigExport = {
-      assetsInclude: 'some-string'
+      assetsInclude: 'some-string',
     }
 
     const newConfig: UserConfigExport = {
-      assetsInclude: ['some-other-string', /regexp?/]
+      assetsInclude: ['some-other-string', /regexp?/],
     }
 
     const mergedConfig: UserConfigExport = {
-      assetsInclude: ['some-string', 'some-other-string', /regexp?/]
+      assetsInclude: ['some-string', 'some-other-string', /regexp?/],
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -118,18 +118,18 @@ describe('mergeConfig', () => {
       custom: {
         alias: {
           bar: 'bar-value',
-          baz: 'baz-value'
-        }
-      }
+          baz: 'baz-value',
+        },
+      },
     }
 
     const newConfig = {
       custom: {
         alias: {
           bar: 'bar-value-2',
-          foo: 'foo-value'
-        }
-      }
+          foo: 'foo-value',
+        },
+      },
     }
 
     const mergedConfig = {
@@ -137,9 +137,9 @@ describe('mergeConfig', () => {
         alias: {
           bar: 'bar-value-2',
           baz: 'baz-value',
-          foo: 'foo-value'
-        }
-      }
+          foo: 'foo-value',
+        },
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -147,15 +147,15 @@ describe('mergeConfig', () => {
 
   test('merge array correctly', () => {
     const baseConfig = {
-      foo: null
+      foo: null,
     }
 
     const newConfig = {
-      foo: ['bar']
+      foo: ['bar'],
     }
 
     const mergedConfig = {
-      foo: ['bar']
+      foo: ['bar'],
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -164,25 +164,46 @@ describe('mergeConfig', () => {
   test('handles ssr.noExternal', () => {
     const baseConfig = {
       ssr: {
-        noExternal: true
-      }
+        noExternal: true,
+      },
     }
 
     const newConfig = {
       ssr: {
-        noExternal: ['foo']
-      }
+        noExternal: ['foo'],
+      },
     }
 
     const mergedConfig = {
       ssr: {
-        noExternal: true
-      }
+        noExternal: true,
+      },
     }
 
     // merging either ways, `ssr.noExternal: true` should take highest priority
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+  })
+
+  test('throws error with functions', () => {
+    const baseConfig = defineConfig(() => ({ base: 'base' }))
+    const newConfig = defineConfig(() => ({ base: 'new' }))
+
+    expect(() =>
+      mergeConfig(
+        // @ts-expect-error TypeScript shouldn't give you to pass a function as argument
+        baseConfig,
+        newConfig,
+      ),
+    ).toThrowError('Cannot merge config in form of callback')
+
+    expect(() =>
+      mergeConfig(
+        {},
+        // @ts-expect-error TypeScript shouldn't give you to pass a function as argument
+        newConfig,
+      ),
+    ).toThrowError('Cannot merge config in form of callback')
   })
 })
 
@@ -211,23 +232,22 @@ describe('preview config', () => {
     strictPort: true,
     host: true,
     open: true,
-    https: true,
     headers: {
-      'Cache-Control': 'no-store'
+      'Cache-Control': 'no-store',
     },
     proxy: { '/foo': 'http://localhost:4567' },
-    cors: false
+    cors: false,
   })
 
   test('preview inherits server config with default port', async () => {
     const config: InlineConfig = {
-      server: serverConfig()
+      server: serverConfig(),
     }
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {
         ...serverConfig(),
-        port: undefined
-      }
+        port: undefined,
+      },
     })
   })
 
@@ -235,14 +255,14 @@ describe('preview config', () => {
     const config: InlineConfig = {
       server: serverConfig(),
       preview: {
-        port: 3006
-      }
+        port: 3006,
+      },
     }
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {
         ...serverConfig(),
-        port: 3006
-      }
+        port: 3006,
+      },
     })
   })
 
@@ -251,18 +271,17 @@ describe('preview config', () => {
     strictPort: false,
     open: false,
     host: false,
-    https: false,
     proxy: { '/bar': 'http://localhost:3010' },
-    cors: true
+    cors: true,
   })
 
   test('preview overrides server config', async () => {
     const config: InlineConfig = {
       server: serverConfig(),
-      preview: previewConfig()
+      preview: previewConfig(),
     }
     expect(await resolveConfig(config, 'serve')).toMatchObject({
-      preview: previewConfig()
+      preview: previewConfig(),
     })
   })
 })
@@ -273,7 +292,7 @@ describe('resolveConfig', () => {
       name: 'vite-plugin-keep-screen-merge',
       config() {
         return { clearScreen: false }
-      }
+      },
     }
   }
 
@@ -282,7 +301,7 @@ describe('resolveConfig', () => {
       name: 'vite-plugin-keep-screen-override',
       config(config) {
         config.clearScreen = false
-      }
+      },
     }
   }
 
@@ -290,7 +309,7 @@ describe('resolveConfig', () => {
     const config1: InlineConfig = { plugins: [keepScreenMergePlugin()] }
     const config2: InlineConfig = {
       plugins: [keepScreenMergePlugin()],
-      clearScreen: true
+      clearScreen: true,
     }
 
     const results1 = await resolveConfig(config1, 'build')
@@ -304,7 +323,7 @@ describe('resolveConfig', () => {
     const config1: InlineConfig = { plugins: [keepScreenOverridePlugin()] }
     const config2: InlineConfig = {
       plugins: [keepScreenOverridePlugin()],
-      clearScreen: true
+      clearScreen: true,
     }
 
     const results1 = await resolveConfig(config1, 'build')
