@@ -137,7 +137,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
-          // eslint-disable-next-line regexp/no-unused-capturing-group -- https://github.com/ota-meshi/eslint-plugin-regexp/issues/675
           /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
 
         let match: RegExpExecArray | null
