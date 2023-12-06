@@ -152,7 +152,8 @@ const hmrClient = new HMRClient(console, async function importUpdatedModule({
   if (isWithinCircularImport) {
     importPromise.catch(() => {
       console.debug(
-        `[hmr] ${acceptedPath} is within a circular import. Reloading page to reset the execution order.`,
+        `[hmr] ${acceptedPath} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order. ` +
+          `To debug and break the circular import, you can run \`vite --debug hmr\` to log the circular dependency path if a file change triggered it.`,
       )
       pageReload()
     })

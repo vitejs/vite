@@ -148,7 +148,8 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
-type HasDeadEnd = boolean | string
+type HasDeadEnd = boolean
+
 export function updateModules(
   file: string,
   modules: ModuleNode[],
