@@ -42,6 +42,7 @@ import {
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
+  createSerialPromiseQueue,
   emptyCssComments,
   generateCodeFrame,
   getHash,
@@ -373,8 +374,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
-  // list of css emit tasks to guarantee the files are emitted in a deterministic order
-  let emitTasks: Promise<void>[] = []
+  // queue to emit css serially to guarantee the files are emitted in a deterministic order
+  let codeSplitEmitQueue = createSerialPromiseQueue<string>()
   let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -413,7 +414,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<RenderedChunk>()
       hasEmitted = false
       chunkCSSMap = new Map()
-      emitTasks = []
+      codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
     async transform(css, id, options) {
@@ -632,21 +633,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
-          const previousTask = emitTasks[emitTasks.length - 1]
-          // finalizeCss is async which makes `emitFile` non-deterministic, so
-          // we use a `.then` to wait for previous tasks before finishing this
-          const thisTask = finalizeCss(chunkCSS, true, config).then((css) => {
-            chunkCSS = css
-            // make sure the previous task is also finished, this works recursively
-            return previousTask
+          // wait for previous tasks as well
+          chunkCSS = await codeSplitEmitQueue.run(async () => {
+            return finalizeCss(chunkCSS, true, config)
           })
-
-          // push this task so the next task can wait for this one
-          emitTasks.push(thisTask)
-          const emitTasksLength = emitTasks.length
-
-          // wait for this and previous tasks to finish
-          await thisTask
 
           // emit corresponding css file
           const referenceId = this.emitFile({
@@ -658,11 +648,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .get(config)!
             .set(referenceId, { originalName: originalFilename, isEntry })
           chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-
-          if (emitTasksLength === emitTasks.length) {
-            // this is the last task, clear `emitTasks` to free up memory
-            emitTasks = []
-          }
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
