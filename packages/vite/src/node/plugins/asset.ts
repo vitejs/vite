@@ -329,6 +329,7 @@ async function fileToBuiltUrl(
   config: ResolvedConfig,
   pluginContext: PluginContext,
   skipPublicCheck = false,
+  shouldInline?: boolean,
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config)) {
     return publicFileToBuiltUrl(id, config)
@@ -343,15 +344,18 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
 
+  if (shouldInline == null) {
+    shouldInline =
+      !!config.build.lib ||
+      // Don't inline SVG with fragments, as they are meant to be reused
+      (!(file.endsWith('.svg') && id.includes('#')) &&
+        !file.endsWith('.html') &&
+        content.length < Number(config.build.assetsInlineLimit) &&
+        !isGitLfsPlaceholder(content))
+  }
+
   let url: string
-  if (
-    config.build.lib ||
-    // Don't inline SVG with fragments, as they are meant to be reused
-    (!(file.endsWith('.svg') && id.includes('#')) &&
-      !file.endsWith('.html') &&
-      content.length < Number(config.build.assetsInlineLimit) &&
-      !isGitLfsPlaceholder(content))
-  ) {
+  if (shouldInline) {
     if (config.build.lib && isGitLfsPlaceholder(content)) {
       config.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
@@ -392,6 +396,7 @@ export async function urlToBuiltUrl(
   importer: string,
   config: ResolvedConfig,
   pluginContext: PluginContext,
+  shouldInline?: boolean,
 ): Promise<string> {
   if (checkPublicFile(url, config)) {
     return publicFileToBuiltUrl(url, config)
@@ -406,6 +411,7 @@ export async function urlToBuiltUrl(
     pluginContext,
     // skip public check since we just did it above
     true,
+    shouldInline,
   )
 }
 
