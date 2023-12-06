@@ -424,41 +424,31 @@ importers:
         specifier: ^8.14.2
         version: 8.14.2
 
-  packages/vite/src/node/__tests__/packages/module:
-    specifiers: {}
+  packages/vite/src/node/__tests__/packages/module: {}
 
-  packages/vite/src/node/__tests__/packages/name:
-    specifiers: {}
+  packages/vite/src/node/__tests__/packages/name: {}
 
-  packages/vite/src/node/__tests__/packages/noname:
-    specifiers: {}
+  packages/vite/src/node/__tests__/packages/noname: {}
 
-  packages/vite/src/node/server/__tests__/fixtures/lerna/nested:
-    specifiers: {}
+  packages/vite/src/node/server/__tests__/fixtures/lerna/nested: {}
 
-  packages/vite/src/node/server/__tests__/fixtures/none/nested:
-    specifiers: {}
+  packages/vite/src/node/server/__tests__/fixtures/none/nested: {}
 
-  packages/vite/src/node/server/__tests__/fixtures/pnpm:
-    specifiers: {}
+  packages/vite/src/node/server/__tests__/fixtures/pnpm: {}
 
-  packages/vite/src/node/server/__tests__/fixtures/pnpm/nested:
-    specifiers: {}
+  packages/vite/src/node/server/__tests__/fixtures/pnpm/nested: {}
 
-  packages/vite/src/node/server/__tests__/fixtures/yarn:
-    specifiers: {}
+  packages/vite/src/node/server/__tests__/fixtures/yarn: {}
 
-  packages/vite/src/node/server/__tests__/fixtures/yarn/nested:
-    specifiers: {}
+  packages/vite/src/node/server/__tests__/fixtures/yarn/nested: {}
 
   packages/vite/src/node/ssr/__tests__:
-    specifiers:
-      '@vitejs/cjs-ssr-dep': link:./fixtures/cjs-ssr-dep
     dependencies:
-      '@vitejs/cjs-ssr-dep': link:fixtures/cjs-ssr-dep
+      '@vitejs/cjs-ssr-dep':
+        specifier: link:./fixtures/cjs-ssr-dep
+        version: link:fixtures/cjs-ssr-dep
 
-  packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep:
-    specifiers: {}
+  packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep: {}
 
   playground:
     devDependencies:
@@ -1928,7 +1918,6 @@ packages:
   /@babel/highlight@7.23.4:
     resolution: {integrity: sha512-acGdbYSfp2WheJoJm/EBBBLh/ID8KDc64ISZ9DYtBmC8/Q204PZJLHyzeB5qMzJ5trcOkybd78M4x2KWsUq++A==}
     engines: {node: '>=6.9.0'}
-    requiresBuild: true
     dependencies:
       '@babel/helper-validator-identifier': 7.22.20
       chalk: 2.4.2
