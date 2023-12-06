@@ -119,6 +119,9 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
+const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
+const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
@@ -337,9 +340,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
+          } else if (nonLeadingHashInFileNameRE.test(fileName)) {
+            // custom[hash].[format] -> [name]-legacy[hash].[format]
+            // custom-[hash].[format] -> [name]-legacy-[hash].[format]
+            // custom.[hash].[format] -> [name]-legacy.[hash].[format]
+            // custom.[hash:10].[format] -> custom-legacy.[hash:10].[format]
+            fileName = fileName.replace(prefixedHashInFileNameRE, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
-            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+            // entry.min.js -> entry-legacy.min.js
+            fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
           }
 
           return fileName
@@ -837,5 +847,7 @@ export const cspHashes = [
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
 ].map((i) => createHash('sha256').update(i).digest('base64'))
+
+export type { Options }
 
 export default viteLegacyPlugin

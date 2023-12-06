@@ -506,7 +506,7 @@ type IdResolver = (
   id: string,
   importer?: string,
   options?: {
-    assertions?: Record<string, string>
+    attributes?: Record<string, string>
     custom?: CustomPluginOptions
     isEntry?: boolean
     skipSelf?: boolean

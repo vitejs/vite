@@ -25,9 +25,10 @@ import type { Plugin } from '../plugin'
 
 const debug = createDebugger('vite:esbuild')
 
-// IIFE content looks like `var MyLib = function() {`. Spaces are removed when minified
+// IIFE content looks like `var MyLib = function() {`.
+// Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(const|var)\s+\S+\s*=\s*function\(\)\s*\{.*"use strict";/s
+  /(const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -92,7 +93,6 @@ export async function transformWithEsbuild(
   }
 
   let tsconfigRaw = options?.tsconfigRaw
-  const fallbackSupported: Record<string, boolean> = {}
 
   // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
@@ -139,23 +139,6 @@ export async function transformWithEsbuild(
       compilerOptions.useDefineForClassFields = false
     }
 
-    // esbuild v0.18 only transforms decorators when `experimentalDecorators` is set to `true`.
-    // To preserve compat with the esbuild breaking change, we set `experimentalDecorators` to
-    // `true` by default if it's unset.
-    // TODO: Remove this in Vite 5
-    if (compilerOptions.experimentalDecorators === undefined) {
-      compilerOptions.experimentalDecorators = true
-    }
-
-    // Compat with esbuild 0.17 where static properties are transpiled to
-    // static blocks when `useDefineForClassFields` is false. Its support
-    // is not great yet, so temporarily disable it for now.
-    // TODO: Remove this in Vite 5, don't pass hardcoded `esnext` target
-    // to `transformWithEsbuild` in the esbuild plugin.
-    if (compilerOptions.useDefineForClassFields !== true) {
-      fallbackSupported['class-static-blocks'] = false
-    }
-
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
@@ -178,10 +161,6 @@ export async function transformWithEsbuild(
     ...options,
     loader,
     tsconfigRaw,
-    supported: {
-      ...fallbackSupported,
-      ...options?.supported,
-    },
   }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions
@@ -219,9 +198,13 @@ export async function transformWithEsbuild(
     if (e.errors) {
       e.frame = ''
       e.errors.forEach((m: Message) => {
-        if (m.text === 'Experimental decorators are not currently enabled') {
+        if (
+          m.text === 'Experimental decorators are not currently enabled' ||
+          m.text ===
+            'Parameter decorators only work when experimental decorators are enabled'
+        ) {
           m.text +=
-            '. Vite 4.4+ now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
+            '. Vite 5 now uses esbuild 0.18 and you need to enable them by adding "experimentalDecorators": true in your "tsconfig.json" file.'
         }
         e.frame += `\n` + prettifyMessage(m, code)
       })
@@ -337,10 +320,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         const esbuildCode = res.code
         const contentIndex =
           opts.format === 'iife'
-            ? esbuildCode.match(IIFE_BEGIN_RE)?.index || 0
+            ? Math.max(esbuildCode.search(IIFE_BEGIN_RE), 0)
             : opts.format === 'umd'
-            ? esbuildCode.indexOf(`(function(`) // same for minified or not
-            : 0
+              ? esbuildCode.indexOf(`(function(`) // same for minified or not
+              : 0
         if (contentIndex > 0) {
           const esbuildHelpers = esbuildCode.slice(0, contentIndex)
           res.code = esbuildCode
@@ -374,6 +357,7 @@ export function resolveEsbuildTranspileOptions(
   const options: TransformOptions = {
     charset: 'utf8',
     ...esbuildOptions,
+    loader: 'js',
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],
     // the final build should always support dynamic import and import.meta.
@@ -449,20 +433,12 @@ export function resolveEsbuildTranspileOptions(
 function prettifyMessage(m: Message, code: string): string {
   let res = colors.yellow(m.text)
   if (m.location) {
-    const lines = code.split(/\r?\n/g)
-    const line = Number(m.location.line)
-    const column = Number(m.location.column)
-    const offset =
-      lines
-        .slice(0, line - 1)
-        .map((l) => l.length)
-        .reduce((total, l) => total + l + 1, 0) + column
-    res += `\n` + generateCodeFrame(code, offset, offset + 1)
+    res += `\n` + generateCodeFrame(code, m.location)
   }
   return res + `\n`
 }
 
-let tsconfckCache: TSConfckCache<TSConfckParseResult>
+let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 
 async function loadTsconfigJsonForFile(
   filename: string,
@@ -470,7 +446,7 @@ async function loadTsconfigJsonForFile(
   try {
     if (tsconfckCache) {
       // shortcut, the cache stores resolved TSConfckParseResult
-      // so getting it from the cache directly we bypass aysnc fn call wrapping it in a promise again
+      // so getting it from the cache directly we bypass async fn call wrapping it in a promise again
       if (tsconfckCache.hasParseResult(filename)) {
         const result = await tsconfckCache.getParseResult(filename)
         return result.tsconfig
@@ -517,7 +493,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache.clear()
+    tsconfckCache?.clear()
 
     // server may not be available if vite config is updated at the same time
     if (server) {

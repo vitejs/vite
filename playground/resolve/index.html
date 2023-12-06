@@ -158,6 +158,9 @@
 <h2>resolve.mainFields</h2>
 <p class="custom-main-fields"></p>
 
+<h2>resolve.mainFields.custom-browser-main</h2>
+<p class="custom-browser-main-field"></p>
+
 <h2>resolve.conditions</h2>
 <p class="custom-condition"></p>
 
@@ -340,6 +343,9 @@
 
   import { msg as customMainMsg } from '@vitejs/test-resolve-custom-main-field'
   text('.custom-main-fields', customMainMsg)
+
+  import { msg as customBrowserMsg } from '@vitejs/test-resolve-custom-browser-main-field'
+  text('.custom-browser-main-field', customBrowserMsg)
 
   import { msg as customConditionMsg } from '@vitejs/test-resolve-custom-condition'
   text('.custom-condition', customConditionMsg)

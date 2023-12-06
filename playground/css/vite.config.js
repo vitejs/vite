@@ -12,6 +12,15 @@ globalThis.location = new URL('http://localhost/')
 export default defineConfig({
   build: {
     cssTarget: 'chrome61',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('manual-chunk.css')) {
+            return 'dir/dir2/manual-chunk'
+          }
+        },
+      },
+    },
   },
   esbuild: {
     logOverride: {

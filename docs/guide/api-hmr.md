@@ -37,6 +37,10 @@ interface ViteHotContext {
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
+  off<T extends string>(
+    event: T,
+    cb: (payload: InferCustomEventPayload<T>) => void,
+  ): void
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }
 ```
@@ -145,6 +149,16 @@ if (import.meta.hot) {
 
 The `import.meta.hot.data` object is persisted across different instances of the same updated module. It can be used to pass on information from a previous version of the module to the next one.
 
+Note that re-assignment of `data` itself is not supported. Instead, you should mutate properties of the `data` object so information added from other handlers are preserved.
+
+```js
+// ok
+import.meta.hot.data.someValue = 'hello'
+
+// not supported
+import.meta.hot.data = { someValue: 'hello' }
+```
+
 ## `hot.decline()`
 
 This is currently a noop and is there for backward compatibility. This could change in the future if there is a new usage for it. To indicate that the module is not hot-updatable, use `hot.invalidate()`.
@@ -180,6 +194,10 @@ The following HMR events are dispatched by Vite automatically:
 - `'vite:ws:connect'` when the WebSocket connection is (re-)established
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+
+## `hot.off(event, cb)`
+
+Remove callback from the event listeners
 
 ## `hot.send(event, data)`
 

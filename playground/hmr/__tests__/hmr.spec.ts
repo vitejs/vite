@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
+import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
   browserLogs,
@@ -7,6 +8,7 @@ import {
   isBuild,
   page,
   removeFile,
+  serverLogs,
   untilBrowserLogAfter,
   untilUpdated,
   viteTestUrl,
@@ -21,7 +23,7 @@ test('should render', async () => {
 if (!isBuild) {
   test('should connect', async () => {
     expect(browserLogs.length).toBe(3)
-    expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
+    expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
   })
 
@@ -171,9 +173,31 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), 'child updated')
   })
 
+  test('soft invalidate', async () => {
+    const el = await page.$('.soft-invalidation')
+    expect(await el.textContent()).toBe(
+      'soft-invalidation/index.js is transformed 1 times. child is bar',
+    )
+    editFile('soft-invalidation/child.js', (code) =>
+      code.replace('bar', 'updated'),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'soft-invalidation/index.js is transformed 1 times. child is updated',
+    )
+  })
+
   test('plugin hmr handler + custom event', async () => {
     const el = await page.$('.custom')
     editFile('customFile.js', (code) => code.replace('custom', 'edited'))
+    await untilUpdated(() => el.textContent(), 'edited')
+  })
+
+  test('plugin hmr remove custom events', async () => {
+    const el = await page.$('.toRemove')
+    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
+    await untilUpdated(() => el.textContent(), 'edited')
+    editFile('customFile.js', (code) => code.replace('edited', 'custom'))
     await untilUpdated(() => el.textContent(), 'edited')
   })
 
@@ -182,21 +206,24 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
   })
 
-  test('full-reload encodeURI path', async () => {
-    await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-    )
-    const el = await page.$('#app')
-    expect(await el.textContent()).toBe('title')
-    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-      code.replace('title', 'title2'),
-    )
-    await page.waitForEvent('load')
-    await untilUpdated(
-      async () => (await page.$('#app')).textContent(),
-      'title2',
-    )
-  })
+  test.skipIf(hasWindowsUnicodeFsBug)(
+    'full-reload encodeURI path',
+    async () => {
+      await page.goto(
+        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+      )
+      const el = await page.$('#app')
+      expect(await el.textContent()).toBe('title')
+      editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+        code.replace('title', 'title2'),
+      )
+      await page.waitForEvent('load')
+      await untilUpdated(
+        async () => (await page.$('#app')).textContent(),
+        'title2',
+      )
+    },
+  )
 
   test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
@@ -623,7 +650,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => page.goto(`${viteTestUrl}/${testDir}/`),
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a0b0c0default0')
               expect(logs).toContain('some >>>>>> a0, b0, c0')
@@ -632,10 +659,11 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             async () => {
+              const loadPromise = page.waitForEvent('load')
               editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
-              await page.waitForEvent('load')
+              await loadPromise
             },
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a1b1c1default0')
               expect(logs).toContain('some >>>>>> a1, b1, c1')
@@ -704,21 +732,25 @@ if (!isBuild) {
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
 
-    await page.goto(viteTestUrl + '/missing-import/index.html', {
-      waitUntil: 'load',
-    })
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-import/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(importCode, unImportCode))
       await loadPromise
-    }, 'missing test')
+    }, ['missing test', /connected/])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await loadPromise
-    }, /500/)
+    }, [/500/, /connected/])
   })
 
   test('should hmr when file is deleted and restored', async () => {
@@ -780,6 +812,57 @@ if (import.meta.hot) {
     )
   })
 
+  test('delete file should not break hmr', async () => {
+    await page.goto(viteTestUrl)
+
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 1',
+    )
+
+    // add state
+    await page.click('.intermediate-file-delete-increment')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2',
+    )
+
+    // update import, hmr works
+    editFile('intermediate-file-delete/index.js', (code) =>
+      code.replace("from './re-export.js'", "from './display.js'"),
+    )
+    editFile('intermediate-file-delete/display.js', (code) =>
+      code.replace('count is ${count}', 'count is ${count}!'),
+    )
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2!',
+    )
+
+    // remove unused file, page reload because it's considered entry point now
+    removeFile('intermediate-file-delete/re-export.js')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 1!',
+    )
+
+    // re-add state
+    await page.click('.intermediate-file-delete-increment')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2!',
+    )
+
+    // hmr works after file deletion
+    editFile('intermediate-file-delete/display.js', (code) =>
+      code.replace('count is ${count}!', 'count is ${count}'),
+    )
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2',
+    )
+  })
+
   test('import.meta.hot?.accept', async () => {
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
@@ -792,13 +875,48 @@ if (import.meta.hot) {
     await untilUpdated(() => el.textContent(), '2')
   })
 
-  test('issue-3033', async () => {
-    await page.goto(viteTestUrl + '/issue-3033/index.html')
-    const el = await page.$('.issue-3033')
+  test('hmr works for self-accepted module within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
+    const el = await page.$('.self-accept-within-circular')
     expect(await el.textContent()).toBe('c')
-    editFile('issue-3033/c.js', (code) =>
+    editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
-    await untilUpdated(() => el.textContent(), 'cc')
+    await untilUpdated(
+      () => page.textContent('.self-accept-within-circular'),
+      'cc',
+    )
+    expect(serverLogs.length).greaterThanOrEqual(1)
+    // Match on full log not possible because of color markers
+    expect(serverLogs.at(-1)!).toContain('page reload')
+    expect(serverLogs.at(-1)!).toContain('(circular imports)')
+  })
+
+  test('hmr should not reload if no accepted within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/circular/index.html')
+    const el = await page.$('.circular')
+    expect(await el.textContent()).toBe(
+      'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
+    )
+    editFile('circular/mod-b.js', (code) =>
+      code.replace(`mod-b ->`, `mod-b (edited) ->`),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)',
+    )
+  })
+
+  test('assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
   })
 }

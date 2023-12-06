@@ -8,6 +8,7 @@ import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
+import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -32,7 +33,12 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
-import { resolvePackageData } from './packages'
+import type { PreviewServer } from './preview'
+import {
+  type PackageCache,
+  findNearestPackageData,
+  resolvePackageData,
+} from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -78,12 +84,29 @@ const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
-export const flattenId = (id: string): string =>
-  id
-    .replace(replaceSlashOrColonRE, '_')
-    .replace(replaceDotRE, '__')
-    .replace(replaceNestedIdRE, '___')
-    .replace(replaceHashRE, '____')
+export const flattenId = (id: string): string => {
+  const flatId = limitFlattenIdLength(
+    id
+      .replace(replaceSlashOrColonRE, '_')
+      .replace(replaceDotRE, '__')
+      .replace(replaceNestedIdRE, '___')
+      .replace(replaceHashRE, '____'),
+  )
+  return flatId
+}
+
+const FLATTEN_ID_HASH_LENGTH = 8
+const FLATTEN_ID_MAX_FILE_LENGTH = 170
+
+const limitFlattenIdLength = (
+  id: string,
+  limit: number = FLATTEN_ID_MAX_FILE_LENGTH,
+): string => {
+  if (id.length <= limit) {
+    return id
+  }
+  return id.slice(0, limit - (FLATTEN_ID_HASH_LENGTH + 1)) + '_' + getHash(id)
+}
 
 export const normalizeId = (id: string): string =>
   id.replace(replaceNestedIdRE, ' > ')
@@ -213,7 +236,7 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
+  return fsPath[0] === '/' || VOLUME_RE.test(fsPath) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {
@@ -276,7 +299,8 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba)(?:$|\?)/
+const knownJsSrcRE =
+  /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -409,6 +433,25 @@ export function lookupFile(
   }
 }
 
+export function isFilePathESM(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
+  if (/\.m[jt]s$/.test(filePath)) {
+    return true
+  } else if (/\.c[jt]s$/.test(filePath)) {
+    return false
+  } else {
+    // check package.json for type: "module"
+    try {
+      const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+      return pkg?.data.type === 'module'
+    } catch {
+      return false
+    }
+  }
+}
+
 const splitRE = /\r?\n/
 
 const range: number = 2
@@ -418,10 +461,14 @@ export function pad(source: string, n = 2): string {
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
 
-export function posToNumber(
-  source: string,
-  pos: number | { line: number; column: number },
-): number {
+type Pos = {
+  /** 1-based */
+  line: number
+  /** 0-based */
+  column: number
+}
+
+export function posToNumber(source: string, pos: number | Pos): number {
   if (typeof pos === 'number') return pos
   const lines = source.split(splitRE)
   const { line, column } = pos
@@ -432,10 +479,7 @@ export function posToNumber(
   return start + column
 }
 
-export function numberToPos(
-  source: string,
-  offset: number | { line: number; column: number },
-): { line: number; column: number } {
+export function numberToPos(source: string, offset: number | Pos): Pos {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error(
@@ -459,16 +503,19 @@ export function numberToPos(
 
 export function generateCodeFrame(
   source: string,
-  start: number | { line: number; column: number } = 0,
-  end?: number,
+  start: number | Pos = 0,
+  end?: number | Pos,
 ): string {
-  start = posToNumber(source, start)
-  end = end || start
+  start = Math.max(posToNumber(source, start), 0)
+  end = Math.min(
+    end !== undefined ? posToNumber(source, end) : start,
+    source.length,
+  )
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
   for (let i = 0; i < lines.length; i++) {
-    count += lines[i].length + 1
+    count += lines[i].length
     if (count >= start) {
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
@@ -481,7 +528,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength) + 1, 0)
+          const pad = Math.max(start - (count - lineLength), 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start,
@@ -497,6 +544,7 @@ export function generateCodeFrame(
       }
       break
     }
+    count++
   }
   return res.join('\n')
 }
@@ -573,6 +621,29 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
+}
+
+export async function recursiveReaddir(dir: string): Promise<string[]> {
+  if (!fs.existsSync(dir)) {
+    return []
+  }
+  let dirents: fs.Dirent[]
+  try {
+    dirents = await fsp.readdir(dir, { withFileTypes: true })
+  } catch (e) {
+    if (e.code === 'EACCES') {
+      // Ignore permission errors
+      return []
+    }
+    throw e
+  }
+  const files = await Promise.all(
+    dirents.map((dirent) => {
+      const res = path.resolve(dir, dirent.name)
+      return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
+    }),
+  )
+  return files.flat(1)
 }
 
 // `fs.realpathSync.native` resolves differently in Windows network drive,
@@ -664,23 +735,19 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
-function reduceSrcset(ret: { url: string; descriptor: string }[]) {
-  return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor ??= ''
-    return (prev +=
-      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
-  }, '')
+function joinSrcset(ret: ImageCandidate[]) {
+  return ret.map(({ url, descriptor }) => `${url} ${descriptor}`).join(', ')
 }
 
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
   return splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const [url] = imageSetUrlRE.exec(src) || ['']
+      const url = imageSetUrlRE.exec(src)?.[0] ?? ''
 
       return {
         url,
-        descriptor: src?.slice(url.length).trim(),
+        descriptor: src.slice(url.length).trim(),
       }
     })
     .filter(({ url }) => !!url)
@@ -695,14 +762,14 @@ export function processSrcSet(
       url: await replacer({ url, descriptor }),
       descriptor,
     })),
-  ).then((ret) => reduceSrcset(ret))
+  ).then(joinSrcset)
 }
 
 export function processSrcSetSync(
   srcs: string,
   replacer: (arg: ImageCandidate) => string,
 ): string {
-  return reduceSrcset(
+  return joinSrcset(
     splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
       url: replacer({ url, descriptor }),
       descriptor,
@@ -954,22 +1021,7 @@ export function arraify<T>(target: T | T[]): T[] {
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
-
-// @ts-expect-error jest only exists when running Jest
-export const usingDynamicImport = typeof jest === 'undefined'
-
-/**
- * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
- *
- * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
- * if we're in a Jest environment.
- * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
- *
- * @param file File path to import.
- */
-export const dynamicImport = usingDynamicImport
-  ? new Function('file', 'return import(file)')
-  : _require
+export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)
@@ -981,8 +1033,10 @@ export function parseRequest(id: string): Record<string, string> | null {
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-export function getHash(text: Buffer | string): string {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+export function getHash(text: Buffer | string, length = 8): string {
+  const h = createHash('sha256').update(text).digest('hex').substring(0, length)
+  if (length <= 64) return h
+  return h.padEnd(length, '_')
 }
 
 const _dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -1010,8 +1064,14 @@ export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
-export function removeComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
+function backwardCompatibleWorkerPlugins(plugins: any) {
+  if (Array.isArray(plugins)) {
+    return plugins
+  }
+  if (typeof plugins === 'function') {
+    return plugins()
+  }
+  return []
 }
 
 function mergeConfigRecursively(
@@ -1046,6 +1106,12 @@ function mergeConfigRecursively(
       (existing === true || value === true)
     ) {
       merged[key] = true
+      continue
+    } else if (key === 'plugins' && rootPath === 'worker') {
+      merged[key] = () => [
+        ...backwardCompatibleWorkerPlugins(existing),
+        ...backwardCompatibleWorkerPlugins(value),
+      ]
       continue
     }
 
@@ -1282,4 +1348,25 @@ export function getPackageManagerCommand(
     default:
       throw new TypeError(`Unknown command type: ${type}`)
   }
+}
+
+export function isDevServer(
+  server: ViteDevServer | PreviewServer,
+): server is ViteDevServer {
+  return 'pluginContainer' in server
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
 }

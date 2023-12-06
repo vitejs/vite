@@ -117,8 +117,8 @@ function createNodePlugins(
           replacement: `__require`,
         },
         'json-stable-stringify/index.js': {
-          pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
-          replacement: 'var json = JSON',
+          src: "require('jsonify')",
+          replacement: 'JSON',
         },
         // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
         // However, we always pass the `resolve` option. Remove this import to avoid
@@ -161,13 +161,14 @@ function createNodeConfig(isProduction: boolean) {
     external: [
       'fsevents',
       'lightningcss',
+      'rollup/parseAst',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
-      // in production we use api-extractor for dts generation
+      // in production we use rollup.dts.config.ts for dts generation
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : './dist/node',
     ),
@@ -195,7 +196,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(162)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
   })
 }
 

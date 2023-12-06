@@ -62,11 +62,6 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
-/**
- * current test using vite inline config
- * when using serve.[jt]s is not possible to get the config
- */
-export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -78,22 +73,6 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
-
-declare module 'vite' {
-  interface InlineConfig {
-    testConfig?: {
-      // relative base output use relative path
-      // rewrite the url to truth file path
-      baseRoute: string
-    }
-  }
-
-  interface UserConfig {
-    testConfig?: {
-      baseRoute: string
-    }
-  }
-}
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -198,13 +177,8 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe(): Promise<void> {
+async function loadConfig(configEnv: ConfigEnv) {
   let config: UserConfig | null = null
-
-  const configEnv: ConfigEnv = {
-    command: isBuild ? 'build' : 'serve',
-    mode: isBuild ? 'production' : 'development',
-  }
 
   // config file named by convention as the *.spec.ts folder
   const variantName = path.basename(dirname(testPath))
@@ -239,7 +213,6 @@ export async function startDefaultServe(): Promise<void> {
         usePolling: true,
         interval: 100,
       },
-      host: true,
       fs: {
         strict: !isBuild,
       },
@@ -253,19 +226,20 @@ export async function startDefaultServe(): Promise<void> {
     },
     customLogger: createInMemoryLogger(serverLogs),
   }
+  return mergeConfig(options, config || {})
+}
 
+export async function startDefaultServe(): Promise<void> {
   setupConsoleWarnCollector(serverLogs)
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
-    viteServer = server = await (await createServer(testConfig)).listen()
-    // use resolved port/base from server
-    const devBase = server.config.base
-    viteTestUrl = `http://localhost:${server.config.server.port}${
-      devBase === '/' ? '' : devBase
-    }`
+    const config = await loadConfig({ command: 'serve', mode: 'development' })
+    viteServer = server = await (await createServer(config)).listen()
+    viteTestUrl = server.resolvedUrls.local[0]
+    if (server.config.base === '/') {
+      viteTestUrl = viteTestUrl.replace(/\/$/, '')
+    }
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
@@ -276,21 +250,30 @@ export async function startDefaultServe(): Promise<void> {
         resolvedConfig = config
       },
     })
-    options.plugins = [resolvedPlugin()]
-    const testConfig = mergeConfig(options, config || {})
-    viteConfig = testConfig
-    const rollupOutput = await build(testConfig)
+    const buildConfig = mergeConfig(
+      await loadConfig({ command: 'build', mode: 'production' }),
+      {
+        plugins: [resolvedPlugin()],
+      },
+    )
+    const rollupOutput = await build(buildConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
     if (isWatch) {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    if (config && config.__test__) {
-      config.__test__()
+    if (buildConfig.__test__) {
+      buildConfig.__test__()
     }
+
+    const previewConfig = await loadConfig({
+      command: 'serve',
+      mode: 'development',
+      isPreview: true,
+    })
     const _nodeEnv = process.env.NODE_ENV
-    const previewServer = await preview(testConfig)
+    const previewServer = await preview(previewConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
     viteTestUrl = previewServer.resolvedUrls.local[0]

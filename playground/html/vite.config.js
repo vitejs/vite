@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { hasWindowsUnicodeFsBug } from '../hasWindowsUnicodeFsBug'
 
 export default defineConfig({
   base: './',
@@ -20,17 +21,31 @@ export default defineConfig({
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html'),
-        unicodePath: resolve(
-          __dirname,
-          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-        ),
+        ...(hasWindowsUnicodeFsBug
+          ? {}
+          : {
+              unicodePath: resolve(
+                __dirname,
+                'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+              ),
+            }),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
         env: resolve(__dirname, 'env.html'),
         sideEffects: resolve(__dirname, 'side-effects/index.html'),
         'a á': resolve(__dirname, 'a á.html'),
+        serveFile: resolve(__dirname, 'serve/file.html'),
+        serveFolder: resolve(__dirname, 'serve/folder/index.html'),
+        serveBothFile: resolve(__dirname, 'serve/both.html'),
+        serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
       },
+    },
+  },
+
+  server: {
+    warmup: {
+      clientFiles: ['./warmup/*'],
     },
   },
 
@@ -38,7 +53,6 @@ export default defineConfig({
     'import.meta.env.VITE_NUMBER': 5173,
     'import.meta.env.VITE_STRING': JSON.stringify('string'),
     'import.meta.env.VITE_OBJECT_STRING': '{ "foo": "bar" }',
-    'import.meta.env.VITE_TEMPLATE_LITERAL': '`template literal`',
     'import.meta.env.VITE_NULL_STRING': 'null',
   },
 

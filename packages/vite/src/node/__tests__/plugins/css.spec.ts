@@ -7,6 +7,7 @@ import {
   convertTargets,
   cssPlugin,
   cssUrlRE,
+  getEmptyChunkReplacer,
   hoistAtRules,
 } from '../../plugins/css'
 
@@ -192,15 +193,15 @@ describe('hoist @ rules', () => {
 @import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toMatchInlineSnapshot(`
-      "@charset \\"utf-8\\";@import \\"baz\\";
+      "@charset "utf-8";@import "baz";
       .foo{color:red;}
       /*
-        @import \\"bla\\";
+        @import "bla";
       */
 
       /*
-        @charset \\"utf-8\\";
-        @import \\"bar\\";
+        @charset "utf-8";
+        @import "bar";
       */
       "
     `)
@@ -256,5 +257,84 @@ describe('convertTargets', () => {
       ios_saf: 851968,
       safari: 852224,
     })
+  })
+})
+
+describe('getEmptyChunkReplacer', () => {
+  test('replaces import call', () => {
+    const code = `\
+import "some-module";
+import "pure_css_chunk.js";
+import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "import "some-module";
+      /* empty css             */
+      import "other-module";"
+    `)
+  })
+
+  test('replaces import call without new lines', () => {
+    const code = `import "some-module";import "pure_css_chunk.js";import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      `"import "some-module";/* empty css             */import "other-module";"`,
+    )
+  })
+
+  test('replaces require call', () => {
+    const code = `\
+require("some-module");
+require("pure_css_chunk.js");
+require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "require("some-module");
+      ;/* empty css              */
+      require("other-module");"
+    `)
+  })
+
+  test('replaces require call in minified code without new lines', () => {
+    const code = `require("some-module");require("pure_css_chunk.js");require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      `"require("some-module");;/* empty css              */require("other-module");"`,
+    )
+  })
+
+  test('replaces require call in minified code that uses comma operator', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js"),require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode).toMatchInlineSnapshot(
+      `"require("some-module"),/* empty css               */require("other-module");"`,
+    )
+    // So there should be no pure css chunk anymore
+    expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('replaces require call in minified code that uses comma operator followed by assignment', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchInlineSnapshot(
+      `"require("some-module");/* empty css               */const v=require("other-module");"`,
+    )
   })
 })

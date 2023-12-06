@@ -10,8 +10,7 @@ import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
   normalizePath,
-  parseRequest,
-  removeComments,
+  requestQueryMaybeEscapedSplitRE,
   requestQuerySplitRE,
   transformStableResult,
 } from '../utils'
@@ -28,6 +27,7 @@ const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
   query?: string
+  import?: string
 }
 
 interface DynamicImportPattern {
@@ -52,8 +52,10 @@ function parseDynamicImportPattern(
   strings: string,
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
-  const rawQuery = parseRequest(filename)
+  const [_, search] = filename.split(requestQuerySplitRE, 2)
+  const searchParams = search ? new URLSearchParams(search) : undefined
   let globParams: DynamicImportRequest | null = null
+
   const ast = (
     parseJS(strings, {
       ecmaVersion: 'latest',
@@ -66,19 +68,26 @@ function parseDynamicImportPattern(
     return null
   }
 
-  const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
+  const [userPattern] = userPatternQuery.split(
+    // ? is escaped on posix OS
+    requestQueryMaybeEscapedSplitRE,
+    2,
+  )
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  if (rawQuery?.raw !== undefined) {
-    globParams = { query: '?raw' }
-  }
+  const globQuery =
+    searchParams &&
+    (['worker', 'url', 'raw'] as const).find((key) => searchParams.has(key))
 
-  if (rawQuery?.url !== undefined) {
-    globParams = { query: '?url' }
-  }
-
-  if (rawQuery?.worker !== undefined) {
-    globParams = { query: '?worker' }
+  if (globQuery) {
+    globParams = {
+      query: `?${globQuery}`,
+      import: '*',
+    }
+  } else if (search) {
+    globParams = {
+      query: search,
+    }
   }
 
   return {
@@ -120,9 +129,7 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams
-    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
-    : ''
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
 
   let newRawPattern = posix.relative(
     posix.dirname(importer),
@@ -213,14 +220,8 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s ||= new MagicString(source)
         let result
         try {
-          // When import string is using backticks, es-module-lexer `end` captures
-          // until the closing parenthesis, instead of the closing backtick.
-          // There may be inline comments between the backtick and the closing
-          // parenthesis, so we manually remove them for now.
-          // See https://github.com/guybedford/es-module-lexer/issues/118
-          const importSource = removeComments(source.slice(start, end)).trim()
           result = await transformDynamicImport(
-            importSource,
+            source.slice(start, end),
             importer,
             resolve,
             config.root,

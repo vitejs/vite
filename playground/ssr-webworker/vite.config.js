@@ -6,6 +6,7 @@ export default defineConfig({
   },
   resolve: {
     dedupe: ['react'],
+    conditions: ['worker'],
   },
   ssr: {
     target: 'webworker',

@@ -20,7 +20,7 @@ To develop and test the core `vite` package:
 
 You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
-> Vite uses pnpm v7. If you are working on multiple projects with different versions of pnpm, it's recommended to enable [Corepack](https://github.com/nodejs/corepack) by running `corepack enable`.
+> Vite uses pnpm v8. If you are working on multiple projects with different versions of pnpm, it's recommended to enable [Corepack](https://github.com/nodejs/corepack) by running `corepack enable`.
 
 ### Ignoring commits when running `git blame`
 
@@ -257,7 +257,7 @@ If you have publish access, the steps below explain how to cut a release for a p
 "Release" is done locally to generate the changelogs and git tags:
 
 1. Make sure the git remote for https://github.com/vitejs/vite is set as `origin`.
-2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date.
+2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date. Then run `pnpm build`.
 3. Run `pnpm release` and follow the prompts to cut a release for a package. It will generate the changelog, a git release tag, and push them to `origin`. You can run with the `--dry` flag to test it out.
 4. When the command finishes, it will provide a link to https://github.com/vitejs/vite/actions/workflows/publish.yml.
 5. Click the link to visit the page, and follow the next steps below.

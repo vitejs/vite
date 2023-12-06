@@ -2,7 +2,7 @@
   "extends": "./tsconfig.base.json",
   "include": [
     "./rollup.config.ts",
-    "scripts",
+    "./rollup.dts.config.ts",
     "src/node/__tests__",
     "src/types/shims.d.ts"
   ],

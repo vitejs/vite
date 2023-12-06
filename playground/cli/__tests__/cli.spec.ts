@@ -21,12 +21,18 @@ test('cli should work', async () => {
 })
 
 test('should restart', async () => {
+  const logsLengthBeforeEdit = streams.server.out.length
   editFile('./vite.config.js', (content) => content)
   await withRetry(async () => {
-    expect(streams.server.out).toEqual(
+    const logs = streams.server.out.slice(logsLengthBeforeEdit)
+    expect(logs).toEqual(
       expect.arrayContaining([expect.stringMatching('server restarted')]),
     )
-    expect(streams.server.out).not.toEqual(
+    // Don't reprint the server URLs as they are the same
+    expect(logs).not.toEqual(
+      expect.arrayContaining([expect.stringMatching('http://localhost')]),
+    )
+    expect(logs).not.toEqual(
       expect.arrayContaining([expect.stringMatching('error')]),
     )
   })

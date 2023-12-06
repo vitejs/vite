@@ -27,7 +27,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { resolveTsconfigRaw, scanImports } from './scan'
+import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
@@ -164,11 +164,6 @@ export interface DepOptimizationResult {
    */
   commit: () => Promise<void>
   cancel: () => void
-}
-
-export interface DepOptimizationProcessing {
-  promise: Promise<void>
-  resolve: () => void
 }
 
 export interface OptimizedDepInfo {
@@ -647,7 +642,7 @@ export function runOptimizeDeps(
         }
 
         for (const o of Object.keys(meta.outputs)) {
-          if (!o.match(jsMapExtensionRE)) {
+          if (!jsMapExtensionRE.test(o)) {
             const id = path
               .relative(processingCacheDirOutputPath, o)
               .replace(jsExtensionRE, '')
@@ -727,16 +722,11 @@ async function prepareEsbuildOptimizerRun(
   //    path.
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
-  const flatIdToExports: Record<string, ExportsData> = {}
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const {
-    plugins: pluginsFromConfig = [],
-    tsconfig,
-    tsconfigRaw,
-    ...esbuildOptions
-  } = optimizeDeps?.esbuildOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
+    optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -754,20 +744,18 @@ async function prepareEsbuildOptimizerRun(
       const flatId = flattenId(id)
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
-      flatIdToExports[flatId] = exportsData
     }),
   )
 
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   // esbuild automatically replaces process.env.NODE_ENV for platform 'browser'
-  // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
-  // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be
-  // later replaced by the define plugin
+  // But in lib mode, we need to keep process.env.NODE_ENV untouched
   const define = {
-    'process.env.NODE_ENV': isBuild
-      ? '__vite_process_env_NODE_ENV'
-      : JSON.stringify(process.env.NODE_ENV || config.mode),
+    'process.env.NODE_ENV':
+      isBuild && config.build.lib
+        ? 'process.env.NODE_ENV'
+        : JSON.stringify(process.env.NODE_ENV || config.mode),
   }
 
   const platform =
@@ -828,8 +816,6 @@ async function prepareEsbuildOptimizerRun(
     metafile: true,
     plugins,
     charset: 'utf8',
-    tsconfig,
-    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
@@ -892,14 +878,6 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
-}
-
-export function newDepOptimizationProcessing(): DepOptimizationProcessing {
-  let resolve: () => void
-  const promise = new Promise((_resolve) => {
-    resolve = _resolve
-  }) as Promise<void>
-  return { promise, resolve: resolve! }
 }
 
 // Convert to { id: src }
