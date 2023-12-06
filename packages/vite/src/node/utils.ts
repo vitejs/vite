@@ -336,6 +336,16 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
+export const urlRE = /(\?|&)url(?:&|$)/
+export const rawRE = /(\?|&)raw(?:&|$)/
+export const rawContentRE = /(?:\?|&)raw-content(?:&|$)/
+export function removeUrlQuery(url: string): string {
+  return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
+}
+export function removeRawQuery(url: string): string {
+  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
+}
+
 const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL

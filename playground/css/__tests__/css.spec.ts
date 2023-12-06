@@ -428,11 +428,23 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
+test('?url', async () => {
+  expect(await getColor('.url-imported-css')).toBe('yellow')
+})
+
 test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
+  )
+})
+
+test('?raw&url', async () => {
+  const rawUrlImportCss = await page.$('.raw-url-imported-css')
+
+  expect(await rawUrlImportCss.textContent()).toBe(
+    readFileSync(require.resolve('../raw-url-imported.css'), 'utf-8'),
   )
 })
 

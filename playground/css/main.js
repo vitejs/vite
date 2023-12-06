@@ -6,8 +6,18 @@ import './less.less'
 import './stylus.styl'
 import './manual-chunk.css'
 
+import urlCss from './url-imported.css?url'
+appendLinkStylesheet(urlCss)
+
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
+
+import rawUrlCss from './raw-url-imported.css?raw&url'
+fetch(rawUrlCss)
+  .then((res) => res.text())
+  .then((content) => {
+    text('.raw-url-imported-css', content)
+  })
 
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
@@ -51,6 +61,13 @@ document
 
 function text(el, text) {
   document.querySelector(el).textContent = text
+}
+
+function appendLinkStylesheet(href) {
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = href
+  document.head.appendChild(link)
 }
 
 if (import.meta.hot) {

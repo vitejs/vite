@@ -27,7 +27,12 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
-import { resolveUserExternal, toOutputFilePathInCss } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  resolveUserExternal,
+  toOutputFilePathInCss,
+  toOutputFilePathInJS,
+} from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -47,6 +52,7 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
+  injectQuery,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -54,11 +60,15 @@ import {
   normalizePath,
   parseRequest,
   processSrcSet,
+  rawRE,
   removeDirectQuery,
+  removeRawQuery,
+  removeUrlQuery,
   requireResolveFromRootWithFallback,
   slash,
   stripBase,
   stripBomTag,
+  urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -167,6 +177,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
+const transformOnlyRE = /[?&]transform-only\b/
 const varRE = /^var\(/i
 const nonEscapedDoubleQuoteRe = /(?<!\\)(")/g
 
@@ -221,10 +232,13 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
 }
 
+const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
+
 /**
  * Plugin applied before user plugins
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
+  const isBuild = config.command === 'build'
   let server: ViteDevServer
   let moduleCache: Map<string, Record<string, string>>
 
@@ -252,6 +266,43 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
+    },
+
+    async load(id) {
+      const hasUrlQuery = urlRE.test(id)
+      const hasRawQuery = rawRE.test(id)
+
+      // *.css?url&raw
+      // in build, it's handled by assets plugin.
+      if (
+        !isBuild &&
+        hasUrlQuery &&
+        hasRawQuery &&
+        isCSSRequest(id) &&
+        !isModuleCSSRequest(id)
+      ) {
+        id = injectQuery(removeRawQuery(removeUrlQuery(id)), 'raw-content')
+        const url = await fileToUrl(id, config, this)
+        return `export default ${JSON.stringify(url)}`
+      }
+
+      // *.css?url
+      // in dev, it's handled by assets plugin.
+      if (
+        isBuild &&
+        hasUrlQuery &&
+        !hasRawQuery &&
+        isCSSRequest(id) &&
+        !isModuleCSSRequest(id)
+      ) {
+        id = injectQuery(removeUrlQuery(id), 'transform-only')
+        return (
+          `import ${JSON.stringify(id)};` +
+          `export default "__VITE_CSS_URL__${Buffer.from(id).toString(
+            'hex',
+          )}__"`
+        )
+      }
     },
 
     async transform(raw, id, options) {
@@ -376,6 +427,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   const styles: Map<string, string> = new Map<string, string>()
   // queue to emit css serially to guarantee the files are emitted in a deterministic order
   let codeSplitEmitQueue = createSerialPromiseQueue<string>()
+  const urlEmitQueue = createSerialPromiseQueue<unknown>()
   let pureCssChunks: Set<RenderedChunk>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
@@ -530,10 +582,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
-          chunkCSS += styles.get(id)
-          // a css module contains JS, so it makes this not a pure css chunk
-          if (cssModuleRE.test(id)) {
-            isPureCssChunk = false
+          // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
+          if (!transformOnlyRE.test(id)) {
+            chunkCSS += styles.get(id)
+            // a css module contains JS, so it makes this not a pure css chunk
+            if (cssModuleRE.test(id)) {
+              isPureCssChunk = false
+            }
           }
         } else {
           // if the module does not have a style, then it's not a pure css chunk.
@@ -541,10 +596,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // that are css gets added to the `styles` map.
           isPureCssChunk = false
         }
-      }
-
-      if (!chunkCSS) {
-        return null
       }
 
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
@@ -606,6 +657,98 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return normalizePath(
           path.format({ ...path.parse(name), base: undefined, ext }),
         )
+      }
+
+      let s: MagicString | undefined
+      const urlEmitTasks: Array<{
+        cssAssetName: string
+        originalFilename: string
+        content: string
+        start: number
+        end: number
+      }> = []
+
+      if (code.includes('__VITE_CSS_URL__')) {
+        let match: RegExpExecArray | null
+        cssUrlAssetRE.lastIndex = 0
+        while ((match = cssUrlAssetRE.exec(code))) {
+          const [full, idHex] = match
+          const id = Buffer.from(idHex, 'hex').toString()
+          const originalFilename = cleanUrl(id)
+          const cssAssetName = ensureFileExt(
+            path.basename(originalFilename),
+            '.css',
+          )
+          if (!styles.has(id)) {
+            throw new Error(
+              `css content for ${JSON.stringify(id)} was not found`,
+            )
+          }
+
+          let cssContent = styles.get(id)!
+
+          cssContent = resolveAssetUrlsInCss(cssContent, cssAssetName)
+
+          urlEmitTasks.push({
+            cssAssetName,
+            originalFilename,
+            content: cssContent,
+            start: match.index,
+            end: match.index + full.length,
+          })
+        }
+      }
+
+      // should await even if this chunk does not include __VITE_CSS_URL__
+      // so that code after this line runs in the same order
+      await urlEmitQueue.run(async () =>
+        Promise.all(
+          urlEmitTasks.map(async (info) => {
+            info.content = await finalizeCss(info.content, true, config)
+          }),
+        ),
+      )
+      if (urlEmitTasks.length > 0) {
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          opts.format,
+          config.isWorker,
+        )
+        s ||= new MagicString(code)
+
+        for (const {
+          cssAssetName,
+          originalFilename,
+          content,
+          start,
+          end,
+        } of urlEmitTasks) {
+          const referenceId = this.emitFile({
+            name: cssAssetName,
+            type: 'asset',
+            source: content,
+          })
+          generatedAssets
+            .get(config)!
+            .set(referenceId, { originalName: originalFilename })
+
+          const replacement = toOutputFilePathInJS(
+            this.getFileName(referenceId),
+            'asset',
+            chunk.fileName,
+            'js',
+            config,
+            toRelativeRuntime,
+          )
+          const replacementString =
+            typeof replacement === 'string'
+              ? JSON.stringify(replacement).slice(1, -1)
+              : `"+${replacement.runtime}+"`
+          s.update(start, end, replacementString)
+        }
+      }
+
+      if (!chunkCSS && !s) {
+        return null
       }
 
       if (config.build.cssCodeSplit) {
@@ -681,23 +824,26 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const insertMark = "'use strict';"
             injectionPoint = code.indexOf(insertMark) + insertMark.length
           }
-          const s = new MagicString(code)
+          s ||= new MagicString(code)
           s.appendRight(injectionPoint, injectCode)
-          if (config.build.sourcemap) {
-            // resolve public URL from CSS paths, we need to use absolute paths
-            return {
-              code: s.toString(),
-              map: s.generateMap({ hires: 'boundary' }),
-            }
-          } else {
-            return { code: s.toString() }
-          }
         }
       } else {
+        // resolve public URL from CSS paths, we need to use absolute paths
         chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
         // finalizeCss is called for the aggregated chunk in generateBundle
 
         chunkCSSMap.set(chunk.fileName, chunkCSS)
+      }
+
+      if (s) {
+        if (config.build.sourcemap) {
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary' }),
+          }
+        } else {
+          return { code: s.toString() }
+        }
       }
       return null
     },

@@ -23,7 +23,10 @@ import {
   injectQuery,
   joinUrlSegments,
   normalizePath,
+  rawRE,
   removeLeadingSlash,
+  removeUrlQuery,
+  urlRE,
   withTrailingSlash,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
@@ -32,10 +35,7 @@ import type { ModuleGraph } from '../server/moduleGraph'
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
-const rawRE = /(?:\?|&)raw(?:&|$)/
-export const urlRE = /(\?|&)url(?:&|$)/
 const jsSourceMapRE = /\.[cm]?js\.map$/
-const unnededFinalQueryCharRE = /[?&]$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -185,8 +185,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const hasRawQuery = rawRE.test(id)
+      const hasUrlQuery = urlRE.test(id)
+
       // raw requests, read from disk
-      if (rawRE.test(id)) {
+      if (hasRawQuery && !hasUrlQuery) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         this.addWatchFile(file)
         // raw query, read file and return as string
@@ -195,11 +198,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         )}`
       }
 
-      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+      if (!hasUrlQuery && !config.assetsInclude(cleanUrl(id))) {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(unnededFinalQueryCharRE, '')
+      id = removeUrlQuery(id)
       let url = await fileToUrl(id, config, this)
 
       // Inherit HMR timestamp if this asset was invalidated

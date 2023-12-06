@@ -1,6 +1,6 @@
 .raw {
   /* should not be transformed by postcss */
-  &-imported {
+  &-url-imported {
     color: yellow;
   }
 }
