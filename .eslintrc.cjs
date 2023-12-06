@@ -169,7 +169,7 @@ module.exports = defineConfig({
       },
     },
     {
-      files: ['playground/**', '**/__tests__/**'],
+      files: ['playground/**'],
       rules: {
         'n/no-extraneous-import': 'off',
         'n/no-extraneous-require': 'off',
