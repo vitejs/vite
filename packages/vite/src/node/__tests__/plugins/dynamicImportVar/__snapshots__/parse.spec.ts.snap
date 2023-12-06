@@ -1,10 +1,10 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parse positives > ? in url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mo\\\\?ds/*.js", {"as":"url","import":"*"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
+exports[`parse positives > ? in url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mo\\\\?ds/*.js", {"query":"url","import":"*"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
 
-exports[`parse positives > ? in variables 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"as":"raw","import":"*"})), \`./mods/\${base ?? foo}.js\`)"`;
+exports[`parse positives > ? in variables 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"query":"raw","import":"*"})), \`./mods/\${base ?? foo}.js\`)"`;
 
-exports[`parse positives > ? in worker 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mo\\\\?ds/*.js", {"as":"worker","import":"*"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
+exports[`parse positives > ? in worker 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mo\\\\?ds/*.js", {"query":"worker","import":"*"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
 
 exports[`parse positives > alias path 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js")), \`./mods/\${base}.js\`)"`;
 
@@ -16,6 +16,6 @@ exports[`parse positives > with multi ../ and itself 1`] = `"__variableDynamicIm
 
 exports[`parse positives > with query 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"query":{"foo":"bar"}})), \`./mods/\${base}.js\`)"`;
 
-exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"as":"raw","import":"*"})), \`./mods/\${base}.js\`)"`;
+exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"query":"raw","import":"*"})), \`./mods/\${base}.js\`)"`;
 
-exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"as":"url","import":"*"})), \`./mods/\${base}.js\`)"`;
+exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js", {"query":"url","import":"*"})), \`./mods/\${base}.js\`)"`;

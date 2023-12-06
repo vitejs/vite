@@ -10,6 +10,7 @@ import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
   normalizePath,
+  parseRequest,
   requestQueryMaybeEscapedSplitRE,
   requestQuerySplitRE,
   transformStableResult,
@@ -26,7 +27,7 @@ const relativePathRE = /^\.{1,2}\//
 const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
-  query?: string
+  query?: string | Record<string, string>
   import?: string
 }
 
@@ -52,8 +53,7 @@ function parseDynamicImportPattern(
   strings: string,
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
-  const [_, search] = filename.split(requestQuerySplitRE, 2)
-  const searchParams = search ? new URLSearchParams(search) : undefined
+  const rawQuery = parseRequest(filename)
   let globParams: DynamicImportRequest | null = null
 
   const ast = (
@@ -75,18 +75,17 @@ function parseDynamicImportPattern(
   )
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  const globQuery =
-    searchParams &&
-    (['worker', 'url', 'raw'] as const).find((key) => searchParams.has(key))
-
+  const globQuery = (['worker', 'url', 'raw'] as const).find(
+    (key) => rawQuery && key in rawQuery,
+  )
   if (globQuery) {
     globParams = {
-      query: `?${globQuery}`,
+      query: globQuery,
       import: '*',
     }
-  } else if (search) {
+  } else if (rawQuery) {
     globParams = {
-      query: search,
+      query: rawQuery,
     }
   }
 
