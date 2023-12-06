@@ -1,4 +1,4 @@
 packages:
   - 'packages/*'
   - 'playground/**'
-  - '**/__tests__/**'
+  - 'packages/**/__tests__/**'
