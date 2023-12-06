@@ -21,9 +21,9 @@ async function createIsExternal(ssrConfig?: SSROptions) {
     {
       configFile: false,
       root: fileURLToPath(new URL('./', import.meta.url)),
-      ssr: ssrConfig
+      ssr: ssrConfig,
     },
-    'serve'
+    'serve',
   )
   return createIsConfiguredAsSsrExternal(resolvedConfig)
 }
