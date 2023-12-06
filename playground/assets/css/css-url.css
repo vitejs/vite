@@ -11,7 +11,7 @@
 }
 
 .css-url-encoded {
-  background: url(/nested/asset%5Bcopy%5D.png);
+  background: url('/nested/asset%5Bsmall%5D.png');
   background-size: 10px;
 }
 

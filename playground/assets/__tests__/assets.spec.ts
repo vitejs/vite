@@ -24,8 +24,8 @@ const assetMatch = isBuild
   : '/foo/bar/nested/asset.png'
 
 const encodedAssetMatch = isBuild
-  ? /\/foo\/bar\/assets\/asset_copy_-[-\w]{8}\.png/
-  : '/foo/bar/nested/asset[copy].png'
+  ? /\/foo\/bar\/assets\/asset_small_-[-\w]{8}\.png/
+  : '/foo/bar/nested/asset[small].png'
 
 const iconMatch = `/foo/bar/icon.png`
 
