@@ -269,18 +269,22 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
+      if (!isCSSRequest(id)) return
+
       const hasUrlQuery = urlRE.test(id)
       const hasRawQuery = rawRE.test(id)
 
+      if (hasUrlQuery && !hasRawQuery && isModuleCSSRequest(id)) {
+        throw new Error(
+          `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
+            id,
+          )})`,
+        )
+      }
+
       // *.css?url&raw
       // in build, it's handled by assets plugin.
-      if (
-        !isBuild &&
-        hasUrlQuery &&
-        hasRawQuery &&
-        isCSSRequest(id) &&
-        !isModuleCSSRequest(id)
-      ) {
+      if (!isBuild && hasUrlQuery && hasRawQuery) {
         id = injectQuery(removeRawQuery(removeUrlQuery(id)), 'raw-content')
         const url = await fileToUrl(id, config, this)
         return `export default ${JSON.stringify(url)}`
@@ -288,13 +292,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       // *.css?url
       // in dev, it's handled by assets plugin.
-      if (
-        isBuild &&
-        hasUrlQuery &&
-        !hasRawQuery &&
-        isCSSRequest(id) &&
-        !isModuleCSSRequest(id)
-      ) {
+      if (isBuild && hasUrlQuery && !hasRawQuery) {
         id = injectQuery(removeUrlQuery(id), 'transform-only')
         return (
           `import ${JSON.stringify(id)};` +
