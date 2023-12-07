@@ -25,10 +25,6 @@ const argv = minimist<{
 }>(process.argv.slice(2), { string: ['_'] })
 const cwd = process.cwd()
 
-type OverwiteOption = {
-  value: string
-  display: string
-}
 type ColorFunc = (str: string | number) => string
 type Framework = {
   name: string
@@ -42,21 +38,6 @@ type FrameworkVariant = {
   color: ColorFunc
   customCommand?: string
 }
-
-const OVERWRITEOPTIONS: OverwiteOption[] = [
-  {
-    value: 'yes',
-    display: 'Remove existing files and continue',
-  },
-  {
-    value: 'no',
-    display: 'Cancel operation',
-  },
-  {
-    value: 'ignore',
-    display: 'Ignore files and continue',
-  },
-]
 
 const FRAMEWORKS: Framework[] = [
   {
@@ -294,12 +275,20 @@ async function init() {
               : `Target directory "${targetDir}"`) +
             ` is not empty. Please choose how to proceed:`,
           initial: 0,
-          choices: OVERWRITEOPTIONS.map((overwriteOption) => {
-            return {
-              title: overwriteOption.display,
-              value: overwriteOption.value,
-            }
-          }),
+          choices: [
+            {
+              title: 'Remove existing files and continue',
+              value: 'yes',
+            },
+            {
+              title: 'Cancel operation',
+              value: 'no',
+            },
+            {
+              title: 'Ignore files and continue',
+              value: 'ignore',
+            },
+          ],
         },
         {
           type: (_, { overwrite }: { overwrite?: string }) => {
