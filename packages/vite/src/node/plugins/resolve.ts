@@ -1299,7 +1299,7 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
 }
 
 function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
-  if (!preserveSymlinks && browserExternalId !== resolved) {
+  if (!preserveSymlinks) {
     resolved = safeRealpathSync(resolved)
   }
   return normalizePath(resolved)
