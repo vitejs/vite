@@ -32,8 +32,13 @@ export const commonFsUtils: FsUtils = {
 
 const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
-  if (config.command !== 'serve') {
-    // cached fsUtils is only used in the dev server for now
+  if (
+    config.command !== 'serve' ||
+    config.server.watch === null ||
+    config.server.watch?.ignored
+  ) {
+    // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
+    // we can support custom ignored patterns later
     return commonFsUtils
   }
   let fsUtils = cachedFsUtilsMap.get(config)
