@@ -58,7 +58,13 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
 
 type DirentsMap = Map<string, DirentCache>
 
-type DirentCacheType = 'directory' | 'file' | 'symlink' | 'error'
+type DirentCacheType =
+  | 'directory'
+  | 'file'
+  | 'symlink'
+  | 'error'
+  | 'directory_maybe_symlink'
+  | 'file_maybe_symlink'
 
 interface DirentCache {
   dirents?: DirentsMap | Promise<DirentsMap>
@@ -105,8 +111,9 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     let direntCache: DirentCache = rootCache
     for (let i = 0; i < parts.length; i++) {
       if (direntCache.type === 'directory') {
+        let dirPath
         if (!direntCache.dirents || direntCache.dirents instanceof Promise) {
-          const dirPath = path.posix.join(root, ...parts.slice(0, i))
+          dirPath = path.posix.join(root, ...parts.slice(0, i))
           const dirents = readDirCacheSync(dirPath)
           if (!dirents) {
             direntCache.type = 'error'
@@ -118,14 +125,33 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         if (!nextDirentCache) {
           return
         }
+        if (nextDirentCache.type === 'directory_maybe_symlink') {
+          dirPath ??= path.posix.join(root, ...parts.slice(0, i))
+          const isSymlink = fs
+            .lstatSync(dirPath, { throwIfNoEntry: false })
+            ?.isSymbolicLink()
+          direntCache.type = isSymlink ? 'symlink' : 'directory'
+        }
         direntCache = nextDirentCache
       } else if (direntCache.type === 'symlink') {
         // early return if we encounter a symlink
         return direntCache
       } else if (direntCache.type === 'error') {
         return direntCache
-      } else if (direntCache.type === 'file') {
-        return i === parts.length - 1 ? direntCache : undefined
+      } else {
+        if (i !== parts.length - 1) {
+          return
+        }
+        if (direntCache.type === 'file_maybe_symlink') {
+          const filePath = path.posix.join(root, ...parts.slice(0, i))
+          const isSymlink = fs
+            .lstatSync(filePath, { throwIfNoEntry: false })
+            ?.isSymbolicLink()
+          direntCache.type = isSymlink ? 'symlink' : 'file'
+          return direntCache
+        } else if (direntCache.type === 'file') {
+          return direntCache
+        }
       }
     }
     return direntCache
@@ -153,13 +179,18 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     return direntCache
   }
 
-  function onPathAdd(file: string): void {
+  async function onPathAdd(
+    file: string,
+    type: 'directory_maybe_symlink' | 'file_maybe_symlink',
+  ): Promise<void> {
     const direntCache = getDirentCacheFromPath(path.dirname(file))
     if (direntCache && direntCache.type === 'directory') {
       // We don't know if the file is a symlink or not for the stats
-      // in the chokidar callback, so we delete the direntCache for the
-      // parent directory and let the next call to fsUtils recreate it
-      direntCache.dirents = undefined
+      // in the chokidar callback, so we add it with type unknown.
+      // If it is accessed, we'll do a new fs call to get the real type.
+      if (direntCache.dirents) {
+        ;(await direntCache.dirents).set(path.basename(file), { type })
+      }
     }
   }
 
@@ -238,9 +269,13 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       return direntCache && direntCache.type === 'directory'
     },
 
-    onFileAdd: onPathAdd,
+    onFileAdd(file) {
+      onPathAdd(file, 'file_maybe_symlink')
+    },
     onFileUnlink: onPathUnlink,
-    onDirectoryAdd: onPathAdd,
+    onDirectoryAdd(file) {
+      onPathAdd(file, 'directory_maybe_symlink')
+    },
     onDirectoryUnlink: onPathUnlink,
   }
 }
