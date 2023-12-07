@@ -486,12 +486,12 @@ const moduleUrls = import.meta.glob('./dir/*.svg', {
 ```ts
 // code produced by vite:
 const moduleStrings = {
-  './dir/foo.svg': () => import('./dir/foo.js?raw'),
-  './dir/bar.svg': () => import('./dir/bar.js?raw'),
+  './dir/foo.svg': () => import('./dir/foo.js?raw').then((m) => m['default']),
+  './dir/bar.svg': () => import('./dir/bar.js?raw').then((m) => m['default']),
 }
 const moduleUrls = {
-  './dir/foo.svg': () => import('./dir/foo.js?url'),
-  './dir/bar.svg': () => import('./dir/bar.js?url'),
+  './dir/foo.svg': () => import('./dir/foo.js?url').then((m) => m['default']),
+  './dir/bar.svg': () => import('./dir/bar.js?url').then((m) => m['default']),
 }
 ```
 
