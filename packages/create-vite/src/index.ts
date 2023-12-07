@@ -25,6 +25,10 @@ const argv = minimist<{
 }>(process.argv.slice(2), { string: ['_'] })
 const cwd = process.cwd()
 
+type OverwiteOption = {
+  value: string
+  display: string
+}
 type ColorFunc = (str: string | number) => string
 type Framework = {
   name: string
@@ -38,6 +42,21 @@ type FrameworkVariant = {
   color: ColorFunc
   customCommand?: string
 }
+
+const OVERWRITEOPTIONS: OverwiteOption[] = [
+  {
+    value: 'yes',
+    display: 'Remove existing files and continue',
+  },
+  {
+    value: 'no',
+    display: 'Cancel operation',
+  },
+  {
+    value: 'ignore',
+    display: 'Ignore files and continue',
+  },
+]
 
 const FRAMEWORKS: Framework[] = [
   {
@@ -267,17 +286,24 @@ async function init() {
         },
         {
           type: () =>
-            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
+            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'select',
           name: 'overwrite',
           message: () =>
             (targetDir === '.'
               ? 'Current directory'
               : `Target directory "${targetDir}"`) +
-            ` is not empty. Remove existing files and continue?`,
+            ` is not empty. Please choose how to proceed:`,
+          initial: 0,
+          choices: OVERWRITEOPTIONS.map((overwriteOption) => {
+            return {
+              title: overwriteOption.display,
+              value: overwriteOption.value,
+            }
+          }),
         },
         {
-          type: (_, { overwrite }: { overwrite?: boolean }) => {
-            if (overwrite === false) {
+          type: (_, { overwrite }: { overwrite?: OverwiteOption }) => {
+            if (overwrite === 'no') {
               throw new Error(red('✖') + ' Operation cancelled')
             }
             return null
@@ -342,7 +368,7 @@ async function init() {
 
   const root = path.join(cwd, targetDir)
 
-  if (overwrite) {
+  if (overwrite === 'yes') {
     emptyDir(root)
   } else if (!fs.existsSync(root)) {
     fs.mkdirSync(root, { recursive: true })
