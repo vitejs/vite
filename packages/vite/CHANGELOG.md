@@ -1,3 +1,10 @@
+## <small>5.0.6 (2023-12-06)</small>
+
+* perf: in-memory public files check (#15195) ([0f9e1bf](https://github.com/vitejs/vite/commit/0f9e1bf)), closes [#15195](https://github.com/vitejs/vite/issues/15195)
+* chore: remove unneccessary eslint-disable-next-line regexp/no-unused-capturing-group (#15247) ([35a5bcf](https://github.com/vitejs/vite/commit/35a5bcf)), closes [#15247](https://github.com/vitejs/vite/issues/15247)
+
+
+
 ## <small>5.0.5 (2023-12-04)</small>
 
 * fix: emit `vite:preloadError` for chunks without deps (#15203) ([d8001c5](https://github.com/vitejs/vite/commit/d8001c5)), closes [#15203](https://github.com/vitejs/vite/issues/15203)
