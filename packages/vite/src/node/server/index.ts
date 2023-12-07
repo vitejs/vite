@@ -35,6 +35,7 @@ import {
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
+import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
@@ -662,8 +663,22 @@ export async function _createServer(
     await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', (file) => onFileAddUnlink(file, false))
-  watcher.on('unlink', (file) => onFileAddUnlink(file, true))
+  const fsUtils = getFsUtils(config)
+
+  watcher.on('add', (file) => {
+    onFileAddUnlink(file, false)
+    fsUtils.onFileAdd?.(file)
+  })
+  watcher.on('unlink', (file) => {
+    onFileAddUnlink(file, true)
+    fsUtils.onFileUnlink?.(file)
+  })
+  watcher.on('addDir', (dir) => {
+    fsUtils.onDirectoryAdd?.(dir)
+  })
+  watcher.on('unlinkDir', (dir) => {
+    fsUtils.onDirectoryUnlink?.(dir)
+  })
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
@@ -755,7 +770,13 @@ export async function _createServer(
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
+    middlewares.use(
+      htmlFallbackMiddleware(
+        root,
+        config.appType === 'spa',
+        getFsUtils(config),
+      ),
+    )
   }
 
   // run post config hooks
