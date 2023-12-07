@@ -130,6 +130,8 @@ export const KNOWN_ASSET_TYPES = [
   'webmanifest',
   'pdf',
   'txt',
+  'md',
+  'mdx',
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
