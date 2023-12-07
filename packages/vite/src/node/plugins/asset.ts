@@ -431,8 +431,10 @@ function svgToDataURL(content: Buffer): string {
       stringContent
         .trim()
         .replaceAll(/>\s+</g, '><')
-        .replaceAll('"', "'")
         .replaceAll('%', '%25')
+        .replaceAll(/"([^"']*'[^"]*)"/g, `%27$1%27`)
+        .replaceAll(/(?<=(%27.*))'(?!(%27))/g, `%23`)
+        .replaceAll('"', "'")
         .replaceAll('#', '%23')
         .replaceAll('<', '%3c')
         .replaceAll('>', '%3e')
