@@ -302,7 +302,7 @@ async function init() {
           }),
         },
         {
-          type: (_, { overwrite }: { overwrite?: OverwiteOption }) => {
+          type: (_, { overwrite }: { overwrite?: string }) => {
             if (overwrite === 'no') {
               throw new Error(red('✖') + ' Operation cancelled')
             }
