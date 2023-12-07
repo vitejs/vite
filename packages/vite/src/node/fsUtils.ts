@@ -56,7 +56,7 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
   return fsUtils
 }
 
-type DirentsMap = Map<string, undefined | DirentCache>
+type DirentsMap = Map<string, DirentCache>
 
 type DirentCacheType = 'directory' | 'file' | 'symlink' | 'error'
 
