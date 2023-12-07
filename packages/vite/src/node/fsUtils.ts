@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 // import fsp from 'node:fs/promises'
 import path from 'node:path'
+import colors from 'picocolors'
 import type { ResolvedConfig } from './config'
 import { normalizePath, safeRealpathSync, tryStatSync } from './utils'
 
@@ -32,18 +33,24 @@ export const commonFsUtils: FsUtils = {
 
 const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
-  if (
-    config.command !== 'serve' ||
-    config.server.watch === null ||
-    config.server.watch?.ignored
-  ) {
-    // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
-    // we can support custom ignored patterns later
-    return commonFsUtils
-  }
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
-    fsUtils = createCachedFsUtils(config)
+    if (config.command !== 'serve' || !config.server.fs.cachedChecks) {
+      // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
+      // we can support custom ignored patterns later
+      fsUtils = commonFsUtils
+    } else if (config.server.watch === null || config.server.watch?.ignored) {
+      config.logger.warn(
+        colors.yellow(
+          `${colors.bold(
+            `(!)`,
+          )} server.fs.cachedChecks isn't supported if server.watch is null or a custom server.watch.ignored is configured\n`,
+        ),
+      )
+      fsUtils = commonFsUtils
+    } else {
+      fsUtils = createCachedFsUtils(config)
+    }
     cachedFsUtilsMap.set(config, fsUtils)
   }
   return fsUtils
