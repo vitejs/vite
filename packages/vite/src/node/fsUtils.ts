@@ -52,7 +52,8 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
       // we can support custom ignored patterns later
       fsUtils = commonFsUtils
-    } else if (config.server.watch === null || config.server.watch?.ignored) {
+    } /* TODO: Enabling for testing, we need to review if this guard is needed
+    else if (config.server.watch === null || config.server.watch?.ignored) {
       config.logger.warn(
         colors.yellow(
           `${colors.bold(
@@ -61,7 +62,7 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
         ),
       )
       fsUtils = commonFsUtils
-    } else {
+    } */ else {
       fsUtils = createCachedFsUtils(config)
     }
     cachedFsUtilsMap.set(config, fsUtils)
