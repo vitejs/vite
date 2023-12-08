@@ -1,7 +1,5 @@
 import fs from 'node:fs'
-// import fsp from 'node:fs/promises'
 import path from 'node:path'
-import colors from 'picocolors'
 import type { ResolvedConfig } from './config'
 import {
   isInNodeModules,
