@@ -129,9 +129,6 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const { root } = config
   const rootDirPath = `${root}/`
   const rootCache = { type: 'directory' as DirentCacheType } // dirents will be computed lazily
-  if (!rootCache) {
-    return commonFsUtils
-  }
 
   const getDirentCacheSync = (parts: string[]): DirentCache | undefined => {
     let direntCache: DirentCache = rootCache
