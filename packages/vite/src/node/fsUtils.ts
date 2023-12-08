@@ -77,9 +77,9 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       fsUtils = commonFsUtils
     } */ else {
       fsUtils = createCachedFsUtils(config)
+      addActiveResolvedConfig(config, fsUtils)
     }
     cachedFsUtilsMap.set(config, fsUtils)
-    addActiveResolvedConfig(config, fsUtils)
   }
   return fsUtils
 }
