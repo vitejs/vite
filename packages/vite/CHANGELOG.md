@@ -1,3 +1,13 @@
+## <small>5.0.7 (2023-12-08)</small>
+
+* fix: suppress terser warning if minify disabled (#15275) ([3e42611](https://github.com/vitejs/vite/commit/3e42611)), closes [#15275](https://github.com/vitejs/vite/issues/15275)
+* fix: symbolic links in public dir (#15264) ([ef2a024](https://github.com/vitejs/vite/commit/ef2a024)), closes [#15264](https://github.com/vitejs/vite/issues/15264)
+* fix(html): skip inlining icon and manifest links (#14958) ([8ad81b4](https://github.com/vitejs/vite/commit/8ad81b4)), closes [#14958](https://github.com/vitejs/vite/issues/14958)
+* chore: remove unneeded condition in getRealPath (#15267) ([8e4655c](https://github.com/vitejs/vite/commit/8e4655c)), closes [#15267](https://github.com/vitejs/vite/issues/15267)
+* perf: cache empty optimizer result (#15245) ([8409b66](https://github.com/vitejs/vite/commit/8409b66)), closes [#15245](https://github.com/vitejs/vite/issues/15245)
+
+
+
 ## <small>5.0.6 (2023-12-06)</small>
 
 * perf: in-memory public files check (#15195) ([0f9e1bf](https://github.com/vitejs/vite/commit/0f9e1bf)), closes [#15195](https://github.com/vitejs/vite/issues/15195)
