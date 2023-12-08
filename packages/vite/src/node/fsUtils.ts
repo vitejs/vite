@@ -7,15 +7,21 @@ import { normalizePath, safeRealpathSync, tryStatSync } from './utils'
 
 export interface FsUtils {
   existsSync: (path: string) => boolean
+  isDirectory: (path: string) => boolean
+
   tryResolveRealFile: (
     path: string,
+    preserveSymlinks?: boolean,
+  ) => string | undefined
+  tryResolveRealFileWithExtensions: (
+    path: string,
+    extensions: string[],
     preserveSymlinks?: boolean,
   ) => string | undefined
   tryResolveRealFileOrType: (
     path: string,
     preserveSymlinks?: boolean,
   ) => { path?: string; type: 'directory' | 'file' } | undefined
-  isDirectory: (path: string) => boolean
 
   onFileAdd?: (file: string) => void
   onFileUnlink?: (file: string) => void
@@ -26,9 +32,11 @@ export interface FsUtils {
 // An implementation of fsUtils without caching
 export const commonFsUtils: FsUtils = {
   existsSync: fs.existsSync,
-  tryResolveRealFile,
-  tryResolveRealFileOrType,
   isDirectory,
+
+  tryResolveRealFile,
+  tryResolveRealFileWithExtensions,
+  tryResolveRealFileOrType,
 }
 
 const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
@@ -99,6 +107,19 @@ function direntsToDirentMap(fsDirents: fs.Dirent[]): DirentsMap {
   return dirents
 }
 
+function ensureFileMaybeSymlinkIsResolved(
+  direntCache: DirentCache,
+  filePath: string,
+) {
+  if (direntCache.type !== 'file_maybe_symlink') return
+
+  const isSymlink = fs
+    .lstatSync(filePath, { throwIfNoEntry: false })
+    ?.isSymbolicLink()
+  direntCache.type =
+    isSymlink === undefined ? 'error' : isSymlink ? 'symlink' : 'file'
+}
+
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const { root } = config
   const rootDirPath = `${root}/`
@@ -121,7 +142,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           }
           direntCache.dirents = dirents
         }
-        const nextDirentCache = direntCache.dirents.get(parts[i])
+        const nextDirentCache = direntCache.dirents!.get(parts[i])
         if (!nextDirentCache) {
           return
         }
@@ -143,14 +164,15 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           return
         }
         if (direntCache.type === 'file_maybe_symlink') {
-          const filePath = path.posix.join(root, ...parts.slice(0, i))
-          const isSymlink = fs
-            .lstatSync(filePath, { throwIfNoEntry: false })
-            ?.isSymbolicLink()
-          direntCache.type = isSymlink ? 'symlink' : 'file'
+          ensureFileMaybeSymlinkIsResolved(
+            direntCache,
+            path.posix.join(root, ...parts.slice(0, i)),
+          )
           return direntCache
         } else if (direntCache.type === 'file') {
           return direntCache
+        } else {
+          return
         }
       }
     }
@@ -235,6 +257,55 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       // a file without symlinks in its path
       return normalizePath(file)
     },
+    tryResolveRealFileWithExtensions(
+      file: string,
+      extensions: string[],
+      preserveSymlinks?: boolean,
+    ): string | undefined {
+      file = normalizePath(file)
+      const dirPath = path.dirname(file)
+      const direntCache = getDirentCacheFromPath(dirPath)
+      if (
+        direntCache === undefined ||
+        (direntCache && direntCache.type === 'symlink')
+      ) {
+        // fallback to built-in fs for out-of-root and symlinked files
+        return tryResolveRealFileWithExtensions(
+          file,
+          extensions,
+          preserveSymlinks,
+        )
+      }
+      if (!direntCache || direntCache.type !== 'directory') {
+        return
+      }
+
+      if (!direntCache.dirents || direntCache.dirents instanceof Promise) {
+        const dirents = readDirCacheSync(dirPath)
+        if (!dirents) {
+          direntCache.type = 'error'
+          return
+        }
+        direntCache.dirents = dirents
+      }
+
+      const base = path.basename(file)
+      for (const ext of extensions) {
+        const fileName = base + ext
+        const fileDirentCache = direntCache.dirents.get(fileName)
+        if (fileDirentCache) {
+          const filePath = path.posix.join(dirPath, fileName)
+          ensureFileMaybeSymlinkIsResolved(fileDirentCache, filePath)
+          if (fileDirentCache.type === 'symlink') {
+            // fallback to built-in fs for symlinked files
+            return tryResolveRealFile(filePath, preserveSymlinks)
+          }
+          if (fileDirentCache.type === 'file') {
+            return normalizePath(filePath)
+          }
+        }
+      }
+    },
     tryResolveRealFileOrType(
       file: string,
       preserveSymlinks?: boolean,
@@ -286,6 +357,17 @@ function tryResolveRealFile(
 ): string | undefined {
   const stat = tryStatSync(file)
   if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
+}
+
+function tryResolveRealFileWithExtensions(
+  filePath: string,
+  extensions: string[],
+  preserveSymlinks?: boolean,
+): string | undefined {
+  for (const ext of extensions) {
+    const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
+    if (res) return res
+  }
 }
 
 function tryResolveRealFileOrType(
