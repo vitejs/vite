@@ -3,7 +3,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { ResolvedConfig } from './config'
-import { normalizePath, safeRealpathSync, tryStatSync } from './utils'
+import {
+  isInNodeModules,
+  normalizePath,
+  safeRealpathSync,
+  tryStatSync,
+} from './utils'
 
 export interface FsUtils {
   existsSync: (path: string) => boolean
@@ -180,16 +185,12 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   }
 
   function getDirentCacheFromPath(
-    file: string,
+    normalizedFile: string,
   ): DirentCache | false | undefined {
-    const normalizedFile = normalizePath(file)
     if (normalizedFile === root) {
       return rootCache
     }
-    if (
-      !normalizedFile.startsWith(rootDirPath) ||
-      normalizedFile.includes('/node_modules/')
-    ) {
+    if (!normalizedFile.startsWith(rootDirPath)) {
       return undefined
     }
     const pathFromRoot = normalizedFile.slice(rootDirPath.length)
@@ -228,7 +229,11 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
 
   return {
     existsSync(file: string) {
-      const direntCache = getDirentCacheFromPath(file)
+      if (isInNodeModules(file)) {
+        return fs.existsSync(file)
+      }
+      const normalizedFile = normalizePath(file)
+      const direntCache = getDirentCacheFromPath(normalizedFile)
       if (
         direntCache === undefined ||
         (direntCache && direntCache.type === 'symlink')
@@ -242,7 +247,11 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       file: string,
       preserveSymlinks?: boolean,
     ): string | undefined {
-      const direntCache = getDirentCacheFromPath(file)
+      if (isInNodeModules(file)) {
+        return tryResolveRealFile(file, preserveSymlinks)
+      }
+      const normalizedFile = normalizePath(file)
+      const direntCache = getDirentCacheFromPath(normalizedFile)
       if (
         direntCache === undefined ||
         (direntCache && direntCache.type === 'symlink')
@@ -255,15 +264,22 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       }
       // We can avoid getRealPath even if preserveSymlinks is false because we know it's
       // a file without symlinks in its path
-      return normalizePath(file)
+      return normalizedFile
     },
     tryResolveRealFileWithExtensions(
       file: string,
       extensions: string[],
       preserveSymlinks?: boolean,
     ): string | undefined {
-      file = normalizePath(file)
-      const dirPath = path.dirname(file)
+      if (isInNodeModules(file)) {
+        return tryResolveRealFileWithExtensions(
+          file,
+          extensions,
+          preserveSymlinks,
+        )
+      }
+      const normalizedFile = normalizePath(file)
+      const dirPath = path.posix.dirname(normalizedFile)
       const direntCache = getDirentCacheFromPath(dirPath)
       if (
         direntCache === undefined ||
@@ -289,7 +305,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         direntCache.dirents = dirents
       }
 
-      const base = path.basename(file)
+      const base = path.posix.basename(normalizedFile)
       for (const ext of extensions) {
         const fileName = base + ext
         const fileDirentCache = direntCache.dirents.get(fileName)
@@ -301,7 +317,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
             return tryResolveRealFile(filePath, preserveSymlinks)
           }
           if (fileDirentCache.type === 'file') {
-            return normalizePath(filePath)
+            return filePath
           }
         }
       }
@@ -310,7 +326,11 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       file: string,
       preserveSymlinks?: boolean,
     ): { path?: string; type: 'directory' | 'file' } | undefined {
-      const direntCache = getDirentCacheFromPath(file)
+      if (isInNodeModules(file)) {
+        return tryResolveRealFileOrType(file, preserveSymlinks)
+      }
+      const normalizedFile = normalizePath(file)
+      const direntCache = getDirentCacheFromPath(normalizedFile)
       if (
         direntCache === undefined ||
         (direntCache && direntCache.type === 'symlink')
@@ -326,16 +346,19 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       }
       // We can avoid getRealPath even if preserveSymlinks is false because we know it's
       // a file without symlinks in its path
-      return { path: normalizePath(file), type: 'file' }
+      return { path: normalizedFile, type: 'file' }
     },
-    isDirectory(path: string) {
-      const direntCache = getDirentCacheFromPath(path)
+    isDirectory(dirPath: string) {
+      if (isInNodeModules(dirPath)) {
+        return isDirectory(dirPath)
+      }
+      const direntCache = getDirentCacheFromPath(normalizePath(dirPath))
       if (
         direntCache === undefined ||
         (direntCache && direntCache.type === 'symlink')
       ) {
         // fallback to built-in fs for out-of-root and symlinked files
-        return isDirectory(path)
+        return isDirectory(dirPath)
       }
       return direntCache && direntCache.type === 'directory'
     },
