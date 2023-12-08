@@ -2,11 +2,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { ResolvedConfig } from './config'
 import {
+  createDebugger,
   isInNodeModules,
   normalizePath,
   safeRealpathSync,
   tryStatSync,
 } from './utils'
+
+const debug = createDebugger('vite:fs')
 
 export interface FsUtils {
   existsSync: (path: string) => boolean
@@ -42,10 +45,22 @@ export const commonFsUtils: FsUtils = {
   tryResolveRealFileOrType,
 }
 
+const activeResolvedConfigs = new Array<WeakRef<ResolvedConfig>>()
+const registry = new FinalizationRegistry((fsUtils: FsUtils) => {
+  debug?.(`removing config`)
+  const i = activeResolvedConfigs.findIndex((r) => !r.deref())
+  activeResolvedConfigs.splice(i, 1)
+})
+function addActiveResolvedConfig(config: ResolvedConfig, fsUtils: FsUtils) {
+  activeResolvedConfigs.push(new WeakRef(config))
+  registry.register(config, fsUtils)
+}
+
 const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
+    debug?.(`resolving FsUtils for ${config.root}`)
     if (config.command !== 'serve' || !config.server.fs.cachedChecks) {
       // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
       // we can support custom ignored patterns later
@@ -64,6 +79,7 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       fsUtils = createCachedFsUtils(config)
     }
     cachedFsUtilsMap.set(config, fsUtils)
+    addActiveResolvedConfig(config, fsUtils)
   }
   return fsUtils
 }
@@ -124,10 +140,109 @@ function ensureFileMaybeSymlinkIsResolved(
     isSymlink === undefined ? 'error' : isSymlink ? 'symlink' : 'file'
 }
 
+interface CachedFsUtilsMeta {
+  root: string
+  rootCache: DirentCache
+}
+const cachedFsUtilsMeta = new WeakMap<ResolvedConfig, CachedFsUtilsMeta>()
+
+function expandUntilOtherRoot(
+  rootCache: DirentCache,
+  root: string,
+  otherRoot: string,
+) {
+  // Start a parent Tree, and expand it to reach the otherRoot
+  if (!rootCache.dirents) {
+    rootCache.dirents = readDirCacheSync(root)
+  }
+  if (!rootCache.dirents) {
+    return
+  }
+  const parts = otherRoot.slice(root.length + 1).split('/')
+  const lastPart = parts.pop()!
+  let currentDirPath = root
+  let currentDirentCache = rootCache
+  while (parts.length) {
+    const nextDirentCache = (currentDirentCache.dirents as DirentsMap).get(
+      parts[0],
+    )
+    if (!nextDirentCache || nextDirentCache.type === 'file') {
+      return
+    }
+    if (nextDirentCache.type === 'symlink') {
+      // We don't support sharing trees with symlinks in the middle of the path
+      return
+    }
+    // We know it's a directory
+    currentDirPath += '/' + parts.shift()!
+    nextDirentCache.dirents = readDirCacheSync(currentDirPath)
+    if (!nextDirentCache.dirents) {
+      return
+    }
+    currentDirentCache = nextDirentCache
+  }
+  const lastDirents = currentDirentCache.dirents as DirentsMap
+  if (!lastDirents.has(lastPart)) {
+    return undefined
+  }
+  return { part: lastPart, dirents: lastDirents }
+}
+
+function findCompatibleRootCache(
+  config: ResolvedConfig,
+): DirentCache | undefined {
+  const { root } = config
+  debug?.(`active configs: ${activeResolvedConfigs.length}`)
+  activeResolvedConfigs.forEach((otherConfigRef) => {
+    const otherConfig = otherConfigRef?.deref()
+    if (otherConfig) {
+      const otherRoot = otherConfig.root
+      const otherCachedFsUtilsMeta = cachedFsUtilsMeta.get(otherConfig)!
+      const otherRootCache = otherCachedFsUtilsMeta.rootCache
+      debug?.(
+        `Checking if ${root} can be connected to the cache for ${otherRoot}`,
+      )
+      if (otherRoot === root) {
+        debug?.(`FsUtils for ${root} sharing root cache with compatible cache`)
+        return otherRootCache
+      } else if (otherRoot.startsWith(root + '/')) {
+        const rootCache = { type: 'directory' } as DirentCache
+        const last = expandUntilOtherRoot(rootCache, root, otherRoot)
+        if (!last) {
+          return
+        }
+        last.dirents.set(last.part, otherRootCache)
+        debug?.(
+          `FsUtils for ${root} connected as a parent to the cache for ${otherRoot}`,
+        )
+        return rootCache
+      } else if (root.startsWith(otherRoot + '/')) {
+        const last = expandUntilOtherRoot(otherRootCache, otherRoot, root)
+        if (!last) {
+          return
+        }
+        debug?.(
+          `FsUtils for ${root} connected as a child to the cache for ${otherRoot}`,
+        )
+        return last.dirents.get(last.part)
+      }
+    }
+  })
+
+  debug?.(`FsUtils for ${root} started as an independent cache`)
+  return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
+}
+
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const { root } = config
   const rootDirPath = `${root}/`
-  const rootCache = { type: 'directory' as DirentCacheType } // dirents will be computed lazily
+
+  const rootCache = findCompatibleRootCache(config)
+  if (!rootCache) {
+    return commonFsUtils
+  }
+
+  cachedFsUtilsMeta.set(config, { root, rootCache })
 
   const getDirentCacheSync = (parts: string[]): DirentCache | undefined => {
     let direntCache: DirentCache = rootCache
