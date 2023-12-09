@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { FSWatcher } from 'dep-types/chokidar'
 import type { ResolvedConfig } from './config'
 import {
   isInNodeModules,
@@ -26,10 +27,7 @@ export interface FsUtils {
     preserveSymlinks?: boolean,
   ) => { path?: string; type: 'directory' | 'file' } | undefined
 
-  onFileAdd?: (file: string) => void
-  onFileUnlink?: (file: string) => void
-  onDirectoryAdd?: (file: string) => void
-  onDirectoryUnlink?: (file: string) => void
+  initWatcher?: (watcher: FSWatcher) => void
 }
 
 // An implementation of fsUtils without caching
@@ -365,14 +363,16 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       return direntCache && direntCache.type === 'directory'
     },
 
-    onFileAdd(file) {
-      onPathAdd(file, 'file_maybe_symlink')
+    initWatcher(watcher: FSWatcher) {
+      watcher.on('add', (file) => {
+        onPathAdd(file, 'file_maybe_symlink')
+      })
+      watcher.on('addDir', (dir) => {
+        onPathAdd(dir, 'directory_maybe_symlink')
+      })
+      watcher.on('unlink', onPathUnlink)
+      watcher.on('unlinkDir', onPathUnlink)
     },
-    onFileUnlink: onPathUnlink,
-    onDirectoryAdd(file) {
-      onPathAdd(file, 'directory_maybe_symlink')
-    },
-    onDirectoryUnlink: onPathUnlink,
   }
 }
 

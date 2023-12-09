@@ -671,21 +671,13 @@ export async function _createServer(
     await onHMRUpdate(file, false)
   })
 
-  const fsUtils = getFsUtils(config)
+  getFsUtils(config).initWatcher?.(watcher)
 
   watcher.on('add', (file) => {
     onFileAddUnlink(file, false)
-    fsUtils.onFileAdd?.(file)
   })
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true)
-    fsUtils.onFileUnlink?.(file)
-  })
-  watcher.on('addDir', (dir) => {
-    fsUtils.onDirectoryAdd?.(dir)
-  })
-  watcher.on('unlinkDir', (dir) => {
-    fsUtils.onDirectoryUnlink?.(dir)
   })
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
