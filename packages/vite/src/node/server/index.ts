@@ -944,7 +944,8 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks: server.fs?.cachedChecks ?? false,
+    cachedChecks:
+      server.fs?.cachedChecks ?? !!process.env.VITE_SERVE_FS_CACHED_CHECKS,
   }
 
   if (server.origin?.endsWith('/')) {
