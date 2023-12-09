@@ -124,6 +124,12 @@ function ensureFileMaybeSymlinkIsResolved(
     isSymlink === undefined ? 'error' : isSymlink ? 'symlink' : 'file'
 }
 
+function pathUntilPart(root: string, parts: string[], i: number): string {
+  let p = root
+  for (let k = 0; k < i; k++) p += '/' + parts[k]
+  return p
+}
+
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const { root } = config
   const rootDirPath = `${root}/`
@@ -135,7 +141,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       if (direntCache.type === 'directory') {
         let dirPath
         if (!direntCache.dirents) {
-          dirPath = path.posix.join(root, ...parts.slice(0, i))
+          dirPath = pathUntilPart(root, parts, i)
           const dirents = readDirCacheSync(dirPath)
           if (!dirents) {
             direntCache.type = 'error'
@@ -148,7 +154,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           return
         }
         if (nextDirentCache.type === 'directory_maybe_symlink') {
-          dirPath ??= path.posix.join(root, ...parts.slice(0, i))
+          dirPath ??= pathUntilPart(root, parts, i)
           const isSymlink = fs
             .lstatSync(dirPath, { throwIfNoEntry: false })
             ?.isSymbolicLink()
@@ -167,7 +173,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         if (direntCache.type === 'file_maybe_symlink') {
           ensureFileMaybeSymlinkIsResolved(
             direntCache,
-            path.posix.join(root, ...parts.slice(0, i)),
+            pathUntilPart(root, parts, i),
           )
           return direntCache
         } else if (direntCache.type === 'file') {
@@ -306,7 +312,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         const fileName = base + ext
         const fileDirentCache = direntCache.dirents.get(fileName)
         if (fileDirentCache) {
-          const filePath = path.posix.join(dirPath, fileName)
+          const filePath = dirPath + '/' + fileName
           ensureFileMaybeSymlinkIsResolved(fileDirentCache, filePath)
           if (fileDirentCache.type === 'symlink') {
             // fallback to built-in fs for symlinked files
