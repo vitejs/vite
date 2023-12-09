@@ -952,7 +952,7 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks: server.fs?.cachedChecks ?? true,
+    cachedChecks: server.fs?.cachedChecks ?? false,
   }
 
   if (server.origin?.endsWith('/')) {
