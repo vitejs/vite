@@ -121,9 +121,7 @@ export function createIsConfiguredAsSsrExternal(
   }
 }
 
-function createIsSsrExternal(
-  config: ResolvedConfig,
-): (id: string, importer?: string) => Promise<boolean | undefined> {
+function createIsSsrExternal(config: ResolvedConfig): IsSsrExternalFunction {
   const processedIds = new Map<string, boolean | undefined>()
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
