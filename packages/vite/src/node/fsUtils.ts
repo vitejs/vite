@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import colors from 'picocolors'
 import type { FSWatcher } from 'dep-types/chokidar'
 import type { ResolvedConfig } from './config'
 import {
@@ -58,7 +59,19 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
         ),
       )
       fsUtils = commonFsUtils
-    } */ else {
+    } */ else if (
+      !config.resolve.preserveSymlinks &&
+      config.root !== getRealPath(config.root)
+    ) {
+      config.logger.warn(
+        colors.yellow(
+          `${colors.bold(
+            `(!)`,
+          )} server.fs.cachedChecks isn't supported resolve.preserveSymlinks is false and root is symlinked\n`,
+        ),
+      )
+      fsUtils = commonFsUtils
+    } else {
       fsUtils = createCachedFsUtils(config)
     }
     cachedFsUtilsMap.set(config, fsUtils)
