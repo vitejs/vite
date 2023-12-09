@@ -561,16 +561,6 @@ function esbuildScanPlugin(
             external: doExternalize(path),
           }
         })
-        // onResolve is not called for glob imports.
-        // we need to add that here as well until esbuild calls onResolve for glob imports.
-        // https://github.com/evanw/esbuild/issues/3317
-        build.onLoad({ filter, namespace: 'file' }, () => {
-          const externalOnLoadResult: OnLoadResult = {
-            loader: 'js',
-            contents: 'export default {}',
-          }
-          return externalOnLoadResult
-        })
       }
 
       // css
@@ -645,6 +635,16 @@ function esbuildScanPlugin(
         return {
           loader,
           contents,
+        }
+      })
+
+      // onResolve is not called for glob imports.
+      // we need to add that here as well until esbuild calls onResolve for glob imports.
+      // https://github.com/evanw/esbuild/issues/3317
+      build.onLoad({ filter: /.*/, namespace: 'file' }, () => {
+        return {
+          loader: 'js',
+          contents: 'export default {}',
         }
       })
     },
