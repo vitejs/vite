@@ -79,7 +79,7 @@ type DirentCacheType =
   | 'file_maybe_symlink'
 
 interface DirentCache {
-  dirents?: DirentsMap | Promise<DirentsMap>
+  dirents?: DirentsMap
   type: DirentCacheType
 }
 
@@ -134,7 +134,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     for (let i = 0; i < parts.length; i++) {
       if (direntCache.type === 'directory') {
         let dirPath
-        if (!direntCache.dirents || direntCache.dirents instanceof Promise) {
+        if (!direntCache.dirents) {
           dirPath = path.posix.join(root, ...parts.slice(0, i))
           const dirents = readDirCacheSync(dirPath)
           if (!dirents) {
@@ -198,28 +198,28 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     return direntCache
   }
 
-  async function onPathAdd(
+  function onPathAdd(
     file: string,
     type: 'directory_maybe_symlink' | 'file_maybe_symlink',
-  ): Promise<void> {
+  ) {
     const direntCache = getDirentCacheFromPath(path.dirname(file))
-    if (direntCache && direntCache.type === 'directory') {
-      // We don't know if the file is a symlink or not for the stats
-      // in the chokidar callback, so we add it with type unknown.
-      // If it is accessed, we'll do a new fs call to get the real type.
-      if (direntCache.dirents) {
-        ;(await direntCache.dirents).set(path.basename(file), { type })
-      }
+    if (
+      direntCache &&
+      direntCache.type === 'directory' &&
+      direntCache.dirents
+    ) {
+      direntCache.dirents.set(path.basename(file), { type })
     }
   }
 
-  async function onPathUnlink(file: string): Promise<void> {
+  function onPathUnlink(file: string) {
     const direntCache = getDirentCacheFromPath(path.dirname(file))
-    if (direntCache && direntCache.type === 'directory') {
-      if (direntCache.dirents) {
-        const dirents = await direntCache.dirents
-        dirents.delete(path.basename(file))
-      }
+    if (
+      direntCache &&
+      direntCache.type === 'directory' &&
+      direntCache.dirents
+    ) {
+      direntCache.dirents.delete(path.basename(file))
     }
   }
 
@@ -292,7 +292,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         return
       }
 
-      if (!direntCache.dirents || direntCache.dirents instanceof Promise) {
+      if (!direntCache.dirents) {
         const dirents = readDirCacheSync(dirPath)
         if (!dirents) {
           direntCache.type = 'error'
