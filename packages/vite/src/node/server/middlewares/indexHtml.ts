@@ -133,6 +133,7 @@ const processNodeUrl = (
       }
     }
 
+    let preTransformUrl: string | undefined
     if (
       (url[0] === '/' && url[1] !== '/') ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
@@ -149,9 +150,20 @@ const processNodeUrl = (
         htmlPath === '/index.html')
     ) {
       url = path.posix.join(config.base, url)
+
+      preTransformUrl = url
+    } else if (url[0] === '/') {
+      preTransformUrl = url
+    } else if (url[0] === '.') {
+      preTransformUrl = path.posix.join(
+        config.base,
+        path.posix.dirname(htmlPath),
+        url,
+      )
     }
-    if (server && shouldPreTransform(url, config)) {
-      preTransformRequest(server, url, config.base)
+
+    if (preTransformUrl && server && shouldPreTransform(url, config)) {
+      preTransformRequest(server, preTransformUrl, config.base)
     }
     return url
   }
