@@ -16,13 +16,12 @@ export function htmlFallbackMiddleware(
       (req.method !== 'GET' && req.method !== 'HEAD') ||
       // Require Accept: text/html or */*
       !(
-        (
-          req.headers.accept === undefined || // equivalent to `Accept: */*`
-          req.headers.accept === '' || // equivalent to `Accept: */*`
-          req.headers.accept.includes('text/html') ||
-          (req.headers.accept.includes('*/*') &&
-            !req.headers.accept.includes('image/*'))
-        ) // exclude favicon requests
+        req.headers.accept === undefined || // equivalent to `Accept: */*`
+        req.headers.accept === '' || // equivalent to `Accept: */*`
+        req.headers.accept.includes('text/html') ||
+        (req.headers.accept.includes('*/*') &&
+          // exclude favicon requests
+          !req.headers.accept.includes('image/*'))
       )
     ) {
       return next()
