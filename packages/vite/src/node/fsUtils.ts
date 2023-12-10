@@ -8,6 +8,7 @@ import {
   normalizePath,
   safeRealpathSync,
   tryStatSync,
+  withoutTrailingSlash,
 } from './utils'
 
 export interface FsUtils {
@@ -142,7 +143,7 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
 }
 
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
-  const { root } = config
+  const root = withoutTrailingSlash(config.root)
   const rootDirPath = `${root}/`
   const rootCache = { type: 'directory' as DirentCacheType } // dirents will be computed lazily
 
