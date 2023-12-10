@@ -148,15 +148,12 @@ const processNodeUrl = (
         originalUrl !== '/' &&
         htmlPath === '/index.html')
     ) {
-      const devBase = config.base
-      const fullUrl = path.posix.join(devBase, url)
-      if (server && shouldPreTransform(url, config)) {
-        preTransformRequest(server, fullUrl, devBase)
-      }
-      return fullUrl
-    } else {
-      return url
+      url = path.posix.join(config.base, url)
     }
+    if (server && shouldPreTransform(url, config)) {
+      preTransformRequest(server, url, config.base)
+    }
+    return url
   }
 
   const processedUrl = useSrcSetReplacer
