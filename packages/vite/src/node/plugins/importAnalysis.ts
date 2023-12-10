@@ -337,7 +337,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          (path.isAbsolute(cleanUrl(resolved.id)) &&
+          // resolved virtual id convention, ie /@vite/client, /@react-refresh, /@vite-plugin-pwa
+          // We don't support absolute paths starting with `/@` at the root of the file system to avoid
+          // expensive fs checks
+          (!resolved.id.startsWith('/@') &&
+            path.isAbsolute(resolved.id) &&
             fs.existsSync(cleanUrl(resolved.id)))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
