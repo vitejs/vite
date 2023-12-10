@@ -106,7 +106,7 @@ function readDirCacheSync(file: string): undefined | DirentsMap {
 }
 
 function direntsToDirentMap(fsDirents: fs.Dirent[]): DirentsMap {
-  const dirents = new Map<string, DirentCache>()
+  const dirents: DirentsMap = new Map()
   for (const dirent of fsDirents) {
     // We ignore non directory, file, and symlink entries
     const type = dirent.isDirectory()
@@ -145,7 +145,7 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const root = withoutTrailingSlash(config.root)
   const rootDirPath = `${root}/`
-  const rootCache = { type: 'directory' as DirentCacheType } // dirents will be computed lazily
+  const rootCache: DirentCache = { type: 'directory' } // dirents will be computed lazily
 
   const getDirentCacheSync = (parts: string[]): DirentCache | undefined => {
     let direntCache: DirentCache = rootCache
