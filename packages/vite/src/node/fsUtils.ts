@@ -68,7 +68,7 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
         colors.yellow(
           `${colors.bold(
             `(!)`,
-          )} server.fs.cachedChecks isn't supported resolve.preserveSymlinks is false and root is symlinked\n`,
+          )} server.fs.cachedChecks isn't supported when resolve.preserveSymlinks is false and root is symlinked\n`,
         ),
       )
       fsUtils = commonFsUtils
