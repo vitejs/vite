@@ -645,10 +645,11 @@ export async function _createServer(
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
 
-    if (publicFiles && config.publicDir && file.startsWith(config.publicDir)) {
-      publicFiles[isUnlink ? 'delete' : 'add'](
-        file.slice(config.publicDir.length),
-      )
+    if (config.publicDir && publicFiles) {
+      const publicDir = normalizePath(config.publicDir)
+      if (file.startsWith(publicDir)) {
+        publicFiles[isUnlink ? 'delete' : 'add'](file.slice(publicDir.length))
+      }
     }
     await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
