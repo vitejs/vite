@@ -641,14 +641,17 @@ export async function _createServer(
     }
   }
 
+  const normalizedPublicDir = normalizePath(config.publicDir)
+
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
 
     if (config.publicDir && publicFiles) {
-      const publicDir = normalizePath(config.publicDir)
-      if (file.startsWith(publicDir)) {
-        publicFiles[isUnlink ? 'delete' : 'add'](file.slice(publicDir.length))
+      if (file.startsWith(normalizedPublicDir)) {
+        publicFiles[isUnlink ? 'delete' : 'add'](
+          file.slice(normalizedPublicDir.length),
+        )
       }
     }
     await handleFileAddUnlink(file, server, isUnlink)
