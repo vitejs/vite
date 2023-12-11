@@ -550,7 +550,6 @@ function esbuildScanPlugin(
       // should be faster than doing it in the catch-all via js
       // they are done after the bare import resolve because a package name
       // may end with these extensions
-
       const setupExternalize = (
         filter: RegExp,
         doExternalize: (path: string) => boolean,
