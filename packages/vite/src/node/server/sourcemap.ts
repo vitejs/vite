@@ -1,8 +1,10 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
+import convertSourceMap from 'convert-source-map'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
+import MagicString from 'magic-string'
 import type { Logger } from '../logger'
-import { createDebugger } from '../utils'
+import { createDebugger, removeTimestampQuery } from '../utils'
 
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,
@@ -142,4 +144,40 @@ export function applySourcemapIgnoreList(
   if (x_google_ignoreList.length > 0) {
     if (!map.x_google_ignoreList) map.x_google_ignoreList = x_google_ignoreList
   }
+}
+
+export function withInjectedSourceMapReference(
+  content: string | Buffer,
+  type: string,
+  url: string,
+  map?: SourceMap | { mappings: '' } | null,
+): string | Buffer {
+  // inject source map reference
+  if (map && 'version' in map && map.mappings) {
+    if (type === 'js' || type === 'css') {
+      return getCodeWithSourcemap(type, content.toString(), map)
+    }
+  }
+  // inject fallback sourcemap for js for improved debugging
+  // https://github.com/vitejs/vite/pull/13514#issuecomment-1592431496
+  else if (type === 'js' && (!map || map.mappings !== '')) {
+    const code = content.toString()
+    // if the code has existing inline sourcemap, assume it's correct and skip
+    if (convertSourceMap.mapFileCommentRegex.test(code)) {
+      debug?.(`Skipped injecting fallback sourcemap for ${url}`)
+    } else {
+      const urlWithoutTimestamp = removeTimestampQuery(url)
+      const ms = new MagicString(code)
+      return getCodeWithSourcemap(
+        type,
+        code,
+        ms.generateMap({
+          source: path.basename(urlWithoutTimestamp),
+          hires: 'boundary',
+          includeContent: true,
+        }),
+      )
+    }
+  }
+  return content
 }

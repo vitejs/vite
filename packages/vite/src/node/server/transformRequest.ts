@@ -24,7 +24,12 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
 import { getDepsOptimizer } from '../optimizer'
-import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
+import { isDirectCSSRequest } from '../plugins/css'
+import {
+  applySourcemapIgnoreList,
+  injectSourcesContent,
+  withInjectedSourceMapReference,
+} from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 
@@ -358,7 +363,18 @@ async function loadAndTransform(
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp) {
     if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
+    else {
+      if (result) {
+        const type = isDirectCSSRequest(url) ? 'css' : 'js'
+        result.code = withInjectedSourceMapReference(
+          result.code,
+          type,
+          url,
+          result.map,
+        ) as string
+      }
+      mod.transformResult = result
+    }
   }
 
   return result
