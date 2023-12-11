@@ -83,7 +83,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
-    "@babel/parser": "^7.23.5",
+    "@babel/parser": "^7.23.6",
     "@jridgewell/trace-mapping": "^0.3.20",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -95,7 +95,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "acorn": "^8.11.2",
-    "acorn-walk": "^8.3.0",
+    "acorn-walk": "^8.3.1",
     "cac": "^6.7.14",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
@@ -139,7 +139,7 @@
     "tslib": "^2.6.2",
     "types": "link:./types",
     "ufo": "^1.3.2",
-    "ws": "^8.14.2"
+    "ws": "^8.15.0"
   },
   "peerDependencies": {
     "@types/node": "^18.0.0 || >=20.0.0",
