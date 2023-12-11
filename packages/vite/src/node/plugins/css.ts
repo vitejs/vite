@@ -293,7 +293,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
-        return decodedUrl
+        return url
       }
 
       const {
