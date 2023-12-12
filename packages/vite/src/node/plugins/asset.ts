@@ -419,16 +419,14 @@ export async function urlToBuiltUrl(
 function svgToDataURL(content: Buffer): string {
   const stringContent = content.toString()
 
-  const singleQuoteInDoubleQuotes = /"[^"']*'[^"]*"/
-  const doubleQuoteInSingleQuotes = /'[^'"]*"[^']*'/
+  const nestedQuotes = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
 
   // If the SVG contains some text or HTML, any transformation is unsafe, and given that double quotes would then
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
   if (
     stringContent.includes('<text') ||
     stringContent.includes('<foreignObject') ||
-    singleQuoteInDoubleQuotes.test(stringContent) ||
-    doubleQuoteInSingleQuotes.test(stringContent)
+    nestedQuotes.test(stringContent)
   ) {
     return `data:image/svg+xml;base64,${content.toString('base64')}`
   } else {
