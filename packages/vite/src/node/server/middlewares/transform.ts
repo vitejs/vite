@@ -48,6 +48,13 @@ export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+
+  // check if public dir is inside root dir
+  const { root } = server.config
+  const publicDir = normalizePath(server.config.publicDir)
+  const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
+  const publicPath = `${publicDir.slice(root.length)}/`
+
   return async function viteTransformMiddleware(req, res, next) {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
@@ -123,43 +130,8 @@ export function transformMiddleware(
         }
       }
 
-      // check if public dir is inside root dir
-      const publicDir = normalizePath(server.config.publicDir)
-      const rootDir = normalizePath(server.config.root)
-      if (publicDir.startsWith(withTrailingSlash(rootDir))) {
-        const publicPath = `${publicDir.slice(rootDir.length)}/`
-        // warn explicit public paths
-        if (url.startsWith(withTrailingSlash(publicPath))) {
-          let warning: string
-
-          if (isImportRequest(url)) {
-            const rawUrl = removeImportQuery(url)
-            if (urlRE.test(url)) {
-              warning =
-                `Assets in the public directory are served at the root path.\n` +
-                `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
-                  rawUrl.replace(publicPath, '/'),
-                )}.`
-            } else {
-              warning =
-                'Assets in public directory cannot be imported from JavaScript.\n' +
-                `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
-                  rawUrl.replace(publicPath, '/src/'),
-                )} instead of ${colors.cyan(rawUrl)}.\n` +
-                `If you intend to use the URL of that asset, use ${colors.cyan(
-                  injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
-                )}.`
-            }
-          } else {
-            warning =
-              `Files in the public directory are served at the root path.\n` +
-              `Instead of ${colors.cyan(url)}, use ${colors.cyan(
-                url.replace(publicPath, '/'),
-              )}.`
-          }
-
-          server.config.logger.warn(colors.yellow(warning))
-        }
+      if (publicDirInRoot && url.startsWith(publicPath)) {
+        warnAboutExplicitPublicPathInUrl(url)
       }
 
       if (
@@ -264,5 +236,37 @@ export function transformMiddleware(
     }
 
     next()
+  }
+
+  function warnAboutExplicitPublicPathInUrl(url: string) {
+    let warning: string
+
+    if (isImportRequest(url)) {
+      const rawUrl = removeImportQuery(url)
+      if (urlRE.test(url)) {
+        warning =
+          `Assets in the public directory are served at the root path.\n` +
+          `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
+            rawUrl.replace(publicPath, '/'),
+          )}.`
+      } else {
+        warning =
+          'Assets in public directory cannot be imported from JavaScript.\n' +
+          `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
+            rawUrl.replace(publicPath, '/src/'),
+          )} instead of ${colors.cyan(rawUrl)}.\n` +
+          `If you intend to use the URL of that asset, use ${colors.cyan(
+            injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
+          )}.`
+      }
+    } else {
+      warning =
+        `Files in the public directory are served at the root path.\n` +
+        `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+          url.replace(publicPath, '/'),
+        )}.`
+    }
+
+    server.config.logger.warn(colors.yellow(warning))
   }
 }
