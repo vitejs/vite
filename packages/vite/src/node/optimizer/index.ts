@@ -462,7 +462,7 @@ export function runOptimizeDeps(
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
   const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
 
-  // Create a temporal directory so we don't need to delete optimized deps
+  // Create a temporary directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
   fs.mkdirSync(processingCacheDir, { recursive: true })
@@ -517,7 +517,7 @@ export function runOptimizeDeps(
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache
-      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+      // Rewire the file paths from the temporary processing dir to the final deps cache dir
       const dataPath = path.join(processingCacheDir, '_metadata.json')
       debug?.(colors.green(`creating _metadata.json in ${processingCacheDir}`))
       fs.writeFileSync(
@@ -526,19 +526,19 @@ export function runOptimizeDeps(
       )
 
       // In order to minimize the time where the deps folder isn't in a consistent state,
-      // we first rename the old depsCacheDir to a temporal path, then we rename the
+      // we first rename the old depsCacheDir to a temporary path, then we rename the
       // new processing cache dir to the depsCacheDir. In systems where doing so in sync
       // is safe, we do an atomic operation (at least for this thread). For Windows, we
       // found there are cases where the rename operation may finish before it's done
       // so we do a graceful rename checking that the folder has been properly renamed.
       // We found that the rename-rename (then delete the old folder in the background)
       // is safer than a delete-rename operation.
-      const temporalPath = depsCacheDir + getTempSuffix()
+      const temporaryPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
       if (isWindows) {
         if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
-          await safeRename(depsCacheDir, temporalPath)
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          await safeRename(depsCacheDir, temporaryPath)
         }
         debug?.(
           colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
@@ -546,8 +546,8 @@ export function runOptimizeDeps(
         await safeRename(processingCacheDir, depsCacheDir)
       } else {
         if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
-          fs.renameSync(depsCacheDir, temporalPath)
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          fs.renameSync(depsCacheDir, temporaryPath)
         }
         debug?.(
           colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
@@ -555,10 +555,10 @@ export function runOptimizeDeps(
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
-      // Delete temporal path in the background
+      // Delete temporary path in the background
       if (depsCacheDirPresent) {
-        debug?.(colors.green(`removing cache temp dir ${temporalPath}`))
-        fsp.rm(temporalPath, { recursive: true, force: true })
+        debug?.(colors.green(`removing cache temp dir ${temporaryPath}`))
+        fsp.rm(temporaryPath, { recursive: true, force: true })
       }
     },
   }
