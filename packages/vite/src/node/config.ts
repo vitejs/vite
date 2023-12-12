@@ -41,6 +41,7 @@ import {
   normalizePath,
   withTrailingSlash,
 } from './utils'
+import { getFsUtils } from './fsUtils'
 import {
   createPluginHookUtils,
   getHookHandler,
@@ -633,6 +634,7 @@ export async function resolveConfig(
                 tryIndex: true,
                 ...options,
                 idOnly: true,
+                fsUtils: getFsUtils(resolved),
               }),
             ],
           }))

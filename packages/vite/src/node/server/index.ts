@@ -35,6 +35,7 @@ import {
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
+import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
@@ -188,6 +189,14 @@ export interface FileSystemServeOptions {
    * @default ['.env', '.env.*', '*.crt', '*.pem']
    */
   deny?: string[]
+
+  /**
+   * Enable caching of fs calls.
+   *
+   * @experimental
+   * @default false
+   */
+  cachedChecks?: boolean
 }
 
 export type ServerHook = (
@@ -666,8 +675,14 @@ export async function _createServer(
     await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', (file) => onFileAddUnlink(file, false))
-  watcher.on('unlink', (file) => onFileAddUnlink(file, true))
+  getFsUtils(config).initWatcher?.(watcher)
+
+  watcher.on('add', (file) => {
+    onFileAddUnlink(file, false)
+  })
+  watcher.on('unlink', (file) => {
+    onFileAddUnlink(file, true)
+  })
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
@@ -759,7 +774,13 @@ export async function _createServer(
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
+    middlewares.use(
+      htmlFallbackMiddleware(
+        root,
+        config.appType === 'spa',
+        getFsUtils(config),
+      ),
+    )
   }
 
   // run post config hooks
@@ -927,6 +948,8 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
+    cachedChecks:
+      server.fs?.cachedChecks ?? !!process.env.VITE_SERVER_FS_CACHED_CHECKS,
   }
 
   if (server.origin?.endsWith('/')) {

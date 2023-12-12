@@ -43,6 +43,8 @@ import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
+import type { FsUtils } from '../fsUtils'
+import { commonFsUtils } from '../fsUtils'
 import {
   findNearestMainPackageData,
   findNearestPackageData,
@@ -92,6 +94,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   isProduction: boolean
   ssrConfig?: SSROptions
   packageCache?: PackageCache
+  fsUtils?: FsUtils
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
@@ -566,25 +569,29 @@ function tryCleanFsResolve(
 ): string | undefined {
   const { tryPrefix, extensions, preserveSymlinks } = options
 
-  const fileStat = tryStatSync(file)
+  const fsUtils = options.fsUtils ?? commonFsUtils
 
-  // Try direct match first
-  if (fileStat?.isFile()) return getRealPath(file, options.preserveSymlinks)
+  // Optimization to get the real type or file type (directory, file, other)
+  const fileResult = fsUtils.tryResolveRealFileOrType(
+    file,
+    options.preserveSymlinks,
+  )
+
+  if (fileResult?.path) return fileResult.path
 
   let res: string | undefined
 
   // If path.dirname is a valid directory, try extensions and ts resolution logic
   const possibleJsToTs = options.isFromTsImporter && isPossibleTsOutput(file)
-  if (possibleJsToTs || extensions.length || tryPrefix) {
+  if (possibleJsToTs || options.extensions.length || tryPrefix) {
     const dirPath = path.dirname(file)
-    const dirStat = tryStatSync(dirPath)
-    if (dirStat?.isDirectory()) {
+    if (fsUtils.isDirectory(dirPath)) {
       if (possibleJsToTs) {
         // try resolve .js, .mjs, .cjs or .jsx import to typescript file
         const fileExt = path.extname(file)
         const fileName = file.slice(0, -fileExt.length)
         if (
-          (res = tryResolveRealFile(
+          (res = fsUtils.tryResolveRealFile(
             fileName + fileExt.replace('js', 'ts'),
             preserveSymlinks,
           ))
@@ -593,13 +600,16 @@ function tryCleanFsResolve(
         // for .js, also try .tsx
         if (
           fileExt === '.js' &&
-          (res = tryResolveRealFile(fileName + '.tsx', preserveSymlinks))
+          (res = fsUtils.tryResolveRealFile(
+            fileName + '.tsx',
+            preserveSymlinks,
+          ))
         )
           return res
       }
 
       if (
-        (res = tryResolveRealFileWithExtensions(
+        (res = fsUtils.tryResolveRealFileWithExtensions(
           file,
           extensions,
           preserveSymlinks,
@@ -610,10 +620,11 @@ function tryCleanFsResolve(
       if (tryPrefix) {
         const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
 
-        if ((res = tryResolveRealFile(prefixed, preserveSymlinks))) return res
+        if ((res = fsUtils.tryResolveRealFile(prefixed, preserveSymlinks)))
+          return res
 
         if (
-          (res = tryResolveRealFileWithExtensions(
+          (res = fsUtils.tryResolveRealFileWithExtensions(
             prefixed,
             extensions,
             preserveSymlinks,
@@ -624,14 +635,14 @@ function tryCleanFsResolve(
     }
   }
 
-  if (tryIndex && fileStat) {
+  if (tryIndex && fileResult?.type === 'directory') {
     // Path points to a directory, check for package.json and entry and /index file
     const dirPath = file
 
     if (!skipPackageJson) {
       let pkgPath = `${dirPath}/package.json`
       try {
-        if (fs.existsSync(pkgPath)) {
+        if (fsUtils.existsSync(pkgPath)) {
           if (!options.preserveSymlinks) {
             pkgPath = safeRealpathSync(pkgPath)
           }
@@ -647,7 +658,7 @@ function tryCleanFsResolve(
     }
 
     if (
-      (res = tryResolveRealFileWithExtensions(
+      (res = fsUtils.tryResolveRealFileWithExtensions(
         `${dirPath}/index`,
         extensions,
         preserveSymlinks,
@@ -657,7 +668,7 @@ function tryCleanFsResolve(
 
     if (tryPrefix) {
       if (
-        (res = tryResolveRealFileWithExtensions(
+        (res = fsUtils.tryResolveRealFileWithExtensions(
           `${dirPath}/${options.tryPrefix}index`,
           extensions,
           preserveSymlinks,
@@ -665,25 +676,6 @@ function tryCleanFsResolve(
       )
         return res
     }
-  }
-}
-
-function tryResolveRealFile(
-  file: string,
-  preserveSymlinks: boolean,
-): string | undefined {
-  const stat = tryStatSync(file)
-  if (stat?.isFile()) return getRealPath(file, preserveSymlinks)
-}
-
-function tryResolveRealFileWithExtensions(
-  filePath: string,
-  extensions: string[],
-  preserveSymlinks: boolean,
-): string | undefined {
-  for (const ext of extensions) {
-    const res = tryResolveRealFile(filePath + ext, preserveSymlinks)
-    if (res) return res
   }
 }
 
@@ -1296,11 +1288,4 @@ function mapWithBrowserField(
 
 function equalWithoutSuffix(path: string, key: string, suffix: string) {
   return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
-}
-
-function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
-  if (!preserveSymlinks) {
-    resolved = safeRealpathSync(resolved)
-  }
-  return normalizePath(resolved)
 }
