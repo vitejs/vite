@@ -23,6 +23,10 @@ const assetMatch = isBuild
   ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
   : '/foo/bar/nested/asset.png'
 
+const encodedAssetMatch = isBuild
+  ? /\/foo\/bar\/assets\/asset_small_-[-\w]{8}\.png/
+  : '/foo/bar/nested/asset[small].png'
+
 const iconMatch = `/foo/bar/icon.png`
 
 const fetchPath = (p: string) => {
@@ -151,6 +155,10 @@ describe('css url() references', () => {
 
   test('relative', async () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
+  })
+
+  test('encoded', async () => {
+    expect(await getBg('.css-url-encoded')).toMatch(encodedAssetMatch)
   })
 
   test('image-set relative', async () => {
