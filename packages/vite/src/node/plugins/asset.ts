@@ -421,6 +421,7 @@ function svgToDataURL(content: Buffer): string {
 
   const singleQuoteInDoubleQuotes = /"[^"']*'[^"]*"/
   const doubleQuoteInSingleQuotes = /'[^'"]*"[^']*'/
+
   // If the SVG contains some text or HTML, any transformation is unsafe, and given that double quotes would then
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
   if (
