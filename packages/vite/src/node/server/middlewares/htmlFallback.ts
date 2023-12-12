@@ -16,14 +16,14 @@ export function htmlFallbackMiddleware(
     if (
       // Only accept GET or HEAD
       (req.method !== 'GET' && req.method !== 'HEAD') ||
+      // Exclude default favicon requests
+      req.url === '/favicon.ico' ||
       // Require Accept: text/html or */*
       !(
         req.headers.accept === undefined || // equivalent to `Accept: */*`
         req.headers.accept === '' || // equivalent to `Accept: */*`
         req.headers.accept.includes('text/html') ||
-        (req.headers.accept.includes('*/*') &&
-          // exclude favicon requests
-          !req.headers.accept.includes('image/*'))
+        req.headers.accept.includes('*/*')
       )
     ) {
       return next()
