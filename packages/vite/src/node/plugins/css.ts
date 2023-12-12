@@ -264,14 +264,15 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
-        if (checkPublicFile(url, config)) {
+        const decodedUrl = decodeURI(url)
+        if (checkPublicFile(decodedUrl, config)) {
           if (encodePublicUrlsInCSS(config)) {
-            return publicFileToBuiltUrl(url, config)
+            return publicFileToBuiltUrl(decodedUrl, config)
           } else {
-            return joinUrlSegments(config.base, url)
+            return joinUrlSegments(config.base, decodedUrl)
           }
         }
-        const resolved = await resolveUrl(url, importer)
+        const resolved = await resolveUrl(decodedUrl, importer)
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
@@ -279,7 +280,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           const isExternal = config.build.rollupOptions.external
             ? resolveUserExternal(
                 config.build.rollupOptions.external,
-                url, // use URL as id since id could not be resolved
+                decodedUrl, // use URL as id since id could not be resolved
                 id,
                 false,
               )
@@ -288,7 +289,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (!isExternal) {
             // #9800 If we cannot resolve the css url, leave a warning.
             config.logger.warnOnce(
-              `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
+              `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
             )
           }
         }
