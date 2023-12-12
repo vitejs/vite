@@ -165,10 +165,19 @@ export async function workerFileToUrl(
 export function webWorkerPostPlugin(): Plugin {
   return {
     name: 'vite:worker-post',
-    resolveImportMeta(property, { chunkId, format }) {
+    resolveImportMeta(property, { format }) {
       // document is undefined in the worker, so we need to avoid it in iife
-      if (property === 'url' && format === 'iife') {
-        return 'self.location.href'
+      if (format === 'iife') {
+        // compiling import.meta
+        if (!property) {
+          return `{
+            url: self.location.href
+          }`
+        }
+        // compiling import.meta.url
+        if (property === 'url') {
+          return 'self.location.href'
+        }
       }
 
       return null
