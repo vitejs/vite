@@ -338,8 +338,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          // vite-plugin-react isn't following the leading \0 virtual module convention
-          // this is a temporal workaround to avoid expensive fs checks for it
+          // vite-plugin-react isn't following the leading \0 virtual module convention.
+          // This is a temporary hack to avoid expensive fs checks for React apps.
+          // We'll remove this as soon we're able to fix the react plugins.
           (resolved.id !== '/@react-refresh' &&
             path.isAbsolute(resolved.id) &&
             fsUtils.existsSync(cleanUrl(resolved.id)))
