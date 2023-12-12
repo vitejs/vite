@@ -1,3 +1,12 @@
+## 5.1.0 (2023-12-12)
+
+* fix(deps): update all non-major dependencies (#15233) ([ad3adda](https://github.com/vitejs/vite/commit/ad3adda)), closes [#15233](https://github.com/vitejs/vite/issues/15233)
+* fix(deps): update all non-major dependencies (#15304) ([bb07f60](https://github.com/vitejs/vite/commit/bb07f60)), closes [#15304](https://github.com/vitejs/vite/issues/15304)
+* feat(cli): allow initializing non-empty directory (#15272) ([00669e1](https://github.com/vitejs/vite/commit/00669e1)), closes [#15272](https://github.com/vitejs/vite/issues/15272)
+* chore(deps): update all non-major dependencies (#15145) ([7ff2c0a](https://github.com/vitejs/vite/commit/7ff2c0a)), closes [#15145](https://github.com/vitejs/vite/issues/15145)
+
+
+
 ## 5.0.0 (2023-11-16)
 
 * feat(create-vite): update templates for vite 5 (#15007) ([e208697](https://github.com/vitejs/vite/commit/e208697)), closes [#15007](https://github.com/vitejs/vite/issues/15007)
