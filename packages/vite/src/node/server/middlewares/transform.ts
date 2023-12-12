@@ -50,10 +50,10 @@ export function transformMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
 
   // check if public dir is inside root dir
+  const { root } = server.config
   const publicDir = normalizePath(server.config.publicDir)
-  const rootDir = normalizePath(server.config.root)
-  const publicDirInRootDir = publicDir.startsWith(withTrailingSlash(rootDir))
-  const publicPath = `${publicDir.slice(rootDir.length)}/`
+  const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
+  const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
@@ -130,7 +130,7 @@ export function transformMiddleware(
         }
       }
 
-      if (publicDirInRootDir && url.startsWith(publicPath)) {
+      if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
       }
 
