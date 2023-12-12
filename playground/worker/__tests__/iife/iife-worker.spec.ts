@@ -114,17 +114,17 @@ describe.runIf(isBuild)('build', () => {
 test('module worker', async () => {
   await untilUpdated(
     async () => page.textContent('.worker-import-meta-url'),
-    /A\sstring.*\/iife\/.+url-worker\.js/,
+    /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
     true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
-    /A\sstring.*\/iife\/.+url-worker\.js/,
+    /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
     true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-without-extension'),
-    'A string',
+    /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
     true,
   )
   await untilUpdated(
