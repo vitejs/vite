@@ -418,11 +418,16 @@ export async function urlToBuiltUrl(
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
 function svgToDataURL(content: Buffer): string {
   const stringContent = content.toString()
+
+  const singleQuoteInDoubleQuotes = /"[^"']*'[^"]*"/
+  const doubleQuoteInSingleQuotes = /'[^'"]*"[^']*'/
   // If the SVG contains some text or HTML, any transformation is unsafe, and given that double quotes would then
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
   if (
     stringContent.includes('<text') ||
-    stringContent.includes('<foreignObject')
+    stringContent.includes('<foreignObject') ||
+    singleQuoteInDoubleQuotes.test(stringContent) ||
+    doubleQuoteInSingleQuotes.test(stringContent)
   ) {
     return `data:image/svg+xml;base64,${content.toString('base64')}`
   } else {
@@ -431,12 +436,8 @@ function svgToDataURL(content: Buffer): string {
       stringContent
         .trim()
         .replaceAll(/>\s+</g, '><')
-        .replaceAll('%', '%25')
-        .replaceAll(
-          /"([^"']*'[^"]*)"/g,
-          (_, capture) => `%22${capture.replaceAll("'", '%27')}%22`,
-        )
         .replaceAll('"', "'")
+        .replaceAll('%', '%25')
         .replaceAll('#', '%23')
         .replaceAll('<', '%3c')
         .replaceAll('>', '%3e')
