@@ -171,7 +171,7 @@ export function webWorkerPostPlugin(): Plugin {
         // compiling import.meta
         if (!property) {
           // rollup only supports `url` property. we only support `url` property as well.
-          // https://github.com/rollup/rollup/blob/62b648e1cc6a1f00260bb85aa2050097bb4afd2b/src/ast/nodes/MetaProperty.ts#L164-L173 
+          // https://github.com/rollup/rollup/blob/62b648e1cc6a1f00260bb85aa2050097bb4afd2b/src/ast/nodes/MetaProperty.ts#L164-L173
           return `{
             url: self.location.href
           }`
