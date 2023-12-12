@@ -337,10 +337,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          // resolved virtual id convention, ie /@vite/client, /@react-refresh, /@vite-plugin-pwa
-          // We don't support absolute paths starting with `/@` at the root of the file system to avoid
-          // expensive fs checks
-          (!resolved.id.startsWith('/@') &&
+          // vite-plugin-react isn't following the leading \0 virtual module convention
+          // this is a temporal workaround to avoid expensive fs checks for it
+          (resolved.id !== '/@react-refresh' &&
             path.isAbsolute(resolved.id) &&
             fs.existsSync(cleanUrl(resolved.id)))
         ) {
