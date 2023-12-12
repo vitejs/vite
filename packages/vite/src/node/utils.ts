@@ -285,9 +285,15 @@ export function isSameFileUri(file1: string, file2: string): boolean {
 
 export const queryRE = /\?.*$/s
 
-const postfixRE = /[?#].*$/s
 export function cleanUrl(url: string): string {
-  return url.replace(postfixRE, '')
+  const l = url.length
+  let r = ''
+  for (let i = 0; i < l; i++) {
+    const c = url[i]
+    if (c === '?' || c === '#') break
+    r += c
+  }
+  return r
 }
 
 export const externalRE = /^(https?:)?\/\//
