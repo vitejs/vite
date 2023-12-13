@@ -441,7 +441,7 @@ export function toDiscoveredDependencies(
   timestamp?: string,
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
-    getLockfileHash(config, ssr),
+    getDepHash(config, ssr),
     deps,
     timestamp,
   )
@@ -1264,6 +1264,10 @@ export function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
     }
   }
   return getHash(content)
+}
+
+export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
+  return getHash(getLockfileHash(config, ssr) + getConfigHash(config, ssr))
 }
 
 function getOptimizedBrowserHash(
