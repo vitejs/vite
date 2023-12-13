@@ -28,6 +28,7 @@ import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
+import type { MetadataManager } from '../metadata'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -317,8 +318,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
+  let metadataManager: MetadataManager
+
   return {
     name: 'vite:build-html',
+
+    inheritMetadata(manager) {
+      metadataManager = manager
+    },
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
@@ -743,7 +750,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           })
         }
 
-        chunk.viteMetadata!.importedCss.forEach((file) => {
+        metadataManager.chunk(chunk).importedCss.forEach((file) => {
           if (!seen.has(file)) {
             seen.add(file)
             tags.push({
@@ -893,7 +900,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const file = this.getFileName(fileHash)
           if (chunk) {
-            chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+            metadataManager.chunk(chunk).importedAssets.add(cleanUrl(file))
           }
           return toOutputAssetFilePath(file) + postfix
         })

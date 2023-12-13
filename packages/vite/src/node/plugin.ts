@@ -15,6 +15,7 @@ import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
 import type { HmrContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
+import type { MetadataManager } from './metadata'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -139,6 +140,12 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: void,
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
+  /**
+   * Use this hook to read and modify bundle and chunk metadata safely.
+   */
+  inheritMetadata?: ObjectHook<
+    (this: void, metadata: MetadataManager) => void | Promise<void>
   >
 
   /**
