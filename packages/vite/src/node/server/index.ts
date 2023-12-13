@@ -52,6 +52,7 @@ import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
+import { MetadataManager } from '../metadata'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -798,6 +799,13 @@ export async function _createServer(
 
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
+
+  const metadataManager = new MetadataManager()
+  await Promise.all(
+    config
+      .getSortedPluginHooks('inheritMetadata')
+      .map((hook) => hook(metadataManager)),
+  )
 
   // httpServer.listen can be called multiple times
   // when port when using next port number

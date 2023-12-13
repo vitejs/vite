@@ -50,6 +50,7 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
+import { MetadataManager } from './metadata'
 
 export interface BuildOptions {
   /**
@@ -554,6 +555,13 @@ export async function build(
     clearLine()
     config.logger.error(msg, { error: e })
   }
+
+  const metadataManager = new MetadataManager()
+  await Promise.all(
+    config
+      .getSortedPluginHooks('inheritMetadata')
+      .map((hook) => hook(metadataManager)),
+  )
 
   let bundle: RollupBuild | undefined
   try {
