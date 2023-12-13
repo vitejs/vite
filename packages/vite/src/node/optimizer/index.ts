@@ -1216,8 +1216,8 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
-        include: optimizeDeps?.include,
-        exclude: optimizeDeps?.exclude,
+        include: Array.from(new Set(optimizeDeps?.include)).sort(),
+        exclude: Array.from(new Set(optimizeDeps?.exclude)).sort(),
         esbuildOptions: {
           ...optimizeDeps?.esbuildOptions,
           plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
@@ -1289,7 +1289,6 @@ export async function optimizedDepNeedsInterop(
   return depInfo?.needsInterop
 }
 
-const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
 export async function cleanupDepsCacheStaleDirs(
   config: ResolvedConfig,
 ): Promise<void> {
