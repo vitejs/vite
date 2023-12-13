@@ -27,7 +27,7 @@ export function metadataCompatPlugin(config: ResolvedConfig): Plugin {
       }
 
       config.logger.warnOnce(
-        `Found legacy \`viteMetadata\` for chunk ${chunk.fileName} in plugin function \`${func}\`. Please migrate to the new metadata manager API.`,
+        `Found legacy \`viteMetadata\` for chunk ${chunk.fileName} in plugin function \`${func}\`. Please migrate to the new metadata manager and the \`inheritMetadata\` API.`,
       )
 
       delete chunk.viteMetadata
