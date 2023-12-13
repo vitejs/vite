@@ -1336,6 +1336,7 @@ export async function optimizedDepNeedsInterop(
   return depInfo?.needsInterop
 }
 
+const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
 export async function cleanupDepsCacheStaleDirs(
   config: ResolvedConfig,
 ): Promise<void> {
