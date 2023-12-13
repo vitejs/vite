@@ -1216,8 +1216,12 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
-        include: optimizeDeps?.include,
-        exclude: optimizeDeps?.exclude,
+        include: optimizeDeps?.include
+          ? Array.from(new Set(optimizeDeps.include)).sort()
+          : undefined,
+        exclude: optimizeDeps?.exclude
+          ? Array.from(new Set(optimizeDeps.exclude)).sort()
+          : undefined,
         esbuildOptions: {
           ...optimizeDeps?.esbuildOptions,
           plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
