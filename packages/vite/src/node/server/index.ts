@@ -74,8 +74,9 @@ import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import type { HmrOptions } from './hmr'
+import type { HMRBroadcaster, HmrOptions } from './hmr'
 import {
+  createHMRBroadcaster,
   getShortName,
   handleFileAddUnlink,
   handleHMRUpdate,
@@ -323,6 +324,11 @@ export interface ViteDevServer {
   restart(forceOptimize?: boolean): Promise<void>
 
   /**
+   * TODO: docs
+   */
+  hot: HMRBroadcaster
+
+  /**
    * Open browser
    */
   openBrowser(): void
@@ -403,7 +409,10 @@ export async function _createServer(
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+
+  const hot = createHMRBroadcaster()
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
+  hot.addChannel(ws)
 
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
@@ -437,6 +446,7 @@ export async function _createServer(
     watcher,
     pluginContainer: container,
     ws,
+    hot,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -558,7 +568,7 @@ export async function _createServer(
       }
       await Promise.allSettled([
         watcher.close(),
-        ws.close(),
+        hot.close(),
         container.close(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
@@ -642,7 +652,7 @@ export async function _createServer(
       try {
         await handleHMRUpdate(file, server, configOnly)
       } catch (err) {
-        ws.send({
+        hot.send({
           type: 'error',
           err: prepareError(err),
         })

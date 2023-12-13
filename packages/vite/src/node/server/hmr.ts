@@ -2,7 +2,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
-import type { Update } from 'types/hmrPayload'
+import type { HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import {
@@ -12,7 +12,7 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../utils'
-import type { ViteDevServer } from '..'
+import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -51,6 +51,38 @@ interface PropagationBoundary {
   isWithinCircularImport: boolean
 }
 
+export interface HMRChannel {
+  /**
+   * Broadcast events to all clients
+   */
+  send(payload: HMRPayload): void
+  /**
+   * Send custom event
+   */
+  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
+  /**
+   * Handle custom event emitted by `import.meta.hot.send`
+   */
+  on<T extends string>(
+    event: T,
+    listener: (data: InferCustomEventPayload<T>, ...args: any[]) => void,
+  ): void
+  /**
+   * Unregister event listener.
+   */
+  off(event: string, listener: Function): void
+  /**
+   * Called when server is closed.
+   */
+  close(): void
+}
+
+// TODO: more jsdoc
+export interface HMRBroadcaster extends HMRChannel {
+  channels: HMRChannel[]
+  addChannel(connection: HMRChannel): void
+}
+
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
     ? path.posix.relative(root, file)
@@ -62,7 +94,7 @@ export async function handleHMRUpdate(
   server: ViteDevServer,
   configOnly: boolean,
 ): Promise<void> {
-  const { ws, config, moduleGraph } = server
+  const { config, hot, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
   const fileName = path.basename(file)
 
@@ -100,7 +132,7 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    ws.send({
+    hot.send({
       type: 'full-reload',
       path: '*',
     })
@@ -133,7 +165,7 @@ export async function handleHMRUpdate(
         clear: true,
         timestamp: true,
       })
-      ws.send({
+      hot.send({
         type: 'full-reload',
         path: config.server.middlewareMode
           ? '*'
@@ -155,7 +187,7 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, ws, moduleGraph }: ViteDevServer,
+  { config, hot, moduleGraph }: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
   const updates: Update[] = []
@@ -204,7 +236,7 @@ export function updateModules(
       colors.green(`page reload `) + colors.dim(file) + reason,
       { clear: !afterInvalidation, timestamp: true },
     )
-    ws.send({
+    hot.send({
       type: 'full-reload',
     })
     return
@@ -220,7 +252,7 @@ export function updateModules(
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: !afterInvalidation, timestamp: true },
   )
-  ws.send({
+  hot.send({
     type: 'update',
     updates,
   })
@@ -455,7 +487,7 @@ function isNodeWithinCircularImports(
 
 export function handlePrunedModules(
   mods: Set<ModuleNode>,
-  { ws }: ViteDevServer,
+  { hot }: ViteDevServer,
 ): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
@@ -465,7 +497,7 @@ export function handlePrunedModules(
     mod.lastHMRTimestamp = t
     debugHmr?.(`[dispose] ${colors.dim(mod.file)}`)
   })
-  ws.send({
+  hot.send({
     type: 'prune',
     paths: [...mods].map((m) => m.url),
   })
@@ -643,4 +675,31 @@ async function readModifiedFile(file: string): Promise<string> {
   } else {
     return content
   }
+}
+
+export function createHMRBroadcaster(): HMRBroadcaster {
+  const channels: HMRChannel[] = []
+  const broadcaster: HMRBroadcaster = {
+    get channels() {
+      return channels
+    },
+    addChannel(connection) {
+      channels.push(connection)
+    },
+    on(event, listener) {
+      channels.forEach((connection) => connection.on(event, listener))
+      return broadcaster
+    },
+    off(event, listener) {
+      channels.forEach((connection) => connection.off(event, listener))
+      return broadcaster
+    },
+    send(...args: any[]) {
+      channels.forEach((connection) => connection.send(...(args as [any])))
+    },
+    close() {
+      return channels.map((connection) => connection.close())
+    },
+  }
+  return broadcaster
 }
