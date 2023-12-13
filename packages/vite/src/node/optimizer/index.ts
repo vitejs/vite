@@ -192,6 +192,16 @@ export interface DepOptimizationMetadata {
    */
   hash: string
   /**
+   * This hash is determined by dependency lockfiles.
+   * This is checked on server startup to avoid unnecessary re-bundles.
+   */
+  lockfileHash: string
+  /**
+   * This hash is determined by user config.
+   * This is checked on server startup to avoid unnecessary re-bundles.
+   */
+  configHash: string
+  /**
    * The browser hash is determined by the main hash plus additional dependencies
    * discovered at runtime. This is used to invalidate browser requests to
    * optimized deps.
@@ -310,9 +320,13 @@ export function initDepsOptimizerMetadata(
   ssr: boolean,
   timestamp?: string,
 ): DepOptimizationMetadata {
-  const hash = getDepHash(config, ssr)
+  const lockfileHash = getLockfileHash(config, ssr)
+  const configHash = getConfigHash(config, ssr)
+  const hash = lockfileHash + configHash
   return {
     hash,
+    lockfileHash,
+    configHash,
     browserHash: getOptimizedBrowserHash(hash, {}, timestamp),
     optimized: {},
     chunks: {},
@@ -363,11 +377,21 @@ export async function loadCachedDepOptimizationMetadata(
       )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
-    if (cachedMetadata && cachedMetadata.hash === getDepHash(config, ssr)) {
-      log?.('Hash is consistent. Skipping. Use --force to override.')
-      // Nothing to commit or cancel as we are using the cache, we only
-      // need to resolve the processing promise so requests can move on
-      return cachedMetadata
+    if (cachedMetadata) {
+      if (cachedMetadata.lockfileHash !== getLockfileHash(config, ssr)) {
+        config.logger.info(
+          'Re-optimizing dependencies because lockfile has changed',
+        )
+      } else if (cachedMetadata.configHash !== getConfigHash(config, ssr)) {
+        config.logger.info(
+          'Re-optimizing dependencies because vite config has changed',
+        )
+      } else {
+        log?.('Hash is consistent. Skipping. Use --force to override.')
+        // Nothing to commit or cancel as we are using the cache, we only
+        // need to resolve the processing promise so requests can move on
+        return cachedMetadata
+      }
     }
   } else {
     config.logger.info('Forced re-optimization of dependencies')
@@ -417,7 +441,7 @@ export function toDiscoveredDependencies(
   timestamp?: string,
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
-    getDepHash(config, ssr),
+    getLockfileHash(config, ssr),
     deps,
     timestamp,
   )
@@ -975,17 +999,15 @@ function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string,
 ): DepOptimizationMetadata | undefined {
-  const { hash, browserHash, optimized, chunks } = JSON.parse(
-    jsonMetadata,
-    (key: string, value: string) => {
+  const { hash, lockfileHash, configHash, browserHash, optimized, chunks } =
+    JSON.parse(jsonMetadata, (key: string, value: string) => {
       // Paths can be absolute or relative to the deps cache dir where
       // the _metadata.json is located
       if (key === 'file' || key === 'src') {
         return normalizePath(path.resolve(depsCacheDir, value))
       }
       return value
-    },
-  )
+    })
   if (
     !chunks ||
     Object.values(optimized).some((depInfo: any) => !depInfo.fileHash)
@@ -995,6 +1017,8 @@ function parseDepsOptimizerMetadata(
   }
   const metadata = {
     hash,
+    lockfileHash,
+    configHash,
     browserHash,
     optimized: {},
     discovered: {},
@@ -1187,27 +1211,11 @@ const lockfileFormats = [
 })
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
-export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  const lockfilePath = lookupFile(config.root, lockfileNames)
-  let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
-  if (lockfilePath) {
-    const lockfileName = path.basename(lockfilePath)
-    const { checkPatches } = lockfileFormats.find(
-      (f) => f.name === lockfileName,
-    )!
-    if (checkPatches) {
-      // Default of https://github.com/ds300/patch-package
-      const fullPath = path.join(path.dirname(lockfilePath), 'patches')
-      const stat = tryStatSync(fullPath)
-      if (stat?.isDirectory()) {
-        content += stat.mtimeMs.toString()
-      }
-    }
-  }
-  // also take config into account
+export function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
+  // Take config into account
   // only a subset of config options that can affect dep optimization
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
-  content += JSON.stringify(
+  const content = JSON.stringify(
     {
       mode: process.env.NODE_ENV || config.mode,
       root: config.root,
@@ -1235,6 +1243,26 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       return value
     },
   )
+  return getHash(content)
+}
+
+export function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
+  const lockfilePath = lookupFile(config.root, lockfileNames)
+  let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
+  if (lockfilePath) {
+    const lockfileName = path.basename(lockfilePath)
+    const { checkPatches } = lockfileFormats.find(
+      (f) => f.name === lockfileName,
+    )!
+    if (checkPatches) {
+      // Default of https://github.com/ds300/patch-package
+      const fullPath = path.join(path.dirname(lockfilePath), 'patches')
+      const stat = tryStatSync(fullPath)
+      if (stat?.isDirectory()) {
+        content += stat.mtimeMs.toString()
+      }
+    }
+  }
   return getHash(content)
 }
 
