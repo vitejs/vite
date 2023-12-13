@@ -1051,10 +1051,13 @@ function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string,
 ) {
-  const { hash, browserHash, optimized, chunks } = metadata
+  const { hash, configHash, lockfileHash, browserHash, optimized, chunks } =
+    metadata
   return JSON.stringify(
     {
       hash,
+      configHash,
+      lockfileHash,
       browserHash,
       optimized: Object.fromEntries(
         Object.values(optimized).map(
@@ -1209,7 +1212,7 @@ const lockfileFormats = [
 })
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
-export function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
+function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
@@ -1244,7 +1247,7 @@ export function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
   return getHash(content)
 }
 
-export function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
+function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
   const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
@@ -1264,7 +1267,7 @@ export function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
   return getHash(content)
 }
 
-export function getDepHash(
+function getDepHash(
   config: ResolvedConfig,
   ssr: boolean,
 ): { lockfileHash: string; configHash: string; hash: string } {
