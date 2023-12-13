@@ -1,4 +1,4 @@
-import type { OutputChunk, RenderedChunk } from 'rollup'
+import type { OutputAsset, OutputChunk, RenderedChunk } from 'rollup'
 
 export interface ChunkMetadata {
   importedAssets: Set<string>
@@ -8,7 +8,7 @@ export interface ChunkMetadata {
 export class MetadataManager {
   chunkMetadata: Record<string, ChunkMetadata> = {}
 
-  chunk(chunk: RenderedChunk | OutputChunk): ChunkMetadata {
+  chunk(chunk: RenderedChunk | OutputChunk | OutputAsset): ChunkMetadata {
     return this.chunkId(chunk.fileName)
   }
 

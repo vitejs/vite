@@ -23,7 +23,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
-import { metadataPlugin } from './metadata'
+import { metadataCompatPlugin } from './metadataCompat'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 
@@ -49,7 +49,7 @@ export async function resolvePlugins(
             : optimizedDepsPlugin(config),
         ]
       : []),
-    isBuild ? metadataPlugin() : null,
+    isBuild ? metadataCompatPlugin(config) : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
     aliasPlugin({
