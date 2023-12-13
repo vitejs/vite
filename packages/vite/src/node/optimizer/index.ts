@@ -1267,7 +1267,7 @@ export function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
 }
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  return getHash(getLockfileHash(config, ssr) + getConfigHash(config, ssr))
+  return getLockfileHash(config, ssr) + getConfigHash(config, ssr)
 }
 
 function getOptimizedBrowserHash(
