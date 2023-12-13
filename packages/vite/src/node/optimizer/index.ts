@@ -320,9 +320,7 @@ export function initDepsOptimizerMetadata(
   ssr: boolean,
   timestamp?: string,
 ): DepOptimizationMetadata {
-  const lockfileHash = getLockfileHash(config, ssr)
-  const configHash = getConfigHash(config, ssr)
-  const hash = lockfileHash + configHash
+  const { lockfileHash, configHash, hash } = getDepHash(config, ssr)
   return {
     hash,
     lockfileHash,
@@ -441,7 +439,7 @@ export function toDiscoveredDependencies(
   timestamp?: string,
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
-    getDepHash(config, ssr),
+    getDepHash(config, ssr).hash,
     deps,
     timestamp,
   )
@@ -1266,8 +1264,18 @@ export function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
   return getHash(content)
 }
 
-export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
-  return getLockfileHash(config, ssr) + getConfigHash(config, ssr)
+export function getDepHash(
+  config: ResolvedConfig,
+  ssr: boolean,
+): { lockfileHash: string; configHash: string; hash: string } {
+  const lockfileHash = getLockfileHash(config, ssr)
+  const configHash = getConfigHash(config, ssr)
+  const hash = getHash(lockfileHash + configHash)
+  return {
+    hash,
+    lockfileHash,
+    configHash,
+  }
 }
 
 function getOptimizedBrowserHash(
@@ -1325,7 +1333,6 @@ export async function optimizedDepNeedsInterop(
   return depInfo?.needsInterop
 }
 
-const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
 export async function cleanupDepsCacheStaleDirs(
   config: ResolvedConfig,
 ): Promise<void> {
