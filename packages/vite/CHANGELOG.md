@@ -1,3 +1,17 @@
+## <small>5.0.9 (2023-12-14)</small>
+
+* fix: htmlFallbackMiddleware for favicon (#15301) ([c902545](https://github.com/vitejs/vite/commit/c902545)), closes [#15301](https://github.com/vitejs/vite/issues/15301)
+* fix: more stable hash calculation for depsOptimize (#15337) ([2b39fe6](https://github.com/vitejs/vite/commit/2b39fe6)), closes [#15337](https://github.com/vitejs/vite/issues/15337)
+* fix(scanner): catch all external files for glob imports (#15286) ([129d0d0](https://github.com/vitejs/vite/commit/129d0d0)), closes [#15286](https://github.com/vitejs/vite/issues/15286)
+* fix(server): avoid chokidar throttling on startup (#15347) ([56a5740](https://github.com/vitejs/vite/commit/56a5740)), closes [#15347](https://github.com/vitejs/vite/issues/15347)
+* fix(worker): replace `import.meta` correctly for IIFE worker (#15321) ([08d093c](https://github.com/vitejs/vite/commit/08d093c)), closes [#15321](https://github.com/vitejs/vite/issues/15321)
+* feat: log re-optimization reasons (#15339) ([b1a6c84](https://github.com/vitejs/vite/commit/b1a6c84)), closes [#15339](https://github.com/vitejs/vite/issues/15339)
+* chore: temporary typo (#15329) ([7b71854](https://github.com/vitejs/vite/commit/7b71854)), closes [#15329](https://github.com/vitejs/vite/issues/15329)
+* perf: avoid computing paths on each request (#15318) ([0506812](https://github.com/vitejs/vite/commit/0506812)), closes [#15318](https://github.com/vitejs/vite/issues/15318)
+* perf: temporary hack to avoid fs checks for /@react-refresh (#15299) ([b1d6211](https://github.com/vitejs/vite/commit/b1d6211)), closes [#15299](https://github.com/vitejs/vite/issues/15299)
+
+
+
 ## <small>5.0.8 (2023-12-12)</small>
 
 * perf: cached fs utils (#15279) ([c9b61c4](https://github.com/vitejs/vite/commit/c9b61c4)), closes [#15279](https://github.com/vitejs/vite/issues/15279)
