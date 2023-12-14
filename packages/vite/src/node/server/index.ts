@@ -414,7 +414,7 @@ export async function _createServer(
   const watcher = watchEnabled
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
-        [root, ...config.configFileDependencies, config.envDir],
+        [...new Set([root, ...config.configFileDependencies, config.envDir])],
         resolvedWatchOptions,
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
