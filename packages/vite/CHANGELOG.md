@@ -1,3 +1,10 @@
+## <small>5.0.10 (2023-12-15)</small>
+
+* fix: omit protocol does not require pre-transform (#15355) ([d9ae1b2](https://github.com/vitejs/vite/commit/d9ae1b2)), closes [#15355](https://github.com/vitejs/vite/issues/15355)
+* fix(build): use base64 for inline SVG if it contains both single and double quotes (#15271) ([1bbff16](https://github.com/vitejs/vite/commit/1bbff16)), closes [#15271](https://github.com/vitejs/vite/issues/15271)
+
+
+
 ## <small>5.0.9 (2023-12-14)</small>
 
 * fix: htmlFallbackMiddleware for favicon (#15301) ([c902545](https://github.com/vitejs/vite/commit/c902545)), closes [#15301](https://github.com/vitejs/vite/issues/15301)
