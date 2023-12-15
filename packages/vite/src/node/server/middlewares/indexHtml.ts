@@ -157,7 +157,7 @@ const processNodeUrl = (
 
     if (server && shouldPreTransform(url, config)) {
       let preTransformUrl: string | undefined
-      if (url[0] === '/') {
+      if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
       } else if (url[0] === '.' || isBareRelative(url)) {
         preTransformUrl = path.posix.join(
