@@ -415,6 +415,8 @@ export async function urlToBuiltUrl(
   )
 }
 
+const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
+
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
 function svgToDataURL(content: Buffer): string {
   const stringContent = content.toString()
@@ -422,7 +424,8 @@ function svgToDataURL(content: Buffer): string {
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
   if (
     stringContent.includes('<text') ||
-    stringContent.includes('<foreignObject')
+    stringContent.includes('<foreignObject') ||
+    nestedQuotesRE.test(stringContent)
   ) {
     return `data:image/svg+xml;base64,${content.toString('base64')}`
   } else {
