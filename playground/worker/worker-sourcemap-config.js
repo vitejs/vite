@@ -35,7 +35,8 @@ export default (sourcemap) => {
     },
     build: {
       outDir: `dist/iife-${typeName}/`,
-      assetsInlineLimit: 100, // keep SVG as assets URL
+      assetsInlineLimit: (filePath) =>
+        filePath.endsWith('.svg') ? false : undefined,
       sourcemap: sourcemap,
       rollupOptions: {
         output: {

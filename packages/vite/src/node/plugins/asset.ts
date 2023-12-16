@@ -344,18 +344,25 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
 
-  if (shouldInline == null) {
-    shouldInline =
-      !!config.build.lib ||
-      // Don't inline SVG with fragments, as they are meant to be reused
-      (!(file.endsWith('.svg') && id.includes('#')) &&
-        !file.endsWith('.html') &&
-        content.length < Number(config.build.assetsInlineLimit) &&
-        !isGitLfsPlaceholder(content))
-  }
+  const finalShouldInline = (() => {
+    if (config.build.lib) return true
+    let limit: number
+    if (typeof config.build.assetsInlineLimit === 'function') {
+      const userShouldInline = config.build.assetsInlineLimit(file, content)
+      if (userShouldInline != null) return userShouldInline
+      limit = 4096
+    } else {
+      limit = Number(config.build.assetsInlineLimit)
+    }
+    if (shouldInline != null) return shouldInline
+    if (file.endsWith('.html')) return false
+    // Don't inline SVG with fragments, as they are meant to be reused
+    if (file.endsWith('.svg') && id.includes('#')) return false
+    return content.length < limit && !isGitLfsPlaceholder(content)
+  })()
 
   let url: string
-  if (shouldInline) {
+  if (finalShouldInline) {
     if (config.build.lib && isGitLfsPlaceholder(content)) {
       config.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
