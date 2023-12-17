@@ -6,6 +6,7 @@ import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
+import { findNodeAround } from 'acorn-walk'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
 import licensePlugin from './rollupLicensePlugin'
@@ -91,7 +92,6 @@ function createNodePlugins(
       declaration: declarationDir !== false,
       declarationDir: declarationDir !== false ? declarationDir : undefined,
     }),
-
     // Some deps have try...catch require of optional deps, but rollup will
     // generate code that force require them upfront for side effects.
     // Shim them with eval() so rollup can skip these calls.
@@ -128,7 +128,6 @@ function createNodePlugins(
           replacement: 'const resolveId = (id) => id',
         },
       }),
-
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -136,6 +135,7 @@ function createNodePlugins(
       ignore: ['bufferutil', 'utf-8-validate'],
     }),
     json(),
+    stringOptimize(),
     isProduction &&
       licensePlugin(
         path.resolve(__dirname, 'LICENSE.md'),
@@ -337,6 +337,90 @@ function bundleSizeLimit(limit: number): Plugin {
             2,
           )}kb.`,
         )
+      }
+    },
+  }
+}
+
+/**
+ * replace startsWith and endsWith
+ */
+function stringOptimize(): Plugin {
+  const MATCH_REGX = /.startsWith|.endsWith/g
+  const asciiMap: Record<string, string> = {
+    '\\': '\\\\',
+    '\0': '\\0',
+    '\t': '\\t',
+    '\n': '\\n',
+    '\r': '\\r',
+  }
+  const formatChar = (ch: string) => asciiMap[ch] ?? ch
+  const CONST_REGX = /export const ([A-Z_]+) = [`'](.+)['`]/g
+  const constants = readFileSync(
+    path.join(__dirname, './src/node/constants.ts'),
+    'utf-8',
+  )
+  // collect constant.ts
+  const constantsMap: Record<string, string> = {}
+  let match = null
+  while ((match = CONST_REGX.exec(constants))) {
+    const [_, key, value] = match
+    if (!key || !value) {
+      continue
+    }
+    constantsMap[key] = value
+  }
+  return {
+    name: 'string-optimize',
+    transform(code, id) {
+      const ast = this.parse(code)
+      const magicstring = new MagicString(code)
+      let m = null
+      while ((m = MATCH_REGX.exec(code))) {
+        const found = findNodeAround(ast, m.index, 'CallExpression')
+          ?.node as any
+        if (!found || !found.arguments || found.arguments.length > 1) {
+          continue
+        }
+        const arg = found.arguments[0]
+        const callee = found.callee
+        if (!arg || !callee || callee.optional) {
+          continue
+        }
+        // ignore `arg.name` as it may case some error
+        const param = arg.value ?? constantsMap?.[arg.name]
+        if (!param) {
+          continue
+        }
+        const paramLength = param.length
+        const object = callee.object
+        if (!object || !object.start || !object.end) {
+          continue
+        }
+        const caller = code.slice(object.start, object.end)
+        let replacedString: string | string[] = []
+        if (m[0] === '.startsWith') {
+          for (let i = 0; i < paramLength; i++) {
+            replacedString.push(`${caller}[${i}]==="${formatChar(param[i])}"`)
+          }
+        } else if (m[0] === '.endsWith') {
+          for (let i = 0; i < paramLength; i++) {
+            replacedString.push(
+              `${caller}.at(${-paramLength + i})==="${formatChar(param[i])}"`,
+            )
+          }
+        } else {
+          continue
+        }
+        replacedString = `(${replacedString.join('&&')})`
+        magicstring.update(found.start, found.end, replacedString)
+        console.log(
+          `transfrom "${caller + m[0]}(${arg.raw})" to "${replacedString}"`,
+        )
+      }
+      return {
+        code: magicstring.toString(),
+        map: magicstring.generateMap({ hires: 'boundary' }),
       }
     },
   }
