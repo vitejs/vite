@@ -406,7 +406,9 @@ function stringOptimize(): Plugin {
         } else if (m[0] === '.endsWith') {
           for (let i = 0; i < paramLength; i++) {
             replacedString.push(
-              `${caller}.at(${-paramLength + i})==="${formatChar(param[i])}"`,
+              `${caller}[${caller}.length-${paramLength - i}]==="${formatChar(
+                param[i],
+              )}"`,
             )
           }
         } else {
