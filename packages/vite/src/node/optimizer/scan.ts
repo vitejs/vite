@@ -677,6 +677,10 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
   if (!path.isAbsolute(resolvedId)) {
     return true
   }
+  // was already resolved to a file
+  if (resolvedId === rawId && fs.existsSync(resolvedId)) {
+    return false
+  }
   // virtual id
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
