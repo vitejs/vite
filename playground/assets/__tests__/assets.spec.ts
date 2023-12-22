@@ -23,6 +23,10 @@ const assetMatch = isBuild
   ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
   : '/foo/bar/nested/asset.png'
 
+const encodedAssetMatch = isBuild
+  ? /\/foo\/bar\/assets\/asset_small_-[-\w]{8}\.png/
+  : '/foo/bar/nested/asset[small].png'
+
 const iconMatch = `/foo/bar/icon.png`
 
 const fetchPath = (p: string) => {
@@ -153,6 +157,10 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
   })
 
+  test('encoded', async () => {
+    expect(await getBg('.css-url-encoded')).toMatch(encodedAssetMatch)
+  })
+
   test('image-set relative', async () => {
     const imageSet = await getBg('.css-image-set-relative')
     imageSet.split(', ').forEach((s) => {
@@ -223,10 +231,20 @@ describe('css url() references', () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
-    const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
-    const el = await page.$(`link.ico`)
-    const href = await el.getAttribute('href')
-    expect(href).toMatch(icoMatch)
+  })
+
+  test('no base64 inline for icon and manifest links', async () => {
+    const iconEl = await page.$(`link.ico`)
+    const href = await iconEl.getAttribute('href')
+    expect(href).toMatch(
+      isBuild ? /\/foo\/bar\/assets\/favicon-[-\w]{8}\.ico/ : 'favicon.ico',
+    )
+
+    const manifestEl = await page.$(`link[rel="manifest"]`)
+    const manifestHref = await manifestEl.getAttribute('href')
+    expect(manifestHref).toMatch(
+      isBuild ? /\/foo\/bar\/assets\/manifest-[-\w]{8}\.json/ : 'manifest.json',
+    )
   })
 
   test('multiple urls on the same line', async () => {

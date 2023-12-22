@@ -41,6 +41,7 @@ import {
   normalizePath,
   withTrailingSlash,
 } from './utils'
+import { getFsUtils } from './fsUtils'
 import {
   createPluginHookUtils,
   getHookHandler,
@@ -633,6 +634,7 @@ export async function resolveConfig(
                 tryIndex: true,
                 ...options,
                 idOnly: true,
+                fsUtils: getFsUtils(resolved),
               }),
             ],
           }))
@@ -821,7 +823,11 @@ export async function resolveConfig(
 
   // validate config
 
-  if (config.build?.terserOptions && config.build.minify !== 'terser') {
+  if (
+    config.build?.terserOptions &&
+    config.build.minify &&
+    config.build.minify !== 'terser'
+  ) {
     logger.warn(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +

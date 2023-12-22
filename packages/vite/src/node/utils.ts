@@ -623,6 +623,8 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export const ERR_SYMLINK_IN_RECURSIVE_READDIR =
+  'ERR_SYMLINK_IN_RECURSIVE_READDIR'
 export async function recursiveReaddir(dir: string): Promise<string[]> {
   if (!fs.existsSync(dir)) {
     return []
@@ -636,6 +638,13 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
       return []
     }
     throw e
+  }
+  if (dirents.some((dirent) => dirent.isSymbolicLink())) {
+    const err: any = new Error(
+      'Symbolic links are not supported in recursiveReaddir',
+    )
+    err.code = ERR_SYMLINK_IN_RECURSIVE_READDIR
+    throw err
   }
   const files = await Promise.all(
     dirents.map((dirent) => {
