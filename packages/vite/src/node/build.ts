@@ -44,7 +44,11 @@ import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_MODULES_TARGET,
+  VERSION,
+} from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
@@ -326,7 +330,7 @@ export function resolveBuildOptions(
   const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},

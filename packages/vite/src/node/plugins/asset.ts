@@ -26,7 +26,7 @@ import {
   removeLeadingSlash,
   withTrailingSlash,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import type { ModuleGraph } from '../server/moduleGraph'
 
 // referenceId is base64url but replaces - with $
@@ -346,15 +346,15 @@ async function fileToBuiltUrl(
 
   const finalShouldInline = (() => {
     if (config.build.lib) return true
+    if (shouldInline != null) return shouldInline
     let limit: number
     if (typeof config.build.assetsInlineLimit === 'function') {
       const userShouldInline = config.build.assetsInlineLimit(file, content)
       if (userShouldInline != null) return userShouldInline
-      limit = 4096
+      limit = DEFAULT_ASSETS_INLINE_LIMIT
     } else {
       limit = Number(config.build.assetsInlineLimit)
     }
-    if (shouldInline != null) return shouldInline
     if (file.endsWith('.html')) return false
     // Don't inline SVG with fragments, as they are meant to be reused
     if (file.endsWith('.svg') && id.includes('#')) return false

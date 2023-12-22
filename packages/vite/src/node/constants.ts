@@ -153,3 +153,5 @@ export const wildcardHosts = new Set([
 export const DEFAULT_DEV_PORT = 5173
 
 export const DEFAULT_PREVIEW_PORT = 4173
+
+export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
