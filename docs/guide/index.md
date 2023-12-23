@@ -1,4 +1,4 @@
-# Getting Started
+# Getting Started with Karel
 
 <audio id="vite-audio">
   <source src="/vite.mp3" type="audio/mpeg">
