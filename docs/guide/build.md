@@ -226,6 +226,40 @@ Or, if exposing multiple entry points:
 }
 ```
 
+And then to configure Vite pass an array or an object of the multiple entry points:
+
+```js
+// vite.config.js
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    lib: {
+      entry: {
+        resolve(__dirname, 'lib/my-lib.js'),
+        resolve(__dirname, 'lib/secondary.js')
+      },
+      name: 'MyLib',
+      // the proper extensions will be added
+      fileName: 'my-lib',
+    },
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: ['vue'],
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {
+          vue: 'Vue',
+        },
+      },
+    },
+  },
+})
+```
+
 ::: tip File Extensions
 If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.
 :::
