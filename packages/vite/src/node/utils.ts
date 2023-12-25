@@ -790,7 +790,7 @@ const cleanSrcSetRE =
   /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:[/;,\w]+/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
-  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
   const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
