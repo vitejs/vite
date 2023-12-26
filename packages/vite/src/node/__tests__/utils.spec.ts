@@ -338,8 +338,6 @@ describe('processSrcSetSync', () => {
       'data:image/avif;base64,AAAA 400w, data:image/avif;base64,BBBB 800w'
     expect(processSrcSetSync(base64, ({ url }) => url)).toBe(base64)
   })
-
-  test('should not split ')
 })
 
 describe('flattenId', () => {
