@@ -787,7 +787,7 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:image\/[\w.+\-]+;base64,[\w+/=]+/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
