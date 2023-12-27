@@ -622,7 +622,7 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
 Make sure to declare the `new URL()` constructor directly inside the `new Worker()` declaration, as done in the above example;
 declaring the URL in a separate variable will cause Vite to ignore the constructor, and the Worker may end up not being included in the built bundle.
 
-Additionaly, all options parameter must be static values, i.e. string literals. Using variables or constants will trigger a build error.
+Additionaly, all options parameters must be static values (i.e. string literals). Using variables or constants will trigger a build error.
 
 The following example won't work:
 
