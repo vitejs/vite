@@ -637,7 +637,7 @@ const worker = new Worker(workerUrl, {
 ))
 ```
 
-Here is how to make it should be:
+Here is how it should be:
 
 ```javascript
 const worker = new Worker(new URL('./worker.js', import.meta.url), {
