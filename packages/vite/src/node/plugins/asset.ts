@@ -348,7 +348,7 @@ async function fileToBuiltUrl(
     shouldInline =
       !!config.build.lib ||
       // Don't inline SVG with fragments, as they are meant to be reused
-      (!(file.endsWith('.svg') && id.includes('#')) &&
+      (!(file.endsWith('.svg') && (id.includes('#') || id.endsWith('?file'))) &&
         !file.endsWith('.html') &&
         content.length < Number(config.build.assetsInlineLimit) &&
         !isGitLfsPlaceholder(content))
