@@ -345,13 +345,7 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   if (shouldInline == null) {
-    shouldInline =
-      !!config.build.lib ||
-      // Don't inline SVG with fragments, as they are meant to be reused
-      (!(file.endsWith('.svg') && (id.includes('#') || id.endsWith('?file'))) &&
-        !file.endsWith('.html') &&
-        content.length < Number(config.build.assetsInlineLimit) &&
-        !isGitLfsPlaceholder(content))
+    shouldInline = getShouldInline(id, config, file, content)
   }
 
   let url: string
@@ -389,6 +383,41 @@ async function fileToBuiltUrl(
 
   cache.set(id, url)
   return url
+}
+
+export function getShouldInline(
+  id: string,
+  config: ResolvedConfig,
+  file: string,
+  content: Buffer,
+): boolean {
+  if (id.endsWith('?file')) {
+    // Force no-inline for files with query ?file
+    return false
+  }
+
+  if (config.build.lib) {
+    return true
+  }
+
+  if (file.endsWith('.svg') && id.includes('#')) {
+    // Don't inline SVG with fragments, as they are meant to be reused
+    return false
+  }
+
+  if (file.endsWith('.html')) {
+    return false
+  }
+
+  if (content.length >= Number(config.build.assetsInlineLimit)) {
+    return false
+  }
+
+  if (isGitLfsPlaceholder(content)) {
+    return false
+  }
+
+  return true
 }
 
 export async function urlToBuiltUrl(
