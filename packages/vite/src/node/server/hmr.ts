@@ -101,7 +101,7 @@ export interface HMRBroadcaster extends HMRChannel {
   /**
    * Add a new third-party channel.
    */
-  addChannel(connection: HMRChannel): void
+  addChannel(connection: HMRChannel): HMRBroadcaster
 }
 
 export function getShortName(file: string, root: string): string {
@@ -115,7 +115,7 @@ export async function handleHMRUpdate(
   server: ViteDevServer,
   configOnly: boolean,
 ): Promise<void> {
-  const { config, hot, moduleGraph } = server
+  const { hot, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
   const fileName = path.basename(file)
 
@@ -706,6 +706,7 @@ export function createHMRBroadcaster(): HMRBroadcaster {
     },
     addChannel(channel) {
       channels.push(channel)
+      return broadcaster
     },
     on(event: string, listener: (...args: any[]) => any) {
       channels.forEach((channel) => channel.on(event, listener))

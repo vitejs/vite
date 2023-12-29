@@ -329,6 +329,7 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
+
   /**
    * Open browser
    */
@@ -411,9 +412,8 @@ export async function _createServer(
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
-  const hot = createHMRBroadcaster()
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-  hot.addChannel(ws)
+  const hot = createHMRBroadcaster().addChannel(ws)
 
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
