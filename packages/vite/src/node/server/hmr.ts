@@ -2,7 +2,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
-import type { HMRPayload, Update } from 'types/hmrPayload'
+import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import {
@@ -51,6 +51,17 @@ interface PropagationBoundary {
   isWithinCircularImport: boolean
 }
 
+export interface HMRBroadcasterClient {
+  /**
+   * Send event to the client
+   */
+  send(payload: HMRPayload): void
+  /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
+}
+
 export interface HMRChannel {
   /**
    * Broadcast events to all clients
@@ -65,7 +76,11 @@ export interface HMRChannel {
    */
   on<T extends string>(
     event: T,
-    listener: (data: InferCustomEventPayload<T>, ...args: any[]) => void,
+    listener: (
+      data: InferCustomEventPayload<T>,
+      client: HMRBroadcasterClient,
+      ...args: any[]
+    ) => void,
   ): void
   /**
    * Unregister event listener.
@@ -77,9 +92,14 @@ export interface HMRChannel {
   close(): void
 }
 
-// TODO: more jsdoc
 export interface HMRBroadcaster extends HMRChannel {
-  channels: HMRChannel[]
+  /**
+   * All registered channels. Always has websocket channel.
+   */
+  readonly channels: HMRChannel[]
+  /**
+   * Add a new third-party channel.
+   */
   addChannel(connection: HMRChannel): void
 }
 
@@ -681,24 +701,24 @@ export function createHMRBroadcaster(): HMRBroadcaster {
   const channels: HMRChannel[] = []
   const broadcaster: HMRBroadcaster = {
     get channels() {
-      return channels
+      return [...channels]
     },
-    addChannel(connection) {
-      channels.push(connection)
+    addChannel(channel) {
+      channels.push(channel)
     },
     on(event, listener) {
-      channels.forEach((connection) => connection.on(event, listener))
+      channels.forEach((channel) => channel.on(event, listener))
       return broadcaster
     },
     off(event, listener) {
-      channels.forEach((connection) => connection.off(event, listener))
+      channels.forEach((channel) => channel.off(event, listener))
       return broadcaster
     },
     send(...args: any[]) {
-      channels.forEach((connection) => connection.send(...(args as [any])))
+      channels.forEach((channel) => channel.send(...(args as [any])))
     },
     close() {
-      return channels.map((connection) => connection.close())
+      return channels.map((channel) => channel.close())
     },
   }
   return broadcaster

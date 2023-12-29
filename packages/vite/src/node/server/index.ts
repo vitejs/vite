@@ -233,8 +233,16 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
+   * @deprecated use `hot` instead
    */
   ws: WebSocketServer
+  /**
+   * HMR broadcaster that can be used to send custom HMR messages to the client
+   *
+   * Always sends a message to at least a WebSocket client. Any third party can
+   * add a channel to the broadcaster to process messages so be aware of that
+   */
+  hot: HMRBroadcaster
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -322,12 +330,6 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
-
-  /**
-   * TODO: docs
-   */
-  hot: HMRBroadcaster
-
   /**
    * Open browser
    */
