@@ -84,11 +84,11 @@ export interface HMRChannel {
   ): void
   on(event: 'connection', listener: () => void): void
   /**
-   * Unregister event listener.
+   * Unregister event listener
    */
   off(event: string, listener: Function): void
   /**
-   * Called when server is closed.
+   * Disconnect all clients, called when server is closed or restarted.
    */
   close(): void
 }
