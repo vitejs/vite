@@ -82,6 +82,7 @@ export interface HMRChannel {
       ...args: any[]
     ) => void,
   ): void
+  on(event: 'connection', listener: () => void): void
   /**
    * Unregister event listener.
    */
@@ -706,7 +707,7 @@ export function createHMRBroadcaster(): HMRBroadcaster {
     addChannel(channel) {
       channels.push(channel)
     },
-    on(event, listener) {
+    on(event: string, listener: (...args: any[]) => any) {
       channels.forEach((channel) => channel.on(event, listener))
       return broadcaster
     },
