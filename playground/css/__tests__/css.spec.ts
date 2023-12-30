@@ -292,7 +292,7 @@ test('@import dependency that @import another dependency', async () => {
   expect(await getColor('.css-proxy-dep')).toBe('purple')
 })
 
-test('@import scss dependency that @import another dependency', async () => {
+test('@import scss dependency that has @import with a css extension pointing to another dependency', async () => {
   expect(await getColor('.scss-proxy-dep')).toBe('purple')
 })
 
