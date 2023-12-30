@@ -90,10 +90,10 @@ export interface HMRChannel {
   /**
    * Disconnect all clients, called when server is closed or restarted.
    */
-  close(): void
+  close(): void | Promise<void>
 }
 
-export interface HMRBroadcaster extends HMRChannel {
+export interface HMRBroadcaster extends Omit<HMRChannel, 'close'> {
   /**
    * All registered channels. Always has websocket channel.
    */
@@ -102,6 +102,7 @@ export interface HMRBroadcaster extends HMRChannel {
    * Add a new third-party channel.
    */
   addChannel(connection: HMRChannel): HMRBroadcaster
+  close(): Promise<unknown[]>
 }
 
 export function getShortName(file: string, root: string): string {
@@ -720,7 +721,7 @@ export function createHMRBroadcaster(): HMRBroadcaster {
       channels.forEach((channel) => channel.send(...(args as [any])))
     },
     close() {
-      return channels.map((channel) => channel.close())
+      return Promise.all(channels.map((channel) => channel.close()))
     },
   }
   return broadcaster
