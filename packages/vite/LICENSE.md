@@ -1136,7 +1136,7 @@ Repository: git+https://github.com/ljharb/define-data-property.git
 
 > MIT License
 > 
-> Copyright (c) 2023 Jordan Harband
+> Copyright (c) 2024 Jordan Harband
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
@@ -2464,7 +2464,7 @@ Repository: git://github.com/isaacs/minimatch.git
 
 > The ISC License
 > 
-> Copyright (c) 2011-2023 Isaac Z. Schlueter and Contributors
+> Copyright (c) 2011-2024 Isaac Z. Schlueter and Contributors
 > 
 > Permission to use, copy, modify, and/or distribute this software for any
 > purpose with or without fee is hereby granted, provided that the above
