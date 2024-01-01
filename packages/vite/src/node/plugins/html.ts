@@ -345,18 +345,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const nodeStartWithLeadingWhitespace = (
           node: DefaultTreeAdapterMap['node'],
         ) => {
-          if (node.sourceCodeLocation!.startOffset === 0)
-            return node.sourceCodeLocation!.startOffset
+          const startOffset = node.sourceCodeLocation!.startOffset
+          if (startOffset === 0) return 0
 
           // Gets the offset for the start of the line including the
           // newline trailing the previous node
           const lineStartOffset =
-            node.sourceCodeLocation!.startOffset -
-            node.sourceCodeLocation!.startCol
-          const line = s.slice(
-            Math.max(0, lineStartOffset),
-            node.sourceCodeLocation!.startOffset,
-          )
+            startOffset - node.sourceCodeLocation!.startCol
 
           // <previous-line-node></previous-line-node>
           // <target-node></target-node>
@@ -369,9 +364,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           //
           // However, if there is content between our target node start and the
           // previous newline, we cannot strip it out without risking content deletion.
-          return line.trim()
-            ? node.sourceCodeLocation!.startOffset
-            : lineStartOffset
+          let isLineEmpty = false
+          try {
+            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+            isLineEmpty = !line.trim()
+          } catch {
+            // magic-string may throw if there's some content removed in the sliced string,
+            // which we ignore and assume the line is not empty
+          }
+
+          return isLineEmpty ? lineStartOffset : startOffset
         }
 
         // pre-transform
