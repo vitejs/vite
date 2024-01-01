@@ -1070,7 +1070,7 @@ export const requireResolveFromRootWithFallback = (
 }
 
 export function emptyCssComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+  return raw.replace(multilineCommentsRE, (s) => blankReplacer(s))
 }
 
 function backwardCompatibleWorkerPlugins(plugins: any) {
