@@ -16,7 +16,7 @@ interface HotCallback {
 }
 
 interface HMRClientOptions {
-  sendBufferedMessage(message: string[]): void
+  sendCustomMessages(message: string[]): void
   // this allows implementing reloading via different methods depending on the environment
   importUpdatedModule(update: Update): Promise<ModuleNamespace>
 }
@@ -205,7 +205,7 @@ export class HMRClient {
   }
 
   public sendBuffer(): void {
-    this.options.sendBufferedMessage(this.buffer)
+    this.options.sendCustomMessages(this.buffer)
     this.buffer = []
   }
 

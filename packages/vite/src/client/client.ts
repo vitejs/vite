@@ -134,7 +134,7 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(console, {
-  sendBufferedMessage(messages) {
+  sendCustomMessages(messages) {
     if (socket.readyState === 1) {
       messages.forEach((msg) => socket.send(msg))
     }
