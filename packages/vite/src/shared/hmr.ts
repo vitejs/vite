@@ -15,18 +15,16 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
-interface Connection {
-  addBuffer(message: string): void
-  send(): unknown
+interface HMRConnection {
+  sendBuffer(message: string[]): void
 }
 
 export class HMRContext implements ViteHotContext {
   private newListeners: CustomListenersMap
 
   constructor(
-    private ownerPath: string,
     private hmrClient: HMRClient,
-    private connection: Connection,
+    private ownerPath: string,
   ) {
     if (!hmrClient.dataMap.has(ownerPath)) {
       hmrClient.dataMap.set(ownerPath, {})
@@ -141,8 +139,8 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.connection.addBuffer(JSON.stringify({ type: 'custom', event, data }))
-    this.connection.send()
+    this.hmrClient.addBuffer(JSON.stringify({ type: 'custom', event, data }))
+    this.hmrClient.sendBuffer()
   }
 
   private acceptDeps(
@@ -169,8 +167,11 @@ export class HMRClient {
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
 
+  private buffer: string[] = []
+
   constructor(
     public logger: Console,
+    private connection: HMRConnection,
     // this allows up to implement reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
   ) {}
@@ -199,6 +200,15 @@ export class HMRClient {
     })
   }
 
+  public addBuffer(message: string): void {
+    this.buffer.push(message)
+  }
+
+  public sendBuffer(): void {
+    this.connection.sendBuffer(this.buffer)
+    this.buffer = []
+  }
+
   protected warnFailedUpdate(err: Error, path: string | string[]): void {
     if (!err.message.includes('fetch')) {
       this.logger.error(err)
@@ -208,6 +218,26 @@ export class HMRClient {
         `This could be due to syntax errors or importing non-existent ` +
         `modules. (see errors above)`,
     )
+  }
+
+  private queued: Promise<(() => void) | undefined>[] = []
+  private pendingQueue = false
+
+  /**
+   * buffer multiple hot updates triggered by the same src change
+   * so that they are invoked in the same order they were sent.
+   * (otherwise the order may be inconsistent because of the http request round trip)
+   */
+  public async queueUpdate(payload: Update): Promise<void> {
+    this.queued.push(this.fetchUpdate(payload))
+    if (!this.pendingQueue) {
+      this.pendingQueue = true
+      await Promise.resolve()
+      this.pendingQueue = false
+      const loading = [...this.queued]
+      this.queued = []
+      ;(await Promise.all(loading)).forEach((fn) => fn && fn())
+    }
   }
 
   public async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
