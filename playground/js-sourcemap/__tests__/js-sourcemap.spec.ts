@@ -129,5 +129,10 @@ describe.runIf(isBuild)('build tests', () => {
         "version": 3,
       }
     `)
+    //
+    const js = findAssetFile(/after-preload-dynamic.*\.js$/)
+    expect(js.trim().split('\n').at(-1)).toMatch(
+      /^\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map$/,
+    )
   })
 })
