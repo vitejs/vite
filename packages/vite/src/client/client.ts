@@ -136,7 +136,7 @@ const pageReload = debounceReload(50)
 const hmrClient = new HMRClient(
   console,
   {
-    isReady: () => socket.readyState === 1,
+    isReady: () => socket && socket.readyState === 1,
     send: (message) => socket.send(message),
   },
   async function importUpdatedModule({
