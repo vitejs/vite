@@ -15,8 +15,10 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
-interface HMRConnection {
-  sendBuffer(message: string[]): void
+interface HMRClientOptions {
+  sendBufferedMessage(message: string[]): void
+  // this allows implementing reloading via different methods depending on the environment
+  importUpdatedModule(update: Update): Promise<ModuleNamespace>
 }
 
 export class HMRContext implements ViteHotContext {
@@ -171,9 +173,7 @@ export class HMRClient {
 
   constructor(
     public logger: Console,
-    private connection: HMRConnection,
-    // this allows up to implement reloading via different methods depending on the environment
-    private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
+    private options: HMRClientOptions,
   ) {}
 
   public async notifyListeners<T extends string>(
@@ -205,7 +205,7 @@ export class HMRClient {
   }
 
   public sendBuffer(): void {
-    this.connection.sendBuffer(this.buffer)
+    this.options.sendBufferedMessage(this.buffer)
     this.buffer = []
   }
 
@@ -262,7 +262,7 @@ export class HMRClient {
       const disposer = this.disposeMap.get(acceptedPath)
       if (disposer) await disposer(this.dataMap.get(acceptedPath))
       try {
-        fetchedModule = await this.importUpdatedModule(update)
+        fetchedModule = await this.options.importUpdatedModule(update)
       } catch (e) {
         this.warnFailedUpdate(e, acceptedPath)
       }

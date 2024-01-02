@@ -133,16 +133,13 @@ const debounceReload = (time: number) => {
 }
 const pageReload = debounceReload(50)
 
-const hmrClient = new HMRClient(
-  console,
-  {
-    sendBuffer(buffer) {
-      if (socket.readyState === 1) {
-        buffer.forEach((msg) => socket.send(msg))
-      }
-    },
+const hmrClient = new HMRClient(console, {
+  sendBufferedMessage(messages) {
+    if (socket.readyState === 1) {
+      messages.forEach((msg) => socket.send(msg))
+    }
   },
-  async function importUpdatedModule({
+  async importUpdatedModule({
     acceptedPath,
     timestamp,
     explicitImportRequired,
@@ -168,7 +165,7 @@ const hmrClient = new HMRClient(
     }
     return await importPromise
   },
-)
+})
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
