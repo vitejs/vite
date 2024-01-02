@@ -133,15 +133,13 @@ const debounceReload = (time: number) => {
 }
 const pageReload = debounceReload(50)
 
-const hmrClient = new HMRClient(console, {
-  sendCustomMessages(messages) {
-    if (socket.readyState === 1) {
-      messages.forEach((msg) => socket.send(msg))
-      return true
-    }
-    return false
+const hmrClient = new HMRClient(
+  console,
+  {
+    isReady: () => socket.readyState === 1,
+    send: (message) => socket.send(message),
   },
-  async importUpdatedModule({
+  async function importUpdatedModule({
     acceptedPath,
     timestamp,
     explicitImportRequired,
@@ -167,13 +165,13 @@ const hmrClient = new HMRClient(console, {
     }
     return await importPromise
   },
-})
+)
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
-      hmrClient.sendBuffer()
+      hmrClient.sendCustomMessages()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       setInterval(() => {

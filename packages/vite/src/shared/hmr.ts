@@ -15,19 +15,15 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
-interface HMRClientOptions {
+interface HMRConnection {
   /**
-   * Send buffered messages to the client.
-   *
-   * Should return `true` if messages are sent successfully.
+   * Checked before sending messages to the client.
    */
-  sendCustomMessages(messages: string[]): boolean
+  isReady(): boolean
   /**
-   * Execute the update.
-   *
-   * This allows implementing reloading via different methods depending on the environment
+   * Send message to the client.
    */
-  importUpdatedModule(update: Update): Promise<ModuleNamespace>
+  send(messages: string): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -151,7 +147,7 @@ export class HMRContext implements ViteHotContext {
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
     this.hmrClient.addBuffer(JSON.stringify({ type: 'custom', event, data }))
-    this.hmrClient.sendBuffer()
+    this.hmrClient.sendCustomMessages()
   }
 
   private acceptDeps(
@@ -182,7 +178,9 @@ export class HMRClient {
 
   constructor(
     public logger: Console,
-    private options: HMRClientOptions,
+    private connection: HMRConnection,
+    // This allows implementing reloading via different methods depending on the environment
+    private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
   ) {}
 
   public async notifyListeners<T extends string>(
@@ -213,10 +211,10 @@ export class HMRClient {
     this.buffer.push(message)
   }
 
-  public sendBuffer(): void {
-    const clearBuffer = this.options.sendCustomMessages(this.buffer)
-    if (clearBuffer) {
-      this.buffer.length = 0
+  public sendCustomMessages(): void {
+    if (this.connection.isReady()) {
+      this.buffer.forEach((msg) => this.connection.send(msg))
+      this.buffer = []
     }
   }
 
@@ -273,7 +271,7 @@ export class HMRClient {
       const disposer = this.disposeMap.get(acceptedPath)
       if (disposer) await disposer(this.dataMap.get(acceptedPath))
       try {
-        fetchedModule = await this.options.importUpdatedModule(update)
+        fetchedModule = await this.importUpdatedModule(update)
       } catch (e) {
         this.warnFailedUpdate(e, acceptedPath)
       }
