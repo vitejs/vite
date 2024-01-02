@@ -137,7 +137,9 @@ const hmrClient = new HMRClient(console, {
   sendCustomMessages(messages) {
     if (socket.readyState === 1) {
       messages.forEach((msg) => socket.send(msg))
+      return true
     }
+    return false
   },
   async importUpdatedModule({
     acceptedPath,

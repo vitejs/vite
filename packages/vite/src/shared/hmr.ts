@@ -16,8 +16,17 @@ interface HotCallback {
 }
 
 interface HMRClientOptions {
-  sendCustomMessages(message: string[]): void
-  // this allows implementing reloading via different methods depending on the environment
+  /**
+   * Send buffered messages to the client.
+   *
+   * Should return `true` if messages are sent successfully.
+   */
+  sendCustomMessages(messages: string[]): boolean
+  /**
+   * Execute the update.
+   *
+   * This allows implementing reloading via different methods depending on the environment
+   */
   importUpdatedModule(update: Update): Promise<ModuleNamespace>
 }
 
@@ -205,8 +214,10 @@ export class HMRClient {
   }
 
   public sendBuffer(): void {
-    this.options.sendCustomMessages(this.buffer)
-    this.buffer = []
+    const clearBuffer = this.options.sendCustomMessages(this.buffer)
+    if (clearBuffer) {
+      this.buffer.length = 0
+    }
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {
