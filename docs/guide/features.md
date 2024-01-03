@@ -631,18 +631,18 @@ const WORKER_NAME = 'MyWorkerName'
 const workerUrl = new URL('./worker.js', import.meta.url)
 // the declaration of the worker will be ignored by Vite due to the URL being declared in a separate variable
 const worker = new Worker(workerUrl, {
-    type: 'module',
-    // the non-static name option will trigger an error
-    name: WORKER_NAME
-))
+  type: 'module',
+  // the non-static name option will trigger an error
+  name: WORKER_NAME,
+})
 ```
 
 Here is how it should be:
 
 ```javascript
 const worker = new Worker(new URL('./worker.js', import.meta.url), {
-    type: 'module',
-    name: 'MyWorkerName'
+  type: 'module',
+  name: 'MyWorkerName',
 })
 ```
 
