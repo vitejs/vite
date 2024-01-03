@@ -257,9 +257,11 @@ async function createServer() {
     // HTML requests and 404s so user middlewares should be added
     // before Vite's middlewares to take effect instead
   })
+  return vite
 }
 
-createServer()
+const config = createServer()
+export default config
 ```
 
 ## server.fs.strict
