@@ -1,1 +1,1 @@
-export default 'test-alias-original'
+export default 'alias-original'

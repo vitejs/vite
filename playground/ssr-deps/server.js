@@ -37,6 +37,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
     resolve: {
       alias: {
         '@vitejs/test-alias': '/src/alias-replaced.js',
+        '@vitejs/test-alias-no-exist': '/src/alias-replaced.js',
       },
     },
     ssr: {

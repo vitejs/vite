@@ -119,8 +119,9 @@ test('import css library', async () => {
   expect(await page.textContent('.module-condition')).toMatch('[success]')
 })
 
-test('apply resolve.alias to library accessible as external', async () => {
+test('resolve.alias', async () => {
   await page.goto(url)
+  expect(await page.textContent('.alias-no-exist')).toMatch('alias-replaced')
   expect(await page.textContent('.alias')).toMatch('alias-replaced')
 })
 
