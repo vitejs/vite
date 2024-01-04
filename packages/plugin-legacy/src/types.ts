@@ -4,6 +4,10 @@ export interface Options {
    */
   targets?: string | string[] | { [key: string]: string }
   /**
+   * default: ['es2020', 'edge79', 'firefox67', 'chrome64', 'safari12']
+   */
+  modernTargets?: string | string[]
+  /**
    * default: true
    */
   polyfills?: boolean | string[]
