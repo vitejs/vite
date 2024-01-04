@@ -119,6 +119,11 @@ test('import css library', async () => {
   expect(await page.textContent('.module-condition')).toMatch('[success]')
 })
 
+test('apply resolve.alias to library accessible as external', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.alias')).toMatch('alias-replaced')
+})
+
 describe.runIf(isServe)('hmr', () => {
   test('handle isomorphic module updates', async () => {
     await page.goto(url)

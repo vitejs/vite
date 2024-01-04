@@ -1,0 +1,1 @@
+export default 'alias-replaced'
