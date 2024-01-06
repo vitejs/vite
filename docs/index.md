@@ -9,8 +9,8 @@ editLink: false
 ---
 
 <script setup>
-import Hero from './.vitepress/theme/components/landing/Hero.vue';
-import HomeSponsors from './.vitepress/theme/components/HomeSponsors.vue';
+import Hero from './.vitepress/theme/components/landing/Hero.vue'
+import HomeSponsors from './.vitepress/theme/components/HomeSponsors.vue'
 </script>
 
 <div class="VPHome">

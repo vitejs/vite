@@ -1,3 +1,9 @@
+<script setup lang="ts">
+
+import HeroDiagram from './HeroDiagram.vue'
+
+</script>
+
 <template>
   <div class="hero">
     <div class="container">
@@ -7,12 +13,11 @@
         target="_blank"
       >
         <img src="/viteconf.svg" alt="Viteconf logo" width="20" height="20" />
-        <span>Vite conf 2023</span>
+        <span>ViteConf 2023 - watch the replay</span>
       </a>
-      <h1>Vite is the next generation frontend tooling</h1>
+      <h1>Vite is the next generation of frontend tooling</h1>
       <h2>
-        Get ready for a development environment that can finally catch up with
-        you.
+        Get ready for a development environment that can finally catch up with you.
       </h2>
       <div class="hero__actions">
         <a href="/guide/" class="btn btn--primary">Get started</a>
@@ -27,7 +32,7 @@
     </div>
     <div class="hero__glow glow--purple" />
     <div class="hero__glow glow--blue" />
-    <div class="hero__diagram" />
+    <HeroDiagram />
   </div>
 </template>
 
@@ -143,7 +148,7 @@ h2 {
   &.glow--purple {
     position: absolute;
     left: 20vw;
-    width: 70vw;
+    width: 80vw;
     aspect-ratio: 4;
     pointer-events: none;
     z-index: -1;
@@ -155,7 +160,7 @@ h2 {
       rgba(189, 52, 254, 0) 100%
     );
     filter: blur(10vw);
-    transform: rotate(10deg);
+    transform: rotate(5deg);
   }
 }
 
@@ -165,10 +170,5 @@ h2 {
   gap: 20px;
 }
 
-.hero__diagram {
-  position: relative;
-  z-index: 2;
-  min-height: 40vh;
-}
+
 </style>
-<script setup lang="ts"></script>
