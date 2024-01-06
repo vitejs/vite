@@ -1,7 +1,5 @@
 <script setup lang="ts">
-
 import HeroDiagram from './HeroDiagram.vue'
-
 </script>
 
 <template>
@@ -17,7 +15,8 @@ import HeroDiagram from './HeroDiagram.vue'
       </a>
       <h1>Vite is the next generation of frontend tooling</h1>
       <h2>
-        Get ready for a development environment that can finally catch up with you.
+        Get ready for a development environment that can finally catch up with
+        you.
       </h2>
       <div class="hero__actions">
         <a href="/guide/" class="btn btn--primary">Get started</a>
@@ -135,7 +134,7 @@ h2 {
 .hero__glow {
   &.glow--blue {
     position: absolute;
-    left: -10vw;
+    left: -5vw;
     width: 40vw;
     aspect-ratio: 3;
     pointer-events: none;
@@ -143,20 +142,22 @@ h2 {
     border-radius: 50% 100% 100% 50%;
     background: linear-gradient(180deg, #61d9ff 0%, rgba(0, 0, 0, 0) 100%);
     filter: blur(10vw);
+    transform: rotate(-5deg) translate3d(0, 10vh, 0);
   }
 
   &.glow--purple {
     position: absolute;
-    left: 20vw;
+    left: 15vw;
     width: 80vw;
     aspect-ratio: 4;
     pointer-events: none;
     z-index: -1;
     border-radius: 100%;
     background: linear-gradient(
-      90deg,
-      rgba(113, 94, 189, 0.9) 0%,
-      rgba(128, 86, 194, 0.8) 80%,
+      270deg,
+      #7a23a1 0%,
+      rgba(113, 94, 189, 0.9) 60%,
+      rgba(113, 94, 189, 0.9) 80%,
       rgba(189, 52, 254, 0) 100%
     );
     filter: blur(10vw);
@@ -169,6 +170,4 @@ h2 {
   flex-direction: row;
   gap: 20px;
 }
-
-
 </style>

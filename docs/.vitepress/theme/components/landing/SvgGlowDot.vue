@@ -11,6 +11,16 @@ const props = defineProps({
     required: false,
     default: 0,
   },
+  glowColor: {
+    type: String,
+    required: false,
+    default: '#41D1FF',
+  },
+  dotColor: {
+    type: String,
+    required: false,
+    default: '#b6e4fa',
+  },
 })
 
 /**
@@ -55,7 +65,7 @@ const dotPosition = computed(() => {
     :cx="dotPosition.x"
     :cy="dotPosition.y"
     r="4"
-    fill="#b6e4fa"
+    :fill="props.dotColor"
     class="glow-effect"
   />
   <text
@@ -78,9 +88,21 @@ const dotPosition = computed(() => {
       x2="100%"
       gradientUnits="userSpaceOnUse"
     >
-      <stop :offset="gradientData.x1" stop-color="#41D1FF" stop-opacity="0" />
-      <stop :offset="gradientData.x2" stop-color="#41D1FF" stop-opacity="0.8" />
-      <stop :offset="gradientData.x3" stop-color="#41D1FF" stop-opacity="0" />
+      <stop
+        :offset="gradientData.x1"
+        :stop-color="props.glowColor"
+        stop-opacity="0"
+      />
+      <stop
+        :offset="gradientData.x2"
+        :stop-color="props.glowColor"
+        stop-opacity="0.8"
+      />
+      <stop
+        :offset="gradientData.x3"
+        :stop-color="props.glowColor"
+        stop-opacity="0"
+      />
     </linearGradient>
   </defs>
 </template>
