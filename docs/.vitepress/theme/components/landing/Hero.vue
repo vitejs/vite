@@ -35,7 +35,7 @@ import HeroDiagram from './HeroDiagram.vue'
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600&display=swap');
 
 .hero {
