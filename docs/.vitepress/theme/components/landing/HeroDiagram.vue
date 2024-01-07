@@ -6,8 +6,22 @@ import SvgGlowDot from './SvgGlowDot.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
-// Input Glows
-const nodeGlow1 = ref(0)
+// Initial positions
+const inputPositions = Array(7)
+  .fill()
+  .map(() => ref(0))
+const outputPosition = ref(0)
+
+// Input Paths
+const inputPaths = [
+  'M843.505 284.659L752.638 284.659C718.596 284.659 684.866 280.049 653.251 271.077L598.822 255.629L0.675021 1.00011',
+  'M843.505 298.181L724.342 297.36C708.881 297.36 693.45 296.409 678.22 294.518L598.822 284.659C592.82 284.659 200.538 190.002 0.675028 164.892',
+  'M843.505 311.703L701.108 310.061L598.822 305.136L0.675049 256.071',
+  'M843.505 325.224L598.822 326.002L0.675049 321.858',
+  'M843.505 338.746L701.108 340.388L598.822 345.442L0.675038 387.646',
+  'M843.505 352.268L724.342 353.088C708.881 353.088 693.45 354.039 678.22 355.93L598.822 365.789L0.675067 478.825',
+  'M843.505 365.789L752.638 365.789C718.596 365.789 684.866 370.399 653.251 379.372L598.822 394.82L0.675049 642.717',
+]
 
 // Input File Sets
 const inputFileSets = ref([
@@ -19,22 +33,26 @@ const inputFileSets = ref([
 ])
 
 onMounted(() => {
-  animateLineGlow(nodeGlow1)
+  animateLineGlow()
 })
 
-const animateLineGlow = (nodeGlow) => {
+const animateLineGlow = () => {
   const timeline = gsap.timeline()
-  timeline.to(
-    nodeGlow,
-    {
-      value: 1,
-      duration: 3,
-      ease: 'power1.out',
-      repeat: -1,
-      yoyo: true,
-    },
-    0,
-  )
+  const staggerAmount = 0.2 // Adjust this value for more or less staggering
+
+  for (let i = 0; i < 7; i++) {
+    timeline.to(
+      inputPositions[i],
+      {
+        value: 1,
+        duration: 3,
+        ease: 'power1.out',
+        repeat: -1,
+        yoyo: true,
+      },
+      i * staggerAmount,
+    )
+  }
 }
 </script>
 
@@ -48,103 +66,11 @@ const animateLineGlow = (nodeGlow) => {
       viewBox="0 0 844 644"
       fill="none"
     >
-      <!-- Line 1 -->
-      <path
-        ref="linePath1"
-        d="M843.505 284.659L752.638 284.659C718.596 284.659 684.866 280.049 653.251 271.077L598.822 255.629L0.675021 1.00011"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 1 Glow -->
-      <SvgGlowDot
-        path="M843.505 284.659L752.638 284.659C718.596 284.659 684.866 280.049 653.251 271.077L598.822 255.629L0.675021 1.00011"
-        :position="nodeGlow1"
-      />
-
-      <!-- Line 2 -->
-      <path
-        ref="linePath2"
-        d="M843.505 298.181L724.342 297.36C708.881 297.36 693.45 296.409 678.22 294.518L598.822 284.659C592.82 284.659 200.538 190.002 0.675028 164.892"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 2 Glow -->
-      <SvgGlowDot
-        path="M843.505 298.181L724.342 297.36C708.881 297.36 693.45 296.409 678.22 294.518L598.822 284.659C592.82 284.659 200.538 190.002 0.675028 164.892"
-        :position="nodeGlow1"
-      />
-
-      <!-- Line 3 -->
-      <path
-        ref="linePath3"
-        d="M843.505 311.703L701.108 310.061L598.822 305.136L0.675049 256.071"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 3 Glow -->
-      <SvgGlowDot
-        path="M843.505 311.703L701.108 310.061L598.822 305.136L0.675049 256.071"
-        :position="nodeGlow1"
-      />
-
-      <!-- Line 4 -->
-      <path
-        ref="linePath4"
-        d="M843.505 325.224L598.822 326.002L0.675049 321.858"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 4 Glow -->
-      <SvgGlowDot
-        path="M843.505 325.224L598.822 326.002L0.675049 321.858"
-        :position="nodeGlow1"
-      />
-
-      <!-- Line 5 -->
-      <path
-        ref="linePath5"
-        d="M843.505 338.746L701.108 340.388L598.822 345.442L0.675038 387.646"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 5 Glow -->
-      <SvgGlowDot
-        path="M843.505 338.746L701.108 340.388L598.822 345.442L0.675038 387.646"
-        :position="nodeGlow1"
-      />
-
-      <!-- Line 6 -->
-      <path
-        ref="linePath6"
-        d="M843.505 352.268L724.342 353.088C708.881 353.088 693.45 354.039 678.22 355.93L598.822 365.789L0.675067 478.825"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 6 Glow -->
-      <SvgGlowDot
-        path="M843.505 352.268L724.342 353.088C708.881 353.088 693.45 354.039 678.22 355.93L598.822 365.789L0.675067 478.825"
-        :position="nodeGlow1"
-      />
-
-      <!-- Line 7 -->
-      <path
-        ref="linePath7"
-        d="M843.505 365.789L752.638 365.789C718.596 365.789 684.866 370.399 653.251 379.372L598.822 394.82L0.675049 642.717"
-        stroke="url(#base_gradient)"
-        stroke-width="1.2"
-      />
-
-      <!-- Line 7 Glow -->
-      <SvgGlowDot
-        path="M843.505 365.789L752.638 365.789C718.596 365.789 684.866 370.399 653.251 379.372L598.822 394.82L0.675049 642.717"
-        :position="nodeGlow1"
-      />
+      <!-- Input Lines -->
+      <g v-for="(path, index) in inputPaths">
+        <path :d="path" stroke="url(#base_gradient)" stroke-width="1.2" />
+        <SvgGlowDot :path="path" :position="inputPositions[index].value" />
+      </g>
 
       <defs>
         <linearGradient
@@ -182,7 +108,7 @@ const animateLineGlow = (nodeGlow) => {
       <!-- Line 1 Glow -->
       <SvgGlowDot
         path="M843.463 1.3315L245.316 5.47507L0.633077 4.69725"
-        :position="nodeGlow1"
+        :position="outputPosition"
         dot-color="#ce9bf4"
         glow-color="#BD34FE"
       />
