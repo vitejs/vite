@@ -700,6 +700,9 @@ importers:
       '@vitejs/test-importee-pkg':
         specifier: file:importee-pkg
         version: file:playground/js-sourcemap/importee-pkg
+      magic-string:
+        specifier: ^0.30.5
+        version: 0.30.5
 
   playground/js-sourcemap/importee-pkg: {}
 

@@ -31,6 +31,27 @@ if (!isBuild) {
     `)
   })
 
+  test('plugin return sourcemap with `sources: [""]`', async () => {
+    const res = await page.request.get(new URL('./zoo.js', page.url()).href)
+    const js = await res.text()
+    expect(js).toContain('// add comment')
+
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
+        "sources": [
+          "zoo.js",
+        ],
+        "sourcesContent": [
+          "export const zoo = 'zoo'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
   test('js with inline sourcemap injected by a plugin', async () => {
     const res = await page.request.get(
       new URL('./foo-with-sourcemap.js', page.url()).href,
