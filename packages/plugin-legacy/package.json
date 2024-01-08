@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "acorn": "^8.11.2",
+    "esbuild-plugin-browserslist": "^0.10.0",
     "picocolors": "^1.0.0",
     "vite": "workspace:*"
   }

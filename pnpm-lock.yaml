@@ -226,6 +226,9 @@ importers:
       acorn:
         specifier: ^8.11.2
         version: 8.11.2
+      esbuild-plugin-browserslist:
+        specifier: ^0.10.0
+        version: 0.10.0(browserslist@4.22.2)
       picocolors:
         specifier: ^1.0.0
         version: 1.0.0
@@ -5603,6 +5606,20 @@ packages:
       d: 1.0.1
       ext: 1.6.0
     dev: false
+
+  /esbuild-plugin-browserslist@0.10.0(browserslist@4.22.2):
+    resolution: {integrity: sha512-rZWFcp3l+73xDiJB+Vl9UqP1VVs+L4E0lygbwJl6UTmW2qQago7DLT56hBu0vocH/TtZsAcRHj0+qHqkkB5Gww==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      browserslist: ^4.21.8
+      esbuild: ~0.19.2
+    dependencies:
+      browserslist: 4.22.2
+      debug: 4.3.4
+      zod: 3.21.4
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
 
   /esbuild@0.18.20:
     resolution: {integrity: sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA==}
