@@ -45,6 +45,12 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
+interface PropagationBoundary {
+  boundary: ModuleNode
+  acceptedVia: ModuleNode
+  isWithinCircularImport: boolean
+}
+
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
     ? path.posix.relative(root, file)
@@ -143,7 +149,8 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
-type HasDeadEnd = boolean | string
+type HasDeadEnd = boolean
+
 export function updateModules(
   file: string,
   modules: ModuleNode[],
@@ -157,7 +164,7 @@ export function updateModules(
   let needFullReload: HasDeadEnd = false
 
   for (const mod of modules) {
-    const boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[] = []
+    const boundaries: PropagationBoundary[] = []
     const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
 
     moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
@@ -172,16 +179,19 @@ export function updateModules(
     }
 
     updates.push(
-      ...boundaries.map(({ boundary, acceptedVia }) => ({
-        type: `${boundary.type}-update` as const,
-        timestamp,
-        path: normalizeHmrUrl(boundary.url),
-        explicitImportRequired:
-          boundary.type === 'js'
-            ? isExplicitImportRequired(acceptedVia.url)
-            : undefined,
-        acceptedPath: normalizeHmrUrl(acceptedVia.url),
-      })),
+      ...boundaries.map(
+        ({ boundary, acceptedVia, isWithinCircularImport }) => ({
+          type: `${boundary.type}-update` as const,
+          timestamp,
+          path: normalizeHmrUrl(boundary.url),
+          acceptedPath: normalizeHmrUrl(acceptedVia.url),
+          explicitImportRequired:
+            boundary.type === 'js'
+              ? isExplicitImportRequired(acceptedVia.url)
+              : false,
+          isWithinCircularImport,
+        }),
+      ),
     )
   }
 
@@ -258,7 +268,7 @@ function areAllImportsAccepted(
 function propagateUpdate(
   node: ModuleNode,
   traversedModules: Set<ModuleNode>,
-  boundaries: { boundary: ModuleNode; acceptedVia: ModuleNode }[],
+  boundaries: PropagationBoundary[],
   currentChain: ModuleNode[] = [node],
 ): HasDeadEnd {
   if (traversedModules.has(node)) {
@@ -279,9 +289,11 @@ function propagateUpdate(
   }
 
   if (node.isSelfAccepting) {
-    boundaries.push({ boundary: node, acceptedVia: node })
-    const result = isNodeWithinCircularImports(node, currentChain)
-    if (result) return result
+    boundaries.push({
+      boundary: node,
+      acceptedVia: node,
+      isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
+    })
 
     // additionally check for CSS importers, since a PostCSS plugin like
     // Tailwind JIT may register any file as a dependency to a CSS file.
@@ -305,9 +317,11 @@ function propagateUpdate(
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
   if (node.acceptedHmrExports) {
-    boundaries.push({ boundary: node, acceptedVia: node })
-    const result = isNodeWithinCircularImports(node, currentChain)
-    if (result) return result
+    boundaries.push({
+      boundary: node,
+      acceptedVia: node,
+      isWithinCircularImport: isNodeWithinCircularImports(node, currentChain),
+    })
   } else {
     if (!node.importers.size) {
       return true
@@ -328,9 +342,11 @@ function propagateUpdate(
     const subChain = currentChain.concat(importer)
 
     if (importer.acceptedHmrDeps.has(node)) {
-      boundaries.push({ boundary: importer, acceptedVia: node })
-      const result = isNodeWithinCircularImports(importer, subChain)
-      if (result) return result
+      boundaries.push({
+        boundary: importer,
+        acceptedVia: node,
+        isWithinCircularImport: isNodeWithinCircularImports(importer, subChain),
+      })
       continue
     }
 
@@ -369,7 +385,7 @@ function isNodeWithinCircularImports(
   nodeChain: ModuleNode[],
   currentChain: ModuleNode[] = [node],
   traversedModules = new Set<ModuleNode>(),
-): HasDeadEnd {
+): boolean {
   // To help visualize how each parameters work, imagine this import graph:
   //
   // A -> B -> C -> ACCEPTED -> D -> E -> NODE
@@ -420,7 +436,7 @@ function isNodeWithinCircularImports(
             importChain.map((m) => colors.dim(m.url)).join(' -> '),
         )
       }
-      return 'circular imports'
+      return true
     }
 
     // Continue recursively
