@@ -23,6 +23,7 @@ import {
   normalizePath,
   removeLeadingSlash,
   tryStatSync,
+  unique,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
@@ -1226,10 +1227,10 @@ function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
         include: optimizeDeps?.include
-          ? Array.from(new Set(optimizeDeps.include)).sort()
+          ? unique(optimizeDeps.include).sort()
           : undefined,
         exclude: optimizeDeps?.exclude
-          ? Array.from(new Set(optimizeDeps.exclude)).sort()
+          ? unique(optimizeDeps.exclude).sort()
           : undefined,
         esbuildOptions: {
           ...optimizeDeps?.esbuildOptions,
