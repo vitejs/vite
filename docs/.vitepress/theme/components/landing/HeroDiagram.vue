@@ -39,12 +39,16 @@ const inputFileSets = ref([
 const outputPosition = ref(0)
 
 onMounted(() => {
-  setInterval(() => {
-    animateInputLines()
-  }, 4000)
+  animateInputLines()
 })
 
+/**
+ * Animate the input lines at random
+ */
 const animateInputLines = () => {
+  const timeline = gsap.timeline({
+    onComplete: animateInputLines,
+  })
   const inputFileSet =
     inputFileSets.value[Math.floor(Math.random() * inputFileSets.value.length)]
   const inputLineIndexes = new Set()
@@ -52,10 +56,9 @@ const animateInputLines = () => {
     const index = Math.floor(Math.random() * inputLines.length)
     inputLineIndexes.add(index)
   }
-  Array.from(inputLineIndexes).forEach((lineIndex, fileIndex) => {
-    console.log(lineIndex, fileIndex)
+  ;[...inputLineIndexes].forEach((lineIndex, fileIndex) => {
     inputLines[lineIndex].label.value = inputFileSet[fileIndex]
-    animateInputLine(inputLines[lineIndex])
+    timeline.add(animateInputLine(inputLines[lineIndex]), fileIndex * 0.2)
   })
 }
 
