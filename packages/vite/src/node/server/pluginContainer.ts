@@ -600,7 +600,20 @@ export async function createPluginContainer(
           break
         }
         if (!combinedMap) {
-          combinedMap = m as SourceMap
+          const sm = m as SourceMap
+          // sourcemap should not include `sources: [null]` (because `sources` should be string) nor
+          // `sources: ['']` (because `''` means the path of sourcemap)
+          // but MagicString generates this when `filename` option is not set.
+          // Rollup supports these and therefore we support this as well
+          if (sm.sources.length === 1 && !sm.sources[0]) {
+            combinedMap = {
+              ...sm,
+              sources: [this.filename],
+              sourcesContent: [this.originalCode],
+            }
+          } else {
+            combinedMap = sm
+          }
         } else {
           combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             m as RawSourceMap,
