@@ -1,0 +1,53 @@
+<script setup>
+import SvgNode from './SvgNode.vue'
+
+defineProps({
+  inputLines: {
+    type: Array,
+    required: true,
+  },
+})
+</script>
+
+<template>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="844"
+    height="644"
+    viewBox="0 0 844 644"
+    fill="none"
+    class="input-lines"
+  >
+    <!-- Input Lines -->
+    <g v-for="inputLine in inputLines">
+      <path
+        :d="inputLine.path"
+        stroke="url(#base_gradient)"
+        stroke-width="1.2"
+      />
+      <SvgNode
+        :path="inputLine.path"
+        :position="inputLine.position.value"
+        :visible="inputLine.visible.value"
+        :label-visible="inputLine.labelVisible.value"
+        :label="inputLine.label.value"
+      />
+    </g>
+
+    <defs>
+      <linearGradient
+        id="base_gradient"
+        x1="88.1032"
+        y1="324.167"
+        x2="843.505"
+        y2="324.167"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0" stop-color="white" stop-opacity="0" />
+        <stop offset="0.5" stop-color="white" stop-opacity="0.33" />
+        <stop offset="0.7" stop-color="white" stop-opacity="0.2" />
+        <stop offset="0.9" stop-color="white" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+  </svg>
+</template>
