@@ -1,3 +1,14 @@
+## <small>5.0.11 (2024-01-05)</small>
+
+* fix: don't pretransform classic script links (#15361) ([19e3c9a](https://github.com/vitejs/vite/commit/19e3c9a)), closes [#15361](https://github.com/vitejs/vite/issues/15361)
+* fix: inject `__vite__mapDeps` code before sourcemap file comment (#15483) ([d2aa096](https://github.com/vitejs/vite/commit/d2aa096)), closes [#15483](https://github.com/vitejs/vite/issues/15483)
+* fix(assets): avoid splitting `,` inside base64 value of `srcset` attribute (#15422) ([8de7bd2](https://github.com/vitejs/vite/commit/8de7bd2)), closes [#15422](https://github.com/vitejs/vite/issues/15422)
+* fix(html): handle offset magic-string slice error (#15435) ([5ea9edb](https://github.com/vitejs/vite/commit/5ea9edb)), closes [#15435](https://github.com/vitejs/vite/issues/15435)
+* chore(deps): update dependency strip-literal to v2 (#15475) ([49d21fe](https://github.com/vitejs/vite/commit/49d21fe)), closes [#15475](https://github.com/vitejs/vite/issues/15475)
+* chore(deps): update tj-actions/changed-files action to v41 (#15476) ([2a540ee](https://github.com/vitejs/vite/commit/2a540ee)), closes [#15476](https://github.com/vitejs/vite/issues/15476)
+
+
+
 ## <small>5.0.10 (2023-12-15)</small>
 
 * fix: omit protocol does not require pre-transform (#15355) ([d9ae1b2](https://github.com/vitejs/vite/commit/d9ae1b2)), closes [#15355](https://github.com/vitejs/vite/issues/15355)
