@@ -12,7 +12,7 @@ const serveNpmCodeDirectlyMiddleware = async (req, res, next) => {
       const code = await fs.readFile(
         new URL(`./node_modules/${file}`, import.meta.url),
       )
-      res.setHeader('Content-Type', 'application/javascript')
+      res.setHeader('Content-Type', 'text/javascript')
       res.end(code)
       return
     }

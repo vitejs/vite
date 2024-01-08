@@ -56,8 +56,8 @@ test('generates assets', async () => {
           'index-legacy: text/html',
           'chunk-async: text/html',
           'chunk-async-legacy: text/html',
-          'immutable-chunk: application/javascript',
-          'immutable-chunk-legacy: application/javascript',
+          'immutable-chunk: text/javascript',
+          'immutable-chunk-legacy: text/javascript',
           'polyfills-legacy: text/html',
         ].join('\n')
       : [

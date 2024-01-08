@@ -7,7 +7,7 @@ settings:
 overrides:
   vite: workspace:*
 
-packageExtensionsChecksum: de16c2a1a6a6350aaa9e478e59cca00e
+packageExtensionsChecksum: 4e49e84b7a11dfd4895fbffb006a7015
 
 patchedDependencies:
   chokidar@3.5.3:
@@ -16,9 +16,9 @@ patchedDependencies:
   dotenv-expand@10.0.0:
     hash: weuqf2vlv5b5g6cikeo4slurbm
     path: patches/dotenv-expand@10.0.0.patch
-  sirv@2.0.3:
-    hash: z45f224eewh2pgpijxcc3aboqm
-    path: patches/sirv@2.0.3.patch
+  sirv@2.0.4:
+    hash: amdes53ifqfntejkflpaq5ifce
+    path: patches/sirv@2.0.4.patch
 
 importers:
 
@@ -358,8 +358,8 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
       mrmime:
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: ^2.0.0
+        version: 2.0.0
       okie:
         specifier: ^1.0.1
         version: 1.0.1
@@ -397,8 +397,8 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0(rollup@4.2.0)
       sirv:
-        specifier: ^2.0.3
-        version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
+        specifier: ^2.0.4
+        version: 2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce)
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
@@ -735,8 +735,8 @@ importers:
   playground/lib:
     devDependencies:
       sirv:
-        specifier: ^2.0.3
-        version: 2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm)
+        specifier: ^2.0.4
+        version: 2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce)
 
   playground/minify:
     dependencies:
@@ -3442,8 +3442,8 @@ packages:
     dev: true
     optional: true
 
-  /@polka/url@1.0.0-next.21:
-    resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
+  /@polka/url@1.0.0-next.24:
+    resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
   /@rollup/plugin-alias@5.0.0(rollup@3.29.2):
@@ -4404,6 +4404,9 @@ packages:
     engines: {node: '>=0.4.0'}
     peerDependencies:
       acorn: '*'
+    peerDependenciesMeta:
+      acorn:
+        optional: true
     dependencies:
       acorn: 8.11.2
 
@@ -7616,6 +7619,11 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
+  /mrmime@2.0.0:
+    resolution: {integrity: sha512-eu38+hdgojoyq63s+yTpN4XMBdt5l8HhMhc4VKLO9KM5caLIBvUm4thi7fFaxyTmCKeNnXZ5pAlBwCUnhA09uw==}
+    engines: {node: '>=10'}
+    dev: true
+
   /ms@2.0.0:
     resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
 
@@ -8894,12 +8902,12 @@ packages:
     requiresBuild: true
     dev: true
 
-  /sirv@2.0.3(patch_hash=z45f224eewh2pgpijxcc3aboqm):
-    resolution: {integrity: sha512-O9jm9BsID1P+0HOi81VpXPoDxYP374pkOLzACAoyUQ/3OUVndNpsz6wMnY2z+yOxzbllCKZrM+9QrWsv4THnyA==}
+  /sirv@2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce):
+    resolution: {integrity: sha512-94Bdh3cC2PKrbgSOUqTiGPWVZeSiXfKOVZNJniWoqrWrRkB1CJzBU3NEbiTsPcYy1lDsANA/THzS+9WBiy5nfQ==}
     engines: {node: '>= 10'}
     dependencies:
-      '@polka/url': 1.0.0-next.21
-      mrmime: 1.0.1
+      '@polka/url': 1.0.0-next.24
+      mrmime: 2.0.0
       totalist: 3.0.0
     dev: true
     patched: true

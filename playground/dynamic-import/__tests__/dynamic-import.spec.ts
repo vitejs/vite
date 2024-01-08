@@ -118,7 +118,7 @@ test('should load dynamic import with vars raw', async () => {
 test('should load dynamic import with vars url', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-url'),
-    isBuild ? 'data:application/javascript' : '/alias/url.js',
+    isBuild ? 'data:text/javascript' : '/alias/url.js',
     true,
   )
 })
