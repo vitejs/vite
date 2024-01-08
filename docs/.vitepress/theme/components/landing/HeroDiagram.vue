@@ -35,8 +35,27 @@ const inputFileSets = ref([
   ['.svg', '.html', '.json'],
 ])
 
-// Output line
-const outputPosition = ref(0)
+// Output lines
+const outputLines = [
+  {
+    position: ref(0),
+    visible: ref(false),
+    labelVisible: ref(false),
+    label: ref('.html'),
+  },
+  {
+    position: ref(0),
+    visible: ref(false),
+    labelVisible: ref(false),
+    label: ref('.css'),
+  },
+  {
+    position: ref(0),
+    visible: ref(false),
+    labelVisible: ref(false),
+    label: ref('.js'),
+  },
+]
 
 onMounted(() => {
   animateInputLines()
@@ -60,6 +79,82 @@ const animateInputLines = () => {
     inputLines[lineIndex].label.value = inputFileSet[fileIndex]
     timeline.add(animateInputLine(inputLines[lineIndex]), fileIndex * 0.2)
   })
+  outputLines.forEach((outputLine, index) => {
+    timeline.add(animateOutputLine(outputLine, index), 3 + 0.2 * index)
+  })
+}
+
+const animateOutputLine = (outputLine, index) => {
+  const timeline = gsap.timeline()
+
+  // Reset the line
+  timeline.set(
+    outputLine.position,
+    {
+      value: 0,
+    },
+    0,
+  )
+
+  // Animate the dot in
+  timeline.to(
+    outputLine.position,
+    {
+      value: (0.7 / 3) * (index + 1) + 0.05,
+      duration: 1.5,
+      ease: 'expo.out',
+    },
+    0,
+  )
+
+  // Show the dot
+  timeline.set(
+    outputLine.visible,
+    {
+      value: true,
+    },
+    0,
+  )
+
+  // Show the label
+  timeline.set(
+    outputLine.labelVisible,
+    {
+      value: true,
+    },
+    0.4,
+  )
+
+  // Animate the dot out
+  timeline.to(
+    outputLine.position,
+    {
+      value: 1,
+      duration: 1.5,
+      ease: 'power3.in',
+    },
+    1.5,
+  )
+
+  // Hide the label
+  timeline.set(
+    outputLine.labelVisible,
+    {
+      value: false,
+    },
+    2,
+  )
+
+  // Hide the dot
+  timeline.set(
+    outputLine.visible,
+    {
+      value: false,
+    },
+    2.5,
+  )
+
+  return timeline
 }
 
 const animateInputLine = (inputLine) => {
@@ -80,7 +175,7 @@ const animateInputLine = (inputLine) => {
     {
       value: 0.3,
       duration: 1.5,
-      ease: 'power3.out',
+      ease: 'expo.out',
     },
     0,
   )
@@ -111,7 +206,7 @@ const animateInputLine = (inputLine) => {
       duration: 1.5,
       ease: 'power3.in',
     },
-    2,
+    1.5,
   )
 
   // Hide the label
@@ -120,7 +215,7 @@ const animateInputLine = (inputLine) => {
     {
       value: false,
     },
-    2.5,
+    2,
   )
 
   // Hide the dot
@@ -129,7 +224,7 @@ const animateInputLine = (inputLine) => {
     {
       value: false,
     },
-    3.0,
+    2.5,
   )
 
   // Return the timeline
@@ -197,13 +292,19 @@ const animateInputLine = (inputLine) => {
         stroke-width="1.2"
       />
 
-      <!-- Line 1 Glow -->
-      <SvgGlowDot
-        path="M843.463 1.3315L245.316 5.47507L0.633077 4.69725"
-        :position="outputPosition"
-        dot-color="#ce9bf4"
-        glow-color="#BD34FE"
-      />
+      <!-- Output Lines -->
+      <g v-for="outputLine in outputLines">
+        <SvgGlowDot
+          path="M843.463 1.3315L245.316 5.47507L0.633077 4.69725"
+          :position="outputLine.position.value"
+          :visible="outputLine.visible.value"
+          :label-visible="outputLine.labelVisible.value"
+          :label="outputLine.label.value"
+          dot-color="#ce9bf4"
+          glow-color="#BD34FE"
+        />
+      </g>
+
       <defs>
         <linearGradient id="output_gradient" gradientUnits="userSpaceOnUse">
           <stop offset="0.1" stop-color="white" stop-opacity="0" />

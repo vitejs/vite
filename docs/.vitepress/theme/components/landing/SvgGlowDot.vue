@@ -42,7 +42,7 @@ const props = defineProps({
 /**
  * A unique id for the path, to avoid collisions in a single SVG output.
  */
-const pathId = computed(() => `${props.path.replace(/\s/g, '')}`)
+const pathId = ref(Math.random().toString(36))
 
 /**
  * A ref for the path element in the SVG DOM.
