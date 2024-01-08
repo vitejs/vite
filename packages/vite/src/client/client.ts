@@ -138,9 +138,10 @@ const hmrClient = new HMRClient(console, async function importUpdatedModule({
   acceptedPath,
   timestamp,
   explicitImportRequired,
+  isWithinCircularImport,
 }) {
   const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
-  return await import(
+  const importPromise = import(
     /* @vite-ignore */
     base +
       acceptedPathWithoutQuery.slice(1) +
@@ -148,6 +149,16 @@ const hmrClient = new HMRClient(console, async function importUpdatedModule({
         query ? `&${query}` : ''
       }`
   )
+  if (isWithinCircularImport) {
+    importPromise.catch(() => {
+      console.info(
+        `[hmr] ${acceptedPath} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order. ` +
+          `To debug and break the circular import, you can run \`vite --debug hmr\` to log the circular dependency path if a file change triggered it.`,
+      )
+      pageReload()
+    })
+  }
+  return await importPromise
 })
 
 async function handleMessage(payload: HMRPayload) {
