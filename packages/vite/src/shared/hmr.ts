@@ -146,8 +146,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.addBuffer(JSON.stringify({ type: 'custom', event, data }))
-    this.hmrClient.sendCustomMessages()
+    this.hmrClient.sendMessage(JSON.stringify({ type: 'custom', event, data }))
   }
 
   private acceptDeps(
@@ -174,7 +173,7 @@ export class HMRClient {
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
 
-  private buffer: string[] = []
+  private messageQueue: string[] = []
 
   constructor(
     public logger: Console,
@@ -207,14 +206,15 @@ export class HMRClient {
     })
   }
 
-  public addBuffer(message: string): void {
-    this.buffer.push(message)
+  public sendMessage(message: string): void {
+    this.messageQueue.push(message)
+    this.flushMessageQueue()
   }
 
-  public sendCustomMessages(): void {
+  public flushMessageQueue(): void {
     if (this.connection.isReady()) {
-      this.buffer.forEach((msg) => this.connection.send(msg))
-      this.buffer = []
+      this.messageQueue.forEach((msg) => this.connection.send(msg))
+      this.messageQueue = []
     }
   }
 
@@ -229,8 +229,8 @@ export class HMRClient {
     )
   }
 
-  private queued: Promise<(() => void) | undefined>[] = []
-  private pendingQueue = false
+  private updateQueue: Promise<(() => void) | undefined>[] = []
+  private pendingUpdateQueue = false
 
   /**
    * buffer multiple hot updates triggered by the same src change
@@ -238,13 +238,13 @@ export class HMRClient {
    * (otherwise the order may be inconsistent because of the http request round trip)
    */
   public async queueUpdate(payload: Update): Promise<void> {
-    this.queued.push(this.fetchUpdate(payload))
-    if (!this.pendingQueue) {
-      this.pendingQueue = true
+    this.updateQueue.push(this.fetchUpdate(payload))
+    if (!this.pendingUpdateQueue) {
+      this.pendingUpdateQueue = true
       await Promise.resolve()
-      this.pendingQueue = false
-      const loading = [...this.queued]
-      this.queued = []
+      this.pendingUpdateQueue = false
+      const loading = [...this.updateQueue]
+      this.updateQueue = []
       ;(await Promise.all(loading)).forEach((fn) => fn && fn())
     }
   }
