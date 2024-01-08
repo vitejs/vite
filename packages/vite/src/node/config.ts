@@ -420,7 +420,7 @@ export async function resolveConfig(
   const configEnv: ConfigEnv = {
     mode,
     command,
-    isSsrBuild: !!config.build?.ssr,
+    isSsrBuild: command === 'build' && !!config.build?.ssr,
     isPreview,
   }
 
