@@ -41,6 +41,7 @@ When passing a variable of SVG string to a manually constructed `url()` through 
 </script>
 
 <main>
+  {/* viteIcon should be wrapped within double quotes */}
   <div style='background: url("{viteIcon}")'>
 </main>
 ```
