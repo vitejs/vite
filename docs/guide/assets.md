@@ -30,6 +30,37 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - TypeScript, by default, does not recognize static asset imports as valid modules. To fix this, include [`vite/client`](./features#client-types).
 
+::: tip Inlining SVGs through `url()`
+When passing a variable of SVG string to a manually constructed `url()` through a JS framework, such as `styled-components` or `svelte`, the variable should be wrapped within double quotes.
+
+```js
+// App.svelte
+
+<script lang="ts">
+  import viteIcon from './assets/vite.svg'
+</script>
+
+<main>
+  <div style='background: url("{viteIcon}")'>
+</main>
+```
+
+```
+import viteIcon from 'assets/vite.vg?url'
+
+export const Div = styled.div`
+  /*
+   * Below do not work
+  background: url(${viteIcon});
+  background: url('${viteIcon}');
+  */
+  /* Only this works */
+  background: url("${viteIcon}");
+`
+```
+
+:::
+
 ### Explicit URL Imports
 
 Assets that are not included in the internal list or in `assetsInclude`, can be explicitly imported as a URL using the `?url` suffix. This is useful, for example, to import [Houdini Paint Worklets](https://houdini.how/usage).
