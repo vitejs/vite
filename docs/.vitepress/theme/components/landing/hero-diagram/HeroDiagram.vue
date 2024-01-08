@@ -60,6 +60,10 @@ const outputLines = [
   },
 ]
 
+// Indicators
+const blueIndicator = ref(false)
+const pinkIndicator = ref(false)
+
 /**
  * Start all animations when mounted
  */
@@ -85,9 +89,14 @@ const animateDiagram = () => {
     inputLines[lineIndex].label.value = inputFileSet[fileIndex]
     timeline.add(animateInputLine(inputLines[lineIndex]), fileIndex * 0.2)
   })
+  timeline.set(blueIndicator, { value: true }, 2.9)
+  timeline.set(pinkIndicator, { value: true }, 3.3)
   outputLines.forEach((outputLine, index) => {
-    timeline.add(animateOutputLine(outputLine, index), 3 + 0.2 * index)
+    timeline.add(animateOutputLine(outputLine, index), 3.6 + 0.2 * index)
   })
+  timeline.set(blueIndicator, { value: false }, '>-1')
+  timeline.set(pinkIndicator, { value: false }, '<')
+  timeline.set({}, {}, '+=0.2')
 }
 
 /**
@@ -146,7 +155,7 @@ const animateOutputLine = (outputLine, index) => {
       duration: 1.5,
       ease: 'power3.in',
     },
-    1.5,
+    2.5,
   )
 
   // Hide the label
@@ -155,7 +164,7 @@ const animateOutputLine = (outputLine, index) => {
     {
       value: false,
     },
-    2,
+    3,
   )
 
   // Hide the dot
@@ -164,7 +173,7 @@ const animateOutputLine = (outputLine, index) => {
     {
       value: false,
     },
-    2.5,
+    3.5,
   )
 
   return timeline
@@ -259,10 +268,10 @@ const animateInputLine = (inputLine) => {
     <SvgOutputs :output-lines="outputLines" />
 
     <!-- Blue Indicator -->
-    <SvgBlueIndicator />
+    <SvgBlueIndicator :active="blueIndicator" />
 
     <!-- Pink Indicator -->
-    <SvgPinkIndicator />
+    <SvgPinkIndicator :active="pinkIndicator" />
 
     <!-- Vite Chip -->
     <div class="vite-chip">

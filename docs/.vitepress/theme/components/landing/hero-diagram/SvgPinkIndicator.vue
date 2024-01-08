@@ -1,3 +1,13 @@
+<script setup>
+const props = defineProps({
+  active: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+})
+</script>
+
 <template>
   <svg
     width="141"
@@ -6,6 +16,7 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     class="pink-indicator"
+    :class="{ active: active }"
   >
     <g opacity="0.2" filter="url(#filter0_d_1_8)">
       <path
@@ -63,6 +74,7 @@
       height="9.23333"
       rx="1.15417"
       fill="#BD34FE"
+      v-show="active"
     />
     <rect
       x="110.513"
@@ -82,6 +94,7 @@
         rx="1.73125"
         fill="#BD34FE"
         fill-opacity="0.5"
+        v-show="active"
       />
     </g>
     <defs>
@@ -196,7 +209,7 @@
     </defs>
   </svg>
   <!-- Pink Glow -->
-  <div class="pink-glow" />
+  <div class="pink-glow" :class="{ active: active }" />
 </template>
 
 <style scoped>
@@ -204,7 +217,13 @@
   position: absolute;
   top: 202px;
   left: 840px;
-  opacity: 0.9;
+  opacity: 0.2;
+  transition: opacity 1s ease-in-out;
+
+  &.active {
+    transition: opacity 0.2s ease-in-out;
+    opacity: 0.5;
+  }
 }
 
 .pink-glow {
@@ -213,8 +232,16 @@
   aspect-ratio: 2;
   position: absolute;
   top: 202px;
-  left: 900px;
+  left: 905px;
   z-index: -1;
-  filter: blur(50px);
+  filter: blur(40px);
+  opacity: 0;
+  transition: all 3s ease-out;
+
+  &.active {
+    transition: all 0.2s ease-in-out;
+    opacity: 0.6;
+    filter: blur(60px);
+  }
 }
 </style>
