@@ -6,13 +6,7 @@ import SvgGlowDot from './SvgGlowDot.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
-// Initial positions
-const inputPositions = Array(7)
-  .fill()
-  .map(() => ref(0))
-const outputPosition = ref(0)
-
-// Input Paths
+// Input paths
 const inputPaths = [
   'M843.505 284.659L752.638 284.659C718.596 284.659 684.866 280.049 653.251 271.077L598.822 255.629L0.675021 1.00011',
   'M843.505 298.181L724.342 297.36C708.881 297.36 693.45 296.409 678.22 294.518L598.822 284.659C592.82 284.659 200.538 190.002 0.675028 164.892',
@@ -23,6 +17,15 @@ const inputPaths = [
   'M843.505 365.789L752.638 365.789C718.596 365.789 684.866 370.399 653.251 379.372L598.822 394.82L0.675049 642.717',
 ]
 
+// Input lines
+const inputLines = inputPaths.map((path) => ({
+  position: ref(0),
+  visible: ref(false),
+  labelVisible: ref(false),
+  label: ref(''),
+  path,
+}))
+
 // Input File Sets
 const inputFileSets = ref([
   ['.jsx', '.sass', '.vue'],
@@ -32,27 +35,102 @@ const inputFileSets = ref([
   ['.svg', '.html', '.json'],
 ])
 
+// Output line
+const outputPosition = ref(0)
+
 onMounted(() => {
-  animateLineGlow()
+  setInterval(() => {
+    animateInputLines()
+  }, 4000)
 })
 
-const animateLineGlow = () => {
-  const timeline = gsap.timeline()
-  const staggerAmount = 0.2 // Adjust this value for more or less staggering
-
-  for (let i = 0; i < 7; i++) {
-    timeline.to(
-      inputPositions[i],
-      {
-        value: 1,
-        duration: 3,
-        ease: 'power1.out',
-        repeat: -1,
-        yoyo: true,
-      },
-      i * staggerAmount,
-    )
+const animateInputLines = () => {
+  const inputFileSet =
+    inputFileSets.value[Math.floor(Math.random() * inputFileSets.value.length)]
+  const inputLineIndexes = new Set()
+  while (inputLineIndexes.size < 3) {
+    const index = Math.floor(Math.random() * inputLines.length)
+    inputLineIndexes.add(index)
   }
+  Array.from(inputLineIndexes).forEach((lineIndex, fileIndex) => {
+    console.log(lineIndex, fileIndex)
+    inputLines[lineIndex].label.value = inputFileSet[fileIndex]
+    animateInputLine(inputLines[lineIndex])
+  })
+}
+
+const animateInputLine = (inputLine) => {
+  const timeline = gsap.timeline()
+
+  // Reset the line
+  timeline.set(
+    inputLine.position,
+    {
+      value: 0,
+    },
+    0,
+  )
+
+  // Animate the dot in
+  timeline.to(
+    inputLine.position,
+    {
+      value: 0.3,
+      duration: 1.5,
+      ease: 'power3.out',
+    },
+    0,
+  )
+
+  // Show the dot
+  timeline.set(
+    inputLine.visible,
+    {
+      value: true,
+    },
+    0,
+  )
+
+  // Show the label
+  timeline.set(
+    inputLine.labelVisible,
+    {
+      value: true,
+    },
+    0.4,
+  )
+
+  // Animate the dot out
+  timeline.to(
+    inputLine.position,
+    {
+      value: 1,
+      duration: 1.5,
+      ease: 'power3.in',
+    },
+    2,
+  )
+
+  // Hide the label
+  timeline.set(
+    inputLine.labelVisible,
+    {
+      value: false,
+    },
+    2.5,
+  )
+
+  // Hide the dot
+  timeline.set(
+    inputLine.visible,
+    {
+      value: false,
+    },
+    3.0,
+  )
+
+  // Return the timeline
+  return timeline
 }
 </script>
 
@@ -65,11 +143,22 @@ const animateLineGlow = () => {
       height="644"
       viewBox="0 0 844 644"
       fill="none"
+      class="input-lines"
     >
       <!-- Input Lines -->
-      <g v-for="(path, index) in inputPaths">
-        <path :d="path" stroke="url(#base_gradient)" stroke-width="1.2" />
-        <SvgGlowDot :path="path" :position="inputPositions[index].value" />
+      <g v-for="inputLine in inputLines">
+        <path
+          :d="inputLine.path"
+          stroke="url(#base_gradient)"
+          stroke-width="1.2"
+        />
+        <SvgGlowDot
+          :path="inputLine.path"
+          :position="inputLine.position.value"
+          :visible="inputLine.visible.value"
+          :label-visible="inputLine.labelVisible.value"
+          :label="inputLine.label.value"
+        />
       </g>
 
       <defs>

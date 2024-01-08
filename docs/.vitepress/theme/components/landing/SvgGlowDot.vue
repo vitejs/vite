@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { gsap } from 'gsap'
 
 const props = defineProps({
   path: {
@@ -10,6 +11,21 @@ const props = defineProps({
     type: Number,
     required: false,
     default: 0,
+  },
+  label: {
+    type: String,
+    required: false,
+    default: null,
+  },
+  visible: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+  labelVisible: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
   glowColor: {
     type: String,
@@ -34,13 +50,24 @@ const pathId = computed(() => `${props.path.replace(/\s/g, '')}`)
 const pathElement = ref(null)
 
 /**
+ * The radius on each side of the dot, represented as a glow on the SVG path.
+ */
+const gradientWidth = ref(0.04)
+
+/**
+ * A scale factor for animating the gradient width.
+ */
+const gradientWidthScaleFactor = ref(props.visible ? 1 : 0)
+
+/**
  * The computed data needed to animate the gradient for the line glow.
  */
 const gradientData = computed(() => {
+  const width = gradientWidth.value * gradientWidthScaleFactor.value
   return {
-    x1: props.position - 0.04,
+    x1: props.position - width,
     x2: props.position,
-    x3: props.position + 0.04,
+    x3: props.position + width,
   }
 })
 
@@ -52,6 +79,30 @@ const dotPosition = computed(() => {
   const pathLength = pathElement.value.getTotalLength()
   return pathElement.value.getPointAtLength((1 - props.position) * pathLength)
 })
+
+/**
+ * The radius of the dot.
+ */
+const dotRadius = ref(props.visible ? 4 : 0)
+
+/**
+ * Watch for changes to the visible prop and animate the glow and dot radius.
+ */
+watch(
+  () => props.visible,
+  (visible) => {
+    gsap.to(gradientWidthScaleFactor, {
+      duration: 0.5,
+      ease: 'power2.inOut',
+      value: visible ? 1 : 0,
+    })
+    gsap.to(dotRadius, {
+      duration: 0.6,
+      ease: 'power2.inOut',
+      value: visible ? 4 : 0,
+    })
+  },
+)
 </script>
 
 <template>
@@ -64,13 +115,14 @@ const dotPosition = computed(() => {
   <circle
     :cx="dotPosition.x"
     :cy="dotPosition.y"
-    r="4"
+    :r="dotRadius"
     :fill="props.dotColor"
     class="glow-effect"
   />
   <text
+    v-if="props.label"
     :x="dotPosition.x"
-    :y="dotPosition.y + 12"
+    :y="dotPosition.y + 15"
     fill="#a3a3a3"
     font-family="Inter, sans-serif"
     font-size="11px"
@@ -78,8 +130,10 @@ const dotPosition = computed(() => {
     font-weight="400"
     text-anchor="middle"
     alignment-baseline="hanging"
+    class="label"
+    :class="{ 'label--visible': props.labelVisible }"
   >
-    .scss
+    {{ props.label }}
   </text>
   <defs>
     <linearGradient
@@ -110,5 +164,14 @@ const dotPosition = computed(() => {
 <style scoped>
 .glow-effect {
   filter: drop-shadow(0 0 6px #b3ebff);
+}
+
+.label {
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+
+  &.label--visible {
+    opacity: 1;
+  }
 }
 </style>
