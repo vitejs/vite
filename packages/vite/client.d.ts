@@ -136,6 +136,10 @@ declare module '*.mov' {
   const src: string
   export default src
 }
+declare module '*.vtt' {
+  const src: string
+  export default src
+}
 
 // fonts
 declare module '*.woff' {
