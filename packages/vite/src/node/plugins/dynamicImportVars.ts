@@ -4,7 +4,6 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -28,8 +27,7 @@ const relativePathRE = /^\.{1,2}\//
 const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
-  as?: keyof KnownAsTypeMap
-  query?: Record<string, string>
+  query?: string | Record<string, string>
   import?: string
 }
 
@@ -77,13 +75,12 @@ function parseDynamicImportPattern(
   )
   const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
-  const as = (['worker', 'url', 'raw'] as const).find(
+  const globQuery = (['worker', 'url', 'raw'] as const).find(
     (key) => rawQuery && key in rawQuery,
   )
-
-  if (as) {
+  if (globQuery) {
     globParams = {
-      as,
+      query: globQuery,
       import: '*',
     }
   } else if (rawQuery) {
