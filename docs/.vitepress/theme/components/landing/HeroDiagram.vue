@@ -57,16 +57,19 @@ const outputLines = [
   },
 ]
 
+/**
+ * Start all animations when mounted
+ */
 onMounted(() => {
-  animateInputLines()
+  animateDiagram()
 })
 
 /**
- * Animate the input lines at random
+ * The core animation for the hero diagram.
  */
-const animateInputLines = () => {
+const animateDiagram = () => {
   const timeline = gsap.timeline({
-    onComplete: animateInputLines,
+    onComplete: animateDiagram,
   })
   const inputFileSet =
     inputFileSets.value[Math.floor(Math.random() * inputFileSets.value.length)]
@@ -84,6 +87,13 @@ const animateInputLines = () => {
   })
 }
 
+/**
+ * Animates a single output line.
+ * There are technically 3 output lines, but they are stacked on top of each other.
+ * @param outputLine
+ * @param index
+ * @returns {gsap.core.Timeline}
+ */
 const animateOutputLine = (outputLine, index) => {
   const timeline = gsap.timeline()
 
@@ -157,6 +167,11 @@ const animateOutputLine = (outputLine, index) => {
   return timeline
 }
 
+/**
+ * Animates a single input line
+ * @param inputLine
+ * @returns {gsap.core.Timeline}
+ */
 const animateInputLine = (inputLine) => {
   const timeline = gsap.timeline()
 
@@ -173,7 +188,7 @@ const animateInputLine = (inputLine) => {
   timeline.to(
     inputLine.position,
     {
-      value: 0.3,
+      value: Math.random() * 0.1 + 0.3,
       duration: 1.5,
       ease: 'expo.out',
     },
@@ -499,6 +514,9 @@ const animateInputLine = (inputLine) => {
       </defs>
     </svg>
 
+    <!-- Blue Glow -->
+    <div class="blue-glow" />
+
     <!-- Pink Indicator -->
     <svg
       width="141"
@@ -697,6 +715,9 @@ const animateInputLine = (inputLine) => {
       </defs>
     </svg>
 
+    <!-- Pink Glow -->
+    <div class="pink-glow" />
+
     <!-- Vite Chip -->
     <div class="vite-chip">
       <div class="vite-chip__background">
@@ -715,21 +736,43 @@ const animateInputLine = (inputLine) => {
   z-index: 2;
   width: 1630px;
   overflow: hidden;
-  margin: -120px auto 0;
+  margin: -100px auto 0;
 }
 
 .blue-indicator {
   position: absolute;
   top: 387px;
   left: 680px;
-  opacity: 0.2;
+  opacity: 0.9;
+}
+
+.blue-glow {
+  background-color: #41d1ff;
+  width: 100px;
+  aspect-ratio: 2;
+  position: absolute;
+  top: 415px;
+  left: 650px;
+  z-index: -1;
+  filter: blur(50px);
 }
 
 .pink-indicator {
   position: absolute;
   top: 202px;
   left: 840px;
-  opacity: 0.2;
+  opacity: 0.9;
+}
+
+.pink-glow {
+  background-color: #bd34fe;
+  width: 100px;
+  aspect-ratio: 2;
+  position: absolute;
+  top: 202px;
+  left: 900px;
+  z-index: -1;
+  filter: blur(50px);
 }
 
 .output-line {
