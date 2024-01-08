@@ -617,36 +617,7 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
 })
 ```
 
-:::warning
-
-Make sure to declare the `new URL()` constructor directly inside the `new Worker()` declaration, as done in the above example;
-declaring the URL in a separate variable will cause Vite to ignore the constructor, and the Worker may end up not being included in the built bundle.
-
-Additionaly, all options parameters must be static values (i.e. string literals). Using variables or constants will trigger a build error.
-
-The following example won't work:
-
-```javascript
-const WORKER_NAME = 'MyWorkerName'
-const workerUrl = new URL('./worker.js', import.meta.url)
-// the declaration of the worker will be ignored by Vite due to the URL being declared in a separate variable
-const worker = new Worker(workerUrl, {
-  type: 'module',
-  // the non-static name option will trigger an error
-  name: WORKER_NAME,
-})
-```
-
-Here is how it should be:
-
-```javascript
-const worker = new Worker(new URL('./worker.js', import.meta.url), {
-  type: 'module',
-  name: 'MyWorkerName',
-})
-```
-
-:::
+The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Additionally, all options parameters must be static values (i.e. string literals).
 
 ### Import with Query Suffixes
 
