@@ -50,8 +50,7 @@ export function transformMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
 
   // check if public dir is inside root dir
-  const { root } = server.config
-  const publicDir = normalizePath(server.config.publicDir)
+  const { root, publicDir } = server.config
   const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
   const publicPath = `${publicDir.slice(root.length)}/`
 

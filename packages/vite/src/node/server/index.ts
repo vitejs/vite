@@ -650,17 +650,15 @@ export async function _createServer(
     }
   }
 
-  const normalizedPublicDir = normalizePath(config.publicDir)
+  const { publicDir } = config
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
 
-    if (config.publicDir && publicFiles) {
-      if (file.startsWith(normalizedPublicDir)) {
-        publicFiles[isUnlink ? 'delete' : 'add'](
-          file.slice(normalizedPublicDir.length),
-        )
+    if (publicDir && publicFiles) {
+      if (file.startsWith(publicDir)) {
+        publicFiles[isUnlink ? 'delete' : 'add'](file.slice(publicDir.length))
       }
     }
     await handleFileAddUnlink(file, server, isUnlink)
@@ -761,7 +759,7 @@ export async function _createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  if (config.publicDir) {
+  if (publicDir) {
     middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
