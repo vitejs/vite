@@ -15,7 +15,7 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
-interface HMRConnection {
+export interface HMRConnection {
   /**
    * Checked before sending messages to the client.
    */
@@ -146,7 +146,9 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.sendMessage(JSON.stringify({ type: 'custom', event, data }))
+    this.hmrClient.messenger.send(
+      JSON.stringify({ type: 'custom', event, data }),
+    )
   }
 
   private acceptDeps(
@@ -165,6 +167,24 @@ export class HMRContext implements ViteHotContext {
   }
 }
 
+class HMRMessenger {
+  constructor(private connection: HMRConnection) {}
+
+  private queue: string[] = []
+
+  public send(message: string): void {
+    this.queue.push(message)
+    this.flush()
+  }
+
+  public flush(): void {
+    if (this.connection.isReady()) {
+      this.queue.forEach((msg) => this.connection.send(msg))
+      this.queue = []
+    }
+  }
+}
+
 export class HMRClient {
   public hotModulesMap = new Map<string, HotModule>()
   public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
@@ -173,14 +193,16 @@ export class HMRClient {
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
 
-  private messageQueue: string[] = []
+  public messenger: HMRMessenger
 
   constructor(
     public logger: Console,
-    private connection: HMRConnection,
+    connection: HMRConnection,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
-  ) {}
+  ) {
+    this.messenger = new HMRMessenger(connection)
+  }
 
   public async notifyListeners<T extends string>(
     event: T,
@@ -204,18 +226,6 @@ export class HMRClient {
         fn(this.dataMap.get(path))
       }
     })
-  }
-
-  public sendMessage(message: string): void {
-    this.messageQueue.push(message)
-    this.flushMessageQueue()
-  }
-
-  public flushMessageQueue(): void {
-    if (this.connection.isReady()) {
-      this.messageQueue.forEach((msg) => this.connection.send(msg))
-      this.messageQueue = []
-    }
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {

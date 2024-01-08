@@ -171,7 +171,7 @@ async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
-      hmrClient.flushMessageQueue()
+      hmrClient.messenger.flush()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       setInterval(() => {
