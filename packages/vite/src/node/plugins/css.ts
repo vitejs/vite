@@ -1844,7 +1844,13 @@ const scss: SassStylePreprocessor = async (
     importer = cleanScssBugUrl(importer)
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias, '$')
+        rebaseUrls(
+          resolved,
+          options.filename,
+          options.alias,
+          '$',
+          resolvers.sass,
+        )
           .then((data) => done?.(fixScssBugImportValue(data)))
           .catch((data) => done?.(data))
       } else {
@@ -1930,6 +1936,7 @@ async function rebaseUrls(
   rootFile: string,
   alias: Alias[],
   variablePrefix: string,
+  resolver: ResolveFn,
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1952,7 +1959,7 @@ async function rebaseUrls(
   }
 
   let rebased
-  const rebaseFn = (url: string) => {
+  const rebaseFn = async (url: string) => {
     if (url[0] === '/') return url
     // ignore url's starting with variable
     if (url.startsWith(variablePrefix)) return url
@@ -1964,7 +1971,7 @@ async function rebaseUrls(
         return url
       }
     }
-    const absolute = path.resolve(fileDir, url)
+    const absolute = (await resolver(url, file)) || path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
   }
@@ -2093,6 +2100,7 @@ function createViteLessPlugin(
             this.rootFile,
             this.alias,
             '@',
+            this.resolvers.less,
           )
           let contents: string
           if (result && 'contents' in result) {

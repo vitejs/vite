@@ -514,6 +514,9 @@ importers:
       '@vitejs/test-css-proxy-dep':
         specifier: file:./css-proxy-dep
         version: file:playground/css/css-proxy-dep
+      '@vitejs/test-scss-proxy-dep':
+        specifier: file:./scss-proxy-dep
+        version: file:playground/css/scss-proxy-dep
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.2
@@ -591,6 +594,14 @@ importers:
   playground/css/postcss-caching/blue-app: {}
 
   playground/css/postcss-caching/green-app: {}
+
+  playground/css/scss-proxy-dep:
+    dependencies:
+      '@vitejs/test-scss-proxy-dep-nested':
+        specifier: file:../scss-proxy-dep-nested
+        version: file:playground/css/scss-proxy-dep-nested
+
+  playground/css/scss-proxy-dep-nested: {}
 
   playground/data-uri: {}
 
@@ -10129,6 +10140,17 @@ packages:
   file:playground/css/css-proxy-dep-nested:
     resolution: {directory: playground/css/css-proxy-dep-nested, type: directory}
     name: '@vitejs/test-css-proxy-dep-nested'
+
+  file:playground/css/scss-proxy-dep:
+    resolution: {directory: playground/css/scss-proxy-dep, type: directory}
+    name: '@vitejs/test-scss-proxy-dep'
+    dependencies:
+      '@vitejs/test-scss-proxy-dep-nested': file:playground/css/scss-proxy-dep-nested
+    dev: true
+
+  file:playground/css/scss-proxy-dep-nested:
+    resolution: {directory: playground/css/scss-proxy-dep-nested, type: directory}
+    name: '@vitejs/test-scss-proxy-dep-nested'
 
   file:playground/define/commonjs-dep:
     resolution: {directory: playground/define/commonjs-dep, type: directory}
