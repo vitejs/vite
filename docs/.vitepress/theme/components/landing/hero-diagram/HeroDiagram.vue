@@ -294,6 +294,11 @@ const animateInputLine = (inputLine) => {
   width: 1630px;
   overflow: hidden;
   margin: -100px auto 0;
+
+  @media (max-width: 1630px) {
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
 
 .vite-chip {

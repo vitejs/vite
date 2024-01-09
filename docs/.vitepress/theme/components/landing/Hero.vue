@@ -47,10 +47,14 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
   display: flex;
   flex-direction: column;
   max-width: 902px;
-  margin: 95px auto 0;
+  margin: 75px auto 0;
   align-items: center;
   position: relative;
   z-index: 2;
+
+  @media (min-width: 768px) {
+    margin: 95px auto 0;
+  }
 }
 
 .hero__pill {
@@ -66,7 +70,11 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
     rgba(189, 52, 254, 0) 100%
   );
   box-shadow: none;
-  margin-bottom: 25px;
+  margin-bottom: 40px;
+
+  @media (min-width: 768px) {
+    margin-bottom: 25px;
+  }
 
   span {
     color: #fff;
@@ -101,19 +109,31 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
 h1 {
   text-align: center;
   font-family: 'Manrope', sans-serif;
-  font-size: 72px;
   font-style: normal;
   font-weight: 600;
-  line-height: 81px;
-  letter-spacing: -1.44px;
   background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.31) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  padding-bottom: 8px; /* Fix for hanging descender on "g" in "tooling" */
   text-wrap: balance;
-  margin-bottom: 15px;
   cursor: default;
+  font-size: 44px;
+  line-height: 120%;
+  letter-spacing: -0.88px;
+  padding: 0 16px;
+  margin-bottom: 15px;
+
+  @media (min-width: 768px) {
+    font-size: 64px;
+    line-height: 81px;
+    letter-spacing: -1.28px;
+  }
+
+  @media (min-width: 1025px) {
+    font-size: 72px;
+    letter-spacing: -1.44px;
+    padding-bottom: 8px; /* Fix for hanging descender on "g" in "tooling" */
+  }
 }
 
 h2 {
@@ -134,22 +154,38 @@ h2 {
 .hero__glow {
   &.glow--blue {
     position: absolute;
-    left: -5vw;
-    width: 40vw;
-    aspect-ratio: 3;
+    left: -60vw;
+    width: 110vw;
+    aspect-ratio: 1;
     pointer-events: none;
     z-index: -2;
-    border-radius: 50% 100% 100% 50%;
+    border-radius: 100%;
     background: linear-gradient(180deg, #61d9ff 0%, rgba(0, 0, 0, 0) 100%);
-    filter: blur(10vw);
-    transform: rotate(-5deg) translate3d(0, 10vh, 0);
+    filter: blur(30vw);
+    transform: none;
+    opacity: 0.3;
+
+    @media (min-width: 768px) {
+      filter: blur(15vw);
+      aspect-ratio: 1.5;
+    }
+
+    @media (min-width: 1025px) {
+      opacity: 1;
+      border-radius: 50% 100% 100% 50%;
+      transform: rotate(-5deg) translate3d(0, 10vh, 0);
+      left: -5vw;
+      width: 40vw;
+      aspect-ratio: 3;
+      filter: blur(10vw);
+    }
   }
 
   &.glow--purple {
     position: absolute;
-    left: 15vw;
-    width: 80vw;
-    aspect-ratio: 4;
+    left: 10vw;
+    width: 110vw;
+    aspect-ratio: 1.2;
     pointer-events: none;
     z-index: -1;
     border-radius: 100%;
@@ -160,8 +196,23 @@ h2 {
       rgba(113, 94, 189, 0.9) 80%,
       rgba(189, 52, 254, 0) 100%
     );
-    filter: blur(10vw);
-    transform: rotate(5deg);
+    filter: blur(30vw);
+    transform: none;
+    opacity: 0.6;
+
+    @media (min-width: 768px) {
+      filter: blur(15vw);
+      aspect-ratio: 2;
+    }
+
+    @media (min-width: 1025px) {
+      opacity: 1;
+      left: 15vw;
+      width: 80vw;
+      aspect-ratio: 4;
+      transform: rotate(5deg);
+      filter: blur(10vw);
+    }
   }
 }
 
