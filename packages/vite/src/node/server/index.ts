@@ -27,6 +27,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  extractModuleType,
   isInNodeModules,
   isObject,
   isParentDirectory,
@@ -369,6 +370,10 @@ export interface ViteDevServer {
    * @internal
    */
   _configServerPort?: number | undefined
+  /**
+   * @internal
+   */
+  _moduleType?: string | undefined
 }
 
 export interface ResolvedServerUrls {
@@ -871,6 +876,8 @@ async function startServer(
     logger: server.config.logger,
   })
   server._currentServerPort = serverPort
+  const file = path.resolve(server.config.root, 'package.json')
+  server._moduleType = extractModuleType(file)
 }
 
 function createServerCloseFn(server: HttpServer | null) {

@@ -7,6 +7,7 @@ import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import {
   createDebugger,
+  diffModuleType,
   normalizePath,
   unique,
   withTrailingSlash,
@@ -70,12 +71,11 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === name,
   )
-  const isPackageJson = fileName === 'package.json'
 
   const isEnv =
     config.inlineConfig.envFile !== false &&
     getEnvFilesForMode(config.mode).includes(fileName)
-  if (isConfig || isConfigDependency || isPackageJson || isEnv) {
+  if (isConfig || isConfigDependency || isEnv || diffModuleType(file, server)) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(

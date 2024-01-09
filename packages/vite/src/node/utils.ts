@@ -1379,3 +1379,12 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
   })
   return { promise, resolve, reject }
 }
+
+export function extractModuleType(file: string): string | undefined {
+  const packageInfo = findNearestPackageData(file)
+  return packageInfo?.data.type
+}
+export function diffModuleType(file: string, server: ViteDevServer): boolean {
+  const type = extractModuleType(file)
+  return type !== server._moduleType
+}
