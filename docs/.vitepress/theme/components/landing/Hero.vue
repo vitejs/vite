@@ -58,6 +58,13 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
 }
 
 .hero__pill {
+  color: #fff;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: -0.3px;
   display: inline-flex;
   padding: 6px 16px;
   align-items: center;

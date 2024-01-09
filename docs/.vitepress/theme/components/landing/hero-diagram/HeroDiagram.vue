@@ -532,7 +532,7 @@ const animateSingleInputMobile = (inputLine) => {
     right: 0;
     left: 0;
     bottom: 0;
-    border-radius: 40px;
+    border-radius: 20px;
     border: 1px solid rgba(84, 66, 131, 0.01);
     border-top-color: rgba(137, 172, 225, 0.6);
     border-bottom-color: rgba(138, 94, 234, 0.05);

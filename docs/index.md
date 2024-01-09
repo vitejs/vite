@@ -1,7 +1,7 @@
 ---
 title: Vite
 titleTemplate: Next Generation Frontend Tooling
-pageClass: landing
+pageClass: landing dark
 
 layout: home
 aside: false

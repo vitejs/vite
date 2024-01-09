@@ -5,6 +5,14 @@
     display: none;
   }
 
+  .VPNavScreenAppearance {
+    visibility: hidden;
+  }
+
+  .social-links::before {
+    margin-left: 0 !important;
+  }
+
   .btn {
     display: flex;
     padding: 10px 18px;
