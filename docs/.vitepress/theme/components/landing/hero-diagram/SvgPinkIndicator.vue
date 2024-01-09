@@ -222,7 +222,7 @@ const props = defineProps({
 
   &.active {
     transition: opacity 0.2s ease-in-out;
-    opacity: 0.5;
+    opacity: 0.6;
   }
 }
 
@@ -240,7 +240,7 @@ const props = defineProps({
 
   &.active {
     transition: all 0.2s ease-in-out;
-    opacity: 0.6;
+    opacity: 0.8;
     filter: blur(60px);
   }
 }

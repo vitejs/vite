@@ -63,6 +63,7 @@ const outputLines = [
 // Indicators
 const blueIndicator = ref(false)
 const pinkIndicator = ref(false)
+const illuminateLogo = ref(false)
 
 /**
  * Start all animations when mounted
@@ -90,6 +91,7 @@ const animateDiagram = () => {
     timeline.add(animateInputLine(inputLines[lineIndex]), fileIndex * 0.2)
   })
   timeline.set(blueIndicator, { value: true }, 2.9)
+  timeline.set(illuminateLogo, { value: true }, 3)
   timeline.set(pinkIndicator, { value: true }, 3.3)
   outputLines.forEach((outputLine, index) => {
     timeline.add(animateOutputLine(outputLine, index), 3.6 + 0.2 * index)
@@ -274,7 +276,7 @@ const animateInputLine = (inputLine) => {
     <SvgPinkIndicator :active="pinkIndicator" />
 
     <!-- Vite Chip -->
-    <div class="vite-chip">
+    <div class="vite-chip" :class="{ active: illuminateLogo }">
       <div class="vite-chip__background">
         <div class="vite-chip__border" />
       </div>
@@ -303,24 +305,77 @@ const animateInputLine = (inputLine) => {
   top: 260px;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 18.467px 33.471px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.2);
+  transition: all 0.5s ease;
 
   .vite-chip__filter {
-    width: 100%;
-    height: 100%;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition: transform 0.3s ease-in-out;
     background: linear-gradient(
         130deg,
-        rgba(0, 0, 0, 0) 10%,
-        rgba(160, 160, 160, 0.15) 35%,
-        rgba(0, 0, 0, 0) 70%
+        rgba(42, 33, 63, 0.5) 0%,
+        rgba(94, 77, 138, 0.1) 35%,
+        rgba(42, 33, 63, 0.5) 90%
       ),
-      rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(3px);
+      linear-gradient(
+        130deg,
+        rgba(96, 72, 157, 0.6) 0%,
+        rgba(42, 33, 63, 0) 40%
+      ),
+      linear-gradient(
+        130deg,
+        rgba(42, 33, 63, 0) 60%,
+        rgba(96, 72, 157, 0.6) 100%
+      ),
+      rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+
+    &:after {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
+      background: linear-gradient(
+        130deg,
+        rgba(42, 33, 63, 0) 40%,
+        rgba(94, 77, 138, 0.5) 50%,
+        rgba(42, 33, 63, 0) 60%
+      );
+      background-size: 500%;
+      background-position-x: 100%;
+      animation: shimmer 12s infinite linear;
+      mix-blend-mode: color-dodge;
+      filter: blur(10px);
+    }
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
+      background: linear-gradient(
+        -130deg,
+        rgba(42, 33, 63, 0) 40%,
+        rgba(94, 77, 138, 0.5) 50%,
+        rgba(42, 33, 63, 0) 60%
+      );
+      background-size: 400%;
+      background-position-x: 100%;
+      animation: shimmer 12s infinite linear;
+      mix-blend-mode: color-dodge;
+      filter: blur(10px);
+    }
   }
 
   .vite-chip__border {
@@ -329,8 +384,10 @@ const animateInputLine = (inputLine) => {
     right: 0;
     left: 0;
     bottom: 0;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 40px;
+    border: 1px solid rgba(84, 66, 131, 0.01);
+    border-top-color: rgba(137, 172, 225, 0.6);
+    border-bottom-color: rgba(138, 94, 234, 0.05);
     opacity: 0.5;
     background: rgba(40, 40, 40, 0.3);
   }
@@ -339,11 +396,32 @@ const animateInputLine = (inputLine) => {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    mix-blend-mode: luminosity;
+    transform: translate(-50%, -50%) scale(0.9);
     width: 67px;
-    opacity: 0.5;
+    opacity: 0.1;
     filter: grayscale(100%);
+    transition: all 0.6s ease;
+    z-index: 3;
+  }
+
+  &.active {
+    box-shadow: 0 18px 28px 0 rgba(0, 0, 0, 0.4);
+
+    .vite-chip__filter {
+      transform: translate3d(0, 0, 0) scale(0.98);
+    }
+
+    .vite-chip__logo {
+      opacity: 1;
+      filter: grayscale(0);
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position-x: 0;
   }
 }
 </style>
