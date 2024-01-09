@@ -1385,6 +1385,9 @@ export function extractModuleType(file: string): string | undefined {
   return packageInfo?.data.type
 }
 export function diffModuleType(file: string, server: ViteDevServer): boolean {
+  if (path.basename(file) !== 'package.json') {
+    return false
+  }
   const type = extractModuleType(file)
   const isNotEqual = type !== server._moduleType
   if (isNotEqual) {
