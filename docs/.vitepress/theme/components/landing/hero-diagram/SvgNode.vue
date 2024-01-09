@@ -169,6 +169,11 @@ watch(
 .label {
   opacity: 0;
   transition: opacity 0.4s ease-in-out;
+  display: none;
+
+  @media (min-width: 1180px) {
+    display: block;
+  }
 
   &.label--visible {
     opacity: 1;

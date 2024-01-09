@@ -74,41 +74,83 @@ onMounted(() => {
 
 /**
  * The core animation for the hero diagram.
+ * Has both a desktop and mobile variation.
  */
 const animateDiagram = () => {
+  // Determine if we're showing the desktop or mobile variation of the animation
+  const isMobile = window.innerWidth < 768
+
+  // Prepare a timeline
   const timeline = gsap.timeline({
     onComplete: animateDiagram,
   })
+
+  // Animate the input nodes/lines
+  prepareInputs().forEach((lineIndex, fileIndex) => {
+    timeline.add(
+      isMobile
+        ? animateSingleInputMobile(inputLines[lineIndex])
+        : animateSingleInputDesktop(inputLines[lineIndex]),
+      fileIndex * (isMobile ? 0.4 : 0.2),
+    )
+  })
+
+  // Illuminate the logo and colored indicators
+  timeline.set(blueIndicator, { value: true }, isMobile ? '>-2' : '>-0.2')
+  timeline.set(illuminateLogo, { value: true }, '<-0.1')
+  timeline.set(pinkIndicator, { value: true }, '<+0.3')
+
+  // Animate the output nodes/lines
+  timeline.addLabel('showOutput', '<+0.2')
+  outputLines.forEach((outputLine, index) => {
+    timeline.add(
+      isMobile
+        ? animateSingleOutputMobile(outputLine, index)
+        : animateSingleOutputDesktop(outputLine, index),
+      'showOutput+=' + (isMobile ? 0.3 : 0.1) * index,
+    )
+  })
+
+  // Disable the colored indicators
+  timeline.set(blueIndicator, { value: false }, '>-1')
+  timeline.set(pinkIndicator, { value: false }, '<')
+
+  // Pause briefly at the end of the animation
+  timeline.set({}, {}, '+=0.2')
+}
+
+/**
+ * Randomly selects a set of input file nodes and assigns them to input lines.
+ * @returns {any[]}
+ */
+const prepareInputs = () => {
+  // Randomly select a set of input file "nodes"
   const inputFileSet =
     inputFileSets.value[Math.floor(Math.random() * inputFileSets.value.length)]
+
+  // Choose enough unique lines for the input file nodes to slide along
   const inputLineIndexes = new Set()
   while (inputLineIndexes.size < 3) {
     const index = Math.floor(Math.random() * inputLines.length)
     inputLineIndexes.add(index)
   }
-  ;[...inputLineIndexes].forEach((lineIndex, fileIndex) => {
+
+  // Assign each line it's appropriate node label
+  const inputs = [...inputLineIndexes]
+  inputs.forEach((lineIndex, fileIndex) => {
     inputLines[lineIndex].label.value = inputFileSet[fileIndex]
-    timeline.add(animateInputLine(inputLines[lineIndex]), fileIndex * 0.2)
   })
-  timeline.set(blueIndicator, { value: true }, 2.9)
-  timeline.set(illuminateLogo, { value: true }, 3)
-  timeline.set(pinkIndicator, { value: true }, 3.3)
-  outputLines.forEach((outputLine, index) => {
-    timeline.add(animateOutputLine(outputLine, index), 3.6 + 0.2 * index)
-  })
-  timeline.set(blueIndicator, { value: false }, '>-1')
-  timeline.set(pinkIndicator, { value: false }, '<')
-  timeline.set({}, {}, '+=0.2')
+  return inputs
 }
 
 /**
- * Animates a single output line.
+ * Animates a single output line for desktop.
  * There are technically 3 output lines, but they are stacked on top of each other.
  * @param outputLine
  * @param index
  * @returns {gsap.core.Timeline}
  */
-const animateOutputLine = (outputLine, index) => {
+const animateSingleOutputDesktop = (outputLine, index) => {
   const timeline = gsap.timeline()
 
   // Reset the line
@@ -182,11 +224,62 @@ const animateOutputLine = (outputLine, index) => {
 }
 
 /**
- * Animates a single input line
+ * Animates a single output line for mobile.
+ * There are technically 3 output lines, but they are stacked on top of each other.
+ * @param outputLine
+ * @param index
+ * @returns {gsap.core.Timeline}
+ */
+const animateSingleOutputMobile = (outputLine, index) => {
+  const timeline = gsap.timeline()
+
+  // Reset the line
+  timeline.set(
+    outputLine.position,
+    {
+      value: 0,
+    },
+    0,
+  )
+
+  // Animate the dot in
+  timeline.to(
+    outputLine.position,
+    {
+      value: 0.7,
+      duration: 3,
+      ease: 'power3.out',
+    },
+    0.2,
+  )
+
+  // Show the dot
+  timeline.set(
+    outputLine.visible,
+    {
+      value: true,
+    },
+    0,
+  )
+
+  // Hide the dot
+  timeline.set(
+    outputLine.visible,
+    {
+      value: false,
+    },
+    1,
+  )
+
+  return timeline
+}
+
+/**
+ * Animates a single input line for desktop.
  * @param inputLine
  * @returns {gsap.core.Timeline}
  */
-const animateInputLine = (inputLine) => {
+const animateSingleInputDesktop = (inputLine) => {
   const timeline = gsap.timeline()
 
   // Reset the line
@@ -259,6 +352,56 @@ const animateInputLine = (inputLine) => {
   // Return the timeline
   return timeline
 }
+
+/**
+ * Animates a single input line for mobile.
+ * @param inputLine
+ * @returns {gsap.core.Timeline}
+ */
+const animateSingleInputMobile = (inputLine) => {
+  const timeline = gsap.timeline()
+
+  // Reset the line
+  timeline.set(
+    inputLine.position,
+    {
+      value: 0,
+    },
+    0,
+  )
+
+  // Animate the dot in
+  timeline.to(
+    inputLine.position,
+    {
+      value: 1,
+      duration: 3,
+      ease: 'power3.out',
+    },
+    0,
+  )
+
+  // Show the dot
+  timeline.set(
+    inputLine.visible,
+    {
+      value: true,
+    },
+    0,
+  )
+
+  // Hide the dot
+  timeline.set(
+    inputLine.visible,
+    {
+      value: false,
+    },
+    1.1,
+  )
+
+  // Return the timeline
+  return timeline
+}
 </script>
 
 <template>
@@ -297,7 +440,7 @@ const animateInputLine = (inputLine) => {
 
   @media (max-width: 1630px) {
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) scale(0.9);
   }
 }
 
@@ -308,7 +451,7 @@ const animateInputLine = (inputLine) => {
   position: absolute;
   left: 750px;
   top: 260px;
-  border-radius: 10px;
+  border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.2);
   transition: all 0.5s ease;
@@ -356,7 +499,7 @@ const animateInputLine = (inputLine) => {
       );
       background-size: 500%;
       background-position-x: 100%;
-      animation: shimmer 12s infinite linear;
+      animation: shimmer 6s infinite linear;
       mix-blend-mode: color-dodge;
       filter: blur(10px);
     }
@@ -377,7 +520,7 @@ const animateInputLine = (inputLine) => {
       );
       background-size: 400%;
       background-position-x: 100%;
-      animation: shimmer 12s infinite linear;
+      animation: shimmer 8s infinite linear;
       mix-blend-mode: color-dodge;
       filter: blur(10px);
     }
