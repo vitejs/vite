@@ -28,6 +28,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ModuleGraph } from '../server/moduleGraph'
+import type { ChunkMetadata, MetadataManager } from '../metadata'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -65,6 +66,7 @@ export function renderAssetUrlInJS(
   ctx: PluginContext,
   config: ResolvedConfig,
   chunk: RenderedChunk,
+  metadata: ChunkMetadata,
   opts: NormalizedOutputOptions,
   code: string,
 ): MagicString | undefined {
@@ -89,7 +91,7 @@ export function renderAssetUrlInJS(
     s ||= new MagicString(code)
     const [full, referenceId, postfix = ''] = match
     const file = ctx.getFileName(referenceId)
-    chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
+    metadata.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
       filename,
@@ -143,6 +145,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
 
   let moduleGraph: ModuleGraph | undefined
+  let metadataManager: MetadataManager
 
   return {
     name: 'vite:asset',
@@ -154,6 +157,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     configureServer(server) {
       moduleGraph = server.moduleGraph
+    },
+
+    inheritMetadata(manager) {
+      metadataManager = manager
     },
 
     resolveId(id) {
@@ -210,7 +217,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk, opts) {
-      const s = renderAssetUrlInJS(this, config, chunk, opts, code)
+      const s = renderAssetUrlInJS(
+        this,
+        config,
+        chunk,
+        metadataManager.chunk(chunk),
+        opts,
+        code,
+      )
 
       if (s) {
         return {

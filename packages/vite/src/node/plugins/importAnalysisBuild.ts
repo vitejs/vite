@@ -26,6 +26,7 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import type { MetadataManager } from '../metadata'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo, interopNamedImports } from './importAnalysis'
 
@@ -200,8 +201,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
+  let metadataManager: MetadataManager
+
   return {
     name: 'vite:build-import-analysis',
+
+    inheritMetadata(manager) {
+      metadataManager = manager
+    },
+
     resolveId(id) {
       if (id === preloadHelperId) {
         return id
@@ -518,7 +526,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     chunk.imports.forEach(addDeps)
                     // Ensure that the css imported by current chunk is loaded after the dependencies.
                     // So the style of current chunk won't be overwritten unexpectedly.
-                    chunk.viteMetadata!.importedCss.forEach((file) => {
+                    metadataManager.chunk(chunk).importedCss.forEach((file) => {
                       deps.add(file)
                     })
                   } else {
@@ -526,10 +534,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       removedPureCssFilesCache.get(config)!
                     const chunk = removedPureCssFiles.get(filename)
                     if (chunk) {
-                      if (chunk.viteMetadata!.importedCss.size) {
-                        chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
-                        })
+                      if (metadataManager.chunk(chunk).importedCss.size) {
+                        metadataManager
+                          .chunk(chunk)
+                          .importedCss.forEach((file) => {
+                            deps.add(file)
+                          })
                         hasRemovedPureCssChunk = true
                       }
 

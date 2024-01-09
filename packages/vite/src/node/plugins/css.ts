@@ -60,6 +60,7 @@ import {
   stripBomTag,
 } from '../utils'
 import type { Logger } from '../logger'
+import type { MetadataManager } from '../metadata'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -406,8 +407,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     }
   }
 
+  let metadataManager: MetadataManager
+
   return {
     name: 'vite:css-post',
+
+    inheritMetadata(manager) {
+      metadataManager = manager
+    },
 
     renderStart() {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
@@ -571,7 +578,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
-          chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
+          metadataManager.chunk(chunk).importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
             'asset',
@@ -658,7 +665,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           generatedAssets
             .get(config)!
             .set(referenceId, { originalName: originalFilename, isEntry })
-          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+          metadataManager
+            .chunk(chunk)
+            .importedCss.add(this.getFileName(referenceId))
 
           if (emitTasksLength === emitTasks.length) {
             // this is the last task, clear `emitTasks` to free up memory
@@ -667,7 +676,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+          // Entry chunk CSS will be collected into `metadataManager.chunk(chunk).importedCss`
           // and injected later by the `'vite:build-html'` plugin into the `index.html`
           // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
           // But because entry chunk can be imported by dynamic import,
@@ -680,6 +689,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               this,
               config,
               chunk,
+              metadataManager.chunk(chunk),
               opts,
               cssString,
             )?.toString() || cssString
@@ -719,9 +729,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     augmentChunkHash(chunk) {
-      if (chunk.viteMetadata?.importedCss.size) {
+      if (metadataManager.chunk(chunk).importedCss.size) {
         let hash = ''
-        for (const id of chunk.viteMetadata.importedCss) {
+        for (const id of metadataManager.chunk(chunk).importedCss) {
           hash += id
         }
         return hash
@@ -762,14 +772,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunkNames.includes(file)) {
-                const { importedCss, importedAssets } = (
-                  bundle[file] as OutputChunk
-                ).viteMetadata!
-                importedCss.forEach((file) =>
-                  chunk.viteMetadata!.importedCss.add(file),
+                const { importedCss, importedAssets } = metadataManager.chunk(
+                  bundle[file] as OutputChunk,
                 )
+                const metadata = metadataManager.chunk(chunk)
+                importedCss.forEach((file) => metadata.importedCss.add(file))
                 importedAssets.forEach((file) =>
-                  chunk.viteMetadata!.importedAssets.add(file),
+                  metadata.importedAssets.add(file),
                 )
                 return false
               }

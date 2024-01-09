@@ -15,14 +15,21 @@ import {
   normalizePath,
   numberToPos,
 } from '../utils'
+import type { MetadataManager } from '../metadata'
 
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
   const ssrManifest: Record<string, string[]> = {}
   const base = config.base // TODO:base
+  let metadataManager: MetadataManager
 
   return {
     name: 'vite:ssr-manifest',
+
+    inheritMetadata(manager) {
+      metadataManager = manager
+    },
+
     generateBundle(_options, bundle) {
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -35,11 +42,11 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
               mappedChunks.push(joinUrlSegments(base, chunk.fileName))
               // <link> tags for entry chunks are already generated in static HTML,
               // so we only need to record info for non-entry chunks.
-              chunk.viteMetadata!.importedCss.forEach((file) => {
+              metadataManager.chunk(chunk).importedCss.forEach((file) => {
                 mappedChunks.push(joinUrlSegments(base, file))
               })
             }
-            chunk.viteMetadata!.importedAssets.forEach((file) => {
+            metadataManager.chunk(chunk).importedAssets.forEach((file) => {
               mappedChunks.push(joinUrlSegments(base, file))
             })
           }
@@ -77,7 +84,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    chunk.viteMetadata!.importedCss.forEach((file) => {
+                    metadataManager.chunk(chunk).importedCss.forEach((file) => {
                       deps.push(joinUrlSegments(base, file)) // TODO:base
                     })
                     chunk.imports.forEach(addDeps)

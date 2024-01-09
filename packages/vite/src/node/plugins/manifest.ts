@@ -9,6 +9,7 @@ import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
+import type { MetadataManager } from '../metadata'
 import { generatedAssets } from './asset'
 import type { GeneratedAssetMeta } from './asset'
 
@@ -29,9 +30,14 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
   const manifest: Manifest = {}
 
   let outputCount: number
+  let metadataManager: MetadataManager
 
   return {
     name: 'vite:manifest',
+
+    inheritMetadata(manager) {
+      metadataManager = manager
+    },
 
     buildStart() {
       outputCount = 0
@@ -85,11 +91,13 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (chunk.viteMetadata?.importedCss.size) {
-          manifestChunk.css = [...chunk.viteMetadata.importedCss]
+        const metadata = metadataManager.chunk(chunk)
+
+        if (metadata.importedCss.size) {
+          manifestChunk.css = [...metadata.importedCss]
         }
-        if (chunk.viteMetadata?.importedAssets.size) {
-          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
+        if (metadata.importedAssets.size) {
+          manifestChunk.assets = [...metadata.importedAssets]
         }
 
         return manifestChunk

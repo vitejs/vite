@@ -118,6 +118,7 @@ export type {
   TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+export type { ChunkMetadata, MetadataManager } from './metadata'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
@@ -142,7 +143,6 @@ export type {
   GeneralImportGlobOptions,
   KnownAsTypeMap,
 } from 'types/importGlob'
-export type { ChunkMetadata } from 'types/metadata'
 
 // dep types
 export type {
