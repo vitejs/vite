@@ -1,3 +1,35 @@
+## <small>5.0.11 (2024-01-05)</small>
+
+* fix: don't pretransform classic script links (#15361) ([19e3c9a](https://github.com/vitejs/vite/commit/19e3c9a)), closes [#15361](https://github.com/vitejs/vite/issues/15361)
+* fix: inject `__vite__mapDeps` code before sourcemap file comment (#15483) ([d2aa096](https://github.com/vitejs/vite/commit/d2aa096)), closes [#15483](https://github.com/vitejs/vite/issues/15483)
+* fix(assets): avoid splitting `,` inside base64 value of `srcset` attribute (#15422) ([8de7bd2](https://github.com/vitejs/vite/commit/8de7bd2)), closes [#15422](https://github.com/vitejs/vite/issues/15422)
+* fix(html): handle offset magic-string slice error (#15435) ([5ea9edb](https://github.com/vitejs/vite/commit/5ea9edb)), closes [#15435](https://github.com/vitejs/vite/issues/15435)
+* chore(deps): update dependency strip-literal to v2 (#15475) ([49d21fe](https://github.com/vitejs/vite/commit/49d21fe)), closes [#15475](https://github.com/vitejs/vite/issues/15475)
+* chore(deps): update tj-actions/changed-files action to v41 (#15476) ([2a540ee](https://github.com/vitejs/vite/commit/2a540ee)), closes [#15476](https://github.com/vitejs/vite/issues/15476)
+
+
+
+## <small>5.0.10 (2023-12-15)</small>
+
+* fix: omit protocol does not require pre-transform (#15355) ([d9ae1b2](https://github.com/vitejs/vite/commit/d9ae1b2)), closes [#15355](https://github.com/vitejs/vite/issues/15355)
+* fix(build): use base64 for inline SVG if it contains both single and double quotes (#15271) ([1bbff16](https://github.com/vitejs/vite/commit/1bbff16)), closes [#15271](https://github.com/vitejs/vite/issues/15271)
+
+
+
+## <small>5.0.9 (2023-12-14)</small>
+
+* fix: htmlFallbackMiddleware for favicon (#15301) ([c902545](https://github.com/vitejs/vite/commit/c902545)), closes [#15301](https://github.com/vitejs/vite/issues/15301)
+* fix: more stable hash calculation for depsOptimize (#15337) ([2b39fe6](https://github.com/vitejs/vite/commit/2b39fe6)), closes [#15337](https://github.com/vitejs/vite/issues/15337)
+* fix(scanner): catch all external files for glob imports (#15286) ([129d0d0](https://github.com/vitejs/vite/commit/129d0d0)), closes [#15286](https://github.com/vitejs/vite/issues/15286)
+* fix(server): avoid chokidar throttling on startup (#15347) ([56a5740](https://github.com/vitejs/vite/commit/56a5740)), closes [#15347](https://github.com/vitejs/vite/issues/15347)
+* fix(worker): replace `import.meta` correctly for IIFE worker (#15321) ([08d093c](https://github.com/vitejs/vite/commit/08d093c)), closes [#15321](https://github.com/vitejs/vite/issues/15321)
+* feat: log re-optimization reasons (#15339) ([b1a6c84](https://github.com/vitejs/vite/commit/b1a6c84)), closes [#15339](https://github.com/vitejs/vite/issues/15339)
+* chore: temporary typo (#15329) ([7b71854](https://github.com/vitejs/vite/commit/7b71854)), closes [#15329](https://github.com/vitejs/vite/issues/15329)
+* perf: avoid computing paths on each request (#15318) ([0506812](https://github.com/vitejs/vite/commit/0506812)), closes [#15318](https://github.com/vitejs/vite/issues/15318)
+* perf: temporary hack to avoid fs checks for /@react-refresh (#15299) ([b1d6211](https://github.com/vitejs/vite/commit/b1d6211)), closes [#15299](https://github.com/vitejs/vite/issues/15299)
+
+
+
 ## <small>5.0.8 (2023-12-12)</small>
 
 * perf: cached fs utils (#15279) ([c9b61c4](https://github.com/vitejs/vite/commit/c9b61c4)), closes [#15279](https://github.com/vitejs/vite/issues/15279)

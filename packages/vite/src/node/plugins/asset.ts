@@ -57,10 +57,6 @@ export function registerCustomMime(): void {
   mrmime.mimes['ico'] = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
-  // mrmime and mime-db is not released yet: https://github.com/jshttp/mime-db/commit/c9242a9b7d4bb25d7a0c9244adec74aeef08d8a1
-  mrmime.mimes['aac'] = 'audio/aac'
-  // https://wiki.xiph.org/MIME_Types_and_File_Extensions#.opus_-_audio/ogg
-  mrmime.mimes['opus'] = 'audio/ogg'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
 }
@@ -415,6 +411,8 @@ export async function urlToBuiltUrl(
   )
 }
 
+const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
+
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
 function svgToDataURL(content: Buffer): string {
   const stringContent = content.toString()
@@ -422,7 +420,8 @@ function svgToDataURL(content: Buffer): string {
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
   if (
     stringContent.includes('<text') ||
-    stringContent.includes('<foreignObject')
+    stringContent.includes('<foreignObject') ||
+    nestedQuotesRE.test(stringContent)
   ) {
     return `data:image/svg+xml;base64,${content.toString('base64')}`
   } else {

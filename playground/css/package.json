@@ -20,6 +20,7 @@
     "@vitejs/test-css-dep-exports": "link:./css-dep-exports",
     "@vitejs/test-css-js-dep": "file:./css-js-dep",
     "@vitejs/test-css-proxy-dep": "file:./css-proxy-dep",
+    "@vitejs/test-scss-proxy-dep": "file:./scss-proxy-dep",
     "fast-glob": "^3.3.2",
     "less": "^4.2.0",
     "postcss-nested": "^6.0.1",

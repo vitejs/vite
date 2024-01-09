@@ -420,7 +420,7 @@ export async function resolveConfig(
   const configEnv: ConfigEnv = {
     mode,
     command,
-    isSsrBuild: !!config.build?.ssr,
+    isSsrBuild: command === 'build' && !!config.build?.ssr,
     isPreview,
   }
 
@@ -651,9 +651,11 @@ export async function resolveConfig(
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
-      ? path.resolve(
-          resolvedRoot,
-          typeof publicDir === 'string' ? publicDir : 'public',
+      ? normalizePath(
+          path.resolve(
+            resolvedRoot,
+            typeof publicDir === 'string' ? publicDir : 'public',
+          ),
         )
       : ''
 

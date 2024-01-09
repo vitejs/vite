@@ -16,7 +16,7 @@ const debug = createDebugger('vite:send', {
 })
 
 const alias: Record<string, string | undefined> = {
-  js: 'application/javascript',
+  js: 'text/javascript',
   css: 'text/css',
   html: 'text/html',
   json: 'application/json',

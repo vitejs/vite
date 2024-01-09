@@ -27,6 +27,7 @@ import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
+  arraify,
   asyncFlatten,
   copyDir,
   emptyDir,
@@ -427,13 +428,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       completeSystemWrapPlugin(),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      ...((
-        await asyncFlatten(
-          Array.isArray(rollupOptionsPlugins)
-            ? rollupOptionsPlugins
-            : [rollupOptionsPlugins],
-        )
-      ).filter(Boolean) as Plugin[]),
+      ...((await asyncFlatten(arraify(rollupOptionsPlugins))).filter(
+        Boolean,
+      ) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
