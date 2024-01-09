@@ -1386,5 +1386,9 @@ export function extractModuleType(file: string): string | undefined {
 }
 export function diffModuleType(file: string, server: ViteDevServer): boolean {
   const type = extractModuleType(file)
-  return type !== server._moduleType
+  const isNotEqual = type !== server._moduleType
+  if (isNotEqual) {
+    server._moduleType = type
+  }
+  return isNotEqual
 }
