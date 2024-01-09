@@ -423,7 +423,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   - Filter and narrow down the affected module list so that the HMR is more accurate.
 
-  - Return an empty array and perform complete custom HMR handling by sending custom events to the client (example uses `server.hot` which was introduced in Vite #, it is recommended to also use `server.ws` if you support lower versions):
+  - Return an empty array and perform complete custom HMR handling by sending custom events to the client (example uses `server.hot` which was introduced in Vite 5.1, it is recommended to also use `server.ws` if you support lower versions):
 
     ```js
     handleHotUpdate({ server }) {
@@ -534,7 +534,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.hot.send` (since Vite #) or `server.ws.send` to broadcast events to all the clients:
+On the plugin side, we could use `server.hot.send` (since Vite 5.1) or `server.ws.send` to broadcast events to all the clients:
 
 ```js
 // vite.config.js
@@ -579,7 +579,7 @@ if (import.meta.hot) {
 }
 ```
 
-Then use `server.hot.on` (since Vite #) or `server.ws.on` and listen to the events on the server side:
+Then use `server.hot.on` (since Vite 5.1) or `server.ws.on` and listen to the events on the server side:
 
 ```js
 // vite.config.js
