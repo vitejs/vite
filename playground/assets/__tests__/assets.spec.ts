@@ -353,9 +353,7 @@ test('?url import', async () => {
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
     isBuild
-      ? `data:application/javascript;base64,${Buffer.from(src).toString(
-          'base64',
-        )}`
+      ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
       : `/foo/bar/foo.js`,
   )
 })
@@ -375,9 +373,7 @@ describe('unicode url', () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
-        ? `data:application/javascript;base64,${Buffer.from(src).toString(
-            'base64',
-          )}`
+        ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
         : `/foo/bar/テスト-測試-white space.js`,
     )
   })
@@ -408,7 +404,7 @@ test('new URL("/...", import.meta.url)', async () => {
 
 test('new URL(..., import.meta.url) without extension', async () => {
   expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
-    isBuild ? 'data:application/javascript' : 'nested/test.js',
+    isBuild ? 'data:text/javascript' : 'nested/test.js',
   )
   expect(
     await page.textContent('.import-meta-url-content-without-extension'),
@@ -423,7 +419,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
     assetMatch,
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:application/javascript;base64' : '/foo/bar/nested/test.js',
+    isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
   )
 })
 

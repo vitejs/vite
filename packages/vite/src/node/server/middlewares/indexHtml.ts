@@ -127,6 +127,7 @@ const processNodeUrl = (
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
+  isClassicScriptLink?: boolean,
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
@@ -155,7 +156,7 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
-    if (server && shouldPreTransform(url, config)) {
+    if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
       let preTransformUrl: string | undefined
       if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
@@ -271,6 +272,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           htmlPath,
           originalUrl,
           server,
+          !isModule,
         )
         if (processedUrl !== src.value) {
           overwriteAttrValue(s, sourceCodeLocation!, processedUrl)

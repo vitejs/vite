@@ -58,8 +58,8 @@
     "@types/micromatch": "^4.0.6",
     "@types/node": "^20.10.4",
     "@types/picomatch": "^2.3.3",
-    "@types/semver": "^7.5.6",
     "@types/sass": "~1.43.1",
+    "@types/semver": "^7.5.6",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
@@ -118,13 +118,18 @@
       "acorn-walk": {
         "peerDependencies": {
           "acorn": "*"
+        },
+        "peerDependenciesMeta": {
+          "acorn": {
+            "optional": true
+          }
         }
       }
     },
     "patchedDependencies": {
       "chokidar@3.5.3": "patches/chokidar@3.5.3.patch",
-      "sirv@2.0.3": "patches/sirv@2.0.3.patch",
-      "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch"
+      "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch",
+      "sirv@2.0.4": "patches/sirv@2.0.4.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {

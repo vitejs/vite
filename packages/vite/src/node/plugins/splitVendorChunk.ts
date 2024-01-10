@@ -4,7 +4,7 @@ import type {
   ManualChunkMeta,
   OutputOptions,
 } from 'rollup'
-import { isInNodeModules } from '../utils'
+import { arraify, isInNodeModules } from '../utils'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
@@ -103,7 +103,7 @@ export function splitVendorChunkPlugin(): Plugin {
     config(config) {
       let outputs = config?.build?.rollupOptions?.output
       if (outputs) {
-        outputs = Array.isArray(outputs) ? outputs : [outputs]
+        outputs = arraify(outputs)
         for (const output of outputs) {
           const viteManualChunks = createSplitVendorChunk(output, config)
           if (viteManualChunks) {
