@@ -1,51 +1,94 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import logoAstro from '../../../../../images/frameworks/astro.svg'
+import logoNuxt from '../../../../../images/frameworks/nuxt.svg'
+import logoVue from '../../../../../images/frameworks/vue.svg'
+import logoAnalog from '../../../../../images/frameworks/analog.svg'
+import logoPlaywright from '../../../../../images/frameworks/playwright.svg'
+import logoMarko from '../../../../../images/frameworks/marko.svg'
+import logoStorybook from '../../../../../images/frameworks/storybook.svg'
+import logoQwik from '../../../../../images/frameworks/qwik.svg'
+import logoVitest from '../../../../../images/frameworks/vitest.svg'
+import logoRedwood from '../../../../../images/frameworks/redwood.svg'
+import logoSolid from '../../../../../images/frameworks/solid.svg'
+import logoAngular from '../../../../../images/frameworks/angular.svg'
+import logoReact from '../../../../../images/frameworks/react.svg'
+import logoSvelte from '../../../../../images/frameworks/svelte.svg'
+import FrameworkCard from './FrameworkCard.vue'
 
 /**
  * The frameworks and tools to display in this section.
  */
 const frameworks = [
   {
-    name: 'Vue',
-  },
-  {
     name: 'Astro',
+    logo: logoAstro,
+    color: '#FFFFFF',
   },
   {
     name: 'Nuxt',
+    logo: logoNuxt,
+    color: '#00da81',
   },
   {
     name: 'Vue',
+    logo: logoVue,
+    color: '#40b782',
   },
   {
-    name: 'Astro',
+    name: 'Analog',
+    logo: logoAnalog,
+    color: '#c10f2e',
   },
   {
-    name: 'Nuxt',
+    name: 'Playwright',
+    logo: logoPlaywright,
+    color: '#d45247',
   },
   {
-    name: 'Vue',
+    name: 'Marko',
+    logo: logoMarko,
+    color: '#de2a87',
   },
   {
-    name: 'Astro',
+    name: 'Storybook',
+    logo: logoStorybook,
+    color: '#fd4684',
   },
   {
-    name: 'Nuxt',
+    name: 'Qwik',
+    logo: logoQwik,
+    color: '#18b5f4',
   },
   {
-    name: 'Vue',
+    name: 'Vitest',
+    logo: logoVitest,
+    color: '#fac52b',
   },
   {
-    name: 'Astro',
+    name: 'Redwood',
+    logo: logoRedwood,
+    color: '#be4622',
   },
   {
-    name: 'Nuxt',
+    name: 'Solid',
+    logo: logoSolid,
+    color: '#75b2df',
   },
   {
-    name: 'Vue',
+    name: 'Angular',
+    logo: logoAngular,
+    color: '#e03237',
   },
   {
-    name: 'Astro',
+    name: 'React',
+    logo: logoReact,
+    color: '#00d6fd',
+  },
+  {
+    name: 'Svelte',
+    logo: logoSvelte,
+    color: '#fd3e00',
   },
 ]
 
@@ -64,21 +107,39 @@ onUnmounted(() => {
 })
 
 /**
- * How many total blocks will be drawn to fill the screen.
+ * How many total blocks (framework or empty) will fit in a single row?
  */
-const numBlocks = computed(() => {
+const numBlocksPerRow = computed(() => {
   return Math.floor(screenWidth.value / (96 + 24))
 })
 
 /**
- * The indexes of the frameworks to display in the center of the screen.
+ * How many framework blocks will fit in a single row?
+ * The most we support for our layout is 7, but it can be less for narrower screens.
+ */
+const numFrameworksPerRow = computed(() => {
+  return Math.min(numBlocksPerRow.value, 7)
+})
+
+/**
+ * How many rows do we need to display all the frameworks?
+ */
+const numRows = computed(() => {
+  return Math.ceil(frameworks.length / numFrameworksPerRow.value)
+})
+
+/**
+ * The indexes of the blocks on each row that support framework cards.
  */
 const centerIndexes = computed(() => {
-  const startIndex =
-    Math.floor(numBlocks.value / 2) - Math.floor(frameworks.length / 4)
+  const startIndex = Math.max(
+    Math.floor(numBlocksPerRow.value / 2) -
+      Math.floor(frameworks.length / (numRows.value * 2)),
+    0,
+  )
   return {
     start: startIndex,
-    end: startIndex + frameworks.length / 2,
+    end: startIndex + Math.floor(frameworks.length / numRows.value),
   }
 })
 </script>
@@ -89,26 +150,39 @@ const centerIndexes = computed(() => {
     <div class="frameworks-container">
       <!-- Top Row -->
       <div class="framework-row">
-        <div class="framework-block" v-for="i in numBlocks"></div>
+        <FrameworkCard v-for="i in numBlocksPerRow" />
       </div>
 
       <!-- Logo Rows -->
-      <div class="framework-row">
-        <template v-for="i in numBlocks">
-          <template v-if="i > centerIndexes.start && i <= centerIndexes.end">
-            <div class="framework-block active">
-              <img src="/logo.svg" alt="FRAMEWORK NAME" />
-            </div>
+      <template v-for="rowIndex in numRows">
+        <div class="framework-row">
+          <template v-for="columnIndex in numBlocksPerRow">
+            <template
+              v-if="
+                columnIndex >= centerIndexes.start &&
+                columnIndex < centerIndexes.end
+              "
+            >
+              <FrameworkCard
+                v-bind="
+                  frameworks[
+                    (rowIndex - 1) * numFrameworksPerRow +
+                      columnIndex -
+                      centerIndexes.start
+                  ]
+                "
+              />
+            </template>
+            <template v-else>
+              <FrameworkCard />
+            </template>
           </template>
-          <template v-else>
-            <div class="framework-block" />
-          </template>
-        </template>
-      </div>
+        </div>
+      </template>
 
       <!-- Bottom Row -->
       <div class="framework-row">
-        <div class="framework-block" v-for="i in numBlocks"></div>
+        <FrameworkCard v-for="i in numBlocksPerRow" />
       </div>
     </div>
   </section>
@@ -137,7 +211,6 @@ const centerIndexes = computed(() => {
 
   .frameworks-container {
     width: 100%;
-    height: 450px;
     background-color: rgba(38, 38, 38, 0.15);
     position: relative;
     margin-top: -40px;
@@ -159,13 +232,14 @@ const centerIndexes = computed(() => {
       left: 0;
       right: 0;
       z-index: 2;
+      pointer-events: none;
     }
 
     &:after {
       content: '';
       display: block;
       width: 100%;
-      height: 80px;
+      height: 100px;
       background: linear-gradient(
         180deg,
         rgba(23, 23, 23, 0) 0%,
@@ -177,6 +251,7 @@ const centerIndexes = computed(() => {
       left: 0;
       right: 0;
       z-index: 2;
+      pointer-events: none;
     }
   }
 
@@ -189,27 +264,11 @@ const centerIndexes = computed(() => {
     position: relative;
 
     &:nth-child(odd) {
-      transform: translate3d(-48px, 0, 0);
+      transform: translate3d(24px, 0, 0);
     }
 
     &:nth-child(even) {
-      transform: translate3d(24px, 0, 0);
-    }
-  }
-
-  .framework-block {
-    width: 96px;
-    aspect-ratio: 1;
-    border-radius: 12px;
-    border: 1px solid rgba(38, 38, 38, 0.7);
-    background: rgba(38, 38, 38, 0.25);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 24px;
-
-    &.active {
-      cursor: pointer;
+      transform: translate3d(-24px, 0, 0);
     }
   }
 }
