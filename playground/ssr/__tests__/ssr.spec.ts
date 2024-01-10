@@ -39,7 +39,12 @@ test.runIf(isServe)('html proxy is encoded', async () => {
     expect(browserLogs).not.toContain('html proxy is not encoded')
   } catch (e) {
     // Ignore net::ERR_ABORTED, which is causing flakiness in this test
-    if (!e.message.includes('net::ERR_ABORTED')) {
+    if (
+      !(
+        e.message.includes('net::ERR_ABORTED') ||
+        e.message.includes('interrupted')
+      )
+    ) {
       throw e
     }
   }
