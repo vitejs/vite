@@ -26,7 +26,7 @@ import {
   unique,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET } from '../constants'
+import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
@@ -369,7 +369,7 @@ export async function loadCachedDepOptimizationMetadata(
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
-      const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
+      const cachedMetadataPath = path.join(depsCacheDir, METADATA_FILENAME)
       cachedMetadata = parseDepsOptimizerMetadata(
         await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
@@ -541,8 +541,10 @@ export function runOptimizeDeps(
 
       // Write metadata file, then commit the processing folder to the global deps cache
       // Rewire the file paths from the temporary processing dir to the final deps cache dir
-      const dataPath = path.join(processingCacheDir, '_metadata.json')
-      debug?.(colors.green(`creating _metadata.json in ${processingCacheDir}`))
+      const dataPath = path.join(processingCacheDir, METADATA_FILENAME)
+      debug?.(
+        colors.green(`creating ${METADATA_FILENAME} in ${processingCacheDir}`),
+      )
       fs.writeFileSync(
         dataPath,
         stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
