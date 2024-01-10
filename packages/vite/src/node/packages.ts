@@ -45,7 +45,7 @@ function invalidatePackageData(
   packageCache: PackageCache,
   pkgPath: string,
 ): void {
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   packageCache.forEach((pkg, cacheKey) => {
     if (pkg.dir === pkgDir) {
       packageCache.delete(cacheKey)
