@@ -36,6 +36,7 @@ import {
 } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { checkPublicFile } from '../publicDir'
 import {
   arraify,
   asyncReplace,
@@ -62,7 +63,6 @@ import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
-  checkPublicFile,
   fileToUrl,
   generatedAssets,
   publicAssetUrlCache,
@@ -166,7 +166,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
-const varRE = /^var\(/i
+const functionCallRE = /^[A-Z_][\w-]*\(/i
 const nonEscapedDoubleQuoteRe = /(?<!\\)(")/g
 
 const cssBundleName = 'style.css'
@@ -264,14 +264,15 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
-        if (checkPublicFile(url, config)) {
+        const decodedUrl = decodeURI(url)
+        if (checkPublicFile(decodedUrl, config)) {
           if (encodePublicUrlsInCSS(config)) {
-            return publicFileToBuiltUrl(url, config)
+            return publicFileToBuiltUrl(decodedUrl, config)
           } else {
-            return joinUrlSegments(config.base, url)
+            return joinUrlSegments(config.base, decodedUrl)
           }
         }
-        const resolved = await resolveUrl(url, importer)
+        const resolved = await resolveUrl(decodedUrl, importer)
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
@@ -279,7 +280,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           const isExternal = config.build.rollupOptions.external
             ? resolveUserExternal(
                 config.build.rollupOptions.external,
-                url, // use URL as id since id could not be resolved
+                decodedUrl, // use URL as id since id could not be resolved
                 id,
                 false,
               )
@@ -288,7 +289,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           if (!isExternal) {
             // #9800 If we cannot resolve the css url, leave a warning.
             config.logger.warnOnce(
-              `\n${url} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
+              `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
             )
           }
         }
@@ -1288,8 +1289,6 @@ export async function preprocessCSS(
   return await compileCSS(filename, code, config)
 }
 
-const postcssReturnsVirtualFilesRE = /^<.+>$/
-
 export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string,
@@ -1299,7 +1298,8 @@ export async function formatPostcssSourceMap(
   const sources = rawMap.sources.map((source) => {
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
-    if (postcssReturnsVirtualFilesRE.test(cleanSource)) {
+    // postcss virtual files
+    if (cleanSource[0] === '<' && cleanSource[cleanSource.length - 1] === '>') {
       return `\0${cleanSource}`
     }
 
@@ -1373,7 +1373,7 @@ async function resolvePostcssConfig(
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     result = postcssrc({}, searchPath).catch((e) => {
-      if (!/No PostCSS Config found/.test(e.message)) {
+      if (!e.message.includes('No PostCSS Config found')) {
         if (e instanceof Error) {
           const { name, message, stack } = e
           e.name = 'Failed to load PostCSS config'
@@ -1517,7 +1517,7 @@ function skipUrlReplacer(rawUrl: string) {
     isExternalUrl(rawUrl) ||
     isDataUrl(rawUrl) ||
     rawUrl[0] === '#' ||
-    varRE.test(rawUrl)
+    functionCallRE.test(rawUrl)
   )
 }
 async function doUrlReplace(
@@ -1654,6 +1654,11 @@ function resolveMinifyCssEsbuildOptions(
   }
 }
 
+const atImportRE =
+  /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+const atCharsetRE =
+  /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+
 export async function hoistAtRules(css: string): Promise<string> {
   const s = new MagicString(css)
   const cleanCss = emptyCssComments(css)
@@ -1663,8 +1668,7 @@ export async function hoistAtRules(css: string): Promise<string> {
   // CSS @import can only appear at top of the file. We need to hoist all @import
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
-  const atImportRE =
-    /@import(?:\s*(?:url\([^)]*\)|"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+  atImportRE.lastIndex = 0
   while ((match = atImportRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
     // Use `appendLeft` instead of `prepend` to preserve original @import order
@@ -1673,8 +1677,7 @@ export async function hoistAtRules(css: string): Promise<string> {
 
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
-  const atCharsetRE =
-    /@charset(?:\s*(?:"(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*').*?|[^;]*);/g
+  atCharsetRE.lastIndex = 0
   let foundCharset = false
   while ((match = atCharsetRE.exec(cleanCss))) {
     s.remove(match.index, match.index + match[0].length)
@@ -1841,7 +1844,13 @@ const scss: SassStylePreprocessor = async (
     importer = cleanScssBugUrl(importer)
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias, '$')
+        rebaseUrls(
+          resolved,
+          options.filename,
+          options.alias,
+          '$',
+          resolvers.sass,
+        )
           .then((data) => done?.(fixScssBugImportValue(data)))
           .catch((data) => done?.(data))
       } else {
@@ -1927,6 +1936,7 @@ async function rebaseUrls(
   rootFile: string,
   alias: Alias[],
   variablePrefix: string,
+  resolver: ResolveFn,
 ): Promise<Sass.ImporterReturnType> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -1949,7 +1959,7 @@ async function rebaseUrls(
   }
 
   let rebased
-  const rebaseFn = (url: string) => {
+  const rebaseFn = async (url: string) => {
     if (url[0] === '/') return url
     // ignore url's starting with variable
     if (url.startsWith(variablePrefix)) return url
@@ -1961,7 +1971,7 @@ async function rebaseUrls(
         return url
       }
     }
-    const absolute = path.resolve(fileDir, url)
+    const absolute = (await resolver(url, file)) || path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
   }
@@ -2090,6 +2100,7 @@ function createViteLessPlugin(
             this.rootFile,
             this.alias,
             '@',
+            this.resolvers.less,
           )
           let contents: string
           if (result && 'contents' in result) {
@@ -2406,8 +2417,8 @@ export const convertTargets = (
 
   for (const entry of entriesWithoutES) {
     if (entry === 'esnext') continue
-    const index = entry.match(versionRE)?.index
-    if (index) {
+    const index = entry.search(versionRE)
+    if (index >= 0) {
       const browser = map[entry.slice(0, index)]
       if (browser === false) continue // No mapping available
       if (browser) {

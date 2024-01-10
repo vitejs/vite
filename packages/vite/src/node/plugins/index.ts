@@ -6,6 +6,7 @@ import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { watchPackageDataPlugin } from '../packages'
+import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -63,6 +64,7 @@ export async function resolvePlugins(
       packageCache: config.packageCache,
       ssrConfig: config.ssr,
       asSrc: true,
+      fsUtils: getFsUtils(config),
       getDepsOptimizer: isBuild
         ? undefined
         : (ssr: boolean) => getDepsOptimizer(config, ssr),

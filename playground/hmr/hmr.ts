@@ -66,7 +66,7 @@ if (import.meta.hot) {
 
     const cssUpdate = event.updates.find(
       (update) =>
-        update.type === 'css-update' && update.path.match('global.css'),
+        update.type === 'css-update' && update.path.includes('global.css'),
     )
     if (cssUpdate) {
       text(

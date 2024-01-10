@@ -92,7 +92,7 @@ async function createServer() {
   // When the server restarts (for example after the user modifies
   // vite.config.js), `vite.middlewares` is still going to be the same
   // reference (with a new internal stack of Vite and plugin-injected
-  // middlewares. The following is valid even after restarts.
+  // middlewares). The following is valid even after restarts.
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {

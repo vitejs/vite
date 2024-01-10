@@ -23,6 +23,10 @@ const assetMatch = isBuild
   ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
   : '/foo/bar/nested/asset.png'
 
+const encodedAssetMatch = isBuild
+  ? /\/foo\/bar\/assets\/asset_small_-[-\w]{8}\.png/
+  : '/foo/bar/nested/asset[small].png'
+
 const iconMatch = `/foo/bar/icon.png`
 
 const fetchPath = (p: string) => {
@@ -132,11 +136,11 @@ describe('asset imports from js', () => {
     )
     expect(await page.textContent('.public-json-import-content'))
       .toMatchInlineSnapshot(`
-      "{
-        \\"foo\\": \\"bar\\"
-      }
-      "
-    `)
+        "{
+          "foo": "bar"
+        }
+        "
+      `)
   })
 })
 
@@ -151,6 +155,10 @@ describe('css url() references', () => {
 
   test('relative', async () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
+  })
+
+  test('encoded', async () => {
+    expect(await getBg('.css-url-encoded')).toMatch(encodedAssetMatch)
   })
 
   test('image-set relative', async () => {
@@ -223,10 +231,20 @@ describe('css url() references', () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
-    const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
-    const el = await page.$(`link.ico`)
-    const href = await el.getAttribute('href')
-    expect(href).toMatch(icoMatch)
+  })
+
+  test('no base64 inline for icon and manifest links', async () => {
+    const iconEl = await page.$(`link.ico`)
+    const href = await iconEl.getAttribute('href')
+    expect(href).toMatch(
+      isBuild ? /\/foo\/bar\/assets\/favicon-[-\w]{8}\.ico/ : 'favicon.ico',
+    )
+
+    const manifestEl = await page.$(`link[rel="manifest"]`)
+    const manifestHref = await manifestEl.getAttribute('href')
+    expect(manifestHref).toMatch(
+      isBuild ? /\/foo\/bar\/assets\/manifest-[-\w]{8}\.json/ : 'manifest.json',
+    )
   })
 
   test('multiple urls on the same line', async () => {
@@ -335,9 +353,7 @@ test('?url import', async () => {
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
     isBuild
-      ? `data:application/javascript;base64,${Buffer.from(src).toString(
-          'base64',
-        )}`
+      ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
       : `/foo/bar/foo.js`,
   )
 })
@@ -357,9 +373,7 @@ describe('unicode url', () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
-        ? `data:application/javascript;base64,${Buffer.from(src).toString(
-            'base64',
-          )}`
+        ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
         : `/foo/bar/テスト-測試-white space.js`,
     )
   })
@@ -390,7 +404,7 @@ test('new URL("/...", import.meta.url)', async () => {
 
 test('new URL(..., import.meta.url) without extension', async () => {
   expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
-    isBuild ? 'data:application/javascript' : 'nested/test.js',
+    isBuild ? 'data:text/javascript' : 'nested/test.js',
   )
   expect(
     await page.textContent('.import-meta-url-content-without-extension'),
@@ -405,7 +419,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
     assetMatch,
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:application/javascript;base64' : '/foo/bar/nested/test.js',
+    isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
   )
 })
 

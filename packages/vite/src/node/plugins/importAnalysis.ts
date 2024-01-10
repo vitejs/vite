@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
@@ -52,12 +51,14 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../utils'
+import { getFsUtils } from '../fsUtils'
+import { checkPublicFile } from '../publicDir'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { checkPublicFile, urlRE } from './asset'
+import { urlRE } from './asset'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
@@ -173,6 +174,7 @@ function extractImportedBindings(
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
+  const fsUtils = getFsUtils(config)
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
@@ -218,10 +220,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
-      const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
-        debug?.(colors.dim(`[skipped] ${prettyImporter}`))
+        debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
         return null
       }
 
@@ -258,7 +259,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`,
+          `${timeFrom(start)} ${colors.dim(
+            `[no imports] ${prettifyUrl(importer, root)}`,
+          )}`,
         )
         return source
       }
@@ -335,8 +338,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          (path.isAbsolute(cleanUrl(resolved.id)) &&
-            fs.existsSync(cleanUrl(resolved.id)))
+          // vite-plugin-react isn't following the leading \0 virtual module convention.
+          // This is a temporary hack to avoid expensive fs checks for React apps.
+          // We'll remove this as soon we're able to fix the react plugins.
+          (resolved.id !== '/@react-refresh' &&
+            path.isAbsolute(resolved.id) &&
+            fsUtils.existsSync(cleanUrl(resolved.id)))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
@@ -365,7 +372,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (
             (isRelative || isSelfImport) &&
             !hasImportInQueryParamsRE.test(url) &&
-            !url.match(DEP_VERSION_RE)
+            !DEP_VERSION_RE.test(url)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
@@ -534,7 +541,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               let rewriteDone = false
               if (
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
-                !resolvedId.match(optimizedDepChunkRE)
+                !optimizedDepChunkRE.test(resolvedId)
               ) {
                 // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
                 // internal optimized chunks don't need es interop and are excluded
@@ -554,7 +561,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   // Non-entry dynamic imports from dependencies will reach here as there isn't
                   // optimize info for them, but they don't need es interop. If the request isn't
                   // a dynamic import, then it is an internal Vite error
-                  if (!file.match(optimizedDepDynamicRE)) {
+                  if (!optimizedDepDynamicRE.test(file)) {
                     config.logger.error(
                       colors.red(
                         `Vite Error, ${url} optimized info should be defined`,
@@ -702,7 +709,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 : acceptedUrls.size
                   ? `[accepts-deps]`
                   : `[detected api usage]`
-          } ${prettyImporter}`,
+          } ${prettifyUrl(importer, root)}`,
         )
         // inject hot context
         str().prepend(
@@ -784,7 +791,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       debug?.(
         `${timeFrom(start)} ${colors.dim(
-          `[${importedUrls.size} imports rewritten] ${prettyImporter}`,
+          `[${importedUrls.size} imports rewritten] ${prettifyUrl(
+            importer,
+            root,
+          )}`,
         )}`,
       )
 

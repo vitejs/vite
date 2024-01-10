@@ -23,7 +23,7 @@ test('should render', async () => {
 if (!isBuild) {
   test('should connect', async () => {
     expect(browserLogs.length).toBe(3)
-    expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
+    expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
   })
 
@@ -887,9 +887,9 @@ if (import.meta.hot) {
       'cc',
     )
     expect(serverLogs.length).greaterThanOrEqual(1)
+    // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
     // Match on full log not possible because of color markers
-    expect(serverLogs.at(-1)!).toContain('page reload')
-    expect(serverLogs.at(-1)!).toContain('(circular imports)')
+    expect(serverLogs.at(-1)!).toContain('hmr update')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {
