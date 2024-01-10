@@ -40,11 +40,7 @@ import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
-import {
-  getDepsOptimizer,
-  initDepsOptimizer,
-  initDevSsrDepsOptimizer,
-} from '../optimizer'
+import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
@@ -824,9 +820,6 @@ export async function _createServer(
       // start deps optimizer after all container plugins are ready
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
-      }
-      if (isDepsOptimizerEnabled(config, true)) {
-        await initDevSsrDepsOptimizer(config, server)
       }
       warmupFiles(server)
       initingServer = undefined
