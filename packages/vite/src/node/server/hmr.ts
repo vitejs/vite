@@ -64,7 +64,7 @@ export async function handleHMRUpdate(
 ): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
-  
+
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === name,
