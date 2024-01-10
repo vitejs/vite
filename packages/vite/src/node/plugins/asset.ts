@@ -329,7 +329,7 @@ async function fileToBuiltUrl(
   config: ResolvedConfig,
   pluginContext: PluginContext,
   skipPublicCheck = false,
-  shouldInline?: boolean,
+  forceInline?: boolean,
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config)) {
     return publicFileToBuiltUrl(id, config)
@@ -344,25 +344,8 @@ async function fileToBuiltUrl(
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
 
-  const finalShouldInline = (() => {
-    if (config.build.lib) return true
-    if (shouldInline != null) return shouldInline
-    let limit: number
-    if (typeof config.build.assetsInlineLimit === 'function') {
-      const userShouldInline = config.build.assetsInlineLimit(file, content)
-      if (userShouldInline != null) return userShouldInline
-      limit = DEFAULT_ASSETS_INLINE_LIMIT
-    } else {
-      limit = Number(config.build.assetsInlineLimit)
-    }
-    if (file.endsWith('.html')) return false
-    // Don't inline SVG with fragments, as they are meant to be reused
-    if (file.endsWith('.svg') && id.includes('#')) return false
-    return content.length < limit && !isGitLfsPlaceholder(content)
-  })()
-
   let url: string
-  if (finalShouldInline) {
+  if (shouldInline(config, file, id, content, forceInline)) {
     if (config.build.lib && isGitLfsPlaceholder(content)) {
       config.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
@@ -403,7 +386,7 @@ export async function urlToBuiltUrl(
   importer: string,
   config: ResolvedConfig,
   pluginContext: PluginContext,
-  shouldInline?: boolean,
+  forceInline?: boolean,
 ): Promise<string> {
   if (checkPublicFile(url, config)) {
     return publicFileToBuiltUrl(url, config)
@@ -418,8 +401,31 @@ export async function urlToBuiltUrl(
     pluginContext,
     // skip public check since we just did it above
     true,
-    shouldInline,
+    forceInline,
   )
+}
+
+const shouldInline = (
+  config: ResolvedConfig,
+  file: string,
+  id: string,
+  content: Buffer,
+  forceInline: boolean | undefined,
+): boolean => {
+  if (config.build.lib) return true
+  if (forceInline !== undefined) return forceInline
+  let limit: number
+  if (typeof config.build.assetsInlineLimit === 'function') {
+    const userShouldInline = config.build.assetsInlineLimit(file, content)
+    if (userShouldInline != null) return userShouldInline
+    limit = DEFAULT_ASSETS_INLINE_LIMIT
+  } else {
+    limit = Number(config.build.assetsInlineLimit)
+  }
+  if (file.endsWith('.html')) return false
+  // Don't inline SVG with fragments, as they are meant to be reused
+  if (file.endsWith('.svg') && id.includes('#')) return false
+  return content.length < limit && !isGitLfsPlaceholder(content)
 }
 
 const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
