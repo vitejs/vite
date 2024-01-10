@@ -14,10 +14,10 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
         <span>ViteConf 2023 - watch the replay</span>
       </a>
       <h1>Vite is the next generation of frontend tooling</h1>
-      <h2>
+      <h3>
         Get ready for a development environment that can finally catch up with
         you.
-      </h2>
+      </h3>
       <div class="hero__actions">
         <a href="/guide/" class="btn btn--primary">Get started</a>
         <a
@@ -41,6 +41,7 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
 .hero {
   position: relative;
   z-index: 2;
+  margin-bottom: 60px;
 }
 
 .container {
@@ -111,51 +112,6 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
       0 0 20px rgba(189, 52, 254, 0.2),
       inset 0 0 10px rgba(189, 52, 254, 0.2);
   }
-}
-
-h1 {
-  text-align: center;
-  font-family: 'Manrope', sans-serif;
-  font-style: normal;
-  font-weight: 600;
-  background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.31) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-wrap: balance;
-  cursor: default;
-  font-size: 44px;
-  line-height: 120%;
-  letter-spacing: -0.88px;
-  padding: 0 16px;
-  margin-bottom: 15px;
-
-  @media (min-width: 768px) {
-    font-size: 64px;
-    line-height: 81px;
-    letter-spacing: -1.28px;
-  }
-
-  @media (min-width: 1025px) {
-    font-size: 72px;
-    letter-spacing: -1.44px;
-    padding-bottom: 8px; /* Fix for hanging descender on "g" in "tooling" */
-  }
-}
-
-h2 {
-  color: #a3a3a3;
-  text-align: center;
-  font-family: Inter, sans-serif;
-  font-size: 20px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 150%;
-  letter-spacing: -0.4px;
-  max-width: 500px;
-  text-wrap: balance;
-  cursor: default;
-  margin-bottom: 25px;
 }
 
 .hero__glow {

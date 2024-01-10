@@ -433,7 +433,6 @@ const animateSingleInputMobile = (inputLine) => {
 .hero__diagram {
   pointer-events: none;
   position: relative;
-  z-index: 2;
   width: 1630px;
   overflow: hidden;
   margin: -100px auto 0;
@@ -467,20 +466,20 @@ const animateSingleInputMobile = (inputLine) => {
     background: linear-gradient(
         130deg,
         rgba(42, 33, 63, 0.5) 0%,
-        rgba(94, 77, 138, 0.1) 35%,
+        rgba(94, 77, 138, 0.5) 35%,
         rgba(42, 33, 63, 0.5) 90%
       ),
       linear-gradient(
         130deg,
-        rgba(96, 72, 157, 0.6) 0%,
+        rgba(96, 72, 157, 0.3) 0%,
         rgba(42, 33, 63, 0) 40%
       ),
       linear-gradient(
         130deg,
         rgba(42, 33, 63, 0) 60%,
-        rgba(96, 72, 157, 0.6) 100%
+        rgba(96, 72, 157, 0.3) 100%
       ),
-      rgba(0, 0, 0, 0.5);
+      rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
 
     &:after {
@@ -499,7 +498,6 @@ const animateSingleInputMobile = (inputLine) => {
       );
       background-size: 500%;
       background-position-x: 100%;
-      animation: shimmer 6s infinite linear;
       mix-blend-mode: color-dodge;
       filter: blur(10px);
     }
@@ -520,7 +518,6 @@ const animateSingleInputMobile = (inputLine) => {
       );
       background-size: 400%;
       background-position-x: 100%;
-      animation: shimmer 8s infinite linear;
       mix-blend-mode: color-dodge;
       filter: blur(10px);
     }
@@ -557,6 +554,14 @@ const animateSingleInputMobile = (inputLine) => {
 
     .vite-chip__filter {
       transform: translate3d(0, 0, 0) scale(0.98);
+
+      &:before {
+        animation: shimmer 8s infinite linear;
+      }
+
+      &:after {
+        animation: shimmer 6s infinite linear;
+      }
     }
 
     .vite-chip__logo {
