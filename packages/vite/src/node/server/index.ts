@@ -52,6 +52,7 @@ import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
+import { getEnvFilesForMode } from '../env'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -414,7 +415,11 @@ export async function _createServer(
   const watcher = watchEnabled
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
-        [...new Set([root, ...config.configFileDependencies, config.envDir])],
+        [
+          root,
+          ...config.configFileDependencies,
+          ...getEnvFilesForMode(config.mode, config.envDir),
+        ],
         resolvedWatchOptions,
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
