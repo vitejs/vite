@@ -424,6 +424,32 @@ importers:
         specifier: ^8.15.0
         version: 8.15.0
 
+  packages/vite/src/node/__tests__/packages/module: {}
+
+  packages/vite/src/node/__tests__/packages/name: {}
+
+  packages/vite/src/node/__tests__/packages/noname: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/lerna/nested: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/none/nested: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/pnpm: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/pnpm/nested: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/yarn: {}
+
+  packages/vite/src/node/server/__tests__/fixtures/yarn/nested: {}
+
+  packages/vite/src/node/ssr/__tests__:
+    dependencies:
+      '@vitejs/cjs-ssr-dep':
+        specifier: link:./fixtures/cjs-ssr-dep
+        version: link:fixtures/cjs-ssr-dep
+
+  packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep: {}
+
   playground:
     devDependencies:
       convert-source-map:
@@ -1896,7 +1922,6 @@ packages:
   /@babel/highlight@7.23.4:
     resolution: {integrity: sha512-acGdbYSfp2WheJoJm/EBBBLh/ID8KDc64ISZ9DYtBmC8/Q204PZJLHyzeB5qMzJ5trcOkybd78M4x2KWsUq++A==}
     engines: {node: '>=6.9.0'}
-    requiresBuild: true
     dependencies:
       '@babel/helper-validator-identifier': 7.22.20
       chalk: 2.4.2
