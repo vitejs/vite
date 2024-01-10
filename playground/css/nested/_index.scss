@@ -1,3 +1,5 @@
+@use 'sass:string';
+
 @import './css-in-scss.css';
 
 .sass-at-import {
@@ -13,5 +15,11 @@
 $var: '/ok.png';
 .sass-url-starts-with-variable {
   background: url($var);
+  background-position: center;
+}
+
+$var2: '/OK.PNG';
+.sass-url-starts-with-function-call {
+  background: url(to-lower-case($var2));
   background-position: center;
 }

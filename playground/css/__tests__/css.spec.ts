@@ -74,6 +74,9 @@ test('sass', async () => {
   const atImport = await page.$('.sass-at-import')
   const atImportAlias = await page.$('.sass-at-import-alias')
   const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
+  const urlStartsWithFunctionCall = await page.$(
+    '.sass-url-starts-with-function-call',
+  )
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
@@ -84,6 +87,9 @@ test('sass', async () => {
     isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
+    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+  expect(await getBg(urlStartsWithFunctionCall)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
