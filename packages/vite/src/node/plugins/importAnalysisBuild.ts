@@ -89,8 +89,13 @@ function preload(
   importerUrl?: string,
 ) {
   let promise: Promise<unknown> = Promise.resolve()
-  // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
-  if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
+  if (
+    // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
+    __VITE_IS_MODERN__ &&
+    deps &&
+    deps.length > 0 &&
+    typeof window !== 'undefined'
+  ) {
     const links = document.getElementsByTagName('link')
 
     promise = Promise.all(
