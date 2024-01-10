@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 /**
  * The frameworks and tools to display in this section.
@@ -51,6 +51,18 @@ const frameworks = [
 
 const screenWidth = ref(window.innerWidth)
 
+const handleResize = () => {
+  screenWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
 /**
  * How many total blocks will be drawn to fill the screen.
  */
@@ -75,29 +87,28 @@ const centerIndexes = computed(() => {
   <section class="frameworks-section">
     <h2>Powering your favorite frameworks and tools</h2>
     <div class="frameworks-container">
+      <!-- Top Row -->
       <div class="framework-row">
-        <div class="framework-block" v-for="i in numBlocks">{{ i }}</div>
+        <div class="framework-block" v-for="i in numBlocks"></div>
       </div>
+
+      <!-- Logo Rows -->
       <div class="framework-row">
-        <div
-          class="framework-block"
-          v-for="i in numBlocks"
-          :class="{ active: i > centerIndexes.start && i <= centerIndexes.end }"
-        >
-          {{ i }}
-        </div>
+        <template v-for="i in numBlocks">
+          <template v-if="i > centerIndexes.start && i <= centerIndexes.end">
+            <div class="framework-block active">
+              <img src="/logo.svg" alt="FRAMEWORK NAME" />
+            </div>
+          </template>
+          <template v-else>
+            <div class="framework-block" />
+          </template>
+        </template>
       </div>
+
+      <!-- Bottom Row -->
       <div class="framework-row">
-        <div
-          class="framework-block"
-          v-for="i in numBlocks"
-          :class="{ active: i > centerIndexes.start && i <= centerIndexes.end }"
-        >
-          {{ i }}
-        </div>
-      </div>
-      <div class="framework-row">
-        <div class="framework-block" v-for="i in numBlocks">{{ i }}</div>
+        <div class="framework-block" v-for="i in numBlocks"></div>
       </div>
     </div>
   </section>
@@ -195,9 +206,10 @@ const centerIndexes = computed(() => {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 24px;
 
     &.active {
-      background: linear-gradient(#57ccff, #af48ff);
+      cursor: pointer;
     }
   }
 }
