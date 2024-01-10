@@ -223,6 +223,7 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    name: 'ws',
     listen: () => {
       wsHttpServer?.listen(port, host)
     },

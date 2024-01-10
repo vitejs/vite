@@ -64,6 +64,10 @@ export interface HMRBroadcasterClient {
 
 export interface HMRChannel {
   /**
+   * Unique channel name
+   */
+  name: string
+  /**
    * Broadcast events to all clients
    */
   send(payload: HMRPayload): void
@@ -93,7 +97,7 @@ export interface HMRChannel {
   close(): void | Promise<void>
 }
 
-export interface HMRBroadcaster extends Omit<HMRChannel, 'close'> {
+export interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
   /**
    * All registered channels. Always has websocket channel.
    */
@@ -706,6 +710,9 @@ export function createHMRBroadcaster(): HMRBroadcaster {
       return [...channels]
     },
     addChannel(channel) {
+      if (channels.some((c) => c.name === channel.name)) {
+        throw new Error(`HMR channel "${channel.name}" is already defined.`)
+      }
       channels.push(channel)
       return broadcaster
     },
