@@ -632,6 +632,8 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export const ERR_SYMLINK_IN_RECURSIVE_READDIR =
+  'ERR_SYMLINK_IN_RECURSIVE_READDIR'
 export async function recursiveReaddir(dir: string): Promise<string[]> {
   if (!fs.existsSync(dir)) {
     return []
@@ -645,6 +647,13 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
       return []
     }
     throw e
+  }
+  if (dirents.some((dirent) => dirent.isSymbolicLink())) {
+    const err: any = new Error(
+      'Symbolic links are not supported in recursiveReaddir',
+    )
+    err.code = ERR_SYMLINK_IN_RECURSIVE_READDIR
+    throw err
   }
   const files = await Promise.all(
     dirents.map((dirent) => {
@@ -787,10 +796,10 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
-  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
   const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
@@ -1070,7 +1079,7 @@ export const requireResolveFromRootWithFallback = (
 }
 
 export function emptyCssComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+  return raw.replace(multilineCommentsRE, blankReplacer)
 }
 
 function backwardCompatibleWorkerPlugins(plugins: any) {

@@ -40,7 +40,7 @@ const sirvOptions = ({
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
       if (knownJavascriptExtensionRE.test(pathname)) {
-        res.setHeader('Content-Type', 'application/javascript')
+        res.setHeader('Content-Type', 'text/javascript')
       }
       const headers = getHeaders()
       if (headers) {
@@ -54,7 +54,7 @@ const sirvOptions = ({
 
 export function servePublicMiddleware(
   server: ViteDevServer,
-  publicFiles: Set<string>,
+  publicFiles?: Set<string>,
 ): Connect.NextHandleFunction {
   const dir = server.config.publicDir
   const serve = sirv(
@@ -82,7 +82,7 @@ export function servePublicMiddleware(
     // in-memory set of known public files. This set is updated on restarts.
     // also skip import request and internal requests `/@fs/ /@vite-client` etc...
     if (
-      !publicFiles.has(toFilePath(req.url!)) ||
+      (publicFiles && !publicFiles.has(toFilePath(req.url!))) ||
       isImportRequest(req.url!) ||
       isInternalRequest(req.url!)
     ) {

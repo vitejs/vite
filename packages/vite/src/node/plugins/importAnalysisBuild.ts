@@ -634,13 +634,22 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
             .join(',')}]`
 
-          s.append(`\
+          const mapDepsCode = `\
 function __vite__mapDeps(indexes) {
   if (!__vite__mapDeps.viteFileDeps) {
     __vite__mapDeps.viteFileDeps = ${fileDepsCode}
   }
   return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
-}`)
+}\n`
+
+          // inject extra code before sourcemap comment
+          const mapFileCommentMatch =
+            convertSourceMap.mapFileCommentRegex.exec(code)
+          if (mapFileCommentMatch) {
+            s.appendRight(mapFileCommentMatch.index, mapDepsCode)
+          } else {
+            s.append(mapDepsCode)
+          }
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless

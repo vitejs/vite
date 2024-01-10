@@ -291,8 +291,8 @@ async function nodeImport(
   metadata?: SSRImportMetadata,
 ) {
   let url: string
-  const isRuntimeHandled = id.startsWith('data:') || isBuiltin(id)
-  if (isRuntimeHandled) {
+  let filePath: string | undefined
+  if (id.startsWith('data:') || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(
@@ -310,6 +310,7 @@ async function nodeImport(
       err.code = 'ERR_MODULE_NOT_FOUND'
       throw err
     }
+    filePath = resolved.id
     url = pathToFileURL(resolved.id).toString()
   }
 
@@ -317,17 +318,17 @@ async function nodeImport(
 
   if (resolveOptions.legacyProxySsrExternalModules) {
     return proxyESM(mod)
-  } else if (isRuntimeHandled) {
-    return mod
-  } else {
+  } else if (filePath) {
     analyzeImportedModDifference(
       mod,
-      url,
+      filePath,
       id,
       metadata,
       resolveOptions.packageCache,
     )
     return proxyGuardOnlyEsm(mod, id)
+  } else {
+    return mod
   }
 }
 

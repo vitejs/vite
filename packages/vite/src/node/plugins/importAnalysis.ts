@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
@@ -53,6 +52,7 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../utils'
+import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
@@ -174,6 +174,7 @@ function extractImportedBindings(
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
+  const fsUtils = getFsUtils(config)
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
@@ -337,8 +338,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = resolved.id.slice(root.length)
         } else if (
           depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          (path.isAbsolute(cleanUrl(resolved.id)) &&
-            fs.existsSync(cleanUrl(resolved.id)))
+          // vite-plugin-react isn't following the leading \0 virtual module convention.
+          // This is a temporary hack to avoid expensive fs checks for React apps.
+          // We'll remove this as soon we're able to fix the react plugins.
+          (resolved.id !== '/@react-refresh' &&
+            path.isAbsolute(resolved.id) &&
+            fsUtils.existsSync(cleanUrl(resolved.id)))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
           // a regular file exists but is out of root: rewrite to absolute /@fs/ paths

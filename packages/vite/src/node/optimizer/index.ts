@@ -23,9 +23,10 @@ import {
   normalizePath,
   removeLeadingSlash,
   tryStatSync,
+  unique,
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET } from '../constants'
+import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
@@ -192,6 +193,16 @@ export interface DepOptimizationMetadata {
    */
   hash: string
   /**
+   * This hash is determined by dependency lockfiles.
+   * This is checked on server startup to avoid unnecessary re-bundles.
+   */
+  lockfileHash: string
+  /**
+   * This hash is determined by user config.
+   * This is checked on server startup to avoid unnecessary re-bundles.
+   */
+  configHash: string
+  /**
    * The browser hash is determined by the main hash plus additional dependencies
    * discovered at runtime. This is used to invalidate browser requests to
    * optimized deps.
@@ -310,9 +321,11 @@ export function initDepsOptimizerMetadata(
   ssr: boolean,
   timestamp?: string,
 ): DepOptimizationMetadata {
-  const hash = getDepHash(config, ssr)
+  const { lockfileHash, configHash, hash } = getDepHash(config, ssr)
   return {
     hash,
+    lockfileHash,
+    configHash,
     browserHash: getOptimizedBrowserHash(hash, {}, timestamp),
     optimized: {},
     chunks: {},
@@ -356,18 +369,28 @@ export async function loadCachedDepOptimizationMetadata(
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
-      const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
+      const cachedMetadataPath = path.join(depsCacheDir, METADATA_FILENAME)
       cachedMetadata = parseDepsOptimizerMetadata(
         await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
-    if (cachedMetadata && cachedMetadata.hash === getDepHash(config, ssr)) {
-      log?.('Hash is consistent. Skipping. Use --force to override.')
-      // Nothing to commit or cancel as we are using the cache, we only
-      // need to resolve the processing promise so requests can move on
-      return cachedMetadata
+    if (cachedMetadata) {
+      if (cachedMetadata.lockfileHash !== getLockfileHash(config, ssr)) {
+        config.logger.info(
+          'Re-optimizing dependencies because lockfile has changed',
+        )
+      } else if (cachedMetadata.configHash !== getConfigHash(config, ssr)) {
+        config.logger.info(
+          'Re-optimizing dependencies because vite config has changed',
+        )
+      } else {
+        log?.('Hash is consistent. Skipping. Use --force to override.')
+        // Nothing to commit or cancel as we are using the cache, we only
+        // need to resolve the processing promise so requests can move on
+        return cachedMetadata
+      }
     }
   } else {
     config.logger.info('Forced re-optimization of dependencies')
@@ -417,7 +440,7 @@ export function toDiscoveredDependencies(
   timestamp?: string,
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
-    getDepHash(config, ssr),
+    getDepHash(config, ssr).hash,
     deps,
     timestamp,
   )
@@ -462,7 +485,7 @@ export function runOptimizeDeps(
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
   const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
 
-  // Create a temporal directory so we don't need to delete optimized deps
+  // Create a temporary directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
   fs.mkdirSync(processingCacheDir, { recursive: true })
@@ -517,28 +540,30 @@ export function runOptimizeDeps(
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache
-      // Rewire the file paths from the temporal processing dir to the final deps cache dir
-      const dataPath = path.join(processingCacheDir, '_metadata.json')
-      debug?.(colors.green(`creating _metadata.json in ${processingCacheDir}`))
+      // Rewire the file paths from the temporary processing dir to the final deps cache dir
+      const dataPath = path.join(processingCacheDir, METADATA_FILENAME)
+      debug?.(
+        colors.green(`creating ${METADATA_FILENAME} in ${processingCacheDir}`),
+      )
       fs.writeFileSync(
         dataPath,
         stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
       )
 
       // In order to minimize the time where the deps folder isn't in a consistent state,
-      // we first rename the old depsCacheDir to a temporal path, then we rename the
+      // we first rename the old depsCacheDir to a temporary path, then we rename the
       // new processing cache dir to the depsCacheDir. In systems where doing so in sync
       // is safe, we do an atomic operation (at least for this thread). For Windows, we
       // found there are cases where the rename operation may finish before it's done
       // so we do a graceful rename checking that the folder has been properly renamed.
       // We found that the rename-rename (then delete the old folder in the background)
       // is safer than a delete-rename operation.
-      const temporalPath = depsCacheDir + getTempSuffix()
+      const temporaryPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
       if (isWindows) {
         if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
-          await safeRename(depsCacheDir, temporalPath)
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          await safeRename(depsCacheDir, temporaryPath)
         }
         debug?.(
           colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
@@ -546,8 +571,8 @@ export function runOptimizeDeps(
         await safeRename(processingCacheDir, depsCacheDir)
       } else {
         if (depsCacheDirPresent) {
-          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporalPath}`))
-          fs.renameSync(depsCacheDir, temporalPath)
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          fs.renameSync(depsCacheDir, temporaryPath)
         }
         debug?.(
           colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
@@ -555,10 +580,10 @@ export function runOptimizeDeps(
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
-      // Delete temporal path in the background
+      // Delete temporary path in the background
       if (depsCacheDirPresent) {
-        debug?.(colors.green(`removing cache temp dir ${temporalPath}`))
-        fsp.rm(temporalPath, { recursive: true, force: true })
+        debug?.(colors.green(`removing cache temp dir ${temporaryPath}`))
+        fsp.rm(temporaryPath, { recursive: true, force: true })
       }
     },
   }
@@ -975,17 +1000,15 @@ function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string,
 ): DepOptimizationMetadata | undefined {
-  const { hash, browserHash, optimized, chunks } = JSON.parse(
-    jsonMetadata,
-    (key: string, value: string) => {
+  const { hash, lockfileHash, configHash, browserHash, optimized, chunks } =
+    JSON.parse(jsonMetadata, (key: string, value: string) => {
       // Paths can be absolute or relative to the deps cache dir where
       // the _metadata.json is located
       if (key === 'file' || key === 'src') {
         return normalizePath(path.resolve(depsCacheDir, value))
       }
       return value
-    },
-  )
+    })
   if (
     !chunks ||
     Object.values(optimized).some((depInfo: any) => !depInfo.fileHash)
@@ -995,6 +1018,8 @@ function parseDepsOptimizerMetadata(
   }
   const metadata = {
     hash,
+    lockfileHash,
+    configHash,
     browserHash,
     optimized: {},
     discovered: {},
@@ -1029,10 +1054,13 @@ function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string,
 ) {
-  const { hash, browserHash, optimized, chunks } = metadata
+  const { hash, configHash, lockfileHash, browserHash, optimized, chunks } =
+    metadata
   return JSON.stringify(
     {
       hash,
+      configHash,
+      lockfileHash,
       browserHash,
       optimized: Object.fromEntries(
         Object.values(optimized).map(
@@ -1187,7 +1215,42 @@ const lockfileFormats = [
 })
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
-export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
+function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
+  // Take config into account
+  // only a subset of config options that can affect dep optimization
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  const content = JSON.stringify(
+    {
+      mode: process.env.NODE_ENV || config.mode,
+      root: config.root,
+      resolve: config.resolve,
+      buildTarget: config.build.target,
+      assetsInclude: config.assetsInclude,
+      plugins: config.plugins.map((p) => p.name),
+      optimizeDeps: {
+        include: optimizeDeps?.include
+          ? unique(optimizeDeps.include).sort()
+          : undefined,
+        exclude: optimizeDeps?.exclude
+          ? unique(optimizeDeps.exclude).sort()
+          : undefined,
+        esbuildOptions: {
+          ...optimizeDeps?.esbuildOptions,
+          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
+        },
+      },
+    },
+    (_, value) => {
+      if (typeof value === 'function' || value instanceof RegExp) {
+        return value.toString()
+      }
+      return value
+    },
+  )
+  return getHash(content)
+}
+
+function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
   const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
@@ -1204,34 +1267,21 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       }
     }
   }
-  // also take config into account
-  // only a subset of config options that can affect dep optimization
-  const optimizeDeps = getDepOptimizationConfig(config, ssr)
-  content += JSON.stringify(
-    {
-      mode: process.env.NODE_ENV || config.mode,
-      root: config.root,
-      resolve: config.resolve,
-      buildTarget: config.build.target,
-      assetsInclude: config.assetsInclude,
-      plugins: config.plugins.map((p) => p.name),
-      optimizeDeps: {
-        include: optimizeDeps?.include,
-        exclude: optimizeDeps?.exclude,
-        esbuildOptions: {
-          ...optimizeDeps?.esbuildOptions,
-          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
-        },
-      },
-    },
-    (_, value) => {
-      if (typeof value === 'function' || value instanceof RegExp) {
-        return value.toString()
-      }
-      return value
-    },
-  )
   return getHash(content)
+}
+
+function getDepHash(
+  config: ResolvedConfig,
+  ssr: boolean,
+): { lockfileHash: string; configHash: string; hash: string } {
+  const lockfileHash = getLockfileHash(config, ssr)
+  const configHash = getConfigHash(config, ssr)
+  const hash = getHash(lockfileHash + configHash)
+  return {
+    hash,
+    lockfileHash,
+    configHash,
+  }
 }
 
 function getOptimizedBrowserHash(
