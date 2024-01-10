@@ -59,13 +59,18 @@
     display: block;
     width: fit-content;
     font-family: Manrope, sans-serif;
-    font-size: 44px;
+    font-size: 32px;
     font-style: normal;
     font-weight: 600;
     line-height: normal;
-    letter-spacing: -0.88px;
+    letter-spacing: -0.64px;
     cursor: default;
     text-wrap: balance;
+
+    @media (min-width: 768px) {
+      font-size: 44px;
+      letter-spacing: -0.88px;
+    }
   }
 
   h3 {

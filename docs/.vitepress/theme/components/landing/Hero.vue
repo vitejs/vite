@@ -41,7 +41,11 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
 .hero {
   position: relative;
   z-index: 2;
-  margin-bottom: 60px;
+  margin-bottom: 0;
+
+  @media (min-width: 768px) {
+    margin-bottom: 60px;
+  }
 }
 
 .container {

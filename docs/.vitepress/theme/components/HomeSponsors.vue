@@ -8,12 +8,12 @@ const { data } = useSponsor()
 <template>
   <VPHomeSponsors
     v-if="data"
-    message="Vite is free and open source, made possible by wonderful sponsors."
+    message="Vite is MIT Licensed and will always be free and open source. This is made possible by our wonderful sponsors."
     :data="data"
   />
   <div class="action">
     <a
-      class="sponsor"
+      class="btn btn--outline"
       href="https://github.com/sponsors/vitejs"
       target="_blank"
       rel="noreferrer"
@@ -21,7 +21,7 @@ const { data } = useSponsor()
       Sponsor Vite
     </a>
     <a
-      class="sponsor"
+      class="btn btn--outline"
       href="https://github.com/sponsors/yyx990803"
       target="_blank"
       rel="noreferrer"

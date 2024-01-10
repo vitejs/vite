@@ -260,9 +260,6 @@ h2 {
     0 0 4px rgba(255, 255, 255, 0.1),
     0 0 14px rgba(130, 168, 236, 0.2);
 }
-h3 {
-  margin-bottom: 20px;
-}
 .feature-section {
   display: flex;
   flex-direction: column;
@@ -284,7 +281,7 @@ h3 {
     display: grid;
     grid: auto / repeat(1, 1fr);
     grid-gap: 30px;
-    margin: 60px auto 0;
+    margin: 45px auto 0;
     width: 100%;
     padding: 0 32px;
 
@@ -292,6 +289,7 @@ h3 {
       width: 1194px;
       max-width: 100%;
       grid: auto / repeat(3, 1fr);
+      margin: 80px auto 0;
     }
   }
 

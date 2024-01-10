@@ -12,12 +12,16 @@ editLink: false
 import Hero from './.vitepress/theme/components/landing/Hero.vue'
 import HomeSponsors from './.vitepress/theme/components/HomeSponsors.vue'
 import FeatureSection from './.vitepress/theme/components/landing/feature-section/FeatureSection.vue'
+import FrameworksSection from './.vitepress/theme/components/landing/frameworks-section/FrameworksSection.vue'
+import CommunitySection from './.vitepress/theme/components/landing/community-section/CommunitySection.vue'
 </script>
 
 <div class="VPHome">
   <Hero/>
-  <FeatureSection title="Redefining Developer Experience" description="Experience the future of web bundling" type="blue" />
-  <FeatureSection title="A Shared Foundation to Build Upon" type="pink" style="margin-top: 160px" />
+  <FeatureSection title="Redefining developer experience" description="Experience the future of web bundling" type="blue" />
+  <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px" />
+  <FrameworksSection />
+  <CommunitySection />
   <HomeSponsors/>
 </div>
 
