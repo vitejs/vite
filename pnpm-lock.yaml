@@ -213,6 +213,9 @@ importers:
       core-js:
         specifier: ^3.34.0
         version: 3.34.0
+      esbuild-plugin-browserslist:
+        specifier: ^0.10.0
+        version: 0.10.0(browserslist@4.22.2)
       magic-string:
         specifier: ^0.30.5
         version: 0.30.5
@@ -226,9 +229,6 @@ importers:
       acorn:
         specifier: ^8.11.2
         version: 8.11.2
-      esbuild-plugin-browserslist:
-        specifier: ^0.10.0
-        version: 0.10.0(browserslist@4.22.2)
       picocolors:
         specifier: ^1.0.0
         version: 1.0.0
@@ -5619,7 +5619,7 @@ packages:
       zod: 3.21.4
     transitivePeerDependencies:
       - supports-color
-    dev: true
+    dev: false
 
   /esbuild@0.18.20:
     resolution: {integrity: sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA==}
@@ -10109,7 +10109,6 @@ packages:
 
   /zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
-    dev: true
 
   /zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
