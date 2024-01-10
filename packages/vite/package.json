@@ -125,7 +125,7 @@
     "periscopic": "^4.0.2",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
-    "postcss-import": "^15.1.0",
+    "postcss-import": "^16.0.0",
     "postcss-load-config": "^4.0.2",
     "postcss-modules": "^6.0.0",
     "resolve.exports": "^2.0.2",
