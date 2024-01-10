@@ -74,7 +74,7 @@ export async function handleHMRUpdate(
 
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    getEnvFilesForMode(config.mode).includes(fileName)
+    getEnvFilesForMode(config.mode, config.envDir).includes(fileName)
   if (isConfig || isConfigDependency || isPackageJson || isEnv) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
