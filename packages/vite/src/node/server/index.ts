@@ -475,9 +475,6 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (isDepsOptimizerEnabled(config, true)) {
-        await initDevSsrDepsOptimizer(config, server)
-      }
       return ssrLoadModule(
         url,
         server,
@@ -827,6 +824,9 @@ export async function _createServer(
       // start deps optimizer after all container plugins are ready
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
+      }
+      if (isDepsOptimizerEnabled(config, true)) {
+        await initDevSsrDepsOptimizer(config, server)
       }
       warmupFiles(server)
       initingServer = undefined
