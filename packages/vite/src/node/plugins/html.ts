@@ -418,6 +418,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         await traverseHtml(html, id, (node) => {
+          id = normalizePath(id)
           if (!nodeIsElement(node)) {
             return
           }
