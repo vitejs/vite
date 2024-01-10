@@ -265,7 +265,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               sizeColor(displaySize(entry.size).padStart(sizePad)),
             )
             if (entry.compressedSize) {
-              log += colors.dim(
+              // When the code content is small, the size after gzip compression may be larger than before compression.
+              // In this case, we can specially mark that the file may not need to be compressed.
+              log += colors[
+                entry.compressedSize > entry.size ? 'yellow' : 'dim'
+              ](
                 ` │ gzip: ${displaySize(entry.compressedSize).padStart(
                   compressPad,
                 )}`,
