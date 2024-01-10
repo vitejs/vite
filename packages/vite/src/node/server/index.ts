@@ -626,6 +626,17 @@ export async function _createServer(
     _shortcutsOptions: undefined,
   }
 
+  // maintain consistency with the server instance after restarting.
+  const reflexServer = new Proxy(server, {
+    get: (_, property: keyof ViteDevServer) => {
+      return server[property]
+    },
+    set: (_, property: keyof ViteDevServer, value: never) => {
+      server[property] = value
+      return true
+    },
+  })
+
   if (!middlewareMode) {
     exitProcess = async () => {
       try {
@@ -717,7 +728,7 @@ export async function _createServer(
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook(server))
+    postHooks.push(await hook(reflexServer))
   }
 
   // Internal middlewares ------------------------------------------------------
