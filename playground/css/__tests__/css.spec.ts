@@ -440,14 +440,6 @@ test('?raw', async () => {
   )
 })
 
-test('?raw&url', async () => {
-  const rawUrlImportCss = await page.$('.raw-url-imported-css')
-
-  expect(await rawUrlImportCss.textContent()).toBe(
-    readFileSync(require.resolve('../raw-url-imported.css'), 'utf-8'),
-  )
-})
-
 test('import css in less', async () => {
   expect(await getColor('.css-in-less')).toBe('yellow')
   expect(await getColor('.css-in-less-2')).toBe('blue')

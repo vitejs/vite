@@ -13,7 +13,6 @@ import {
   isJSRequest,
   normalizePath,
   prettifyUrl,
-  rawContentRE,
   removeImportQuery,
   removeTimestampQuery,
   unwrapId,
@@ -166,7 +165,7 @@ export function transformMiddleware(
       if (
         isJSRequest(url) ||
         isImportRequest(url) ||
-        (isCSSRequest(url) && !rawContentRE.test(url)) ||
+        isCSSRequest(url) ||
         isHTMLProxy(url)
       ) {
         // strip ?import

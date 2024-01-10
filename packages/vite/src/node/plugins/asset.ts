@@ -185,11 +185,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const hasRawQuery = rawRE.test(id)
-      const hasUrlQuery = urlRE.test(id)
-
       // raw requests, read from disk
-      if (hasRawQuery && !hasUrlQuery) {
+      if (rawRE.test(id)) {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         this.addWatchFile(file)
         // raw query, read file and return as string
@@ -198,7 +195,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         )}`
       }
 
-      if (!hasUrlQuery && !config.assetsInclude(cleanUrl(id))) {
+      if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
         return
       }
 

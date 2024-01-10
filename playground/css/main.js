@@ -12,13 +12,6 @@ appendLinkStylesheet(urlCss)
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
 
-import rawUrlCss from './raw-url-imported.css?raw&url'
-fetch(rawUrlCss)
-  .then((res) => res.text())
-  .then((content) => {
-    text('.raw-url-imported-css', content)
-  })
-
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))

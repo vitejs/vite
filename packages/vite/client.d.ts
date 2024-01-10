@@ -230,11 +230,6 @@ declare module '*?url' {
   export default src
 }
 
-declare module '*?raw&url' {
-  const src: string
-  export default src
-}
-
 declare module '*?inline' {
   const src: string
   export default src

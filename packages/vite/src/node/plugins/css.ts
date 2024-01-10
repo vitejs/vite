@@ -60,9 +60,7 @@ import {
   normalizePath,
   parseRequest,
   processSrcSet,
-  rawRE,
   removeDirectQuery,
-  removeRawQuery,
   removeUrlQuery,
   requireResolveFromRootWithFallback,
   slash,
@@ -271,35 +269,26 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     async load(id) {
       if (!isCSSRequest(id)) return
 
-      const hasUrlQuery = urlRE.test(id)
-      const hasRawQuery = rawRE.test(id)
+      if (urlRE.test(id)) {
+        if (isModuleCSSRequest(id)) {
+          throw new Error(
+            `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
+              id,
+            )})`,
+          )
+        }
 
-      if (hasUrlQuery && !hasRawQuery && isModuleCSSRequest(id)) {
-        throw new Error(
-          `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
-            id,
-          )})`,
-        )
-      }
-
-      // *.css?url&raw
-      // in build, it's handled by assets plugin.
-      if (!isBuild && hasUrlQuery && hasRawQuery) {
-        id = injectQuery(removeRawQuery(removeUrlQuery(id)), 'raw-content')
-        const url = await fileToUrl(id, config, this)
-        return `export default ${JSON.stringify(url)}`
-      }
-
-      // *.css?url
-      // in dev, it's handled by assets plugin.
-      if (isBuild && hasUrlQuery && !hasRawQuery) {
-        id = injectQuery(removeUrlQuery(id), 'transform-only')
-        return (
-          `import ${JSON.stringify(id)};` +
-          `export default "__VITE_CSS_URL__${Buffer.from(id).toString(
-            'hex',
-          )}__"`
-        )
+        // *.css?url
+        // in dev, it's handled by assets plugin.
+        if (isBuild) {
+          id = injectQuery(removeUrlQuery(id), 'transform-only')
+          return (
+            `import ${JSON.stringify(id)};` +
+            `export default "__VITE_CSS_URL__${Buffer.from(id).toString(
+              'hex',
+            )}__"`
+          )
+        }
       }
     },
 
