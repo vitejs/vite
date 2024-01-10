@@ -2,6 +2,7 @@
 @import '=/nested/partial'; // sass convention: omitting leading _ for partials
 @import '@vitejs/test-css-dep'; // package w/ sass entry points
 @import '@vitejs/test-css-dep-exports'; // package with a sass export mapping
+@import '@vitejs/test-scss-proxy-dep'; // package with a sass proxy import
 @import 'virtual-dep'; // virtual file added through importer
 @import '=/pkg-dep'; // package w/out sass field
 @import '=/weapp.wxss'; // wxss file

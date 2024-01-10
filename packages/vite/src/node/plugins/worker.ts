@@ -324,7 +324,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               return worker;
             } catch(e) {
               return new ${workerConstructor}(
-                "data:application/javascript;base64," + encodedJs,
+                "data:text/javascript;base64," + encodedJs,
                 ${workerTypeOption}
               );
             }${
@@ -340,7 +340,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               : `${encodedJs}
           export default function WorkerWrapper(options) {
             return new ${workerConstructor}(
-              "data:application/javascript;base64," + encodedJs,
+              "data:text/javascript;base64," + encodedJs,
               ${workerTypeOption}
             );
           }
