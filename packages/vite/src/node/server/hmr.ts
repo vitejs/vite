@@ -35,6 +35,8 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: Server
+  /** @internal */
+  channels?: HMRChannel[]
 }
 
 export interface HmrContext {
@@ -92,9 +94,13 @@ export interface HMRChannel {
    */
   off(event: string, listener: Function): void
   /**
+   * Start listening for messages
+   */
+  listen(): void
+  /**
    * Disconnect all clients, called when server is closed or restarted.
    */
-  close(): void | Promise<void>
+  close(): void
 }
 
 export interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
@@ -705,6 +711,7 @@ async function readModifiedFile(file: string): Promise<string> {
 
 export function createHMRBroadcaster(): HMRBroadcaster {
   const channels: HMRChannel[] = []
+  const readyChannels = new WeakSet<HMRChannel>()
   const broadcaster: HMRBroadcaster = {
     get channels() {
       return [...channels]
@@ -717,15 +724,32 @@ export function createHMRBroadcaster(): HMRBroadcaster {
       return broadcaster
     },
     on(event: string, listener: (...args: any[]) => any) {
+      // emit connection event only when all channels are ready
+      if (event === 'connection') {
+        // make a copy so we don't wait for channels that might be added after this is triggered
+        const channels = this.channels
+        channels.forEach((channel) =>
+          channel.on('connection', () => {
+            readyChannels.add(channel)
+            if (channels.every((c) => readyChannels.has(c))) {
+              listener()
+            }
+          }),
+        )
+        return
+      }
       channels.forEach((channel) => channel.on(event, listener))
-      return broadcaster
+      return
     },
     off(event, listener) {
       channels.forEach((channel) => channel.off(event, listener))
-      return broadcaster
+      return
     },
     send(...args: any[]) {
       channels.forEach((channel) => channel.send(...(args as [any])))
+    },
+    listen() {
+      channels.forEach((channel) => channel.listen())
     },
     close() {
       return Promise.all(channels.map((channel) => channel.close()))
