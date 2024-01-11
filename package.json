@@ -42,7 +42,6 @@
   },
   "devDependencies": {
     "@babel/types": "^7.23.6",
-    "@eslint-types/import": "^2.29.0-1",
     "@eslint-types/typescript-eslint": "^6.12.0",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/babel__core": "^7.20.5",

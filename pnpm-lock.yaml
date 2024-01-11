@@ -27,9 +27,6 @@ importers:
       '@babel/types':
         specifier: ^7.23.6
         version: 7.23.6
-      '@eslint-types/import':
-        specifier: ^2.29.0-1
-        version: 2.29.0-1
       '@eslint-types/typescript-eslint':
         specifier: ^6.12.0
         version: 6.12.0
@@ -3309,10 +3306,6 @@ packages:
   /@eslint-community/regexpp@4.9.1:
     resolution: {integrity: sha512-Y27x+MBLjXa+0JWDhykM3+JE+il3kHKAEqabfEWq3SDhZjLYb6/BHL/JKFnH3fe207JaXkyDo685Oc2Glt6ifA==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
-    dev: true
-
-  /@eslint-types/import@2.29.0-1:
-    resolution: {integrity: sha512-cmlKmWLY9PKmsxKdb5DlXZBe6SV3fIyhoMj+lBVUeW5d9Dvqs62Hk+jskz4D9B3x+dEwDez29ScTog04K8WpUQ==}
     dev: true
 
   /@eslint-types/typescript-eslint@6.12.0:
