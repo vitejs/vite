@@ -24,7 +24,8 @@ const relativePathRE = /^\.{1,2}\//
 // fast path to check if source contains a dynamic import. we check for a
 // trailing slash too as a dynamic import statement can have comments between
 // the `import` and the `(`.
-const hasDynamicImportRE = /\bimport\s*[(/]/
+const hasDynamicImportRE =
+  /\bimport\s*(?:\((?!\s*\/\*\s*@vite-ignore\s*\*\/)|\/)/
 
 interface DynamicImportRequest {
   query?: string | Record<string, string>
