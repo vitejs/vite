@@ -11,9 +11,9 @@ import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
   generateCodeFrame,
   joinUrlSegments,
-  jsonStableStringify,
   normalizePath,
   numberToPos,
+  sortObjectKeys,
 } from '../utils'
 
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
@@ -100,7 +100,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             ? config.build.ssrManifest
             : '.vite/ssr-manifest.json',
         type: 'asset',
-        source: jsonStableStringify(ssrManifest),
+        source: JSON.stringify(sortObjectKeys(ssrManifest), undefined, 2),
       })
     },
   }

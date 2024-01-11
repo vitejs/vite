@@ -1380,12 +1380,10 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
   return { promise, resolve, reject }
 }
 
-/**
- * Stringifies JSON with keys sorted alphabetically.
- * Credit: https://stackoverflow.com/a/53593328/13265944
- */
-export function jsonStableStringify(obj: Record<string, any>): string {
-  const allKeys = new Set<string>()
-  JSON.stringify(obj, (key, value) => (allKeys.add(key), value))
-  return JSON.stringify(obj, Array.from(allKeys).sort(), 2)
+export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
+  const sorted: Record<string, any> = {}
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = obj[key]
+  }
+  return sorted as T
 }
