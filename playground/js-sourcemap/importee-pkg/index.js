@@ -1,2 +1,2 @@
-// eslint-disable-next-line import/no-commonjs
+// eslint-disable-next-line i/no-commonjs
 exports.foo = 'foo'
