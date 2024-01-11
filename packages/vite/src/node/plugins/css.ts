@@ -166,7 +166,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
-const varRE = /^var\(/i
+const functionCallRE = /^[A-Z_][\w-]*\(/i
 const nonEscapedDoubleQuoteRe = /(?<!\\)(")/g
 
 const cssBundleName = 'style.css'
@@ -1517,7 +1517,7 @@ function skipUrlReplacer(rawUrl: string) {
     isExternalUrl(rawUrl) ||
     isDataUrl(rawUrl) ||
     rawUrl[0] === '#' ||
-    varRE.test(rawUrl)
+    functionCallRE.test(rawUrl)
   )
 }
 async function doUrlReplace(

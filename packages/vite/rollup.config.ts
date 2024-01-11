@@ -127,6 +127,10 @@ function createNodePlugins(
           src: 'const resolveId = require("./lib/resolve-id")',
           replacement: 'const resolveId = (id) => id',
         },
+        'postcss-import/lib/parse-styles.js': {
+          src: 'const resolveId = require("./resolve-id")',
+          replacement: 'const resolveId = (id) => id',
+        },
       }),
 
     commonjs({
