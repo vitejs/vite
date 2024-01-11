@@ -1,3 +1,7 @@
+html:has(.landing) {
+  --vp-c-bg: #101010;
+}
+
 .landing {
   overflow-x: hidden;
 

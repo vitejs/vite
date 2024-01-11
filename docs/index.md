@@ -23,10 +23,3 @@ import CommunitySection from './.vitepress/theme/components/landing/community-se
   <FrameworksSection />
   <CommunitySection />
 </div>
-
-<style>
-/* TODO: Only apply this to the landing */
-  :root{
-    --vp-c-bg: #101010;
-  }
-</style>
