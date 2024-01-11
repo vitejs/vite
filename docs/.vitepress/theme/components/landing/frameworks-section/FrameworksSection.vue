@@ -132,14 +132,34 @@ const numRows = computed(() => {
  * The indexes of the blocks on each row that support framework cards.
  */
 const centerIndexes = computed(() => {
+  if (numBlocksPerRow.value === numFrameworksPerRow.value) {
+    return {
+      start: 1,
+      end: numBlocksPerRow.value,
+    }
+  }
   const startIndex = Math.max(
-    Math.floor(numBlocksPerRow.value / 2) -
+    Math.ceil(numBlocksPerRow.value / 2) -
       Math.floor(frameworks.length / (numRows.value * 2)),
     0,
   )
   return {
     start: startIndex,
     end: startIndex + Math.floor(frameworks.length / numRows.value),
+  }
+})
+
+const rowStyle = computed(() => {
+  if (numBlocksPerRow.value % 2 === 0) {
+    return {
+      transform: `translate3d(calc(((100% - ${
+        numBlocksPerRow.value * (96 + 24)
+      }px) / 1) + var(--row-offset)), 0, 0)`,
+    }
+  } else {
+    return {
+      transform: `translate3d(var(--row-offset), 0, 0)`,
+    }
   }
 })
 </script>
@@ -149,13 +169,13 @@ const centerIndexes = computed(() => {
     <h2>Powering your favorite frameworks and tools</h2>
     <div class="frameworks-container">
       <!-- Top Row -->
-      <div class="framework-row">
+      <div class="framework-row" :style="rowStyle">
         <FrameworkCard v-for="i in numBlocksPerRow" />
       </div>
 
       <!-- Logo Rows -->
       <template v-for="rowIndex in numRows">
-        <div class="framework-row">
+        <div class="framework-row" :style="rowStyle">
           <template v-for="columnIndex in numBlocksPerRow">
             <template
               v-if="
@@ -181,7 +201,7 @@ const centerIndexes = computed(() => {
       </template>
 
       <!-- Bottom Row -->
-      <div class="framework-row">
+      <div class="framework-row" :style="rowStyle">
         <FrameworkCard v-for="i in numBlocksPerRow" />
       </div>
     </div>
@@ -259,16 +279,16 @@ const centerIndexes = computed(() => {
     display: grid;
     grid-template-columns: repeat(auto-fill, 96px);
     grid-gap: 24px;
-    justify-content: center;
+    justify-content: flex-start;
     margin-bottom: 24px;
     position: relative;
 
-    &:nth-child(odd) {
-      transform: translate3d(24px, 0, 0);
+    &:nth-child(even) {
+      --row-offset: 24px;
     }
 
-    &:nth-child(even) {
-      transform: translate3d(-24px, 0, 0);
+    &:nth-child(odd) {
+      --row-offset: -24px;
     }
   }
 }

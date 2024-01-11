@@ -43,6 +43,12 @@ defineProps({
   cursor: pointer;
   position: relative;
 
+  img {
+    filter: drop-shadow(
+      0 0 0.8rem color-mix(in srgb, var(--glow-color) 50%, transparent)
+    );
+  }
+
   &:before {
     content: '';
     position: absolute;
