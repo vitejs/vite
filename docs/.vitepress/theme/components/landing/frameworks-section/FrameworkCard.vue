@@ -1,17 +1,31 @@
 <script setup>
-defineProps({
-  name: String,
-  logo: String | null,
-  color: {
-    type: String,
-    default: '#8974fd',
+import { ref } from 'vue'
+
+const props = defineProps({
+  framework: {
+    type: Object,
+    required: false,
+    default: () => ({
+      name: null,
+      logo: null,
+      color: '#FFFFFF',
+      visible: ref(true),
+    }),
   },
 })
 </script>
 
 <template>
-  <div class="framework-card" :style="{ '--glow-color': color }">
-    <img v-if="logo" :src="logo" :alt="name" />
+  <div
+    class="framework-card"
+    :style="{ '--glow-color': props.framework.color }"
+    :class="{ active: props.framework.visible.value === true }"
+  >
+    <img
+      v-if="props.framework.logo"
+      :src="props.framework.logo"
+      :alt="props.framework.name"
+    />
   </div>
 </template>
 
@@ -27,6 +41,18 @@ defineProps({
   align-items: center;
   padding: 24px;
   --glow-color: rgba(0, 0, 0, 0);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+
+  img {
+    filter: drop-shadow(
+      0 0 0.8rem color-mix(in srgb, var(--glow-color) 40%, transparent)
+    );
+  }
+
+  &.active {
+    opacity: 1;
+  }
 }
 
 .framework-card:not(:has(img)) {
@@ -42,12 +68,6 @@ defineProps({
 .framework-card:has(img) {
   cursor: pointer;
   position: relative;
-
-  img {
-    filter: drop-shadow(
-      0 0 0.8rem color-mix(in srgb, var(--glow-color) 50%, transparent)
-    );
-  }
 
   &:before {
     content: '';

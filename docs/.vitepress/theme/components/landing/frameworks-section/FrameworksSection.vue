@@ -1,5 +1,11 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import FrameworkCard from './FrameworkCard.vue'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+gsap.registerPlugin(ScrollTrigger)
+
+// Framework assets
 import logoAstro from '../../../../../images/frameworks/astro.svg'
 import logoNuxt from '../../../../../images/frameworks/nuxt.svg'
 import logoVue from '../../../../../images/frameworks/vue.svg'
@@ -14,7 +20,6 @@ import logoSolid from '../../../../../images/frameworks/solid.svg'
 import logoAngular from '../../../../../images/frameworks/angular.svg'
 import logoReact from '../../../../../images/frameworks/react.svg'
 import logoSvelte from '../../../../../images/frameworks/svelte.svg'
-import FrameworkCard from './FrameworkCard.vue'
 
 /**
  * The frameworks and tools to display in this section.
@@ -24,71 +29,85 @@ const frameworks = [
     name: 'Astro',
     logo: logoAstro,
     color: '#FFFFFF',
+    visible: ref(false),
   },
   {
     name: 'Nuxt',
     logo: logoNuxt,
     color: '#00da81',
+    visible: ref(false),
   },
   {
     name: 'Vue',
     logo: logoVue,
     color: '#40b782',
+    visible: ref(false),
   },
   {
     name: 'Analog',
     logo: logoAnalog,
     color: '#c10f2e',
+    visible: ref(false),
   },
   {
     name: 'Playwright',
     logo: logoPlaywright,
     color: '#d45247',
+    visible: ref(false),
   },
   {
     name: 'Marko',
     logo: logoMarko,
     color: '#de2a87',
+    visible: ref(false),
   },
   {
     name: 'Storybook',
     logo: logoStorybook,
     color: '#fd4684',
+    visible: ref(false),
   },
   {
     name: 'Qwik',
     logo: logoQwik,
     color: '#18b5f4',
+    visible: ref(false),
   },
   {
     name: 'Vitest',
     logo: logoVitest,
     color: '#fac52b',
+    visible: ref(false),
   },
   {
     name: 'Redwood',
     logo: logoRedwood,
     color: '#be4622',
+    visible: ref(false),
   },
   {
     name: 'Solid',
     logo: logoSolid,
     color: '#75b2df',
+    visible: ref(false),
   },
   {
     name: 'Angular',
     logo: logoAngular,
     color: '#e03237',
+    visible: ref(false),
   },
   {
     name: 'React',
     logo: logoReact,
     color: '#00d6fd',
+    visible: ref(false),
   },
   {
     name: 'Svelte',
     logo: logoSvelte,
     color: '#fd3e00',
+    visible: ref(false),
   },
 ]
 
@@ -100,6 +119,18 @@ const handleResize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+
+  let timeline = gsap.timeline({
+    scrollTrigger: {
+      trigger: '#frameworks-section',
+      start: 'top 70%',
+      once: true,
+    },
+  })
+
+  frameworks.forEach((framework, index) => {
+    timeline.set(framework.visible, { value: true }, index * 0.05)
+  })
 })
 
 onUnmounted(() => {
@@ -168,7 +199,7 @@ const rowStyle = computed(() => {
 </script>
 
 <template>
-  <section class="frameworks-section">
+  <section class="frameworks-section" id="frameworks-section">
     <h2>Powering your favorite frameworks and tools</h2>
     <div class="frameworks-container">
       <!-- Top Row -->
@@ -187,7 +218,7 @@ const rowStyle = computed(() => {
               "
             >
               <FrameworkCard
-                v-bind="
+                :framework="
                   frameworks[
                     (rowIndex - 1) * numFrameworksPerRow +
                       columnIndex -
