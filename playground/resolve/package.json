@@ -18,7 +18,7 @@
     "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/"
   },
   "dependencies": {
-    "@babel/runtime": "^7.23.6",
+    "@babel/runtime": "^7.23.8",
     "es5-ext": "0.10.62",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",

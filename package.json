@@ -42,8 +42,8 @@
   },
   "devDependencies": {
     "@babel/types": "^7.23.6",
-    "@eslint-types/typescript-eslint": "^6.12.0",
-    "@rollup/plugin-typescript": "^11.1.5",
+    "@eslint-types/typescript-eslint": "^6.18.1",
+    "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.6",
     "@types/convert-source-map": "^2.0.3",
@@ -55,21 +55,21 @@
     "@types/json-stable-stringify": "^1.0.36",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.6",
-    "@types/node": "^20.10.4",
+    "@types/node": "^20.11.0",
     "@types/picomatch": "^2.3.3",
     "@types/sass": "~1.43.1",
     "@types/semver": "^7.5.6",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
+    "@typescript-eslint/eslint-plugin": "^6.18.1",
+    "@typescript-eslint/parser": "^6.18.1",
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^4.1.0",
-    "eslint": "^8.55.0",
-    "eslint-define-config": "^2.0.0",
+    "eslint": "^8.56.0",
+    "eslint-define-config": "^2.1.0",
     "eslint-plugin-i": "^2.29.1",
-    "eslint-plugin-n": "^16.4.0",
-    "eslint-plugin-regexp": "^2.1.2",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-regexp": "^2.2.0",
     "execa": "^8.0.1",
     "feed": "^4.2.2",
     "fs-extra": "^11.2.0",
@@ -83,13 +83,13 @@
     "semver": "^7.5.4",
     "simple-git-hooks": "^2.9.0",
     "tslib": "^2.6.2",
-    "tsx": "^4.6.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-rc.31",
-    "vitest": "^1.0.4",
-    "vue": "^3.3.11"
+    "vitepress": "1.0.0-rc.36",
+    "vitest": "^1.1.3",
+    "vue": "^3.4.9"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -108,7 +108,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.12.0",
+  "packageManager": "pnpm@8.14.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
