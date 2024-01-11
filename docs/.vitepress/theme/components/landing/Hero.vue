@@ -36,8 +36,6 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600&display=swap');
-
 .hero {
   position: relative;
   z-index: 2;
