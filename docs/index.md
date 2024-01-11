@@ -22,7 +22,6 @@ import CommunitySection from './.vitepress/theme/components/landing/community-se
   <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px" />
   <FrameworksSection />
   <CommunitySection />
-  <HomeSponsors/>
 </div>
 
 <style>
