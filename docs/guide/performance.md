@@ -6,6 +6,10 @@ While Vite is fast by default, performance issues can creep in as the project's 
 - Slow page loads
 - Slow builds
 
+## Avoid Browser Extensions
+
+Some browser extensions may interfere with requests and slow down startup and reload times for large apps, especially when using browser dev tools. We recommend creating a dev-only profile without extensions, or switch to incognito mode, while using Vite's dev server in these cases. Incognito mode should also be faster than a regular profile without extensions.
+
 ## Audit Configured Vite Plugins
 
 Vite's internal and official plugins are optimized to do the least amount of work possible while providing compatibility with the broader ecosystem. For example, code transformations use regex in dev, but do a complete parse in build to ensure correctness.
