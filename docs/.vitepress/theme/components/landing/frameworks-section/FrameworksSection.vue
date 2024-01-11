@@ -135,7 +135,7 @@ const centerIndexes = computed(() => {
   if (numBlocksPerRow.value === numFrameworksPerRow.value) {
     return {
       start: 1,
-      end: numBlocksPerRow.value,
+      end: numBlocksPerRow.value + 1,
     }
   }
   const startIndex = Math.max(
@@ -149,6 +149,9 @@ const centerIndexes = computed(() => {
   }
 })
 
+/**
+ * Generate CSS transformations for each row, to gracefully slide between horizontal positions.
+ */
 const rowStyle = computed(() => {
   if (numBlocksPerRow.value % 2 === 0) {
     return {
