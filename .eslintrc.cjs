@@ -16,7 +16,7 @@ module.exports = defineConfig({
     'plugin:regexp/recommended',
   ],
   ignorePatterns: ['packages/create-vite/template-**'],
-  plugins: ['import', 'regexp'],
+  plugins: ['i', 'regexp'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
@@ -93,12 +93,12 @@ module.exports = defineConfig({
     '@typescript-eslint/prefer-for-of': 'off',
     '@typescript-eslint/prefer-function-type': 'off',
 
-    'import/no-nodejs-modules': [
+    'i/no-nodejs-modules': [
       'error',
       { allow: builtinModules.map((mod) => `node:${mod}`) },
     ],
-    'import/no-duplicates': 'error',
-    'import/order': 'error',
+    'i/no-duplicates': 'error',
+    'i/order': 'error',
     'sort-imports': [
       'error',
       {
@@ -213,7 +213,7 @@ module.exports = defineConfig({
         'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
       ],
       rules: {
-        'import/no-commonjs': 'error',
+        'i/no-commonjs': 'error',
       },
     },
     {
