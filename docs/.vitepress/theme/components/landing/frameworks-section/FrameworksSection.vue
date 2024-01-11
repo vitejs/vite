@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import FrameworkCard from './FrameworkCard.vue'
 import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
 // Framework assets
@@ -111,13 +111,14 @@ const frameworks = [
   },
 ]
 
-const screenWidth = ref(window.innerWidth)
+const screenWidth = ref(1920)
 
 const handleResize = () => {
   screenWidth.value = window.innerWidth
 }
 
 onMounted(() => {
+  handleResize()
   window.addEventListener('resize', handleResize)
 
   let timeline = gsap.timeline({

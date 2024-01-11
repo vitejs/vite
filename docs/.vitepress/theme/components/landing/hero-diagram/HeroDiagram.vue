@@ -1,6 +1,6 @@
 <script setup>
 import { gsap } from 'gsap'
-import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
+import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
 import { onMounted, ref } from 'vue'
 import SvgInputs from './SvgInputs.vue'
 import SvgOutputs from './SvgOutputs.vue'
