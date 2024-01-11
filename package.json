@@ -42,7 +42,6 @@
   },
   "devDependencies": {
     "@babel/types": "^7.23.6",
-    "@eslint-types/import": "^2.29.0-1",
     "@eslint-types/typescript-eslint": "^6.12.0",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/babel__core": "^7.20.5",
@@ -68,7 +67,7 @@
     "conventional-changelog-cli": "^4.1.0",
     "eslint": "^8.55.0",
     "eslint-define-config": "^2.0.0",
-    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-i": "^2.29.1",
     "eslint-plugin-n": "^16.4.0",
     "eslint-plugin-regexp": "^2.1.2",
     "execa": "^8.0.1",
