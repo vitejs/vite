@@ -116,10 +116,6 @@ function createNodePlugins(
           pattern: /require(?=\((configFile|'ts-node')\))/g,
           replacement: `__require`,
         },
-        'json-stable-stringify/index.js': {
-          src: "require('jsonify')",
-          replacement: 'JSON',
-        },
         // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
         // However, we always pass the `resolve` option. Remove this import to avoid
         // bundling the `resolve` dep.

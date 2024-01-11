@@ -5,13 +5,13 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
-import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
   generateCodeFrame,
   joinUrlSegments,
+  jsonStableStringify,
   normalizePath,
   numberToPos,
 } from '../utils'
@@ -100,7 +100,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             ? config.build.ssrManifest
             : '.vite/ssr-manifest.json',
         type: 'asset',
-        source: jsonStableStringify(ssrManifest, { space: 2 }),
+        source: jsonStableStringify(ssrManifest),
       })
     },
   }
