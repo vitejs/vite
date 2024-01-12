@@ -155,6 +155,22 @@ const { data } = useSponsor()
     <div class="sponsor-grid">
       <VPSponsors v-if="data" :data="data" />
     </div>
+
+    <!-- Sponsorship Actions -->
+    <div class="sponsor-actions">
+      <a
+        href="https://github.com/sponsors/vitejs"
+        target="_blank"
+        class="btn btn--outline btn--rounded"
+        >Sponsor Vite</a
+      >
+      <a
+        href="https://github.com/sponsors/yyx990803"
+        target="_blank"
+        class="btn btn--outline btn--rounded"
+        >Sponsor Evan You</a
+      >
+    </div>
   </div>
 </template>
 
@@ -251,6 +267,14 @@ const { data } = useSponsor()
       filter: grayscale(1) invert(1);
       transform: scale(1.05);
     }
+  }
+
+  .sponsor-actions {
+    margin: 60px auto 0;
+    width: fit-content;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
   }
 }
 </style>

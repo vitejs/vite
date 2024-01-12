@@ -166,5 +166,9 @@ html:has(.landing) {
         border: 1px solid rgba(255, 255, 255, 0.4);
       }
     }
+
+    &.btn--rounded {
+      border-radius: 100px;
+    }
   }
 }
