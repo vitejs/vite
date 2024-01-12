@@ -295,8 +295,8 @@ h2 {
 
   .grid__item {
     border-radius: 12px;
-    border: 1px solid #171717;
-    background: rgba(38, 38, 38, 0.15);
+    border: 1px solid rgba(38, 38, 38, 0.7);
+    background: #161616;
     height: 370px;
     display: flex;
     justify-content: flex-start;

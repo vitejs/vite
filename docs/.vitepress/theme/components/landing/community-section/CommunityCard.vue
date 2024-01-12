@@ -56,8 +56,8 @@ defineProps<{
   width: 100%;
   margin-bottom: 25px;
   border-radius: 12px;
-  border: 1px solid #171717;
-  background: rgba(38, 38, 38, 0.25);
+  border: 1px solid rgba(38, 38, 38, 0.7);
+  background: #161616;
   padding: 24px;
   display: flex;
   flex-direction: column;
