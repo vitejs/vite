@@ -907,6 +907,34 @@ if (import.meta.hot) {
     )
   })
 
+  test('HMR should work for circular imports with one module being an entry', async () => {
+    await page.goto(viteTestUrl + '/circular-entry/index.html')
+    const main = page.locator('.main')
+    const mainAccepted = page.locator('.main-accepted')
+    expect(await main.textContent()).toBe('[success]')
+    expect(await mainAccepted.textContent()).toBe('[success]')
+    editFile('circular-entry/other.js', (code) =>
+      code.replace(`[success]`, `[success]1`),
+    )
+    // The below wait and reload should not be needed
+    // await page.waitForTimeout(200)
+    // await page.reload()
+    await untilUpdated(() => main.textContent(), '[success]1')
+    await untilUpdated(() => mainAccepted.textContent(), '[success]1')
+
+    // Test simpler case without HMR boundary
+    await page.goto(viteTestUrl + '/circular-entry/main-only.html')
+    const main2 = page.locator('.main')
+    expect(await main2.textContent()).toBe('[success]1')
+    editFile('circular-entry/other.js', (code) =>
+      code.replace(`[success]1`, `[success]2`),
+    )
+    // The below wait and reload should not be needed
+    // await page.waitForTimeout(200)
+    // await page.reload()
+    await untilUpdated(() => main.textContent(), '[success]2')
+  })
+
   test('assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
