@@ -5,10 +5,9 @@ import type {
   OutputChunk,
   RenderedChunk,
 } from 'rollup'
-import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { normalizePath } from '../utils'
+import { normalizePath, sortObjectKeys } from '../utils'
 import { generatedAssets } from './asset'
 import type { GeneratedAssetMeta } from './asset'
 
@@ -162,7 +161,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
               ? config.build.manifest
               : '.vite/manifest.json',
           type: 'asset',
-          source: jsonStableStringify(manifest, { space: 2 }),
+          source: JSON.stringify(sortObjectKeys(manifest), undefined, 2),
         })
       }
     },
