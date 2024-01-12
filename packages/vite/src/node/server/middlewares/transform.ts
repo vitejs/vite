@@ -44,6 +44,30 @@ const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
+/**
+ * A middleware that short-circuits the middleware chain to serve cached transformed modules
+ */
+export function cachedTransformMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteCachedTransformMiddleware(req, res, next) {
+    // check if we can return 304 early
+    const ifNoneMatch = req.headers['if-none-match']
+    if (
+      ifNoneMatch &&
+      server.moduleGraph.getModuleByEtag(ifNoneMatch)?.transformResult?.etag ===
+        ifNoneMatch
+    ) {
+      debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
+      res.statusCode = 304
+      return res.end()
+    }
+
+    next()
+  }
+}
+
 export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
@@ -153,18 +177,6 @@ export function transformMiddleware(
           req.headers.accept?.includes('text/css')
         ) {
           url = injectQuery(url, 'direct')
-        }
-
-        // check if we can return 304 early
-        const ifNoneMatch = req.headers['if-none-match']
-        if (
-          ifNoneMatch &&
-          (await server.moduleGraph.getModuleByUrl(url, false))?.transformResult
-            ?.etag === ifNoneMatch
-        ) {
-          debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
-          res.statusCode = 304
-          return res.end()
         }
 
         // resolve, load and transform using the plugin container

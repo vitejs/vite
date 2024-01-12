@@ -56,7 +56,10 @@ import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
 import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
-import { transformMiddleware } from './middlewares/transform'
+import {
+  cachedTransformMiddleware,
+  transformMiddleware,
+} from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware,
@@ -730,6 +733,8 @@ export async function _createServer(
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(root))
   }
+
+  middlewares.use(cachedTransformMiddleware(server))
 
   // cors (enabled by default)
   const { cors } = serverConfig
