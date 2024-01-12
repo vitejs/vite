@@ -110,7 +110,7 @@ const testimonials = [
 
 <style scoped>
 .community-section {
-  margin-top: 100px;
+  margin-top: 140px;
   display: none;
 
   @media (min-width: 768px) {

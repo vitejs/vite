@@ -68,7 +68,7 @@ html:has(.landing) {
     font-size: 32px;
     font-style: normal;
     font-weight: 600;
-    line-height: normal;
+    line-height: 120%;
     letter-spacing: -0.64px;
     cursor: default;
     text-wrap: balance;

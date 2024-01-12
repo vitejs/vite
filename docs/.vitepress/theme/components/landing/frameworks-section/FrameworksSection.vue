@@ -268,7 +268,7 @@ const rowStyle = computed(() => {
     width: 100%;
     background-color: rgba(38, 38, 38, 0.15);
     position: relative;
-    margin-top: -40px;
+    margin-top: -20px;
     overflow: hidden;
 
     &:before {
