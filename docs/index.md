@@ -16,12 +16,26 @@ import FrameworksSection from './.vitepress/theme/components/landing/frameworks-
 import CommunitySection from './.vitepress/theme/components/landing/community-section/CommunitySection.vue'
 import SponsorSection from './.vitepress/theme/components/landing/sponsor-section/SponsorSection.vue'
 import GetStartedSection from './.vitepress/theme/components/landing/GetStartedSection.vue'
+import FeatureInstantServerStart from './.vitepress/theme/components/landing/feature-section/FeatureInstantServerStart.vue'
+import FeatureHMR from './.vitepress/theme/components/landing/feature-section/FeatureHMR.vue'
+import FeatureRichFeatures from './.vitepress/theme/components/landing/feature-section/FeatureRichFeatures.vue'
+import FeatureOptimizedBuild from './.vitepress/theme/components/landing/feature-section/FeatureOptimizedBuild.vue'
 </script>
 
 <div class="VPHome">
   <Hero/>
-  <FeatureSection title="Redefining developer experience" description="Experience the future of web bundling" type="blue" />
-  <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px" />
+  <FeatureSection title="Redefining developer experience" description="Experience the future of web bundling" type="blue">
+    <FeatureInstantServerStart />
+    <FeatureHMR />
+    <FeatureRichFeatures />
+    <FeatureOptimizedBuild />
+  </FeatureSection>
+  <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px">
+    <FeatureInstantServerStart />
+    <FeatureHMR />
+    <FeatureRichFeatures />
+    <FeatureOptimizedBuild />
+  </FeatureSection>
   <FrameworksSection />
   <CommunitySection />
   <SponsorSection />

@@ -205,67 +205,37 @@ const props = defineProps({
 
     <!-- Section Grid -->
     <div class="feature-section__grid">
-      <div class="grid__item item--1">
-        <div class="item__meta">
-          <div class="meta__title">Instant Server Start</div>
-          <div class="meta__description">
-            On demand file serving over native ESM, no bundling required!
-          </div>
-        </div>
-      </div>
-      <div class="grid__item item--2">
-        <div class="item__meta meta--center">
-          <div class="meta__title">Lightning Fast HMR</div>
-          <div class="meta__description">
-            Hot Module Replacement (HMR) that stays fast regardless of app size.
-          </div>
-        </div>
-      </div>
-      <div class="grid__item item--3">
-        <div class="item__meta meta--center">
-          <div class="meta__title">Rich features</div>
-          <div class="meta__description">
-            Out-of-the-box support for TypeScript, JSX, CSS and more.
-          </div>
-        </div>
-      </div>
-      <div class="grid__item item--4">
-        <div class="item__meta meta--center">
-          <div class="meta__title">Optimized build</div>
-          <div class="meta__description">
-            Pre-configured Rollup build with multi-page and library mode
-            support.
-          </div>
-        </div>
-      </div>
+      <slot></slot>
     </div>
   </section>
 </template>
 
-<style scoped>
-svg {
-  margin-bottom: 15px;
-}
-h2 {
-  --text-color: #404040;
-  background: radial-gradient(
-    circle 300px at 30% -180%,
-    var(--text-color) 0%,
-    #ffffff 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow:
-    0 0 4px rgba(255, 255, 255, 0.1),
-    0 0 14px rgba(130, 168, 236, 0.2);
-}
+<style>
 .feature-section {
   display: flex;
   flex-direction: column;
   margin: 0 auto;
   gap: 0;
   align-items: center;
+
+  svg {
+    margin-bottom: 15px;
+  }
+
+  h2 {
+    --text-color: #404040;
+    background: radial-gradient(
+      circle 300px at 30% -180%,
+      var(--text-color) 0%,
+      #ffffff 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow:
+      0 0 4px rgba(255, 255, 255, 0.1),
+      0 0 14px rgba(130, 168, 236, 0.2);
+  }
 
   .feature-section__title {
     display: flex;
@@ -293,58 +263,74 @@ h2 {
     }
   }
 
-  .grid__item {
+  .feature-card {
     border-radius: 12px;
     border: 1px solid rgba(38, 38, 38, 0.7);
-    background: #161616;
-    height: 370px;
+    background: #141414;
+    height: 350px;
     display: flex;
     justify-content: flex-start;
     align-items: flex-end;
     padding: 32px;
-  }
+    position: relative;
+    overflow: hidden;
 
-  .item__meta {
-    max-width: 275px;
+    .feature__meta {
+      max-width: 275px;
+      position: relative;
+      z-index: 2;
 
-    &.meta--center {
-      margin: 0 auto;
-      text-align: center;
+      .meta__title {
+        color: #fff;
+        font-family: Manrope, sans-serif;
+        font-size: 20px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: normal;
+        letter-spacing: -0.4px;
+        margin-bottom: 8px;
+      }
+
+      .meta__description {
+        color: #a3a3a3;
+        font-family: Inter, sans-serif;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 150%;
+        letter-spacing: -0.32px;
+        text-wrap: balance;
+      }
+
+      &.meta--center {
+        margin: 0 auto;
+        text-align: center;
+      }
     }
-  }
 
-  .meta__title {
-    color: #fff;
-    font-family: Manrope, sans-serif;
-    font-size: 20px;
-    font-style: normal;
-    font-weight: 600;
-    line-height: normal;
-    letter-spacing: -0.4px;
-    margin-bottom: 8px;
-  }
+    .feature__visualization {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 0;
+    }
 
-  .meta__description {
-    color: #a3a3a3;
-    font-family: Inter, sans-serif;
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 150%;
-    letter-spacing: -0.32px;
-    text-wrap: balance;
-  }
+    &:nth-child(1),
+    &:nth-child(4) {
+      grid-column: span 1;
+    }
 
-  .item--1,
-  .item--4 {
-    grid-column: span 1;
-  }
+    &:nth-child(2),
+    &:nth-child(3) {
+      grid-column: span 1;
 
-  .item--2,
-  .item--3 {
-    grid-column: span 1;
-    @media (min-width: 768px) {
-      grid-column: span 2;
+      @media (min-width: 768px) {
+        grid-column: span 2;
+      }
     }
   }
 }
