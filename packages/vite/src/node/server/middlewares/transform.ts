@@ -54,14 +54,21 @@ export function cachedTransformMiddleware(
   return function viteCachedTransformMiddleware(req, res, next) {
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
-    if (
-      ifNoneMatch &&
-      server.moduleGraph.getModuleByEtag(ifNoneMatch)?.transformResult?.etag ===
-        ifNoneMatch
-    ) {
-      debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
-      res.statusCode = 304
-      return res.end()
+    if (ifNoneMatch) {
+      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
+      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+        // For direct CSS requests, if the same CSS file is imported in a module,
+        // the browser sends the request for the direct CSS request with the etag
+        // from the imported CSS module. We ignore the etag in this case.
+        const mixedEtag =
+          !req.headers.accept?.includes('text/css') &&
+          isDirectRequest(moduleByEtag.url)
+        if (!mixedEtag) {
+          debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
+          res.statusCode = 304
+          return res.end()
+        }
+      }
     }
 
     next()
