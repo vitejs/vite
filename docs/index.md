@@ -31,10 +31,6 @@ import FeatureOptimizedBuild from './.vitepress/theme/components/landing/feature
     <FeatureOptimizedBuild />
   </FeatureSection>
   <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px">
-    <FeatureInstantServerStart />
-    <FeatureHMR />
-    <FeatureRichFeatures />
-    <FeatureOptimizedBuild />
   </FeatureSection>
   <FrameworksSection />
   <CommunitySection />

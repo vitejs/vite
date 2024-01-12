@@ -258,7 +258,7 @@ const props = defineProps({
     @media (min-width: 768px) {
       width: 1194px;
       max-width: 100%;
-      grid: auto / repeat(3, 1fr);
+      grid: auto / repeat(6, 1fr);
       margin: 80px auto 0;
     }
   }
@@ -267,7 +267,7 @@ const props = defineProps({
     border-radius: 12px;
     border: 1px solid rgba(38, 38, 38, 0.7);
     background: #141414;
-    height: 350px;
+    min-height: 350px;
     display: flex;
     justify-content: flex-start;
     align-items: flex-end;
@@ -289,6 +289,7 @@ const props = defineProps({
         line-height: normal;
         letter-spacing: -0.4px;
         margin-bottom: 8px;
+        cursor: default;
       }
 
       .meta__description {
@@ -300,6 +301,7 @@ const props = defineProps({
         line-height: 150%;
         letter-spacing: -0.32px;
         text-wrap: balance;
+        cursor: default;
       }
 
       &.meta--center {
@@ -322,6 +324,14 @@ const props = defineProps({
     &:nth-child(1),
     &:nth-child(4) {
       grid-column: span 1;
+
+      @media (min-width: 768px) {
+        grid-column: span 3;
+      }
+
+      @media (min-width: 1200px) {
+        grid-column: span 2;
+      }
     }
 
     &:nth-child(2),
@@ -329,7 +339,11 @@ const props = defineProps({
       grid-column: span 1;
 
       @media (min-width: 768px) {
-        grid-column: span 2;
+        grid-column: span 3;
+      }
+
+      @media (min-width: 1200px) {
+        grid-column: span 4;
       }
     }
   }

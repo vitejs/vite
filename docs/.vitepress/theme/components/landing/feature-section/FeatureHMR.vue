@@ -109,7 +109,7 @@
       </svg>
     </div>
     <div class="feature__meta meta--center">
-      <div class="meta__title">Lightning Fast HMR</div>
+      <div class="meta__title">Lightning fast HMR</div>
       <div class="meta__description">
         Hot Module Replacement (HMR) that stays fast regardless of app size.
       </div>
