@@ -111,6 +111,7 @@ html:has(.landing) {
     line-height: 24px;
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
     transition: all 0.2s ease-in-out;
+    width: fit-content;
 
     &:hover {
       transform: translate3d(0, -2px, 0);

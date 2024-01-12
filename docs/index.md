@@ -15,6 +15,7 @@ import FeatureSection from './.vitepress/theme/components/landing/feature-sectio
 import FrameworksSection from './.vitepress/theme/components/landing/frameworks-section/FrameworksSection.vue'
 import CommunitySection from './.vitepress/theme/components/landing/community-section/CommunitySection.vue'
 import SponsorSection from './.vitepress/theme/components/landing/sponsor-section/SponsorSection.vue'
+import GetStartedSection from './.vitepress/theme/components/landing/GetStartedSection.vue'
 </script>
 
 <div class="VPHome">
@@ -24,4 +25,5 @@ import SponsorSection from './.vitepress/theme/components/landing/sponsor-sectio
   <FrameworksSection />
   <CommunitySection />
   <SponsorSection />
+  <GetStartedSection />
 </div>
