@@ -45,7 +45,7 @@ html:has(.landing) {
     font-size: 44px;
     line-height: 120%;
     letter-spacing: -0.88px;
-    padding: 0 16px;
+    padding: 0 20px;
     margin-bottom: 15px;
 
     @media (min-width: 768px) {
@@ -72,6 +72,7 @@ html:has(.landing) {
     letter-spacing: -0.64px;
     cursor: default;
     text-wrap: balance;
+    padding: 0 20px;
 
     @media (min-width: 768px) {
       font-size: 44px;
@@ -92,6 +93,7 @@ html:has(.landing) {
     text-wrap: balance;
     cursor: default;
     margin-bottom: 25px;
+    padding: 0 20px;
   }
 
   .btn {
