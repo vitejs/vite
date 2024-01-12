@@ -170,6 +170,7 @@ watch(
   opacity: 0;
   transition: opacity 0.4s ease-in-out;
   display: none;
+  will-change: opacity;
 
   @media (min-width: 1180px) {
     display: block;

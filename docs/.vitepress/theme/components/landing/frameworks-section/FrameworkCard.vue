@@ -81,6 +81,7 @@ const props = defineProps({
     z-index: -1;
     opacity: 0;
     transition: opacity 3s ease;
+    will-change: opacity;
   }
 
   &:hover {
