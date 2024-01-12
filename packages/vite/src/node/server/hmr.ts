@@ -624,19 +624,15 @@ async function readModifiedFile(file: string): Promise<string> {
   const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
     const mtime = (await fsp.stat(file)).mtimeMs
-    await new Promise((r) => {
-      let n = 0
-      const poll = async () => {
-        n++
-        const newMtime = (await fsp.stat(file)).mtimeMs
-        if (newMtime !== mtime || n > 10) {
-          r(0)
-        } else {
-          setTimeout(poll, 10)
-        }
+
+    for (let n = 0; n < 10; n++) {
+      await new Promise((r) => setTimeout(r, 10))
+      const newMtime = (await fsp.stat(file)).mtimeMs
+      if (newMtime !== mtime) {
+        break
       }
-      setTimeout(poll, 10)
-    })
+    }
+
     return await fsp.readFile(file, 'utf-8')
   } else {
     return content
