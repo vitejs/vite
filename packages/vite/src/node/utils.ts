@@ -1379,3 +1379,11 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
   })
   return { promise, resolve, reject }
 }
+
+export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
+  const sorted: Record<string, any> = {}
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = obj[key]
+  }
+  return sorted as T
+}

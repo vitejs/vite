@@ -112,7 +112,6 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.3.2",
     "http-proxy": "^1.18.1",
-    "json-stable-stringify": "^1.1.0",
     "launch-editor-middleware": "^2.6.1",
     "lightningcss": "^1.22.1",
     "magic-string": "^0.30.5",
