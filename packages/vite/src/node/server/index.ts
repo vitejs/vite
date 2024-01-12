@@ -734,13 +734,13 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  middlewares.use(cachedTransformMiddleware(server))
-
   // cors (enabled by default)
   const { cors } = serverConfig
   if (cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
+
+  middlewares.use(cachedTransformMiddleware(server))
 
   // proxy
   const { proxy } = serverConfig
