@@ -234,14 +234,13 @@ const props = defineProps({
   top: 202px;
   left: 905px;
   z-index: -1;
-  filter: blur(40px);
+  filter: blur(60px);
   opacity: 0;
   transition: all 3s ease-out;
 
   &.active {
-    transition: all 0.2s ease-in-out;
+    transition: opacity 0.2s ease-in-out;
     opacity: 0.8;
-    filter: blur(60px);
   }
 }
 </style>
