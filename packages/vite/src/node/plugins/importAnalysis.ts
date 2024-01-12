@@ -48,6 +48,7 @@ import {
   timeFrom,
   transformStableResult,
   unwrapId,
+  urlRE,
   withTrailingSlash,
   wrapId,
 } from '../utils'
@@ -58,7 +59,6 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { urlRE } from './asset'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'

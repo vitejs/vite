@@ -336,6 +336,15 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
+export const urlRE = /(\?|&)url(?:&|$)/
+export const rawRE = /(\?|&)raw(?:&|$)/
+export function removeUrlQuery(url: string): string {
+  return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
+}
+export function removeRawQuery(url: string): string {
+  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
+}
+
 const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
@@ -1378,6 +1387,31 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+export function createSerialPromiseQueue<T>(): {
+  run(f: () => Promise<T>): Promise<T>
+} {
+  let previousTask: Promise<[unknown, Awaited<T>]> | undefined
+
+  return {
+    async run(f) {
+      const thisTask = f()
+      // wait for both the previous task and this task
+      // so that this function resolves in the order this function is called
+      const depTasks = Promise.all([previousTask, thisTask])
+      previousTask = depTasks
+
+      const [, result] = await depTasks
+
+      // this task was the last one, clear `previousTask` to free up memory
+      if (previousTask === depTasks) {
+        previousTask = undefined
+      }
+
+      return result
+    },
+  }
 }
 
 export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
