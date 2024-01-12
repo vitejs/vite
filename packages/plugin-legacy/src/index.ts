@@ -185,6 +185,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   let overriddenBuildTarget = false
+  let overriddenDefaultModernTargets = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
@@ -207,6 +208,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
+          overriddenDefaultModernTargets = options.modernTargets !== undefined
           config.build.target = options.modernTargets
             ? resolveToEsbuildTarget(browserslist(options.modernTargets))
             : modernTargetsEsbuild
@@ -227,6 +229,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         config.logger.warn(
           colors.yellow(
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
+          ),
+        )
+      }
+      if (overriddenDefaultModernTargets) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy overrode builtin targets of modern chunks. Some versions of browsers between legacy and modern maybe not be supported.`,
           ),
         )
       }
