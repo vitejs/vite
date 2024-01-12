@@ -45,7 +45,11 @@ import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_MODULES_TARGET,
+  VERSION,
+} from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
@@ -101,7 +105,9 @@ export interface BuildOptions {
    * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit?:
+    | number
+    | ((filePath: string, content: Buffer) => boolean | undefined)
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -325,7 +331,7 @@ export function resolveBuildOptions(
   const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},

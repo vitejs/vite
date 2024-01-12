@@ -82,10 +82,12 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 
 ## build.assetsInlineLimit
 
-- **Type:** `number`
+- **Type:** `number` | `((filePath: string, content: Buffer) => boolean | undefined)`
 - **Default:** `4096` (4 KiB)
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
+
+If a callback is passed, a boolean can be returned to opt-in or opt-out. If nothing is returned the default logic applies.
 
 Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent.
 

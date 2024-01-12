@@ -21,7 +21,8 @@ export default defineConfig(({ isPreview }) => ({
   },
   build: {
     outDir: 'dist/relative-base',
-    assetsInlineLimit: 100, // keep SVG as assets URL
+    assetsInlineLimit: (filePath) =>
+      filePath.endsWith('.svg') ? false : undefined,
     rollupOptions: {
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
