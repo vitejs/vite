@@ -259,7 +259,7 @@ describe('css url() references', () => {
   })
 
   test.runIf(isBuild)('generated paths in CSS', () => {
-    const css = findAssetFile(/\.css$/, 'foo')
+    const css = findAssetFile(/index-[-\w]{8}\.css$/, 'foo')
 
     // preserve postfix query/hash
     expect(css).toMatch(`woff2?#iefix`)
@@ -359,11 +359,10 @@ test('?url import', async () => {
 })
 
 test('?url import on css', async () => {
-  const src = readFile('css/icons.css')
   const txt = await page.textContent('.url-css')
-  expect(txt).toEqual(
+  expect(txt).toMatch(
     isBuild
-      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      ? /\/foo\/bar\/assets\/icons-[-\w]{8}\.css/
       : '/foo/bar/css/icons.css',
   )
 })
@@ -462,6 +461,8 @@ test.runIf(isBuild)('manifest', async () => {
 
   for (const file of listAssets('foo')) {
     if (file.endsWith('.css')) {
+      // ignore icons-*.css as it's imported with ?url
+      if (file.includes('icons-')) continue
       expect(entry.css).toContain(`assets/${file}`)
     } else if (!file.endsWith('.js')) {
       expect(entry.assets).toContain(`assets/${file}`)

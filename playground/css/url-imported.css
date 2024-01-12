@@ -1,0 +1,6 @@
+.url {
+  /* should be transformed by postcss */
+  &-imported-css {
+    color: yellow;
+  }
+}
