@@ -235,7 +235,6 @@ const startAnimation = () => {
     transition: all 0.4s ease-in-out;
     border: 1px solid transparent;
     border-right: none;
-    box-shadow: 0 0 1px 0 rgba(19, 179, 81, 0);
 
     .command-transition-enter-active,
     .command-transition-leave-active,
