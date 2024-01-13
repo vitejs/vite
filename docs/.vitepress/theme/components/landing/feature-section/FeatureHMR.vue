@@ -50,15 +50,6 @@ const startAnimation = () => {
     null,
     1,
   )
-  timeline.call(
-    () => {
-      terminalActive.value = false
-      connectionsActive.value = false
-      browserActive.value = false
-    },
-    null,
-    3,
-  )
 }
 </script>
 

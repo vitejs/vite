@@ -69,7 +69,15 @@ const illuminateLogo = ref(false)
  * Start all animations when mounted
  */
 onMounted(() => {
-  animateDiagram()
+  gsap
+    .timeline({
+      scrollTrigger: {
+        trigger: '#hero-diagram',
+        start: 'center 70%',
+        once: true,
+      },
+    })
+    .call(animateDiagram)
 })
 
 /**
@@ -405,7 +413,7 @@ const animateSingleInputMobile = (inputLine) => {
 </script>
 
 <template>
-  <div class="hero__diagram">
+  <div class="hero__diagram" id="hero-diagram">
     <!-- Input Lines -->
     <SvgInputs :input-lines="inputLines" />
 
