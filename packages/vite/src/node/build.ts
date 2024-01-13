@@ -603,6 +603,7 @@ export async function build(
         exports: 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
+        hoistTransitiveImports: libOptions ? false : undefined,
         // es2015 enables `generatedCode.symbols`
         // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // - #1048 add `Symbol.toStringTag` for module default export
