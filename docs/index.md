@@ -10,7 +10,6 @@ editLink: false
 
 <script setup>
 import Hero from './.vitepress/theme/components/landing/Hero.vue'
-import HomeSponsors from './.vitepress/theme/components/HomeSponsors.vue'
 import FeatureSection from './.vitepress/theme/components/landing/feature-section/FeatureSection.vue'
 import FrameworksSection from './.vitepress/theme/components/landing/frameworks-section/FrameworksSection.vue'
 import CommunitySection from './.vitepress/theme/components/landing/community-section/CommunitySection.vue'
