@@ -471,6 +471,7 @@ export function runOptimizeDeps(
   depsInfo: Record<string, OptimizedDepInfo>,
   ssr: boolean = resolvedConfig.command === 'build' &&
     !!resolvedConfig.build.ssr,
+  onOptimized?: (metadata: DepOptimizationMetadata) => void,
 ): {
   cancel: () => Promise<void>
   result: Promise<DepOptimizationResult>
@@ -687,6 +688,8 @@ export function runOptimizeDeps(
             }
           }
         }
+
+        onOptimized?.(metadata)
 
         debug?.(
           `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,

@@ -243,7 +243,12 @@ async function createDepsOptimizer(
             // run on the background, but we wait until crawling has ended
             // to decide if we send this result to the browser or we need to
             // do another optimize step
-            optimizationResult = runOptimizeDeps(config, knownDeps)
+            optimizationResult = runOptimizeDeps(
+              config,
+              knownDeps,
+              undefined,
+              server?.pluginContainer.depsOptimized,
+            )
           } catch (e) {
             logger.error(e.stack || e.message)
           } finally {
@@ -318,7 +323,12 @@ async function createDepsOptimizer(
         const knownDeps = prepareKnownDeps()
         startNextDiscoveredBatch()
 
-        optimizationResult = runOptimizeDeps(config, knownDeps)
+        optimizationResult = runOptimizeDeps(
+          config,
+          knownDeps,
+          undefined,
+          server?.pluginContainer.depsOptimized,
+        )
         processingResult = await optimizationResult.result
         optimizationResult = undefined
       }

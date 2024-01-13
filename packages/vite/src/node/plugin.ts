@@ -15,6 +15,13 @@ import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
 import type { HmrContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
+import type {
+  CacheLoadReadResult,
+  CacheLoadWriteOptions,
+  CacheTransformReadResult,
+  CacheTransformWriteOptions,
+} from './server/cache'
+import type { DepOptimizationMetadata } from './optimizer'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -139,6 +146,61 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: void,
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
+  /**
+   * Called when deps where optimized.
+   */
+  depsOptimized?: ObjectHook<
+    (this: void, metadata: DepOptimizationMetadata) => void | Promise<void>
+  >
+  /**
+   * During module load: Read the data from the persistent cache. Return `null` if the
+   * file should not be cached.
+   */
+  serveLoadCacheRead?: ObjectHook<
+    (
+      this: PluginContext,
+      options: {
+        id: string
+        file: string
+        url: string
+        ssr: boolean
+      },
+    ) => Promise<CacheLoadReadResult | null>
+  >
+  /**
+   * During module load: Write the data to the persistent cache.
+   */
+  serveLoadCacheWrite?: ObjectHook<
+    (
+      this: PluginContext,
+      options: CacheLoadWriteOptions,
+    ) => Promise<void> | void
+  >
+  /**
+   * During module transform: Read the data from the persistent cache. Return `null` if the
+   * file should not be cached. A module that was not cached during load will not be cached during transform either.
+   */
+  serveTransformCacheRead?: ObjectHook<
+    (
+      this: PluginContext,
+      options: {
+        id: string
+        file: string
+        url: string
+        code: string
+        ssr: boolean
+      },
+    ) => Promise<CacheTransformReadResult | null>
+  >
+  /**
+   * During module transform: Write the data to the persistent cache. A module that was not cached during load will not be cached during transform either.
+   */
+  serveTransformCacheWrite?: ObjectHook<
+    (
+      this: PluginContext,
+      options: CacheTransformWriteOptions,
+    ) => Promise<void> | void
   >
 
   /**

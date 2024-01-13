@@ -3,10 +3,15 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import convertSourceMap from 'convert-source-map'
-import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
+import MagicString from 'magic-string'
 import colors from 'picocolors'
+import type {
+  LoadResult,
+  PartialResolvedId,
+  SourceDescription,
+  SourceMap,
+} from 'rollup'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
@@ -202,7 +207,45 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, { ssr })
+  let loadResult: LoadResult
+
+  const cacheLoadResult = await pluginContainer.serveLoadCacheRead({
+    id,
+    file,
+    url,
+    ssr,
+  })
+  const isIncludedInLoadCache = cacheLoadResult?.cacheKey != null
+
+  if (cacheLoadResult?.result) {
+    loadResult = cacheLoadResult.result
+  }
+
+  if (!loadResult) {
+    loadResult = await pluginContainer.load(id, { ssr })
+
+    if (cacheLoadResult?.cacheKey && loadResult) {
+      let code: string
+      let map: any | null
+      if (typeof loadResult === 'string') {
+        code = loadResult
+      } else {
+        code = loadResult.code
+        map = loadResult.map
+      }
+      await pluginContainer.serveLoadCacheWrite({
+        cacheKey: cacheLoadResult.cacheKey,
+        id,
+        file,
+        url,
+        code,
+        map,
+        mod,
+        ssr,
+      })
+    }
+  }
+
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
@@ -284,80 +327,128 @@ async function loadAndTransform(
   mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
 
   // transform
-  const transformStart = debugTransform ? performance.now() : 0
-  const transformResult = await pluginContainer.transform(code, id, {
-    inMap: map,
-    ssr,
-  })
-  const originalCode = code
-  if (
-    transformResult == null ||
-    (isObject(transformResult) && transformResult.code == null)
-  ) {
-    // no transform applied, keep code as-is
-    debugTransform?.(
-      timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
-    )
-  } else {
-    debugTransform?.(`${timeFrom(transformStart)} ${prettyUrl}`)
-    code = transformResult.code!
-    map = transformResult.map
-  }
+  let result: TransformResult | null = null
 
-  let normalizedMap: SourceMap | { mappings: '' } | null
-  if (typeof map === 'string') {
-    normalizedMap = JSON.parse(map)
-  } else if (map) {
-    normalizedMap = map as SourceMap | { mappings: '' }
-  } else {
-    normalizedMap = null
-  }
+  const cacheTransformResult = isIncludedInLoadCache
+    ? await pluginContainer.serveTransformCacheRead({
+        id,
+        file,
+        url,
+        ssr,
+        code,
+      })
+    : null
 
-  if (normalizedMap && 'version' in normalizedMap && mod.file) {
-    if (normalizedMap.mappings) {
-      await injectSourcesContent(normalizedMap, mod.file, logger)
+  if (cacheTransformResult?.result) {
+    if (cacheTransformResult.result.hmr) {
+      // Restore module graph node info for HMR
+      await moduleGraph.updateModuleInfo(
+        mod,
+        cacheTransformResult.result.hmr.importedModules,
+        cacheTransformResult.result.hmr.importedBindings,
+        cacheTransformResult.result.hmr.acceptedModules,
+        cacheTransformResult.result.hmr.acceptedExports,
+        cacheTransformResult.result.hmr.isSelfAccepting,
+        ssr,
+      )
     }
 
-    const sourcemapPath = `${mod.file}.map`
-    applySourcemapIgnoreList(
-      normalizedMap,
-      sourcemapPath,
-      config.server.sourcemapIgnoreList,
-      logger,
-    )
+    result = {
+      code: cacheTransformResult.result.code,
+      map: cacheTransformResult.result.map,
+      etag: getEtag(cacheTransformResult.result.code, { weak: true }),
+    }
+  }
 
-    if (path.isAbsolute(mod.file)) {
-      for (
-        let sourcesIndex = 0;
-        sourcesIndex < normalizedMap.sources.length;
-        ++sourcesIndex
-      ) {
-        const sourcePath = normalizedMap.sources[sourcesIndex]
-        if (sourcePath) {
-          // Rewrite sources to relative paths to give debuggers the chance
-          // to resolve and display them in a meaningful way (rather than
-          // with absolute paths).
-          if (path.isAbsolute(sourcePath)) {
-            normalizedMap.sources[sourcesIndex] = path.relative(
-              path.dirname(mod.file),
-              sourcePath,
-            )
+  if (!result) {
+    const transformStart = debugTransform ? performance.now() : 0
+    const transformResult = await pluginContainer.transform(code, id, {
+      inMap: map,
+      ssr,
+    })
+    const originalCode = code
+    if (
+      transformResult == null ||
+      (isObject(transformResult) && transformResult.code == null)
+    ) {
+      // no transform applied, keep code as-is
+      debugTransform?.(
+        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
+      )
+    } else {
+      debugTransform?.(`${timeFrom(transformStart)} ${prettyUrl}`)
+      code = transformResult.code!
+      map = transformResult.map
+    }
+
+    let normalizedMap: SourceMap | { mappings: '' } | null
+    if (typeof map === 'string') {
+      normalizedMap = JSON.parse(map)
+    } else if (map) {
+      normalizedMap = map as SourceMap | { mappings: '' }
+    } else {
+      normalizedMap = null
+    }
+
+    if (normalizedMap && 'version' in normalizedMap && mod.file) {
+      if (normalizedMap.mappings) {
+        await injectSourcesContent(normalizedMap, mod.file, logger)
+      }
+
+      const sourcemapPath = `${mod.file}.map`
+      applySourcemapIgnoreList(
+        normalizedMap,
+        sourcemapPath,
+        config.server.sourcemapIgnoreList,
+        logger,
+      )
+
+      if (path.isAbsolute(mod.file)) {
+        for (
+          let sourcesIndex = 0;
+          sourcesIndex < normalizedMap.sources.length;
+          ++sourcesIndex
+        ) {
+          const sourcePath = normalizedMap.sources[sourcesIndex]
+          if (sourcePath) {
+            // Rewrite sources to relative paths to give debuggers the chance
+            // to resolve and display them in a meaningful way (rather than
+            // with absolute paths).
+            if (path.isAbsolute(sourcePath)) {
+              normalizedMap.sources[sourcesIndex] = path.relative(
+                path.dirname(mod.file),
+                sourcePath,
+              )
+            }
           }
         }
       }
     }
+
+    if (server._restartPromise && !ssr) throwClosedServerError()
+
+    result =
+      ssr && !server.config.experimental.skipSsrTransform
+        ? await server.ssrTransform(code, normalizedMap, url, originalCode)
+        : ({
+            code,
+            map: normalizedMap,
+            etag: getEtag(code, { weak: true }),
+          } satisfies TransformResult)
+
+    if (cacheTransformResult?.cacheKey && result) {
+      await pluginContainer.serveTransformCacheWrite({
+        cacheKey: cacheTransformResult.cacheKey,
+        id,
+        file,
+        url,
+        code: result.code,
+        map: result.map,
+        mod,
+        ssr,
+      })
+    }
   }
-
-  if (server._restartPromise && !ssr) throwClosedServerError()
-
-  const result =
-    ssr && !server.config.experimental.skipSsrTransform
-      ? await server.ssrTransform(code, normalizedMap, url, originalCode)
-      : ({
-          code,
-          map: normalizedMap,
-          etag: getEtag(code, { weak: true }),
-        } satisfies TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale

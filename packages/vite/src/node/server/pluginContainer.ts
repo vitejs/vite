@@ -80,8 +80,15 @@ import {
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
+import type { DepOptimizationMetadata } from '../optimizer'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph, ModuleNode } from './moduleGraph'
+import type {
+  CacheLoadReadResult,
+  CacheLoadWriteOptions,
+  CacheTransformReadResult,
+  CacheTransformWriteOptions,
+} from './cache'
 
 const noop = () => {}
 
@@ -137,6 +144,22 @@ export interface PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null>
+  depsOptimized(metadata: DepOptimizationMetadata): void
+  serveLoadCacheRead(options: {
+    id: string
+    file: string
+    url: string
+    ssr: boolean
+  }): Promise<CacheLoadReadResult | null>
+  serveLoadCacheWrite(data: CacheLoadWriteOptions): Promise<void>
+  serveTransformCacheRead(options: {
+    id: string
+    file: string
+    url: string
+    ssr: boolean
+    code: string
+  }): Promise<CacheTransformReadResult | null>
+  serveTransformCacheWrite(data: CacheTransformWriteOptions): Promise<void>
   watchChange(
     id: string,
     change: { event: 'create' | 'update' | 'delete' },
@@ -676,6 +699,81 @@ export async function createPluginContainer(
           () => [container.options as NormalizedInputOptions],
         ),
       )
+    },
+
+    depsOptimized(metadata) {
+      for (const plugin of getSortedPlugins('depsOptimized')) {
+        if (!plugin.depsOptimized) continue
+        const handler =
+          'handler' in plugin.depsOptimized
+            ? plugin.depsOptimized.handler
+            : plugin.depsOptimized
+        handler(metadata)
+      }
+    },
+
+    async serveLoadCacheRead({ id, file, url, ssr }) {
+      const ctx = new Context()
+      ctx.ssr = !!ssr
+      for (const plugin of getSortedPlugins('serveLoadCacheRead')) {
+        if (!plugin.serveLoadCacheRead) continue
+        const handler =
+          'handler' in plugin.serveLoadCacheRead
+            ? plugin.serveLoadCacheRead.handler
+            : plugin.serveLoadCacheRead
+        const result = await handleHookPromise(
+          handler.call(ctx as any, { id, file, ssr, url }),
+        )
+        if (result != null) {
+          return result
+        }
+      }
+      return null
+    },
+
+    async serveLoadCacheWrite(data) {
+      const ctx = new Context()
+      ctx.ssr = !!data.ssr
+      for (const plugin of getSortedPlugins('serveLoadCacheWrite')) {
+        if (!plugin.serveLoadCacheWrite) continue
+        const handler =
+          'handler' in plugin.serveLoadCacheWrite
+            ? plugin.serveLoadCacheWrite.handler
+            : plugin.serveLoadCacheWrite
+        await handleHookPromise(handler.call(ctx as any, data))
+      }
+    },
+
+    async serveTransformCacheRead({ id, file, url, ssr, code }) {
+      const ctx = new Context()
+      ctx.ssr = !!ssr
+      for (const plugin of getSortedPlugins('serveTransformCacheRead')) {
+        if (!plugin.serveTransformCacheRead) continue
+        const handler =
+          'handler' in plugin.serveTransformCacheRead
+            ? plugin.serveTransformCacheRead.handler
+            : plugin.serveTransformCacheRead
+        const result = await handleHookPromise(
+          handler.call(ctx as any, { id, file, ssr, url, code }),
+        )
+        if (result != null) {
+          return result
+        }
+      }
+      return null
+    },
+
+    async serveTransformCacheWrite(data) {
+      const ctx = new Context()
+      ctx.ssr = !!data.ssr
+      for (const plugin of getSortedPlugins('serveTransformCacheWrite')) {
+        if (!plugin.serveTransformCacheWrite) continue
+        const handler =
+          'handler' in plugin.serveTransformCacheWrite
+            ? plugin.serveTransformCacheWrite.handler
+            : plugin.serveTransformCacheWrite
+        await handleHookPromise(handler.call(ctx as any, data))
+      }
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {

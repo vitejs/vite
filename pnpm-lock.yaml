@@ -227,6 +227,18 @@ importers:
         specifier: workspace:*
         version: link:../vite
 
+  packages/plugin-persistent-cache:
+    devDependencies:
+      debug:
+        specifier: ^4.3.4
+        version: 4.3.4
+      picocolors:
+        specifier: ^1.0.0
+        version: 1.0.0
+      vite:
+        specifier: workspace:*
+        version: link:../vite
+
   packages/vite:
     dependencies:
       esbuild:
