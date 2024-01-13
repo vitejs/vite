@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import FrameworkCard from './FrameworkCard.vue'
+import FrameworkCard, { Framework } from './FrameworkCard.vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
@@ -24,7 +24,7 @@ import logoSvelte from '../../../../../images/frameworks/svelte.svg'
 /**
  * The frameworks and tools to display in this section.
  */
-const frameworks = [
+const frameworks: Framework[] = [
   {
     name: 'Astro',
     logo: logoAstro,

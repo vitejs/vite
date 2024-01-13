@@ -1,17 +1,39 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { Ref, ref } from 'vue'
 
-const props = defineProps({
-  framework: {
-    type: Object,
-    required: false,
-    default: () => ({
-      name: null,
-      logo: null,
-      color: '#FFFFFF',
-      visible: ref(true),
-    }),
-  },
+/**
+ * A single framework or tool to display in the frameworks section.
+ */
+export interface Framework {
+  /**
+   * The name of the framework.
+   */
+  name?: string
+
+  /**
+   * A string representing the URL of the logo in SVG format.
+   */
+  logo?: string
+
+  /**
+   * A string representing the hex color of the glow effect.
+   */
+  color?: string
+
+  /**
+   * Whether the framework card is visible or not.
+   */
+  visible: Ref<boolean>
+}
+
+interface Props {
+  framework?: Framework
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  framework: (): Framework => ({
+    visible: ref(true),
+  }),
 })
 </script>
 
