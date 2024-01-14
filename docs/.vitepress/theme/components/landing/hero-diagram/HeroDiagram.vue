@@ -383,7 +383,7 @@ const animateSingleInputMobile = (inputLine) => {
     inputLine.position,
     {
       value: 1,
-      duration: 3,
+      duration: 2,
       ease: 'power3.out',
     },
     0,

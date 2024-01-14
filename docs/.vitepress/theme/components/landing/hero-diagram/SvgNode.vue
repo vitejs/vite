@@ -35,7 +35,7 @@ const props = defineProps({
   dotColor: {
     type: String,
     required: false,
-    default: '#b6e4fa',
+    default: '#9fe6fd',
   },
 })
 
@@ -52,24 +52,12 @@ const pathElement = ref(null)
 /**
  * The radius on each side of the dot, represented as a glow on the SVG path.
  */
-const gradientWidth = ref(0.04)
+const gradientWidth = ref(30)
 
 /**
  * A scale factor for animating the gradient width.
  */
 const gradientWidthScaleFactor = ref(props.visible ? 1 : 0)
-
-/**
- * The computed data needed to animate the gradient for the line glow.
- */
-const gradientData = computed(() => {
-  const width = gradientWidth.value * gradientWidthScaleFactor.value
-  return {
-    x1: props.position - width,
-    x2: props.position,
-    x3: props.position + width,
-  }
-})
 
 /**
  * The computed position of the dot along the path.
@@ -117,7 +105,7 @@ watch(
     :cy="dotPosition.y"
     :r="dotRadius"
     :fill="props.dotColor"
-    class="glow-effect"
+    :style="`filter: drop-shadow(0 0 6px ${props.dotColor});`"
   />
   <text
     v-if="props.label"
@@ -136,28 +124,16 @@ watch(
     {{ props.label }}
   </text>
   <defs>
-    <linearGradient
+    <radialGradient
       :id="`glow_gradient_${pathId}`"
-      x1="0%"
-      x2="100%"
+      :cx="dotPosition.x"
+      :cy="dotPosition.y"
+      :r="gradientWidth * gradientWidthScaleFactor"
       gradientUnits="userSpaceOnUse"
     >
-      <stop
-        :offset="gradientData.x1"
-        :stop-color="props.glowColor"
-        stop-opacity="0"
-      />
-      <stop
-        :offset="gradientData.x2"
-        :stop-color="props.glowColor"
-        stop-opacity="0.8"
-      />
-      <stop
-        :offset="gradientData.x3"
-        :stop-color="props.glowColor"
-        stop-opacity="0"
-      />
-    </linearGradient>
+      <stop offset="0%" :stop-color="props.glowColor" :stop-opacity="1" />
+      <stop offset="100%" :stop-color="props.glowColor" stop-opacity="0" />
+    </radialGradient>
   </defs>
 </template>
 

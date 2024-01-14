@@ -1,4 +1,8 @@
 <script setup>
+import SvgNode from '../hero-diagram/SvgNode.vue'
+import { onMounted, ref } from 'vue'
+import { gsap } from 'gsap'
+
 const props = defineProps({
   title: {
     type: String,
@@ -13,53 +17,76 @@ const props = defineProps({
     default: 'blue',
   },
 })
+
+const animationPercentage = ref(0)
+const animationVisible = ref(false)
+
+let timeline = null
+
+onMounted(() => {
+  startAnimation()
+})
+
+/**
+ * When the component scrolls into viewport, we start the animation.
+ */
+const startAnimation = () => {
+  timeline = gsap.timeline({
+    scrollTrigger: {
+      trigger: `#feature_section_${props.type}`,
+      start: 'top 80%',
+      once: true,
+    },
+  })
+  timeline.call(
+    () => {
+      animationVisible.value = true
+    },
+    null,
+    0,
+  )
+  timeline.to(
+    animationPercentage,
+    {
+      value: 0.55,
+      duration: 2,
+      ease: 'expo.out',
+    },
+    0,
+  )
+}
 </script>
 
 <template>
-  <section class="feature-section">
+  <section class="feature-section" :id="`feature_section_${props.type}`">
     <!-- Section Title -->
     <div class="feature-section__title">
       <svg
-        v-if="type === 'blue'"
         xmlns="http://www.w3.org/2000/svg"
         width="70"
         height="61"
         viewBox="0 0 70 61"
         fill="none"
+        style="overflow: visible"
       >
         <path
           d="M38.5 0.772461V60.5215M22.6301 60.7725V38.7905C22.6301 25.3784 17.3675 12.5156 8 3.03184M54.3699 60.7725V38.7905C54.3699 25.3784 59.6325 12.5156 69 3.03184"
           stroke="url(#paint0_linear_724_6724)"
           stroke-width="2"
         />
-        <path
-          d="M38.5 0.772461V60.5215M22.6301 60.7725V38.7905C22.6301 25.3784 17.3675 12.5156 8 3.03184M54.3699 60.7725V38.7905C54.3699 25.3784 59.6325 12.5156 69 3.03184"
-          stroke="url(#paint1_radial_724_6724)"
-          stroke-width="2"
+        <SvgNode
+          v-if="type === 'blue'"
+          path="M22.6301 80.7725V38.7905C22.6301 25.3784 17.3675 12.5156 8 3.03184L-20 -20"
+          :position="animationPercentage"
+          :visible="animationVisible"
         />
-        <g filter="url(#filter0_f_724_6724)">
-          <ellipse
-            cx="20.9788"
-            cy="25.7384"
-            rx="3.89362"
-            ry="9.19791"
-            fill="#41D1FF"
-          />
-        </g>
-        <ellipse
-          cx="20.9788"
-          cy="25.7383"
-          rx="3.89362"
-          ry="3.94196"
-          fill="#41D1FF"
-        />
-        <ellipse
-          cx="20.9788"
-          cy="25.7383"
-          rx="3.89362"
-          ry="3.94196"
-          fill="white"
-          fill-opacity="0.5"
+        <SvgNode
+          v-if="type === 'pink'"
+          path="M54.3699 80.7725V38.7905C54.3699 25.3784 59.6325 12.5156 69 3.03184L90 -20"
+          :position="animationPercentage"
+          :visible="animationVisible"
+          dot-color="#ce9bf4"
+          glow-color="#BD34FE"
         />
         <defs>
           <filter
@@ -95,106 +122,6 @@ const props = defineProps({
             <stop offset="0.485224" stop-color="#737373" />
             <stop offset="1" stop-color="#404040" stop-opacity="0" />
           </linearGradient>
-          <radialGradient
-            id="paint1_radial_724_6724"
-            cx="0"
-            cy="0"
-            r="1"
-            gradientUnits="userSpaceOnUse"
-            gradientTransform="translate(20.9787 24.4242) rotate(74.4747) scale(21.8199 18.295)"
-          >
-            <stop stop-color="#41D1FF" />
-            <stop offset="1" stop-color="#41D1FF" stop-opacity="0" />
-          </radialGradient>
-        </defs>
-      </svg>
-      <svg
-        v-if="type === 'pink'"
-        xmlns="http://www.w3.org/2000/svg"
-        width="69"
-        height="62"
-        viewBox="0 0 69 62"
-        fill="none"
-      >
-        <path
-          d="M31 1.5V61.249M15.3902 61.5V39.518C15.3902 26.1059 10.2139 13.2432 1 3.75938M46.6098 61.5V39.518C46.6098 26.1059 51.7861 13.2432 61 3.75938"
-          stroke="url(#paint0_linear_724_6980)"
-          stroke-width="2"
-        />
-        <path
-          d="M31 1.5V61.249M15.3902 61.5V39.518C15.3902 26.1059 10.2139 13.2432 1 3.75938M46.6098 61.5V39.518C46.6098 26.1059 51.7861 13.2432 61 3.75938"
-          stroke="url(#paint1_radial_724_6980)"
-          stroke-width="2"
-        />
-        <g filter="url(#filter0_f_724_6980)">
-          <ellipse
-            cx="47.8298"
-            cy="26.4657"
-            rx="3.82979"
-            ry="9.19791"
-            fill="#BD34FE"
-          />
-        </g>
-        <ellipse
-          cx="47.8298"
-          cy="26.4659"
-          rx="3.82979"
-          ry="3.94196"
-          fill="#BD34FE"
-        />
-        <ellipse
-          cx="47.8298"
-          cy="26.4659"
-          rx="3.82979"
-          ry="3.94196"
-          fill="white"
-          fill-opacity="0.5"
-        />
-        <defs>
-          <filter
-            id="filter0_f_724_6980"
-            x="27.617"
-            y="0.884844"
-            width="40.4255"
-            height="51.1617"
-            filterUnits="userSpaceOnUse"
-            color-interpolation-filters="sRGB"
-          >
-            <feFlood flood-opacity="0" result="BackgroundImageFix" />
-            <feBlend
-              mode="normal"
-              in="SourceGraphic"
-              in2="BackgroundImageFix"
-              result="shape"
-            />
-            <feGaussianBlur
-              stdDeviation="8.19149"
-              result="effect1_foregroundBlur_724_6980"
-            />
-          </filter>
-          <linearGradient
-            id="paint0_linear_724_6980"
-            x1="31"
-            y1="1.5"
-            x2="31"
-            y2="61.5"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stop-color="#404040" stop-opacity="0" />
-            <stop offset="0.485224" stop-color="#737373" />
-            <stop offset="1" stop-color="#404040" stop-opacity="0" />
-          </linearGradient>
-          <radialGradient
-            id="paint1_radial_724_6980"
-            cx="0"
-            cy="0"
-            r="1"
-            gradientUnits="userSpaceOnUse"
-            gradientTransform="translate(48.5 26) rotate(88.6361) scale(21.006 17.3643)"
-          >
-            <stop stop-color="#BD34FE" />
-            <stop offset="1" stop-color="#BD34FE" stop-opacity="0" />
-          </radialGradient>
         </defs>
       </svg>
       <h2 :style="{ '--text-color': type === 'blue' ? '#41D1FF' : '#BD34FE' }">
@@ -217,6 +144,14 @@ const props = defineProps({
   margin: 0 auto;
   gap: 0;
   align-items: center;
+
+  &:nth-of-type(1) {
+    margin-top: -60px;
+
+    @media (min-width: 768px) {
+      margin-top: 0;
+    }
+  }
 
   svg {
     margin-bottom: 15px;
