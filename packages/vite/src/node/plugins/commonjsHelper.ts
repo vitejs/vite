@@ -72,10 +72,7 @@ export class commonjsHelperContainer implements commonjsHelperContainerType {
       },
       collect: this.collect.bind(this),
       compiler(localName, cjsModuleName) {
-        return `const ${localName} = ${this.mergeNamespaces}({
-							__proto__: null,
-							default: ${this.getDefaultExportFromCjs}(${cjsModuleName})
-						}, [${cjsModuleName}]);`
+        return `const ${localName} = ${this.mergeNamespaces}({ __proto__: null, default: ${this.getDefaultExportFromCjs}(${cjsModuleName})}, [${cjsModuleName}]);`
       },
     },
     dynamic: {
