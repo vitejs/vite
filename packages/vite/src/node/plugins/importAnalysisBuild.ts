@@ -28,7 +28,7 @@ import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo, interopNamedImports } from './importAnalysis'
-import { commonjsHelperContainer } from './commonjsHelper'
+import { CommonjsHelperContainer } from './commonjsHelper'
 
 type FileDep = {
   url: string
@@ -302,7 +302,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
-      const commonjsHelpers = new commonjsHelperContainer()
+      const commonjsHelpers = new CommonjsHelperContainer()
       for (let index = 0; index < imports.length; index++) {
         const {
           s: start,
@@ -404,8 +404,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
       }
 
-      if (commonjsHelpers.collectTools.length) {
-        str().prepend(commonjsHelpers.injectHelper())
+      const injectHelper = commonjsHelpers.injectHelper()
+      if (injectHelper) {
+        str().prepend(injectHelper)
       }
 
       if (s) {

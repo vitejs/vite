@@ -1,40 +1,28 @@
 import type { Plugin } from '../plugin'
 
-interface InteractiveInterface {
-  localName: string
-  importedName: string
-}
-
-interface PropertyDescriptor {
-  configurable?: boolean
-  enumerable?: boolean
-  value?: any
-  writable?: boolean
-  get?(): any
-  set?(v: any): void
-}
+const HELPERS_ID = '/commonjs-helpers.js'
+const RESOLVED_HELPERS_ID = '\0/commonjs-helpers.js'
 
 interface HelperTool {
   getDefaultExportFromCjs?: PropertyDescriptor
   mergeNamespaces?: PropertyDescriptor
 }
+interface InteractiveInterface {
+  importedName: keyof HelperTool
+  localName: string
+}
 type HelperContainer = {
-  init?: Record<keyof HelperTool, string>
-  collect?: (helper: InteractiveInterface) => void
+  needInject?: boolean
   compiler: (localName: string, importedName: string) => string
 } & HelperTool
-
-export interface commonjsHelperContainerType {
-  collectTools: Array<InteractiveInterface>
-  helperContainer: Record<string, HelperContainer>
-  init: () => void
+export interface CommonjsHelperContainerType {
   collect: (helper: InteractiveInterface) => void
   translate: (
     importedName: string,
     localName: string,
     cjsModuleName: string,
   ) => string
-  injectHelper: () => void
+  injectHelper: () => string | null
 }
 
 const helperModule = `
@@ -61,26 +49,24 @@ const helperModule = `
 		return Object.freeze(Object.defineProperty(n, Symbol.toStringTag, { value: 'Module' }));
 	}
 `
-export class commonjsHelperContainer implements commonjsHelperContainerType {
-  collectTools = new Array<InteractiveInterface>()
-  uniqueChecker = new Map<string, Set<string>>()
-  helperContainer: Record<string, HelperContainer> = {
+
+const getLocalName = (importedName: keyof HelperTool) => {
+  return `__${importedName}`
+}
+export class CommonjsHelperContainer implements CommonjsHelperContainerType {
+  private _uniqueChecker = new Set<keyof HelperTool>()
+  private _collectHelper = new Array<InteractiveInterface>()
+  private _exposeHelperName = new Array<keyof HelperTool>(
+    'mergeNamespaces',
+    'getDefaultExportFromCjs',
+  )
+  private _helperContainer: Record<string, HelperContainer> = {
     '*': {
-      init: {
-        mergeNamespaces: '__mergeNamespaces',
-        getDefaultExportFromCjs: '__getDefaultExportFromCjs',
-      },
-      collect: this.collect.bind(this),
       compiler(localName, cjsModuleName) {
         return `const ${localName} = ${this.mergeNamespaces}({ __proto__: null, default: ${this.getDefaultExportFromCjs}(${cjsModuleName})}, [${cjsModuleName}]);`
       },
     },
     dynamic: {
-      init: {
-        mergeNamespaces: '__mergeNamespaces',
-        getDefaultExportFromCjs: '__getDefaultExportFromCjs',
-      },
-      collect: this.collect.bind(this),
       compiler(localName, importedName) {
         return `${localName} => ${this.mergeNamespaces}({
 					__proto__: null,
@@ -89,71 +75,59 @@ export class commonjsHelperContainer implements commonjsHelperContainerType {
       },
     },
   }
+
   constructor() {
-    this.init()
+    this._init()
   }
-  init(): void {
+  private _init(): void {
     const collect = this.collect.bind(this)
-    Object.keys(this.helperContainer).forEach((importedName) => {
-      const helper = this.helperContainer[importedName]
-      if (helper.init) {
-        Object.defineProperties(
-          helper,
-          Object.keys(helper.init).reduce(
-            (accumulator, helperToolImportedName) => {
-              const helperToolLocalName =
-                helper.init![helperToolImportedName as keyof HelperTool]
-              accumulator[helperToolImportedName] = {
-                get() {
-                  collect({
-                    localName: helperToolLocalName,
-                    importedName: helperToolImportedName,
-                  })
-                  return helperToolLocalName
-                },
-              }
-              return accumulator
-            },
-            {} as PropertyDescriptorMap,
-          ),
-        )
-      }
+    Object.keys(this._helperContainer).forEach((importedName) => {
+      const helper = this._helperContainer[importedName]
+      Object.defineProperties(
+        helper,
+        Object.values(this._exposeHelperName).reduce(
+          (accumulator, exposeImportedName) => {
+            const importedName = exposeImportedName as keyof HelperTool
+            const localName = getLocalName(importedName)
+            accumulator[importedName] = {
+              get() {
+                const { needInject = true } = helper
+                needInject && collect({ importedName, localName })
+                return localName
+              },
+            }
+            return accumulator
+          },
+          {} as PropertyDescriptorMap,
+        ),
+      )
     })
   }
   collect(helper: InteractiveInterface): void {
-    if (!this.uniqueChecker.get(helper.importedName)) {
-      this.uniqueChecker.set(helper.importedName, new Set())
-    }
-    const checker = this.uniqueChecker.get(helper.importedName)
-    if (checker?.has(helper.localName)) {
-      return
-    }
-    checker?.add(helper.localName)
-    this.collectTools.push(helper)
+    if (this._uniqueChecker.has(helper.importedName)) return
+    this._uniqueChecker.add(helper.importedName)
+    this._collectHelper.push(helper)
   }
   translate(
     importedName: string,
     localName: string,
     cjsModuleName: string,
   ): string {
-    const compilerHelper = this.helperContainer[importedName]
+    const compilerHelper = this._helperContainer[importedName]
     if (compilerHelper) {
       return compilerHelper.compiler(localName, cjsModuleName)
     }
     return ''
   }
-  injectHelper(): string {
-    if (this.collectTools.length) {
-      return `import { ${[...this.collectTools].map(
+  injectHelper(): string | null {
+    if (this._collectHelper.length) {
+      return `import { ${[...this._collectHelper].map(
         ({ localName, importedName }) => `${importedName} as ${localName}`,
       )} } from "${HELPERS_ID}";`
     }
-    return ''
+    return null
   }
 }
-
-const HELPERS_ID = '/commonjs-helpers.js'
-const RESOLVED_HELPERS_ID = '\0/commonjs-helpers.js'
 
 export function commonjsHelperPlugin(): Plugin {
   return {

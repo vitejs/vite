@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import MagicString from 'magic-string'
 import { transformCjsImport } from '../../plugins/importAnalysis'
-import { commonjsHelperContainer } from '../../plugins/commonjsHelper'
+import { CommonjsHelperContainer } from '../../plugins/commonjsHelper'
 import type { ResolvedConfig } from '../../config'
 
 describe('transformCjsImport', () => {
@@ -24,7 +24,7 @@ describe('transformCjsImport', () => {
       config?: ResolvedConfig
     },
   ) {
-    const commonjsHelpers = new commonjsHelperContainer()
+    const commonjsHelpers = new CommonjsHelperContainer()
     const {
       url = defaultUrl,
       rawUrl = defaultRawUrl,
@@ -43,8 +43,9 @@ describe('transformCjsImport', () => {
     )
     if (compilerResult) {
       const s = new MagicString(compilerResult)
-      if (commonjsHelpers.collectTools.length) {
-        s.prepend(commonjsHelpers.injectHelper())
+      const injectHelper = commonjsHelpers.injectHelper()
+      if (injectHelper) {
+        s.prepend(injectHelper)
       }
       return s.toString()
     }

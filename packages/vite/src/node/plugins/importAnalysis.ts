@@ -64,8 +64,8 @@ import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
-import type { commonjsHelperContainerType } from './commonjsHelper'
-import { commonjsHelperContainer } from './commonjsHelper'
+import type { CommonjsHelperContainerType } from './commonjsHelper'
+import { CommonjsHelperContainer } from './commonjsHelper'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -418,7 +418,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const orderedAcceptedExports = new Array<Set<string> | undefined>(
         imports.length,
       )
-      const commonjsHelpers = new commonjsHelperContainer()
+      const commonjsHelpers = new CommonjsHelperContainer()
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
           const {
@@ -734,8 +734,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (commonjsHelpers.collectTools.length) {
-        str().prepend(commonjsHelpers.injectHelper())
+      const injectHelper = commonjsHelpers.injectHelper()
+      if (injectHelper) {
+        str().prepend(injectHelper)
       }
 
       // normalize and rewrite accepted urls
@@ -863,7 +864,7 @@ export function interopNamedImports(
   importIndex: number,
   importer: string,
   config: ResolvedConfig,
-  commonjsHelpers: commonjsHelperContainerType,
+  commonjsHelpers: CommonjsHelperContainerType,
 ): void {
   const source = str.original
   const {
@@ -942,7 +943,7 @@ export function transformCjsImport(
   importIndex: number,
   importer: string,
   config: ResolvedConfig,
-  commonjsHelpers: commonjsHelperContainerType,
+  commonjsHelpers: CommonjsHelperContainerType,
 ): string | undefined {
   const node = (
     parseJS(importExp, {
