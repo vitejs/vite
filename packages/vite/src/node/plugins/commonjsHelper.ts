@@ -16,7 +16,6 @@ type HelperContainer = {
   compiler: (localName: string, importedName: string) => string
 } & HelperTool
 export interface CommonjsHelperContainerType {
-  collect: (helper: InteractiveInterface) => void
   translate: (
     importedName: string,
     localName: string,
@@ -80,7 +79,7 @@ export class CommonjsHelperContainer implements CommonjsHelperContainerType {
     this._init()
   }
   private _init(): void {
-    const collect = this.collect.bind(this)
+    const collect = this._collect.bind(this)
     Object.keys(this._helperContainer).forEach((importedName) => {
       const helper = this._helperContainer[importedName]
       Object.defineProperties(
@@ -103,7 +102,7 @@ export class CommonjsHelperContainer implements CommonjsHelperContainerType {
       )
     })
   }
-  collect(helper: InteractiveInterface): void {
+  private _collect(helper: InteractiveInterface): void {
     if (this._uniqueChecker.has(helper.importedName)) return
     this._uniqueChecker.add(helper.importedName)
     this._collectHelper.push(helper)
