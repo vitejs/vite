@@ -382,6 +382,10 @@ const position = ref(0.5)
 </template>
 
 <style scoped>
+.feature-card {
+  min-height: 370px;
+}
+
 .feature__visualization {
   .left-lines {
     position: absolute;
