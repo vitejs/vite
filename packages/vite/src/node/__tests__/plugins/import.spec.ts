@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { transformCjsImport } from '../../plugins/importAnalysis'
+import { commonjsHelperContainer } from '../../plugins/commonjsHelper'
 
 describe('transformCjsImport', () => {
   const url = './node_modules/.vite/deps/react.js'
@@ -24,6 +25,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -41,6 +43,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -55,6 +58,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -71,6 +75,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -87,6 +92,7 @@ describe('transformCjsImport', () => {
         0,
         'modA',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(undefined)
 
@@ -102,6 +108,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(undefined)
 
@@ -117,6 +124,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -133,6 +141,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -151,6 +160,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -166,6 +176,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
@@ -181,6 +192,7 @@ describe('transformCjsImport', () => {
         0,
         '',
         config,
+        new commonjsHelperContainer(),
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +

@@ -64,6 +64,8 @@ import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
+import type { commonjsHelperContainerType } from './commonjsHelper'
+import { commonjsHelperContainer } from './commonjsHelper'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -416,7 +418,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const orderedAcceptedExports = new Array<Set<string> | undefined>(
         imports.length,
       )
-
+      const commonjsHelpers = new commonjsHelperContainer()
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
           const {
@@ -577,6 +579,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     index,
                     importer,
                     config,
+                    commonjsHelpers,
                   )
                   rewriteDone = true
                 }
@@ -595,6 +598,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   index,
                   importer,
                   config,
+                  commonjsHelpers,
                 )
                 rewriteDone = true
               }
@@ -730,6 +734,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      if (commonjsHelpers.collectTools.length) {
+        str().prepend(commonjsHelpers.injectHelper())
+      }
+
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
@@ -855,6 +863,7 @@ export function interopNamedImports(
   importIndex: number,
   importer: string,
   config: ResolvedConfig,
+  commonjsHelpers: commonjsHelperContainerType,
 ): void {
   const source = str.original
   const {
@@ -870,8 +879,11 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))` +
-        getLineBreaks(exp),
+      `import('${rewrittenUrl}').then(${commonjsHelpers.translate(
+        'dynamic',
+        'm',
+        'm.default',
+      )})` + getLineBreaks(exp),
       { contentOnly: true },
     )
   } else {
@@ -883,6 +895,7 @@ export function interopNamedImports(
       importIndex,
       importer,
       config,
+      commonjsHelpers,
     )
     if (rewritten) {
       str.overwrite(expStart, expEnd, rewritten + getLineBreaks(exp), {
@@ -929,6 +942,7 @@ export function transformCjsImport(
   importIndex: number,
   importer: string,
   config: ResolvedConfig,
+  commonjsHelpers: commonjsHelperContainerType,
 ): string | undefined {
   const node = (
     parseJS(importExp, {
@@ -1006,7 +1020,9 @@ export function transformCjsImport(
     const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
-        lines.push(`const ${localName} = ${cjsModuleName}`)
+        lines.push(
+          commonjsHelpers.translate(importedName, localName, cjsModuleName),
+        )
       } else if (importedName === 'default') {
         lines.push(
           `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,

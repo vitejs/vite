@@ -26,6 +26,7 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
+import { commonjsHelperPlugin } from './commonjsHelper'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -103,7 +104,11 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
+      : [
+          clientInjectionsPlugin(config),
+          importAnalysisPlugin(config),
+          commonjsHelperPlugin(),
+        ]),
   ].filter(Boolean) as Plugin[]
 }
 
