@@ -3,6 +3,7 @@ import { createServer } from 'vite'
 
 async function runTest() {
   const server = await createServer({
+    configFile: false,
     server: {
       middlewareMode: true,
     },
