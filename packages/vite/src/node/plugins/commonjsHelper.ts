@@ -152,19 +152,19 @@ export class commonjsHelperContainer implements commonjsHelperContainerType {
   }
 }
 
-const HELPERS_ID = '/vite/commonjsHelpers'
-const resolvedHELPERS_ID = '\0' + HELPERS_ID + '.js'
+const HELPERS_ID = '/commonjs-helpers.js'
+const RESOLVED_HELPERS_ID = '\0/commonjs-helpers.js'
 
 export function commonjsHelperPlugin(): Plugin {
   return {
     name: 'vite:commonjs-helper',
     resolveId(id) {
       if (id === HELPERS_ID) {
-        return resolvedHELPERS_ID
+        return RESOLVED_HELPERS_ID
       }
     },
     load(id) {
-      if (id === resolvedHELPERS_ID) {
+      if (id === RESOLVED_HELPERS_ID) {
         return helperModule
       }
     },

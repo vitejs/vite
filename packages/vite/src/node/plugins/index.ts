@@ -104,11 +104,8 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [
-          clientInjectionsPlugin(config),
-          importAnalysisPlugin(config),
-          commonjsHelperPlugin(),
-        ]),
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
+    commonjsHelperPlugin(),
   ].filter(Boolean) as Plugin[]
 }
 

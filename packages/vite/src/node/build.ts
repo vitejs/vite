@@ -55,6 +55,7 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
+import { commonjsHelperPlugin } from './plugins/commonjsHelper'
 
 export interface BuildOptions {
   /**
@@ -450,6 +451,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             buildReporterPlugin(config),
           ]
         : []),
+      commonjsHelperPlugin(),
       loadFallbackPlugin(),
     ],
   }

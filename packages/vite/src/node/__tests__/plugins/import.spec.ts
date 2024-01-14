@@ -76,7 +76,7 @@ describe('transformCjsImport', () => {
 
   test('import all specifier', () => {
     expect(compiler('import * as react from "react"')).toEqual(
-      'import { mergeNamespaces as __mergeNamespaces,getDefaultExportFromCjs as __getDefaultExportFromCjs } from "/vite/commonjsHelpers";' +
+      'import { mergeNamespaces as __mergeNamespaces,getDefaultExportFromCjs as __getDefaultExportFromCjs } from "/commonjs-helpers.js";' +
         'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const react = __mergeNamespaces({ __proto__: null, default: __getDefaultExportFromCjs(__vite__cjsImport0_react)}, [__vite__cjsImport0_react]);',
     )
