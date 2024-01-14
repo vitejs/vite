@@ -6,7 +6,7 @@ import { isServe } from '~utils'
 const execFileAsync = promisify(execFile)
 
 test.runIf(isServe)('basic', async () => {
-  await execFileAsync('pnpm', ['test'], {
+  await execFileAsync('node', ['--experimental-network-imports', 'test.js'], {
     cwd: new URL('..', import.meta.url),
   })
 })
