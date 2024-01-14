@@ -65,7 +65,7 @@ import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
 import type { CommonjsHelperContainerType } from './commonjsHelper'
-import { CommonjsHelperContainer } from './commonjsHelper'
+import { CommonjsHelperContainer, ImportType } from './commonjsHelper'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -881,7 +881,7 @@ export function interopNamedImports(
       expStart,
       expEnd,
       `import('${rewrittenUrl}').then(${commonjsHelpers.translate(
-        'dynamic',
+        ImportType.DynamicImport,
         'm',
         'm.default',
       )})` + getLineBreaks(exp),
@@ -1022,7 +1022,11 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          commonjsHelpers.translate(importedName, localName, cjsModuleName),
+          commonjsHelpers.translate(
+            ImportType.NamespacesImport,
+            localName,
+            cjsModuleName,
+          ),
         )
       } else if (importedName === 'default') {
         lines.push(

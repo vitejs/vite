@@ -23,6 +23,10 @@ export interface CommonjsHelperContainerType {
   ) => string
   injectHelper: () => string | null
 }
+export enum ImportType {
+  NamespacesImport = 'namespacesImport',
+  DynamicImport = 'dynamicImport',
+}
 
 const helperModule = `
 	export const getDefaultExportFromCjs = (x) => {
@@ -59,13 +63,13 @@ export class CommonjsHelperContainer implements CommonjsHelperContainerType {
     'mergeNamespaces',
     'getDefaultExportFromCjs',
   )
-  private _helperContainer: Record<string, HelperContainer> = {
-    '*': {
+  private _helperContainer: Record<ImportType, HelperContainer> = {
+    [ImportType.NamespacesImport]: {
       compiler(localName, cjsModuleName) {
         return `const ${localName} = ${this.mergeNamespaces}({ __proto__: null, default: ${this.getDefaultExportFromCjs}(${cjsModuleName})}, [${cjsModuleName}]);`
       },
     },
-    dynamic: {
+    [ImportType.DynamicImport]: {
       compiler(localName, importedName) {
         return `${localName} => ${this.mergeNamespaces}({
 					__proto__: null,
@@ -81,7 +85,7 @@ export class CommonjsHelperContainer implements CommonjsHelperContainerType {
   private _init(): void {
     const collect = this._collect.bind(this)
     Object.keys(this._helperContainer).forEach((importedName) => {
-      const helper = this._helperContainer[importedName]
+      const helper = this._helperContainer[importedName as ImportType]
       Object.defineProperties(
         helper,
         Object.values(this._exposeHelperName).reduce(
@@ -112,7 +116,7 @@ export class CommonjsHelperContainer implements CommonjsHelperContainerType {
     localName: string,
     cjsModuleName: string,
   ): string {
-    const compilerHelper = this._helperContainer[importedName]
+    const compilerHelper = this._helperContainer[importedName as ImportType]
     if (compilerHelper) {
       return compilerHelper.compiler(localName, cjsModuleName)
     }
