@@ -1393,8 +1393,6 @@ importers:
         specifier: ^4.18.2
         version: 4.18.2
 
-  playground/ssr-network-imports: {}
-
   playground/ssr-noexternal:
     dependencies:
       '@vitejs/test-external-cjs':

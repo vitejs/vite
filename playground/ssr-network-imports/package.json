@@ -1,9 +1,0 @@
-{
-  "name": "@vitejs/test-ssr-network-imports",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "test": "node --experimental-network-imports test.js"
-  }
-}
