@@ -235,7 +235,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (overriddenDefaultModernTargets) {
         config.logger.warn(
           colors.yellow(
-            `plugin-legacy overrode builtin targets of modern chunks. Some versions of browsers between legacy and modern maybe not be supported.`,
+            `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
           ),
         )
       }
