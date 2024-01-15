@@ -535,8 +535,8 @@ export async function resolveConfig(
       colors.yellow(
         `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
           `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
-          `to remove the 'browser' string and preserve the previous browser behaviour.`
-      )
+          `to remove the 'browser' string and preserve the previous browser behaviour.`,
+      ),
     )
   }
 
@@ -560,7 +560,7 @@ export async function resolveConfig(
       logger.warn(
         `NODE_ENV=${userNodeEnv} is not supported in the .env file. ` +
           `Only NODE_ENV=development is supported to create a development build of your project. ` +
-          `If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.`
+          `If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.`,
       )
     }
   }
@@ -583,7 +583,7 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
     logger,
-    resolvedRoot
+    resolvedRoot,
   )
 
   // resolve cache directory
@@ -592,8 +592,8 @@ export async function resolveConfig(
     config.cacheDir
       ? path.resolve(resolvedRoot, config.cacheDir)
       : pkgDir
-      ? path.join(pkgDir, `node_modules/.vite`)
-      : path.join(resolvedRoot, `.vite`)
+        ? path.join(pkgDir, `node_modules/.vite`)
+        : path.join(resolvedRoot, `.vite`),
   )
 
   const assetsFilter =
@@ -654,8 +654,8 @@ export async function resolveConfig(
       ? normalizePath(
           path.resolve(
             resolvedRoot,
-            typeof publicDir === 'string' ? publicDir : 'public'
-          )
+            typeof publicDir === 'string' ? publicDir : 'public',
+          ),
         )
       : ''
 
@@ -676,8 +676,8 @@ export async function resolveConfig(
     logger.warn(
       colors.yellow(
         `worker.plugins is now a function that returns an array of plugins. ` +
-          `Please update your Vite config accordingly.\n`
-      )
+          `Please update your Vite config accordingly.\n`,
+      ),
     )
   }
 
@@ -703,7 +703,7 @@ export async function resolveConfig(
     workerConfig = await runConfigHook(
       workerConfig,
       workerUserPlugins,
-      configEnv
+      configEnv,
     )
 
     const workerResolved: ResolvedConfig = {
@@ -716,14 +716,14 @@ export async function resolveConfig(
       workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
-      workerPostPlugins
+      workerPostPlugins,
     )
 
     // run configResolved hooks
     await Promise.all(
       createPluginHookUtils(resolvedWorkerPlugins)
         .getSortedPluginHooks('configResolved')
-        .map((hook) => hook(workerResolved))
+        .map((hook) => hook(workerResolved)),
     )
 
     return resolvedWorkerPlugins
@@ -738,7 +738,7 @@ export async function resolveConfig(
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
-      normalizePath(path.resolve(name))
+      normalizePath(path.resolve(name)),
     ),
     inlineConfig,
     root: resolvedRoot,
@@ -805,7 +805,7 @@ export async function resolveConfig(
     resolved,
     prePlugins,
     normalPlugins,
-    postPlugins
+    postPlugins,
   )
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
@@ -813,7 +813,7 @@ export async function resolveConfig(
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
-      .map((hook) => hook(resolved))
+      .map((hook) => hook(resolved)),
   )
 
   debug?.(`using resolved config: %O`, {
@@ -836,8 +836,8 @@ export async function resolveConfig(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
           `Note Vite now defaults to use esbuild for minification. If you still ` +
-          `prefer Terser, set build.minify to "terser".`
-      )
+          `prefer Terser, set build.minify to "terser".`,
+      ),
     )
   }
 
@@ -847,18 +847,18 @@ export async function resolveConfig(
   // Use isArray to narrow its type to array
   if (Array.isArray(outputOption)) {
     const assetFileNamesList = outputOption.map(
-      (output) => output.assetFileNames
+      (output) => output.assetFileNames,
     )
     if (assetFileNamesList.length > 1) {
       const firstAssetFileNames = assetFileNamesList[0]
       const hasDifferentReference = assetFileNamesList.some(
-        (assetFileNames) => assetFileNames !== firstAssetFileNames
+        (assetFileNames) => assetFileNames !== firstAssetFileNames,
       )
       if (hasDifferentReference) {
         resolved.logger.warn(
           colors.yellow(`
 assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
-`)
+`),
         )
       }
     }
@@ -875,7 +875,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
       colors.yellow(`
 (!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
     The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
-`)
+`),
     )
   }
 
@@ -889,16 +889,16 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
-  logger: Logger
+  logger: Logger,
 ): string {
   if (base[0] === '.') {
     logger.warn(
       colors.yellow(
         colors.bold(
           `(!) invalid "base" option: "${base}". The value can only be an absolute ` +
-            `URL, "./", or an empty string.`
-        )
-      )
+            `URL, "./", or an empty string.`,
+        ),
+      ),
     )
     return '/'
   }
@@ -908,7 +908,9 @@ export function resolveBaseUrl(
   // no leading slash warn
   if (!isExternal && base[0] !== '/') {
     logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
+      colors.yellow(
+        colors.bold(`(!) "base" option should start with a slash.`),
+      ),
     )
   }
 
@@ -925,7 +927,7 @@ export function resolveBaseUrl(
 }
 
 export function sortUserPlugins(
-  plugins: (Plugin | Plugin[])[] | undefined
+  plugins: (Plugin | Plugin[])[] | undefined,
 ): [Plugin[], Plugin[], Plugin[]] {
   const prePlugins: Plugin[] = []
   const postPlugins: Plugin[] = []
@@ -946,7 +948,7 @@ export async function loadConfigFromFile(
   configEnv: ConfigEnv,
   configFile?: string,
   configRoot: string = process.cwd(),
-  logLevel?: LogLevel
+  logLevel?: LogLevel,
 ): Promise<{
   path: string
   config: UserConfig
@@ -984,7 +986,7 @@ export async function loadConfigFromFile(
     const userConfig = await loadConfigFromBundledFile(
       resolvedPath,
       bundled.code,
-      isESM
+      isESM,
     )
     debug?.(`bundled config file loaded in ${getTime()}`)
 
@@ -1002,7 +1004,7 @@ export async function loadConfigFromFile(
   } catch (e) {
     createLogger(logLevel).error(
       colors.red(`failed to load config from ${resolvedPath}`),
-      { error: e }
+      { error: e },
     )
     throw e
   }
@@ -1010,7 +1012,7 @@ export async function loadConfigFromFile(
 
 async function bundleConfigFile(
   fileName: string,
-  isESM: boolean
+  isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
@@ -1039,7 +1041,7 @@ async function bundleConfigFile(
           const resolveByViteResolver = (
             id: string,
             importer: string,
-            isRequire: boolean
+            isRequire: boolean,
           ) => {
             return tryNodeResolve(
               id,
@@ -1059,7 +1061,7 @@ async function bundleConfigFile(
                 packageCache,
                 isRequire,
               },
-              false
+              false,
             )?.id
           }
 
@@ -1093,14 +1095,14 @@ async function bundleConfigFile(
                     canResolveWithImport = !!resolveByViteResolver(
                       id,
                       importer,
-                      false
+                      false,
                     )
                   } catch {}
                   if (canResolveWithImport) {
                     throw new Error(
                       `Failed to resolve ${JSON.stringify(
-                        id
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`
+                        id,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                     )
                   }
                 }
@@ -1116,15 +1118,15 @@ async function bundleConfigFile(
               ) {
                 throw new Error(
                   `${JSON.stringify(
-                    id
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`
+                    id,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                 )
               }
               return {
                 path: idFsPath,
                 external: true,
               }
-            }
+            },
           )
         },
       },
@@ -1135,11 +1137,11 @@ async function bundleConfigFile(
             const contents = await fsp.readFile(args.path, 'utf8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
-                path.dirname(args.path)
+                path.dirname(args.path),
               )};` +
               `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(
-                pathToFileURL(args.path).href
+                pathToFileURL(args.path).href,
               )};`
 
             return {
@@ -1166,7 +1168,7 @@ const _require = createRequire(import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string,
-  isESM: boolean
+  isESM: boolean,
 ): Promise<UserConfigExport> {
   // for esm, before we can register loaders without requiring users to run node
   // with --experimental-loader themselves, we have to do a hack here:
@@ -1212,7 +1214,7 @@ async function loadConfigFromBundledFile(
 async function runConfigHook(
   config: InlineConfig,
   plugins: Plugin[],
-  configEnv: ConfigEnv
+  configEnv: ConfigEnv,
 ): Promise<InlineConfig> {
   let conf = config
 
@@ -1232,13 +1234,13 @@ async function runConfigHook(
 
 export function getDepOptimizationConfig(
   config: ResolvedConfig,
-  ssr: boolean
+  ssr: boolean,
 ): DepOptimizationConfig {
   return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
 }
 export function isDepsOptimizerEnabled(
   config: ResolvedConfig,
-  ssr: boolean
+  ssr: boolean,
 ): boolean {
   const { command } = config
   const { disabled } = getDepOptimizationConfig(config, ssr)
