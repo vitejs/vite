@@ -16,8 +16,6 @@ import importBuiltinCjs from '@vitejs/test-import-builtin-cjs'
 import { hello as linkedNoExternal } from '@vitejs/test-linked-no-external'
 import virtualMessage from '@vitejs/test-pkg-exports/virtual'
 import moduleConditionMessage from '@vitejs/test-module-condition'
-import testAlias from '@vitejs/test-alias'
-import testAliasNoExist from '@vitejs/test-alias-no-exist'
 import '@vitejs/test-css-lib'
 
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
@@ -91,9 +89,6 @@ export async function render(url, rootDir) {
   html += `\n<p class="css-lib">I should be blue</p>`
 
   html += `\n<p class="module-condition">${moduleConditionMessage}</p>`
-
-  html += `\n<p class="alias">message from alias: ${testAlias}</p>`
-  html += `\n<p class="alias-no-exist">message from alias-no-exist: ${testAliasNoExist}</p>`
 
   html += `\n<p class="isomorphic-module-server">${isomorphicModuleMessage}</p>`
 

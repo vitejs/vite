@@ -1228,6 +1228,14 @@ importers:
         specifier: ^4.18.2
         version: 4.18.2
 
+  playground/ssr-alias:
+    dependencies:
+      '@vitejs/test-alias-original':
+        specifier: file:./alias-original
+        version: file:playground/ssr-alias/alias-original
+
+  playground/ssr-alias/alias-original: {}
+
   playground/ssr-conditions:
     dependencies:
       '@vitejs/test-ssr-conditions-external':
@@ -1247,9 +1255,6 @@ importers:
 
   playground/ssr-deps:
     dependencies:
-      '@vitejs/test-alias':
-        specifier: file:./alias
-        version: file:playground/ssr-deps/alias
       '@vitejs/test-css-lib':
         specifier: file:./css-lib
         version: file:playground/ssr-deps/css-lib
@@ -1320,8 +1325,6 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.18.2
-
-  playground/ssr-deps/alias: {}
 
   playground/ssr-deps/css-lib: {}
 
@@ -9846,6 +9849,11 @@ packages:
       dep-a: file:playground/preload/dep-a
     dev: true
 
+  file:playground/ssr-alias/alias-original:
+    resolution: {directory: playground/ssr-alias/alias-original, type: directory}
+    name: '@vitejs/test-alias-original'
+    dev: false
+
   file:playground/ssr-conditions/external:
     resolution: {directory: playground/ssr-conditions/external, type: directory}
     name: '@vitejs/test-ssr-conditions-external'
@@ -9854,11 +9862,6 @@ packages:
   file:playground/ssr-conditions/no-external:
     resolution: {directory: playground/ssr-conditions/no-external, type: directory}
     name: '@vitejs/test-ssr-conditions-no-external'
-    dev: false
-
-  file:playground/ssr-deps/alias:
-    resolution: {directory: playground/ssr-deps/alias, type: directory}
-    name: '@vitejs/test-alias'
     dev: false
 
   file:playground/ssr-deps/css-lib:

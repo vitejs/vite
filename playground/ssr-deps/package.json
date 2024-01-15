@@ -30,7 +30,6 @@
     "@vitejs/test-external-entry": "file:./external-entry",
     "@vitejs/test-linked-no-external": "link:./linked-no-external",
     "@vitejs/test-pkg-exports": "file:./pkg-exports",
-    "@vitejs/test-alias": "file:./alias",
     "@vitejs/test-module-condition": "file:./module-condition"
   },
   "devDependencies": {
