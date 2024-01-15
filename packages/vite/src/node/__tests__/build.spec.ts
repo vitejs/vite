@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import { describe, expect, test, vi } from 'vitest'
@@ -101,6 +101,51 @@ describe('build', () => {
       buildProject('blue'),
     ])
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('external modules should not be hoisted in library build', async () => {
+    const [esBundle] = (await build({
+      logLevel: 'silent',
+      build: {
+        lib: {
+          entry: ['foo.js', 'bar.js'],
+          formats: ['es'],
+        },
+        rollupOptions: {
+          external: 'external',
+        },
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            const name = basename(id)
+            if (name === 'foo.js' || name === 'bar.js') {
+              return name
+            }
+          },
+          load(id) {
+            if (id === 'foo.js') {
+              return `
+                  import bar from 'bar.js'
+                  export default bar()
+                `
+            }
+            if (id === 'bar.js') {
+              return `
+                  import ext from 'external';
+                  export default ext();`
+            }
+          },
+        },
+      ],
+    })) as RollupOutput[]
+
+    const foo = esBundle.output.find(
+      (chunk) => chunk.fileName === 'foo.js',
+    ) as OutputChunk
+    expect(foo.code).not.contains('import "external"')
   })
 })
 
