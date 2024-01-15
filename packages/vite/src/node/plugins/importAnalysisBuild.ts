@@ -6,28 +6,20 @@ import type {
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
-import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
-  cleanUrl,
   combineSourcemaps,
   generateCodeFrame,
-  isDataUrl,
-  isExternalUrl,
   isInNodeModules,
-  moduleListContains,
   numberToPos,
-  withTrailingSlash,
 } from '../utils'
 import type { Plugin } from '../plugin'
-import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
-import { createParseErrorInfo, interopNamedImports } from './importAnalysis'
+import { createParseErrorInfo } from './importAnalysis'
 
 type FileDep = {
   url: string
@@ -48,10 +40,6 @@ export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
-
-// TODO: abstract
-const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
-const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -237,78 +225,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const { root } = config
-      const depsOptimizer = getDepsOptimizer(config, ssr)
-
-      const normalizeUrl = async (
-        url: string,
-        pos: number,
-      ): Promise<[string, string]> => {
-        let importerFile = importer
-
-        const optimizeDeps = getDepOptimizationConfig(config, ssr)
-        if (moduleListContains(optimizeDeps?.exclude, url)) {
-          if (depsOptimizer) {
-            await depsOptimizer.scanProcessing
-
-            // if the dependency encountered in the optimized file was excluded from the optimization
-            // the dependency needs to be resolved starting from the original source location of the optimized file
-            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-            // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
-              if (!optimizedModule.src) continue // Ignore chunks
-              if (optimizedModule.file === importer) {
-                importerFile = optimizedModule.src
-              }
-            }
-          }
-        }
-
-        const resolved = await this.resolve(url, importerFile, {
-          skipSelf: false,
-        })
-
-        if (!resolved) {
-          // in ssr, we should let node handle the missing modules
-          if (ssr) {
-            return [url, url]
-          }
-          return this.error(
-            `Failed to resolve import "${url}" from "${path.relative(
-              process.cwd(),
-              importerFile,
-            )}". Does the file exist?`,
-            pos,
-          )
-        }
-
-        // normalize all imports into resolved URLs
-        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(withTrailingSlash(root))) {
-          // in root: infer short absolute path from root
-          url = resolved.id.slice(root.length)
-        } else {
-          url = resolved.id
-        }
-
-        if (isExternalUrl(url)) {
-          return [url, url]
-        }
-
-        return [url, resolved.id]
-      }
-
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
         const {
-          s: start,
           e: end,
           ss: expStart,
           se: expEnd,
-          n: specifier,
           d: dynamicIndex,
           a: attributeIndex,
         } = imports[index]
@@ -331,66 +256,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 : ''
             })`,
           )
-        }
-
-        // static import or valid string in dynamic import
-        // If resolvable, let's resolve it
-        if (depsOptimizer && specifier) {
-          // skip external / data uri
-          if (isExternalUrl(specifier) || isDataUrl(specifier)) {
-            continue
-          }
-
-          // normalize
-          const [url, resolvedId] = await normalizeUrl(specifier, start)
-
-          if (url !== specifier) {
-            if (
-              depsOptimizer.isOptimizedDepFile(resolvedId) &&
-              !optimizedDepChunkRE.test(resolvedId)
-            ) {
-              const file = cleanUrl(resolvedId) // Remove ?v={hash}
-
-              const needsInterop = await optimizedDepNeedsInterop(
-                depsOptimizer.metadata,
-                file,
-                config,
-                ssr,
-              )
-
-              let rewriteDone = false
-
-              if (needsInterop === undefined) {
-                // Non-entry dynamic imports from dependencies will reach here as there isn't
-                // optimize info for them, but they don't need es interop. If the request isn't
-                // a dynamic import, then it is an internal Vite error
-                if (!optimizedDepDynamicRE.test(file)) {
-                  config.logger.error(
-                    colors.red(
-                      `Vite Error, ${url} optimized info should be defined`,
-                    ),
-                  )
-                }
-              } else if (needsInterop) {
-                // config.logger.info(`${url} needs interop`)
-                interopNamedImports(
-                  str(),
-                  imports[index],
-                  url,
-                  index,
-                  importer,
-                  config,
-                )
-                rewriteDone = true
-              }
-              if (!rewriteDone) {
-                const rewrittenUrl = JSON.stringify(file)
-                const s = isDynamicImport ? start : start - 1
-                const e = isDynamicImport ? end : end + 1
-                str().update(s, e, rewrittenUrl)
-              }
-            }
-          }
         }
       }
 

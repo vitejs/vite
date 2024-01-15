@@ -8,6 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = process.env.VITEST
 
+const noExternal = [
+  '@vitejs/test-no-external-cjs',
+  '@vitejs/test-import-builtin-cjs',
+  '@vitejs/test-no-external-css',
+  '@vitejs/test-external-entry',
+]
+
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
 
@@ -35,18 +42,13 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal: [
-        '@vitejs/test-no-external-cjs',
-        '@vitejs/test-import-builtin-cjs',
-        '@vitejs/test-no-external-css',
-        '@vitejs/test-external-entry',
-      ],
+      noExternal,
       external: [
         '@vitejs/test-nested-external',
         '@vitejs/test-external-entry/entry',
       ],
       optimizeDeps: {
-        disabled: 'build',
+        include: noExternal,
       },
     },
     plugins: [

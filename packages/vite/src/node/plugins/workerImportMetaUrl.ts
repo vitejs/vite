@@ -12,7 +12,6 @@ import {
   slash,
   transformStableResult,
 } from '../utils'
-import { getDepsOptimizer } from '../optimizer'
 import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
@@ -131,7 +130,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id, options) {
-      const ssr = options?.ssr === true
       if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
         const query = parseRequest(id)
         let s: MagicString | undefined
@@ -176,7 +174,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let builtUrl: string
           if (isBuild) {
-            getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
             builtUrl = await workerFileToUrl(config, file, query)
           } else {
             builtUrl = await fileToUrl(cleanUrl(file), config, this)

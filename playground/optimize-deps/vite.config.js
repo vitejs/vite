@@ -17,7 +17,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    disabled: false,
     include: [
       '@vitejs/test-dep-linked-include',
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
@@ -49,10 +48,6 @@ export default defineConfig({
   build: {
     // to make tests faster
     minify: false,
-    // Avoid @rollup/plugin-commonjs
-    commonjsOptions: {
-      include: [],
-    },
     rollupOptions: {
       onwarn(msg, warn) {
         // filter `"Buffer" is not exported by "__vite-browser-external"` warning
