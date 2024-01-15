@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import SvgNode from './SvgNode.vue'
 
 defineProps({

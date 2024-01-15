@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
 import { onMounted, ref } from 'vue'
@@ -6,6 +6,7 @@ import SvgInputs from './SvgInputs.vue'
 import SvgOutputs from './SvgOutputs.vue'
 import SvgBlueIndicator from './SvgBlueIndicator.vue'
 import SvgPinkIndicator from './SvgPinkIndicator.vue'
+import { SvgNodeProps } from './SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
@@ -73,7 +74,7 @@ onMounted(() => {
     .timeline({
       scrollTrigger: {
         trigger: '#hero-diagram',
-        start: 'center 70%',
+        start: 'center 80%',
         once: true,
       },
     })
@@ -487,8 +488,8 @@ const animateSingleInputMobile = (inputLine) => {
         rgba(42, 33, 63, 0) 60%,
         rgba(96, 72, 157, 0.3) 100%
       ),
-      rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+      rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(2px);
 
     &:after {
       content: '';
@@ -501,13 +502,13 @@ const animateSingleInputMobile = (inputLine) => {
       background: linear-gradient(
         130deg,
         rgba(42, 33, 63, 0) 40%,
-        rgba(94, 77, 138, 0.5) 50%,
+        rgba(94, 77, 138, 0.3) 50%,
         rgba(42, 33, 63, 0) 60%
       );
       background-size: 500%;
       background-position-x: 100%;
       mix-blend-mode: color-dodge;
-      filter: blur(10px);
+      filter: blur(6px);
     }
 
     &:before {
@@ -521,13 +522,13 @@ const animateSingleInputMobile = (inputLine) => {
       background: linear-gradient(
         -130deg,
         rgba(42, 33, 63, 0) 40%,
-        rgba(94, 77, 138, 0.5) 50%,
+        rgba(94, 77, 138, 0.3) 50%,
         rgba(42, 33, 63, 0) 60%
       );
       background-size: 400%;
       background-position-x: 100%;
       mix-blend-mode: color-dodge;
-      filter: blur(10px);
+      filter: blur(6px);
     }
   }
 
@@ -539,9 +540,8 @@ const animateSingleInputMobile = (inputLine) => {
     bottom: 0;
     border-radius: 20px;
     border: 1px solid rgba(84, 66, 131, 0.01);
-    border-top-color: rgba(137, 172, 225, 0.6);
-    border-bottom-color: rgba(138, 94, 234, 0.05);
-    opacity: 0.5;
+    border-top-color: rgba(137, 172, 225, 0.4);
+    opacity: 0.8;
     background: rgba(40, 40, 40, 0.3);
   }
 
