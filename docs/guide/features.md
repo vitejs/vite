@@ -391,26 +391,6 @@ const modules = {
 }
 ```
 
-### Glob Import As
-
-`import.meta.glob` also supports importing files as strings (similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string)) with the [Import Reflection](https://github.com/tc39/proposal-import-reflection) syntax:
-
-```js
-const modules = import.meta.glob('./dir/*.js', { as: 'raw', eager: true })
-```
-
-The above will be transformed into the following:
-
-```js
-// code produced by vite
-const modules = {
-  './dir/foo.js': 'export default "foo"\n',
-  './dir/bar.js': 'export default "bar"\n',
-}
-```
-
-`{ as: 'url' }` is also supported for loading assets as URLs.
-
 ### Multiple Patterns
 
 The first argument can be an array of globs, for example
@@ -490,20 +470,37 @@ const modules = {
 
 #### Custom Queries
 
-You can also use the `query` option to provide custom queries to imports for other plugins to consume.
+You can also use the `query` option to provide queries to imports, for example, to import assets [as a string](https://vitejs.dev/guide/assets.html#importing-asset-as-string) or [as a url](https://vitejs.dev/guide/assets.html#importing-asset-as-url):
 
 ```ts
-const modules = import.meta.glob('./dir/*.js', {
-  query: { foo: 'bar', bar: true },
+const moduleStrings = import.meta.glob('./dir/*.svg', {
+  query: '?raw',
+  import: 'default',
+})
+const moduleUrls = import.meta.glob('./dir/*.svg', {
+  query: '?url',
+  import: 'default',
 })
 ```
 
 ```ts
 // code produced by vite:
-const modules = {
-  './dir/foo.js': () => import('./dir/foo.js?foo=bar&bar=true'),
-  './dir/bar.js': () => import('./dir/bar.js?foo=bar&bar=true'),
+const moduleStrings = {
+  './dir/foo.svg': () => import('./dir/foo.js?raw').then((m) => m['default']),
+  './dir/bar.svg': () => import('./dir/bar.js?raw').then((m) => m['default']),
 }
+const moduleUrls = {
+  './dir/foo.svg': () => import('./dir/foo.js?url').then((m) => m['default']),
+  './dir/bar.svg': () => import('./dir/bar.js?url').then((m) => m['default']),
+}
+```
+
+You can also provide custom queries for other plugins to consume:
+
+```ts
+const modules = import.meta.glob('./dir/*.js', {
+  query: { foo: 'bar', bar: true },
+})
 ```
 
 ### Glob Import Caveats

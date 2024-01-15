@@ -74,6 +74,9 @@ test('sass', async () => {
   const atImport = await page.$('.sass-at-import')
   const atImportAlias = await page.$('.sass-at-import-alias')
   const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
+  const urlStartsWithFunctionCall = await page.$(
+    '.sass-url-starts-with-function-call',
+  )
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
@@ -84,6 +87,9 @@ test('sass', async () => {
     isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
+    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+  expect(await getBg(urlStartsWithFunctionCall)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
@@ -292,6 +298,10 @@ test('@import dependency that @import another dependency', async () => {
   expect(await getColor('.css-proxy-dep')).toBe('purple')
 })
 
+test('@import scss dependency that has @import with a css extension pointing to another dependency', async () => {
+  expect(await getColor('.scss-proxy-dep')).toBe('purple')
+})
+
 test('@import dependency w/out package scss', async () => {
   expect(await getColor('.sass-dep')).toBe('lavender')
 })
@@ -426,6 +436,10 @@ test('minify css', async () => {
   const cssFile = findAssetFile(/index-[-\w]+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test('?url', async () => {
+  expect(await getColor('.url-imported-css')).toBe('yellow')
 })
 
 test('?raw', async () => {

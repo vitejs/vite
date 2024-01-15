@@ -95,7 +95,7 @@ describe.runIf(isBuild)('build', () => {
 
     // chunk
     expect(content).toMatch(`new Worker("/iife-sourcemap/assets/my-worker`)
-    expect(content).toMatch(`new Worker("data:application/javascript;base64`)
+    expect(content).toMatch(`new Worker("data:text/javascript;base64`)
     expect(content).toMatch(
       `new Worker("/iife-sourcemap/assets/possible-ts-output-worker`,
     )
