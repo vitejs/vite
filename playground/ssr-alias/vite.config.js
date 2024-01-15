@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
-    ssr: '/src/main.js',
+    ssr: './src/main.js',
   },
   resolve: {
     alias: {
