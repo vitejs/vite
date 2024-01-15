@@ -720,9 +720,11 @@ export async function resolveConfig(
     )
 
     // run configResolved hooks
-    createPluginHookUtils(resolvedWorkerPlugins)
-      .getSortedPluginHooks('configResolved')
-      .map((hook) => hook(workerResolved))
+    await Promise.all(
+      createPluginHookUtils(resolvedWorkerPlugins)
+        .getSortedPluginHooks('configResolved')
+        .map((hook) => hook(workerResolved)),
+    )
 
     return resolvedWorkerPlugins
   }
