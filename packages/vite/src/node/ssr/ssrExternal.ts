@@ -9,7 +9,6 @@ import {
   isBuiltin,
 } from '../utils'
 import type { ResolvedConfig } from '..'
-import { getAliasPatternMatcher } from '../plugins/preAlias'
 
 const debug = createDebugger('vite:ssr-external')
 
@@ -126,14 +125,13 @@ function createIsSsrExternal(
   const processedIds = new Map<string, boolean | undefined>()
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
-  const matchAlias = getAliasPatternMatcher(config.resolve.alias)
 
   return (id: string, importer?: string) => {
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
     let external = false
-    if (id[0] !== '.' && !path.isAbsolute(id) && !matchAlias(id)) {
+    if (id[0] !== '.' && !path.isAbsolute(id)) {
       external = isBuiltin(id) || isConfiguredAsExternal(id, importer)
     }
     processedIds.set(id, external)
