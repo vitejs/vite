@@ -24,12 +24,12 @@ import {
   urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
+import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import {
   assetUrlRE,
-  checkPublicFile,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
@@ -48,8 +48,9 @@ const htmlProxyRE =
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
-  /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/g
+  /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
+const spaceRe = /[\t\n\f\r ]/
 
 const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
@@ -140,6 +141,17 @@ export const assetAttrsConfig: Record<string, string[]> = {
   image: ['xlink:href', 'href'],
   use: ['xlink:href', 'href'],
 }
+
+// Some `<link rel>` elements should not be inlined in build. Excluding:
+// - `shortcut`                     : only valid for IE <9, use `icon`
+// - `mask-icon`                    : deprecated since Safari 12 (for pinned tabs)
+// - `apple-touch-icon-precomposed` : only valid for iOS <7 (for avoiding gloss effect)
+const noInlineLinkRels = new Set([
+  'icon',
+  'apple-touch-icon',
+  'apple-touch-startup-image',
+  'manifest',
+])
 
 export const isAsyncScriptMap = new WeakMap<
   ResolvedConfig,
@@ -310,10 +322,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const relativeUrlPath = path.posix.relative(
-          config.root,
-          normalizePath(id),
-        )
+        id = normalizePath(id)
+        const relativeUrlPath = path.posix.relative(config.root, id)
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -333,18 +343,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const nodeStartWithLeadingWhitespace = (
           node: DefaultTreeAdapterMap['node'],
         ) => {
-          if (node.sourceCodeLocation!.startOffset === 0)
-            return node.sourceCodeLocation!.startOffset
+          const startOffset = node.sourceCodeLocation!.startOffset
+          if (startOffset === 0) return 0
 
           // Gets the offset for the start of the line including the
           // newline trailing the previous node
           const lineStartOffset =
-            node.sourceCodeLocation!.startOffset -
-            node.sourceCodeLocation!.startCol
-          const line = s.slice(
-            Math.max(0, lineStartOffset),
-            node.sourceCodeLocation!.startOffset,
-          )
+            startOffset - node.sourceCodeLocation!.startCol
 
           // <previous-line-node></previous-line-node>
           // <target-node></target-node>
@@ -357,9 +362,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           //
           // However, if there is content between our target node start and the
           // previous newline, we cannot strip it out without risking content deletion.
-          return line.trim()
-            ? node.sourceCodeLocation!.startOffset
-            : lineStartOffset
+          let isLineEmpty = false
+          try {
+            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+            isLineEmpty = !line.trim()
+          } catch {
+            // magic-string may throw if there's some content removed in the sliced string,
+            // which we ignore and assume the line is not empty
+          }
+
+          return isLineEmpty ? lineStartOffset : startOffset
         }
 
         // pre-transform
@@ -386,14 +398,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const namedOutput = Object.keys(
           config?.build?.rollupOptions?.input || {},
         )
-        const processAssetUrl = async (url: string) => {
+        const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
             !namedOutput.includes(url) && // Direct reference to named output
             !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
-              return await urlToBuiltUrl(url, id, config, this)
+              return await urlToBuiltUrl(url, id, config, this, shouldInline)
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e
@@ -522,9 +534,26 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       })
                       js += importExpression
                     } else {
+                      // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+                      // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+                      const isNoInlineLink =
+                        node.nodeName === 'link' &&
+                        node.attrs.some(
+                          (p) =>
+                            p.name === 'rel' &&
+                            p.value
+                              .split(spaceRe)
+                              .some((v) =>
+                                noInlineLinkRels.has(v.toLowerCase()),
+                              ),
+                        )
+                      const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(
                         (async () => {
-                          const processedUrl = await processAssetUrl(url)
+                          const processedUrl = await processAssetUrl(
+                            url,
+                            shouldInline,
+                          )
                           if (processedUrl !== url) {
                             overwriteAttrValue(
                               s,
@@ -926,10 +955,9 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const { 1: url, index } = match
-    const startUrl = cleanCode.indexOf(url, index)
-    const start = startUrl + 1
-    const end = start + url.length - 2
+    const [, [urlStart, urlEnd]] = match.indices!
+    const start = urlStart + 1
+    const end = urlEnd - 1
     scriptUrls.push({
       start: start + startOffset,
       end: end + startOffset,
@@ -1004,11 +1032,11 @@ export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   return (html, ctx) => {
-    const importMapIndex = html.match(importMapRE)?.index
-    if (importMapIndex === undefined) return
+    const importMapIndex = html.search(importMapRE)
+    if (importMapIndex < 0) return
 
-    const importMapAppendIndex = html.match(importMapAppendRE)?.index
-    if (importMapAppendIndex === undefined) return
+    const importMapAppendIndex = html.search(importMapAppendRE)
+    if (importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(

@@ -27,6 +27,7 @@ import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
+  arraify,
   asyncFlatten,
   copyDir,
   emptyDir,
@@ -44,7 +45,11 @@ import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_MODULES_TARGET,
+  VERSION,
+} from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
@@ -100,7 +105,9 @@ export interface BuildOptions {
    * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit?:
+    | number
+    | ((filePath: string, content: Buffer) => boolean | undefined)
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -324,7 +331,7 @@ export function resolveBuildOptions(
   const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
@@ -427,13 +434,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       completeSystemWrapPlugin(),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      ...((
-        await asyncFlatten(
-          Array.isArray(rollupOptionsPlugins)
-            ? rollupOptionsPlugins
-            : [rollupOptionsPlugins],
-        )
-      ).filter(Boolean) as Plugin[]),
+      ...((await asyncFlatten(arraify(rollupOptionsPlugins))).filter(
+        Boolean,
+      ) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
@@ -910,7 +913,7 @@ export function onRollupWarning(
         const id = warning.id
         const exporter = warning.exporter
         // throw unless it's commonjs external...
-        if (!id || !/\?commonjs-external$/.test(id)) {
+        if (!id || !id.endsWith('?commonjs-external')) {
           throw new Error(
             `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
               `This is most likely unintended because it can break your application at runtime.\n` +

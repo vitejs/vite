@@ -106,6 +106,7 @@ describe('optimizer-scan:script-test', () => {
       `import type Bar from 'foo'`,
     ]
     shouldFailArray.forEach((str) => {
+      importsRE.lastIndex = 0
       expect(importsRE.test(str)).toBe(false)
     })
   })

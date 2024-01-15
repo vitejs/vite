@@ -35,21 +35,20 @@ import {
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
+import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
-import {
-  getDepsOptimizer,
-  initDepsOptimizer,
-  initDevSsrDepsOptimizer,
-} from '../optimizer'
+import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
+import { initPublicFiles } from '../publicDir'
+import { getEnvFilesForMode } from '../env'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -187,6 +186,14 @@ export interface FileSystemServeOptions {
    * @default ['.env', '.env.*', '*.crt', '*.pem']
    */
   deny?: string[]
+
+  /**
+   * Enable caching of fs calls.
+   *
+   * @experimental
+   * @default false
+   */
+  cachedChecks?: boolean
 }
 
 export type ServerHook = (
@@ -378,6 +385,8 @@ export async function _createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
+  const initPublicFilesPromise = initPublicFiles(config)
+
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -402,7 +411,11 @@ export async function _createServer(
   const watcher = watchEnabled
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
-        [root, ...config.configFileDependencies, config.envDir],
+        [
+          root,
+          ...config.configFileDependencies,
+          ...getEnvFilesForMode(config.mode, config.envDir),
+        ],
         resolvedWatchOptions,
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
@@ -458,9 +471,6 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (isDepsOptimizerEnabled(config, true)) {
-        await initDevSsrDepsOptimizer(config, server)
-      }
       return ssrLoadModule(
         url,
         server,
@@ -609,6 +619,17 @@ export async function _createServer(
     _shortcutsOptions: undefined,
   }
 
+  // maintain consistency with the server instance after restarting.
+  const reflexServer = new Proxy(server, {
+    get: (_, property: keyof ViteDevServer) => {
+      return server[property]
+    },
+    set: (_, property: keyof ViteDevServer, value: never) => {
+      server[property] = value
+      return true
+    },
+  })
+
   if (!middlewareMode) {
     exitProcess = async () => {
       try {
@@ -623,6 +644,8 @@ export async function _createServer(
     }
   }
 
+  const publicFiles = await initPublicFilesPromise
+
   const onHMRUpdate = async (file: string, configOnly: boolean) => {
     if (serverConfig.hmr !== false) {
       try {
@@ -636,9 +659,17 @@ export async function _createServer(
     }
   }
 
+  const { publicDir } = config
+
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
+
+    if (publicDir && publicFiles) {
+      if (file.startsWith(publicDir)) {
+        publicFiles[isUnlink ? 'delete' : 'add'](file.slice(publicDir.length))
+      }
+    }
     await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
   }
@@ -648,12 +679,17 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-
     await onHMRUpdate(file, false)
   })
 
-  watcher.on('add', (file) => onFileAddUnlink(file, false))
-  watcher.on('unlink', (file) => onFileAddUnlink(file, true))
+  getFsUtils(config).initWatcher?.(watcher)
+
+  watcher.on('add', (file) => {
+    onFileAddUnlink(file, false)
+  })
+  watcher.on('unlink', (file) => {
+    onFileAddUnlink(file, true)
+  })
 
   ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
@@ -685,7 +721,7 @@ export async function _createServer(
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
   for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook(server))
+    postHooks.push(await hook(reflexServer))
   }
 
   // Internal middlewares ------------------------------------------------------
@@ -732,8 +768,8 @@ export async function _createServer(
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
-  if (config.publicDir) {
-    middlewares.use(servePublicMiddleware(server))
+  if (publicDir) {
+    middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
   // main transform middleware
@@ -745,7 +781,13 @@ export async function _createServer(
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
+    middlewares.use(
+      htmlFallbackMiddleware(
+        root,
+        config.appType === 'spa',
+        getFsUtils(config),
+      ),
+    )
   }
 
   // run post config hooks
@@ -913,6 +955,8 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
+    cachedChecks:
+      server.fs?.cachedChecks ?? !!process.env.VITE_SERVER_FS_CACHED_CHECKS,
   }
 
   if (server.origin?.endsWith('/')) {

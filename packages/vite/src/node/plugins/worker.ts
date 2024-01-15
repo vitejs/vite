@@ -165,10 +165,21 @@ export async function workerFileToUrl(
 export function webWorkerPostPlugin(): Plugin {
   return {
     name: 'vite:worker-post',
-    resolveImportMeta(property, { chunkId, format }) {
+    resolveImportMeta(property, { format }) {
       // document is undefined in the worker, so we need to avoid it in iife
-      if (property === 'url' && format === 'iife') {
-        return 'self.location.href'
+      if (format === 'iife') {
+        // compiling import.meta
+        if (!property) {
+          // rollup only supports `url` property. we only support `url` property as well.
+          // https://github.com/rollup/rollup/blob/62b648e1cc6a1f00260bb85aa2050097bb4afd2b/src/ast/nodes/MetaProperty.ts#L164-L173
+          return `{
+            url: self.location.href
+          }`
+        }
+        // compiling import.meta.url
+        if (property === 'url') {
+          return 'self.location.href'
+        }
       }
 
       return null
@@ -313,7 +324,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               return worker;
             } catch(e) {
               return new ${workerConstructor}(
-                "data:application/javascript;base64," + encodedJs,
+                "data:text/javascript;base64," + encodedJs,
                 ${workerTypeOption}
               );
             }${
@@ -329,7 +340,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               : `${encodedJs}
           export default function WorkerWrapper(options) {
             return new ${workerConstructor}(
-              "data:application/javascript;base64," + encodedJs,
+              "data:text/javascript;base64," + encodedJs,
               ${workerTypeOption}
             );
           }
@@ -379,7 +390,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         )
       }
-      if (code.match(workerAssetUrlRE)) {
+      workerAssetUrlRE.lastIndex = 0
+      if (workerAssetUrlRE.test(code)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
           config.isWorker,
