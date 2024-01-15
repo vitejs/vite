@@ -21,9 +21,9 @@ export interface Update {
   acceptedPath: string
   timestamp: number
   /** @internal */
-  explicitImportRequired: boolean
+  explicitImportRequired?: boolean
   /** @internal */
-  isWithinCircularImport: boolean
+  isWithinCircularImport?: boolean
 }
 
 export interface PrunePayload {
