@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
@@ -62,9 +63,9 @@ describe.runIf(isServe)('hmr', () => {
   })
 })
 
-describe.runIf(isServe)('stacktrace', () => {
-  const execFileAsync = promisify(execFile)
+const execFileAsync = promisify(execFile)
 
+describe.runIf(isServe)('stacktrace', () => {
   for (const ext of ['js', 'ts']) {
     for (const sourcemapsEnabled of [false, true]) {
       test(`stacktrace of ${ext} is correct when sourcemaps is${
@@ -97,4 +98,14 @@ describe.runIf(isServe)('stacktrace', () => {
       })
     }
   }
+})
+
+test.runIf(isServe)('network-imports', async () => {
+  await execFileAsync(
+    'node',
+    ['--experimental-network-imports', 'test-network-imports.js'],
+    {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    },
+  )
 })
