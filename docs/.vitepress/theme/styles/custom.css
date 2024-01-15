@@ -6,12 +6,17 @@ html:has(.landing) {
 
 .landing {
   overflow-x: hidden;
+  touch-action: pan-y;
 
   .VPNavBar,
   .VPNavBar:not(.top) {
-    border-bottom: 1px solid #262626 !important;
-    background: rgba(23, 23, 23, 0.8) !important;
+    background: transparent !important;
     backdrop-filter: blur(10px);
+
+    @media (min-width: 768px) {
+      background: rgba(23, 23, 23, 0.8) !important;
+      border-bottom: 1px solid #262626 !important;
+    }
 
     .content-body {
       background: none !important;

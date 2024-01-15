@@ -50,7 +50,7 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
   display: flex;
   flex-direction: column;
   max-width: 902px;
-  margin: 75px auto 0;
+  margin: 60px auto 0;
   align-items: center;
   position: relative;
   z-index: 2;
