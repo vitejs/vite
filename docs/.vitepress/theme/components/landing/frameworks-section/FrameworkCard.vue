@@ -21,6 +21,11 @@ export interface Framework {
   color?: string
 
   /**
+   * A string representing the URL of the framework/tool's homepage.
+   */
+  url?: string
+
+  /**
    * Whether the framework card is visible or not.
    */
   visible: Ref<boolean>
@@ -38,7 +43,11 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div
+  <component
+    :is="props.framework.url ? 'a' : 'div'"
+    :href="props.framework.url ? props.framework.url : undefined"
+    target="_blank"
+    rel="noopener"
     class="framework-card"
     :style="{ '--glow-color': props.framework.color }"
     :class="{ active: props.framework.visible.value === true }"
@@ -48,7 +57,7 @@ const props = withDefaults(defineProps<Props>(), {
       :src="props.framework.logo"
       :alt="props.framework.name"
     />
-  </div>
+  </component>
 </template>
 
 <style scoped>
@@ -65,8 +74,10 @@ const props = withDefaults(defineProps<Props>(), {
   --glow-color: rgba(0, 0, 0, 0);
   opacity: 0;
   transition: opacity 0.4s ease;
+  user-select: none;
 
   img {
+    user-select: none;
     filter: drop-shadow(
       0 0 0.8rem color-mix(in srgb, var(--glow-color) 40%, transparent)
     );
