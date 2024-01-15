@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 
@@ -24,6 +26,7 @@ export default defineConfig({
     },
     virtualPlugin(),
     transformCountPlugin(),
+    watchCssDepsPlugin(),
   ],
 })
 
@@ -62,6 +65,23 @@ function transformCountPlugin(): Plugin {
     transform(code) {
       if (code.includes('__TRANSFORM_COUNT__')) {
         return code.replace('__TRANSFORM_COUNT__', String(++num))
+      }
+    },
+  }
+}
+
+function watchCssDepsPlugin(): Plugin {
+  return {
+    name: 'watch-css-deps',
+    async transform(code, id) {
+      // replace the `replaced` identifier in the CSS file with the adjacent
+      // `dep.js` file's `color` variable.
+      if (id.includes('css-deps/main.css')) {
+        const depPath = path.resolve(__dirname, './css-deps/dep.js')
+        const dep = await fs.readFile(depPath, 'utf-8')
+        const color = dep.match(/color = '(.+?)'/)[1]
+        this.addWatchFile(depPath)
+        return code.replace('replaced', color)
       }
     },
   }

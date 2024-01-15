@@ -12,7 +12,7 @@ import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
-import { cssPlugin, cssPostPlugin } from './css'
+import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
@@ -101,7 +101,11 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
+      : [
+          clientInjectionsPlugin(config),
+          cssAnalysisPlugin(config),
+          importAnalysisPlugin(config),
+        ]),
   ].filter(Boolean) as Plugin[]
 }
 
