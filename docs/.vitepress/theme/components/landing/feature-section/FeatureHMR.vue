@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 
 const terminalActive = ref(false)
@@ -9,7 +9,9 @@ const browserActive = ref(false)
 let timeline = null
 
 onMounted(() => {
-  startAnimation()
+  nextTick(() => {
+    startAnimation()
+  })
 })
 
 /**
@@ -391,6 +393,7 @@ const startAnimation = () => {
     }
 
     /* Major "Screen" of Browser */
+
     .browser__major-glow,
     .browser__major-edge {
       fill: #41d1ff;
@@ -402,6 +405,7 @@ const startAnimation = () => {
     }
 
     /* Heading */
+
     .browser__heading-glow,
     .browser__heading-edge {
       fill: #41d1ff;
@@ -413,6 +417,7 @@ const startAnimation = () => {
     }
 
     /* Tagline */
+
     .browser__tagline-glow,
     .browser__tagline-edge {
       fill: #c063ed;
@@ -425,6 +430,7 @@ const startAnimation = () => {
 
     &.active {
       /* Major "Screen" of Browser */
+
       .browser__major-glow,
       .browser__major-edge {
         filter: grayscale(0) brightness(100%);
@@ -435,6 +441,7 @@ const startAnimation = () => {
       }
 
       /* Heading */
+
       .browser__heading-glow,
       .browser__heading-edge {
         filter: grayscale(0) brightness(100%);
@@ -446,6 +453,7 @@ const startAnimation = () => {
       }
 
       /* Tagline */
+
       .browser__tagline-glow,
       .browser__tagline-edge {
         filter: grayscale(0) brightness(100%);

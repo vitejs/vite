@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import SvgInputs from './SvgInputs.vue'
 import SvgOutputs from './SvgOutputs.vue'
 import SvgBlueIndicator from './SvgBlueIndicator.vue'
@@ -70,15 +70,17 @@ const illuminateLogo = ref(false)
  * Start all animations when mounted
  */
 onMounted(() => {
-  gsap
-    .timeline({
-      scrollTrigger: {
-        trigger: '#hero-diagram',
-        start: 'center 80%',
-        once: true,
-      },
-    })
-    .call(animateDiagram)
+  nextTick(() => {
+    gsap
+      .timeline({
+        scrollTrigger: {
+          trigger: '#hero-diagram',
+          start: 'center 80%',
+          once: true,
+        },
+      })
+      .call(animateDiagram)
+  })
 })
 
 /**

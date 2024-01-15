@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import FrameworkCard, { Framework } from './FrameworkCard.vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
@@ -133,18 +133,19 @@ const handleResize = () => {
 
 onMounted(() => {
   handleResize()
-  window.addEventListener('resize', handleResize)
 
-  let timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#frameworks-section',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-
-  frameworks.forEach((framework, index) => {
-    timeline.set(framework.visible, { value: true }, index * 0.05)
+  nextTick(() => {
+    window.addEventListener('resize', handleResize)
+    let timeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#frameworks-section',
+        start: 'top 70%',
+        once: true,
+      },
+    })
+    frameworks.forEach((framework, index) => {
+      timeline.set(framework.visible, { value: true }, index * 0.05)
+    })
   })
 })
 

@@ -85,7 +85,7 @@ const dotPosition: ComputedRef<{
 /**
  * The radius of the dot.
  */
-const dotRadius: Ref<number> = ref(props.visible ? 4 : 0)
+const dotRadius: Ref<number> = ref(props.visible ? 3 : 0)
 
 /**
  * Watch for changes to the visible prop and animate the glow and dot radius.

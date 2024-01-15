@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from 'gsap'
 
 /**
@@ -27,27 +27,29 @@ let timeline = null
  * This animates in the `npm run dev` command.
  */
 onMounted(() => {
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#instant-server-start-card',
-      start: 'top 70%',
-      once: true,
-    },
+  nextTick(() => {
+    timeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#instant-server-start-card',
+        start: 'top 70%',
+        once: true,
+      },
+    })
+    timeline.call(() => {
+      cardEnabled.value = true
+    })
+    timeline.call(
+      () => {
+        if (commandTriggered.value) {
+          return
+        }
+        highlightEnter.value = true
+      },
+      null,
+      4,
+    )
+    window.addEventListener('keydown', handleEnterPress)
   })
-  timeline.call(() => {
-    cardEnabled.value = true
-  })
-  timeline.call(
-    () => {
-      if (commandTriggered.value) {
-        return
-      }
-      highlightEnter.value = true
-    },
-    null,
-    4,
-  )
-  window.addEventListener('keydown', handleEnterPress)
 })
 
 function handleEnterPress(event) {
