@@ -28,6 +28,8 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
+export const workerOrSharedWorkerRE = /(\?|&)(worker|sharedworker)(?:&|$)/
+
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
@@ -191,18 +193,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   const isWorker = config.isWorker
 
-  const isWorkerQueryId = (id: string) => {
-    const parsedQuery = parseRequest(id)
-    if (
-      parsedQuery &&
-      (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-    ) {
-      return true
-    }
-
-    return false
-  }
-
   return {
     name: 'vite:worker',
 
@@ -222,13 +212,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      if (isBuild && isWorkerQueryId(id)) {
+      if (isBuild && workerOrSharedWorkerRE.test(id)) {
         return ''
       }
     },
 
     shouldTransformCachedModule({ id }) {
-      if (isBuild && config.build.watch && isWorkerQueryId(id)) {
+      if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
         return true
       }
     },
