@@ -497,8 +497,8 @@ const startAnimation = () => {
 
       .bolt__highlight {
         opacity: 0.6;
-        transition: opacity 0.3s ease;
-        transition-delay: 0.4s;
+        transition: opacity 0.1s ease;
+        transition-delay: 0.5s;
       }
     }
   }
@@ -566,7 +566,7 @@ const startAnimation = () => {
     opacity: 0.5;
   }
   100% {
-    opacity: 0.5;
+    opacity: 0.9;
   }
 }
 </style>
