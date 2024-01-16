@@ -14,12 +14,12 @@ export default defineConfig({
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          server.ws.send('custom:foo', { msg })
-          server.ws.send('custom:remove', { msg })
+          server.hot.send('custom:foo', { msg })
+          server.hot.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
-        server.ws.on('custom:remote-add', ({ a, b }, client) => {
+        server.hot.on('custom:remote-add', ({ a, b }, client) => {
           client.send('custom:remote-add-result', { result: a + b })
         })
       },
@@ -47,7 +47,7 @@ export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.ws.on('virtual:increment', async () => {
+      server.hot.on('virtual:increment', async () => {
         const mod = await server.moduleGraph.getModuleByUrl('\0virtual:file')
         if (mod) {
           num++
