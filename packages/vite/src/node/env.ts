@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
-import { arraify, tryStatSync } from './utils'
+import { arraify, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
 export function getEnvFilesForMode(mode: string, envDir: string): string[] {
@@ -11,7 +11,7 @@ export function getEnvFilesForMode(mode: string, envDir: string): string[] {
     /** local file */ `.env.local`,
     /** mode file */ `.env.${mode}`,
     /** mode local file */ `.env.${mode}.local`,
-  ].map((file) => path.join(envDir, file))
+  ].map((file) => normalizePath(path.join(envDir, file)))
 }
 
 export function loadEnv(
