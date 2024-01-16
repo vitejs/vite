@@ -282,5 +282,35 @@ const startAnimation = () => {
       }
     }
   }
+
+  &.feature-section--flip {
+    .feature-card {
+      &:nth-child(2),
+      &:nth-child(3) {
+        grid-column: span 1;
+
+        @media (min-width: 768px) {
+          grid-column: span 3;
+        }
+
+        @media (min-width: 1200px) {
+          grid-column: span 2;
+        }
+      }
+
+      &:nth-child(1),
+      &:nth-child(4) {
+        grid-column: span 1;
+
+        @media (min-width: 768px) {
+          grid-column: span 3;
+        }
+
+        @media (min-width: 1200px) {
+          grid-column: span 4;
+        }
+      }
+    }
+  }
 }
 </style>

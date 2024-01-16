@@ -19,6 +19,10 @@ import FeatureInstantServerStart from './.vitepress/theme/components/landing/fea
 import FeatureHMR from './.vitepress/theme/components/landing/feature-section/FeatureHMR.vue'
 import FeatureRichFeatures from './.vitepress/theme/components/landing/feature-section/FeatureRichFeatures.vue'
 import FeatureOptimizedBuild from './.vitepress/theme/components/landing/feature-section/FeatureOptimizedBuild.vue'
+import FeatureFlexiblePlugins from './.vitepress/theme/components/landing/feature-section/FeatureFlexiblePlugins.vue'
+import FeatureTypedAPI from './.vitepress/theme/components/landing/feature-section/FeatureTypedAPI.vue'
+import FeatureSSRSupport from './.vitepress/theme/components/landing/feature-section/FeatureSSRSupport.vue'
+import FeatureCI from './.vitepress/theme/components/landing/feature-section/FeatureCI.vue'
 </script>
 
 <div class="VPHome">
@@ -29,7 +33,11 @@ import FeatureOptimizedBuild from './.vitepress/theme/components/landing/feature
     <FeatureRichFeatures />
     <FeatureOptimizedBuild />
   </FeatureSection>
-  <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px">
+  <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px" class="feature-section--flip">
+    <FeatureFlexiblePlugins />
+    <FeatureTypedAPI />
+    <FeatureSSRSupport />
+    <FeatureCI />
   </FeatureSection>
   <FrameworksSection />
   <CommunitySection />
