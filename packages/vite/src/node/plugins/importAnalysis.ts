@@ -847,6 +847,8 @@ export function createParseErrorInfo(
     showCodeFrame: !probablyBinary,
   }
 }
+// prettier-ignore
+const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m }
 
 export function interopNamedImports(
   str: MagicString,
@@ -870,7 +872,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (m => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m })(m.default))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelper.toString()})(m.default))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1007,7 +1009,7 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = (m => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m })(${cjsModuleName})`,
+          `const ${localName} = (${interopHelper.toString()})(${cjsModuleName})`,
         )
       } else if (importedName === 'default') {
         lines.push(
