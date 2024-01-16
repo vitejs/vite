@@ -122,12 +122,10 @@ import logoPostCSS from './../../../../../images/supports/postcss.svg'
   &:hover {
     .feature__visualization {
       .card {
-        box-shadow: var(--card-color) 0 10px 20px -10px;
-
         &:after {
           border-color: rgba(60, 60, 60, 0.8);
-          transition: all 0.3s ease;
           --opacity: 0.8;
+          box-shadow: var(--card-color) 0 10px 20px -10px;
         }
       }
 
@@ -209,7 +207,11 @@ import logoPostCSS from './../../../../../images/supports/postcss.svg'
         #181818 30%,
         rgba(24 24 24 / var(--opacity)) 100%
       );
-      transition: background 0.3s ease;
+      will-change: background;
+      box-shadow: var(--card-color) 0 5px 10px -30px;
+      transition:
+        --opacity 0.8s ease,
+        box-shadow 0.5s ease;
       z-index: 1;
     }
 
