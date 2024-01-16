@@ -27,6 +27,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  initRollupParseAst,
   isInNodeModules,
   isObject,
   isParentDirectory,
@@ -816,6 +817,7 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
+      await initRollupParseAst()
       await container.buildStart({})
       // start deps optimizer after all container plugins are ready
       if (isDepsOptimizerEnabled(config, false)) {
