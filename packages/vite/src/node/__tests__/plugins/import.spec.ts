@@ -74,7 +74,7 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        `const react = __vite__cjsImport0_react && __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react : { ...(typeof __vite__cjsImport0_react === 'object' && !Array.isArray(__vite__cjsImport0_react) ? __vite__cjsImport0_react : {}), default: __vite__cjsImport0_react }`,
+        `const react = (m => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m })(__vite__cjsImport0_react)`,
     )
   })
 
