@@ -848,6 +848,18 @@ export function createParseErrorInfo(
   }
 }
 
+const interopHelper = (module: any) => {
+  if (Array.isArray(module) || typeof module === 'string') {
+    return {
+      default: module,
+    }
+  }
+  if (module && module.__esModule) {
+    return module
+  }
+  return { ...module, default: module }
+}
+
 export function interopNamedImports(
   str: MagicString,
   importSpecifier: ImportSpecifier,
@@ -870,7 +882,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelper.toString()})(m.default))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1006,7 +1018,9 @@ export function transformCjsImport(
     const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
-        lines.push(`const ${localName} = ${cjsModuleName}`)
+        lines.push(
+          `const ${localName} = (${interopHelper.toString()})(${cjsModuleName})`,
+        )
       } else if (importedName === 'default') {
         lines.push(
           `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,
