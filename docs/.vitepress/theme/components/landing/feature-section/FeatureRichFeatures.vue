@@ -4,7 +4,7 @@ import logoCSS from './../../../../../images/supports/css3.svg'
 import logoJS from './../../../../../images/supports/js.svg'
 import logoTS from './../../../../../images/supports/ts.svg'
 import logoWA from './../../../../../images/supports/wa.svg'
-import logoPostCSS from './../../../../../images/supports/postCSS.svg'
+import logoPostCSS from './../../../../../images/supports/postcss.svg'
 </script>
 
 <template>
