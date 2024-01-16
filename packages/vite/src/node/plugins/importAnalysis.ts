@@ -870,7 +870,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : { ...(typeof m.default === 'object' && !Array.isArray(m.default) ? m.default : {}), default: m.default })` +
+      `import('${rewrittenUrl}').then(m => (m => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m })(m.default))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1007,7 +1007,7 @@ export function transformCjsImport(
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(
-          `const ${localName} = ${cjsModuleName} && ${cjsModuleName}.__esModule ? ${cjsModuleName} : { ...(typeof ${cjsModuleName} === 'object' && !Array.isArray(${cjsModuleName}) ? ${cjsModuleName} : {}), default: ${cjsModuleName} }`,
+          `const ${localName} = (m => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m })(${cjsModuleName})`,
         )
       } else if (importedName === 'default') {
         lines.push(
