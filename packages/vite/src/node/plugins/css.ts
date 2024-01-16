@@ -237,7 +237,6 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let server: ViteDevServer
   let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
@@ -253,10 +252,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:css',
-
-    configureServer(_server) {
-      server = _server
-    },
 
     buildStart() {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
@@ -292,7 +287,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id, options) {
+    async transform(raw, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -300,8 +295,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-      const ssr = options?.ssr === true
-
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         const decodedUrl = decodeURI(url)
         if (checkPublicFile(decodedUrl, config)) {
@@ -345,57 +338,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         moduleCache.set(id, modules)
       }
 
-      // track deps for build watch mode
-      if (config.command === 'build' && config.build.watch && deps) {
+      if (deps) {
         for (const file of deps) {
           this.addWatchFile(file)
-        }
-      }
-
-      // dev
-      if (server) {
-        // server only logic for handling CSS @import dependency hmr
-        const { moduleGraph } = server
-        const thisModule = moduleGraph.getModuleById(id)
-        if (thisModule) {
-          // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting =
-            !modules && !inlineRE.test(id) && !htmlProxyRE.test(id)
-          if (deps) {
-            // record deps in the module graph so edits to @import css can trigger
-            // main import to hot update
-            const depModules = new Set<string | ModuleNode>()
-            const devBase = config.base
-            for (const file of deps) {
-              depModules.add(
-                isCSSRequest(file)
-                  ? moduleGraph.createFileOnlyEntry(file)
-                  : await moduleGraph.ensureEntryFromUrl(
-                      stripBase(
-                        await fileToUrl(file, config, this),
-                        (config.server?.origin ?? '') + devBase,
-                      ),
-                      ssr,
-                    ),
-              )
-            }
-            moduleGraph.updateModuleInfo(
-              thisModule,
-              depModules,
-              null,
-              // The root CSS proxy module is self-accepting and should not
-              // have an explicit accept list
-              new Set(),
-              null,
-              isSelfAccepting,
-              ssr,
-            )
-            for (const file of deps) {
-              this.addWatchFile(file)
-            }
-          } else {
-            thisModule.isSelfAccepting = isSelfAccepting
-          }
         }
       }
 
@@ -940,6 +885,78 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           type: 'asset',
           source: extractedCss,
         })
+      }
+    },
+  }
+}
+
+export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
+  let server: ViteDevServer
+
+  return {
+    name: 'vite:css-analysis',
+
+    configureServer(_server) {
+      server = _server
+    },
+
+    async transform(_, id, options) {
+      if (
+        !isCSSRequest(id) ||
+        commonjsProxyRE.test(id) ||
+        SPECIAL_QUERY_RE.test(id)
+      ) {
+        return
+      }
+
+      const ssr = options?.ssr === true
+      const { moduleGraph } = server
+      const thisModule = moduleGraph.getModuleById(id)
+
+      // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.
+      // JS-related HMR is handled in the import-analysis plugin.
+      if (thisModule) {
+        // CSS modules cannot self-accept since it exports values
+        const isSelfAccepting =
+          !cssModulesCache.get(config)?.get(id) &&
+          !inlineRE.test(id) &&
+          !htmlProxyRE.test(id)
+        // attached by pluginContainer.addWatchFile
+        const pluginImports = (this as any)._addedImports as
+          | Set<string>
+          | undefined
+        if (pluginImports) {
+          // record deps in the module graph so edits to @import css can trigger
+          // main import to hot update
+          const depModules = new Set<string | ModuleNode>()
+          const devBase = config.base
+          for (const file of pluginImports) {
+            depModules.add(
+              isCSSRequest(file)
+                ? moduleGraph.createFileOnlyEntry(file)
+                : await moduleGraph.ensureEntryFromUrl(
+                    stripBase(
+                      await fileToUrl(file, config, this),
+                      (config.server?.origin ?? '') + devBase,
+                    ),
+                    ssr,
+                  ),
+            )
+          }
+          moduleGraph.updateModuleInfo(
+            thisModule,
+            depModules,
+            null,
+            // The root CSS proxy module is self-accepting and should not
+            // have an explicit accept list
+            new Set(),
+            null,
+            isSelfAccepting,
+            ssr,
+          )
+        } else {
+          thisModule.isSelfAccepting = isSelfAccepting
+        }
       }
     },
   }
