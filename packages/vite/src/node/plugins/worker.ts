@@ -5,7 +5,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
+import { cleanUrl, getHash, injectQuery, urlRE } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
@@ -28,6 +28,10 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
+export const workerOrSharedWorkerRE = /(?:\?|&)(worker|sharedworker)(?:&|$)/
+const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
+const inlineRE = /[?&]inline\b/
+
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
@@ -43,7 +47,6 @@ function saveEmitWorkerAsset(
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null,
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
@@ -99,12 +102,11 @@ async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return emitSourcemapForWorkerEntry(config, query, chunk)
+  return emitSourcemapForWorkerEntry(config, chunk)
 }
 
 function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
-  query: Record<string, string> | null,
   chunk: OutputChunk,
 ): OutputChunk {
   const { map: sourcemap } = chunk
@@ -144,12 +146,11 @@ function encodeWorkerAssetFileName(
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null,
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(config, id, query)
+    const outputChunk = await bundleWorkerEntry(config, id)
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
@@ -191,18 +192,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   const isWorker = config.isWorker
 
-  const isWorkerQueryId = (id: string) => {
-    const parsedQuery = parseRequest(id)
-    if (
-      parsedQuery &&
-      (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-    ) {
-      return true
-    }
-
-    return false
-  }
-
   return {
     name: 'vite:worker',
 
@@ -222,23 +211,23 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      if (isBuild && isWorkerQueryId(id)) {
+      if (isBuild && workerOrSharedWorkerRE.test(id)) {
         return ''
       }
     },
 
     shouldTransformCachedModule({ id }) {
-      if (isBuild && config.build.watch && isWorkerQueryId(id)) {
+      if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
         return true
       }
     },
 
-    async transform(raw, id, options) {
-      const query = parseRequest(id)
-      if (query && query[WORKER_FILE_ID] != null) {
+    async transform(raw, id) {
+      const workerFileMatch = workerFileRE.exec(id)
+      if (workerFileMatch) {
         // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
-        const workerType = query['type']! as WorkerType
+        const workerType = workerFileMatch[1] as WorkerType
         let injectEnv = ''
 
         const scriptPath = JSON.stringify(
@@ -270,18 +259,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
         return
       }
-      if (
-        query == null ||
-        (query && (query.worker ?? query.sharedworker) == null)
-      ) {
-        return
-      }
+
+      const workerMatch = workerOrSharedWorkerRE.exec(id)
+      if (!workerMatch) return
 
       // stringified url or `new URL(...)`
       let url: string
       const { format } = config.worker
       const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
+        workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
       const workerType = isBuild
         ? format === 'es'
           ? 'module'
@@ -293,8 +279,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }`
 
       if (isBuild) {
-        if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(config, id, query)
+        if (inlineRE.test(id)) {
+          const chunk = await bundleWorkerEntry(config, id)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
           ).toString('base64')}";`
@@ -349,15 +335,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' },
           }
         } else {
-          url = await workerFileToUrl(config, id, query)
+          url = await workerFileToUrl(config, id)
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, WORKER_FILE_ID)
-        url = injectQuery(url, `type=${workerType}`)
+        url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
       }
 
-      if (query.url != null) {
+      if (urlRE.test(id)) {
         return {
           code: `export default ${JSON.stringify(url)}`,
           map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning

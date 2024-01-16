@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { URL, URLSearchParams, fileURLToPath } from 'node:url'
+import { URL, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -1040,14 +1040,6 @@ export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
-
-export function parseRequest(id: string): Record<string, string> | null {
-  const [_, search] = id.split(requestQuerySplitRE, 2)
-  if (!search) {
-    return null
-  }
-  return Object.fromEntries(new URLSearchParams(search))
-}
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 

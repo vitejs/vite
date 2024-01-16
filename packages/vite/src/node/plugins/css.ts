@@ -58,7 +58,6 @@ import {
   isObject,
   joinUrlSegments,
   normalizePath,
-  parseRequest,
   processSrcSet,
   removeDirectQuery,
   removeUrlQuery,
@@ -171,6 +170,7 @@ export function resolveCSSOptions(
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
 const directRequestRE = /[?&]direct\b/
 const htmlProxyRE = /[?&]html-proxy\b/
+const htmlProxyIndexRE = /&index=(\d+)/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
@@ -474,12 +474,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const inlineCSS = inlineCSSRE.test(id)
       const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
-        const query = parseRequest(id)
         if (styleAttrRE.test(id)) {
           css = css.replace(/"/g, '&quot;')
         }
+        const index = htmlProxyIndexRE.exec(id)?.[1]
+        if (index == null) {
+          throw new Error(`HTML proxy index in "${id}" not found`)
+        }
         addToHTMLProxyTransformResult(
-          `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
+          `${getHash(cleanUrl(id))}_${Number.parseInt(index)}`,
           css,
         )
         return `export default ''`
