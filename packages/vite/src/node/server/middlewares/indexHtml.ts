@@ -3,7 +3,8 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
 import type { Connect } from 'dep-types/connect'
-import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { Token } from 'parse5'
+import { type Element, type TextNode, isElementNode } from '@parse5/tools'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -15,7 +16,6 @@ import {
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
-  nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
@@ -211,13 +211,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
 
-  const addInlineModule = (
-    node: DefaultTreeAdapterMap['element'],
-    ext: 'js',
-  ) => {
+  const addInlineModule = (node: Element, ext: 'js') => {
     inlineModuleIndex++
 
-    const contentNode = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
+    const contentNode = node.childNodes[0] as TextNode
 
     const code = contentNode.value
 
@@ -252,95 +249,97 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, base)
   }
 
-  await traverseHtml(html, filename, (node) => {
-    if (!nodeIsElement(node)) {
-      return
-    }
+  await traverseHtml(html, filename, {
+    element(node: Element) {
+      if (!isElementNode(node)) {
+        return
+      }
 
-    // script tags
-    if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
+      // script tags
+      if (node.nodeName === 'script') {
+        const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
 
-      if (src) {
-        const processedUrl = processNodeUrl(
-          src.value,
-          isSrcSet(src),
-          config,
-          htmlPath,
-          originalUrl,
-          server,
-          !isModule,
-        )
-        if (processedUrl !== src.value) {
-          overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
-        }
-      } else if (isModule && node.childNodes.length) {
-        addInlineModule(node, 'js')
-      } else if (node.childNodes.length) {
-        const scriptNode = node.childNodes[
-          node.childNodes.length - 1
-        ] as DefaultTreeAdapterMap['textNode']
-        for (const {
-          url,
-          start,
-          end,
-        } of extractImportExpressionFromClassicScript(scriptNode)) {
+        if (src) {
           const processedUrl = processNodeUrl(
+            src.value,
+            isSrcSet(src),
+            config,
+            htmlPath,
+            originalUrl,
+            server,
+            !isModule,
+          )
+          if (processedUrl !== src.value) {
+            overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
+          }
+        } else if (isModule && node.childNodes.length) {
+          addInlineModule(node, 'js')
+        } else if (node.childNodes.length) {
+          const scriptNode = node.childNodes[
+            node.childNodes.length - 1
+          ] as TextNode
+          for (const {
             url,
-            false,
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== url) {
-            s.update(start, end, processedUrl)
-          }
-        }
-      }
-    }
-
-    const inlineStyle = findNeedTransformStyleAttribute(node)
-    if (inlineStyle) {
-      inlineModuleIndex++
-      inlineStyles.push({
-        index: inlineModuleIndex,
-        location: inlineStyle.location!,
-        code: inlineStyle.attr.value,
-      })
-    }
-
-    if (node.nodeName === 'style' && node.childNodes.length) {
-      const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
-      styleUrl.push({
-        start: children.sourceCodeLocation!.startOffset,
-        end: children.sourceCodeLocation!.endOffset,
-        code: children.value,
-      })
-    }
-
-    // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
+            start,
+            end,
+          } of extractImportExpressionFromClassicScript(scriptNode)) {
+            const processedUrl = processNodeUrl(
+              url,
+              false,
+              config,
+              htmlPath,
+              originalUrl,
             )
+            if (processedUrl !== url) {
+              s.update(start, end, processedUrl)
+            }
           }
         }
       }
-    }
+
+      const inlineStyle = findNeedTransformStyleAttribute(node)
+      if (inlineStyle) {
+        inlineModuleIndex++
+        inlineStyles.push({
+          index: inlineModuleIndex,
+          location: inlineStyle.location!,
+          code: inlineStyle.attr.value,
+        })
+      }
+
+      if (node.nodeName === 'style' && node.childNodes.length) {
+        const children = node.childNodes[0] as TextNode
+        styleUrl.push({
+          start: children.sourceCodeLocation!.startOffset,
+          end: children.sourceCodeLocation!.endOffset,
+          code: children.value,
+        })
+      }
+
+      // elements with [href/src] attrs
+      const assetAttrs = assetAttrsConfig[node.nodeName]
+      if (assetAttrs) {
+        for (const p of node.attrs) {
+          const attrKey = getAttrKey(p)
+          if (p.value && assetAttrs.includes(attrKey)) {
+            const processedUrl = processNodeUrl(
+              p.value,
+              isSrcSet(p),
+              config,
+              htmlPath,
+              originalUrl,
+            )
+            if (processedUrl !== p.value) {
+              overwriteAttrValue(
+                s,
+                node.sourceCodeLocation!.attrs![attrKey],
+                processedUrl,
+              )
+            }
+          }
+        }
+      }
+    },
   })
 
   await Promise.all([

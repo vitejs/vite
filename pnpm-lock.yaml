@@ -252,6 +252,9 @@ importers:
       '@jridgewell/trace-mapping':
         specifier: ^0.3.21
         version: 0.3.21
+      '@parse5/tools':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@rollup/plugin-alias':
         specifier: ^5.1.0
         version: 5.1.0(rollup@4.2.0)
@@ -3660,6 +3663,12 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.13.0
+
+  /@parse5/tools@0.4.0:
+    resolution: {integrity: sha512-mLIbnvph9mBtEoFxz+LSy8Mh89sXVECdymzdmqw9PgM/IP3Q3CKETvruKYliV3QcvJLEc7PRb7YuG5XtTpKarw==}
+    dependencies:
+      parse5: 7.1.2
+    dev: true
 
   /@pkgjs/parseargs@0.11.0:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}

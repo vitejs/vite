@@ -458,6 +458,13 @@ Repository: https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.walk
 
 ---------------------------------------
 
+## @parse5/tools
+License: MIT
+By: James Garbutt
+Repository: git+https://github.com/43081j/parse5-tools.git
+
+---------------------------------------
+
 ## @polka/url
 License: MIT
 By: Luke Edwards

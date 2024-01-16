@@ -121,6 +121,7 @@
     "okie": "^1.0.1",
     "open": "^8.4.2",
     "parse5": "^7.1.2",
+    "@parse5/tools": "^0.4.0",
     "periscopic": "^4.0.2",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
