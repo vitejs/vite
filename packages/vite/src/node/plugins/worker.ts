@@ -45,7 +45,6 @@ function saveEmitWorkerAsset(
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null,
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
@@ -101,12 +100,11 @@ async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return emitSourcemapForWorkerEntry(config, query, chunk)
+  return emitSourcemapForWorkerEntry(config, chunk)
 }
 
 function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
-  query: Record<string, string> | null,
   chunk: OutputChunk,
 ): OutputChunk {
   const { map: sourcemap } = chunk
@@ -146,12 +144,11 @@ function encodeWorkerAssetFileName(
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null,
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(config, id, query)
+    const outputChunk = await bundleWorkerEntry(config, id)
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
@@ -223,7 +220,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id, options) {
+    async transform(raw, id) {
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
         // if import worker by worker constructor will have query.type
@@ -284,7 +281,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       if (isBuild) {
         if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(config, id, query)
+          const chunk = await bundleWorkerEntry(config, id)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
           ).toString('base64')}";`
@@ -339,7 +336,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' },
           }
         } else {
-          url = await workerFileToUrl(config, id, query)
+          url = await workerFileToUrl(config, id)
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
