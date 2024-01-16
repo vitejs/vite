@@ -45,6 +45,8 @@ interface ScriptAssetsUrl {
 
 const htmlProxyRE =
   /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(js|css)$/
+const isHtmlProxyRE = /\?html-proxy\b/
+
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
@@ -63,7 +65,7 @@ const importMapAppendRE = new RegExp(
   'i',
 )
 
-export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
+export const isHTMLProxy = (id: string): boolean => isHtmlProxyRE.test(id)
 
 export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
@@ -88,7 +90,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:html-inline-proxy',
 
     resolveId(id) {
-      if (htmlProxyRE.test(id)) {
+      if (isHTMLProxy(id)) {
         return id
       }
     },
