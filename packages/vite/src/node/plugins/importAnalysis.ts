@@ -744,7 +744,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       // update the module graph for HMR analysis.
-      // node CSS imports does its own graph update in the css plugin so we
+      // node CSS imports does its own graph update in the css-analysis plugin so we
       // only handle js graph updates here.
       if (!isCSSRequest(importer)) {
         // attached by pluginContainer.addWatchFile
