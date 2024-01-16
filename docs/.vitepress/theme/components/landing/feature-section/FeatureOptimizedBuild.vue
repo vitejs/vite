@@ -52,7 +52,7 @@ const startAnimation = () => {
         node.visible.value = false
       },
       null,
-      '-=0.4',
+      '-=0.6',
     )
     timeline.add(subtimeline, Math.random())
   })
@@ -448,13 +448,55 @@ const startAnimation = () => {
   .left-lines {
     position: absolute;
     top: 60px;
+    left: unset;
     right: 50%;
+
+    @media (min-width: 455px) {
+      left: 0;
+      right: unset;
+    }
+
+    @media (min-width: 768px) {
+      left: unset;
+      right: 50%;
+    }
+
+    @media (min-width: 900px) {
+      left: 0;
+      right: unset;
+    }
+
+    @media (min-width: 1200px) {
+      left: unset;
+      right: 50%;
+    }
   }
 
   .right-lines {
     position: absolute;
     top: 71px;
+    right: unset;
     left: 50%;
+
+    @media (min-width: 455px) {
+      right: 0;
+      left: unset;
+    }
+
+    @media (min-width: 768px) {
+      right: unset;
+      left: 50%;
+    }
+
+    @media (min-width: 900px) {
+      right: 0;
+      left: unset;
+    }
+
+    @media (min-width: 1200px) {
+      right: unset;
+      left: 50%;
+    }
   }
 
   .bolt {
