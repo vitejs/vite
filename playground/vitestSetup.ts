@@ -1,6 +1,5 @@
 import type * as http from 'node:http'
-import path, { dirname, join, resolve } from 'node:path'
-import os from 'node:os'
+import path, { dirname, resolve } from 'node:path'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
@@ -22,7 +21,7 @@ import {
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
-import { beforeAll } from 'vitest'
+import { beforeAll, inject } from 'vitest'
 
 // #region env
 
@@ -80,8 +79,6 @@ export function setViteUrl(url: string): void {
 
 // #endregion
 
-const DIR = join(os.tmpdir(), 'vitest_playwright_global_setup')
-
 beforeAll(async (s) => {
   const suite = s as File
   // skip browser setup for non-playground tests
@@ -89,7 +86,7 @@ beforeAll(async (s) => {
     return
   }
 
-  const wsEndpoint = fs.readFileSync(join(DIR, 'wsEndpoint'), 'utf-8')
+  const wsEndpoint = inject('wsEndpoint')
   if (!wsEndpoint) {
     throw new Error('wsEndpoint not found')
   }
@@ -352,5 +349,11 @@ declare module 'vite' {
      * runs after build and before preview
      */
     __test__?: () => void
+  }
+}
+
+declare module 'vitest' {
+  export interface ProvidedContext {
+    wsEndpoint: string
   }
 }

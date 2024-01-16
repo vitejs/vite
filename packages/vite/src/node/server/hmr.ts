@@ -2,7 +2,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
 import colors from 'picocolors'
-import type { Update } from 'types/hmrPayload'
+import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import {
@@ -12,7 +12,7 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../utils'
-import type { ViteDevServer } from '..'
+import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
@@ -35,6 +35,8 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: Server
+  /** @internal */
+  channels?: HMRChannel[]
 }
 
 export interface HmrContext {
@@ -51,6 +53,68 @@ interface PropagationBoundary {
   isWithinCircularImport: boolean
 }
 
+export interface HMRBroadcasterClient {
+  /**
+   * Send event to the client
+   */
+  send(payload: HMRPayload): void
+  /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
+}
+
+export interface HMRChannel {
+  /**
+   * Unique channel name
+   */
+  name: string
+  /**
+   * Broadcast events to all clients
+   */
+  send(payload: HMRPayload): void
+  /**
+   * Send custom event
+   */
+  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
+  /**
+   * Handle custom event emitted by `import.meta.hot.send`
+   */
+  on<T extends string>(
+    event: T,
+    listener: (
+      data: InferCustomEventPayload<T>,
+      client: HMRBroadcasterClient,
+      ...args: any[]
+    ) => void,
+  ): void
+  on(event: 'connection', listener: () => void): void
+  /**
+   * Unregister event listener
+   */
+  off(event: string, listener: Function): void
+  /**
+   * Start listening for messages
+   */
+  listen(): void
+  /**
+   * Disconnect all clients, called when server is closed or restarted.
+   */
+  close(): void
+}
+
+export interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
+  /**
+   * All registered channels. Always has websocket channel.
+   */
+  readonly channels: HMRChannel[]
+  /**
+   * Add a new third-party channel.
+   */
+  addChannel(connection: HMRChannel): HMRBroadcaster
+  close(): Promise<unknown[]>
+}
+
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
     ? path.posix.relative(root, file)
@@ -62,7 +126,7 @@ export async function handleHMRUpdate(
   server: ViteDevServer,
   configOnly: boolean,
 ): Promise<void> {
-  const { ws, config, moduleGraph } = server
+  const { hot, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
@@ -98,7 +162,7 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    ws.send({
+    hot.send({
       type: 'full-reload',
       path: '*',
     })
@@ -131,7 +195,7 @@ export async function handleHMRUpdate(
         clear: true,
         timestamp: true,
       })
-      ws.send({
+      hot.send({
         type: 'full-reload',
         path: config.server.middlewareMode
           ? '*'
@@ -153,7 +217,7 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, ws, moduleGraph }: ViteDevServer,
+  { config, hot, moduleGraph }: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
   const updates: Update[] = []
@@ -202,7 +266,7 @@ export function updateModules(
       colors.green(`page reload `) + colors.dim(file) + reason,
       { clear: !afterInvalidation, timestamp: true },
     )
-    ws.send({
+    hot.send({
       type: 'full-reload',
     })
     return
@@ -218,7 +282,7 @@ export function updateModules(
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: !afterInvalidation, timestamp: true },
   )
-  ws.send({
+  hot.send({
     type: 'update',
     updates,
   })
@@ -453,7 +517,7 @@ function isNodeWithinCircularImports(
 
 export function handlePrunedModules(
   mods: Set<ModuleNode>,
-  { ws }: ViteDevServer,
+  { hot }: ViteDevServer,
 ): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
@@ -463,7 +527,7 @@ export function handlePrunedModules(
     mod.lastHMRTimestamp = t
     debugHmr?.(`[dispose] ${colors.dim(mod.file)}`)
   })
-  ws.send({
+  hot.send({
     type: 'prune',
     paths: [...mods].map((m) => m.url),
   })
@@ -637,4 +701,53 @@ async function readModifiedFile(file: string): Promise<string> {
   } else {
     return content
   }
+}
+
+export function createHMRBroadcaster(): HMRBroadcaster {
+  const channels: HMRChannel[] = []
+  const readyChannels = new WeakSet<HMRChannel>()
+  const broadcaster: HMRBroadcaster = {
+    get channels() {
+      return [...channels]
+    },
+    addChannel(channel) {
+      if (channels.some((c) => c.name === channel.name)) {
+        throw new Error(`HMR channel "${channel.name}" is already defined.`)
+      }
+      channels.push(channel)
+      return broadcaster
+    },
+    on(event: string, listener: (...args: any[]) => any) {
+      // emit connection event only when all channels are ready
+      if (event === 'connection') {
+        // make a copy so we don't wait for channels that might be added after this is triggered
+        const channels = this.channels
+        channels.forEach((channel) =>
+          channel.on('connection', () => {
+            readyChannels.add(channel)
+            if (channels.every((c) => readyChannels.has(c))) {
+              listener()
+            }
+          }),
+        )
+        return
+      }
+      channels.forEach((channel) => channel.on(event, listener))
+      return
+    },
+    off(event, listener) {
+      channels.forEach((channel) => channel.off(event, listener))
+      return
+    },
+    send(...args: any[]) {
+      channels.forEach((channel) => channel.send(...(args as [any])))
+    },
+    listen() {
+      channels.forEach((channel) => channel.listen())
+    },
+    close() {
+      return Promise.all(channels.map((channel) => channel.close()))
+    },
+  }
+  return broadcaster
 }
