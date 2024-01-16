@@ -69,30 +69,27 @@ export function createDevHtmlTransformFn(
     config.plugins,
     config.logger,
   )
+  const transformHooks = [
+    preImportMapHook(config),
+    ...preHooks,
+    htmlEnvHook(config),
+    devHtmlHook,
+    ...normalHooks,
+    ...postHooks,
+    postImportMapHook(),
+  ]
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(
-      html,
-      [
-        preImportMapHook(config),
-        ...preHooks,
-        htmlEnvHook(config),
-        devHtmlHook,
-        ...normalHooks,
-        ...postHooks,
-        postImportMapHook(),
-      ],
-      {
-        path: url,
-        filename: getHtmlFilename(url, server),
-        server,
-        originalUrl,
-      },
-    )
+    return applyHtmlTransforms(html, transformHooks, {
+      path: url,
+      filename: getHtmlFilename(url, server),
+      server,
+      originalUrl,
+    })
   }
 }
 
