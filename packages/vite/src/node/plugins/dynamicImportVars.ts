@@ -72,9 +72,10 @@ function parseDynamicImportPattern(
     requestQueryMaybeEscapedSplitRE,
     2,
   )
-  const [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
+  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
   let globParams: DynamicImportRequest | null = null
   if (search) {
+    search = '?' + search
     if (
       workerOrSharedWorkerRE.test(search) ||
       urlRE.test(search) ||

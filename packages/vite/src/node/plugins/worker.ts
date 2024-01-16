@@ -339,8 +339,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, WORKER_FILE_ID)
-        url = injectQuery(url, `type=${workerType}`)
+        url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
       }
 
       if (urlRE.test(id)) {
