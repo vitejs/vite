@@ -134,7 +134,18 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
-  console,
+  {
+    error: console.error,
+    debug: console.debug,
+    updated({ acceptedPath, path }) {
+      const loggedPath =
+        acceptedPath === path ? path : `${acceptedPath} via ${path}`
+      console.debug(`[vite] hot updated: ${loggedPath}`)
+    },
+    invalidated(id, message) {
+      console.debug(`[vite] invalidate ${id}${message ? `: ${message}` : ''}`)
+    },
+  },
   {
     isReady: () => socket && socket.readyState === 1,
     send: (message) => socket.send(message),

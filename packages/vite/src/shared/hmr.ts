@@ -15,6 +15,19 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
+export interface HMRLogger {
+  error(msg: string | Error): void
+  debug(...msg: unknown[]): void
+  /**
+   * Log when HMR update is applied
+   */
+  updated(update: Update): void
+  /**
+   * Log when module is invalidated via "impoer.meta.hot.invalidate"
+   */
+  invalidated(id: string, message?: string): void
+}
+
 export interface HMRConnection {
   /**
    * Checked before sending messages to the client.
@@ -107,9 +120,7 @@ export class HMRContext implements ViteHotContext {
       message,
     })
     this.send('vite:invalidate', { path: this.ownerPath, message })
-    this.hmrClient.logger.debug(
-      `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
-    )
+    this.hmrClient.logger.invalidated(this.ownerPath, message)
   }
 
   on<T extends string>(
@@ -196,7 +207,7 @@ export class HMRClient {
   public messenger: HMRMessenger
 
   constructor(
-    public logger: Console,
+    public logger: HMRLogger,
     connection: HMRConnection,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
@@ -293,8 +304,7 @@ export class HMRClient {
           deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)),
         )
       }
-      const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-      this.logger.debug(`[vite] hot updated: ${loggedPath}`)
+      this.logger.updated(update)
     }
   }
 }
