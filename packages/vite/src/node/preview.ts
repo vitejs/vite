@@ -132,7 +132,7 @@ export async function preview(
     await resolveHttpsConfig(config.preview?.https),
   )
   setClientErrorHandler(httpServer, config.logger)
-  const closeHttpServer = createServerCloseFn(httpServer) as () => Promise<void>
+  const closeHttpServer = createServerCloseFn(httpServer)
 
   const options = config.preview
   const logger = config.logger

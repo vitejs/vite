@@ -898,9 +898,9 @@ async function startServer(
 
 export function createServerCloseFn(
   server: HttpServer | null,
-): () => Promise<void> | void {
+): () => Promise<void> {
   if (!server) {
-    return () => {}
+    return () => Promise.resolve()
   }
 
   let hasListened = false
