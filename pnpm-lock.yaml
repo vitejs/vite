@@ -779,6 +779,20 @@ importers:
 
   playground/module-graph: {}
 
+  playground/monorepo-alias:
+    devDependencies:
+      '@vitejs/test-resolve-linked':
+        specifier: workspace:*
+        version: link:../resolve-linked
+
+  playground/monorepo-alias/root:
+    dependencies:
+      '@vitejs/test-monorepo-alias-shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  playground/monorepo-alias/shared: {}
+
   playground/multiple-entrypoints:
     devDependencies:
       sass:

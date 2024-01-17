@@ -1,0 +1,21 @@
+{
+  "name": "@vitejs/test-monorepo-alias-shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "#exports": "Fake paths on purpose so that they don't resolve!",
+  "exports": {
+    ".": {
+      "module": "./build/index.js"
+    },
+    "./*": {
+      "module": "./build/*.js"
+    }
+  }
+}

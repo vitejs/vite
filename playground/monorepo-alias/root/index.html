@@ -1,0 +1,11 @@
+<div>Default: <span id="default"></span></div>
+<div>Deep: <span id="deep"></span></div>
+
+<script type="module">
+  import { DEFAULT_IMPORT, DEEP_IMPORT } from './src/index.mjs'
+
+  console.log({ DEFAULT_IMPORT, DEEP_IMPORT })
+
+  document.getElementById('default').textContent = DEFAULT_IMPORT
+  document.getElementById('deep').textContent = DEEP_IMPORT
+</script>
