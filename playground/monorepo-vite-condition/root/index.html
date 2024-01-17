@@ -1,0 +1,11 @@
+<div>Main default: <span id="main-default"></span></div>
+<div>Exports default: <span id="exports-default"></span></div>
+<div>Exports deep: <span id="exports-deep"></span></div>
+
+<script type="module">
+  import { exports, main } from './src/index.mjs'
+
+  document.getElementById('main-default').textContent = main
+  document.getElementById('exports-default').textContent = exports.default
+  document.getElementById('exports-deep').textContent = exports.deep
+</script>

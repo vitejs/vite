@@ -793,6 +793,25 @@ importers:
 
   playground/monorepo-alias/shared: {}
 
+  playground/monorepo-vite-condition:
+    devDependencies:
+      '@vitejs/test-resolve-linked':
+        specifier: workspace:*
+        version: link:../resolve-linked
+
+  playground/monorepo-vite-condition/exports: {}
+
+  playground/monorepo-vite-condition/main: {}
+
+  playground/monorepo-vite-condition/root:
+    dependencies:
+      '@vitejs/test-monorepo-vite-condition-exports':
+        specifier: workspace:*
+        version: link:../exports
+      '@vitejs/test-monorepo-vite-condition-main':
+        specifier: workspace:*
+        version: link:../main
+
   playground/multiple-entrypoints:
     devDependencies:
       sass:

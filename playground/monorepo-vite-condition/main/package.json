@@ -1,0 +1,15 @@
+{
+  "name": "@vitejs/test-monorepo-vite-condition-main",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "vite": "./src/main.ts",
+  "#main": "Fake path on purpose so that it doesn't resolve!",
+  "main": "./build/main.js"
+}

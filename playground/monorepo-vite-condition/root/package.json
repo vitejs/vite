@@ -1,0 +1,16 @@
+{
+  "name": "@vitejs/test-monorepo-vite-condition-root",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-monorepo-vite-condition-exports": "workspace:*",
+    "@vitejs/test-monorepo-vite-condition-main": "workspace:*"
+  }
+}
