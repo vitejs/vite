@@ -224,6 +224,12 @@ const startAnimation = () => {
 </template>
 
 <style scoped>
+.feature-card {
+  .feature__meta {
+    max-width: calc(100% - 30px);
+  }
+}
+
 .feature__visualization {
   .terminal {
     position: absolute;

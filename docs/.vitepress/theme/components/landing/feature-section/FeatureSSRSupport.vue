@@ -432,6 +432,12 @@ const startAnimation = () => {
 </template>
 
 <style scoped>
+.feature-card {
+  .feature__meta {
+    max-width: calc(100%);
+  }
+}
+
 .feature__visualization {
   margin-top: 10px;
 
