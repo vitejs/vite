@@ -896,7 +896,9 @@ async function startServer(
   server._currentServerPort = serverPort
 }
 
-function createServerCloseFn(server: HttpServer | null) {
+export function createServerCloseFn(
+  server: HttpServer | null,
+): () => Promise<void> | void {
   if (!server) {
     return () => {}
   }

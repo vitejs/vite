@@ -9,6 +9,7 @@ import type {
   ResolvedServerOptions,
   ResolvedServerUrls,
 } from './server'
+import { createServerCloseFn } from './server'
 import type { CommonServerOptions } from './http'
 import {
   httpServerStart,
@@ -59,6 +60,10 @@ export interface PreviewServer {
    * The resolved vite config object
    */
   config: ResolvedConfig
+  /**
+   * Stop the server.
+   */
+  close(): Promise<void>
   /**
    * A connect app instance.
    * - Can be used to attach custom middlewares to the preview server.
@@ -127,6 +132,7 @@ export async function preview(
     await resolveHttpsConfig(config.preview?.https),
   )
   setClientErrorHandler(httpServer, config.logger)
+  const closeHttpServer = createServerCloseFn(httpServer) as () => Promise<void>
 
   const options = config.preview
   const logger = config.logger
@@ -135,6 +141,9 @@ export async function preview(
     config,
     middlewares: app,
     httpServer,
+    async close() {
+      await closeHttpServer()
+    },
     resolvedUrls: null,
     printUrls() {
       if (server.resolvedUrls) {
