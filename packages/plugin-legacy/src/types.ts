@@ -4,6 +4,10 @@ export interface Options {
    */
   targets?: string | string[] | { [key: string]: string }
   /**
+   * default: 'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'
+   */
+  modernTargets?: string | string[]
+  /**
    * default: true
    */
   polyfills?: boolean | string[]
