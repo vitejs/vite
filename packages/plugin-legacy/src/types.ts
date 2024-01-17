@@ -24,4 +24,8 @@ export interface Options {
    * default: true
    */
   renderModernChunks?: boolean
+  /**
+   * default: []
+   */
+  excludeLegacyPolyfills?: (string | RegExp)[]
 }

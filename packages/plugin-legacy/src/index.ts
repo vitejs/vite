@@ -125,6 +125,7 @@ const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
+  let excludeLegacyPolyfills: Options['excludeLegacyPolyfills']
 
   // browsers supporting ESM + dynamic import + import.meta + async generator
   const modernTargetsEsbuild = [
@@ -274,6 +275,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         await detectPolyfills(
           `Promise.resolve(); Promise.all();`,
           targets,
+          excludeLegacyPolyfills,
           legacyPolyfills,
         )
       }
@@ -321,6 +323,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         browserslistLoadConfig({ path: config.root }) ||
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
+
+      excludeLegacyPolyfills = options.excludeLegacyPolyfills
+      isDebug &&
+        excludeLegacyPolyfills &&
+        console.log(
+          `[@vitejs/plugin-legacy] excludeLegacyPolyfills:`,
+          excludeLegacyPolyfills,
+        )
 
       const getLegacyOutputFileName = (
         fileNames:
@@ -394,7 +404,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargetsBabel, modernPolyfills)
+          await detectPolyfills(
+            raw,
+            modernTargetsBabel,
+            undefined,
+            modernPolyfills,
+          )
         }
 
         const ms = new MagicString(raw)
@@ -473,7 +488,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, { needPolyfills }),
+            createBabelPresetEnvOptions(targets, excludeLegacyPolyfills, {
+              needPolyfills,
+            }),
           ],
         ],
       })
@@ -639,6 +656,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 export async function detectPolyfills(
   code: string,
   targets: any,
+  exclude: (string | RegExp)[] | undefined,
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
@@ -650,7 +668,7 @@ export async function detectPolyfills(
     presets: [
       [
         (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, {}),
+        createBabelPresetEnvOptions(targets, exclude, {}),
       ],
     ],
   })
@@ -669,6 +687,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
+  exclude: (string | RegExp)[] | undefined,
   { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
@@ -685,6 +704,7 @@ function createBabelPresetEnvOptions(
       : undefined,
     shippedProposals: true,
     ignoreBrowserslistConfig: true,
+    exclude,
   }
 }
 
