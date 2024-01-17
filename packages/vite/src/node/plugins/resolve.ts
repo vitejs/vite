@@ -987,7 +987,14 @@ export function resolvePackageEntry(
 
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
-      for (const field of options.mainFields) {
+      const mainFields = [...options.mainFields]
+
+      // Support `"vite": "./src/index.ts"` main field
+      if (isWithinLocalWorkspace(id, options.root)) {
+        mainFields.unshift('vite')
+      }
+
+      for (const field of mainFields) {
         if (field === 'browser') {
           if (targetWeb) {
             entryPoint = tryResolveBrowserEntry(dir, data, options)
@@ -1089,6 +1096,11 @@ function resolveExportsOrImports(
     }
     return true
   })
+
+  // Support `"vite": "./src/index.ts"` export condition
+  if (isWithinLocalWorkspace(key, options.root)) {
+    conditions.unshift('vite')
+  }
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, {
@@ -1299,4 +1311,15 @@ function mapWithBrowserField(
 
 function equalWithoutSuffix(path: string, key: string, suffix: string) {
   return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
+}
+
+/**
+ * Attempt to determine if a file path is within the current monorepo
+ * workspace. This is true if:
+ *
+ * - The file is NOT within the current app.
+ * - The file is NOT within node modules (symlinks must be resolved).
+ */
+function isWithinLocalWorkspace(id: string, appRoot: string) {
+  return !id.startsWith(appRoot) && !id.includes('node_modules')
 }
