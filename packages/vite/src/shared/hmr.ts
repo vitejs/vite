@@ -23,7 +23,7 @@ export interface HMRLogger {
    */
   updated(update: Update): void
   /**
-   * Log when module is invalidated via "impoer.meta.hot.invalidate"
+   * Log when a module is invalidated via "import.meta.hot.invalidate"
    */
   invalidated(id: string, message?: string): void
 }
