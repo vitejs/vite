@@ -896,9 +896,11 @@ async function startServer(
   server._currentServerPort = serverPort
 }
 
-function createServerCloseFn(server: HttpServer | null) {
+export function createServerCloseFn(
+  server: HttpServer | null,
+): () => Promise<void> {
   if (!server) {
-    return () => {}
+    return () => Promise.resolve()
   }
 
   let hasListened = false
