@@ -20,6 +20,10 @@ html:has(.landing) {
     }
   }
 
+  .VPHome {
+    padding-bottom: 0 !important;
+  }
+
   /* /////////////// */
   /* Force Dark Mode */
   /* /////////////// */

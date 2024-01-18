@@ -1,5 +1,5 @@
 <script setup>
-import SvgNode from '../1. hero-section/svg-elements/SvgNode.vue'
+import SvgNode from '../common/SvgNode.vue'
 import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 

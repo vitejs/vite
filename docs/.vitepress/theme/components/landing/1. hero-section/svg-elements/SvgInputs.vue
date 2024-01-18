@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SvgNode from './SvgNode.vue'
+import SvgNode from '../../common/SvgNode.vue'
 
 defineProps({
   inputLines: {

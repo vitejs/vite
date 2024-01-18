@@ -6,7 +6,7 @@ import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
-import { SvgNodeProps } from './svg-elements/SvgNode.vue'
+import { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, Ref, ref } from 'vue'
-import SvgNode from '../1. hero-section/svg-elements/SvgNode.vue'
+import SvgNode from '../common/SvgNode.vue'
 import { gsap } from 'gsap'
 
 const glowPosition: Ref<number> = ref(0)
