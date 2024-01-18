@@ -91,6 +91,11 @@ const { data } = useSponsor()
     right: 0;
     width: 100%;
     z-index: -1;
+    display: none;
+
+    @media (max-width: 1240px) {
+      display: block;
+    }
   }
 
   .icon-heart {
