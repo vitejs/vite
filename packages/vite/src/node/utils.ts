@@ -17,7 +17,7 @@ import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
 
-import type { TransformResult } from 'rollup'
+import type { AstNode, ParseAst, ParseAstAsync, TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
@@ -40,6 +40,46 @@ import {
   resolvePackageData,
 } from './packages'
 import type { CommonServerOptions } from '.'
+
+let rollupParseAst: ParseAst
+let rollupParseAstAsync: ParseAstAsync
+let rollupInited: Promise<any> | boolean = false
+export async function initRollupParseAst(): Promise<any | boolean> {
+  if (!rollupInited) {
+    const importRollupParseAst = import('rollup/parseAst')
+    rollupInited = importRollupParseAst
+    const { parseAst, parseAstAsync } = await importRollupParseAst
+    rollupParseAst = parseAst
+    rollupParseAstAsync = parseAstAsync
+    rollupInited = true
+  }
+  return rollupInited
+}
+export function parseAst(
+  code: string,
+  options?: {
+    allowReturnOutsideFunction?: boolean
+  },
+): AstNode {
+  if (!rollupInited) {
+    throw new Error(
+      `rollup/parseAst is not initialized yet, call initRollupParseAst() first`,
+    )
+  }
+  return rollupParseAst(code, options)
+}
+
+export async function parseAstAsync(
+  code: string,
+  options?: {
+    allowReturnOutsideFunction?: boolean
+  },
+): Promise<AstNode> {
+  if (rollupInited === false) {
+    await initRollupParseAst()
+  }
+  return rollupParseAstAsync(code, options)
+}
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
