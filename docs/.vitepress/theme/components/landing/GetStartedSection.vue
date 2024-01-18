@@ -32,7 +32,8 @@
   }
 
   h3 {
-    margin: 0 auto 25px;
+    margin: 0 auto 30px;
+    color: #d4d4d8;
   }
 
   .btn {

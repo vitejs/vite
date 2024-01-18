@@ -491,7 +491,7 @@ const animateSingleInputMobile = (inputLine) => {
         rgba(96, 72, 157, 0.3) 100%
       ),
       rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(1px);
 
     &:after {
       content: '';
