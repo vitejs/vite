@@ -2,11 +2,11 @@
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
 import { nextTick, onMounted, ref } from 'vue'
-import SvgInputs from './SvgInputs.vue'
-import SvgOutputs from './SvgOutputs.vue'
-import SvgBlueIndicator from './SvgBlueIndicator.vue'
-import SvgPinkIndicator from './SvgPinkIndicator.vue'
-import { SvgNodeProps } from './SvgNode.vue'
+import SvgInputs from './svg-elements/SvgInputs.vue'
+import SvgOutputs from './svg-elements/SvgOutputs.vue'
+import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
+import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
+import { SvgNodeProps } from './svg-elements/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 

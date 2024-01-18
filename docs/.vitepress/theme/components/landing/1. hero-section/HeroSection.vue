@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HeroDiagram from './hero-diagram/HeroDiagram.vue'
+import HeroDiagram from './HeroDiagram.vue'
 </script>
 
 <template>
