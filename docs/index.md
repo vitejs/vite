@@ -23,6 +23,9 @@ import FeatureFlexiblePlugins from './.vitepress/theme/components/landing/featur
 import FeatureTypedAPI from './.vitepress/theme/components/landing/feature-section/FeatureTypedAPI.vue'
 import FeatureSSRSupport from './.vitepress/theme/components/landing/feature-section/FeatureSSRSupport.vue'
 import FeatureCI from './.vitepress/theme/components/landing/feature-section/FeatureCI.vue'
+
+import { gsap } from 'gsap'
+gsap.ticker.fps(60)
 </script>
 
 <div class="VPHome">
