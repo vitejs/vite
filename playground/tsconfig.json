@@ -1,5 +1,5 @@
 {
-  "include": ["**/vite*config*", "**/*.ts", "monorepo-vite-condition/exports/src/dir/deep.tsx"],
+  "include": ["**/vite*config*", "**/*.ts"],
   "exclude": ["**/dist/**"],
   "compilerOptions": {
     "checkJs": true,

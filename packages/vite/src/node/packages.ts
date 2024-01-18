@@ -223,7 +223,7 @@ export function loadPackageData(pkgPath: string): PackageData {
 
 // Determine if the package is within a monorepo workspace.
 // We can do this by resolving the symlink, comparing the resolved path,
-// and ensuring the resolve path is not within node_modules.
+// and ensuring the resolved path is not within node_modules.
 function isPackageInWorkspace(basePath: string): boolean {
   if (!basePath.includes('node_modules')) {
     return true

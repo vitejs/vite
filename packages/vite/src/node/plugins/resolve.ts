@@ -1098,7 +1098,7 @@ function resolveExportsOrImports(
     return true
   })
 
-  // Support `vite` export condition for local packages
+  // Support `vite` condition for local packages
   if (pkg.inWorkspace) {
     conditions.unshift('vite')
   }
