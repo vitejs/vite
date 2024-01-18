@@ -485,7 +485,7 @@ const animateSingleInputMobile = (inputLine) => {
         rgba(61, 61, 61, 0.3) 100%
       ),
       linear-gradient(to bottom, rgba(16, 14, 26, 0.3) 60%, rgba(12, 12, 12, 0));
-    backdrop-filter: blur(1px);
+    backdrop-filter: blur(4px);
     border-radius: 10px;
 
     &:after {
