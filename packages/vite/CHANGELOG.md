@@ -1,3 +1,23 @@
+## 5.1.0-beta.1 (2024-01-18)
+
+* fix: handle namespace import and dynamic import interop consistently (#15619) ([ec8b420](https://github.com/vitejs/vite/commit/ec8b420)), closes [#15619](https://github.com/vitejs/vite/issues/15619)
+* fix(css): track dependencies from addWatchFile for HMR (#15608) ([dfcb83d](https://github.com/vitejs/vite/commit/dfcb83d)), closes [#15608](https://github.com/vitejs/vite/issues/15608)
+* fix(deps): update all non-major dependencies (#15603) ([109fb80](https://github.com/vitejs/vite/commit/109fb80)), closes [#15603](https://github.com/vitejs/vite/issues/15603)
+* fix(hmr): normalize env files path (#15584) ([d0f1d2e](https://github.com/vitejs/vite/commit/d0f1d2e)), closes [#15584](https://github.com/vitejs/vite/issues/15584)
+* fix(ssr): externalize network imports during `ssrLoadModule` (#15599) ([af2aa09](https://github.com/vitejs/vite/commit/af2aa09)), closes [#15599](https://github.com/vitejs/vite/issues/15599)
+* fix(types): mark hmr update internal types optional (#15606) ([df8f5a5](https://github.com/vitejs/vite/commit/df8f5a5)), closes [#15606](https://github.com/vitejs/vite/issues/15606)
+* perf: avoid parseRequest (#15617) ([0cacfad](https://github.com/vitejs/vite/commit/0cacfad)), closes [#15617](https://github.com/vitejs/vite/issues/15617)
+* perf: avoid performance.now() call (#15634) ([e43f7ee](https://github.com/vitejs/vite/commit/e43f7ee)), closes [#15634](https://github.com/vitejs/vite/issues/15634)
+* perf: do not bind plugin hook context functions (#15610) ([3b7e0c3](https://github.com/vitejs/vite/commit/3b7e0c3)), closes [#15610](https://github.com/vitejs/vite/issues/15610)
+* perf: don't recreate html hooks on each transform call (#15579) ([bdb826c](https://github.com/vitejs/vite/commit/bdb826c)), closes [#15579](https://github.com/vitejs/vite/issues/15579)
+* perf: simplify isHtmlProxy regex (#15590) ([644d120](https://github.com/vitejs/vite/commit/644d120)), closes [#15590](https://github.com/vitejs/vite/issues/15590)
+* feat: preview server add close method (#15630) ([947aa53](https://github.com/vitejs/vite/commit/947aa53)), closes [#15630](https://github.com/vitejs/vite/issues/15630)
+* feat: support multiple HMR clients on the server (#15340) ([bf1e9c2](https://github.com/vitejs/vite/commit/bf1e9c2)), closes [#15340](https://github.com/vitejs/vite/issues/15340)
+* feat(build): set `hoistTransitiveImports` to false in library builds (#15595) ([e6ebc7b](https://github.com/vitejs/vite/commit/e6ebc7b)), closes [#15595](https://github.com/vitejs/vite/issues/15595)
+* refactor: remove build time pre-bundling (#15184) ([757844f](https://github.com/vitejs/vite/commit/757844f)), closes [#15184](https://github.com/vitejs/vite/issues/15184)
+
+
+
 ## 5.1.0-beta.0 (2024-01-15)
 
 * fix: await `configResolved` hooks of worker plugins (#15597) ([03c8004](https://github.com/vitejs/vite/commit/03c8004)), closes [#15597](https://github.com/vitejs/vite/issues/15597)
