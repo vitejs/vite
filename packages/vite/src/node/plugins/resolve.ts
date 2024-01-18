@@ -484,6 +484,7 @@ function resolveSubpathImports(
     options,
     targetWeb,
     'imports',
+    pkgData.inWorkspace,
   )
 
   if (importsPath?.[0] === '.') {
@@ -959,7 +960,7 @@ export async function tryOptimizedResolve(
 
 export function resolvePackageEntry(
   id: string,
-  { dir, data, setResolvedCache, getResolvedCache }: PackageData,
+  { dir, data, setResolvedCache, getResolvedCache, inWorkspace }: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
@@ -982,6 +983,7 @@ export function resolvePackageEntry(
         options,
         targetWeb,
         'exports',
+        inWorkspace,
       )
     }
 
@@ -989,8 +991,8 @@ export function resolvePackageEntry(
     if (!entryPoint) {
       const mainFields = [...options.mainFields]
 
-      // Support `"vite": "./src/index.ts"` main field
-      if (isWithinLocalWorkspace(id, options.root)) {
+      // Support `vite` entry point field for local packages
+      if (inWorkspace) {
         mainFields.unshift('vite')
       }
 
@@ -1077,6 +1079,7 @@ function resolveExportsOrImports(
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   type: 'imports' | 'exports',
+  inWorkspace: boolean,
 ) {
   const additionalConditions = new Set(
     options.overrideConditions || [
@@ -1097,8 +1100,8 @@ function resolveExportsOrImports(
     return true
   })
 
-  // Support `"vite": "./src/index.ts"` export condition
-  if (isWithinLocalWorkspace(key, options.root)) {
+  // Support `vite` export condition for local packages
+  if (inWorkspace) {
     conditions.unshift('vite')
   }
 
@@ -1122,6 +1125,7 @@ function resolveDeepImport(
     getResolvedCache,
     dir,
     data,
+    inWorkspace,
   }: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
@@ -1145,6 +1149,7 @@ function resolveDeepImport(
         options,
         targetWeb,
         'exports',
+        inWorkspace,
       )
       if (exportsId !== undefined) {
         relativeId = exportsId + postfix
@@ -1313,17 +1318,4 @@ function mapWithBrowserField(
 
 function equalWithoutSuffix(path: string, key: string, suffix: string) {
   return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
-}
-
-/**
- * Attempt to determine if a file path is within the current monorepo
- * workspace. This is true if:
- *
- * - The file is NOT within the current app.
- * - The file is NOT within node modules (symlinks must be resolved).
- */
-function isWithinLocalWorkspace(id: string, appRoot: string) {
-  console.log('isWithinLocalWorkspace', { id, appRoot })
-
-  return !id.startsWith(appRoot) && !id.includes('node_modules')
 }

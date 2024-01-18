@@ -22,6 +22,7 @@ export type PackageCache = Map<string, PackageData>
 export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
+  inWorkspace: boolean
   webResolvedImports: Record<string, string | undefined>
   nodeResolvedImports: Record<string, string | undefined>
   setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
@@ -198,6 +199,7 @@ export function loadPackageData(pkgPath: string): PackageData {
     dir: pkgDir,
     data,
     hasSideEffects,
+    inWorkspace: isPackageInWorkspace(pkgPath),
     webResolvedImports: {},
     nodeResolvedImports: {},
     setResolvedCache(key: string, entry: string, targetWeb: boolean) {
@@ -217,6 +219,19 @@ export function loadPackageData(pkgPath: string): PackageData {
   }
 
   return pkg
+}
+
+// Determine if the package is within a monorepo workspace.
+// We can do this by resolving the symlink, comparing the resolved path,
+// and ensuring the resolve path is not within node_modules.
+function isPackageInWorkspace(basePath: string): boolean {
+  if (!basePath.includes('node_modules')) {
+    return true
+  }
+
+  const resolvedPath = fs.realpathSync(basePath)
+
+  return resolvedPath !== basePath && !resolvedPath.includes('node_modules')
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
