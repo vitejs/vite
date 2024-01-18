@@ -46,7 +46,11 @@ const { data } = useSponsor()
 
 <style scoped>
 .sponsor-section {
-  margin-top: 180px;
+  margin-top: 120px;
+
+  @media (min-width: 768px) {
+    margin-top: 180px;
+  }
 
   .icon-heart {
     margin: 0 auto 10px;
