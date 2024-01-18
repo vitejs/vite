@@ -263,7 +263,7 @@ const rowStyle = computed(() => {
   margin-top: 150px;
 
   @media (min-width: 768px) {
-    margin-top: 280px;
+    margin-top: 240px;
   }
 
   h2 {
