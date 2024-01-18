@@ -2139,6 +2139,8 @@ const makeScssWorker = (
     {
       parentFunctions: { internalImporter },
       shouldUseFake(_sassPath, _data, options) {
+        // functions and importer is a function and is not serializable
+        // in that case, fallback to running in main thread
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importer &&
@@ -2391,6 +2393,8 @@ const makeLessWorker = (
     {
       parentFunctions: { viteLessResolve },
       shouldUseFake(_lessPath, _content, options) {
+        // plugins are a function and is not serializable
+        // in that case, fallback to running in main thread
         return options.plugins?.length > 0
       },
       max: maxWorkers,
@@ -2504,6 +2508,8 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
     },
     {
       shouldUseFake(_stylusPath, _content, _root, options) {
+        // define can include functions and those are not serializable
+        // in that case, fallback to running in main thread
         return !!(
           options.define &&
           Object.values(options.define).some((d) => typeof d === 'function')
