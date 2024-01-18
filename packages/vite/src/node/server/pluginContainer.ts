@@ -68,6 +68,7 @@ import {
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
+  initRollupParseAst,
   isExternalUrl,
   isObject,
   normalizePath,
@@ -163,6 +164,8 @@ export async function createPluginContainer(
   } = config
   const { getSortedPluginHooks, getSortedPlugins } =
     createPluginHookUtils(plugins)
+
+  const initRollupParseAstPromise = initRollupParseAst()
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -655,6 +658,7 @@ export async function createPluginContainer(
     getModuleInfo,
 
     async buildStart() {
+      await initRollupParseAstPromise
       await handleHookPromise(
         hookParallel(
           'buildStart',
