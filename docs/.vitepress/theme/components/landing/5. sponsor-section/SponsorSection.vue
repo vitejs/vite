@@ -93,7 +93,7 @@ const { data } = useSponsor()
     z-index: -1;
     display: none;
 
-    @media (max-width: 1240px) {
+    @media (min-width: 1240px) {
       display: block;
     }
   }
