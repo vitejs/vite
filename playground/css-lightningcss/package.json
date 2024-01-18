@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "lightningcss": "^1.22.1"
+    "lightningcss": "^1.23.0"
   }
 }
