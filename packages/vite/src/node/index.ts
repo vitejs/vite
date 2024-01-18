@@ -12,11 +12,7 @@ export { createServer } from './server'
 export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
-export {
-  formatPostcssSourceMap,
-  createCSSPreprocessor,
-  preprocessCSS,
-} from './plugins/css'
+export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'

@@ -277,7 +277,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
 
-      preprocessorWorkerController = createPreprocessorWorkerController()
+      preprocessorWorkerController = createPreprocessorWorkerController(
+        normalizeMaxWorkers(config.css.preprocessorMaxWorkers),
+      )
+      preprocessorWorkerControllerCache.set(
+        config,
+        preprocessorWorkerController,
+      )
     },
 
     buildEnd() {
@@ -1125,7 +1131,6 @@ async function compileCSSPreprocessors(
     config.root,
     opts,
     atImportResolvers,
-    normalizeMaxWorkers(config.css.preprocessorMaxWorkers),
   )
   if (preprocessResult.error) {
     throw preprocessResult.error
@@ -1445,6 +1450,14 @@ const importPostcssImport = createCachedImport(() => import('postcss-import'))
 const importPostcssModules = createCachedImport(() => import('postcss-modules'))
 const importPostcss = createCachedImport(() => import('postcss'))
 
+const preprocessorWorkerControllerCache = new WeakMap<
+  ResolvedConfig,
+  PreprocessorWorkerController
+>()
+let alwaysFakeWorkerWorkerControllerCache:
+  | PreprocessorWorkerController
+  | undefined
+
 export interface PreprocessCSSResult {
   code: string
   map?: SourceMapInput
@@ -1455,45 +1468,22 @@ export interface PreprocessCSSResult {
 /**
  * @experimental
  */
-export function createCSSPreprocessor(): {
-  process(
-    code: string,
-    filename: string,
-    config: ResolvedConfig,
-  ): Promise<PreprocessCSSResult>
-  close: () => void
-} {
-  const preprocessorWorkerController = createPreprocessorWorkerController()
-
-  return {
-    async process(code, filename, config) {
-      return await compileCSS(
-        filename,
-        code,
-        config,
-        preprocessorWorkerController,
-      )
-    },
-    close() {
-      preprocessorWorkerController.close()
-    },
-  }
-}
-
-/**
- * @deprecated use createCSSPreprocessor instead
- */
 export async function preprocessCSS(
   code: string,
   filename: string,
   config: ResolvedConfig,
 ): Promise<PreprocessCSSResult> {
-  const p = createCSSPreprocessor()
-  try {
-    return await p.process(code, filename, config)
-  } finally {
-    p.close()
+  let workerController = preprocessorWorkerControllerCache.get(config)
+
+  if (!workerController) {
+    // if workerController doesn't exist, create a workerController that always uses fake workers
+    // because fake workers doesn't require calling `.close` unlike real workers
+    alwaysFakeWorkerWorkerControllerCache ||=
+      createPreprocessorWorkerController(0)
+    workerController = alwaysFakeWorkerWorkerControllerCache
   }
+
+  return await compileCSS(filename, code, config, workerController)
 }
 
 export async function formatPostcssSourceMap(
@@ -1933,7 +1923,6 @@ type StylePreprocessor = {
     root: string,
     options: StylePreprocessorOptions,
     resolvers: CSSAtImportResolvers,
-    maxWorkers: number | undefined,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
   close: () => void
 }
@@ -1944,7 +1933,6 @@ type SassStylePreprocessor = {
     root: string,
     options: SassStylePreprocessorOptions,
     resolvers: CSSAtImportResolvers,
-    maxWorkers: number | undefined,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
   close: () => void
 }
@@ -1955,7 +1943,6 @@ type StylusStylePreprocessor = {
     root: string,
     options: StylusStylePreprocessorOptions,
     resolvers: CSSAtImportResolvers,
-    maxWorkers: number | undefined,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
   close: () => void
 }
@@ -2153,7 +2140,9 @@ const makeScssWorker = (
   return worker
 }
 
-const scssProcessor = (): SassStylePreprocessor => {
+const scssProcessor = (
+  maxWorkers: number | undefined,
+): SassStylePreprocessor => {
   const workerMap = new Map<unknown, ReturnType<typeof makeScssWorker>>()
 
   return {
@@ -2162,7 +2151,7 @@ const scssProcessor = (): SassStylePreprocessor => {
         worker.stop()
       }
     },
-    async process(source, root, options, resolvers, maxWorkers) {
+    async process(source, root, options, resolvers) {
       const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
 
       if (!workerMap.has(options.alias)) {
@@ -2403,7 +2392,7 @@ const makeLessWorker = (
   return worker
 }
 
-const lessProcessor = (): StylePreprocessor => {
+const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
   const workerMap = new Map<unknown, ReturnType<typeof makeLessWorker>>()
 
   return {
@@ -2412,7 +2401,7 @@ const lessProcessor = (): StylePreprocessor => {
         worker.stop()
       }
     },
-    async process(source, root, options, resolvers, maxWorkers) {
+    async process(source, root, options, resolvers) {
       const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
 
       if (!workerMap.has(options.alias)) {
@@ -2521,7 +2510,9 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
   return worker
 }
 
-const stylProcessor = (): StylusStylePreprocessor => {
+const stylProcessor = (
+  maxWorkers: number | undefined,
+): StylusStylePreprocessor => {
   const workerMap = new Map<unknown, ReturnType<typeof makeStylWorker>>()
 
   return {
@@ -2530,7 +2521,7 @@ const stylProcessor = (): StylusStylePreprocessor => {
         worker.stop()
       }
     },
-    async process(source, root, options, resolvers, maxWorkers) {
+    async process(source, root, options, resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
 
       if (!workerMap.has(options.alias)) {
@@ -2632,24 +2623,22 @@ async function getSource(
   }
 }
 
-const createPreprocessorWorkerController = () => {
-  const scss = scssProcessor()
-  const less = lessProcessor()
-  const styl = stylProcessor()
+const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
+  const scss = scssProcessor(maxWorkers)
+  const less = lessProcessor(maxWorkers)
+  const styl = stylProcessor(maxWorkers)
 
   const sassProcess: StylePreprocessor['process'] = (
     source,
     root,
     options,
     resolvers,
-    maxWorkers,
   ) => {
     return scss.process(
       source,
       root,
       { ...options, indentedSyntax: true },
       resolvers,
-      maxWorkers,
     )
   }
 
