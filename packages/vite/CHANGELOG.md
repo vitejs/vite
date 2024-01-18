@@ -1,3 +1,120 @@
+## 5.1.0-beta.1 (2024-01-18)
+
+* fix: handle namespace import and dynamic import interop consistently (#15619) ([ec8b420](https://github.com/vitejs/vite/commit/ec8b420)), closes [#15619](https://github.com/vitejs/vite/issues/15619)
+* fix(css): track dependencies from addWatchFile for HMR (#15608) ([dfcb83d](https://github.com/vitejs/vite/commit/dfcb83d)), closes [#15608](https://github.com/vitejs/vite/issues/15608)
+* fix(deps): update all non-major dependencies (#15603) ([109fb80](https://github.com/vitejs/vite/commit/109fb80)), closes [#15603](https://github.com/vitejs/vite/issues/15603)
+* fix(hmr): normalize env files path (#15584) ([d0f1d2e](https://github.com/vitejs/vite/commit/d0f1d2e)), closes [#15584](https://github.com/vitejs/vite/issues/15584)
+* fix(ssr): externalize network imports during `ssrLoadModule` (#15599) ([af2aa09](https://github.com/vitejs/vite/commit/af2aa09)), closes [#15599](https://github.com/vitejs/vite/issues/15599)
+* fix(types): mark hmr update internal types optional (#15606) ([df8f5a5](https://github.com/vitejs/vite/commit/df8f5a5)), closes [#15606](https://github.com/vitejs/vite/issues/15606)
+* perf: avoid parseRequest (#15617) ([0cacfad](https://github.com/vitejs/vite/commit/0cacfad)), closes [#15617](https://github.com/vitejs/vite/issues/15617)
+* perf: avoid performance.now() call (#15634) ([e43f7ee](https://github.com/vitejs/vite/commit/e43f7ee)), closes [#15634](https://github.com/vitejs/vite/issues/15634)
+* perf: do not bind plugin hook context functions (#15610) ([3b7e0c3](https://github.com/vitejs/vite/commit/3b7e0c3)), closes [#15610](https://github.com/vitejs/vite/issues/15610)
+* perf: don't recreate html hooks on each transform call (#15579) ([bdb826c](https://github.com/vitejs/vite/commit/bdb826c)), closes [#15579](https://github.com/vitejs/vite/issues/15579)
+* perf: simplify isHtmlProxy regex (#15590) ([644d120](https://github.com/vitejs/vite/commit/644d120)), closes [#15590](https://github.com/vitejs/vite/issues/15590)
+* feat: preview server add close method (#15630) ([947aa53](https://github.com/vitejs/vite/commit/947aa53)), closes [#15630](https://github.com/vitejs/vite/issues/15630)
+* feat: support multiple HMR clients on the server (#15340) ([bf1e9c2](https://github.com/vitejs/vite/commit/bf1e9c2)), closes [#15340](https://github.com/vitejs/vite/issues/15340)
+* feat(build): set `hoistTransitiveImports` to false in library builds (#15595) ([e6ebc7b](https://github.com/vitejs/vite/commit/e6ebc7b)), closes [#15595](https://github.com/vitejs/vite/issues/15595)
+* refactor: remove build time pre-bundling (#15184) ([757844f](https://github.com/vitejs/vite/commit/757844f)), closes [#15184](https://github.com/vitejs/vite/issues/15184)
+
+
+
+## 5.1.0-beta.0 (2024-01-15)
+
+* fix: await `configResolved` hooks of worker plugins (#15597) ([03c8004](https://github.com/vitejs/vite/commit/03c8004)), closes [#15597](https://github.com/vitejs/vite/issues/15597)
+* fix: hmr for env files, regression from #15365 (#15559) ([d1b143f](https://github.com/vitejs/vite/commit/d1b143f)), closes [#15365](https://github.com/vitejs/vite/issues/15365) [#15559](https://github.com/vitejs/vite/issues/15559)
+* fix: init dev ssr optimizer on server init (#15561) ([db28b92](https://github.com/vitejs/vite/commit/db28b92)), closes [#15561](https://github.com/vitejs/vite/issues/15561)
+* fix: only watch needed env files (#15365) ([476e572](https://github.com/vitejs/vite/commit/476e572)), closes [#15365](https://github.com/vitejs/vite/issues/15365)
+* fix: resolvedUrls is null in plugin's configureServer after server restart (#15450) ([653a48c](https://github.com/vitejs/vite/commit/653a48c)), closes [#15450](https://github.com/vitejs/vite/issues/15450)
+* fix: revert `package.json` change should trigger server restart (#15519) (#15558) ([9fc5d9c](https://github.com/vitejs/vite/commit/9fc5d9c)), closes [#15519](https://github.com/vitejs/vite/issues/15519) [#15558](https://github.com/vitejs/vite/issues/15558)
+* fix: set correct `isSsrBuild` value in dev (#15536) ([fdbe04d](https://github.com/vitejs/vite/commit/fdbe04d)), closes [#15536](https://github.com/vitejs/vite/issues/15536)
+* fix: update javascript mime type to text/javascript (#15427) ([a621de8](https://github.com/vitejs/vite/commit/a621de8)), closes [#15427](https://github.com/vitejs/vite/issues/15427)
+* fix(build): normalize html path (#15554) ([d0d5938](https://github.com/vitejs/vite/commit/d0d5938)), closes [#15554](https://github.com/vitejs/vite/issues/15554)
+* fix(css): @import with .css in node_modules importing a different package failed to resolve (#15000) ([8ccf722](https://github.com/vitejs/vite/commit/8ccf722)), closes [#15000](https://github.com/vitejs/vite/issues/15000)
+* fix(css): `.css?url` support (#15259) ([ed56d96](https://github.com/vitejs/vite/commit/ed56d96)), closes [#15259](https://github.com/vitejs/vite/issues/15259)
+* fix(css): skip url replace for function calls (#15544) ([21a52e6](https://github.com/vitejs/vite/commit/21a52e6)), closes [#15544](https://github.com/vitejs/vite/issues/15544)
+* fix(deps): update all non-major dependencies (#15375) ([ab56227](https://github.com/vitejs/vite/commit/ab56227)), closes [#15375](https://github.com/vitejs/vite/issues/15375)
+* fix(esbuild): update to tsconfck 3.0.1 to fix edge cases when resolving tsconfig.extends (#15502) ([1fcebeb](https://github.com/vitejs/vite/commit/1fcebeb)), closes [#15502](https://github.com/vitejs/vite/issues/15502)
+* fix(hmr): `package.json` change should trigger server restart (#15519) ([260ebbf](https://github.com/vitejs/vite/commit/260ebbf)), closes [#15519](https://github.com/vitejs/vite/issues/15519)
+* fix(hmr): make watcher ignore build.outDir (#15326) ([2836276](https://github.com/vitejs/vite/commit/2836276)), closes [#15326](https://github.com/vitejs/vite/issues/15326)
+* fix(hmr): propagate `fs.stat` failure for `hmrContext.read` (#15568) ([c6d240b](https://github.com/vitejs/vite/commit/c6d240b)), closes [#15568](https://github.com/vitejs/vite/issues/15568)
+* fix(sourcemap): sourcemap is incorrect when sourcemap has `sources: [null]` (#14588) ([f8c6a34](https://github.com/vitejs/vite/commit/f8c6a34)), closes [#14588](https://github.com/vitejs/vite/issues/14588)
+* feat: `build.assetsInlineLimit` callback (#15366) ([4d1342e](https://github.com/vitejs/vite/commit/4d1342e)), closes [#15366](https://github.com/vitejs/vite/issues/15366)
+* feat: add '*.m4a' to client.d.ts and constants (#15471) ([ebc37f6](https://github.com/vitejs/vite/commit/ebc37f6)), closes [#15471](https://github.com/vitejs/vite/issues/15471)
+* feat: add support for .vtt type (#15538) ([a5c6d3d](https://github.com/vitejs/vite/commit/a5c6d3d)), closes [#15538](https://github.com/vitejs/vite/issues/15538)
+* feat(glob-import): deprecate as option (#14420) ([953e697](https://github.com/vitejs/vite/commit/953e697)), closes [#14420](https://github.com/vitejs/vite/issues/14420)
+* feat(hmr): reload for circular imports only if error (#15118) ([6ace32b](https://github.com/vitejs/vite/commit/6ace32b)), closes [#15118](https://github.com/vitejs/vite/issues/15118)
+* feat(ssr): support external true (#10939) ([e451be2](https://github.com/vitejs/vite/commit/e451be2)), closes [#10939](https://github.com/vitejs/vite/issues/10939)
+* refactor: extract '_metadata.json' string to a constant (#15541) ([adda370](https://github.com/vitejs/vite/commit/adda370)), closes [#15541](https://github.com/vitejs/vite/issues/15541)
+* refactor: normalize publicDir when resolving config (#15360) ([ea5fdeb](https://github.com/vitejs/vite/commit/ea5fdeb)), closes [#15360](https://github.com/vitejs/vite/issues/15360)
+* refactor: remove json-stable-stringify (#15571) ([b9b0816](https://github.com/vitejs/vite/commit/b9b0816)), closes [#15571](https://github.com/vitejs/vite/issues/15571)
+* refactor: reuse existing node utils (#15480) ([17ab48a](https://github.com/vitejs/vite/commit/17ab48a)), closes [#15480](https://github.com/vitejs/vite/issues/15480)
+* refactor(hmr): keep buffer implementation internal, expose queueUpdate (#15486) ([c029efb](https://github.com/vitejs/vite/commit/c029efb)), closes [#15486](https://github.com/vitejs/vite/issues/15486)
+* perf: optimize logger (#15574) ([0fb9071](https://github.com/vitejs/vite/commit/0fb9071)), closes [#15574](https://github.com/vitejs/vite/issues/15574)
+* chore: avoid bundling resolve dep (#15570) ([ae49ac4](https://github.com/vitejs/vite/commit/ae49ac4)), closes [#15570](https://github.com/vitejs/vite/issues/15570)
+* chore(deps): update dependency postcss-import to v16 (#15533) ([36775c4](https://github.com/vitejs/vite/commit/36775c4)), closes [#15533](https://github.com/vitejs/vite/issues/15533)
+
+
+
+## <small>5.0.11 (2024-01-05)</small>
+
+* fix: don't pretransform classic script links (#15361) ([19e3c9a](https://github.com/vitejs/vite/commit/19e3c9a)), closes [#15361](https://github.com/vitejs/vite/issues/15361)
+* fix: inject `__vite__mapDeps` code before sourcemap file comment (#15483) ([d2aa096](https://github.com/vitejs/vite/commit/d2aa096)), closes [#15483](https://github.com/vitejs/vite/issues/15483)
+* fix(assets): avoid splitting `,` inside base64 value of `srcset` attribute (#15422) ([8de7bd2](https://github.com/vitejs/vite/commit/8de7bd2)), closes [#15422](https://github.com/vitejs/vite/issues/15422)
+* fix(html): handle offset magic-string slice error (#15435) ([5ea9edb](https://github.com/vitejs/vite/commit/5ea9edb)), closes [#15435](https://github.com/vitejs/vite/issues/15435)
+* chore(deps): update dependency strip-literal to v2 (#15475) ([49d21fe](https://github.com/vitejs/vite/commit/49d21fe)), closes [#15475](https://github.com/vitejs/vite/issues/15475)
+* chore(deps): update tj-actions/changed-files action to v41 (#15476) ([2a540ee](https://github.com/vitejs/vite/commit/2a540ee)), closes [#15476](https://github.com/vitejs/vite/issues/15476)
+
+
+
+## <small>5.0.10 (2023-12-15)</small>
+
+* fix: omit protocol does not require pre-transform (#15355) ([d9ae1b2](https://github.com/vitejs/vite/commit/d9ae1b2)), closes [#15355](https://github.com/vitejs/vite/issues/15355)
+* fix(build): use base64 for inline SVG if it contains both single and double quotes (#15271) ([1bbff16](https://github.com/vitejs/vite/commit/1bbff16)), closes [#15271](https://github.com/vitejs/vite/issues/15271)
+
+
+
+## <small>5.0.9 (2023-12-14)</small>
+
+* fix: htmlFallbackMiddleware for favicon (#15301) ([c902545](https://github.com/vitejs/vite/commit/c902545)), closes [#15301](https://github.com/vitejs/vite/issues/15301)
+* fix: more stable hash calculation for depsOptimize (#15337) ([2b39fe6](https://github.com/vitejs/vite/commit/2b39fe6)), closes [#15337](https://github.com/vitejs/vite/issues/15337)
+* fix(scanner): catch all external files for glob imports (#15286) ([129d0d0](https://github.com/vitejs/vite/commit/129d0d0)), closes [#15286](https://github.com/vitejs/vite/issues/15286)
+* fix(server): avoid chokidar throttling on startup (#15347) ([56a5740](https://github.com/vitejs/vite/commit/56a5740)), closes [#15347](https://github.com/vitejs/vite/issues/15347)
+* fix(worker): replace `import.meta` correctly for IIFE worker (#15321) ([08d093c](https://github.com/vitejs/vite/commit/08d093c)), closes [#15321](https://github.com/vitejs/vite/issues/15321)
+* feat: log re-optimization reasons (#15339) ([b1a6c84](https://github.com/vitejs/vite/commit/b1a6c84)), closes [#15339](https://github.com/vitejs/vite/issues/15339)
+* chore: temporary typo (#15329) ([7b71854](https://github.com/vitejs/vite/commit/7b71854)), closes [#15329](https://github.com/vitejs/vite/issues/15329)
+* perf: avoid computing paths on each request (#15318) ([0506812](https://github.com/vitejs/vite/commit/0506812)), closes [#15318](https://github.com/vitejs/vite/issues/15318)
+* perf: temporary hack to avoid fs checks for /@react-refresh (#15299) ([b1d6211](https://github.com/vitejs/vite/commit/b1d6211)), closes [#15299](https://github.com/vitejs/vite/issues/15299)
+
+
+
+## <small>5.0.8 (2023-12-12)</small>
+
+* perf: cached fs utils (#15279) ([c9b61c4](https://github.com/vitejs/vite/commit/c9b61c4)), closes [#15279](https://github.com/vitejs/vite/issues/15279)
+* fix: missing warmupRequest in transformIndexHtml (#15303) ([103820f](https://github.com/vitejs/vite/commit/103820f)), closes [#15303](https://github.com/vitejs/vite/issues/15303)
+* fix: public files map will be updated on add/unlink in windows (#15317) ([921ca41](https://github.com/vitejs/vite/commit/921ca41)), closes [#15317](https://github.com/vitejs/vite/issues/15317)
+* fix(build): decode urls in CSS files (fix #15109) (#15246) ([ea6a7a6](https://github.com/vitejs/vite/commit/ea6a7a6)), closes [#15109](https://github.com/vitejs/vite/issues/15109) [#15246](https://github.com/vitejs/vite/issues/15246)
+* fix(deps): update all non-major dependencies (#15304) ([bb07f60](https://github.com/vitejs/vite/commit/bb07f60)), closes [#15304](https://github.com/vitejs/vite/issues/15304)
+* fix(ssr): check esm file with normal file path (#15307) ([1597170](https://github.com/vitejs/vite/commit/1597170)), closes [#15307](https://github.com/vitejs/vite/issues/15307)
+
+
+
+## <small>5.0.7 (2023-12-08)</small>
+
+* fix: suppress terser warning if minify disabled (#15275) ([3e42611](https://github.com/vitejs/vite/commit/3e42611)), closes [#15275](https://github.com/vitejs/vite/issues/15275)
+* fix: symbolic links in public dir (#15264) ([ef2a024](https://github.com/vitejs/vite/commit/ef2a024)), closes [#15264](https://github.com/vitejs/vite/issues/15264)
+* fix(html): skip inlining icon and manifest links (#14958) ([8ad81b4](https://github.com/vitejs/vite/commit/8ad81b4)), closes [#14958](https://github.com/vitejs/vite/issues/14958)
+* chore: remove unneeded condition in getRealPath (#15267) ([8e4655c](https://github.com/vitejs/vite/commit/8e4655c)), closes [#15267](https://github.com/vitejs/vite/issues/15267)
+* perf: cache empty optimizer result (#15245) ([8409b66](https://github.com/vitejs/vite/commit/8409b66)), closes [#15245](https://github.com/vitejs/vite/issues/15245)
+
+
+
+## <small>5.0.6 (2023-12-06)</small>
+
+* perf: in-memory public files check (#15195) ([0f9e1bf](https://github.com/vitejs/vite/commit/0f9e1bf)), closes [#15195](https://github.com/vitejs/vite/issues/15195)
+* chore: remove unneccessary eslint-disable-next-line regexp/no-unused-capturing-group (#15247) ([35a5bcf](https://github.com/vitejs/vite/commit/35a5bcf)), closes [#15247](https://github.com/vitejs/vite/issues/15247)
+
+
+
 ## <small>5.0.5 (2023-12-04)</small>
 
 * fix: emit `vite:preloadError` for chunks without deps (#15203) ([d8001c5](https://github.com/vitejs/vite/commit/d8001c5)), closes [#15203](https://github.com/vitejs/vite/issues/15203)

@@ -1,6 +1,5 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
-import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -17,25 +16,26 @@ import {
 } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import { checkPublicFile } from '../publicDir'
 import {
   cleanUrl,
   getHash,
   injectQuery,
   joinUrlSegments,
   normalizePath,
+  rawRE,
   removeLeadingSlash,
+  removeUrlQuery,
+  urlRE,
   withTrailingSlash,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import type { ModuleGraph } from '../server/moduleGraph'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
-const rawRE = /(?:\?|&)raw(?:&|$)/
-export const urlRE = /(\?|&)url(?:&|$)/
 const jsSourceMapRE = /\.[cm]?js\.map$/
-const unnededFinalQueryCharRE = /[?&]$/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -57,10 +57,6 @@ export function registerCustomMime(): void {
   mrmime.mimes['ico'] = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
-  // mrmime and mime-db is not released yet: https://github.com/jshttp/mime-db/commit/c9242a9b7d4bb25d7a0c9244adec74aeef08d8a1
-  mrmime.mimes['aac'] = 'audio/aac'
-  // https://wiki.xiph.org/MIME_Types_and_File_Extensions#.opus_-_audio/ogg
-  mrmime.mimes['opus'] = 'audio/ogg'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
 }
@@ -195,11 +191,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         )}`
       }
 
-      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+      if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
         return
       }
 
-      id = id.replace(urlRE, '$1').replace(unnededFinalQueryCharRE, '')
+      id = removeUrlQuery(id)
       let url = await fileToUrl(id, config, this)
 
       // Inherit HMR timestamp if this asset was invalidated
@@ -246,31 +242,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
       }
     },
-  }
-}
-
-export function checkPublicFile(
-  url: string,
-  { publicDir }: ResolvedConfig,
-): string | undefined {
-  // note if the file is in /public, the resolver would have returned it
-  // as-is so it's not going to be a fully resolved path.
-  if (!publicDir || url[0] !== '/') {
-    return
-  }
-  const publicFile = path.join(publicDir, cleanUrl(url))
-  if (
-    !normalizePath(publicFile).startsWith(
-      withTrailingSlash(normalizePath(publicDir)),
-    )
-  ) {
-    // can happen if URL starts with '../'
-    return
-  }
-  if (fs.existsSync(publicFile)) {
-    return publicFile
-  } else {
-    return
   }
 }
 
@@ -354,6 +325,7 @@ async function fileToBuiltUrl(
   config: ResolvedConfig,
   pluginContext: PluginContext,
   skipPublicCheck = false,
+  forceInline?: boolean,
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config)) {
     return publicFileToBuiltUrl(id, config)
@@ -369,14 +341,7 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   let url: string
-  if (
-    config.build.lib ||
-    // Don't inline SVG with fragments, as they are meant to be reused
-    (!(file.endsWith('.svg') && id.includes('#')) &&
-      !file.endsWith('.html') &&
-      content.length < Number(config.build.assetsInlineLimit) &&
-      !isGitLfsPlaceholder(content))
-  ) {
+  if (shouldInline(config, file, id, content, forceInline)) {
     if (config.build.lib && isGitLfsPlaceholder(content)) {
       config.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
@@ -417,6 +382,7 @@ export async function urlToBuiltUrl(
   importer: string,
   config: ResolvedConfig,
   pluginContext: PluginContext,
+  forceInline?: boolean,
 ): Promise<string> {
   if (checkPublicFile(url, config)) {
     return publicFileToBuiltUrl(url, config)
@@ -431,8 +397,34 @@ export async function urlToBuiltUrl(
     pluginContext,
     // skip public check since we just did it above
     true,
+    forceInline,
   )
 }
+
+const shouldInline = (
+  config: ResolvedConfig,
+  file: string,
+  id: string,
+  content: Buffer,
+  forceInline: boolean | undefined,
+): boolean => {
+  if (config.build.lib) return true
+  if (forceInline !== undefined) return forceInline
+  let limit: number
+  if (typeof config.build.assetsInlineLimit === 'function') {
+    const userShouldInline = config.build.assetsInlineLimit(file, content)
+    if (userShouldInline != null) return userShouldInline
+    limit = DEFAULT_ASSETS_INLINE_LIMIT
+  } else {
+    limit = Number(config.build.assetsInlineLimit)
+  }
+  if (file.endsWith('.html')) return false
+  // Don't inline SVG with fragments, as they are meant to be reused
+  if (file.endsWith('.svg') && id.includes('#')) return false
+  return content.length < limit && !isGitLfsPlaceholder(content)
+}
+
+const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
 
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
 function svgToDataURL(content: Buffer): string {
@@ -441,7 +433,8 @@ function svgToDataURL(content: Buffer): string {
   // need to be escaped, the gain to use a data URI would be ridiculous if not negative
   if (
     stringContent.includes('<text') ||
-    stringContent.includes('<foreignObject')
+    stringContent.includes('<foreignObject') ||
+    nestedQuotesRE.test(stringContent)
   ) {
     return `data:image/svg+xml;base64,${content.toString('base64')}`
   } else {

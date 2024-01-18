@@ -7,7 +7,6 @@ import type { ResolveFn } from '../'
 import {
   injectQuery,
   isParentDirectory,
-  normalizePath,
   slash,
   transformStableResult,
 } from '../utils'
@@ -28,7 +27,7 @@ import { tryFsResolve } from './resolve'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const normalizedPublicDir = normalizePath(config.publicDir)
+  const { publicDir } = config
   let assetResolver: ResolveFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -53,7 +52,6 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          // eslint-disable-next-line regexp/no-unused-capturing-group -- https://github.com/ota-meshi/eslint-plugin-regexp/issues/675
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
 
@@ -118,7 +116,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = await assetResolver(url, id)
             file ??=
               url[0] === '/'
-                ? slash(path.join(config.publicDir, url))
+                ? slash(path.join(publicDir, url))
                 : slash(path.resolve(path.dirname(id), url))
           }
 
@@ -127,9 +125,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let builtUrl: string | undefined
           if (file) {
             try {
-              if (isParentDirectory(normalizedPublicDir, file)) {
-                const publicPath =
-                  '/' + path.posix.relative(normalizedPublicDir, file)
+              if (isParentDirectory(publicDir, file)) {
+                const publicPath = '/' + path.posix.relative(publicDir, file)
                 builtUrl = await fileToUrl(publicPath, config, this)
               } else {
                 builtUrl = await fileToUrl(file, config, this)

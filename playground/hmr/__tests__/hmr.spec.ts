@@ -5,6 +5,7 @@ import {
   browserLogs,
   editFile,
   getBg,
+  getColor,
   isBuild,
   page,
   removeFile,
@@ -887,9 +888,9 @@ if (import.meta.hot) {
       'cc',
     )
     expect(serverLogs.length).greaterThanOrEqual(1)
+    // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
     // Match on full log not possible because of color markers
-    expect(serverLogs.at(-1)!).toContain('page reload')
-    expect(serverLogs.at(-1)!).toContain('(circular imports)')
+    expect(serverLogs.at(-1)!).toContain('hmr update')
   })
 
   test('hmr should not reload if no accepted within circular imported files', async () => {
@@ -918,5 +919,12 @@ if (import.meta.hot) {
       /Logo updated/,
     )
     await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('CSS HMR with this.addWatchFile', async () => {
+    await page.goto(viteTestUrl + '/css-deps/index.html')
+    expect(await getColor('.css-deps')).toMatch('red')
+    editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
+    await untilUpdated(() => getColor('.css-deps'), 'green')
   })
 }

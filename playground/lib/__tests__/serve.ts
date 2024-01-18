@@ -27,6 +27,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
         root: rootDir,
         logLevel: 'silent',
         server: {
+          port,
+          strictPort: true,
           watch: {
             usePolling: true,
             interval: 100,
@@ -43,7 +45,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     ).listen()
     // use resolved port/base from server
     const devBase = viteServer.config.base === '/' ? '' : viteServer.config.base
-    setViteUrl(`http://localhost:${viteServer.config.server.port}${devBase}`)
+    setViteUrl(`http://localhost:${port}${devBase}`)
     await page.goto(viteTestUrl)
 
     return viteServer

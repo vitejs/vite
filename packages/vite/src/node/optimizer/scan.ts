@@ -550,7 +550,6 @@ function esbuildScanPlugin(
       // should be faster than doing it in the catch-all via js
       // they are done after the bare import resolve because a package name
       // may end with these extensions
-
       const setupExternalize = (
         filter: RegExp,
         doExternalize: (path: string) => boolean,
@@ -560,16 +559,6 @@ function esbuildScanPlugin(
             path,
             external: doExternalize(path),
           }
-        })
-        // onResolve is not called for glob imports.
-        // we need to add that here as well until esbuild calls onResolve for glob imports.
-        // https://github.com/evanw/esbuild/issues/3317
-        build.onLoad({ filter, namespace: 'file' }, () => {
-          const externalOnLoadResult: OnLoadResult = {
-            loader: 'js',
-            contents: 'export default {}',
-          }
-          return externalOnLoadResult
         })
       }
 
@@ -645,6 +634,16 @@ function esbuildScanPlugin(
         return {
           loader,
           contents,
+        }
+      })
+
+      // onResolve is not called for glob imports.
+      // we need to add that here as well until esbuild calls onResolve for glob imports.
+      // https://github.com/evanw/esbuild/issues/3317
+      build.onLoad({ filter: /.*/, namespace: 'file' }, () => {
+        return {
+          loader: 'js',
+          contents: 'export default {}',
         }
       })
     },

@@ -4,20 +4,21 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
   normalizePath,
-  parseRequest,
+  rawRE,
   requestQueryMaybeEscapedSplitRE,
   requestQuerySplitRE,
   transformStableResult,
+  urlRE,
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
+import { workerOrSharedWorkerRE } from './worker'
 
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
 
@@ -28,8 +29,7 @@ const relativePathRE = /^\.{1,2}\//
 const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
-  as?: keyof KnownAsTypeMap
-  query?: Record<string, string>
+  query?: string | Record<string, string>
   import?: string
 }
 
@@ -55,9 +55,6 @@ function parseDynamicImportPattern(
   strings: string,
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
-  const rawQuery = parseRequest(filename)
-  let globParams: DynamicImportRequest | null = null
-
   const ast = (
     parseJS(strings, {
       ecmaVersion: 'latest',
@@ -75,20 +72,23 @@ function parseDynamicImportPattern(
     requestQueryMaybeEscapedSplitRE,
     2,
   )
-  const [rawPattern] = filename.split(requestQuerySplitRE, 2)
-
-  const as = (['worker', 'url', 'raw'] as const).find(
-    (key) => rawQuery && key in rawQuery,
-  )
-
-  if (as) {
-    globParams = {
-      as,
-      import: '*',
-    }
-  } else if (rawQuery) {
-    globParams = {
-      query: rawQuery,
+  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
+  let globParams: DynamicImportRequest | null = null
+  if (search) {
+    search = '?' + search
+    if (
+      workerOrSharedWorkerRE.test(search) ||
+      urlRE.test(search) ||
+      rawRE.test(search)
+    ) {
+      globParams = {
+        query: search,
+        import: '*',
+      }
+    } else {
+      globParams = {
+        query: search,
+      }
     }
   }
 

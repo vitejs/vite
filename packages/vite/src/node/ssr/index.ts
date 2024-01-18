@@ -6,7 +6,7 @@ export type SsrDepOptimizationOptions = DepOptimizationConfig
 
 export interface SSROptions {
   noExternal?: string | RegExp | (string | RegExp)[] | true
-  external?: string[]
+  external?: string[] | true
 
   /**
    * Define the target for the ssr build. The browser field in package.json
@@ -60,8 +60,8 @@ export function resolveSSROptions(
     target,
     ...ssr,
     optimizeDeps: {
-      disabled: true,
       ...optimizeDeps,
+      noDiscovery: true, // always true for ssr
       esbuildOptions: {
         preserveSymlinks,
         ...optimizeDeps.esbuildOptions,
