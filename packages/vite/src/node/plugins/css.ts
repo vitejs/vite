@@ -1964,8 +1964,8 @@ function loadPreprocessorPath(
     const resolved = requireResolveFromRootWithFallback(root, lang)
     return (loadedPreprocessorPath[lang] = resolved)
   } catch (e) {
-    const installCommand = getPackageManagerCommand('install')
     if (e.code === 'MODULE_NOT_FOUND') {
+      const installCommand = getPackageManagerCommand('install')
       throw new Error(
         `Preprocessor dependency "${lang}" not found. Did you install it? Try \`${installCommand} -D ${lang}\`.`,
       )
