@@ -239,6 +239,10 @@ export default defineConfig({
               link: '/guide/ssr',
             },
             {
+              text: 'Monorepo packages',
+              link: '/guide/monorepo-packages',
+            },
+            {
               text: 'Backend Integration',
               link: '/guide/backend-integration',
             },
