@@ -563,7 +563,7 @@ const animateSingleInputMobile = (inputLine) => {
     box-shadow: 0 18px 28px 0 rgba(0, 0, 0, 0.4);
 
     .vite-chip__filter {
-      transform: translate3d(0, 0, 0) scale(0.98);
+      transform: translate3d(0, 0, 0) scale(0.97);
 
       &:before {
         animation: shimmer 8s infinite linear;

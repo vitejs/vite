@@ -4,7 +4,6 @@ html:has(.landing) {
 
 .landing {
   overflow-x: hidden;
-  touch-action: pan-y;
 
   .VPNavBar,
   .VPNavBar:not(.top) {
