@@ -2085,7 +2085,7 @@ const makeScssWorker = (
         // additionalData can a function that is not cloneable but it won't be used
         options: SassStylePreprocessorOptions & { additionalData: undefined },
       ) => {
-        // eslint-disable-next-line no-restricted-globals
+        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const sass: typeof Sass = require(sassPath)
         // eslint-disable-next-line no-restricted-globals
         const path = require('node:path')
@@ -2310,7 +2310,7 @@ const makeLessWorker = (
 
   const worker = new WorkerWithFallback(
     () => {
-      // eslint-disable-next-line no-restricted-globals
+      // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
       const fsp = require('node:fs/promises')
       // eslint-disable-next-line no-restricted-globals
       const path = require('node:path')
@@ -2367,7 +2367,7 @@ const makeLessWorker = (
         // additionalData can a function that is not cloneable but it won't be used
         options: StylePreprocessorOptions & { additionalData: undefined },
       ) => {
-        // eslint-disable-next-line no-restricted-globals
+        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const nodeLess: typeof Less = require(lessPath)
         const viteResolverPlugin = createViteLessPlugin(
           nodeLess,
@@ -2477,7 +2477,7 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
         // additionalData can a function that is not cloneable but it won't be used
         options: StylusStylePreprocessorOptions & { additionalData: undefined },
       ) => {
-        // eslint-disable-next-line no-restricted-globals
+        // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const nodeStylus: typeof Stylus = require(stylusPath)
 
         const ref = nodeStylus(content, options)
