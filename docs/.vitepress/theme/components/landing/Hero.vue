@@ -144,6 +144,13 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
       width: 40vw;
       aspect-ratio: 3;
       filter: blur(10vw);
+      max-width: 700px;
+    }
+
+    @media (min-width: 1930px) {
+      left: 50%;
+      filter: blur(200px);
+      transform: rotate(-5deg) translate3d(-100%, 10vh, 0);
     }
   }
 
@@ -178,6 +185,13 @@ import HeroDiagram from './hero-diagram/HeroDiagram.vue'
       aspect-ratio: 4;
       transform: rotate(5deg);
       filter: blur(10vw);
+      max-width: 1400px;
+    }
+
+    @media (min-width: 1930px) {
+      left: 50%;
+      filter: blur(200px);
+      transform: rotate(-5deg) translate3d(-40%, 0, 0);
     }
   }
 }
