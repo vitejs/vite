@@ -226,7 +226,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const msAtStart = debug && performance.now()
+      const msAtStart = debug ? performance.now() : 0
       await init
       let imports!: readonly ImportSpecifier[]
       let exports!: readonly ExportSpecifier[]
@@ -259,7 +259,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(msAtStart!)} ${colors.dim(
+          `${timeFrom(msAtStart)} ${colors.dim(
             `[no imports] ${prettifyUrl(importer, root)}`,
           )}`,
         )
@@ -790,7 +790,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       debug?.(
-        `${timeFrom(msAtStart!)} ${colors.dim(
+        `${timeFrom(msAtStart)} ${colors.dim(
           `[${importedUrls.size} imports rewritten] ${prettifyUrl(
             importer,
             root,
