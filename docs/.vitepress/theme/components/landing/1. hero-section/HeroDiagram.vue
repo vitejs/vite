@@ -108,11 +108,11 @@ const animateDiagram = () => {
 
   // Illuminate the logo and colored indicators
   timeline.set(blueIndicator, { value: true }, isMobile ? '>-2' : '>-0.2')
-  timeline.set(illuminateLogo, { value: true }, '<-0.1')
+  timeline.set(illuminateLogo, { value: true }, '<-0.3')
   timeline.set(pinkIndicator, { value: true }, '<+0.3')
 
   // Animate the output nodes/lines
-  timeline.addLabel('showOutput', '<+0.2')
+  timeline.addLabel('showOutput', '<+0.4')
   outputLines.forEach((outputLine, index) => {
     timeline.add(
       isMobile
@@ -210,7 +210,7 @@ const animateSingleOutputDesktop = (outputLine, index) => {
       duration: 1.5,
       ease: 'power3.in',
     },
-    2.5,
+    3,
   )
 
   // Hide the label
@@ -219,7 +219,7 @@ const animateSingleOutputDesktop = (outputLine, index) => {
     {
       value: false,
     },
-    3,
+    3.5,
   )
 
   // Hide the dot
@@ -228,7 +228,7 @@ const animateSingleOutputDesktop = (outputLine, index) => {
     {
       value: false,
     },
-    3.5,
+    4,
   )
 
   return timeline
@@ -339,7 +339,7 @@ const animateSingleInputDesktop = (inputLine) => {
       duration: 1.5,
       ease: 'power3.in',
     },
-    1.5,
+    2,
   )
 
   // Hide the label
@@ -348,7 +348,7 @@ const animateSingleInputDesktop = (inputLine) => {
     {
       value: false,
     },
-    2,
+    2.5,
   )
 
   // Hide the dot
@@ -357,7 +357,7 @@ const animateSingleInputDesktop = (inputLine) => {
     {
       value: false,
     },
-    2.5,
+    3,
   )
 
   // Return the timeline
@@ -433,6 +433,7 @@ const animateSingleInputMobile = (inputLine) => {
     <div class="vite-chip" :class="{ active: illuminateLogo }">
       <div class="vite-chip__background">
         <div class="vite-chip__border" />
+        <div class="vite-chip__edge"></div>
       </div>
       <div class="vite-chip__filter" />
       <img src="/logo.svg" alt="Vite Logo" class="vite-chip__logo" />
@@ -455,16 +456,15 @@ const animateSingleInputMobile = (inputLine) => {
 }
 
 .vite-chip {
-  width: 130px;
-  height: 130px;
-  border: 1px solid rgba(17, 17, 17, 0.2);
+  width: 134px;
+  height: 134px;
   position: absolute;
   left: 750px;
   top: 260px;
-  border-radius: 15px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.2);
-  transition: all 0.5s ease;
+  transition: all 0.6s ease-out;
+  transform: translate3d(0, 0, 0) scale(0.85);
 
   .vite-chip__filter {
     position: absolute;
@@ -476,47 +476,43 @@ const animateSingleInputMobile = (inputLine) => {
     transition: transform 0.3s ease-in-out;
     background: linear-gradient(
         130deg,
-        rgba(42, 33, 63, 0.5) 0%,
-        rgba(94, 77, 138, 0.5) 35%,
-        rgba(42, 33, 63, 0.5) 90%
-      ),
-      linear-gradient(
-        130deg,
-        rgba(96, 72, 157, 0.3) 0%,
-        rgba(42, 33, 63, 0) 40%
+        rgba(61, 61, 61, 0.3) 0%,
+        rgba(61, 61, 61, 0) 40%
       ),
       linear-gradient(
         130deg,
         rgba(42, 33, 63, 0) 60%,
-        rgba(96, 72, 157, 0.3) 100%
+        rgba(61, 61, 61, 0.3) 100%
       ),
-      rgba(0, 0, 0, 0.8);
+      linear-gradient(to bottom, rgba(16, 14, 26, 0.3) 60%, rgba(12, 12, 12, 0));
     backdrop-filter: blur(1px);
+    border-radius: 10px;
 
     &:after {
       content: '';
       position: absolute;
-      top: -1px;
+      top: -10px;
       left: 0;
       right: 0;
       bottom: 0;
       z-index: 5;
       background: linear-gradient(
         130deg,
-        rgba(42, 33, 63, 0) 40%,
-        rgba(94, 77, 138, 0.3) 50%,
-        rgba(42, 33, 63, 0) 60%
+        rgba(61, 61, 61, 0) 45%,
+        rgba(154, 152, 222, 0.3) 50%,
+        rgba(61, 61, 61, 0) 60%
       );
       background-size: 500%;
       background-position-x: 100%;
+      filter: blur(8px);
+      border-radius: 100px;
       mix-blend-mode: color-dodge;
-      filter: blur(6px);
     }
 
     &:before {
       content: '';
       position: absolute;
-      top: -1px;
+      top: -10px;
       left: 0;
       right: 0;
       bottom: 0;
@@ -524,25 +520,41 @@ const animateSingleInputMobile = (inputLine) => {
       background: linear-gradient(
         -130deg,
         rgba(42, 33, 63, 0) 40%,
-        rgba(94, 77, 138, 0.3) 50%,
+        rgba(154, 152, 222, 0.2) 50%,
         rgba(42, 33, 63, 0) 60%
       );
       background-size: 400%;
       background-position-x: 100%;
+      filter: blur(10px);
+      border-radius: 100px;
       mix-blend-mode: color-dodge;
-      filter: blur(6px);
     }
+  }
+
+  .vite-chip__edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid;
+    border-image-slice: 1;
+    border-image-source: linear-gradient(
+      to bottom right,
+      rgba(0, 0, 0, 0) 30%,
+      rgba(255, 255, 255, 0.1) 60%,
+      rgba(0, 0, 0, 0) 90%
+    );
   }
 
   .vite-chip__border {
     position: absolute;
-    top: 0;
-    right: 0;
-    left: 0;
-    bottom: 0;
-    border-radius: 20px;
-    border: 1px solid rgba(84, 66, 131, 0.01);
-    border-top-color: rgba(137, 172, 225, 0.4);
+    top: 2px;
+    right: 2px;
+    left: 2px;
+    bottom: 2px;
+    border-radius: 10px;
+    border: 0 solid rgba(89, 82, 108, 0.3);
     opacity: 0.8;
     background: rgba(40, 40, 40, 0.3);
   }
@@ -552,18 +564,19 @@ const animateSingleInputMobile = (inputLine) => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
-    width: 67px;
-    opacity: 0.1;
+    width: 65px;
+    opacity: 0.2;
     filter: grayscale(100%);
     transition: all 0.6s ease;
     z-index: 3;
   }
 
   &.active {
-    box-shadow: 0 18px 28px 0 rgba(0, 0, 0, 0.4);
+    transform: translate3d(0, 0, 0) scale(1);
+    box-shadow: 0 30px 35px -10px rgba(0, 0, 0, 0.6);
 
     .vite-chip__filter {
-      transform: translate3d(0, 0, 0) scale(0.97);
+      transform: translate3d(0, 0, 0) scale(0.99);
 
       &:before {
         animation: shimmer 8s infinite linear;
@@ -572,6 +585,11 @@ const animateSingleInputMobile = (inputLine) => {
       &:after {
         animation: shimmer 6s infinite linear;
       }
+    }
+
+    .vite-chip__border {
+      border-width: 5px;
+      transition: all 1s ease;
     }
 
     .vite-chip__logo {
