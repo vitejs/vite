@@ -5,6 +5,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
 import {
+  initRollupParseAst,
   injectQuery,
   isParentDirectory,
   slash,
@@ -54,6 +55,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const assetImportMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
+
+        await initRollupParseAst()
 
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
