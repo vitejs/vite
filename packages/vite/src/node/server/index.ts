@@ -15,7 +15,6 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
-import type { InvalidatePayload } from 'types/customEvent'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -74,8 +73,9 @@ import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import type { HmrOptions } from './hmr'
+import type { HMRBroadcaster, HmrOptions } from './hmr'
 import {
+  createHMRBroadcaster,
   getShortName,
   handleFileAddUnlink,
   handleHMRUpdate,
@@ -232,8 +232,16 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
+   * @deprecated use `hot` instead
    */
   ws: WebSocketServer
+  /**
+   * HMR broadcaster that can be used to send custom HMR messages to the client
+   *
+   * Always sends a message to at least a WebSocket client. Any third party can
+   * add a channel to the broadcaster to process messages
+   */
+  hot: HMRBroadcaster
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    */
@@ -379,12 +387,12 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { ws: true })
+  return _createServer(inlineConfig, { hotListen: true })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { ws: boolean },
+  options: { hotListen: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -403,7 +411,12 @@ export async function _createServer(
   const httpServer = middlewareMode
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
+  const hot = createHMRBroadcaster().addChannel(ws)
+  if (typeof config.server.hmr === 'object' && config.server.hmr.channels) {
+    config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
+  }
 
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
@@ -441,6 +454,7 @@ export async function _createServer(
     watcher,
     pluginContainer: container,
     ws,
+    hot,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -559,7 +573,7 @@ export async function _createServer(
       }
       await Promise.allSettled([
         watcher.close(),
-        ws.close(),
+        hot.close(),
         container.close(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
@@ -654,7 +668,7 @@ export async function _createServer(
       try {
         await handleHMRUpdate(file, server, configOnly)
       } catch (err) {
-        ws.send({
+        hot.send({
           type: 'error',
           err: prepareError(err),
         })
@@ -694,7 +708,7 @@ export async function _createServer(
     onFileAddUnlink(file, true)
   })
 
-  ws.on('vite:invalidate', async ({ path, message }: InvalidatePayload) => {
+  hot.on('vite:invalidate', async ({ path, message }) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
@@ -839,7 +853,7 @@ export async function _createServer(
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
         // ensure ws server started
-        ws.listen()
+        hot.listen()
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
@@ -848,8 +862,8 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    if (options.ws) {
-      ws.listen()
+    if (options.hotListen) {
+      hot.listen()
     }
     await initServer()
   }
@@ -887,9 +901,11 @@ async function startServer(
   server._currentServerPort = serverPort
 }
 
-function createServerCloseFn(server: HttpServer | null) {
+export function createServerCloseFn(
+  server: HttpServer | null,
+): () => Promise<void> {
   if (!server) {
-    return () => {}
+    return () => Promise.resolve()
   }
 
   let hasListened = false
@@ -1000,7 +1016,7 @@ async function restartServer(server: ViteDevServer) {
     let newServer = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { ws: false })
+      newServer = await _createServer(inlineConfig, { hotListen: false })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,
@@ -1033,7 +1049,7 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    server.ws.listen()
+    server.hot.listen()
   }
   logger.info('server restarted.', { timestamp: true })
 

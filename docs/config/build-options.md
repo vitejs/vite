@@ -82,10 +82,12 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 
 ## build.assetsInlineLimit
 
-- **Type:** `number`
+- **Type:** `number` | `((filePath: string, content: Buffer) => boolean | undefined)`
 - **Default:** `4096` (4 KiB)
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
+
+If a callback is passed, a boolean can be returned to opt-in or opt-out. If nothing is returned the default logic applies.
 
 Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent.
 
@@ -191,7 +193,7 @@ During the SSR build, static assets aren't emitted as it is assumed they would b
 ## build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
-- **Default:** `'esbuild'`
+- **Default:** `'esbuild'` for client build, `false` for SSR build
 
 Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 

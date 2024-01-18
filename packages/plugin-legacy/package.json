@@ -45,6 +45,7 @@
     "@babel/preset-env": "^7.23.8",
     "browserslist": "^4.22.2",
     "core-js": "^3.35.0",
+    "esbuild-plugin-browserslist": "^0.10.0",
     "magic-string": "^0.30.5",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.14.3"

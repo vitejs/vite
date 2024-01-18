@@ -16,6 +16,7 @@ import {
   removeImportQuery,
   removeTimestampQuery,
   unwrapId,
+  urlRE,
   withTrailingSlash,
 } from '../../utils'
 import { send } from '../send'
@@ -38,7 +39,6 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { urlRE } from '../../plugins/asset'
 
 const debugCache = createDebugger('vite:cache')
 
