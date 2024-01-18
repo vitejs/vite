@@ -144,9 +144,13 @@ const { data } = useSponsor()
       display: block;
       border-radius: 12px;
       border: 1px solid rgba(38, 38, 38, 0.7);
-      background: rgba(38, 38, 38, 0.25);
-      backdrop-filter: blur(1px);
+      background: #161616;
       margin: 20px auto;
+
+      @media (min-width: 768px) {
+        background: rgba(38, 38, 38, 0.25);
+        backdrop-filter: blur(1px);
+      }
     }
 
     &:deep(.vp-sponsor-grid) {
