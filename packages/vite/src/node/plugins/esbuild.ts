@@ -491,7 +491,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     // server may not be available if vite config is updated at the same time
     if (server) {
       // force full reload
-      server.ws.send({
+      server.hot.send({
         type: 'full-reload',
         path: '*',
       })

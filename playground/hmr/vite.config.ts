@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 
@@ -12,18 +14,19 @@ export default defineConfig({
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          server.ws.send('custom:foo', { msg })
-          server.ws.send('custom:remove', { msg })
+          server.hot.send('custom:foo', { msg })
+          server.hot.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
-        server.ws.on('custom:remote-add', ({ a, b }, client) => {
+        server.hot.on('custom:remote-add', ({ a, b }, client) => {
           client.send('custom:remote-add-result', { result: a + b })
         })
       },
     },
     virtualPlugin(),
     transformCountPlugin(),
+    watchCssDepsPlugin(),
   ],
 })
 
@@ -44,7 +47,7 @@ export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.ws.on('virtual:increment', async () => {
+      server.hot.on('virtual:increment', async () => {
         const mod = await server.moduleGraph.getModuleByUrl('\0virtual:file')
         if (mod) {
           num++
@@ -62,6 +65,23 @@ function transformCountPlugin(): Plugin {
     transform(code) {
       if (code.includes('__TRANSFORM_COUNT__')) {
         return code.replace('__TRANSFORM_COUNT__', String(++num))
+      }
+    },
+  }
+}
+
+function watchCssDepsPlugin(): Plugin {
+  return {
+    name: 'watch-css-deps',
+    async transform(code, id) {
+      // replace the `replaced` identifier in the CSS file with the adjacent
+      // `dep.js` file's `color` variable.
+      if (id.includes('css-deps/main.css')) {
+        const depPath = path.resolve(__dirname, './css-deps/dep.js')
+        const dep = await fs.readFile(depPath, 'utf-8')
+        const color = dep.match(/color = '(.+?)'/)[1]
+        this.addWatchFile(depPath)
+        return code.replace('replaced', color)
       }
     },
   }
