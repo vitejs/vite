@@ -18,14 +18,6 @@ interface HotCallback {
 export interface HMRLogger {
   error(msg: string | Error): void
   debug(...msg: unknown[]): void
-  /**
-   * Log when HMR update is applied
-   */
-  updated(update: Update): void
-  /**
-   * Log when a module is invalidated via "import.meta.hot.invalidate"
-   */
-  invalidated(id: string, message?: string): void
 }
 
 export interface HMRConnection {
@@ -120,7 +112,9 @@ export class HMRContext implements ViteHotContext {
       message,
     })
     this.send('vite:invalidate', { path: this.ownerPath, message })
-    this.hmrClient.logger.invalidated(this.ownerPath, message)
+    this.hmrClient.logger.debug(
+      `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
+    )
   }
 
   on<T extends string>(
@@ -304,7 +298,8 @@ export class HMRClient {
           deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)),
         )
       }
-      this.logger.updated(update)
+      const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
+      this.logger.debug(`[vite] hot updated: ${loggedPath}`)
     }
   }
 }
