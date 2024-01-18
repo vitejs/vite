@@ -53,12 +53,12 @@ const props = withDefaults(defineProps<SvgNodeProps>(), {
 /**
  * A unique id for the path, to avoid collisions in a single SVG output.
  */
-const pathId: Ref<String> = ref(Math.random().toString(36))
+const pathId: Ref<string> = ref(Math.random().toString(36))
 
 /**
  * A ref for the path element in the SVG DOM.
  */
-const pathElement: Ref<String | null> = ref(null)
+const pathElement: Ref<string | null> = ref(null)
 
 /**
  * The radius on each side of the dot, represented as a glow on the SVG path.
@@ -71,6 +71,14 @@ const gradientWidth: Ref<number> = ref(30)
 const gradientWidthScaleFactor: Ref<number> = ref(props.visible ? 1 : 0)
 
 /**
+ * The length of the SVG path.
+ */
+const pathLength: ComputedRef<number> = computed(() => {
+  if (!pathElement.value) return 0
+  return pathElement.value.getTotalLength()
+})
+
+/**
  * The computed position of the dot along the path.
  */
 const dotPosition: ComputedRef<{
@@ -78,8 +86,9 @@ const dotPosition: ComputedRef<{
   y: number
 }> = computed(() => {
   if (!pathElement.value) return { x: 0, y: 0 }
-  const pathLength = pathElement.value.getTotalLength()
-  return pathElement.value.getPointAtLength((1 - props.position) * pathLength)
+  return pathElement.value.getPointAtLength(
+    (1 - props.position) * pathLength.value,
+  )
 })
 
 /**
