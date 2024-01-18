@@ -229,9 +229,11 @@ function isPackageInWorkspace(basePath: string): boolean {
     return true
   }
 
-  const resolvedPath = fs.realpathSync(basePath)
+  // For soft links (workspace:, link:), this will return the source path
+  // For hard links (file:, node modules), this will return self
+  const realPath = fs.realpathSync(basePath)
 
-  return resolvedPath !== basePath && !resolvedPath.includes('node_modules')
+  return realPath !== basePath && !realPath.includes('node_modules')
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {

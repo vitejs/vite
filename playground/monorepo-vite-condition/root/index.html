@@ -1,11 +1,25 @@
 <div>Main default: <span id="main-default"></span></div>
+<div>Main external (in node modules): <span id="main-external"></span></div>
+<div>Main internal (link node modules): <span id="main-internal"></span></div>
+
 <div>Exports default: <span id="exports-default"></span></div>
 <div>Exports deep: <span id="exports-deep"></span></div>
+<div>
+  Exports external (in node modules): <span id="exports-external"></span>
+</div>
+<div>
+  Exports internal (link node modules): <span id="exports-internal"></span>
+</div>
 
 <script type="module">
   import { exports, main } from './src/index.mjs'
 
-  document.getElementById('main-default').textContent = main
+  document.getElementById('main-default').textContent = main.default
+  document.getElementById('main-external').textContent = main.external
+  document.getElementById('main-internal').textContent = main.internal
+
   document.getElementById('exports-default').textContent = exports.default
   document.getElementById('exports-deep').textContent = exports.deep
+  document.getElementById('exports-external').textContent = exports.external
+  document.getElementById('exports-internal').textContent = exports.internal
 </script>

@@ -793,24 +793,40 @@ importers:
 
   playground/monorepo-alias/shared: {}
 
-  playground/monorepo-vite-condition:
-    devDependencies:
-      '@vitejs/test-resolve-linked':
-        specifier: workspace:*
-        version: link:../resolve-linked
+  playground/monorepo-vite-condition: {}
 
   playground/monorepo-vite-condition/exports: {}
 
+  playground/monorepo-vite-condition/exports-external: {}
+
+  playground/monorepo-vite-condition/exports-internal: {}
+
   playground/monorepo-vite-condition/main: {}
+
+  playground/monorepo-vite-condition/main-external: {}
+
+  playground/monorepo-vite-condition/main-internal: {}
 
   playground/monorepo-vite-condition/root:
     dependencies:
       '@vitejs/test-monorepo-vite-condition-exports':
         specifier: workspace:*
         version: link:../exports
+      '@vitejs/test-monorepo-vite-condition-exports-external':
+        specifier: file:../exports-external
+        version: file:playground/monorepo-vite-condition/exports-external
+      '@vitejs/test-monorepo-vite-condition-exports-internal':
+        specifier: link:../exports-internal
+        version: link:../exports-internal
       '@vitejs/test-monorepo-vite-condition-main':
         specifier: workspace:*
         version: link:../main
+      '@vitejs/test-monorepo-vite-condition-main-external':
+        specifier: file:../main-external
+        version: file:playground/monorepo-vite-condition/main-external
+      '@vitejs/test-monorepo-vite-condition-main-internal':
+        specifier: link:../main-internal
+        version: link:../main-internal
 
   playground/multiple-entrypoints:
     devDependencies:
@@ -9747,6 +9763,16 @@ packages:
   file:playground/minify/dir/module:
     resolution: {directory: playground/minify/dir/module, type: directory}
     name: '@vitejs/test-minify'
+    dev: false
+
+  file:playground/monorepo-vite-condition/exports-external:
+    resolution: {directory: playground/monorepo-vite-condition/exports-external, type: directory}
+    name: '@vitejs/test-monorepo-vite-condition-exports-external'
+    dev: false
+
+  file:playground/monorepo-vite-condition/main-external:
+    resolution: {directory: playground/monorepo-vite-condition/main-external, type: directory}
+    name: '@vitejs/test-monorepo-vite-condition-main-external'
     dev: false
 
   file:playground/optimize-deps-no-discovery/dep-no-discovery:

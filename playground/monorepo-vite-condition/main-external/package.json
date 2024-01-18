@@ -1,0 +1,14 @@
+{
+  "name": "@vitejs/test-monorepo-vite-condition-main-external",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "vite": "./src/main.ts",
+  "main": "./build/main.js"
+}

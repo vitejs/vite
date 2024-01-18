@@ -11,6 +11,10 @@
   },
   "dependencies": {
     "@vitejs/test-monorepo-vite-condition-exports": "workspace:*",
-    "@vitejs/test-monorepo-vite-condition-main": "workspace:*"
+    "@vitejs/test-monorepo-vite-condition-exports-external": "file:../exports-external",
+    "@vitejs/test-monorepo-vite-condition-exports-internal": "link:../exports-internal",
+    "@vitejs/test-monorepo-vite-condition-main": "workspace:*",
+    "@vitejs/test-monorepo-vite-condition-main-external": "file:../main-external",
+    "@vitejs/test-monorepo-vite-condition-main-internal": "link:../main-internal"
   }
 }
