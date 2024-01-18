@@ -10,7 +10,6 @@ import type {
   OnLoadResult,
   Plugin,
 } from 'esbuild'
-import esbuild, { formatMessages, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import {
@@ -135,6 +134,7 @@ export function scanImports(config: ResolvedConfig): {
 
   `)
       if (e.errors) {
+        const { formatMessages } = await import('esbuild')
         const msgs = await formatMessages(e.errors, {
           kind: 'error',
           color: true,
@@ -216,6 +216,7 @@ async function prepareEsbuildScanner(
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
+  const esbuild = (await import('esbuild')).default
   return await esbuild.context({
     absWorkingDir: process.cwd(),
     write: false,
@@ -315,6 +316,7 @@ function esbuildScanPlugin(
     let transpiledContents
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
+      const { transform } = await import('esbuild')
       transpiledContents = (await transform(contents, { loader })).code
     } else {
       transpiledContents = contents

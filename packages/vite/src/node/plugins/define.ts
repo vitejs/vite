@@ -1,4 +1,3 @@
-import { transform } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, getHash } from '../utils'
@@ -148,6 +147,7 @@ export async function replaceDefine(
 
   const esbuildOptions = config.esbuild || {}
 
+  const { transform } = await import('esbuild')
   const result = await transform(code, {
     loader: 'js',
     charset: esbuildOptions.charset ?? 'utf8',
