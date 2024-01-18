@@ -259,9 +259,9 @@ const animateSingleOutputMobile = (outputLine, index) => {
     {
       value: 0.7,
       duration: 3,
-      ease: 'power3.out',
+      ease: 'power2.out',
     },
-    0.2,
+    0.3,
   )
 
   // Show the dot
@@ -270,7 +270,7 @@ const animateSingleOutputMobile = (outputLine, index) => {
     {
       value: true,
     },
-    0,
+    0.35,
   )
 
   // Hide the dot
@@ -387,7 +387,7 @@ const animateSingleInputMobile = (inputLine) => {
     {
       value: 1,
       duration: 2,
-      ease: 'power3.out',
+      ease: 'power2.out',
     },
     0,
   )
@@ -407,7 +407,7 @@ const animateSingleInputMobile = (inputLine) => {
     {
       value: false,
     },
-    1.1,
+    0.6,
   )
 
   // Return the timeline
@@ -451,7 +451,7 @@ const animateSingleInputMobile = (inputLine) => {
 
   @media (max-width: 1630px) {
     left: 50%;
-    transform: translateX(-50%) scale(0.9);
+    transform: translateX(-50%);
   }
 }
 
@@ -485,7 +485,6 @@ const animateSingleInputMobile = (inputLine) => {
         rgba(61, 61, 61, 0.3) 100%
       ),
       linear-gradient(to bottom, rgba(16, 14, 26, 0.3) 60%, rgba(12, 12, 12, 0));
-    backdrop-filter: blur(4px);
     border-radius: 10px;
 
     &:after {
@@ -541,8 +540,8 @@ const animateSingleInputMobile = (inputLine) => {
     border-image-slice: 1;
     border-image-source: linear-gradient(
       to bottom right,
-      rgba(0, 0, 0, 0) 30%,
-      rgba(255, 255, 255, 0.1) 60%,
+      rgba(0, 0, 0, 0) 50%,
+      rgba(255, 255, 255, 0.15) 60%,
       rgba(0, 0, 0, 0) 90%
     );
   }
@@ -576,7 +575,7 @@ const animateSingleInputMobile = (inputLine) => {
     box-shadow: 0 30px 35px -10px rgba(0, 0, 0, 0.6);
 
     .vite-chip__filter {
-      transform: translate3d(0, 0, 0) scale(0.99);
+      transform: translate3d(0, 0, 0) scale(0.97);
 
       &:before {
         animation: shimmer 8s infinite linear;
