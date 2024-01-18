@@ -424,7 +424,7 @@ const startAnimation = () => {
     transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.2);
     will-change: filter, transform;
     filter: grayscale(1) brightness(0.4)
-      cx 0px 1px rgba(0, 0, 0, 0.1));
+      drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.1));
     transform: translate3d(0, 0, 0);
   }
 

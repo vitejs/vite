@@ -130,15 +130,6 @@
   position: relative;
   overflow: hidden;
 
-  &:deep(.vite-chip) {
-    width: 84px;
-    margin: 0 auto 40px;
-
-    &:deep(.vite-chip__logo) {
-      opacity: 0.8;
-    }
-  }
-
   h2 {
     color: #fff;
     font-size: 44px;
@@ -171,6 +162,37 @@
     width: 84px;
     aspect-ratio: 1;
     filter: drop-shadow(0px 18px 33px rgba(0, 0, 0, 0.5));
+    margin: 0 auto 40px;
+
+    &:before {
+      content: '';
+      position: absolute;
+      bottom: -30px;
+      left: -20px;
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(180deg, #61d9ff 0%, rgba(0, 0, 0, 0) 100%);
+      z-index: -1;
+      filter: blur(30px);
+    }
+
+    &:after {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(
+        270deg,
+        #7a23a1 0%,
+        rgba(113, 94, 189, 0.9) 60%,
+        rgba(113, 94, 189, 0.9) 80%,
+        rgba(189, 52, 254, 0) 100%
+      );
+      z-index: -1;
+      filter: blur(30px);
+    }
 
     svg {
       position: absolute;
@@ -179,11 +201,20 @@
       width: 100%;
       height: 100%;
       max-width: 100%;
+      z-index: 2;
+      border: 1px solid #2f2f2f;
+      border-radius: 5px;
+      filter: drop-shadow(0px 10px 5px rgba(0, 0, 0, 0.5));
     }
 
     .vite-chip__logo {
       position: relative;
       width: 50%;
+      opacity: 0.8;
+      z-index: 3;
+      filter: drop-shadow(
+        0 0 0.6rem color-mix(in srgb, #ffffad 50%, transparent)
+      );
     }
   }
 
