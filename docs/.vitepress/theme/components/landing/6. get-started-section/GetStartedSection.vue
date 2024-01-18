@@ -241,14 +241,6 @@
       }
 
       @media (min-width: 1025px) {
-        filter: blur(5vw);
-        bottom: -40%;
-        width: 50%;
-        left: 10%;
-        opacity: 0.3;
-      }
-
-      @media (min-width: 1930px) {
         filter: blur(80px);
         width: 900px;
         left: calc(50% - 700px);
@@ -283,14 +275,6 @@
       }
 
       @media (min-width: 1025px) {
-        filter: blur(5vw);
-        bottom: -40%;
-        width: 50%;
-        right: 10%;
-        opacity: 0.3;
-      }
-
-      @media (min-width: 1930px) {
         filter: blur(90px);
         width: 1100px;
         right: calc(50% - 700px);

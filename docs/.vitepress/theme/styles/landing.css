@@ -17,7 +17,7 @@ html:has(.landing) {
     backdrop-filter: blur(10px);
 
     @media (min-width: 768px) {
-      background: rgba(23, 23, 23, 0.8) !important;
+      background: rgba(15, 15, 15, 0.8) !important;
       border-bottom: 1px solid #262626 !important;
     }
 

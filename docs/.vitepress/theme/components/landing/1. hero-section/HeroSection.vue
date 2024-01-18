@@ -120,30 +120,38 @@ import HeroDiagram from './HeroDiagram.vue'
 .hero__glow {
   &.glow--blue {
     position: absolute;
-    left: -60vw;
-    width: 110vw;
+    left: -200px;
+    width: 500px;
     aspect-ratio: 1;
     pointer-events: none;
     z-index: -2;
     border-radius: 100%;
-    background: linear-gradient(180deg, #61d9ff 0%, rgba(0, 0, 0, 0) 100%);
-    filter: blur(30vw);
+    background: linear-gradient(
+      to left,
+      #107694 0%,
+      #43c9ff 50%,
+      rgb(103, 91, 168) 70%,
+      transparent 100%
+    );
+    filter: blur(10vw);
+    opacity: 0.2;
     transform: none;
-    opacity: 0.3;
 
     @media (min-width: 768px) {
+      left: -60vw;
+      width: 110vw;
       filter: blur(15vw);
       aspect-ratio: 1.5;
     }
 
     @media (min-width: 1025px) {
-      opacity: 1;
+      opacity: 0.8;
       border-radius: 50% 100% 100% 50%;
       transform: rotate(-5deg) translate3d(0, 10vh, 0);
       left: -5vw;
       width: 40vw;
       aspect-ratio: 3;
-      filter: blur(10vw);
+      filter: blur(200px);
       max-width: 700px;
     }
 
@@ -156,40 +164,44 @@ import HeroDiagram from './HeroDiagram.vue'
 
   &.glow--purple {
     position: absolute;
-    left: 10vw;
-    width: 110vw;
+    left: -20px;
+    width: 650px;
     aspect-ratio: 1.2;
     pointer-events: none;
     z-index: -1;
     border-radius: 100%;
     background: linear-gradient(
       270deg,
-      #7a23a1 0%,
-      rgba(113, 94, 189, 0.9) 60%,
+      #bd34fe 0%,
+      rgb(127, 90, 215) 30%,
+      rgb(118, 96, 171) 60%,
       rgba(113, 94, 189, 0.9) 80%,
-      rgba(189, 52, 254, 0) 100%
+      rgba(113, 94, 189, 0) 100%
     );
-    filter: blur(30vw);
+    filter: blur(20vw);
     transform: none;
-    opacity: 0.6;
+    opacity: 0.4;
 
     @media (min-width: 768px) {
+      left: 10vw;
+      width: 110vw;
       filter: blur(15vw);
       aspect-ratio: 2;
     }
 
     @media (min-width: 1025px) {
-      opacity: 1;
+      opacity: 0.8;
       left: 15vw;
       width: 80vw;
-      aspect-ratio: 4;
+      aspect-ratio: 3;
       transform: rotate(5deg);
-      filter: blur(10vw);
+      filter: blur(200px);
       max-width: 1400px;
     }
 
     @media (min-width: 1930px) {
       left: 50%;
+      aspect-ratio: 4;
       filter: blur(200px);
       transform: rotate(-5deg) translate3d(-40%, 0, 0);
     }
