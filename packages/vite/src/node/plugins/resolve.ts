@@ -479,12 +479,11 @@ function resolveSubpathImports(
   if (!pkgData) return
 
   let importsPath = resolveExportsOrImports(
-    pkgData.data,
+    pkgData,
     id,
     options,
     targetWeb,
     'imports',
-    pkgData.inWorkspace,
   )
 
   if (importsPath?.[0] === '.') {
@@ -960,11 +959,12 @@ export async function tryOptimizedResolve(
 
 export function resolvePackageEntry(
   id: string,
-  { dir, data, setResolvedCache, getResolvedCache, inWorkspace }: PackageData,
+  pkg: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
+  const { dir, data, setResolvedCache, getResolvedCache } = pkg
 
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
@@ -978,12 +978,11 @@ export function resolvePackageEntry(
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
       entryPoint = resolveExportsOrImports(
-        data,
+        pkg,
         '.',
         options,
         targetWeb,
         'exports',
-        inWorkspace,
       )
     }
 
@@ -992,7 +991,7 @@ export function resolvePackageEntry(
       const mainFields = [...options.mainFields]
 
       // Support `vite` entry point field for local packages
-      if (inWorkspace) {
+      if (pkg.inWorkspace) {
         mainFields.unshift('vite')
       }
 
@@ -1074,12 +1073,11 @@ function packageEntryFailure(id: string, details?: string) {
 }
 
 function resolveExportsOrImports(
-  pkg: PackageData['data'],
+  pkg: PackageData,
   key: string,
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
   type: 'imports' | 'exports',
-  inWorkspace: boolean,
 ) {
   const additionalConditions = new Set(
     options.overrideConditions || [
@@ -1101,35 +1099,45 @@ function resolveExportsOrImports(
   })
 
   // Support `vite` export condition for local packages
-  if (inWorkspace) {
+  if (pkg.inWorkspace) {
     conditions.unshift('vite')
   }
 
   const fn = type === 'imports' ? imports : exports
-  const result = fn(pkg, key, {
+  const result = fn(pkg.data, key, {
     browser: targetWeb && !additionalConditions.has('node'),
     require: options.isRequire && !additionalConditions.has('import'),
     conditions,
   })
 
-  console.log('resolveExportsOrImports', key, result)
+  if (!result) {
+    return undefined
+  }
 
-  return result ? result[0] : undefined
+  // We need to support array conditions like `["./src/*.ts", "./src/*.tsx"]`
+  // So loop through each result and find one that actually exists
+  if (result.length > 1) {
+    for (const entry of result) {
+      if (fs.existsSync(path.join(pkg.dir, entry))) {
+        return entry
+      }
+    }
+  }
+
+  // If nothing exists, return the 1st entry and let the other layers
+  // handle the appropriate error
+  return result[0]
 }
 
 function resolveDeepImport(
   id: string,
-  {
-    webResolvedImports,
-    setResolvedCache,
-    getResolvedCache,
-    dir,
-    data,
-    inWorkspace,
-  }: PackageData,
+  pkg: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
+  const { webResolvedImports, setResolvedCache, getResolvedCache, dir, data } =
+    pkg
+
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
@@ -1144,12 +1152,11 @@ function resolveDeepImport(
       // resolve without postfix (see #7098)
       const { file, postfix } = splitFileAndPostfix(relativeId)
       const exportsId = resolveExportsOrImports(
-        data,
+        pkg,
         file,
         options,
         targetWeb,
         'exports',
-        inWorkspace,
       )
       if (exportsId !== undefined) {
         relativeId = exportsId + postfix
