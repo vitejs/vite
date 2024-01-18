@@ -32,6 +32,7 @@ SOFTWARE.
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -71,7 +72,6 @@ import {
   isObject,
   normalizePath,
   numberToPos,
-  parseAst,
   prettifyUrl,
   rollupVersion,
   timeFrom,
@@ -302,7 +302,7 @@ export async function createPluginContainer(
     }
 
     parse(code: string, opts: any) {
-      return parseAst(code, opts)
+      return rollupParseAst(code, opts)
     }
 
     async resolve(
