@@ -24,6 +24,7 @@ defineProps({
         :d="inputLine.path"
         stroke="url(#base_gradient)"
         stroke-width="1.2"
+        style="opacity: 0.8"
       />
       <SvgNode
         :path="inputLine.path"

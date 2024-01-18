@@ -5,6 +5,12 @@ html:has(.landing) {
 .landing {
   overflow-x: hidden;
 
+  * {
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+  }
+
   .VPNavBar,
   .VPNavBar:not(.top) {
     background: transparent !important;

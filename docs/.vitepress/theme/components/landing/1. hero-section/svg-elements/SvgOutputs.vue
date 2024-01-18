@@ -17,6 +17,7 @@ defineProps({
     viewBox="0 0 844 40"
     fill="none"
     class="output-line"
+    style="opacity: 0.8"
   >
     <path
       d="M843.463 1.3315L245.316 5.47507L0.633077 4.69725"
