@@ -261,7 +261,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
-  const preprocessorWorkerController = createPreprocessorWorkerController()
+  let preprocessorWorkerController: PreprocessorWorkerController | undefined
 
   // warm up cache for resolved postcss config
   if (config.css?.transformer !== 'lightningcss') {
@@ -281,6 +281,12 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
+
+      preprocessorWorkerController = createPreprocessorWorkerController()
+    },
+
+    buildEnd() {
+      preprocessorWorkerController?.close()
     },
 
     async load(id) {
@@ -361,7 +367,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         id,
         raw,
         config,
-        preprocessorWorkerController,
+        preprocessorWorkerController!,
         urlReplacer,
       )
       if (modules) {
@@ -426,9 +432,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         code: css,
         map,
       }
-    },
-    buildEnd() {
-      preprocessorWorkerController.close()
     },
   }
 }
