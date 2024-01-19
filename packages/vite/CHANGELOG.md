@@ -1,3 +1,11 @@
+## 5.1.0-beta.2 (2024-01-19)
+
+* fix: fs deny for case insensitive systems (#15653) ([89be67d](https://github.com/vitejs/vite/commit/89be67d)), closes [#15653](https://github.com/vitejs/vite/issues/15653)
+* perf: don't recalculate path.dirname(mod.file) (#15623) ([e459be4](https://github.com/vitejs/vite/commit/e459be4)), closes [#15623](https://github.com/vitejs/vite/issues/15623)
+* perf: optimize getSortedPluginsByHook (#15624) ([f08a037](https://github.com/vitejs/vite/commit/f08a037)), closes [#15624](https://github.com/vitejs/vite/issues/15624)
+
+
+
 ## 5.1.0-beta.1 (2024-01-18)
 
 * fix: handle namespace import and dynamic import interop consistently (#15619) ([ec8b420](https://github.com/vitejs/vite/commit/ec8b420)), closes [#15619](https://github.com/vitejs/vite/issues/15619)
