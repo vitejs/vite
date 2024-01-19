@@ -220,13 +220,13 @@ const rowStyle = computed(() => {
     <div class="frameworks-container">
       <!-- Top Row -->
       <div class="framework-row" :style="rowStyle">
-        <FrameworkCard v-for="i in numBlocksPerRow" />
+        <FrameworkCard v-for="i in numBlocksPerRow + 2" />
       </div>
 
       <!-- Logo Rows -->
       <template v-for="rowIndex in numRows">
         <div class="framework-row" :style="rowStyle">
-          <template v-for="columnIndex in numBlocksPerRow">
+          <template v-for="columnIndex in numBlocksPerRow + 2">
             <template
               v-if="
                 columnIndex >= centerIndexes.start &&
@@ -252,7 +252,7 @@ const rowStyle = computed(() => {
 
       <!-- Bottom Row -->
       <div class="framework-row" :style="rowStyle">
-        <FrameworkCard v-for="i in numBlocksPerRow" />
+        <FrameworkCard v-for="i in numBlocksPerRow + 2" />
       </div>
     </div>
   </section>
@@ -285,6 +285,16 @@ const rowStyle = computed(() => {
     position: relative;
     margin-top: -20px;
     overflow: hidden;
+
+    @media (min-width: 1300px) {
+      mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        #ffffff 300px,
+        #ffffff calc(100vw - 300px),
+        transparent 100%
+      );
+    }
 
     &:before {
       content: '';
@@ -327,11 +337,13 @@ const rowStyle = computed(() => {
 
   .framework-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 96px);
+    grid-auto-columns: 96px;
     grid-gap: 24px;
     justify-content: flex-start;
     margin-bottom: 24px;
     position: relative;
+    white-space: nowrap;
+    grid-auto-flow: column;
 
     &:nth-child(even) {
       --row-offset: 24px;
