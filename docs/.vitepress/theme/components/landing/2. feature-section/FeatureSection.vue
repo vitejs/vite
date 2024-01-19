@@ -155,6 +155,10 @@ const startAnimation = () => {
     }
   }
 
+  &:nth-of-type(2) {
+    margin-top: 160px;
+  }
+
   svg {
     position: relative;
     margin-bottom: 15px;

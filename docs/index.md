@@ -23,9 +23,6 @@ import FeatureFlexiblePlugins from './.vitepress/theme/components/landing/2. fea
 import FeatureTypedAPI from './.vitepress/theme/components/landing/2. feature-section/FeatureTypedAPI.vue'
 import FeatureSSRSupport from './.vitepress/theme/components/landing/2. feature-section/FeatureSSRSupport.vue'
 import FeatureCI from './.vitepress/theme/components/landing/2. feature-section/FeatureCI.vue'
-
-import { gsap } from 'gsap'
-gsap.ticker.fps(60)
 </script>
 
 <div class="VPHome">
@@ -36,7 +33,7 @@ gsap.ticker.fps(60)
     <FeatureRichFeatures />
     <FeatureOptimizedBuild />
   </FeatureSection>
-  <FeatureSection title="A shared foundation to build upon" type="pink" style="margin-top: 160px" class="feature-section--flip">
+  <FeatureSection title="A shared foundation to build upon" type="pink" class="feature-section--flip">
     <FeatureFlexiblePlugins />
     <FeatureTypedAPI />
     <FeatureSSRSupport />
