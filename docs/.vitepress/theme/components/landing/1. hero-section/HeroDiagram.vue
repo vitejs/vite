@@ -554,27 +554,38 @@ const animateSingleInputMobile = (inputLine) => {
     border-image-slice: 1;
     border-image-source: linear-gradient(
       to bottom right,
-      rgba(0, 0, 0, 0) 50%,
-      rgba(255, 255, 255, 0.15) 60%,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(255, 255, 255, 0.15) 65%,
       rgba(0, 0, 0, 0) 90%
     );
-    display: none;
 
     @media (min-width: 768px) {
-      display: block;
+      border-image-source: linear-gradient(
+        to bottom right,
+        rgba(0, 0, 0, 0) 50%,
+        rgba(255, 255, 255, 0.15) 60%,
+        rgba(0, 0, 0, 0) 90%
+      );
     }
   }
 
   .vite-chip__border {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    left: 2px;
-    bottom: 2px;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
     border-radius: 10px;
     border: 0 solid rgba(89, 82, 108, 0.3);
     opacity: 0.8;
     background: rgba(40, 40, 40, 0.3);
+
+    @media (min-width: 768px) {
+      top: 2px;
+      right: 2px;
+      left: 2px;
+      bottom: 2px;
+    }
   }
 
   .vite-chip__logo {
@@ -632,7 +643,7 @@ const animateSingleInputMobile = (inputLine) => {
   bottom: -60%;
   width: 100%;
   z-index: -1;
-  opacity: 0.6;
+  opacity: 0.4;
   transition: opacity 0.4s ease;
 
   @media (min-width: 768px) {
@@ -705,7 +716,11 @@ const animateSingleInputMobile = (inputLine) => {
   }
 
   &.active {
-    opacity: 0.6;
+    opacity: 0.4;
+
+    @media (min-width: 768px) {
+      opacity: 0.6;
+    }
   }
 }
 </style>
