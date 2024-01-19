@@ -140,27 +140,30 @@ export function getSortedPluginsByHook<K extends keyof Plugin>(
   hookName: K,
   plugins: readonly Plugin[],
 ): PluginWithRequiredHook<K>[] {
-  const pre: Plugin[] = []
-  const normal: Plugin[] = []
-  const post: Plugin[] = []
+  const sortedPlugins: Plugin[] = []
+  // Use indexes to track and insert the ordered plugins directly in the
+  // resulting array to avoid creating 3 extra temporary arrays per hook
+  let pre = 0,
+    normal = 0,
+    post = 0
   for (const plugin of plugins) {
     const hook = plugin[hookName]
     if (hook) {
       if (typeof hook === 'object') {
         if (hook.order === 'pre') {
-          pre.push(plugin)
+          sortedPlugins.splice(pre++, 0, plugin)
           continue
         }
         if (hook.order === 'post') {
-          post.push(plugin)
+          sortedPlugins.splice(pre + normal + post++, 0, plugin)
           continue
         }
       }
-      normal.push(plugin)
+      sortedPlugins.splice(pre + normal++, 0, plugin)
     }
   }
 
-  return [...pre, ...normal, ...post] as PluginWithRequiredHook<K>[]
+  return sortedPlugins as PluginWithRequiredHook<K>[]
 }
 
 export function getHookHandler<T extends ObjectHook<Function>>(
