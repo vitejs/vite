@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import SvgNode from '../common/SvgNode.vue'
-import { nextTick, onMounted, ref, Ref } from 'vue'
+import { ref, Ref } from 'vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
-/**
- * Each of the 10 nodes that fly into the bolt in the center.
- */
+// Animation state
+const isBoltActive: Ref<boolean> = ref(false)
 const nodes = Array.from({ length: 10 }, () => {
   return {
     position: ref(0),
@@ -14,53 +14,57 @@ const nodes = Array.from({ length: 10 }, () => {
   }
 })
 
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#optimized-build-card')
 
 /**
- * Whether the bolt is illuminated or not.
+ * Start the animation when the card is hovered
  */
-const isBoltActive: Ref<boolean> = ref(false)
+const { startAnimation } = useCardAnimation(
+  '#optimized-build-card',
+  () => {
+    // Define the timeline
+    const timeline = gsap.timeline()
 
-let timeline = null
+    // Animate in each node
+    nodes.forEach((node, i) => {
+      let subTimeline = gsap.timeline()
+      subTimeline.call(() => {
+        node.visible.value = true
+      })
+      subTimeline.to(node.position, {
+        value: 1,
+        duration: 0.8,
+        ease: 'power3.out',
+      })
+      subTimeline.call(
+        () => {
+          node.visible.value = false
+        },
+        null,
+        '-=0.6',
+      )
+      timeline.add(subTimeline, Math.random())
+    })
 
-const startAnimation = () => {
-  if (timeline) {
-    timeline.kill()
-  }
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#optimized-build-card',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-  nodes.forEach((node, i) => {
-    let subtimeline = gsap.timeline()
-    subtimeline.call(() => {
-      node.visible.value = true
-    })
-    subtimeline.to(node.position, {
-      value: 1,
-      duration: 0.8,
-      ease: 'power3.out',
-    })
-    subtimeline.call(
+    // Animate in the bolt
+    timeline.call(
       () => {
-        node.visible.value = false
+        isBoltActive.value = true
       },
       null,
-      '-=0.6',
+      '-=0.5',
     )
-    timeline.add(subtimeline, Math.random())
-  })
-  timeline.call(
-    () => {
-      isBoltActive.value = true
-    },
-    null,
-    '-=0.5',
-  )
-}
+
+    // All done
+    return timeline
+  },
+  {
+    once: true,
+  },
+)
 </script>
 
 <template>

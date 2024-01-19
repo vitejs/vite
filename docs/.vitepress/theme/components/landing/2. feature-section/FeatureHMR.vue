@@ -1,65 +1,66 @@
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
+// Animation state
 const terminalActive = ref(false)
 const connectionsActive = ref(false)
 const browserActive = ref(false)
 
-let timeline = null
-
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#hmr-card')
 
-onMounted(() => {
-  nextTick(() => {
-    startAnimation()
-  })
-})
-
 /**
- * When the component scrolls into viewport, we start the animation.
+ * Start the animation when the card is hovered
  */
-const startAnimation = () => {
-  if (terminalActive.value) {
-    return
-  }
-  if (timeline) {
-    timeline.kill()
-  }
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#hmr-card',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-  timeline.call(
-    () => {
-      terminalActive.value = true
-    },
-    null,
-    0,
-  )
-  timeline.call(
-    () => {
-      connectionsActive.value = true
-    },
-    null,
-    0.4,
-  )
-  timeline.call(
-    () => {
-      browserActive.value = true
-    },
-    null,
-    1,
-  )
-}
+const { startAnimation } = useCardAnimation(
+  '#hmr-card',
+  () => {
+    // Define the timeline
+    const timeline = gsap.timeline()
+
+    // Animate in the components, one at a time
+    timeline.call(
+      () => {
+        terminalActive.value = true
+      },
+      null,
+      0,
+    )
+    timeline.call(
+      () => {
+        connectionsActive.value = true
+      },
+      null,
+      0.4,
+    )
+    timeline.call(
+      () => {
+        browserActive.value = true
+      },
+      null,
+      1,
+    )
+
+    // All done
+    return timeline
+  },
+  {
+    once: true,
+  },
+)
 </script>
 
 <template>
-  <div class="feature-card" id="hmr-card" @mouseover="startAnimation">
+  <div
+    class="feature-card"
+    id="hmr-card"
+    @mouseover.stop.prevent="startAnimation"
+  >
     <div class="feature__visualization">
       <!-- Terminal / IDE (left-side) -->
       <div class="terminal" :class="{ active: terminalActive }">

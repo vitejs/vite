@@ -6,12 +6,25 @@ import logoTS from './../../../../../images/supports/ts.svg'
 import logoWA from './../../../../../images/supports/wa.svg'
 import logoPostCSS from './../../../../../images/supports/postcss.svg'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#rich-features-card')
+
+/**
+ * Start the animation when the card is hovered
+ */
+const { isCardActive } = useCardAnimation('#rich-features-card')
 </script>
 
 <template>
-  <div class="feature-card" id="rich-features-card">
+  <div
+    class="feature-card"
+    id="rich-features-card"
+    :class="{ active: isCardActive }"
+  >
     <div class="feature__visualization">
       <div class="card-container">
         <svg
@@ -124,7 +137,8 @@ useSlideIn('#rich-features-card')
 .feature-card {
   transform: translate3d(-60px, 0, 0);
 
-  &:hover {
+  &:hover,
+  &.active {
     .feature__visualization {
       .card {
         &:after {

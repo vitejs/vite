@@ -1,15 +1,25 @@
-import { onMounted, ref, Ref } from 'vue'
+import { onMounted, onUnmounted, ref, Ref } from 'vue'
 import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
 
 /**
  * A custom hook for animating a card element.
  *
  * @param {HTMLElement | string} el - The element or selector for the element to be animated
  * @param {() => GSAPTimeline | null} animation - A function that returns a GSAP timeline for the animation
+ * @param {object} options - Options for the animation
  */
 export function useCardAnimation(
   el: HTMLElement | string,
   animation: () => GSAPTimeline | null = null,
+  options?: {
+    /**
+     * A flag to indicate whether the animation should only run once, and not reset once complete.
+     */
+    once?: boolean
+  },
 ) {
   /**
    * The GSAP timeline for this animation.
@@ -45,29 +55,48 @@ export function useCardAnimation(
     }
     timeline = gsap.timeline({
       onComplete: () => {
-        isCardActive.value = false
-        setTimeout(() => {
-          isAnimationRunning.value = false
-        }, 3000)
+        if (!options?.once) {
+          isCardActive.value = false
+          setTimeout(() => {
+            isAnimationRunning.value = false
+          }, 3000)
+        }
       },
     })
     timeline.add(animation())
   }
 
   /**
+   * The ScrollTrigger instance for this card.
+   */
+  let scrollTriggerInstance = null
+
+  /**
    * Trigger's the card's animation automatically on mobile devices (no hover method)
    */
   onMounted(() => {
     if (window.innerWidth < 768) {
-      gsap.to(window, {
-        scrollTrigger: {
-          trigger: el,
-          start: 'top center',
-          onEnter: () => {
-            startAnimation()
-          },
+      scrollTriggerInstance = ScrollTrigger.create({
+        trigger: el,
+        start: 'top 60%',
+        onEnter: () => {
+          startAnimation()
         },
       })
+    }
+  })
+
+  /**
+   * Remove the ScrollTrigger and GSAP timeline instances when the component is unmounted
+   */
+  onUnmounted(() => {
+    if (scrollTriggerInstance) {
+      scrollTriggerInstance.kill()
+      scrollTriggerInstance = null
+    }
+    if (timeline) {
+      timeline.kill()
+      timeline = null
     }
   })
 

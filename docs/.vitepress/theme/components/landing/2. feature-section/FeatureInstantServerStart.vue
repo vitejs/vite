@@ -1,46 +1,26 @@
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
-/**
- * Whether the card has entered the viewport for the first time.
- */
-const cardEnabled = ref(false)
-
-/**
- * Whether the user has clicked on the "Enter" key.
- */
+// Animation state
 const commandTriggered = ref(false)
-
-/**
- * Whether to highlight the "Enter" key.
- */
 const highlightEnter = ref(false)
 
 /**
- * The timeline for the animation.
+ * Slide the card in when the page loads
  */
-let timeline = null
-
 useSlideIn('#instant-server-start-card')
 
 /**
- * Enable the card when it's in the viewport.
- * This animates in the `npm run dev` command.
+ * Start the animation when the card is hovered
  */
-onMounted(() => {
-  nextTick(() => {
-    timeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: '#instant-server-start-card',
-        start: 'top 70%',
-        once: true,
-      },
-    })
-    timeline.call(() => {
-      cardEnabled.value = true
-    })
+const { isCardActive, startAnimation } = useCardAnimation(
+  '#instant-server-start-card',
+  () => {
+    const timeline = gsap.timeline()
+
     timeline.call(
       () => {
         if (commandTriggered.value) {
@@ -49,17 +29,25 @@ onMounted(() => {
         highlightEnter.value = true
       },
       null,
-      4,
+      0.6,
     )
-    window.addEventListener('keydown', handleEnterPress)
-  })
+  },
+  {
+    once: true,
+  },
+)
+
+/**
+ * Enable the card when it's in the viewport.
+ * This animates in the `npm run dev` command.
+ */
+onMounted(() => {
+  window.addEventListener('keydown', handleEnterPress)
 })
 
 function handleEnterPress(event) {
   if (event.key === 'Enter') {
-    if (cardEnabled.value) {
-      startAnimation()
-    }
+    commandRunAnimation()
   }
 }
 
@@ -67,21 +55,15 @@ function handleEnterPress(event) {
  * Clean up when unmounting the component.
  */
 onUnmounted(() => {
-  if (timeline) {
-    timeline.kill()
-  }
   window.removeEventListener('keydown', handleEnterPress)
 })
 
 /**
  * When the user clicks on the "Enter" key, we trigger the main animation.
  */
-const startAnimation = () => {
+const commandRunAnimation = () => {
   if (commandTriggered.value) {
     return
-  }
-  if (timeline) {
-    timeline.kill()
   }
   commandTriggered.value = true
   highlightEnter.value = false
@@ -92,16 +74,20 @@ const startAnimation = () => {
 </script>
 
 <template>
-  <div id="instant-server-start-card" class="feature-card">
+  <div
+    id="instant-server-start-card"
+    class="feature-card"
+    @mouseover.stop.prevent="startAnimation"
+  >
     <div class="feature__visualization">
       <div
         class="terminal"
         :class="{ 'terminal--active': commandTriggered }"
-        @click.prevent="startAnimation"
+        @click.prevent="commandRunAnimation"
       >
         <div class="terminal__skeleton-line" />
         <div class="terminal__skeleton-line" />
-        <div class="entrance-wrapper" :class="{ active: cardEnabled }">
+        <div class="entrance-wrapper" :class="{ active: isCardActive }">
           <Transition name="command-transition">
             <svg
               class="terminal__command"
@@ -209,7 +195,7 @@ const startAnimation = () => {
         </div>
         <div
           class="terminal__enter-pulse"
-          v-if="highlightEnter && cardEnabled"
+          v-if="highlightEnter && isCardActive"
         />
         <Transition name="ready-label-transition">
           <span class="terminal__ready-label" v-if="commandTriggered"
