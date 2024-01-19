@@ -154,7 +154,9 @@ const startAnimation = () => {
   }
 
   svg {
+    position: relative;
     margin-bottom: 15px;
+    z-index: 2;
   }
 
   h2 {

@@ -91,7 +91,11 @@ const startAnimation = () => {
 <template>
   <div id="instant-server-start-card" class="feature-card">
     <div class="feature__visualization">
-      <div class="terminal" :class="{ 'terminal--active': commandTriggered }">
+      <div
+        class="terminal"
+        :class="{ 'terminal--active': commandTriggered }"
+        @click.prevent="startAnimation"
+      >
         <div class="terminal__skeleton-line" />
         <div class="terminal__skeleton-line" />
         <div class="entrance-wrapper" :class="{ active: cardEnabled }">
@@ -118,7 +122,6 @@ const startAnimation = () => {
               height="28"
               viewBox="0 0 28 28"
               v-if="!commandTriggered"
-              @click.prevent="startAnimation"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
