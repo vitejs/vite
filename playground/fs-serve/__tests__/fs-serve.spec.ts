@@ -94,6 +94,10 @@ describe.runIf(isServe)('main', () => {
   test('denied', async () => {
     expect(await page.textContent('.unsafe-dotenv')).toBe('404')
   })
+
+  test('denied', async () => {
+    expect(await page.textContent('.unsafe-dotenv-casing')).toBe('404')
+  })
 })
 
 describe('fetch', () => {

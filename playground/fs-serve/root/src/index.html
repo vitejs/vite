@@ -45,6 +45,7 @@
 
 <h2>Denied</h2>
 <pre class="unsafe-dotenv"></pre>
+<pre class="unsafe-dotenv-casing"></pre>
 
 <script type="module">
   import '../../entry'
@@ -239,6 +240,15 @@
   fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/root/.env'))
     .then((r) => {
       text('.unsafe-dotenv', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // .env, for case insensitive file systems
+  fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/root/.EnV'))
+    .then((r) => {
+      text('.unsafe-dotenv-casing', r.status)
     })
     .catch((e) => {
       console.error(e)
