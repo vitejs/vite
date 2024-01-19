@@ -144,7 +144,7 @@ html:has(.landing) {
       position: relative;
       background: radial-gradient(
           141.42% 141.42% at 100% 0%,
-          rgba(255, 255, 255, 0.5) 0%,
+          rgba(255, 255, 255, 0.4) 0%,
           rgba(255, 255, 255, 0) 100%
         ),
         radial-gradient(
@@ -156,9 +156,7 @@ html:has(.landing) {
           89.94% 89.94% at 18.42% 15.79%,
           #41d1ff 0%,
           rgba(65, 209, 255, 0) 100%
-        ),
-        linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%),
-        rgba(255, 255, 255, 0.2);
+        );
       box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.75) inset;
 
       &:hover {
@@ -176,9 +174,7 @@ html:has(.landing) {
             89.94% 89.94% at 18.42% 15.79%,
             #41d1ff 0%,
             rgba(65, 209, 255, 0) 100%
-          ),
-          linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 100%),
-          rgba(255, 255, 255, 0.5);
+          );
         box-shadow: 0 1.5px 0 0 rgba(255, 255, 255, 0.8) inset;
       }
     }
