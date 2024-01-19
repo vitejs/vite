@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface Testimonial {
+export interface Testimonial {
   /**
    * The URL to the avatar image.
    */
