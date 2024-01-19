@@ -1,35 +1,16 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, Ref } from 'vue'
-import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
-const isCardActive: Ref<boolean> = ref(false)
-
-onMounted(() => {
-  nextTick(() => {
-    startAnimation()
-  })
-})
-
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#ssr-support')
 
-let timeline = null
-
-const startAnimation = () => {
-  if (timeline) {
-    timeline.kill()
-  }
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#ssr-support',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-  timeline.call(() => {
-    isCardActive.value = true
-  })
-}
+/**
+ * Start the animation when the card is hovered
+ */
+const { isCardActive } = useCardAnimation('#ssr-support')
 </script>
 
 <template>
@@ -504,7 +485,8 @@ const startAnimation = () => {
     transition: all 0.3s ease-in-out;
   }
 
-  &.active {
+  &.active,
+  &:hover {
     .connector {
       stroke: #ffe358;
       transition-delay: 0.1s;

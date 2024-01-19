@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, Ref } from 'vue'
-import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
 import { useCardAnimation } from '../../../composables/useCardAnimation'
 

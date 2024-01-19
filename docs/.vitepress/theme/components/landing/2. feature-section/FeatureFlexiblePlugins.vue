@@ -1,35 +1,16 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, Ref } from 'vue'
-import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
-const isCardActive: Ref<boolean> = ref(false)
-
-onMounted(() => {
-  nextTick(() => {
-    startAnimation()
-  })
-})
-
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#flexible-plugin-system')
 
-let timeline = null
-
-const startAnimation = () => {
-  if (timeline) {
-    timeline.kill()
-  }
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#flexible-plugin-system',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-  timeline.call(() => {
-    isCardActive.value = true
-  })
-}
+/**
+ * Start the animation when the card is hovered
+ */
+const { isCardActive } = useCardAnimation('#flexible-plugin-system')
 </script>
 
 <template>
@@ -388,6 +369,7 @@ const startAnimation = () => {
     left: 50%;
     transform-origin: center 40%;
     transform: translate3d(-50%, 0, 0) scale(0.5);
+    margin-top: 0;
 
     @media (min-width: 480px) {
       transform-origin: center center;
@@ -396,14 +378,17 @@ const startAnimation = () => {
 
     @media (min-width: 630px) {
       transform: translate3d(-50%, 0, 0) scale(1);
+      margin-top: 20px;
     }
 
     @media (min-width: 768px) {
       transform: translate3d(-50%, 0, 0) scale(0.6);
+      margin-top: 0;
     }
 
     @media (min-width: 1000px) {
       transform: translate3d(-50%, 0, 0) scale(0.8);
+      margin-top: 20px;
     }
 
     @media (min-width: 1200px) {
@@ -417,16 +402,16 @@ const startAnimation = () => {
       transform 0.5s ease-in-out,
       filter 0.05s ease 0.45s;
     will-change: filter, transform;
-    transform: translate3d(0px, -70px, 0);
+    transform: translate3d(0px, -60px, 0);
   }
 
   .blue-chip__cube {
-    filter: grayscale(1) brightness(0.2)
+    filter: grayscale(1) brightness(0.15)
       drop-shadow(0 0 0rem color-mix(in srgb, #40cffd 0%, transparent));
   }
 
   .pink-chip__cube {
-    filter: grayscale(1) brightness(0.2)
+    filter: grayscale(1) brightness(0.15)
       drop-shadow(0 0 0rem color-mix(in srgb, #bc33fc 0%, transparent));
   }
 
@@ -471,7 +456,7 @@ const startAnimation = () => {
     background: #41d1ff;
     filter: blur(80px);
     z-index: -1;
-    opacity: 0.2;
+    opacity: 0;
     transition: opacity 0.5s ease-out;
     will-change: opacity;
   }
@@ -485,12 +470,13 @@ const startAnimation = () => {
     background: #bd34fe;
     filter: blur(80px);
     z-index: -1;
-    opacity: 0.2;
+    opacity: 0;
     transition: opacity 0.5s ease-out;
     will-change: opacity;
   }
 
-  &.active {
+  &.active,
+  &:hover {
     .blue-chip__cube,
     .pink-chip__cube {
       transform: translate3d(0px, 0, 0);
