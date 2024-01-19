@@ -1,3 +1,9 @@
+## <small>4.5.2 (2024-01-19)</small>
+
+* fix: fs deny for case insensitive systems (#15653) ([eeec23b](https://github.com/vitejs/vite/commit/eeec23b)), closes [#15653](https://github.com/vitejs/vite/issues/15653)
+
+
+
 ## <small>4.5.1 (2023-12-04)</small>
 
 * fix: backport #15223, proxy html path should be encoded (#15226) ([41bb354](https://github.com/vitejs/vite/commit/41bb354)), closes [#15223](https://github.com/vitejs/vite/issues/15223) [#15226](https://github.com/vitejs/vite/issues/15226)
