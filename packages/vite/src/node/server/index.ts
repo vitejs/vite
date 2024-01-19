@@ -452,7 +452,10 @@ export async function createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true })
+    _fsDenyGlob: picomatch(config.server.fs.deny, {
+      matchBase: true,
+      nocase: true
+    })
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
