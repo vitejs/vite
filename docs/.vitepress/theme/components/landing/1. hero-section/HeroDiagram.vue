@@ -6,7 +6,6 @@ import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
-import { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
@@ -159,7 +158,6 @@ const prepareInputs = () => {
  * There are technically 3 output lines, but they are stacked on top of each other.
  * @param outputLine
  * @param index
- * @returns {gsap.core.Timeline}
  */
 const animateSingleOutputDesktop = (outputLine, index) => {
   const timeline = gsap.timeline()

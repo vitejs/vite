@@ -39,7 +39,7 @@ export interface SvgNodeProps {
   /**
    * The color of the dot.
    */
-  dotColor?: string
+  dotColor?: string | boolean
 }
 
 const props = withDefaults(defineProps<SvgNodeProps>(), {
@@ -130,10 +130,11 @@ watch(
     :mask="`url(#glow_mask_${pathId})`"
   />
   <circle
+    v-if="props.dotColor"
     :cx="dotPosition.x"
     :cy="dotPosition.y"
     :r="dotRadius"
-    :fill="props.dotColor"
+    :fill="props.dotColor ? props.dotColor : 'transparent'"
     class="circle-dot"
     :style="`--dot-color: ${props.dotColor}`"
     key="circle-dot"
