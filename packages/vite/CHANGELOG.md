@@ -1,3 +1,9 @@
+## <small>2.9.17 (2024-01-19)</small>
+
+* fix: port #15653 to v3 (#15655) ([0cd769c](https://github.com/vitejs/vite/commit/0cd769c)), closes [#15653](https://github.com/vitejs/vite/issues/15653) [#15655](https://github.com/vitejs/vite/issues/15655)
+
+
+
 ## <small>2.9.16 (2023-05-26)</small>
 
 * fix: port #13348 to v2, fs.deny with leading double slash (#13350) ([7d8100a](https://github.com/vitejs/vite/commit/7d8100a)), closes [#13348](https://github.com/vitejs/vite/issues/13348) [#13350](https://github.com/vitejs/vite/issues/13350)
