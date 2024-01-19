@@ -44,6 +44,37 @@ const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
+/**
+ * A middleware that short-circuits the middleware chain to serve cached transformed modules
+ */
+export function cachedTransformMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteCachedTransformMiddleware(req, res, next) {
+    // check if we can return 304 early
+    const ifNoneMatch = req.headers['if-none-match']
+    if (ifNoneMatch) {
+      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
+      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+        // For direct CSS requests, if the same CSS file is imported in a module,
+        // the browser sends the request for the direct CSS request with the etag
+        // from the imported CSS module. We ignore the etag in this case.
+        const mixedEtag =
+          !req.headers.accept?.includes('text/css') &&
+          isDirectRequest(moduleByEtag.url)
+        if (!mixedEtag) {
+          debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
+          res.statusCode = 304
+          return res.end()
+        }
+      }
+    }
+
+    next()
+  }
+}
+
 export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
@@ -153,18 +184,6 @@ export function transformMiddleware(
           req.headers.accept?.includes('text/css')
         ) {
           url = injectQuery(url, 'direct')
-        }
-
-        // check if we can return 304 early
-        const ifNoneMatch = req.headers['if-none-match']
-        if (
-          ifNoneMatch &&
-          (await server.moduleGraph.getModuleByUrl(url, false))?.transformResult
-            ?.etag === ifNoneMatch
-        ) {
-          debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
-          res.statusCode = 304
-          return res.end()
         }
 
         // resolve, load and transform using the plugin container
