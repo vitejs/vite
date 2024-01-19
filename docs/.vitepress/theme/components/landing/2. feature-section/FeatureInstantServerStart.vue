@@ -225,6 +225,16 @@ const startAnimation = () => {
 
 <style scoped>
 .feature-card {
+  /* Extend height on smaller devices, to make room for text */
+  @media (max-width: 420px) {
+    height: 400px;
+  }
+
+  /* Or for really small screen */
+  @media (max-width: 340px) {
+    height: 420px;
+  }
+
   .feature__meta {
     max-width: calc(100% - 30px);
   }

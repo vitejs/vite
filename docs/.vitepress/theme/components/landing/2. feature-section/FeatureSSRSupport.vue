@@ -436,6 +436,11 @@ const startAnimation = () => {
   .feature__meta {
     max-width: calc(100%);
   }
+
+  /* Extend height on smaller devices, to make room for text */
+  @media (max-width: 380px) {
+    height: 400px;
+  }
 }
 
 .feature__visualization {

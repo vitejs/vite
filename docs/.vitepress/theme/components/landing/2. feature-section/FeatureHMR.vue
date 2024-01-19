@@ -298,6 +298,11 @@ const startAnimation = () => {
       opacity: 1;
     }
   }
+
+  /* Extend height on smaller devices, to make room for text */
+  @media (max-width: 400px) {
+    height: 380px;
+  }
 }
 
 .feature__visualization {

@@ -210,6 +210,11 @@ const startAnimation = () => {
     position: relative;
     overflow: hidden;
 
+    /* Extend height on smaller devices, to make room for text */
+    @media (max-width: 380px) {
+      padding: 24px;
+    }
+
     .feature__meta {
       max-width: 275px;
       position: relative;
