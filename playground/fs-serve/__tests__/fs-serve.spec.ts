@@ -97,7 +97,8 @@ describe.runIf(isServe)('main', () => {
 
   test('denied EnV casing', async () => {
     // It is 403 in case insensitive system, 404 in others
-    expect(await page.textContent('.unsafe-dotEnV-casing')).not.toBe('200')
+    const code = await page.textContent('.unsafe-dotEnV-casing')
+    expect(code === '403' || code === '404').toBeTruthy()
   })
 })
 
