@@ -1,3 +1,10 @@
+## <small>5.0.12 (2024-01-19)</small>
+
+* fix: await `configResolved` hooks of worker plugins (#15597) (#15605) ([ef89f80](https://github.com/vitejs/vite/commit/ef89f80)), closes [#15597](https://github.com/vitejs/vite/issues/15597) [#15605](https://github.com/vitejs/vite/issues/15605)
+* fix: fs deny for case insensitive systems (#15653) ([91641c4](https://github.com/vitejs/vite/commit/91641c4)), closes [#15653](https://github.com/vitejs/vite/issues/15653)
+
+
+
 ## <small>5.0.11 (2024-01-05)</small>
 
 * fix: don't pretransform classic script links (#15361) ([19e3c9a](https://github.com/vitejs/vite/commit/19e3c9a)), closes [#15361](https://github.com/vitejs/vite/issues/15361)
