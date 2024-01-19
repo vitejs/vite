@@ -16,7 +16,10 @@
       "module": "./build/index.js"
     },
     "./*": {
-      "vite": ["./src/*.ts", "./src/*.tsx"],
+      "vite": [
+        "./src/*.ts",
+        "./src/*.tsx"
+      ],
       "module": "./build/*.js"
     }
   }

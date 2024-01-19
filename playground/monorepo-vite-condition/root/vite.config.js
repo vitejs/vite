@@ -5,4 +5,7 @@ export default defineConfig({
     // None!
     alias: {},
   },
+  experimental: {
+    vitePackageEntryPoints: true,
+  },
 })

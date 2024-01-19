@@ -72,6 +72,7 @@ export async function resolvePlugins(
         isBuild && config.build.ssr
           ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
           : undefined,
+      vitePackageEntryPoints: config.experimental.vitePackageEntryPoints,
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),

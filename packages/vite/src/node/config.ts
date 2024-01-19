@@ -310,6 +310,15 @@ export interface ExperimentalOptions {
    * @default false
    */
   skipSsrTransform?: boolean
+  /**
+   * Resolves source files of local packages (in a monorepo workspace) using `package.json`
+   * entry points. If using `exports`, uses the `vite` condition. Otherwise, uses the `vite`
+   * main-like field.
+   *
+   * @experimental
+   * @default false
+   */
+  vitePackageEntryPoints?: boolean
 }
 
 export interface LegacyOptions {
@@ -1258,7 +1267,7 @@ function optimizeDepsDisabledBackwardCompatibility(
       }
       resolved.logger.warn(
         colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
-    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty. 
+    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty.
     Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
     ${
       commonjsPluginDisabled

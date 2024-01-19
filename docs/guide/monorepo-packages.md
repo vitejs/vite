@@ -10,7 +10,19 @@ This method is based entirely around `package.json` entry points. For local pack
 
 - Requires entry points within the package's `package.json`.
 - Requires package (npm, pnpm, yarn) workspaces.
-- Requires the package to exist in `node_modules` (symlinked via workspaces).
+- Requires the package to be symlinked in `node_modules`.
+
+Because this functionality is experimental, it must be enabled in your config.
+
+```js
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  experimental: {
+    vitePackageEntryPoints: true,
+  },
+})
+```
 
 ### Implementation
 
@@ -44,11 +56,11 @@ For packages that are depended on (not symlinked in `node_modules`), the `vite` 
 
 ### Caveats
 
-- If using `vite` exports condition:
+- If using `vite` export condition:
   - To support deep imports, the `./*` entry point must be defined, which maps 1:1 to the file system.
-  - To support multiple source files with different extensions, use an array as the `vite` condition (example above).
+  - To support multiple source files with different extensions, use an array as the `vite` condition value (example above).
 - If using `vite` main entry point:
-  - Only default imports are supported.
+  - Only default/index imports are supported.
   - Deep imports are not supported.
 - Packages that are not symlinked into `node_modules` will _not_ use the `vite` entry points. For reference, `workspace:`, `portal:`, and `link:` are supported, while `file:`, `git:`, etc are not.
 
