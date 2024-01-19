@@ -19,7 +19,7 @@ defineProps({
     class="input-lines"
   >
     <!-- Input Lines -->
-    <g v-for="inputLine in inputLines">
+    <g v-for="inputLine in inputLines" :key="inputLine.path">
       <path
         :d="inputLine.path"
         stroke="url(#base_gradient)"
@@ -52,3 +52,17 @@ defineProps({
     </defs>
   </svg>
 </template>
+
+<style scoped>
+.input-lines {
+  transform: translate3d(0, 0, 0);
+
+  &:deep(.circle-dot) {
+    display: none;
+
+    @media (min-width: 768px) {
+      display: block;
+    }
+  }
+}
+</style>

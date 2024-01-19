@@ -486,6 +486,11 @@ const animateSingleInputMobile = (inputLine) => {
       ),
       linear-gradient(to bottom, rgba(16, 14, 26, 0.3) 60%, rgba(12, 12, 12, 0));
     border-radius: 10px;
+    display: none;
+
+    @media (min-width: 768px) {
+      display: block;
+    }
 
     &:after {
       content: '';
@@ -553,6 +558,11 @@ const animateSingleInputMobile = (inputLine) => {
       rgba(255, 255, 255, 0.15) 60%,
       rgba(0, 0, 0, 0) 90%
     );
+    display: none;
+
+    @media (min-width: 768px) {
+      display: block;
+    }
   }
 
   .vite-chip__border {
@@ -622,11 +632,11 @@ const animateSingleInputMobile = (inputLine) => {
   bottom: -60%;
   width: 100%;
   z-index: -1;
-  opacity: 0.1;
-  transition: opacity 2s ease;
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
 
   @media (min-width: 768px) {
-    transition: opacity 0.5s ease;
+    opacity: 0.1;
   }
 
   background: radial-gradient(

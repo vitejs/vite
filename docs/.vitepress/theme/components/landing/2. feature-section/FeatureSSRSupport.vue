@@ -417,7 +417,9 @@ const { isCardActive } = useCardAnimation('#ssr-support')
 
 <style scoped>
 .feature-card {
-  transform: translate3d(-60px, 0, 0);
+  @media (min-width: 768px) {
+    transform: translate3d(-60px, 0, 0);
+  }
 
   .feature__meta {
     max-width: calc(100%);

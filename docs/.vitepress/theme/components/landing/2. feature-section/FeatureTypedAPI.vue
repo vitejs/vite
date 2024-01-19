@@ -58,7 +58,9 @@ const { isCardActive } = useCardAnimation('#fully-typed-api')
 
 <style scoped>
 .feature-card {
-  transform: translate3d(60px, 0, 0);
+  @media (min-width: 768px) {
+    transform: translate3d(60px, 0, 0);
+  }
 }
 
 .feature__visualization {

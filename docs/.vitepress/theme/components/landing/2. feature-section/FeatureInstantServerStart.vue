@@ -218,7 +218,10 @@ const commandRunAnimation = () => {
 <style scoped>
 .feature-card {
   perspective: 100px;
-  transform: translate3d(-60px, 0, 0);
+
+  @media (min-width: 768px) {
+    transform: translate3d(-60px, 0, 0);
+  }
 
   /* Extend height on smaller devices, to make room for text */
   @media (max-width: 420px) {
@@ -386,11 +389,14 @@ const commandRunAnimation = () => {
         transparent 50%
       );
       filter: blur(15px);
-      transform: translate3d(0, 60px, 0);
       opacity: 0;
       pointer-events: none;
       will-change: opacity, transform;
       transition: all 2s ease-in-out;
+
+      @media (min-width: 768px) {
+        transform: translate3d(60px, 0, 0);
+      }
     }
 
     &.terminal--active {

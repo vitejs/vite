@@ -115,7 +115,7 @@ watch(
     gsap.to(dotRadius, {
       duration: 0.6,
       ease: 'power2.inOut',
-      value: visible ? 4 : 0,
+      value: visible ? 3 : 0,
     })
   },
 )
@@ -128,6 +128,7 @@ watch(
     :stroke="`url(#glow_gradient_${pathId})`"
     stroke-width="1.2"
     :mask="`url(#glow_mask_${pathId})`"
+    class="svg-path"
   />
   <circle
     v-if="props.dotColor"
@@ -179,6 +180,11 @@ watch(
 </template>
 
 <style scoped>
+.svg-path {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
 .label {
   opacity: 0;
   transition: opacity 0.4s ease-in-out;
@@ -195,11 +201,12 @@ watch(
 }
 
 .circle-dot {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
   --dot-color: white;
-  filter: none;
 
   @media (min-width: 768px) {
-    filter: drop-shadow(0 0 5px var(--dot-color));
+    filter: drop-shadow(0 0 3px var(--dot-color));
   }
 }
 </style>

@@ -50,5 +50,6 @@ defineProps({
   position: absolute;
   top: 300px;
   left: 785px;
+  transform: translate3d(0, 0, 0);
 }
 </style>

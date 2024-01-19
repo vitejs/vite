@@ -350,7 +350,9 @@ const { isCardActive } = useCardAnimation('#flexible-plugin-system')
 
 <style scoped>
 .feature-card {
-  transform: translate3d(-60px, 0, 0);
+  @media (min-width: 768px) {
+    transform: translate3d(-60px, 0, 0);
+  }
 
   .feature__meta {
     max-width: 680px;
@@ -402,7 +404,10 @@ const { isCardActive } = useCardAnimation('#flexible-plugin-system')
       transform 0.5s ease-in-out,
       filter 0.05s ease 0.45s;
     will-change: filter, transform;
-    transform: translate3d(0px, -60px, 0);
+
+    @media (min-width: 768px) {
+      transform: translate3d(-60px, 0, 0);
+    }
   }
 
   .blue-chip__cube {

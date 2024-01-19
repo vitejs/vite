@@ -446,8 +446,11 @@ const { startAnimation } = useCardAnimation(
 
 <style scoped>
 .feature-card {
-  transform: translate3d(60px, 0, 0);
   min-height: 370px;
+
+  @media (min-width: 768px) {
+    transform: translate3d(60px, 0, 0);
+  }
 }
 
 .feature__visualization {
