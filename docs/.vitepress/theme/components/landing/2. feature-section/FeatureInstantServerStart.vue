@@ -28,6 +28,15 @@ let timeline = null
  */
 onMounted(() => {
   nextTick(() => {
+    gsap.to('#instant-server-start-card', {
+      x: 0,
+      scrollTrigger: {
+        trigger: '#instant-server-start-card',
+        start: 'top 100%',
+        end: 'top 70%',
+        scrub: 1,
+      },
+    })
     timeline = gsap.timeline({
       scrollTrigger: {
         trigger: '#instant-server-start-card',
@@ -228,6 +237,9 @@ const startAnimation = () => {
 
 <style scoped>
 .feature-card {
+  perspective: 100px;
+  transform: translate3d(-60px, 0, 0);
+
   /* Extend height on smaller devices, to make room for text */
   @media (max-width: 420px) {
     height: 400px;

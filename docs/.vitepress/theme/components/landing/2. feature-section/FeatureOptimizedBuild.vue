@@ -20,6 +20,15 @@ const isBoltActive: Ref<boolean> = ref(false)
 
 onMounted(() => {
   nextTick(() => {
+    gsap.to('#optimized-build-card', {
+      x: 0,
+      scrollTrigger: {
+        trigger: '#optimized-build-card',
+        start: 'top 100%',
+        end: 'top 70%',
+        scrub: 1,
+      },
+    })
     startAnimation()
   })
 })
@@ -441,6 +450,7 @@ const startAnimation = () => {
 
 <style scoped>
 .feature-card {
+  transform: translate3d(60px, 0, 0);
   min-height: 370px;
 }
 

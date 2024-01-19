@@ -5,10 +5,26 @@ import logoJS from './../../../../../images/supports/js.svg'
 import logoTS from './../../../../../images/supports/ts.svg'
 import logoWA from './../../../../../images/supports/wa.svg'
 import logoPostCSS from './../../../../../images/supports/postcss.svg'
+import { nextTick, onMounted } from 'vue'
+import { gsap } from 'gsap'
+
+onMounted(() => {
+  nextTick(() => {
+    gsap.to('#rich-features-card', {
+      x: 0,
+      scrollTrigger: {
+        trigger: '#rich-features-card',
+        start: 'top 100%',
+        end: 'top 70%',
+        scrub: 1,
+      },
+    })
+  })
+})
 </script>
 
 <template>
-  <div class="feature-card">
+  <div class="feature-card" id="rich-features-card">
     <div class="feature__visualization">
       <div class="card-container">
         <svg
@@ -119,6 +135,8 @@ import logoPostCSS from './../../../../../images/supports/postcss.svg'
 }
 
 .feature-card {
+  transform: translate3d(-60px, 0, 0);
+
   &:hover {
     .feature__visualization {
       .card {
