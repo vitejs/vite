@@ -173,7 +173,7 @@ import HeroDiagram from './HeroDiagram.vue'
     background: linear-gradient(
       270deg,
       #bd34fe 0%,
-      rgb(127, 90, 215) 30%,
+      rgb(127, 90, 215) 10%,
       rgb(118, 96, 171) 60%,
       rgba(113, 94, 189, 0.9) 80%,
       rgba(113, 94, 189, 0) 100%
@@ -195,7 +195,7 @@ import HeroDiagram from './HeroDiagram.vue'
       width: 80vw;
       aspect-ratio: 3;
       transform: rotate(5deg);
-      filter: blur(200px);
+      filter: blur(180px);
       max-width: 1400px;
     }
 
