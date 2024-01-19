@@ -1,3 +1,9 @@
+## <small>3.2.8 (2024-01-19)</small>
+
+* fix: fs deny for case insensitive ([a26c87d](https://github.com/vitejs/vite/commit/a26c87d))
+
+
+
 ## <small>3.2.7 (2023-05-26)</small>
 
 * fix: port #13348 to v3, fs.deny with leading double slash (#13349) ([0574f80](https://github.com/vitejs/vite/commit/0574f80)), closes [#13348](https://github.com/vitejs/vite/issues/13348) [#13349](https://github.com/vitejs/vite/issues/13349)
