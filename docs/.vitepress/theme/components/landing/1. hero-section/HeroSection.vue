@@ -129,7 +129,7 @@ import HeroDiagram from './HeroDiagram.vue'
     background: linear-gradient(
       to left,
       #107694 0%,
-      #43c9ff 50%,
+      #27c5ff 50%,
       rgb(103, 91, 168) 70%,
       transparent 100%
     );
@@ -145,7 +145,7 @@ import HeroDiagram from './HeroDiagram.vue'
     }
 
     @media (min-width: 1025px) {
-      opacity: 0.8;
+      opacity: 1;
       border-radius: 50% 100% 100% 50%;
       transform: rotate(-5deg) translate3d(0, 10vh, 0);
       left: -5vw;
@@ -172,10 +172,10 @@ import HeroDiagram from './HeroDiagram.vue'
     border-radius: 100%;
     background: linear-gradient(
       270deg,
-      #bd34fe 0%,
-      rgb(127, 90, 215) 10%,
-      rgb(118, 96, 171) 60%,
-      rgba(113, 94, 189, 0.9) 80%,
+      #ba23ff 0%,
+      rgb(119, 82, 215) 10%,
+      rgb(110, 75, 190) 60%,
+      rgba(101, 79, 190, 0.9) 80%,
       rgba(113, 94, 189, 0) 100%
     );
     filter: blur(20vw);
@@ -190,7 +190,7 @@ import HeroDiagram from './HeroDiagram.vue'
     }
 
     @media (min-width: 1025px) {
-      opacity: 0.8;
+      opacity: 1;
       left: 15vw;
       width: 80vw;
       aspect-ratio: 3;
