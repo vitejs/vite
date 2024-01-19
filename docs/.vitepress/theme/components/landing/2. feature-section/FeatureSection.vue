@@ -144,6 +144,8 @@ const startAnimation = () => {
   margin: 0 auto;
   gap: 0;
   align-items: center;
+  position: relative;
+  z-index: 2;
 
   &:nth-of-type(1) {
     margin-top: -60px;
