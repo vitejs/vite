@@ -505,7 +505,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // Loop over every property key. Currently only strings are allows, as per spec
               obj.properties.forEach((prop) => {
                 if (
-                  prop.type == 'Property' &&
+                  prop.type === 'Property' &&
                   prop.key.type === 'Identifier' &&
                   prop.value.type === 'Literal'
                 ) {
