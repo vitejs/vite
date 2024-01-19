@@ -126,16 +126,28 @@ const frameworks: Framework[] = [
 ]
 
 const screenWidth = ref(1920)
+let resizeTimeout = null
 
 const handleResize = () => {
   screenWidth.value = window.innerWidth
+}
+
+const throttledResizeHandler = () => {
+  if (resizeTimeout === null) {
+    resizeTimeout = setTimeout(() => {
+      handleResize()
+      resizeTimeout = null
+    }, 100)
+  }
 }
 
 onMounted(() => {
   handleResize()
 
   nextTick(() => {
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', throttledResizeHandler)
+
+    // Initialize the GSAP timeline
     let timeline = gsap.timeline({
       scrollTrigger: {
         trigger: '#frameworks-section',
@@ -143,6 +155,7 @@ onMounted(() => {
         once: true,
       },
     })
+
     frameworks.forEach((framework, index) => {
       timeline.set(framework.visible, { value: true }, index * 0.05)
     })
@@ -150,7 +163,14 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
+  // Deregister the throttled event handler
+  window.removeEventListener('resize', throttledResizeHandler)
+
+  // Clear any pending execution of the resize handler
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+    resizeTimeout = null
+  }
 })
 
 /**
