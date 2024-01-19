@@ -220,6 +220,15 @@ export class HMRClient {
     }
   }
 
+  public clear(): void {
+    this.hotModulesMap.clear()
+    this.disposeMap.clear()
+    this.pruneMap.clear()
+    this.dataMap.clear()
+    this.customListenersMap.clear()
+    this.ctxToListenersMap.clear()
+  }
+
   // After an HMR update, some modules are no longer imported on the page
   // but they may have left behind side effects that need to be cleaned up
   // (.e.g style injections)
@@ -264,7 +273,7 @@ export class HMRClient {
     }
   }
 
-  public async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
+  private async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
     const { path, acceptedPath } = update
     const mod = this.hotModulesMap.get(path)
     if (!mod) {
