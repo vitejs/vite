@@ -10,6 +10,8 @@ export async function createServer(port) {
   const mf = new Miniflare({
     scriptPath: path.resolve(__dirname, 'dist/worker/entry-worker.js'),
     port,
+    modules: true,
+    compatibilityFlags: ['nodejs_compat'],
   })
   await mf.ready
   return { mf }
