@@ -1,6 +1,7 @@
 <script setup>
 import { nextTick, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
 const terminalActive = ref(false)
 const connectionsActive = ref(false)
@@ -8,17 +9,10 @@ const browserActive = ref(false)
 
 let timeline = null
 
+useSlideIn('#hmr-card')
+
 onMounted(() => {
   nextTick(() => {
-    gsap.to('#hmr-card', {
-      x: 0,
-      scrollTrigger: {
-        trigger: '#hmr-card',
-        start: 'top 100%',
-        end: 'top 70%',
-        scrub: 1,
-      },
-    })
     startAnimation()
   })
 })

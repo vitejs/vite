@@ -5,22 +5,9 @@ import logoJS from './../../../../../images/supports/js.svg'
 import logoTS from './../../../../../images/supports/ts.svg'
 import logoWA from './../../../../../images/supports/wa.svg'
 import logoPostCSS from './../../../../../images/supports/postcss.svg'
-import { nextTick, onMounted } from 'vue'
-import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
-onMounted(() => {
-  nextTick(() => {
-    gsap.to('#rich-features-card', {
-      x: 0,
-      scrollTrigger: {
-        trigger: '#rich-features-card',
-        start: 'top 100%',
-        end: 'top 70%',
-        scrub: 1,
-      },
-    })
-  })
-})
+useSlideIn('#rich-features-card')
 </script>
 
 <template>

@@ -2,6 +2,7 @@
 import { nextTick, onMounted, Ref, ref } from 'vue'
 import SvgNode from '../common/SvgNode.vue'
 import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
 const glowPosition: Ref<number> = ref(0)
 const glowVisible: Ref<boolean> = ref(false)
@@ -11,6 +12,8 @@ const animationRunning: Ref<boolean> = ref(false)
 const checkmarks = Array.from({ length: 13 }, (): Ref<boolean> => ref(false))
 
 let timeline = null
+
+useSlideIn('#continuous-integration')
 
 onMounted(() => {
   nextTick(() => {
@@ -350,6 +353,8 @@ const startAnimation = () => {
 
 <style scoped>
 .feature-card {
+  transform: translate3d(60px, 0, 0);
+
   .feature__meta {
     max-width: 500px;
   }

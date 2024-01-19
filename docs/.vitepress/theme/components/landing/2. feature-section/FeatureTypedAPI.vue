@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, Ref } from 'vue'
 import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
 const isCardActive: Ref<boolean> = ref(false)
 
@@ -9,6 +10,8 @@ onMounted(() => {
     startAnimation()
   })
 })
+
+useSlideIn('#fully-typed-api')
 
 let timeline = null
 
@@ -73,6 +76,10 @@ const startAnimation = () => {
 </template>
 
 <style scoped>
+.feature-card {
+  transform: translate3d(60px, 0, 0);
+}
+
 .feature__visualization {
   .ide {
     position: absolute;

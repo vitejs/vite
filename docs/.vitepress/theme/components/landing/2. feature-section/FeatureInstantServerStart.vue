@@ -1,6 +1,7 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
 /**
  * Whether the card has entered the viewport for the first time.
@@ -22,21 +23,14 @@ const highlightEnter = ref(false)
  */
 let timeline = null
 
+useSlideIn('#instant-server-start-card')
+
 /**
  * Enable the card when it's in the viewport.
  * This animates in the `npm run dev` command.
  */
 onMounted(() => {
   nextTick(() => {
-    gsap.to('#instant-server-start-card', {
-      x: 0,
-      scrollTrigger: {
-        trigger: '#instant-server-start-card',
-        start: 'top 100%',
-        end: 'top 70%',
-        scrub: 1,
-      },
-    })
     timeline = gsap.timeline({
       scrollTrigger: {
         trigger: '#instant-server-start-card',

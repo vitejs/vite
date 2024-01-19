@@ -2,6 +2,7 @@
 import SvgNode from '../common/SvgNode.vue'
 import { nextTick, onMounted, ref, Ref } from 'vue'
 import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
 /**
  * Each of the 10 nodes that fly into the bolt in the center.
@@ -13,6 +14,8 @@ const nodes = Array.from({ length: 10 }, () => {
   }
 })
 
+useSlideIn('#optimized-build-card')
+
 /**
  * Whether the bolt is illuminated or not.
  */
@@ -20,15 +23,6 @@ const isBoltActive: Ref<boolean> = ref(false)
 
 onMounted(() => {
   nextTick(() => {
-    gsap.to('#optimized-build-card', {
-      x: 0,
-      scrollTrigger: {
-        trigger: '#optimized-build-card',
-        start: 'top 100%',
-        end: 'top 70%',
-        scrub: 1,
-      },
-    })
     startAnimation()
   })
 })

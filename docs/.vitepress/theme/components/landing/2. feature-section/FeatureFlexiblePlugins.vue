@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, Ref } from 'vue'
 import { gsap } from 'gsap'
+import { useSlideIn } from '../../../composables/useSlideIn'
 
 const isCardActive: Ref<boolean> = ref(false)
 
@@ -9,6 +10,8 @@ onMounted(() => {
     startAnimation()
   })
 })
+
+useSlideIn('#flexible-plugin-system')
 
 let timeline = null
 
@@ -366,6 +369,8 @@ const startAnimation = () => {
 
 <style scoped>
 .feature-card {
+  transform: translate3d(-60px, 0, 0);
+
   .feature__meta {
     max-width: 680px;
   }
