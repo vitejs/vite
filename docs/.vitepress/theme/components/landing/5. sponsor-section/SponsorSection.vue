@@ -79,6 +79,8 @@ const { data } = useSponsor()
 .sponsor-section {
   margin-top: 120px;
   position: relative;
+  max-width: 100%;
+  overflow: hidden;
 
   @media (min-width: 768px) {
     margin-top: 180px;
