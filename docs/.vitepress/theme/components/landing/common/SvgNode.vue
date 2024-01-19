@@ -122,61 +122,63 @@ watch(
 </script>
 
 <template>
-  <path
-    ref="pathElement"
-    :d="props.path"
-    :stroke="`url(#glow_gradient_${pathId})`"
-    stroke-width="1.2"
-    :mask="`url(#glow_mask_${pathId})`"
-    class="svg-path"
-  />
-  <circle
-    v-if="props.dotColor"
-    :cx="dotPosition.x"
-    :cy="dotPosition.y"
-    :r="dotRadius"
-    :fill="props.dotColor ? props.dotColor : 'transparent'"
-    class="circle-dot"
-    :style="`--dot-color: ${props.dotColor}`"
-    key="circle-dot"
-  />
-  <text
-    v-if="props.label"
-    :x="dotPosition.x"
-    :y="dotPosition.y + 15"
-    fill="#a3a3a3"
-    font-family="Inter, sans-serif"
-    font-size="11px"
-    font-style="normal"
-    font-weight="400"
-    text-anchor="middle"
-    alignment-baseline="hanging"
-    class="label"
-    :class="{ 'label--visible': props.labelVisible }"
-  >
-    {{ props.label }}
-  </text>
-  <defs>
-    <mask :id="`glow_mask_${pathId}`">
-      <path :d="props.path" fill="black" />
-      <circle
+  <g>
+    <path
+      ref="pathElement"
+      :d="props.path"
+      :stroke="`url(#glow_gradient_${pathId})`"
+      stroke-width="1.2"
+      :mask="`url(#glow_mask_${pathId})`"
+      class="svg-path"
+    />
+    <circle
+      v-if="props.dotColor"
+      :cx="dotPosition.x"
+      :cy="dotPosition.y"
+      :r="dotRadius"
+      :fill="props.dotColor ? props.dotColor : 'transparent'"
+      class="circle-dot"
+      :style="`--dot-color: ${props.dotColor}`"
+      key="circle-dot"
+    />
+    <text
+      v-if="props.label"
+      :x="dotPosition.x"
+      :y="dotPosition.y + 15"
+      fill="#a3a3a3"
+      font-family="Inter, sans-serif"
+      font-size="11px"
+      font-style="normal"
+      font-weight="400"
+      text-anchor="middle"
+      alignment-baseline="hanging"
+      class="label"
+      :class="{ 'label--visible': props.labelVisible }"
+    >
+      {{ props.label }}
+    </text>
+    <defs>
+      <mask :id="`glow_mask_${pathId}`">
+        <path :d="props.path" fill="black" />
+        <circle
+          :cx="dotPosition.x"
+          :cy="dotPosition.y"
+          :r="gradientWidth * gradientWidthScaleFactor"
+          fill="white"
+        />
+      </mask>
+      <radialGradient
+        :id="`glow_gradient_${pathId}`"
         :cx="dotPosition.x"
         :cy="dotPosition.y"
         :r="gradientWidth * gradientWidthScaleFactor"
-        fill="white"
-      />
-    </mask>
-    <radialGradient
-      :id="`glow_gradient_${pathId}`"
-      :cx="dotPosition.x"
-      :cy="dotPosition.y"
-      :r="gradientWidth * gradientWidthScaleFactor"
-      gradientUnits="userSpaceOnUse"
-    >
-      <stop offset="0%" :stop-color="props.glowColor" :stop-opacity="1" />
-      <stop offset="100%" :stop-color="props.glowColor" stop-opacity="0" />
-    </radialGradient>
-  </defs>
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0%" :stop-color="props.glowColor" :stop-opacity="1" />
+        <stop offset="100%" :stop-color="props.glowColor" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+  </g>
 </template>
 
 <style scoped>

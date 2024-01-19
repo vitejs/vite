@@ -21,13 +21,15 @@ const inputPaths = [
 ]
 
 // Input lines
-const inputLines = inputPaths.map((path) => ({
-  position: ref(0),
-  visible: ref(false),
-  labelVisible: ref(false),
-  label: ref(''),
-  path,
-}))
+const inputLines = inputPaths.map((path) =>
+  ref({
+    position: 0,
+    visible: false,
+    labelVisible: false,
+    label: '',
+    path,
+  }),
+)
 
 // Input File Sets
 const inputFileSets = ref([
@@ -99,8 +101,8 @@ const animateDiagram = () => {
   prepareInputs().forEach((lineIndex, fileIndex) => {
     timeline.add(
       isMobile
-        ? animateSingleInputMobile(inputLines[lineIndex])
-        : animateSingleInputDesktop(inputLines[lineIndex]),
+        ? animateSingleInputMobile(inputLines[lineIndex as number])
+        : animateSingleInputDesktop(inputLines[lineIndex as number]),
       fileIndex * (isMobile ? 0.4 : 0.2),
     )
   })
@@ -131,7 +133,6 @@ const animateDiagram = () => {
 
 /**
  * Randomly selects a set of input file nodes and assigns them to input lines.
- * @returns {any[]}
  */
 const prepareInputs = () => {
   // Randomly select a set of input file "nodes"
@@ -141,14 +142,14 @@ const prepareInputs = () => {
   // Choose enough unique lines for the input file nodes to slide along
   const inputLineIndexes = new Set()
   while (inputLineIndexes.size < 3) {
-    const index = Math.floor(Math.random() * inputLines.length)
+    const index: number = Math.floor(Math.random() * inputLines.length)
     inputLineIndexes.add(index)
   }
 
   // Assign each line it's appropriate node label
   const inputs = [...inputLineIndexes]
   inputs.forEach((lineIndex, fileIndex) => {
-    inputLines[lineIndex].label.value = inputFileSet[fileIndex]
+    inputLines[lineIndex as number].value.label = inputFileSet[fileIndex]
   })
   return inputs
 }
@@ -293,18 +294,18 @@ const animateSingleInputDesktop = (inputLine) => {
 
   // Reset the line
   timeline.set(
-    inputLine.position,
+    inputLine.value,
     {
-      value: 0,
+      position: 0,
     },
     0,
   )
 
   // Animate the dot in
   timeline.to(
-    inputLine.position,
+    inputLine.value,
     {
-      value: Math.random() * 0.1 + 0.3,
+      position: Math.random() * 0.1 + 0.3,
       duration: 1.5,
       ease: 'expo.out',
     },
@@ -313,27 +314,27 @@ const animateSingleInputDesktop = (inputLine) => {
 
   // Show the dot
   timeline.set(
-    inputLine.visible,
+    inputLine.value,
     {
-      value: true,
+      visible: true,
     },
     0,
   )
 
   // Show the label
   timeline.set(
-    inputLine.labelVisible,
+    inputLine.value,
     {
-      value: true,
+      labelVisible: true,
     },
     0.4,
   )
 
   // Animate the dot out
   timeline.to(
-    inputLine.position,
+    inputLine.value,
     {
-      value: 1,
+      position: 1,
       duration: 1.5,
       ease: 'power3.in',
     },
@@ -342,18 +343,18 @@ const animateSingleInputDesktop = (inputLine) => {
 
   // Hide the label
   timeline.set(
-    inputLine.labelVisible,
+    inputLine.value,
     {
-      value: false,
+      labelVisible: false,
     },
     2.5,
   )
 
   // Hide the dot
   timeline.set(
-    inputLine.visible,
+    inputLine.value,
     {
-      value: false,
+      visible: false,
     },
     3,
   )
@@ -372,18 +373,18 @@ const animateSingleInputMobile = (inputLine) => {
 
   // Reset the line
   timeline.set(
-    inputLine.position,
+    inputLine.value,
     {
-      value: 0,
+      position: 0,
     },
     0,
   )
 
   // Animate the dot in
   timeline.to(
-    inputLine.position,
+    inputLine.value,
     {
-      value: 1,
+      position: 1,
       duration: 2,
       ease: 'power2.out',
     },
@@ -392,18 +393,18 @@ const animateSingleInputMobile = (inputLine) => {
 
   // Show the dot
   timeline.set(
-    inputLine.visible,
+    inputLine.value,
     {
-      value: true,
+      visible: true,
     },
     0,
   )
 
   // Hide the dot
   timeline.set(
-    inputLine.visible,
+    inputLine.value,
     {
-      value: false,
+      visible: false,
     },
     0.6,
   )

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import SvgNode from '../../common/SvgNode.vue'
+import SvgNode, { SvgNodeProps } from '../../common/SvgNode.vue'
+import { Ref } from 'vue'
 
 defineProps({
   inputLines: {
-    type: Array,
+    type: Array as () => Ref<SvgNodeProps>[],
     required: true,
   },
 })
@@ -19,20 +20,14 @@ defineProps({
     class="input-lines"
   >
     <!-- Input Lines -->
-    <g v-for="inputLine in inputLines" :key="inputLine.path">
+    <g v-for="inputLine in inputLines" :key="inputLine.value.path">
       <path
-        :d="inputLine.path"
+        :d="inputLine.value.path"
         stroke="url(#base_gradient)"
         stroke-width="1.2"
         style="opacity: 0.8"
       />
-      <SvgNode
-        :path="inputLine.path"
-        :position="inputLine.position.value"
-        :visible="inputLine.visible.value"
-        :label-visible="inputLine.labelVisible.value"
-        :label="inputLine.label.value"
-      />
+      <SvgNode v-bind="inputLine.value" />
     </g>
 
     <defs>
