@@ -200,7 +200,7 @@ const centerIndexes = computed(() => {
  * Generate CSS transformations for each row, to gracefully slide between horizontal positions.
  */
 const rowStyle = computed(() => {
-  if (numBlocksPerRow.value % 2 === 0) {
+  if (numBlocksPerRow.value % 2 === 0 && screenWidth.value > 768) {
     return {
       transform: `translate3d(calc(((100% - ${
         numBlocksPerRow.value * (96 + 24)
@@ -346,11 +346,21 @@ const rowStyle = computed(() => {
     grid-auto-flow: column;
 
     &:nth-child(even) {
-      --row-offset: 24px;
+      --row-offset: 36px;
     }
 
     &:nth-child(odd) {
-      --row-offset: -24px;
+      --row-offset: 12px;
+    }
+
+    @media (min-width: 1080px) {
+      &:nth-child(even) {
+        --row-offset: 24px;
+      }
+
+      &:nth-child(odd) {
+        --row-offset: -24px;
+      }
     }
   }
 }
