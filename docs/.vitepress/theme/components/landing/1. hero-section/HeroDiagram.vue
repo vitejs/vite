@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, Ref, ref } from 'vue'
 import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
+import { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
@@ -21,7 +22,7 @@ const inputPaths = [
 ]
 
 // Input lines
-const inputLines = inputPaths.map((path) =>
+const inputLines: Ref[] = inputPaths.map((path) =>
   ref({
     position: 0,
     visible: false,
@@ -41,25 +42,25 @@ const inputFileSets = ref([
 ])
 
 // Output lines
-const outputLines = [
-  {
-    position: ref(0),
-    visible: ref(false),
-    labelVisible: ref(false),
-    label: ref('.html'),
-  },
-  {
-    position: ref(0),
-    visible: ref(false),
-    labelVisible: ref(false),
-    label: ref('.css'),
-  },
-  {
-    position: ref(0),
-    visible: ref(false),
-    labelVisible: ref(false),
-    label: ref('.js'),
-  },
+const outputLines: Ref[] = [
+  ref({
+    position: 0,
+    visible: false,
+    labelVisible: false,
+    label: '.html',
+  }),
+  ref({
+    position: 0,
+    visible: false,
+    labelVisible: false,
+    label: '.css',
+  }),
+  ref({
+    position: 0,
+    visible: false,
+    labelVisible: false,
+    label: '.js',
+  }),
 ]
 
 // Indicators
@@ -165,18 +166,18 @@ const animateSingleOutputDesktop = (outputLine, index) => {
 
   // Reset the line
   timeline.set(
-    outputLine.position,
+    outputLine.value,
     {
-      value: 0,
+      position: 0,
     },
     0,
   )
 
   // Animate the dot in
   timeline.to(
-    outputLine.position,
+    outputLine.value,
     {
-      value: (0.7 / 3) * (index + 1) + 0.05,
+      position: (0.7 / 3) * (index + 1) + 0.05,
       duration: 1.5,
       ease: 'expo.out',
     },
@@ -185,27 +186,27 @@ const animateSingleOutputDesktop = (outputLine, index) => {
 
   // Show the dot
   timeline.set(
-    outputLine.visible,
+    outputLine.value,
     {
-      value: true,
+      visible: true,
     },
     0,
   )
 
   // Show the label
   timeline.set(
-    outputLine.labelVisible,
+    outputLine.value,
     {
-      value: true,
+      labelVisible: true,
     },
     0.4,
   )
 
   // Animate the dot out
   timeline.to(
-    outputLine.position,
+    outputLine.value,
     {
-      value: 1,
+      position: 1,
       duration: 1.5,
       ease: 'power3.in',
     },
@@ -214,18 +215,18 @@ const animateSingleOutputDesktop = (outputLine, index) => {
 
   // Hide the label
   timeline.set(
-    outputLine.labelVisible,
+    outputLine.value,
     {
-      value: false,
+      labelVisible: false,
     },
     3.5,
   )
 
   // Hide the dot
   timeline.set(
-    outputLine.visible,
+    outputLine.value,
     {
-      value: false,
+      visible: false,
     },
     4,
   )
@@ -236,27 +237,24 @@ const animateSingleOutputDesktop = (outputLine, index) => {
 /**
  * Animates a single output line for mobile.
  * There are technically 3 output lines, but they are stacked on top of each other.
- * @param outputLine
- * @param index
- * @returns {gsap.core.Timeline}
  */
-const animateSingleOutputMobile = (outputLine, index) => {
+const animateSingleOutputMobile = (outputLine) => {
   const timeline = gsap.timeline()
 
   // Reset the line
   timeline.set(
-    outputLine.position,
+    outputLine.value,
     {
-      value: 0,
+      position: 0,
     },
     0,
   )
 
   // Animate the dot in
   timeline.to(
-    outputLine.position,
+    outputLine.value,
     {
-      value: 0.7,
+      position: 0.7,
       duration: 3,
       ease: 'power2.out',
     },
@@ -265,18 +263,18 @@ const animateSingleOutputMobile = (outputLine, index) => {
 
   // Show the dot
   timeline.set(
-    outputLine.visible,
+    outputLine.value,
     {
-      value: true,
+      visible: true,
     },
     0.35,
   )
 
   // Hide the dot
   timeline.set(
-    outputLine.visible,
+    outputLine.value,
     {
-      value: false,
+      visible: false,
     },
     1,
   )

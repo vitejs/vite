@@ -1,9 +1,10 @@
-<script setup>
-import SvgNode from '../../common/SvgNode.vue'
+<script setup lang="ts">
+import SvgNode, { SvgNodeProps } from '../../common/SvgNode.vue'
+import { Ref } from 'vue'
 
 defineProps({
   outputLines: {
-    type: Array,
+    type: Array as () => Ref<SvgNodeProps>[],
     required: true,
   },
 })
@@ -27,10 +28,10 @@ defineProps({
     <g v-for="outputLine in outputLines">
       <SvgNode
         path="M843.463 1.3315L245.316 5.47507L0.633077 4.69725"
-        :position="outputLine.position.value"
-        :visible="outputLine.visible.value"
-        :label-visible="outputLine.labelVisible.value"
-        :label="outputLine.label.value"
+        :position="outputLine.value.position"
+        :visible="outputLine.value.visible"
+        :label-visible="outputLine.value.labelVisible"
+        :label="outputLine.value.label"
         dot-color="#ce9bf4"
         glow-color="#BD34FE"
       />
