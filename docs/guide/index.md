@@ -62,7 +62,7 @@ $ pnpm create vite
 ```
 
 ```bash [Bun]
-$ bun create-vite
+$ bun create vite
 ```
 
 :::
