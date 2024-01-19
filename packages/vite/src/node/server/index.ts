@@ -629,10 +629,7 @@ export async function _createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, {
-      matchBase: true,
-      nocase: true,
-    }),
+    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true }),
     _shortcutsOptions: undefined,
   }
 
