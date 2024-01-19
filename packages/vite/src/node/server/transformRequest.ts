@@ -363,10 +363,8 @@ async function loadAndTransform(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }
@@ -467,10 +465,8 @@ async function handleModuleSoftInvalidation(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    server.moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }

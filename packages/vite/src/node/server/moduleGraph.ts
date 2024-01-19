@@ -88,6 +88,7 @@ export type ResolvedUrl = [
 export class ModuleGraph {
   urlToModuleMap = new Map<string, ModuleNode>()
   idToModuleMap = new Map<string, ModuleNode>()
+  etagToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
@@ -192,6 +193,9 @@ export class ModuleGraph {
 
     // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
     // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
+    const etag = mod.transformResult?.etag
+    if (etag) this.etagToModuleMap.delete(etag)
+
     mod.transformResult = null
     mod.ssrTransformResult = null
     mod.ssrModule = null
@@ -417,6 +421,27 @@ export class ModuleGraph {
       return [mod.url, mod.id, mod.meta]
     }
     return this._resolveUrl(url, ssr)
+  }
+
+  updateModuleTransformResult(
+    mod: ModuleNode,
+    result: TransformResult | null,
+    ssr: boolean,
+  ): void {
+    if (ssr) {
+      mod.ssrTransformResult = result
+    } else {
+      const prevEtag = mod.transformResult?.etag
+      if (prevEtag) this.etagToModuleMap.delete(prevEtag)
+
+      mod.transformResult = result
+
+      if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
+    }
+  }
+
+  getModuleByEtag(etag: string): ModuleNode | undefined {
+    return this.etagToModuleMap.get(etag)
   }
 
   /**
