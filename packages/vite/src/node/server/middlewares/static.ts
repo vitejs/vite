@@ -156,7 +156,7 @@ export function serveRawFsMiddleware(
   }
 }
 
-const _matchOptions = { matchBase: true }
+const _matchOptions = { matchBase: true, nocase: true }
 
 export function isFileServingAllowed(
   url: string,
