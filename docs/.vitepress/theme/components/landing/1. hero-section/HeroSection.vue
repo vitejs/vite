@@ -212,5 +212,10 @@ import HeroDiagram from './HeroDiagram.vue'
   display: flex;
   flex-direction: row;
   gap: 20px;
+  margin-top: 20px;
+
+  @media (min-width: 768px) {
+    margin-top: 0;
+  }
 }
 </style>
