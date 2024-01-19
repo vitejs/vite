@@ -407,7 +407,9 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               this.error(message)
             }
 
-            return options.idOnly ? id : { id, external: true }
+            return options.idOnly
+              ? id
+              : { id, external: true, moduleSideEffects: false }
           } else {
             if (!asSrc) {
               debug?.(
