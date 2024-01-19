@@ -24,6 +24,10 @@ const generatedContentImports = [
   },
 ]
 
+const virtualFileImportAttributes = '@virtual-file-import-attributes'
+const virtualIdImportAttributes = '\0' + virtualFileImportAttributes
+let importAttributes = {}
+
 export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
@@ -96,6 +100,27 @@ export default defineConfig({
             '}\n\n' +
             tests
           )
+        }
+      },
+    },
+    {
+      name: 'import-attributes',
+      resolveId(id, _importer, options) {
+        if (id === virtualFileImportAttributes) {
+          importAttributes = options.attributes
+          return virtualIdImportAttributes
+        }
+      },
+      load(id) {
+        if (id === virtualIdImportAttributes) {
+          if (
+            importAttributes.foo === 'bar' &&
+            importAttributes.baz === 'qux'
+          ) {
+            return `export const msg = "[success] from custom virtual file"`
+          } else {
+            return `export const msg = "fail"`
+          }
         }
       },
     },

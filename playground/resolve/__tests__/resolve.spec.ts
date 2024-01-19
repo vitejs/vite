@@ -209,6 +209,10 @@ test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })
 
+test('Resolving import attributes', async () => {
+  expect(await page.textContent('.import-attributes')).toMatch('[success]')
+})
+
 test('Resolve doesnt interrupt page request with trailing query and .css', async () => {
   await page.goto(viteTestUrl + '/?test.css')
   expect(await page.locator('vite-error-overlay').count()).toBe(0)

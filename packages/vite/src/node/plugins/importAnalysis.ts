@@ -282,6 +282,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizeUrl = async (
         url: string,
         pos: number,
+        importAttributes: Record<string, any> | undefined,
         forceSkipImportAnalysis: boolean = false,
       ): Promise<[string, string]> => {
         url = stripBase(url, base)
@@ -306,7 +307,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const resolved = await this.resolve(url, importerFile)
+        const resolved = await this.resolve(url, importerFile, {
+          attributes: importAttributes,
+        })
 
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
@@ -482,7 +485,35 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const isDynamicImport = dynamicIndex > -1
 
           // strip import attributes as we can process them ourselves
+          let importAttributes: Record<string, any> | undefined = undefined
+
           if (!isDynamicImport && attributeIndex > -1) {
+            const raw = source.substring(attributeIndex, expEnd)
+            importAttributes = {}
+
+            // Import attributes are a JavaScript object { foo: 'bar' }
+            // So use Acorn to parse them as such
+            const program = parseJS(`const attributes = ${raw}`, {
+              ecmaVersion: 'latest',
+            })
+            if (
+              program.body[0].type === 'VariableDeclaration' &&
+              program.body[0].declarations[0].type === 'VariableDeclarator' &&
+              program.body[0].declarations[0].init?.type === 'ObjectExpression'
+            ) {
+              const obj = program.body[0].declarations[0].init
+              // Loop over every property key. Currently only strings are allows, as per spec
+              obj.properties.forEach((prop) => {
+                if (
+                  prop.type == 'Property' &&
+                  prop.key.type === 'Identifier' &&
+                  prop.value.type === 'Literal'
+                ) {
+                  importAttributes![prop.key.name] = prop.value.value
+                }
+              })
+            }
+
             str().remove(end + 1, expEnd)
           }
 
@@ -528,7 +559,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // normalize
-            const [url, resolvedId] = await normalizeUrl(specifier, start)
+            const [url, resolvedId] = await normalizeUrl(
+              specifier,
+              start,
+              importAttributes,
+            )
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.
@@ -754,7 +789,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           ;(
             await Promise.all(
-              [...pluginImports].map((id) => normalizeUrl(id, 0, true)),
+              [...pluginImports].map((id) =>
+                normalizeUrl(id, 0, undefined, true),
+              ),
             )
           ).forEach(([url]) => importedUrls.add(url))
         }
