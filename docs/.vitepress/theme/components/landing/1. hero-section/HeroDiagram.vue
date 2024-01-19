@@ -508,6 +508,7 @@ const animateSingleInputMobile = (inputLine) => {
       filter: blur(8px);
       border-radius: 100px;
       mix-blend-mode: color-dodge;
+      display: none;
     }
 
     &:before {
@@ -529,6 +530,14 @@ const animateSingleInputMobile = (inputLine) => {
       filter: blur(10px);
       border-radius: 100px;
       mix-blend-mode: color-dodge;
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      &:before,
+      &:after {
+        display: block;
+      }
     }
   }
 

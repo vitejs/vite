@@ -6,11 +6,12 @@ export function useSlideIn(el: HTMLElement | string) {
     await nextTick(() => {
       gsap.to(el, {
         x: 0,
+        duration: 1,
+        ease: 'power3.out',
         scrollTrigger: {
           trigger: el,
           start: 'top 100%',
-          end: 'top 70%',
-          scrub: 1,
+          once: true,
         },
       })
     })

@@ -238,8 +238,10 @@ const props = defineProps({
   opacity: 0;
   transition: all 3s ease-out;
   will-change: opacity;
+  display: none;
 
   @media (min-width: 768px) {
+    display: block;
     filter: blur(60px);
   }
 

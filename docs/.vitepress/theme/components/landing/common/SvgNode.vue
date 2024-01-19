@@ -58,7 +58,7 @@ const pathId: Ref<string> = ref(Math.random().toString(36))
 /**
  * A ref for the path element in the SVG DOM.
  */
-const pathElement: Ref<string | null> = ref(null)
+const pathElement: Ref<SVGPathElement | null> = ref(null)
 
 /**
  * The radius on each side of the dot, represented as a glow on the SVG path.
@@ -79,17 +79,22 @@ const pathLength: ComputedRef<number> = computed(() => {
 })
 
 /**
- * The computed position of the dot along the path.
+ * The position of the dot on the SVG path.
  */
-const dotPosition: ComputedRef<{
-  x: number
-  y: number
-}> = computed(() => {
-  if (!pathElement.value) return { x: 0, y: 0 }
-  return pathElement.value.getPointAtLength(
-    (1 - props.position) * pathLength.value,
-  )
-})
+const dotPosition: Ref<{ x: number; y: number }> = ref({ x: 0, y: 0 })
+
+/**
+ * Watch for changes to the position of the dot.
+ */
+watch(
+  () => props.position,
+  () => {
+    if (!pathElement.value) return { x: 0, y: 0 }
+    const position = (1 - props.position) * pathLength.value
+    const { x, y } = pathElement.value.getPointAtLength(position)
+    dotPosition.value = { x, y }
+  },
+)
 
 /**
  * The radius of the dot.
@@ -122,13 +127,16 @@ watch(
     :d="props.path"
     :stroke="`url(#glow_gradient_${pathId})`"
     stroke-width="1.2"
+    :mask="`url(#glow_mask_${pathId})`"
   />
   <circle
     :cx="dotPosition.x"
     :cy="dotPosition.y"
     :r="dotRadius"
     :fill="props.dotColor"
-    :style="`filter: drop-shadow(0 0 6px ${props.dotColor});`"
+    class="circle-dot"
+    :style="`--dot-color: ${props.dotColor}`"
+    key="circle-dot"
   />
   <text
     v-if="props.label"
@@ -147,6 +155,15 @@ watch(
     {{ props.label }}
   </text>
   <defs>
+    <mask :id="`glow_mask_${pathId}`">
+      <path :d="props.path" fill="black" />
+      <circle
+        :cx="dotPosition.x"
+        :cy="dotPosition.y"
+        :r="gradientWidth * gradientWidthScaleFactor"
+        fill="white"
+      />
+    </mask>
     <radialGradient
       :id="`glow_gradient_${pathId}`"
       :cx="dotPosition.x"
@@ -173,6 +190,15 @@ watch(
 
   &.label--visible {
     opacity: 1;
+  }
+}
+
+.circle-dot {
+  --dot-color: white;
+  filter: none;
+
+  @media (min-width: 768px) {
+    filter: drop-shadow(0 0 5px var(--dot-color));
   }
 }
 </style>
