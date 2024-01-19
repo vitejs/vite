@@ -29,6 +29,7 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
+  importEsbuild,
   isBuiltin,
   isExternalUrl,
   isFilePathESM,
@@ -1009,7 +1010,7 @@ async function bundleConfigFile(
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
 
-  const { build } = await import('esbuild')
+  const { build } = await importEsbuild()
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],

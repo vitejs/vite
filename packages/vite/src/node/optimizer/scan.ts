@@ -23,6 +23,7 @@ import {
   createDebugger,
   dataUrlRE,
   externalRE,
+  importEsbuild,
   isInNodeModules,
   isObject,
   isOptimizable,
@@ -134,7 +135,7 @@ export function scanImports(config: ResolvedConfig): {
 
   `)
       if (e.errors) {
-        const { formatMessages } = await import('esbuild')
+        const { formatMessages } = await importEsbuild()
         const msgs = await formatMessages(e.errors, {
           kind: 'error',
           color: true,
@@ -216,8 +217,9 @@ async function prepareEsbuildScanner(
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  const esbuild = (await import('esbuild')).default
-  return await esbuild.context({
+  return await (
+    await importEsbuild()
+  ).context({
     absWorkingDir: process.cwd(),
     write: false,
     stdin: {
@@ -316,7 +318,7 @@ function esbuildScanPlugin(
     let transpiledContents
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
-      const { transform } = await import('esbuild')
+      const { transform } = await importEsbuild()
       transpiledContents = (await transform(contents, { loader })).code
     } else {
       transpiledContents = contents

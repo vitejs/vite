@@ -13,6 +13,7 @@ import {
   createDebugger,
   flattenId,
   getHash,
+  importEsbuild,
   isOptimizable,
   isWindows,
   lookupFile,
@@ -758,7 +759,7 @@ async function prepareEsbuildOptimizerRun(
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
-  const esbuild = (await import('esbuild')).default
+  const esbuild = await importEsbuild()
   const context = await esbuild.context({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
@@ -1058,7 +1059,7 @@ export async function extractExportsData(
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
     // so only the entry file is being transformed.
-    const { build } = await import('esbuild')
+    const { build } = await importEsbuild()
     const result = await build({
       ...esbuildOptions,
       entryPoints: [filePath],
