@@ -223,6 +223,7 @@ const startAnimation = () => {
       max-width: 275px;
       position: relative;
       z-index: 2;
+      pointer-events: none;
 
       .meta__title {
         color: #fff;
