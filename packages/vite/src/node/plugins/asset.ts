@@ -18,6 +18,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
+  blobRE,
   cleanUrl,
   getHash,
   injectQuery,
@@ -189,6 +190,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8'),
         )}`
+      }
+
+      if (blobRE.test(id)) {
+        const file = checkPublicFile(id, config) || cleanUrl(id)
+        this.addWatchFile(file)
+        // blob query, read file and return as is
+        return await fsp.readFile(file, 'utf-8')
       }
 
       if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
