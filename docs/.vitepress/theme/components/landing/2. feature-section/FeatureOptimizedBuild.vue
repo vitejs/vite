@@ -21,12 +21,6 @@ useSlideIn('#optimized-build-card')
  */
 const isBoltActive: Ref<boolean> = ref(false)
 
-onMounted(() => {
-  nextTick(() => {
-    startAnimation()
-  })
-})
-
 let timeline = null
 
 const startAnimation = () => {
@@ -70,7 +64,11 @@ const startAnimation = () => {
 </script>
 
 <template>
-  <div class="feature-card" id="optimized-build-card">
+  <div
+    class="feature-card"
+    id="optimized-build-card"
+    @mouseover.stop.prevent="startAnimation"
+  >
     <div class="feature__visualization">
       <!-- Left-side lines/nodes -->
       <svg

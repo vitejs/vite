@@ -1,109 +1,94 @@
 <script setup lang="ts">
-import { nextTick, onMounted, Ref, ref } from 'vue'
+import { Ref, ref } from 'vue'
 import SvgNode from '../common/SvgNode.vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
+// Animation state
 const glowPosition: Ref<number> = ref(0)
 const glowVisible: Ref<boolean> = ref(false)
-const isCardActive: Ref<boolean> = ref(false)
-const animationRunning: Ref<boolean> = ref(false)
-
 const checkmarks = Array.from({ length: 13 }, (): Ref<boolean> => ref(false))
 
-let timeline = null
-
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#continuous-integration')
 
-onMounted(() => {
-  nextTick(() => {
-    startAnimation()
-  })
-})
+/**
+ * Start the animation when the card is hovered
+ */
+const { startAnimation, isCardActive } = useCardAnimation(
+  '#continuous-integration',
+  () => {
+    // Reset initial state
+    glowPosition.value = 0
+    glowVisible.value = false
 
-const startAnimation = () => {
-  if (animationRunning.value) {
-    return
-  }
-  if (timeline) {
-    timeline.kill()
-  }
-  animationRunning.value = true
-  glowPosition.value = 0
-  glowVisible.value = false
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#continuous-integration',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-  timeline.call(() => {
-    isCardActive.value = true
-  })
-  timeline.to(
-    glowPosition,
-    {
-      value: 1,
-      duration: 1.5,
-      ease: 'power2.in',
-    },
-    0,
-  )
-  timeline.call(
-    () => {
-      glowVisible.value = true
-    },
-    null,
-    0.2,
-  )
-  timeline.call(
-    () => {
-      glowVisible.value = false
-    },
-    null,
-    1.1,
-  )
-  checkmarks.forEach((checkmark, index) => {
+    // Define the timeline
+    const timeline = gsap.timeline()
+
+    // Move the glowing lines from top to bottom
+    timeline.to(
+      glowPosition,
+      {
+        value: 1,
+        duration: 1.5,
+        ease: 'power2.in',
+      },
+      0,
+    )
+
+    // Make the glowing lines visible
     timeline.call(
       () => {
-        checkmark.value = true
+        glowVisible.value = true
       },
       null,
-      1.3 + index * 0.2,
+      0.2,
     )
-  })
-  checkmarks.forEach((checkmark) => {
+    // Make the glowing lines hidden shortly after
     timeline.call(
       () => {
-        checkmark.value = false
+        glowVisible.value = false
       },
       null,
-      7,
+      1.1,
     )
-  })
-  timeline.call(
-    () => {
-      isCardActive.value = false
-    },
-    null,
-    7.2,
-  )
-  timeline.call(
-    () => {
-      animationRunning.value = false
-    },
-    null,
-    9,
-  )
-}
+
+    // Stagger the checkmarks
+    checkmarks.forEach((checkmark, index) => {
+      timeline.call(
+        () => {
+          checkmark.value = true
+        },
+        null,
+        1.3 + index * 0.2,
+      )
+    })
+
+    // Turn off the checkmarks
+    checkmarks.forEach((checkmark) => {
+      timeline.call(
+        () => {
+          checkmark.value = false
+        },
+        null,
+        7,
+      )
+    })
+
+    // All done
+    return timeline
+  },
+)
 </script>
 
 <template>
   <div
     class="feature-card"
     id="continuous-integration"
-    @mouseover="startAnimation"
+    @mouseover.stop.prevent="startAnimation"
   >
     <div class="feature__visualization" :class="{ active: isCardActive }">
       <div class="camera-container">

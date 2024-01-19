@@ -2,34 +2,17 @@
 import { nextTick, onMounted, ref, Ref } from 'vue'
 import { gsap } from 'gsap'
 import { useSlideIn } from '../../../composables/useSlideIn'
+import { useCardAnimation } from '../../../composables/useCardAnimation'
 
-const isCardActive: Ref<boolean> = ref(false)
-
-onMounted(() => {
-  nextTick(() => {
-    startAnimation()
-  })
-})
-
+/**
+ * Slide the card in when the page loads
+ */
 useSlideIn('#fully-typed-api')
 
-let timeline = null
-
-const startAnimation = () => {
-  if (timeline) {
-    timeline.kill()
-  }
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: '#fully-typed-api',
-      start: 'top 70%',
-      once: true,
-    },
-  })
-  timeline.call(() => {
-    isCardActive.value = true
-  })
-}
+/**
+ * Start the animation when the card is hovered
+ */
+const { isCardActive } = useCardAnimation('#fully-typed-api')
 </script>
 
 <template>
@@ -186,7 +169,8 @@ const startAnimation = () => {
     }
   }
 
-  &.active {
+  &.active,
+  &:hover {
     .code__inactive {
       filter: blur(5px);
     }
