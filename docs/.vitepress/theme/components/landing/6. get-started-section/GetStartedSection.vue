@@ -146,7 +146,7 @@
   }
 
   h3 {
-    margin: 0 auto 30px;
+    margin: 0 auto 40px;
     color: #d4d4d8;
   }
 
@@ -162,7 +162,9 @@
     width: 84px;
     aspect-ratio: 1;
     filter: drop-shadow(0px 18px 33px rgba(0, 0, 0, 0.5));
-    margin: 0 auto 40px;
+    margin: 0 auto 60px;
+    border: 1px solid #2b4659;
+    border-radius: 6px;
 
     &:before {
       content: '';
@@ -237,7 +239,7 @@
         filter: blur(10vw);
         bottom: -30%;
         left: -10%;
-        opacity: 0.3;
+        opacity: 0.2;
       }
 
       @media (min-width: 1025px) {
@@ -265,13 +267,13 @@
       );
       filter: blur(15vw);
       transform: none;
-      opacity: 0.7;
+      opacity: 0.6;
 
       @media (min-width: 768px) {
         filter: blur(10vw);
         bottom: -30%;
         right: -10%;
-        opacity: 0.4;
+        opacity: 0.3;
       }
 
       @media (min-width: 1025px) {
