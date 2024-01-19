@@ -406,7 +406,7 @@ const { isCardActive } = useCardAnimation('#flexible-plugin-system')
     will-change: filter, transform;
 
     @media (min-width: 768px) {
-      transform: translate3d(-60px, 0, 0);
+      transform: translate3d(0, -60px, 0);
     }
   }
 
