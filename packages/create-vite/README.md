@@ -26,7 +26,7 @@ $ pnpm create vite
 With Bun:
 
 ```bash
-$ bun create-vite
+$ bun create vite
 ```
 
 Then follow the prompts!
@@ -44,7 +44,7 @@ yarn create vite my-vue-app --template vue
 pnpm create vite my-vue-app --template vue
 
 # Bun
-bun create-vite my-vue-app --template vue
+bun create vite my-vue-app --template vue
 ```
 
 Currently supported template presets include:
