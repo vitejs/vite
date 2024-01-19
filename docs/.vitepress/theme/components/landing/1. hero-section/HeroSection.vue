@@ -1,10 +1,11 @@
-<script setup lang="ts">
+<script setup>
 import HeroDiagram from './HeroDiagram.vue'
 </script>
 
 <template>
   <div class="hero">
     <div class="container">
+      <!-- ViteConf Replay Button -->
       <a
         href="https://viteconf.org/23/replay?utm=vite-homepage"
         class="hero__pill"
@@ -13,22 +14,31 @@ import HeroDiagram from './HeroDiagram.vue'
         <img src="/viteconf.svg" alt="Viteconf logo" width="20" height="20" />
         <span>ViteConf 2023 - watch the replay</span>
       </a>
+
+      <!-- Heading -->
       <h1>Vite is the next generation of frontend tooling</h1>
+
+      <!-- Tagline -->
       <h3>
         Get ready for a development environment that can finally catch up with
         you.
       </h3>
+
+      <!-- CTA Buttons -->
       <div class="hero__actions">
         <a href="/guide/" class="btn btn--primary">Get started</a>
         <a
           href="https://github.com/vitejs/vite"
           target="_blank"
           class="btn btn--outline"
-          ><img src="/github.svg" alt="GitHub logo" width="20" height="20" />
-          GitHub</a
         >
+          <img src="/github.svg" alt="GitHub logo" width="20" height="20" />
+          GitHub
+        </a>
       </div>
     </div>
+
+    <!-- Animated Diagram -->
     <HeroDiagram />
   </div>
 </template>

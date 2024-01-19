@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import { MotionPathPlugin } from 'gsap/dist/MotionPathPlugin'
-import { nextTick, onMounted, Ref, ref } from 'vue'
+import { onMounted, onUnmounted, Ref, ref } from 'vue'
 import SvgInputs from './svg-elements/SvgInputs.vue'
 import SvgOutputs from './svg-elements/SvgOutputs.vue'
 import SvgBlueIndicator from './svg-elements/SvgBlueIndicator.vue'
 import SvgPinkIndicator from './svg-elements/SvgPinkIndicator.vue'
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import { SvgNodeProps } from '../common/SvgNode.vue'
 
 gsap.registerPlugin(MotionPathPlugin)
 
-// Input paths
+// Define the paths on the input side of the diagram
 const inputPaths = [
   'M843.505 284.659L752.638 284.659C718.596 284.659 684.866 280.049 653.251 271.077L598.822 255.629L0.675021 1.00011',
   'M843.505 298.181L724.342 297.36C708.881 297.36 693.45 296.409 678.22 294.518L598.822 284.659C592.82 284.659 200.538 190.002 0.675028 164.892',
@@ -21,7 +22,7 @@ const inputPaths = [
   'M843.505 365.789L752.638 365.789C718.596 365.789 684.866 370.399 653.251 379.372L598.822 394.82L0.675049 642.717',
 ]
 
-// Input lines
+// Setup objects representing each input line's animation state
 const inputLines: Ref[] = inputPaths.map((path) =>
   ref({
     position: 0,
@@ -32,7 +33,7 @@ const inputLines: Ref[] = inputPaths.map((path) =>
   }),
 )
 
-// Input File Sets
+// Define the file set "combinations" that can be shown on the input side
 const inputFileSets = ref([
   ['.jsx', '.sass', '.vue'],
   ['.tsx', '.scss', '.vue'],
@@ -41,7 +42,7 @@ const inputFileSets = ref([
   ['.svg', '.html', '.json'],
 ])
 
-// Output lines
+// Setup objects representing each output line's animation state
 const outputLines: Ref[] = [
   ref({
     position: 0,
@@ -63,26 +64,31 @@ const outputLines: Ref[] = [
   }),
 ]
 
-// Indicators
+// Add some flags for whether to display various subcomponents
 const blueIndicator = ref(false)
 const pinkIndicator = ref(false)
 const illuminateLogo = ref(false)
 
-/**
- * Start all animations when mounted
- */
+// Set up a reference to our ScrollTrigger instance and timeline
+let scrollTriggerInstance: ScrollTrigger | null
+let timeline: gsap.core.Timeline | null
+
+// Start all animations when mounted
 onMounted(() => {
-  nextTick(() => {
-    gsap
-      .timeline({
-        scrollTrigger: {
-          trigger: '#hero-diagram',
-          start: 'center 80%',
-          once: true,
-        },
-      })
-      .call(animateDiagram)
+  scrollTriggerInstance = ScrollTrigger.create({
+    trigger: '#hero-diagram',
+    start: 'center 80%',
+    once: true,
+    onEnter: () => {
+      animateDiagram()
+    },
   })
+})
+
+// Clean up the scroll trigger and timeline when unmounted
+onUnmounted(() => {
+  scrollTriggerInstance?.kill()
+  timeline?.kill()
 })
 
 /**
@@ -91,10 +97,11 @@ onMounted(() => {
  */
 const animateDiagram = () => {
   // Determine if we're showing the desktop or mobile variation of the animation
+  // This is determined on each "loop" of the animation
   const isMobile = window.innerWidth < 768
 
   // Prepare a timeline
-  const timeline = gsap.timeline({
+  timeline = gsap.timeline({
     onComplete: animateDiagram,
   })
 
@@ -157,11 +164,12 @@ const prepareInputs = () => {
 
 /**
  * Animates a single output line for desktop.
- * There are technically 3 output lines, but they are stacked on top of each other.
- * @param outputLine
- * @param index
+ * There are technically 3 output lines, but they are stacked on top of each other.x
  */
-const animateSingleOutputDesktop = (outputLine, index) => {
+const animateSingleOutputDesktop = (
+  outputLine: Ref<SvgNodeProps>,
+  index: number,
+) => {
   const timeline = gsap.timeline()
 
   // Reset the line
@@ -238,7 +246,7 @@ const animateSingleOutputDesktop = (outputLine, index) => {
  * Animates a single output line for mobile.
  * There are technically 3 output lines, but they are stacked on top of each other.
  */
-const animateSingleOutputMobile = (outputLine) => {
+const animateSingleOutputMobile = (outputLine: Ref<SvgNodeProps>) => {
   const timeline = gsap.timeline()
 
   // Reset the line
@@ -284,10 +292,8 @@ const animateSingleOutputMobile = (outputLine) => {
 
 /**
  * Animates a single input line for desktop.
- * @param inputLine
- * @returns {gsap.core.Timeline}
  */
-const animateSingleInputDesktop = (inputLine) => {
+const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
   const timeline = gsap.timeline()
 
   // Reset the line
@@ -363,10 +369,8 @@ const animateSingleInputDesktop = (inputLine) => {
 
 /**
  * Animates a single input line for mobile.
- * @param inputLine
- * @returns {gsap.core.Timeline}
  */
-const animateSingleInputMobile = (inputLine) => {
+const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   const timeline = gsap.timeline()
 
   // Reset the line
@@ -437,6 +441,7 @@ const animateSingleInputMobile = (inputLine) => {
     </div>
   </div>
 
+  <!-- Background -->
   <div class="hero__background" :class="{ active: illuminateLogo }" />
 </template>
 
