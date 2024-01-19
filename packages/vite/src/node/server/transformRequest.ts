@@ -327,6 +327,7 @@ async function loadAndTransform(
     )
 
     if (path.isAbsolute(mod.file)) {
+      let modDirname
       for (
         let sourcesIndex = 0;
         sourcesIndex < normalizedMap.sources.length;
@@ -338,8 +339,9 @@ async function loadAndTransform(
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
           if (path.isAbsolute(sourcePath)) {
+            modDirname ??= path.dirname(mod.file)
             normalizedMap.sources[sourcesIndex] = path.relative(
-              path.dirname(mod.file),
+              modDirname,
               sourcePath,
             )
           }
