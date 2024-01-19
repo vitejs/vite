@@ -439,6 +439,8 @@ const animateSingleInputMobile = (inputLine) => {
       <img src="/logo.svg" alt="Vite Logo" class="vite-chip__logo" />
     </div>
   </div>
+
+  <div class="hero__background" :class="{ active: illuminateLogo }" />
 </template>
 
 <style scoped>
@@ -602,6 +604,91 @@ const animateSingleInputMobile = (inputLine) => {
 @keyframes shimmer {
   to {
     background-position-x: 0;
+  }
+}
+
+.hero__background {
+  position: absolute;
+  top: -30%;
+  left: 0;
+  right: 0;
+  bottom: -60%;
+  width: 100%;
+  z-index: -1;
+  opacity: 0.1;
+  transition: opacity 2s ease;
+
+  @media (min-width: 768px) {
+    transition: opacity 0.5s ease;
+  }
+
+  background: radial-gradient(
+    circle at right center,
+    rgb(86, 50, 119) 0%,
+    rgba(74, 55, 140, 1) 30%,
+    rgb(65, 114, 194) 55%,
+    rgba(50, 81, 115, 0.5) 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 300% 30% at center center,
+    rgba(0, 0, 0, 1) 20%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+
+  @media (min-width: 1024px) {
+    background: radial-gradient(
+      circle at right center,
+      rgba(75, 41, 105, 0.5) 0%,
+      rgb(86, 50, 119) 25%,
+      rgba(74, 55, 140, 1) 40%,
+      rgb(64, 102, 168) 65%,
+      rgba(50, 81, 115, 0.5) 100%
+    );
+    mask-image: radial-gradient(
+      ellipse 150% 30% at center center,
+      rgba(0, 0, 0, 1) 20%,
+      rgba(0, 0, 0, 0.5) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  @media (min-width: 1500px) {
+    background: radial-gradient(
+      circle at right center,
+      rgba(75, 41, 105, 0.5) 0%,
+      rgb(86, 50, 119) 25%,
+      rgba(74, 55, 140, 1) 45%,
+      rgb(64, 102, 168) 65%,
+      rgba(50, 81, 115, 0.5) 100%
+    );
+    mask-image: radial-gradient(
+      ellipse 80% 40% at center center,
+      rgba(0, 0, 0, 1) 20%,
+      rgba(0, 0, 0, 0.5) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  @media (min-width: 1800px) {
+    background: radial-gradient(
+      circle at right center,
+      rgba(75, 41, 105, 0.5) 0%,
+      rgb(86, 50, 119) 25%,
+      rgba(74, 55, 140, 1) 50%,
+      rgb(64, 102, 168) 70%,
+      rgba(50, 81, 115, 0.5) 100%
+    );
+    mask-image: radial-gradient(
+      ellipse 80% 40% at center center,
+      rgba(0, 0, 0, 1) 20%,
+      rgba(0, 0, 0, 0.5) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  &.active {
+    opacity: 0.6;
   }
 }
 </style>

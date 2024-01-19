@@ -223,10 +223,14 @@ const props = defineProps({
   top: 415px;
   left: 655px;
   z-index: -1;
-  filter: blur(60px);
+  filter: blur(40px);
   opacity: 0;
   transition: all 3s ease-out;
   will-change: opacity;
+
+  @media (min-width: 768px) {
+    filter: blur(60px);
+  }
 
   &.active {
     transition: all 0.2s ease-in-out;
