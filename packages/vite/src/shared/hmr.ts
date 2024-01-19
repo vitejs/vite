@@ -15,6 +15,11 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
+export interface HMRLogger {
+  error(msg: string | Error): void
+  debug(...msg: unknown[]): void
+}
+
 export interface HMRConnection {
   /**
    * Checked before sending messages to the client.
@@ -196,7 +201,7 @@ export class HMRClient {
   public messenger: HMRMessenger
 
   constructor(
-    public logger: Console,
+    public logger: HMRLogger,
     connection: HMRConnection,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
