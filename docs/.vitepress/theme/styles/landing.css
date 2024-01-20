@@ -3,7 +3,12 @@
 /* /////////////////////// */
 
 html:has(.landing) {
+  background-color: #101010;
   --vp-c-bg: #101010;
+
+  body {
+    background-color: #101010;
+  }
 }
 
 .landing {
