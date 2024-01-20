@@ -7,6 +7,12 @@ export const isWindows =
 const NULL_BYTE_PLACEHOLDER = `__x00__`
 const VALID_ID_PREFIX = `/@id/`
 
+export function wrapId(id: string): string {
+  return id.startsWith(VALID_ID_PREFIX)
+    ? id
+    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
+}
+
 export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX)
     ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')

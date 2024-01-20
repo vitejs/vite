@@ -1,8 +1,11 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect } from 'vitest'
 import { isWindows } from '../utils'
 import { createViteRuntimeTester } from './utils'
+
+const _URL = URL
 
 describe('vite-runtime initialization', async () => {
   const it = await createViteRuntimeTester()
@@ -10,6 +13,21 @@ describe('vite-runtime initialization', async () => {
   it('correctly runs ssr code', async ({ runtime }) => {
     const mod = await runtime.executeUrl('/fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
+
+    // loads the same module if id is a file url
+    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
+    const mod2 = await runtime.executeUrl(fileUrl.toString())
+    expect(mod).toBe(mod2)
+
+    // loads the same module if id is a file path
+    const filePath = fileURLToPath(fileUrl)
+    const mod3 = await runtime.executeUrl(filePath)
+    expect(mod).toBe(mod3)
+  })
+
+  it('can load virtual modules as an entry point', async ({ runtime }) => {
+    const mod = await runtime.executeEntrypoint('virtual:test')
+    expect(mod.msg).toBe('virtual')
   })
 
   it('exports is not modifiable', async ({ runtime }) => {

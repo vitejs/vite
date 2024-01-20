@@ -22,6 +22,7 @@ import {
   posixResolve,
   toWindowsPath,
   unwrapId,
+  wrapId,
 } from './utils'
 import {
   ssrDynamicImportKey,
@@ -74,8 +75,9 @@ export class ViteRuntime {
    * URL to execute. Accepts file path, server path or id relative to the root.
    */
   public async executeUrl<T = any>(url: string): Promise<T> {
+    url = this.normalizeEntryUrl(url)
     const fetchedModule = await this.cachedModule(url)
-    return await this.cachedRequest(url, fetchedModule, [])
+    return await this.cachedRequest(url, fetchedModule)
   }
 
   /**
@@ -83,6 +85,7 @@ export class ViteRuntime {
    * In the case of a full reload triggered by HMR, these are the modules that will be reloaded
    */
   public async executeEntrypoint<T = any>(url: string): Promise<T> {
+    url = this.normalizeEntryUrl(url)
     const fetchedModule = await this.cachedModule(url)
     return await this.cachedRequest(url, fetchedModule, [], {
       entrypoint: true,
@@ -94,6 +97,36 @@ export class ViteRuntime {
     this.idToFileMap.clear()
     this.entrypoints.clear()
     this.hmrClient?.clear()
+  }
+
+  // we don't use moduleCache.normalize because this URL doesn't have to follow the same rules
+  // this URL is something that user passes down manually, and is later resolved by fetchModule
+  // moduleCache.normalize is used on resolved "file" property
+  private normalizeEntryUrl(url: string) {
+    // expect fetchModule to resolve relative module correctly
+    if (url[0] === '.') {
+      return url
+    }
+    // file:///C:/root/id.js -> C:/root/id.js
+    if (url.startsWith('file://')) {
+      // 8 is the length of "file:///"
+      url = url.slice(isWindows ? 8 : 7)
+    }
+    url = url.replace(/\\/g, '/')
+    const _root = this.options.root
+    const root = _root[_root.length - 1] === '/' ? _root : `${_root}/`
+    // strip root from the URL because fetchModule prefers a public served url path
+    // packages/vite/src/node/server/moduleGraph.ts:17
+    if (url.startsWith(root)) {
+      // /root/id.js -> /id.js
+      // C:/root/id.js -> /id.js
+      // 1 is to keep the leading slash
+      return url.slice(root.length - 1)
+    }
+    // if it's a server url (starts with a slash), keep it, otherwise assume a virtual module
+    // /id.js -> /id.js
+    // virtual:custom -> /@id/virtual:custom
+    return url[0] === '/' ? url : wrapId(url)
   }
 
   private processImport(
@@ -110,7 +143,7 @@ export class ViteRuntime {
   private async cachedRequest(
     id: string,
     fetchedModule: ResolvedResult,
-    callstack: string[],
+    callstack: string[] = [],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
     const moduleId = fetchedModule.id
