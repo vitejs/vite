@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import {
+  computed,
+  ComputedRef,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  Ref,
+  ref,
+} from 'vue'
 import FrameworkCard, { Framework } from './FrameworkCard.vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
+
 gsap.registerPlugin(ScrollTrigger)
 
 // Framework assets
@@ -125,13 +134,21 @@ const frameworks: Framework[] = [
   },
 ]
 
-const screenWidth = ref(1920)
-let resizeTimeout = null
+// Starting parameters
+const screenWidth: Ref<number> = ref(1920)
+let resizeTimeout: ReturnType<typeof setTimeout> | null = null
+let timeline: gsap.core.Timeline | null = null
 
+/**
+ * When the resize event fires, update the screen width.
+ */
 const handleResize = () => {
   screenWidth.value = window.innerWidth
 }
 
+/**
+ * Throttle the resize event handler.
+ */
 const throttledResizeHandler = () => {
   if (resizeTimeout === null) {
     resizeTimeout = setTimeout(() => {
@@ -142,23 +159,23 @@ const throttledResizeHandler = () => {
 }
 
 onMounted(() => {
+  // Set the initial size of the screen
   handleResize()
 
-  nextTick(() => {
-    window.addEventListener('resize', throttledResizeHandler)
+  // Listen for resize events
+  window.addEventListener('resize', throttledResizeHandler)
 
-    // Initialize the GSAP timeline
-    let timeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: '#frameworks-section',
-        start: 'top 70%',
-        once: true,
-      },
-    })
+  // Initialize the GSAP timeline
+  timeline = gsap.timeline({
+    scrollTrigger: {
+      trigger: '#frameworks-section',
+      start: 'top 70%',
+      once: true,
+    },
+  })
 
-    frameworks.forEach((framework, index) => {
-      timeline.set(framework.visible, { value: true }, index * 0.05)
-    })
+  frameworks.forEach((framework, index) => {
+    timeline.set(framework.visible, { value: true }, index * 0.05)
   })
 })
 
@@ -171,12 +188,18 @@ onUnmounted(() => {
     clearTimeout(resizeTimeout)
     resizeTimeout = null
   }
+
+  // Kill the GSAP timeline
+  if (timeline) {
+    timeline.kill()
+    timeline = null
+  }
 })
 
 /**
  * How many total blocks (framework or empty) will fit in a single row?
  */
-const numBlocksPerRow = computed(() => {
+const numBlocksPerRow: ComputedRef<number> = computed(() => {
   return Math.floor(screenWidth.value / (96 + 24))
 })
 
@@ -184,42 +207,44 @@ const numBlocksPerRow = computed(() => {
  * How many framework blocks will fit in a single row?
  * The most we support for our layout is 7, but it can be less for narrower screens.
  */
-const numFrameworksPerRow = computed(() => {
+const numFrameworksPerRow: ComputedRef<number> = computed(() => {
   return Math.min(numBlocksPerRow.value, 7)
 })
 
 /**
  * How many rows do we need to display all the frameworks?
  */
-const numRows = computed(() => {
+const numRows: ComputedRef<number> = computed(() => {
   return Math.ceil(frameworks.length / numFrameworksPerRow.value)
 })
 
 /**
  * The indexes of the blocks on each row that support framework cards.
  */
-const centerIndexes = computed(() => {
-  if (numBlocksPerRow.value === numFrameworksPerRow.value) {
-    return {
-      start: 1,
-      end: numBlocksPerRow.value + 1,
+const centerIndexes: ComputedRef<{ start: number; end: number }> = computed(
+  () => {
+    if (numBlocksPerRow.value === numFrameworksPerRow.value) {
+      return {
+        start: 1,
+        end: numBlocksPerRow.value + 1,
+      }
     }
-  }
-  const startIndex = Math.max(
-    Math.ceil(numBlocksPerRow.value / 2) -
-      Math.floor(frameworks.length / (numRows.value * 2)),
-    0,
-  )
-  return {
-    start: startIndex,
-    end: startIndex + Math.floor(frameworks.length / numRows.value),
-  }
-})
+    const startIndex = Math.max(
+      Math.ceil(numBlocksPerRow.value / 2) -
+        Math.floor(frameworks.length / (numRows.value * 2)),
+      0,
+    )
+    return {
+      start: startIndex,
+      end: startIndex + Math.floor(frameworks.length / numRows.value),
+    }
+  },
+)
 
 /**
  * Generate CSS transformations for each row, to gracefully slide between horizontal positions.
  */
-const rowStyle = computed(() => {
+const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
   if (numBlocksPerRow.value % 2 === 0 && screenWidth.value > 768) {
     return {
       transform: `translate3d(calc(((100% - ${
