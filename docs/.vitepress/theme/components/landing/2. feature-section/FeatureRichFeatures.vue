@@ -223,6 +223,7 @@ const { isCardActive } = useCardAnimation('#rich-features-card')
       right: -1px;
       bottom: -1px;
       border-radius: 10px;
+      --opacity: 0.99;
       background: linear-gradient(
         to bottom,
         #181818 30%,
