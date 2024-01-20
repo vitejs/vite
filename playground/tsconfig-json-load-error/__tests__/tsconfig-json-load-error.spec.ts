@@ -11,7 +11,7 @@ import {
 } from '~utils'
 
 const unexpectedTokenSyntaxErrorRE =
-  /^(\\u001b\[31m\[vite:esbuild\] )*parsing .* failed: SyntaxError: Unexpected token.*\}.*/
+  /(\[vite:esbuild\] )*parsing .* failed: SyntaxError: Unexpected token.*\}.*/
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
