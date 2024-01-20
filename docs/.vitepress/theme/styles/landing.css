@@ -13,6 +13,7 @@ html:has(.landing) {
 
 .landing {
   overflow-x: hidden;
+  background-color: #101010;
 
   * {
     -webkit-font-smoothing: antialiased !important;
