@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import SvgNode from '../common/SvgNode.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, Ref, ref } from 'vue'
 import { gsap } from 'gsap'
 
 const props = defineProps({
@@ -18,42 +18,51 @@ const props = defineProps({
   },
 })
 
-const animationPercentage = ref(0)
-const animationVisible = ref(false)
+// Animation state
+const animationPercentage: Ref<number> = ref(0)
+const animationVisible: Ref<boolean> = ref(false)
 
-let timeline = null
+// GSAP timeline for the icon above the section title
+let timeline: gsap.core.Timeline | null
 
 onMounted(() => {
   startAnimation()
+})
+
+onUnmounted(() => {
+  if (timeline) {
+    timeline.kill()
+  }
 })
 
 /**
  * When the component scrolls into viewport, we start the animation.
  */
 const startAnimation = () => {
-  timeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: `#feature_section_${props.type}`,
-      start: 'top 80%',
-      once: true,
-    },
-  })
-  timeline.call(
-    () => {
-      animationVisible.value = true
-    },
-    null,
-    0,
-  )
-  timeline.to(
-    animationPercentage,
-    {
-      value: 0.55,
-      duration: 2,
-      ease: 'expo.out',
-    },
-    0,
-  )
+  timeline = gsap
+    .timeline({
+      scrollTrigger: {
+        trigger: `#feature_section_${props.type}`,
+        start: 'top 80%',
+        once: true,
+      },
+    })
+    .call(
+      () => {
+        animationVisible.value = true
+      },
+      null,
+      0,
+    )
+    .to(
+      animationPercentage,
+      {
+        value: 0.55,
+        duration: 2,
+        ease: 'expo.out',
+      },
+      0,
+    )
 }
 </script>
 
@@ -71,7 +80,7 @@ const startAnimation = () => {
       >
         <path
           d="M38.5 0.772461V60.5215M22.6301 60.7725V38.7905C22.6301 25.3784 17.3675 12.5156 8 3.03184M54.3699 60.7725V38.7905C54.3699 25.3784 59.6325 12.5156 69 3.03184"
-          stroke="url(#paint0_linear_724_6724)"
+          stroke="url(#linear-gradient-bg-lines)"
           stroke-width="2"
         />
         <SvgNode
@@ -89,37 +98,16 @@ const startAnimation = () => {
           glow-color="#BD34FE"
         />
         <defs>
-          <filter
-            id="filter0_f_724_6724"
-            x="0.702227"
-            y="0.157549"
-            width="40.5533"
-            height="51.162"
-            filterUnits="userSpaceOnUse"
-            color-interpolation-filters="sRGB"
-          >
-            <feFlood flood-opacity="0" result="BackgroundImageFix" />
-            <feBlend
-              mode="normal"
-              in="SourceGraphic"
-              in2="BackgroundImageFix"
-              result="shape"
-            />
-            <feGaussianBlur
-              stdDeviation="8.19149"
-              result="effect1_foregroundBlur_724_6724"
-            />
-          </filter>
           <linearGradient
-            id="paint0_linear_724_6724"
+            id="linear-gradient-bg-lines"
             x1="38.5"
             y1="0.772461"
             x2="38.5"
             y2="60.7725"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stop-color="#404040" stop-opacity="0" />
-            <stop offset="0.485224" stop-color="#737373" />
+            <stop offset="0" stop-color="#404040" stop-opacity="0" />
+            <stop offset="0.5" stop-color="#737373" />
             <stop offset="1" stop-color="#404040" stop-opacity="0" />
           </linearGradient>
         </defs>
@@ -132,6 +120,7 @@ const startAnimation = () => {
 
     <!-- Section Grid -->
     <div class="feature-section__grid">
+      <!-- Feature Cards -->
       <slot></slot>
     </div>
   </section>
