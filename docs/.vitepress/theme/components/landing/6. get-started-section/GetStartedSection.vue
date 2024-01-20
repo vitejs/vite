@@ -1,5 +1,3 @@
-<script setup></script>
-
 <template>
   <div class="get-started-section">
     <div class="vite-chip">
