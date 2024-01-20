@@ -29,6 +29,7 @@ import {
 import {
   cleanUrl,
   createDebugger,
+  evalValue,
   fsPathFromUrl,
   generateCodeFrame,
   injectQuery,
@@ -484,36 +485,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const isDynamicImport = dynamicIndex > -1
 
-          // strip import attributes as we can process them ourselves
+          // Grab the import attributes
           let importAttributes: Record<string, any> | undefined = undefined
-
           if (!isDynamicImport && attributeIndex > -1) {
             const raw = source.substring(attributeIndex, expEnd)
-            importAttributes = {}
+            importAttributes = evalValue<{}>(raw)
 
-            // Import attributes are a JavaScript object { foo: 'bar' }
-            // So use Acorn to parse them as such
-            const program = parseJS(`const attributes = ${raw}`, {
-              ecmaVersion: 'latest',
-            })
-            if (
-              program.body[0].type === 'VariableDeclaration' &&
-              program.body[0].declarations[0].type === 'VariableDeclarator' &&
-              program.body[0].declarations[0].init?.type === 'ObjectExpression'
-            ) {
-              const obj = program.body[0].declarations[0].init
-              // Loop over every property key. Currently only strings are allows, as per spec
-              obj.properties.forEach((prop) => {
-                if (
-                  prop.type === 'Property' &&
-                  prop.key.type === 'Identifier' &&
-                  prop.value.type === 'Literal'
-                ) {
-                  importAttributes![prop.key.name] = prop.value.value
-                }
-              })
-            }
-
+            // strip import attributes as we can process them ourselves
             str().remove(end + 1, expEnd)
           }
 
