@@ -226,7 +226,7 @@
       width: 80%;
       aspect-ratio: 1.5;
       pointer-events: none;
-      z-index: -2;
+      z-index: 0;
       border-radius: 100%;
       background: linear-gradient(180deg, #61d9ff 0%, rgba(0, 0, 0, 0) 100%);
       filter: blur(15vw);
@@ -254,7 +254,7 @@
       width: 80%;
       aspect-ratio: 1.5;
       pointer-events: none;
-      z-index: -1;
+      z-index: 0;
       border-radius: 100%;
       background: linear-gradient(
         270deg,
