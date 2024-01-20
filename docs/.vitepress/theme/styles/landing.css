@@ -1,3 +1,7 @@
+/* /////////////////////// */
+/* Landing Page CSS Styles */
+/* /////////////////////// */
+
 html:has(.landing) {
   --vp-c-bg: #101010;
 }
@@ -10,6 +14,10 @@ html:has(.landing) {
     -moz-osx-font-smoothing: grayscale !important;
     text-rendering: optimizeLegibility !important;
   }
+
+  /* /////////////////// */
+  /* VitePress Overrides */
+  /* /////////////////// */
 
   .VPNavBar,
   .VPNavBar:not(.top) {
@@ -118,6 +126,10 @@ html:has(.landing) {
     margin-bottom: 25px;
     padding: 0 20px;
   }
+
+  /* /////// */
+  /* Buttons */
+  /* /////// */
 
   .btn {
     display: flex;

@@ -77,6 +77,7 @@ defineProps<{
     font-weight: 400;
     line-height: 150%;
     letter-spacing: -0.32px;
+    text-wrap: pretty;
   }
 
   .card__header {
