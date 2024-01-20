@@ -137,6 +137,8 @@
     letter-spacing: -1px;
     margin: 0 auto 20px;
     text-align: center;
+    position: relative;
+    z-index: 1;
 
     @media (min-width: 768px) {
       font-size: 52px;
@@ -146,23 +148,28 @@
   h3 {
     margin: 0 auto 40px;
     color: #d4d4d8;
+    position: relative;
+    z-index: 1;
   }
 
   .btn {
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
   }
 
   .vite-chip {
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
     width: 84px;
     aspect-ratio: 1;
     filter: drop-shadow(0px 18px 33px rgba(0, 0, 0, 0.5));
     margin: 0 auto 60px;
     border: 1px solid #2b4659;
     border-radius: 6px;
+    position: relative;
+    z-index: 1;
 
     &:before {
       content: '';
