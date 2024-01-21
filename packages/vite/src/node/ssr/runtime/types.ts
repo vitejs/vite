@@ -1,4 +1,5 @@
 import type { ViteHotContext } from 'types/hot'
+import type { HMRPayload } from 'types/hmrPayload'
 import type { HMRConnection, HMRLogger } from '../../../shared/hmr'
 import type { ModuleCacheMap } from './moduleCache'
 import type {
@@ -20,6 +21,10 @@ export interface DefineImportMetadata {
    * => undefined
    */
   importedNames?: string[]
+}
+
+export interface HMRRuntimeConnection extends HMRConnection {
+  onUpdate(callback: (payload: HMRPayload) => void): void
 }
 
 export interface SSRImportMetadata extends DefineImportMetadata {
@@ -49,12 +54,10 @@ export interface ViteModuleRunner {
   runViteModule(
     context: ViteRuntimeModuleContext,
     code: string,
+    id: string,
     metadata?: SSRImportMetadata,
   ): Promise<any>
-  runExternalModule(
-    filepath: string,
-    metadata?: SSRImportMetadata,
-  ): Promise<any>
+  runExternalModule(file: string, metadata?: SSRImportMetadata): Promise<any>
   /**
    * This is called for every "import" (dynamic and static) statement and is not cached
    */
@@ -102,7 +105,7 @@ export interface ViteServerClientOptions {
   hmr?:
     | false
     | {
-        connection: HMRConnection
+        connection: HMRRuntimeConnection
         logger?: false | HMRLogger
       }
   moduleCache?: ModuleCacheMap

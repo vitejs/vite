@@ -46,41 +46,44 @@ export function createImportMetaEnvProxy(
   environmentVariables?: Record<string, any>,
 ): ImportMetaEnv {
   const booleanKeys = ['DEV', 'PROD', 'SSR']
-  return new Proxy(process.env, {
-    get(_, key) {
-      if (typeof key !== 'string') return undefined
-      const env = _getEnv(environmentVariables)
-      if (booleanKeys.includes(key)) return !!env[key]
-      return env[key] ?? _envShim[key]
-    },
-    has(_, key) {
-      const env = _getEnv(environmentVariables)
-      return key in env || key in _envShim
-    },
-    set(_, key, value) {
-      if (typeof key !== 'string') return true
+  return new Proxy(
+    {},
+    {
+      get(_, key) {
+        if (typeof key !== 'string') return undefined
+        const env = _getEnv(environmentVariables)
+        if (booleanKeys.includes(key)) return !!env[key]
+        return env[key] ?? _envShim[key]
+      },
+      has(_, key) {
+        const env = _getEnv(environmentVariables)
+        return key in env || key in _envShim
+      },
+      set(_, key, value) {
+        if (typeof key !== 'string') return true
 
-      if (booleanKeys.includes(key)) {
-        value = value ? '1' : ''
-      }
+        if (booleanKeys.includes(key)) {
+          value = value ? '1' : ''
+        }
 
-      const env = _getEnv(environmentVariables) || _envShim
-      env[key] = value
-      return true
+        const env = _getEnv(environmentVariables) || _envShim
+        env[key] = value
+        return true
+      },
+      deleteProperty(_, prop) {
+        if (!prop) {
+          return false
+        }
+        const env = _getEnv(environmentVariables) || _envShim
+        delete env[prop as any]
+        return true
+      },
+      ownKeys() {
+        const env = _getEnv(environmentVariables) || _envShim
+        return Object.keys(env)
+      },
     },
-    deleteProperty(_, prop) {
-      if (!prop) {
-        return false
-      }
-      const env = _getEnv(environmentVariables) || _envShim
-      delete env[prop as any]
-      return true
-    },
-    ownKeys() {
-      const env = _getEnv(environmentVariables) || _envShim
-      return Object.keys(env)
-    },
-  }) as ImportMetaEnv
+  ) as ImportMetaEnv
 }
 
 export function isPrimitive(value: unknown): boolean {

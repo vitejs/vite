@@ -18,7 +18,7 @@ const AsyncFunction = async function () {}.constructor as typeof Function
 export class ESModulesRunner implements ViteModuleRunner {
   async runViteModule(
     context: ViteRuntimeModuleContext,
-    transformed: string,
+    code: string,
   ): Promise<any> {
     // use AsyncFunction instead of vm module to support broader array of environments out of the box
     const initModule = new AsyncFunction(
@@ -28,7 +28,7 @@ export class ESModulesRunner implements ViteModuleRunner {
       ssrDynamicImportKey,
       ssrExportAllKey,
       // source map should already be inlined by Vite
-      '"use strict";' + transformed,
+      '"use strict";' + code,
     )
 
     await initModule(

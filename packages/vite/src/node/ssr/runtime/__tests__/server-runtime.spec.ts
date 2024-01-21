@@ -30,6 +30,61 @@ describe('vite-runtime initialization', async () => {
     expect(mod.msg).toBe('virtual')
   })
 
+  it('css is loaded correctly', async ({ runtime }) => {
+    const css = await runtime.executeUrl('/fixtures/test.css')
+    expect(css.default).toMatchInlineSnapshot(`
+      ".test {
+        color: red;
+      }
+      "
+    `)
+    const module = await runtime.executeUrl('/fixtures/test.module.css')
+    expect(module).toMatchObject({
+      default: {
+        test: expect.stringMatching(/^_test_/),
+      },
+      test: expect.stringMatching(/^_test_/),
+    })
+  })
+
+  it('assets are loaded correctly', async ({ runtime }) => {
+    const assets = await runtime.executeUrl('/fixtures/assets.js')
+    expect(assets).toMatchObject({
+      mov: '/fixtures/assets/placeholder.mov',
+      txt: '/fixtures/assets/placeholder.txt',
+      png: '/fixtures/assets/placeholder.png',
+      webp: '/fixtures/assets/placeholder.webp',
+    })
+  })
+
+  it('ids with Vite queries are loaded correctly', async ({ runtime }) => {
+    const raw = await runtime.executeUrl('/fixtures/simple.js?raw')
+    expect(raw.default).toMatchInlineSnapshot(`
+      "export const test = 'I am initialized'
+
+      import.meta.hot?.accept()
+      "
+    `)
+    const url = await runtime.executeUrl('/fixtures/simple.js?url')
+    expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
+    const inline = await runtime.executeUrl('/fixtures/test.css?inline')
+    expect(inline.default).toMatchInlineSnapshot(`
+      ".test {
+        color: red;
+      }
+      "
+    `)
+  })
+
+  it('modules with query strings are treated as different modules', async ({
+    runtime,
+  }) => {
+    const modSimple = await runtime.executeUrl('/fixtures/simple.js')
+    const modUrl = await runtime.executeUrl('/fixtures/simple.js?url')
+    expect(modSimple).not.toBe(modUrl)
+    expect(modUrl.default).toBe('/fixtures/simple.js')
+  })
+
   it('exports is not modifiable', async ({ runtime }) => {
     const mod = await runtime.executeUrl('/fixtures/simple.js')
     expect(() => {

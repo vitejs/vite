@@ -32,6 +32,7 @@ import {
   ssrModuleExportsKey,
 } from './constants'
 import { silentConsole } from './hmrLogger'
+import { createHMRHandler } from './hmrHandler'
 
 interface ViteRuntimeDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -46,7 +47,7 @@ export class ViteRuntime {
   public hmrClient?: HMRClient
   public entrypoints = new Set<string>()
 
-  private idToFileMap = new Map<string, string>()
+  private idToUrlMap = new Map<string, string>()
   private envProxy: ImportMetaEnv
 
   constructor(
@@ -68,6 +69,7 @@ export class ViteRuntime {
           return this.executeUrl(acceptedPath)
         },
       )
+      options.hmr.connection.onUpdate(createHMRHandler(this))
     }
   }
 
@@ -94,7 +96,7 @@ export class ViteRuntime {
 
   public clearCache(): void {
     this.moduleCache.clear()
-    this.idToFileMap.clear()
+    this.idToUrlMap.clear()
     this.entrypoints.clear()
     this.hmrClient?.clear()
   }
@@ -204,7 +206,7 @@ export class ViteRuntime {
     id: string,
     importer?: string,
   ): Promise<ResolvedResult> {
-    const normalized = this.idToFileMap.get(id)
+    const normalized = this.idToUrlMap.get(id)
     if (normalized) {
       const mod = this.moduleCache.getByModuleId(normalized)
       if (mod.meta) {
@@ -219,19 +221,22 @@ export class ViteRuntime {
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
     // if we used id for that, it's possible to have a duplicated module
-    const moduleId = this.moduleCache.normalize(fetchedModule.file || id)
+    const idQuery = id.split('?')[1]
+    const query = idQuery ? `?${idQuery}` : ''
+    const fullFile = fetchedModule.file ? `${fetchedModule.file}${query}` : id
+    const moduleId = this.moduleCache.normalize(fullFile)
     const mod = this.moduleCache.getByModuleId(moduleId)
     fetchedModule.id = moduleId
     mod.meta = fetchedModule
-    this.idToFileMap.set(id, moduleId)
-    this.idToFileMap.set(unwrapId(id), moduleId)
+    this.idToUrlMap.set(id, moduleId)
+    this.idToUrlMap.set(unwrapId(id), moduleId)
     return fetchedModule as ResolvedResult
   }
 
   // override is allowed, consider this a public API
   protected async directRequest(
     id: string,
-    { file, externalize, code: transformed, id: moduleId }: ResolvedResult,
+    { file, externalize, code, id: moduleId }: ResolvedResult,
     _callstack: string[],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
@@ -267,7 +272,7 @@ export class ViteRuntime {
       return exports
     }
 
-    if (transformed == null) {
+    if (code == null) {
       const importer = callstack[callstack.length - 2]
       throw new Error(
         `[vite-runtime] Failed to load "${id}"${
@@ -330,7 +335,7 @@ export class ViteRuntime {
 
     this.debug?.('[vite-runtime] executing', href)
 
-    await this.runner.runViteModule(context, transformed, metadata)
+    await this.runner.runViteModule(context, code, id, metadata)
 
     return exports
   }

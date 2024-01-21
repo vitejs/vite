@@ -1,7 +1,6 @@
 import type { ViteDevServer } from '../../../index'
 import { ViteRuntime } from '../runtime'
 import { ESModulesRunner } from '../esmRunner'
-import { createHMRHandler } from '../hmrHandler'
 import type { ViteModuleRunner, ViteServerClientOptions } from '../types'
 import type { HMRLogger } from '../../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
@@ -35,7 +34,7 @@ export async function createViteRuntime(
   options: MainThreadRuntimeOptions = {},
 ): Promise<ViteRuntime> {
   const hmr = createHMROptions(server, options)
-  const runtime = new ViteRuntime(
+  return new ViteRuntime(
     {
       ...options,
       root: server.config.root,
@@ -44,10 +43,4 @@ export async function createViteRuntime(
     },
     options.runner || new ESModulesRunner(),
   )
-
-  if (hmr) {
-    hmr.connection.onUpdate(createHMRHandler(runtime))
-  }
-
-  return runtime
 }
