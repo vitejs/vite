@@ -113,15 +113,15 @@ const { startAnimation } = useCardAnimation(
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <g filter="url(#browser-background-shading)">
+        <g class="browser__background" filter="url(#shadow)">
           <rect
             x="17"
             y="-33"
             width="442"
             height="237"
             rx="18"
-            fill="#262626"
-            fill-opacity="0.8"
+            fill="#242424"
+            fill-opacity="1"
           />
         </g>
         <path
@@ -169,58 +169,18 @@ const { startAnimation } = useCardAnimation(
           />
         </g>
         <defs>
-          <filter
-            id="browser-background-shading"
-            x="0"
-            y="-40"
-            width="467.615"
-            height="263"
-            filterUnits="userSpaceOnUse"
-            color-interpolation-filters="sRGB"
-          >
-            <feFlood flood-opacity="0" result="BackgroundImageFix" />
-            <feColorMatrix
-              in="SourceAlpha"
-              type="matrix"
-              values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-              result="hardAlpha"
-            />
-            <feOffset dx="-4" dy="6" />
-            <feGaussianBlur stdDeviation="6.5" />
-            <feComposite in2="hardAlpha" operator="out" />
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.28 0"
-            />
-            <feBlend
-              mode="normal"
-              in2="BackgroundImageFix"
-              result="effect1_dropShadow_1130_634"
-            />
-            <feBlend
-              mode="normal"
-              in="SourceGraphic"
-              in2="effect1_dropShadow_1130_634"
-              result="shape"
-            />
-            <feColorMatrix
-              in="SourceAlpha"
-              type="matrix"
-              values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-              result="hardAlpha"
-            />
-            <feOffset />
-            <feGaussianBlur stdDeviation="3" />
-            <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.14 0"
-            />
-            <feBlend
-              mode="normal"
-              in2="shape"
-              result="effect2_innerShadow_1130_634"
-            />
+          <filter id="shadow" x="-20%" y="0" width="140%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
+            <feOffset in="blur" dx="5" dy="5" result="offsetBlur" />
+            <feComponentTransfer result="shadowOpacity">
+              <feFuncA type="linear" slope="0.6" />
+              <!-- Adjust the slope value to control opacity -->
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode in="shadowOpacity" />
+              <!-- Use the result of feComponentTransfer -->
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
           <filter
             id="browser-glow-filter"
@@ -259,7 +219,7 @@ const { startAnimation } = useCardAnimation(
             y2="201.056"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stop-color="#404040" />
+            <stop offset="0" stop-color="#404040" />
             <stop offset="1" stop-color="#404040" stop-opacity="0" />
           </linearGradient>
           <linearGradient
@@ -270,7 +230,7 @@ const { startAnimation } = useCardAnimation(
             y2="201.056"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stop-color="#404040" />
+            <stop offset="0" stop-color="#404040" />
             <stop offset="1" stop-color="#404040" stop-opacity="0" />
           </linearGradient>
         </defs>
@@ -403,6 +363,13 @@ const { startAnimation } = useCardAnimation(
 
     * {
       transition: all 0.5s ease;
+    }
+
+    /* Background */
+
+    .browser__background {
+      stroke: #2b2b2b;
+      stroke-width: 3px;
     }
 
     /* Major "Screen" of Browser */
