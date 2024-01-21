@@ -6,7 +6,7 @@ export { ESModulesRunner } from './esmRunner'
 
 export { handleHMRUpdate, createHMRHandler } from './hmrHandler'
 
-export type { HMRLogger, HMRConnection } from '../../../shared/hmr'
+export type { HMRLogger } from '../../../shared/hmr'
 export type {
   ViteModuleRunner,
   ViteRuntimeModuleContext,
@@ -15,6 +15,7 @@ export type {
   FetchFunction,
   ResolvedResult,
   SSRImportMetadata,
+  HMRRuntimeConnection,
   ViteRuntimeImportMeta,
   ViteServerClientOptions,
 } from './types'
