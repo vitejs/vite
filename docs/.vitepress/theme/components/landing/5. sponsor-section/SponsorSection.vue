@@ -92,7 +92,7 @@ const { data } = useSponsor()
     left: 0;
     right: 0;
     width: 100%;
-    z-index: -1;
+    z-index: 0;
     display: none;
 
     @media (min-width: 1240px) {
