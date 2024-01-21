@@ -605,8 +605,12 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   }
 
   &.active {
-    transform: translate3d(0, 0, 0) scale(1);
     box-shadow: 0 30px 35px -10px rgba(0, 0, 0, 0.6);
+    transform: translate3d(0, 0, 0) scale(0.9);
+
+    @media (min-width: 768px) {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
 
     .vite-chip__filter {
       transform: translate3d(0, 0, 0) scale(0.97);
