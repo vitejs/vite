@@ -29,17 +29,27 @@ const inputLines: Ref[] = inputPaths.map((path) =>
     visible: false,
     labelVisible: false,
     label: '',
+    dotColor: null,
+    glowColor: null,
     path,
   }),
 )
 
 // Define the file set "combinations" that can be shown on the input side
 const inputFileSets = ref([
-  ['.jsx', '.sass', '.svelte'],
-  ['.tsx', '.scss', '.vue'],
-  ['.js', '.styl', '.svelte'],
-  ['.ts', '.less', '.vue'],
-  ['.svg', '.html', '.json'],
+  [
+    { label: '.jsx' },
+    { label: '.sass' },
+    { label: '.svelte', color: '#ff8d67' },
+  ],
+  [{ label: '.tsx' }, { label: '.scss' }, { label: '.vue', color: '#40b782' }],
+  [
+    { label: '.js' },
+    { label: '.styl' },
+    { label: '.svelte', color: '#ff8d67' },
+  ],
+  [{ label: '.ts' }, { label: '.less' }, { label: '.vue', color: '#40b782' }],
+  [{ label: '.mts' }, { label: '.html' }, { label: '.json' }],
 ])
 
 // Setup objects representing each output line's animation state
@@ -157,7 +167,10 @@ const prepareInputs = () => {
   // Assign each line it's appropriate node label
   const inputs = [...inputLineIndexes]
   inputs.forEach((lineIndex, fileIndex) => {
-    inputLines[lineIndex as number].value.label = inputFileSet[fileIndex]
+    inputLines[lineIndex as number].value.label = inputFileSet[fileIndex].label
+    inputLines[lineIndex as number].value.dotColor = inputLines[
+      lineIndex as number
+    ].value.glowColor = inputFileSet[fileIndex].color
   })
   return inputs
 }
@@ -218,7 +231,7 @@ const animateSingleOutputDesktop = (
       duration: 1.5,
       ease: 'power3.in',
     },
-    3,
+    2,
   )
 
   // Hide the label
@@ -227,7 +240,7 @@ const animateSingleOutputDesktop = (
     {
       labelVisible: false,
     },
-    3.5,
+    2.5,
   )
 
   // Hide the dot
@@ -236,7 +249,7 @@ const animateSingleOutputDesktop = (
     {
       visible: false,
     },
-    4,
+    3,
   )
 
   return timeline
@@ -331,7 +344,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       labelVisible: true,
     },
-    0.4,
+    0.2,
   )
 
   // Animate the dot out
@@ -342,7 +355,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
       duration: 1.2,
       ease: 'power3.in',
     },
-    1,
+    1.2,
   )
 
   // Hide the label
@@ -351,7 +364,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       labelVisible: false,
     },
-    1.2,
+    1.6,
   )
 
   // Hide the dot
@@ -360,7 +373,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       visible: false,
     },
-    1.7,
+    1.9,
   )
 
   // Return the timeline
