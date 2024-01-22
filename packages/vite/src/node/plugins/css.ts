@@ -22,7 +22,6 @@ import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
 import type { LightningCSSOptions } from 'dep-types/lightningcss'
 import type { TransformOptions } from 'esbuild'
-import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
@@ -53,6 +52,7 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
+  importEsbuild,
   injectQuery,
   isDataUrl,
   isExternalUrl,
@@ -1799,6 +1799,8 @@ async function minifyCSS(
     // LightningCSS output does not return a linebreak at the end
     return code.toString() + (inlined ? '' : '\n')
   }
+
+  const { formatMessages, transform } = await importEsbuild()
   try {
     const { code, warnings } = await transform(css, {
       loader: 'css',

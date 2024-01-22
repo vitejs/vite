@@ -5,7 +5,6 @@ import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import glob from 'fast-glob'
 import { getDepOptimizationConfig } from '../config'
@@ -14,6 +13,7 @@ import {
   createDebugger,
   flattenId,
   getHash,
+  importEsbuild,
   isOptimizable,
   isWindows,
   lookupFile,
@@ -759,6 +759,7 @@ async function prepareEsbuildOptimizerRun(
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
+  const esbuild = await importEsbuild()
   const context = await esbuild.context({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
@@ -1058,6 +1059,7 @@ export async function extractExportsData(
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
     // so only the entry file is being transformed.
+    const { build } = await importEsbuild()
     const result = await build({
       ...esbuildOptions,
       entryPoints: [filePath],
