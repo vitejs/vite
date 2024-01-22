@@ -170,7 +170,7 @@ const prepareInputs = () => {
     inputLines[lineIndex as number].value.label = inputFileSet[fileIndex].label
     inputLines[lineIndex as number].value.dotColor = inputLines[
       lineIndex as number
-    ].value.glowColor = inputFileSet[fileIndex].color
+    ].value.glowColor = inputFileSet[fileIndex].color as string | null
   })
   return inputs
 }
