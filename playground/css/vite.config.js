@@ -82,5 +82,6 @@ export default defineConfig({
         },
       },
     },
+    preprocessorMaxWorkers: true,
   },
 })

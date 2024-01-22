@@ -288,6 +288,9 @@ importers:
       acorn-walk:
         specifier: ^8.3.2
         version: 8.3.2(acorn@8.11.3)
+      artichokie:
+        specifier: ^0.2.0
+        version: 0.2.0
       cac:
         specifier: ^6.7.14
         version: 6.7.14
@@ -354,9 +357,6 @@ importers:
       mrmime:
         specifier: ^2.0.0
         version: 2.0.0
-      okie:
-        specifier: ^1.0.1
-        version: 1.0.1
       open:
         specifier: ^8.4.2
         version: 8.4.2
@@ -4597,17 +4597,6 @@ packages:
       acorn: 8.11.3
     dev: true
 
-  /acorn-walk@8.3.1(acorn@8.11.3):
-    resolution: {integrity: sha512-TgUZgYvqZprrl7YldZNoa9OciCAyZR+Ejm9eXzKCmjsF5IKp/wgQ7Z/ZpjpGTIUPwrHQIcYeI8qDh4PsEwxMbw==}
-    engines: {node: '>=0.4.0'}
-    peerDependencies:
-      acorn: '*'
-    peerDependenciesMeta:
-      acorn:
-        optional: true
-    dependencies:
-      acorn: 8.11.3
-
   /acorn-walk@8.3.2(acorn@8.11.3):
     resolution: {integrity: sha512-cjkyv4OtNCIeqhHrfS81QWXoCBPExR/J62oyEqepVw8WaQeSqpW2uhuLPh1m9eWhDuOo/jUXVTlifvesOWp/4A==}
     engines: {node: '>=0.4.0'}
@@ -4618,7 +4607,6 @@ packages:
         optional: true
     dependencies:
       acorn: 8.11.3
-    dev: true
 
   /acorn@7.4.1:
     resolution: {integrity: sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==}
@@ -4759,6 +4747,11 @@ packages:
   /array-union@2.1.0:
     resolution: {integrity: sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==}
     engines: {node: '>=8'}
+    dev: true
+
+  /artichokie@0.2.0:
+    resolution: {integrity: sha512-LXtOFWUNABHEo49FJpwOf8VLzOJ1iGV9xu9ezwnveI75LIqGhUDDjMFo3MkUmtc+t3oDZRMATuVMrt6d8FCvrQ==}
+    engines: {node: ^18.0.0 || >=20.0.0}
     dev: true
 
   /as-table@1.0.55:
@@ -7268,7 +7261,7 @@ packages:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       acorn: 8.11.3
-      acorn-walk: 8.3.1(acorn@8.11.3)
+      acorn-walk: 8.3.2(acorn@8.11.3)
       capnp-ts: 0.7.0
       exit-hook: 2.2.1
       glob-to-regexp: 0.4.1
@@ -7589,11 +7582,6 @@ packages:
 
   /object-inspect@1.12.3:
     resolution: {integrity: sha512-geUvdk7c+eizMNUDkRpW1wJwgfOiOeHbxBR/hLXK1aT6zmVSO0jsQcs7fj6MGw89jC/cjGfLcNOrtMYtGqm81g==}
-
-  /okie@1.0.1:
-    resolution: {integrity: sha512-JQh5TdSYhzXSuKN3zzX8Rw9Q/Tec1fm0jwP/k9+cBDk6tyLjlARVu936MLY//2NZp76UGHH+5gXPzRejU1bTjQ==}
-    engines: {node: '>=12.0.0'}
-    dev: true
 
   /on-finished@2.3.0:
     resolution: {integrity: sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww==}
@@ -9072,7 +9060,7 @@ packages:
       '@tsconfig/node16': 1.0.2
       '@types/node': 20.11.1
       acorn: 8.11.3
-      acorn-walk: 8.3.1(acorn@8.11.3)
+      acorn-walk: 8.3.2(acorn@8.11.3)
       arg: 4.1.3
       create-require: 1.1.1
       diff: 4.0.2
