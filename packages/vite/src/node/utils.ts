@@ -190,8 +190,8 @@ export function resolveDependencyVersion(
   return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
 }
 
-export const esbuildVersion = resolveDependencyVersion('rollup')
-export const rollupVersion = resolveDependencyVersion('esbuild')
+export const rollupVersion = resolveDependencyVersion('rollup')
+export const esbuildVersion = resolveDependencyVersion('esbuild')
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
