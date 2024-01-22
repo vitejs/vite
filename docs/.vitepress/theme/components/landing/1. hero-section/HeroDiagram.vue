@@ -23,7 +23,7 @@ const inputPaths = [
 ]
 
 // Setup objects representing each input line's animation state
-const inputLines: Ref[] = inputPaths.map((path) =>
+const inputLines: Ref<SvgNodeProps>[] = inputPaths.map((path) =>
   ref({
     position: 0,
     visible: false,
