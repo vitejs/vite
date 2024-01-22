@@ -1,5 +1,14 @@
+import { DecodedMap } from './source-map/decoder'
 import type { ModuleCache } from './types'
-import { isWindows } from './utils'
+import { decodeBase64, isWindows } from './utils'
+
+let SOURCEMAPPING_URL = 'sourceMa'
+SOURCEMAPPING_URL += 'ppingURL'
+
+const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
+const VITE_RUNTIME_SOURCEMAPPING_REGEXP = new RegExp(
+  `//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,(.+)`,
+)
 
 export class ModuleCacheMap extends Map<string, ModuleCache> {
   private root: string
@@ -92,6 +101,19 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
       super.delete(id)
     }
     return invalidated
+  }
+
+  getSourceMap(moduleId: string): null | DecodedMap {
+    const mod = this.get(moduleId)
+    if (mod.map) return mod.map
+    if (!mod.meta || !mod.meta.code) return null
+    const mapString = mod.meta.code.match(
+      VITE_RUNTIME_SOURCEMAPPING_REGEXP,
+    )?.[1]
+    if (!mapString) return null
+    const baseFile = mod.meta.file || moduleId.split('?')[0]
+    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), baseFile)
+    return mod.map
   }
 }
 

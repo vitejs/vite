@@ -3,6 +3,11 @@ import type { ImportMetaEnv } from './types'
 export const isWindows =
   typeof process !== 'undefined' && process.platform === 'win32'
 
+export const decodeBase64 =
+  typeof atob !== 'undefined'
+    ? atob
+    : (str: string) => Buffer.from(str, 'base64').toString('utf-8')
+
 // currently we copy this from '../../constants' - maybe we can inline it somewhow?
 const NULL_BYTE_PLACEHOLDER = `__x00__`
 const VALID_ID_PREFIX = `/@id/`

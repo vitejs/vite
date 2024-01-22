@@ -140,6 +140,7 @@ function inlineSourceMap(mod: ModuleNode, result: TransformResult) {
 
   // this assumes that "new AsyncFunction" is used to create the module
   const moduleSourceMap = Object.assign({}, map, {
+    sourcesContent: undefined, // remove sourcesContent because _we_ don't use it, it also reduces the payload size
     // currently we need to offset the line
     // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
     mappings: ';'.repeat(fnDeclarationLineCount) + map.mappings,

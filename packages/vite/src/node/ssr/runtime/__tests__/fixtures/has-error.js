@@ -1,1 +1,1 @@
-throw new Error()
+throw new Error('module error')

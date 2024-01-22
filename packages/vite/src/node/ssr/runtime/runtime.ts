@@ -33,6 +33,7 @@ import {
 } from './constants'
 import { silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
+import { enableSourceMapSupport } from './source-map/index'
 
 interface ViteRuntimeDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -73,6 +74,9 @@ export class ViteRuntime {
         },
       )
       options.hmr.connection.onUpdate(createHMRHandler(this))
+    }
+    if (options.sourcemapInterceptor !== false) {
+      enableSourceMapSupport(this)
     }
   }
 

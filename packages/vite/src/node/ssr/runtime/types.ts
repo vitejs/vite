@@ -9,6 +9,8 @@ import type {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
+import type { DecodedMap } from './source-map/decoder'
+import type { InterceptorOptions } from './source-map/interceptor'
 
 export interface DefineImportMetadata {
   /**
@@ -65,6 +67,7 @@ export interface ModuleCache {
   exports?: any
   evaluated?: boolean
   resolving?: boolean
+  map?: DecodedMap
   meta?: FetchResult
   /**
    * Module ids that imports this module
@@ -94,6 +97,11 @@ export interface ViteServerClientOptions {
   root: string
   fetchModule: FetchFunction
   environmentVariables?: Record<string, any>
+  sourcemapInterceptor?:
+    | false
+    | 'node'
+    | 'prepareStackTrace'
+    | InterceptorOptions
   hmr?:
     | false
     | {
