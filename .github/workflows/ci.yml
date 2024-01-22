@@ -98,7 +98,7 @@ jobs:
 
       - name: Cache Playwright's binary
         if: steps.changed-files.outputs.only_changed != 'true'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
