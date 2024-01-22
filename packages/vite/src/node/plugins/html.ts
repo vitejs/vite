@@ -1203,27 +1203,31 @@ export async function applyHtmlTransforms(
         tags = res.tags
       }
 
-      const headTags: HtmlTagDescriptor[] = []
-      const headPrependTags: HtmlTagDescriptor[] = []
-      const bodyTags: HtmlTagDescriptor[] = []
-      const bodyPrependTags: HtmlTagDescriptor[] = []
+      let headTags: HtmlTagDescriptor[] | undefined
+      let headPrependTags: HtmlTagDescriptor[] | undefined
+      let bodyTags: HtmlTagDescriptor[] | undefined
+      let bodyPrependTags: HtmlTagDescriptor[] | undefined
 
       for (const tag of tags) {
-        if (tag.injectTo === 'body') {
-          bodyTags.push(tag)
-        } else if (tag.injectTo === 'body-prepend') {
-          bodyPrependTags.push(tag)
-        } else if (tag.injectTo === 'head') {
-          headTags.push(tag)
-        } else {
-          headPrependTags.push(tag)
+        switch (tag.injectTo) {
+          case 'body':
+            ;(bodyTags ??= []).push(tag)
+            break
+          case 'body-prepend':
+            ;(bodyPrependTags ??= []).push(tag)
+            break
+          case 'head':
+            ;(headTags ??= []).push(tag)
+            break
+          default:
+            ;(headPrependTags ??= []).push(tag)
         }
       }
 
-      html = injectToHead(html, headPrependTags, true)
-      html = injectToHead(html, headTags)
-      html = injectToBody(html, bodyPrependTags, true)
-      html = injectToBody(html, bodyTags)
+      if (headPrependTags) html = injectToHead(html, headPrependTags, true)
+      if (headTags) html = injectToHead(html, headTags)
+      if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
+      if (bodyTags) html = injectToBody(html, bodyTags)
     }
   }
 
