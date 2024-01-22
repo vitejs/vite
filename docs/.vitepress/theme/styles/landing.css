@@ -28,9 +28,9 @@ html:has(.landing) {
   .VPNavBar,
   .VPNavBar:not(.top) {
     background: transparent !important;
-    backdrop-filter: blur(10px);
 
     @media (min-width: 768px) {
+      backdrop-filter: blur(10px);
       background: rgba(15, 15, 15, 0.8) !important;
       border-bottom: 1px solid #262626 !important;
     }
@@ -38,6 +38,11 @@ html:has(.landing) {
     .content-body {
       background: none !important;
     }
+  }
+
+  .VPFooter {
+    border-top: 1px solid #262626 !important;
+    background: radial-gradient(circle at top center, #0f151a 30%, #000000 80%);
   }
 
   .VPHome {
