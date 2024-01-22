@@ -430,6 +430,13 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   // Return the timeline
   return timeline
 }
+
+// Animating borders only smoothly transitions in Chromium-based browsers
+// We don't need extensive checking, just see if the `chrome` key exists on the window object
+const isChromiumBrowser = ref(false)
+onMounted(() => {
+  isChromiumBrowser.value = 'chrome' in window
+})
 </script>
 
 <template>
@@ -450,7 +457,10 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     <div class="vite-chip" :class="{ active: illuminateLogo }">
       <div class="vite-chip__background">
         <div class="vite-chip__border" />
-        <div class="vite-chip__edge"></div>
+        <div
+          class="vite-chip__edge"
+          :class="{ 'edge--animated': isChromiumBrowser }"
+        ></div>
       </div>
       <div class="vite-chip__filter" />
       <img src="/logo.svg" alt="Vite Logo" class="vite-chip__logo" />
@@ -635,8 +645,10 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     .vite-chip__edge {
       opacity: 1;
 
-      @media (min-width: 768px) {
-        animation: rotateGradient 4s linear infinite;
+      &.edge--animated {
+        @media (min-width: 768px) {
+          animation: rotateGradient 8s linear infinite;
+        }
       }
     }
 
