@@ -233,6 +233,18 @@ describe('hmr works correctly', () => {
     await untilUpdated(() => el(), '3')
   })
 
+  test('queries are correctly resolved', async () => {
+    const query1 = () => hmr('query1')
+    const query2 = () => hmr('query2')
+
+    expect(query1()).toBe('query1')
+    expect(query2()).toBe('query2')
+
+    editFile('queries/multi-query.js', (code) => code + '//comment')
+    await untilUpdated(() => query1(), '//commentquery1')
+    await untilUpdated(() => query2(), '//commentquery2')
+  })
+
   // TODO
   // test.skipIf(hasWindowsUnicodeFsBug)('full-reload encodeURI path', async () => {
   //   await page.goto(

@@ -48,6 +48,7 @@ export class ViteRuntime {
   public entrypoints = new Set<string>()
 
   private idToUrlMap = new Map<string, string>()
+  private fileToIdMap = new Map<string, string[]>()
   private envProxy: ImportMetaEnv
 
   constructor(
@@ -65,7 +66,9 @@ export class ViteRuntime {
         options.hmr.connection,
         ({ acceptedPath, ssrInvalidates }) => {
           this.moduleCache.delete(acceptedPath)
-          ssrInvalidates?.forEach((id) => this.moduleCache.delete(id))
+          if (ssrInvalidates) {
+            this.invalidateFiles(ssrInvalidates)
+          }
           return this.executeUrl(acceptedPath)
         },
       )
@@ -99,6 +102,15 @@ export class ViteRuntime {
     this.idToUrlMap.clear()
     this.entrypoints.clear()
     this.hmrClient?.clear()
+  }
+
+  private invalidateFiles(files: string[]) {
+    files.forEach((file) => {
+      const ids = this.fileToIdMap.get(file)
+      if (ids) {
+        ids.forEach((id) => this.moduleCache.deleteByModuleId(id))
+      }
+    })
   }
 
   // we don't use moduleCache.normalize because this URL doesn't have to follow the same rules
@@ -231,6 +243,13 @@ export class ViteRuntime {
     const mod = this.moduleCache.getByModuleId(moduleId)
     fetchedModule.id = moduleId
     mod.meta = fetchedModule
+
+    if (fetchedModule.file) {
+      const fileModules = this.fileToIdMap.get(fetchedModule.file) || []
+      fileModules.push(moduleId)
+      this.fileToIdMap.set(fetchedModule.file, fileModules)
+    }
+
     this.idToUrlMap.set(id, moduleId)
     this.idToUrlMap.set(unwrapId(id), moduleId)
     return fetchedModule as ResolvedResult

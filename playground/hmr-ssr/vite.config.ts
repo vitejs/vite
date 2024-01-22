@@ -24,6 +24,7 @@ export default defineConfig({
     },
     virtualPlugin(),
     transformCountPlugin(),
+    queryPlugin(),
   ],
 })
 
@@ -51,6 +52,21 @@ export const virtual = _virtual + '${num}';`
           server.reloadModule(mod)
         }
       })
+    },
+  }
+}
+
+function queryPlugin(): Plugin {
+  return {
+    name: 'query-resolver',
+    transform(code, id) {
+      if (id.includes('?query1')) {
+        return `export default ${JSON.stringify(code + 'query1')}`
+      }
+
+      if (id.includes('?query2')) {
+        return `export default ${JSON.stringify(code + 'query2')}`
+      }
     },
   }
 }
