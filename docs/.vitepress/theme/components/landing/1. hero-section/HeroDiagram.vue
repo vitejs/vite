@@ -35,9 +35,9 @@ const inputLines: Ref[] = inputPaths.map((path) =>
 
 // Define the file set "combinations" that can be shown on the input side
 const inputFileSets = ref([
-  ['.jsx', '.sass', '.vue'],
+  ['.jsx', '.sass', '.svelte'],
   ['.tsx', '.scss', '.vue'],
-  ['.js', '.styl', '.vue'],
+  ['.js', '.styl', '.svelte'],
   ['.ts', '.less', '.vue'],
   ['.svg', '.html', '.json'],
 ])
@@ -658,13 +658,14 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     opacity: 0.1;
   }
 
-  background: radial-gradient(
-    circle at right center,
-    rgb(86, 50, 119) 0%,
-    rgba(74, 55, 140, 1) 30%,
-    rgb(65, 114, 194) 55%,
-    rgba(50, 81, 115, 0.5) 100%
-  );
+  background: url('/noise.png'),
+    radial-gradient(
+      circle at right center,
+      rgb(86, 50, 119) 0%,
+      rgba(74, 55, 140, 1) 30%,
+      rgb(65, 114, 194) 55%,
+      rgba(50, 81, 115, 0.5) 100%
+    );
   mask-image: radial-gradient(
     ellipse 300% 30% at center center,
     rgba(0, 0, 0, 1) 20%,
@@ -673,14 +674,15 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   );
 
   @media (min-width: 1024px) {
-    background: radial-gradient(
-      circle at right center,
-      rgba(75, 41, 105, 0.5) 0%,
-      rgb(86, 50, 119) 25%,
-      rgba(74, 55, 140, 1) 40%,
-      rgb(64, 102, 168) 65%,
-      rgba(50, 81, 115, 0.5) 100%
-    );
+    background: url('/noise.png'),
+      radial-gradient(
+        circle at right center,
+        rgba(75, 41, 105, 0.5) 0%,
+        rgb(86, 50, 119) 25%,
+        rgba(74, 55, 140, 1) 40%,
+        rgb(64, 102, 168) 65%,
+        rgba(50, 81, 115, 0.5) 100%
+      );
     mask-image: radial-gradient(
       ellipse 150% 30% at center center,
       rgba(0, 0, 0, 1) 20%,
@@ -690,14 +692,15 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   }
 
   @media (min-width: 1500px) {
-    background: radial-gradient(
-      circle at right center,
-      rgba(75, 41, 105, 0.5) 0%,
-      rgb(86, 50, 119) 25%,
-      rgba(74, 55, 140, 1) 45%,
-      rgb(64, 102, 168) 65%,
-      rgba(50, 81, 115, 0.5) 100%
-    );
+    background: url('/noise.png'),
+      radial-gradient(
+        circle at right center,
+        rgba(75, 41, 105, 0.5) 0%,
+        rgb(86, 50, 119) 25%,
+        rgba(74, 55, 140, 1) 45%,
+        rgb(64, 102, 168) 65%,
+        rgba(50, 81, 115, 0.5) 100%
+      );
     mask-image: radial-gradient(
       ellipse 80% 40% at center center,
       rgba(0, 0, 0, 1) 20%,
@@ -707,14 +710,15 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   }
 
   @media (min-width: 1800px) {
-    background: radial-gradient(
-      circle at right center,
-      rgba(75, 41, 105, 0.5) 0%,
-      rgb(86, 50, 119) 25%,
-      rgba(74, 55, 140, 1) 50%,
-      rgb(64, 102, 168) 70%,
-      rgba(50, 81, 115, 0.5) 100%
-    );
+    background: url('/noise.png'),
+      radial-gradient(
+        circle at right center,
+        rgba(75, 41, 105, 0.5) 0%,
+        rgb(86, 50, 119) 25%,
+        rgba(74, 55, 140, 1) 50%,
+        rgb(64, 102, 168) 70%,
+        rgba(50, 81, 115, 0.5) 100%
+      );
     mask-image: radial-gradient(
       ellipse 80% 40% at center center,
       rgba(0, 0, 0, 1) 20%,
