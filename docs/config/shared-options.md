@@ -267,7 +267,7 @@ export default defineConfig({
 - **Type:** `number | true`
 - **Default:** `0` (does not create any workers and run in the main thread)
 
-If this option is set, preprocessors will run in workers when possible. `true` means the number of CPUs minus 1.
+If this option is set, CSS preprocessors will run in workers when possible. `true` means the number of CPUs minus 1.
 
 ## css.devSourcemap
 
