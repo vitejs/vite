@@ -71,7 +71,7 @@ export class HMRContext implements ViteHotContext {
     return this.hmrClient.dataMap.get(this.ownerPath)
   }
 
-  accept(deps?: any, callback?: any): void {
+  accept = (deps?: any, callback?: any): void => {
     if (typeof deps === 'function' || !deps) {
       // self-accept: hot.accept(() => {})
       this.acceptDeps([this.ownerPath], ([mod]) => deps?.(mod))
@@ -87,18 +87,18 @@ export class HMRContext implements ViteHotContext {
 
   // export names (first arg) are irrelevant on the client side, they're
   // extracted in the server for propagation
-  acceptExports(
+  acceptExports = (
     _: string | readonly string[],
     callback: (data: any) => void,
-  ): void {
+  ): void => {
     this.acceptDeps([this.ownerPath], ([mod]) => callback?.(mod))
   }
 
-  dispose(cb: (data: any) => void): void {
+  dispose = (cb: (data: any) => void): void => {
     this.hmrClient.disposeMap.set(this.ownerPath, cb)
   }
 
-  prune(cb: (data: any) => void): void {
+  prune = (cb: (data: any) => void): void => {
     this.hmrClient.pruneMap.set(this.ownerPath, cb)
   }
 
@@ -106,7 +106,7 @@ export class HMRContext implements ViteHotContext {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   decline(): void {}
 
-  invalidate(message: string): void {
+  invalidate = (message: string): void => {
     this.hmrClient.notifyListeners('vite:invalidate', {
       path: this.ownerPath,
       message,
@@ -117,10 +117,10 @@ export class HMRContext implements ViteHotContext {
     )
   }
 
-  on<T extends string>(
+  on = <T extends string>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
-  ): void {
+  ): void => {
     const addToMap = (map: Map<string, any[]>) => {
       const existing = map.get(event) || []
       existing.push(cb)
@@ -130,10 +130,10 @@ export class HMRContext implements ViteHotContext {
     addToMap(this.newListeners)
   }
 
-  off<T extends string>(
+  off = <T extends string>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
-  ): void {
+  ): void => {
     const removeFromMap = (map: Map<string, any[]>) => {
       const existing = map.get(event)
       if (existing === undefined) {
@@ -150,7 +150,10 @@ export class HMRContext implements ViteHotContext {
     removeFromMap(this.newListeners)
   }
 
-  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
+  send = <T extends string>(
+    event: T,
+    data?: InferCustomEventPayload<T>,
+  ): void => {
     this.hmrClient.messenger.send(
       JSON.stringify({ type: 'custom', event, data }),
     )
