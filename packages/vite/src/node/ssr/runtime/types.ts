@@ -58,14 +58,6 @@ export interface ViteModuleRunner {
     metadata?: SSRImportMetadata,
   ): Promise<any>
   runExternalModule(file: string, metadata?: SSRImportMetadata): Promise<any>
-  /**
-   * This is called for every "import" (dynamic and static) statement and is not cached
-   */
-  processImport?(
-    exports: Record<string, any>,
-    fetchResult: ResolvedResult,
-    metadata?: SSRImportMetadata,
-  ): Record<string, any>
 }
 
 export interface ModuleCache {
