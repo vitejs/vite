@@ -3,6 +3,19 @@ import type { ViteRuntime } from '../runtime'
 import { posixDirname, posixResolve } from '../utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
+export interface InterceptorOptions {
+  retrieveFile?: (path: string) => string | null | undefined | false
+  retrieveSourceMap?: (path: string) => null | { url: string; map: any }
+}
+
+export function interceptStackTrace(
+  runtime: ViteRuntime,
+  options: InterceptorOptions = {},
+): void {
+  Error.prepareStackTrace = (error, stack) =>
+    prepareStackTrace(runtime, options, error, stack)
+}
+
 interface CallSite extends NodeJS.CallSite {
   getScriptNameOrSourceURL(): string
 }
@@ -395,17 +408,4 @@ function prepareStackTrace(
   }
   state.curPosition = state.nextPosition = null
   return errorString + processedStack.reverse().join('')
-}
-
-export interface InterceptorOptions {
-  retrieveFile?: (path: string) => string | null | undefined | false
-  retrieveSourceMap?: (path: string) => null | { url: string; map: any }
-}
-
-export function interceptStackTrace(
-  runtime: ViteRuntime,
-  options: InterceptorOptions = {},
-): void {
-  Error.prepareStackTrace = (error, stack) =>
-    prepareStackTrace(runtime, options, error, stack)
 }

@@ -1,4 +1,3 @@
-import type { Bias, Needle, OriginalMapping } from '@jridgewell/trace-mapping'
 import { posixResolve } from '../utils'
 
 interface SourceMapLike {
@@ -7,6 +6,21 @@ interface SourceMapLike {
   names?: string[]
   sources?: string[]
   sourcesContent?: string[]
+}
+
+type Bias = typeof LEAST_UPPER_BOUND | typeof GREATEST_LOWER_BOUND
+
+type OriginalMapping = {
+  source: string | null
+  line: number
+  column: number
+  name: string | null
+}
+
+type Needle = {
+  line: number
+  column: number
+  bias?: Bias
 }
 
 export class DecodedMap {
@@ -237,7 +251,7 @@ function traceSegmentInternal(
 
 export function getOriginalPosition(
   map: DecodedMap,
-  { line, column, bias }: Needle,
+  { line, column }: Needle,
 ): OriginalMapping | null {
   line--
   if (line < 0) throw new Error(LINE_GTR_ZERO)
@@ -253,7 +267,7 @@ export function getOriginalPosition(
     map._decodedMemo,
     line,
     column,
-    bias || GREATEST_LOWER_BOUND,
+    GREATEST_LOWER_BOUND,
   )
   if (index === -1) return null
   const segment = segments[index]

@@ -89,7 +89,10 @@ function patchTypes(): Plugin {
       }
     },
     renderChunk(code, chunk) {
-      if (chunk.fileName.startsWith('runtime')) {
+      if (
+        chunk.fileName.startsWith('runtime') ||
+        chunk.fileName.startsWith('types.d-')
+      ) {
         validateRuntimeChunk.call(this, chunk)
       } else {
         validateChunkImports.call(this, chunk)
@@ -110,7 +113,7 @@ function validateRuntimeChunk(this: PluginContext, chunk: RenderedChunk) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
-      !id.startsWith('runtime.d')
+      !id.startsWith('types.d')
     ) {
       this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
       process.exitCode = 1
@@ -128,7 +131,7 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
-      !id.startsWith('runtime.d') &&
+      !id.startsWith('types.d') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
