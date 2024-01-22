@@ -51,7 +51,6 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
-  importEsbuild,
   injectQuery,
   isDataUrl,
   isExternalUrl,
@@ -1724,7 +1723,7 @@ async function minifyCSS(
     return code.toString() + (inlined ? '' : '\n')
   }
 
-  const { formatMessages, transform } = await importEsbuild()
+  const { formatMessages, transform } = await import('esbuild')
   try {
     const { code, warnings } = await transform(css, {
       loader: 'css',

@@ -41,26 +41,6 @@ import {
 } from './packages'
 import type { CommonServerOptions } from '.'
 
-// Cache lazy loaded esbuild import to avoid the extra cost of the import resolution on hot paths
-// Only keep the functions we use to avoid keeping the promise and the entire module in memory
-type EsbuildModule = typeof import('esbuild')
-type EsbuildFunctions = Pick<
-  EsbuildModule,
-  'build' | 'transform' | 'context' | 'formatMessages'
->
-let esbuildFunctions: EsbuildFunctions | Promise<EsbuildFunctions>
-export async function importEsbuild(): Promise<EsbuildFunctions> {
-  if (esbuildFunctions) {
-    return esbuildFunctions
-  }
-  esbuildFunctions = import('esbuild').then((esbuild) => {
-    const { build, transform, context, formatMessages } = esbuild
-    esbuildFunctions = { build, transform, context, formatMessages }
-    return esbuildFunctions
-  })
-  return esbuildFunctions
-}
-
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
  */
