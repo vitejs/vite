@@ -141,12 +141,15 @@ const animateDiagram = () => {
     )
   })
 
-  // Disable the colored indicators
-  timeline.set(blueIndicator, { value: false }, '>-1')
-  timeline.set(pinkIndicator, { value: false }, '<')
+  //  Desktop only reset
+  if (!isMobile) {
+    // Disable the colored indicators
+    timeline.set(blueIndicator, { value: false }, '>-1')
+    timeline.set(pinkIndicator, { value: false }, '<')
 
-  // Pause briefly at the end of the animation
-  timeline.set({}, {}, '+=0.2')
+    // Pause briefly at the end of the animation
+    timeline.set({}, {}, '+=0.2')
+  }
 }
 
 /**
@@ -276,8 +279,8 @@ const animateSingleOutputMobile = (outputLine: Ref<SvgNodeProps>) => {
     outputLine.value,
     {
       position: 0.7,
-      duration: 3,
-      ease: 'power2.out',
+      duration: 2,
+      ease: 'power1.inOut',
     },
     0.3,
   )
@@ -288,7 +291,7 @@ const animateSingleOutputMobile = (outputLine: Ref<SvgNodeProps>) => {
     {
       visible: true,
     },
-    0.35,
+    0.75,
   )
 
   // Hide the dot
@@ -297,7 +300,7 @@ const animateSingleOutputMobile = (outputLine: Ref<SvgNodeProps>) => {
     {
       visible: false,
     },
-    1,
+    1.2,
   )
 
   return timeline
@@ -400,7 +403,7 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     inputLine.value,
     {
       position: 1,
-      duration: 2,
+      duration: 1.8,
       ease: 'power2.out',
     },
     0,
@@ -421,7 +424,7 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     {
       visible: false,
     },
-    0.6,
+    0.5,
   )
 
   // Return the timeline
@@ -468,7 +471,12 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
 
   @media (max-width: 1630px) {
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  @media (max-width: 768px) {
+    left: 50%;
+    transform: translate3d(-50%, 0, 0) scale(0.9);
   }
 }
 
@@ -622,11 +630,7 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
 
   &.active {
     box-shadow: 0 30px 35px -10px rgba(0, 0, 0, 0.6);
-    transform: translate3d(0, 0, 0) scale(0.9);
-
-    @media (min-width: 768px) {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
+    transform: translate3d(0, 0, 0) scale(1);
 
     .vite-chip__edge {
       opacity: 1;
