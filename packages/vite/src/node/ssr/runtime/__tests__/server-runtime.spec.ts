@@ -112,7 +112,7 @@ describe('vite-runtime initialization', async () => {
     return err.stack!.split('\n')[1].replace(runtime.options.root, '<root>')
   }
 
-  it.only('source maps are correctly applied to stack traces', async ({
+  it('source maps are correctly applied to stack traces', async ({
     runtime,
     server,
   }) => {
