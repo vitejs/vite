@@ -74,6 +74,7 @@ export async function createViteRuntimeTester(
       hmr: {
         logger: false,
       },
+      sourcemapInterceptor: 'prepareStackTrace',
     })
     if (config.server?.watch) {
       await waitForWatcher(t.server)

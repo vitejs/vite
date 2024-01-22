@@ -30,6 +30,30 @@ function createHMROptions(
   }
 }
 
+const prepareStackTrace = {
+  retrieveFile(id: string) {
+    if (existsSync(id)) {
+      return readFileSync(id, 'utf-8')
+    }
+  },
+}
+
+function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
+  if (options.sourcemapInterceptor != null) {
+    if (options.sourcemapInterceptor === 'prepareStackTrace') {
+      return prepareStackTrace
+    }
+    if (typeof options.sourcemapInterceptor === 'object') {
+      return { ...prepareStackTrace, ...options.sourcemapInterceptor }
+    }
+    return options.sourcemapInterceptor
+  }
+  if (typeof process !== 'undefined' && 'setSourceMapsEnabled' in process) {
+    return 'node'
+  }
+  return prepareStackTrace
+}
+
 export async function createViteRuntime(
   server: ViteDevServer,
   options: MainThreadRuntimeOptions = {},
@@ -41,13 +65,7 @@ export async function createViteRuntime(
       root: server.config.root,
       fetchModule: server.ssrFetchModule,
       hmr,
-      sourcemapInterceptor: options.sourcemapInterceptor ?? {
-        retrieveFile: (id) => {
-          if (existsSync(id)) {
-            return readFileSync(id, 'utf-8')
-          }
-        },
-      },
+      sourcemapInterceptor: resolveSourceMapOptions(options),
     },
     options.runner || new ESModulesRunner(),
   )
