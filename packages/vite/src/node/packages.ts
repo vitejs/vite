@@ -21,7 +21,7 @@ export type PackageCache = Map<string, PackageData>
 
 export interface PackageData {
   dir: string
-  hasSideEffects: (id: string) => boolean | 'no-treeshake'
+  hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
   webResolvedImports: Record<string, string | undefined>
   nodeResolvedImports: Record<string, string | undefined>
   setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
@@ -171,7 +171,7 @@ export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
   const pkgDir = path.dirname(pkgPath)
   const { sideEffects } = data
-  let hasSideEffects: (id: string) => boolean
+  let hasSideEffects: (id: string) => boolean | null
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {
@@ -191,7 +191,7 @@ export function loadPackageData(pkgPath: string): PackageData {
       resolve: pkgDir,
     })
   } else {
-    hasSideEffects = () => true
+    hasSideEffects = () => null
   }
 
   const pkg: PackageData = {
