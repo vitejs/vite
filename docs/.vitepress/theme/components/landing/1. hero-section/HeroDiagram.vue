@@ -121,11 +121,11 @@ const animateDiagram = () => {
   timeline.set(pinkIndicator, { value: true }, '<+0.3')
 
   // Animate the output nodes/lines
-  timeline.addLabel('showOutput', '<+0.4')
+  timeline.addLabel('showOutput', '<')
   outputLines.forEach((outputLine, index) => {
     timeline.add(
       isMobile
-        ? animateSingleOutputMobile(outputLine, index)
+        ? animateSingleOutputMobile(outputLine)
         : animateSingleOutputDesktop(outputLine, index),
       'showOutput+=' + (isMobile ? 0.3 : 0.1) * index,
     )
@@ -339,7 +339,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     inputLine.value,
     {
       position: 1,
-      duration: 1.5,
+      duration: 1.2,
       ease: 'power3.in',
     },
     1,
@@ -351,7 +351,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       labelVisible: false,
     },
-    1.5,
+    1.2,
   )
 
   // Hide the dot
@@ -360,7 +360,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       visible: false,
     },
-    2,
+    1.7,
   )
 
   // Return the timeline
@@ -603,7 +603,7 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     width: 65px;
     opacity: 0.2;
     filter: grayscale(100%);
-    transition: all 0.6s ease;
+    transition: all 0.2s ease;
     z-index: 3;
   }
 
