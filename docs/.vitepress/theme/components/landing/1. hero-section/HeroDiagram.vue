@@ -594,8 +594,8 @@ onMounted(() => {
       rgba(0, 0, 0, 0) 90%
     );
     opacity: 0;
-    will-change: opacity;
-    transition: opacity 1s ease-in-out;
+    will-change: opacity, border;
+    transition: all 1s ease-in-out;
 
     @media (min-width: 768px) {
       border-image-source: linear-gradient(
