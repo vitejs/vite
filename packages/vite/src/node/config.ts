@@ -8,6 +8,7 @@ import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
+import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
@@ -1008,8 +1009,6 @@ async function bundleConfigFile(
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
-
-  const { build } = await import('esbuild')
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],

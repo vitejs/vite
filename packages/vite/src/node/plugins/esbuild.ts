@@ -6,6 +6,7 @@ import type {
   TransformOptions,
   TransformResult,
 } from 'esbuild'
+import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
@@ -172,7 +173,6 @@ export async function transformWithEsbuild(
   delete resolvedOptions.jsxInject
 
   try {
-    const { transform } = await import('esbuild')
     const result = await transform(code, resolvedOptions)
     let map: SourceMap
     if (inMap && resolvedOptions.sourcemap) {
