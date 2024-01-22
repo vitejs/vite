@@ -39,10 +39,12 @@ defineProps({
         y2="324.167"
         gradientUnits="userSpaceOnUse"
       >
-        <stop offset="0" stop-color="white" stop-opacity="0" />
-        <stop offset="0.5" stop-color="white" stop-opacity="0.33" />
-        <stop offset="0.7" stop-color="white" stop-opacity="0.2" />
-        <stop offset="0.9" stop-color="white" stop-opacity="0" />
+        <stop offset="0" stop-color="#c6caff" stop-opacity="0" />
+        <stop offset="0.2" stop-color="#c6caff" stop-opacity="0.1" />
+        <stop offset="0.4" stop-color="white" stop-opacity="0.4" />
+        <stop offset="0.6" stop-color="#c6caff" stop-opacity="0.2" />
+        <stop offset="0.8" stop-color="#c6caff" stop-opacity="0.2" />
+        <stop offset="0.9" stop-color="#c6caff" stop-opacity="0" />
       </linearGradient>
     </defs>
   </svg>

@@ -32,15 +32,15 @@ defineProps({
         :visible="outputLine.value.visible"
         :label-visible="outputLine.value.labelVisible"
         :label="outputLine.value.label"
-        dot-color="#ce9bf4"
+        dot-color="#d499ff"
         glow-color="#BD34FE"
       />
     </g>
     <defs>
       <linearGradient id="output_gradient" gradientUnits="userSpaceOnUse">
-        <stop offset="0.1" stop-color="white" stop-opacity="0" />
-        <stop offset="0.4" stop-color="white" stop-opacity="0.33" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop offset="0.1" stop-color="#E0C8FF" stop-opacity="0" />
+        <stop offset="0.4" stop-color="#E0C8FF" stop-opacity="0.4" />
+        <stop offset="1" stop-color="#E0C8FF" stop-opacity="0" />
       </linearGradient>
     </defs>
   </svg>

@@ -77,7 +77,7 @@ let timeline: gsap.core.Timeline | null
 onMounted(() => {
   scrollTriggerInstance = ScrollTrigger.create({
     trigger: '#hero-diagram',
-    start: 'center 80%',
+    start: 'center 100%',
     once: true,
     onEnter: () => {
       animateDiagram()
@@ -309,8 +309,8 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
   timeline.to(
     inputLine.value,
     {
-      position: Math.random() * 0.1 + 0.3,
-      duration: 1.5,
+      position: Math.random() * 0.1 + 0.4,
+      duration: 1,
       ease: 'expo.out',
     },
     0,
@@ -342,7 +342,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
       duration: 1.5,
       ease: 'power3.in',
     },
-    2,
+    1,
   )
 
   // Hide the label
@@ -351,7 +351,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       labelVisible: false,
     },
-    2.5,
+    1.5,
   )
 
   // Hide the dot
@@ -360,7 +360,7 @@ const animateSingleInputDesktop = (inputLine: Ref<SvgNodeProps>) => {
     {
       visible: false,
     },
-    3,
+    2,
   )
 
   // Return the timeline
@@ -562,6 +562,9 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
       rgba(255, 255, 255, 0.15) 65%,
       rgba(0, 0, 0, 0) 90%
     );
+    opacity: 0;
+    will-change: opacity;
+    transition: opacity 1s ease-in-out;
 
     @media (min-width: 768px) {
       border-image-source: linear-gradient(
@@ -612,6 +615,14 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
       transform: translate3d(0, 0, 0) scale(1);
     }
 
+    .vite-chip__edge {
+      opacity: 1;
+
+      @media (min-width: 768px) {
+        animation: rotateGradient 4s linear infinite;
+      }
+    }
+
     .vite-chip__filter {
       transform: translate3d(0, 0, 0) scale(0.97);
 
@@ -652,7 +663,7 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
   width: 100%;
   z-index: -1;
   opacity: 0.4;
-  transition: opacity 0.4s ease;
+  transition: opacity 1s ease;
 
   @media (min-width: 768px) {
     opacity: 0.1;
@@ -731,8 +742,51 @@ const animateSingleInputMobile = (inputLine: Ref<SvgNodeProps>) => {
     opacity: 0.4;
 
     @media (min-width: 768px) {
-      opacity: 0.6;
+      opacity: 0.7;
     }
+  }
+}
+
+@keyframes rotateGradient {
+  0% {
+    border-image-source: linear-gradient(
+      to bottom right,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(255, 255, 255, 0.15) 65%,
+      rgba(0, 0, 0, 0) 90%
+    );
+  }
+  25% {
+    border-image-source: linear-gradient(
+      to right top,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(255, 255, 255, 0.15) 65%,
+      rgba(0, 0, 0, 0) 90%
+    );
+  }
+  50% {
+    border-image-source: linear-gradient(
+      to top left,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(255, 255, 255, 0.15) 65%,
+      rgba(0, 0, 0, 0) 90%
+    );
+  }
+  75% {
+    border-image-source: linear-gradient(
+      to left bottom,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(255, 255, 255, 0.15) 65%,
+      rgba(0, 0, 0, 0) 90%
+    );
+  }
+  100% {
+    border-image-source: linear-gradient(
+      to bottom right,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(255, 255, 255, 0.15) 65%,
+      rgba(0, 0, 0, 0) 90%
+    );
   }
 }
 </style>
