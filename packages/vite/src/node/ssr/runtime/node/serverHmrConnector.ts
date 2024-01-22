@@ -1,10 +1,10 @@
 import type { CustomPayload, HMRPayload } from 'types/hmrPayload'
-import type { HMRConnection } from '../../../../shared/hmr'
 import type { ViteDevServer } from '../../../server'
 import type {
   HMRBroadcasterClient,
   ServerHMRChannel,
 } from '../../../server/hmr'
+import type { HMRRuntimeConnection } from '../types'
 
 class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
   constructor(private readonly hmrChannel: ServerHMRChannel) {}
@@ -29,7 +29,7 @@ class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
   }
 }
 
-export class ServerHMRConnector implements HMRConnection {
+export class ServerHMRConnector implements HMRRuntimeConnection {
   private handlers: ((payload: HMRPayload) => void)[] = []
   private hmrChannel: ServerHMRChannel
   private hmrClient: ServerHMRBroadcasterClient
@@ -65,15 +65,9 @@ export class ServerHMRConnector implements HMRConnection {
     )
   }
 
-  onUpdate(handler: (payload: HMRPayload) => void): () => void {
+  onUpdate(handler: (payload: HMRPayload) => void): void {
     this.handlers.push(handler)
     handler({ type: 'connected' })
     this.connected = true
-    return () => {
-      this.handlers = this.handlers.filter((cb) => cb !== handler)
-      if (!this.handlers.length) {
-        this.connected = false
-      }
-    }
   }
 }
