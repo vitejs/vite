@@ -33,7 +33,6 @@ import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { VERSION as rollupVersion } from 'rollup'
-import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -69,10 +68,12 @@ import {
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
+  initRollupParseAst,
   isExternalUrl,
   isObject,
   normalizePath,
   numberToPos,
+  parseAst,
   prettifyUrl,
   timeFrom,
   unwrapId,
@@ -163,6 +164,8 @@ export async function createPluginContainer(
   } = config
   const { getSortedPluginHooks, getSortedPlugins } =
     createPluginHookUtils(plugins)
+
+  const initRollupParseAstPromise = initRollupParseAst()
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -302,7 +305,7 @@ export async function createPluginContainer(
     }
 
     parse(code: string, opts: any) {
-      return rollupParseAst(code, opts)
+      return parseAst(code, opts)
     }
 
     async resolve(
@@ -655,6 +658,7 @@ export async function createPluginContainer(
     getModuleInfo,
 
     async buildStart() {
+      await initRollupParseAstPromise
       await handleHookPromise(
         hookParallel(
           'buildStart',
