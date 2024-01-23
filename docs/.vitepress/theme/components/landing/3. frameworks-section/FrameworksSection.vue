@@ -20,6 +20,7 @@ import logoRedwood from '../../../../../images/frameworks/redwood.svg'
 import logoSolid from '../../../../../images/frameworks/solid.svg'
 import logoAngular from '../../../../../images/frameworks/angular.svg'
 import logoReact from '../../../../../images/frameworks/react.svg'
+import logoRemix from '../../../../../images/frameworks/remix.svg'
 import logoSvelte from '../../../../../images/frameworks/svelte.svg'
 
 /**
@@ -118,6 +119,13 @@ const frameworks: Framework[] = [
     visible: ref(false),
   },
   {
+    name: 'Remix',
+    logo: logoRemix,
+    color: '#3991fd',
+    url: 'https://remix.run/',
+    visible: ref(false),
+  },
+  {
     name: 'Svelte',
     logo: logoSvelte,
     color: '#fd3e00',
@@ -200,7 +208,7 @@ const numBlocksPerRow: ComputedRef<number> = computed(() => {
  * The most we support for our layout is 7, but it can be less for narrower screens.
  */
 const numFrameworksPerRow: ComputedRef<number> = computed(() => {
-  return Math.min(numBlocksPerRow.value, 7)
+  return Math.min(numBlocksPerRow.value, 8)
 })
 
 /**
