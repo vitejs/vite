@@ -65,7 +65,7 @@ export function proxyMiddleware(
         )
       } else if ('req' in res) {
         config.logger.error(
-          `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
+          `${colors.red(`http proxy error: ${originalRes.req.url}`)}\n${
             err.stack
           }`,
           {
