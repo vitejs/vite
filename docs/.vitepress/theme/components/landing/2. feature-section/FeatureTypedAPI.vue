@@ -28,32 +28,42 @@ const { isCardActive, startAnimation } = useCardAnimation(
     <div class="feature__visualization" :class="{ active: isCardActive }">
       <div class="ide">
         <span class="code code__inactive">
-          <span class="code--blue">import</span> ‘.../nested/main’<br />
-          <span class="code--blue">import</span> ‘.../nested/....’<br />
-          <span class="code--blue">import</span> ‘.../nested/....’<br />
-          <span class="code--blue">import</span> ‘.../nested/....’<br />
-          <br />
-          <span class="code--blue">import</span> ‘.../nested/main’<br />
-          <span class="code--blue">import</span> ‘.../nested/....’<br />
-          <span class="code--blue">import</span> ‘.../nested/....’<br />
+          <span class="code--red">import</span> { createServer }
+          <span class="code--red">from</span>
+          <span class="code--blue">'vite'</span><br /><br />
+          <span class="code--red">const</span> server =
+          <span class="code--red">await</span>
+          <span class="code--purple">createServer</span>({<br />
+          <span class="code--grey"
+            >&nbsp;&nbsp;&nbsp;// user config options</span
+          ><br />
+          })
         </span>
         <span class="code code__feature">
-          <span class="code--grey">import { </span
-          ><span class="code--highlight">createServer</span
-          ><span class="code--grey"> } from ‘</span
-          ><span class="code--yellow">vite</span
-          ><span class="code--grey">’</span>
+          <span class="code--red">await</span> server.<span
+            class="code--highlight"
+            >listen</span
+          >()<br />
+          <span class="code--extra"
+            >server.<span class="code--purple">printUrls</span>()</span
+          >
         </span>
       </div>
       <div class="tooltip">
         <span class="code">
-          (alias) <span class="code--purple">function</span
-          ><br />createServer(inlineConfig?:
-          <span class="code--yellow">InlineConfig</span>):
-          <span class="code--yellow">Promise</span>&lt;<span
-            class="code--yellow"
-            >ViteDevServer</span
-          >&gt;<br /><span class="code--blue">import </span> createServer
+          (method) ViteDevServer.<span class="code--blue">listen</span
+          >(port<span class="code--blue">?:</span> number
+          <span class="code--blue">| undefined,</span> isRestart<span
+            class="code--blue"
+            >?:</span
+          >
+          boolean <span class="code--blue">| undefined</span>):
+          <span class="code--yellow">Promise</span
+          ><span class="code--blue">&lt;</span>ViteDevServer<span
+            class="code--blue"
+            >&gt;</span
+          ><br />
+          <span class="code--descriptor">Start the server.</span>
         </span>
       </div>
     </div>
@@ -100,15 +110,16 @@ const { isCardActive, startAnimation } = useCardAnimation(
     background-size: 400%;
     background-position-x: 100%;
     animation: shimmer 7s infinite linear;
-    padding: 12px 2px 12px 12px;
+    padding: 12px 2px 6px 12px;
     position: absolute;
     z-index: 5;
-    top: 48px;
-    left: 90px;
+    top: 25px;
+    left: 60px;
     right: 0;
     border-top: 1px solid #383838;
     opacity: 0;
     transition: all 0.2s ease-in-out;
+    transform: translate3d(0, 20px, 0);
   }
 
   .code__inactive {
@@ -122,7 +133,7 @@ const { isCardActive, startAnimation } = useCardAnimation(
 
   .code__feature {
     position: absolute;
-    top: 160px;
+    top: 140px;
     left: 15px;
   }
 
@@ -145,25 +156,32 @@ const { isCardActive, startAnimation } = useCardAnimation(
       display: inline-block;
       position: relative;
       padding: 2px;
+      color: #dc94ff;
+      transition: all 0.1s ease-in-out;
 
       &:before {
         content: '';
         width: 100%;
         height: 100%;
         border-radius: 5px;
-        opacity: 0.2;
-        background: #ffe358;
+        opacity: 0;
+        background: #94e2fb;
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
         z-index: -1;
+        transition: all 0.1s ease-in-out;
       }
     }
 
     .code--purple {
       color: #dc94ff;
+    }
+
+    .code--red {
+      color: #ff6b6b;
     }
 
     .code--blue {
@@ -177,6 +195,18 @@ const { isCardActive, startAnimation } = useCardAnimation(
     .code--yellow {
       color: #ffe358;
     }
+
+    .code--descriptor {
+      margin-top: 8px;
+      padding-top: 6px;
+      display: block;
+      border-top: 1px solid #363636;
+    }
+
+    .code--extra {
+      transition: opacity 0.2s ease-in-out;
+      opacity: 1;
+    }
   }
 
   &.active {
@@ -184,9 +214,22 @@ const { isCardActive, startAnimation } = useCardAnimation(
       filter: blur(5px);
     }
 
+    .code--highlight {
+      color: #94e2fb;
+
+      &:before {
+        opacity: 0.2;
+      }
+    }
+
     .tooltip {
       transition-delay: 0.1s;
       opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .code--extra {
+      opacity: 0.2;
     }
   }
 }
