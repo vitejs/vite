@@ -16,7 +16,13 @@ useSlideIn('#rich-features-card')
 /**
  * Start the animation when the card is hovered
  */
-const { isCardActive } = useCardAnimation('#rich-features-card')
+const { isCardActive, startAnimation } = useCardAnimation(
+  '#rich-features-card',
+  null,
+  {
+    once: true,
+  },
+)
 </script>
 
 <template>
@@ -24,6 +30,7 @@ const { isCardActive } = useCardAnimation('#rich-features-card')
     class="feature-card"
     id="rich-features-card"
     :class="{ active: isCardActive }"
+    @mouseover.stop.prevent="startAnimation"
   >
     <div class="feature__visualization">
       <div class="card-container">
@@ -139,7 +146,6 @@ const { isCardActive } = useCardAnimation('#rich-features-card')
     transform: translate3d(-60px, 0, 0);
   }
 
-  &:hover,
   &.active {
     .feature__visualization {
       .card {

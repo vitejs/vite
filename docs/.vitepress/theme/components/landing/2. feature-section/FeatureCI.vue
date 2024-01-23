@@ -67,19 +67,11 @@ const { startAnimation, isCardActive } = useCardAnimation(
       )
     })
 
-    // Turn off the checkmarks
-    checkmarks.forEach((checkmark) => {
-      timeline.call(
-        () => {
-          checkmark.value = false
-        },
-        null,
-        7,
-      )
-    })
-
     // All done
     return timeline
+  },
+  {
+    once: true,
   },
 )
 </script>

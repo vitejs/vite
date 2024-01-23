@@ -10,11 +10,21 @@ useSlideIn('#flexible-plugin-system')
 /**
  * Start the animation when the card is hovered
  */
-const { isCardActive } = useCardAnimation('#flexible-plugin-system')
+const { isCardActive, startAnimation } = useCardAnimation(
+  '#flexible-plugin-system',
+  null,
+  {
+    once: true,
+  },
+)
 </script>
 
 <template>
-  <div class="feature-card" id="flexible-plugin-system">
+  <div
+    class="feature-card"
+    id="flexible-plugin-system"
+    @mouseover.stop.prevent="startAnimation"
+  >
     <div class="feature__visualization" :class="{ active: isCardActive }">
       <div class="diagram">
         <!-- Diagram -->
@@ -480,8 +490,7 @@ const { isCardActive } = useCardAnimation('#flexible-plugin-system')
     will-change: opacity;
   }
 
-  &.active,
-  &:hover {
+  &.active {
     .blue-chip__cube,
     .pink-chip__cube {
       transform: translate3d(0px, 0, 0);

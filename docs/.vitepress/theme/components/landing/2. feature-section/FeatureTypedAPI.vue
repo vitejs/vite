@@ -10,11 +10,21 @@ useSlideIn('#fully-typed-api')
 /**
  * Start the animation when the card is hovered
  */
-const { isCardActive } = useCardAnimation('#fully-typed-api')
+const { isCardActive, startAnimation } = useCardAnimation(
+  '#fully-typed-api',
+  null,
+  {
+    once: true,
+  },
+)
 </script>
 
 <template>
-  <div class="feature-card" id="fully-typed-api">
+  <div
+    class="feature-card"
+    id="fully-typed-api"
+    @mouseover.stop.prevent="startAnimation"
+  >
     <div class="feature__visualization" :class="{ active: isCardActive }">
       <div class="ide">
         <span class="code code__inactive">
@@ -169,8 +179,7 @@ const { isCardActive } = useCardAnimation('#fully-typed-api')
     }
   }
 
-  &.active,
-  &:hover {
+  &.active {
     .code__inactive {
       filter: blur(5px);
     }

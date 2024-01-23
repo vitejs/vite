@@ -10,11 +10,21 @@ useSlideIn('#ssr-support')
 /**
  * Start the animation when the card is hovered
  */
-const { isCardActive } = useCardAnimation('#ssr-support')
+const { isCardActive, startAnimation } = useCardAnimation(
+  '#ssr-support',
+  null,
+  {
+    once: true,
+  },
+)
 </script>
 
 <template>
-  <div class="feature-card" id="ssr-support">
+  <div
+    class="feature-card"
+    id="ssr-support"
+    @mouseover.stop.prevent="startAnimation"
+  >
     <div class="feature__visualization" :class="{ active: isCardActive }">
       <svg
         width="402"
@@ -487,8 +497,7 @@ const { isCardActive } = useCardAnimation('#ssr-support')
     transition: all 0.3s ease-in-out;
   }
 
-  &.active,
-  &:hover {
+  &.active {
     .connector {
       stroke: #ffe358;
       transition-delay: 0.1s;
