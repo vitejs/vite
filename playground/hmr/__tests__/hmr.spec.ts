@@ -186,6 +186,17 @@ if (!isBuild) {
       () => el.textContent(),
       'soft-invalidation/index.js is transformed 1 times. child is updated',
     )
+
+    editFile('soft-invalidation/index.js', (code) =>
+      code.replace('child is', 'child is now'),
+    )
+    editFile('soft-invalidation/child.js', (code) =>
+      code.replace('updated', 'updated?'),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'soft-invalidation/index.js is transformed 2 times. child is now updated?',
+    )
   })
 
   test('plugin hmr handler + custom event', async () => {

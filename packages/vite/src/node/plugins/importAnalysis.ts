@@ -43,6 +43,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  removeTimestampQuery,
   stripBase,
   stripBomTag,
   timeFrom,
@@ -685,7 +686,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // `importedUrls` will be mixed with watched files for the module graph,
       // `staticImportedUrls` will only contain the static top-level imports and
       // dynamic imports
-      const staticImportedUrls = new Set(_orderedImportedUrls)
+      const staticImportedUrls = new Set(
+        _orderedImportedUrls.map((url) => removeTimestampQuery(url)),
+      )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
