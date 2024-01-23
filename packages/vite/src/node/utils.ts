@@ -162,6 +162,16 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
+export function resolveDependencyVersion(
+  dep: string,
+  pkgRelativePath = '../../package.json',
+): string {
+  const pkgPath = path.resolve(_require.resolve(dep), pkgRelativePath)
+  return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
+}
+
+export const rollupVersion = resolveDependencyVersion('rollup')
+
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
