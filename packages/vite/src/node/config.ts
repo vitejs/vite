@@ -766,6 +766,7 @@ export async function resolveConfig(
     packageCache,
     createResolver,
     optimizeDeps: {
+      holdUntilCrawlEnd: true,
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: resolveOptions.preserveSymlinks,
