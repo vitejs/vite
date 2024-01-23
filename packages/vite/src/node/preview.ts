@@ -108,6 +108,7 @@ export async function preview(
     'serve',
     'production',
     'production',
+    true,
   )
 
   const distDir = path.resolve(config.root, config.build.outDir)
