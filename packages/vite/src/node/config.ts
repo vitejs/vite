@@ -1080,6 +1080,8 @@ async function bundleConfigFile(
               let idFsPath: string | undefined
               try {
                 idFsPath = resolveByViteResolver(id, importer, !isImport)
+                // do not use the file extension ".ts" as an external dependency
+                if (idFsPath?.endsWith('.ts')) return
               } catch (e) {
                 if (!isImport) {
                   let canResolveWithImport = false
