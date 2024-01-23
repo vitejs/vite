@@ -5,13 +5,18 @@
  */
 export { VERSION as version } from './constants'
 export { version as esbuildVersion } from 'esbuild'
-export { VERSION as rollupVersion } from 'rollup'
 export {
   splitVendorChunkPlugin,
   splitVendorChunk,
   isCSSRequest,
 } from './plugins/splitVendorChunk'
-export { normalizePath, mergeConfig, mergeAlias, createFilter } from './utils'
+export {
+  normalizePath,
+  mergeConfig,
+  mergeAlias,
+  createFilter,
+  rollupVersion,
+} from './utils'
 export { send } from './server/send'
 export { createLogger } from './logger'
 export { searchForWorkspaceRoot } from './server/searchRoot'

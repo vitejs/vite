@@ -32,7 +32,6 @@ SOFTWARE.
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { VERSION as rollupVersion } from 'rollup'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
@@ -74,6 +73,7 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  rollupVersion,
   timeFrom,
   unwrapId,
 } from '../utils'
