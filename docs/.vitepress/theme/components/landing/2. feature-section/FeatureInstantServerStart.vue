@@ -21,6 +21,7 @@ const { isCardActive, startAnimation } = useCardAnimation(
   () => {
     const timeline = gsap.timeline()
 
+    // Highlight the enter key
     timeline.call(
       () => {
         if (commandTriggered.value) {
@@ -29,48 +30,23 @@ const { isCardActive, startAnimation } = useCardAnimation(
         highlightEnter.value = true
       },
       null,
-      0.6,
+      1.3,
+    )
+
+    // Execute the `npm run dev` command
+    timeline.call(
+      () => {
+        commandTriggered.value = true
+        highlightEnter.value = false
+      },
+      null,
+      1.6,
     )
   },
   {
     once: true,
   },
 )
-
-/**
- * Enable the card when it's in the viewport.
- * This animates in the `npm run dev` command.
- */
-onMounted(() => {
-  window.addEventListener('keydown', handleEnterPress)
-})
-
-function handleEnterPress(event) {
-  if (event.key === 'Enter') {
-    commandRunAnimation()
-  }
-}
-
-/**
- * Clean up when unmounting the component.
- */
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleEnterPress)
-})
-
-/**
- * When the user clicks on the "Enter" key, we trigger the main animation.
- */
-const commandRunAnimation = () => {
-  if (commandTriggered.value) {
-    return
-  }
-  commandTriggered.value = true
-  highlightEnter.value = false
-  setTimeout(() => {
-    commandTriggered.value = false
-  }, 5000)
-}
 </script>
 
 <template>
@@ -80,11 +56,7 @@ const commandRunAnimation = () => {
     @mouseover.stop.prevent="startAnimation"
   >
     <div class="feature__visualization">
-      <div
-        class="terminal"
-        :class="{ 'terminal--active': commandTriggered }"
-        @click.prevent="commandRunAnimation"
-      >
+      <div class="terminal" :class="{ 'terminal--active': commandTriggered }">
         <div class="terminal__skeleton-line" />
         <div class="terminal__skeleton-line" />
         <div class="entrance-wrapper" :class="{ active: isCardActive }">
@@ -337,7 +309,6 @@ const commandRunAnimation = () => {
       top: 93px;
       left: 165px;
       border-radius: 2px;
-      cursor: pointer;
     }
 
     .terminal__enter-pulse {
@@ -351,7 +322,7 @@ const commandRunAnimation = () => {
       border: 1px solid white;
       opacity: 0;
       box-shadow: 0 0 5px 0 rgb(255, 255, 255);
-      animation: enter-pulse 4s ease-out infinite;
+      animation: enter-pulse 1s ease-out;
     }
 
     .terminal__ready-label {
@@ -383,11 +354,12 @@ const commandRunAnimation = () => {
       bottom: 0;
       height: 100%;
       border-radius: 12px 0 0 12px;
-      background: radial-gradient(
-        ellipse 140% 80% at 96% bottom,
-        #13b351 0%,
-        transparent 50%
-      );
+      background: url('/noise.png'),
+        radial-gradient(
+          ellipse 140% 80% at 96% bottom,
+          #13b351 0%,
+          transparent 50%
+        );
       filter: blur(15px);
       opacity: 0;
       pointer-events: none;
@@ -419,7 +391,7 @@ const commandRunAnimation = () => {
     right: 40px;
     width: 1px;
     height: calc(100% - 170px - 33px);
-    background: #13b351;
+    background: url('/noise.png'), #13b351;
     box-shadow: 0 0 10px 0 #13b351;
     transition: all 0.5s ease-in;
     will-change: transform, opacity;
