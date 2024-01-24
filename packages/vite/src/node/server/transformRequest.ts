@@ -240,9 +240,11 @@ async function loadAndTransform(
 
         code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
       } catch (e) {
-        logger.warn(`Failed to load source map for ${url}.`, {
-          timestamp: true,
-        })
+        if (server.config.build.sourcemap) {
+          logger.warn(`Failed to load source map for ${url}.`, {
+            timestamp: true,
+          })
+        }
       }
     }
   } else {
