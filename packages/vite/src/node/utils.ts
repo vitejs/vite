@@ -415,7 +415,7 @@ export function prettifyUrl(url: string, root: string): string {
     const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
     return colors.dim(normalizePath(file))
   } else {
-    return colors.dim(normalizePath(url))
+    return colors.dim(url)
   }
 }
 
