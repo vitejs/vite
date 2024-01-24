@@ -49,27 +49,10 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
       // we can support custom ignored patterns later
       fsUtils = commonFsUtils
-    } /* TODO: Enabling for testing, we need to review if this guard is needed
-    else if (config.server.watch === null || config.server.watch?.ignored) {
-      config.logger.warn(
-        colors.yellow(
-          `${colors.bold(
-            `(!)`,
-          )} server.fs.cachedChecks isn't supported if server.watch is null or a custom server.watch.ignored is configured\n`,
-        ),
-      )
-      fsUtils = commonFsUtils
-    } */ else if (
+    } else if (
       !config.resolve.preserveSymlinks &&
       config.root !== getRealPath(config.root)
     ) {
-      config.logger.warn(
-        colors.yellow(
-          `${colors.bold(
-            `(!)`,
-          )} server.fs.cachedChecks isn't supported when resolve.preserveSymlinks is false and root is symlinked\n`,
-        ),
-      )
       fsUtils = commonFsUtils
     } else {
       fsUtils = createCachedFsUtils(config)
