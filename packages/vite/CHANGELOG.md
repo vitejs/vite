@@ -1,3 +1,15 @@
+## 5.1.0-beta.3 (2024-01-22)
+
+* perf: middleware to short-circuit on 304 (#15586) ([35ae4f8](https://github.com/vitejs/vite/commit/35ae4f8)), closes [#15586](https://github.com/vitejs/vite/issues/15586)
+* perf: use thread for preprocessors (#13584) ([acd795f](https://github.com/vitejs/vite/commit/acd795f)), closes [#13584](https://github.com/vitejs/vite/issues/13584)
+* fix: default sideEffect option is delivered to rollup (#15665) ([f6cf3d1](https://github.com/vitejs/vite/commit/f6cf3d1)), closes [#15665](https://github.com/vitejs/vite/issues/15665)
+* fix(ssr): mark builtin modules as side effect free (#15658) ([526cf23](https://github.com/vitejs/vite/commit/526cf23)), closes [#15658](https://github.com/vitejs/vite/issues/15658)
+* fix(ssr): support externalized builtins for webworker (#15656) ([639bbd6](https://github.com/vitejs/vite/commit/639bbd6)), closes [#15656](https://github.com/vitejs/vite/issues/15656)
+* refactor: append tags logic in applyHtmlTransforms (#15647) ([09b1517](https://github.com/vitejs/vite/commit/09b1517)), closes [#15647](https://github.com/vitejs/vite/issues/15647)
+* refactor(hmr): provide a separate logger interface (#15631) ([110e2e1](https://github.com/vitejs/vite/commit/110e2e1)), closes [#15631](https://github.com/vitejs/vite/issues/15631)
+
+
+
 ## 5.1.0-beta.2 (2024-01-19)
 
 * fix: fs deny for case insensitive systems (#15653) ([89be67d](https://github.com/vitejs/vite/commit/89be67d)), closes [#15653](https://github.com/vitejs/vite/issues/15653)

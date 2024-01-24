@@ -544,7 +544,7 @@ export async function build(
     },
   }
 
-  const outputBuildError = (e: RollupError) => {
+  const mergeRollupError = (e: RollupError) => {
     let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
       msg += `\nfile: ${colors.cyan(
@@ -554,6 +554,11 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
+    return msg
+  }
+
+  const outputBuildError = (e: RollupError) => {
+    const msg = mergeRollupError(e)
     clearLine()
     config.logger.error(msg, { error: e })
   }
@@ -704,7 +709,8 @@ export async function build(
     }
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
-    outputBuildError(e)
+    e.message = mergeRollupError(e)
+    clearLine()
     throw e
   } finally {
     if (bundle) await bundle.close()

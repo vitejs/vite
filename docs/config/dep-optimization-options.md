@@ -62,6 +62,14 @@ Certain options are omitted since changing them would not be compatible with Vit
 
 Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
 
+## optimizeDeps.holdUntilCrawlEnd
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `true`
+
+When enabled, it will hold the first optimized deps results until all static imports are crawled on cold start. This avoids the need for full-page reloads when new dependencies are discovered and they trigger the generation of new common chunks. If all dependencies are found by the scanner plus the explicitely defined ones in `include`, it is better to disable this option to let the browser process more requests in parallel.
+
 ## optimizeDeps.disabled
 
 - **Deprecated**
