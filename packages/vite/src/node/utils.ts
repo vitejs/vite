@@ -413,9 +413,9 @@ export function prettifyUrl(url: string, root: string): string {
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
     const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
-    return colors.dim(file)
+    return colors.dim(normalizePath(file))
   } else {
-    return colors.dim(url)
+    return colors.dim(normalizePath(url))
   }
 }
 
