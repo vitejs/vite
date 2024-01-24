@@ -416,7 +416,7 @@ async function handleModuleSoftInvalidation(
     await init
     const source = transformResult.code
     const s = new MagicString(source)
-    const [imports] = parseImports(source)
+    const [imports] = parseImports(source, mod.id || undefined)
 
     for (const imp of imports) {
       let rawUrl = source.slice(imp.s, imp.e)
