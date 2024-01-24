@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import colors from 'picocolors'
 import type { FSWatcher } from 'dep-types/chokidar'
 import type { ResolvedConfig } from './config'
 import {
