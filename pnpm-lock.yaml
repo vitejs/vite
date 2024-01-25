@@ -381,6 +381,9 @@ importers:
       postcss-modules:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.33)
+      pretty-bytes:
+        specifier: ^6.1.1
+        version: 6.1.1
       resolve.exports:
         specifier: ^2.0.2
         version: 2.0.2
@@ -8010,6 +8013,7 @@ packages:
   /pretty-bytes@6.1.1:
     resolution: {integrity: sha512-mQUvGU6aUFQ+rNvTIAcZuWGRT9a6f6Yrg9bHs4ImKF+HZCEK+plBvnAZYSIQztknZF2qnzNtr6F8s0+IuptdlQ==}
     engines: {node: ^14.13.1 || >=16.0.0}
+    dev: true
 
   /pretty-format@29.7.0:
     resolution: {integrity: sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==}

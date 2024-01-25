@@ -127,6 +127,7 @@
     "postcss-import": "^16.0.0",
     "postcss-load-config": "^4.0.2",
     "postcss-modules": "^6.0.0",
+    "pretty-bytes": "^6.1.1",
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-license": "^3.2.0",
