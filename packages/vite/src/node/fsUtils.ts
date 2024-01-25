@@ -8,6 +8,7 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from './utils'
+import { searchForWorkspaceRoot } from './server/searchRoot'
 
 export interface FsUtils {
   existsSync: (path: string) => boolean
@@ -124,7 +125,7 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
 }
 
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
-  const root = config.root // root is resolved and normalized, so it doesn't have a trailing slash
+  const root = normalizePath(searchForWorkspaceRoot(config.root))
   const rootDirPath = `${root}/`
   const rootCache: DirentCache = { type: 'directory' } // dirents will be computed lazily
 
