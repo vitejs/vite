@@ -194,7 +194,7 @@ export interface FileSystemServeOptions {
    * Enable caching of fs calls.
    *
    * @experimental
-   * @default false
+   * @default true
    */
   cachedChecks?: boolean
 }
@@ -989,8 +989,7 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks:
-      server.fs?.cachedChecks ?? !!process.env.VITE_SERVER_FS_CACHED_CHECKS,
+    cachedChecks: server.fs?.cachedChecks ?? true,
   }
 
   if (server.origin?.endsWith('/')) {

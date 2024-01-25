@@ -46,7 +46,7 @@ export default defineConfig({
 
   server: {
     fs: {
-      cachedChecks: true,
+      cachedChecks: false,
     },
     warmup: {
       clientFiles: ['./warmup/*'],
