@@ -834,8 +834,8 @@ export async function _createServer(
 
     // handle directory indexes
     const directoryIndexPlugin = directoryIndex()
-    directoryIndexPlugin.configResolved(config)
-    directoryIndexPlugin.configureServer(server)
+    ;(directoryIndexPlugin as any).configResolved(config)
+    ;(directoryIndexPlugin as any).configureServer(server)
 
     // handle 404s
     middlewares.use(notFoundMiddleware())
