@@ -209,7 +209,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       direntCache.type === 'directory' &&
       direntCache.dirents
     ) {
-      direntCache.dirents.set(normalizePath(path.basename(file)), { type })
+      direntCache.dirents.set(path.basename(file), { type })
     }
   }
 
@@ -222,7 +222,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       direntCache.type === 'directory' &&
       direntCache.dirents
     ) {
-      direntCache.dirents.delete(normalizePath(path.basename(file)))
+      direntCache.dirents.delete(path.basename(file))
     }
   }
 
