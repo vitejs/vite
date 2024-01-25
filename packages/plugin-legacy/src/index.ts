@@ -411,7 +411,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargets, modernPolyfills)
+          await detectPolyfills(
+            raw,
+            options.modernTargets || modernTargetsBabel,
+            modernPolyfills,
+          )
         }
 
         const ms = new MagicString(raw)
