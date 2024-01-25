@@ -53,6 +53,9 @@ const registry = new FinalizationRegistry((fsUtils: FsUtils) => {
 function addActiveResolvedConfig(config: ResolvedConfig, fsUtils: FsUtils) {
   activeResolvedConfigs.push(new WeakRef(config))
   registry.register(config, fsUtils)
+  debug?.(
+    `registered FsUtils for config with root ${config.root}, active configs: ${activeResolvedConfigs.length}`,
+  )
 }
 
 const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
@@ -187,7 +190,7 @@ function findCompatibleRootCache(
 ): DirentCache | undefined {
   const { root } = config
   debug?.(`active configs: ${activeResolvedConfigs.length}`)
-  activeResolvedConfigs.forEach((otherConfigRef) => {
+  for (const otherConfigRef of activeResolvedConfigs) {
     const otherConfig = otherConfigRef?.deref()
     if (otherConfig) {
       const otherRoot = otherConfig.root
@@ -221,7 +224,7 @@ function findCompatibleRootCache(
         return last.dirents.get(last.part)
       }
     }
-  })
+  }
 
   debug?.(`FsUtils for ${root} started as an independent cache`)
   return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
