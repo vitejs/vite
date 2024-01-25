@@ -106,7 +106,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
   getSourceMap(moduleId: string): null | DecodedMap {
     const mod = this.get(moduleId)
     if (mod.map) return mod.map
-    if (!mod.meta || !mod.meta.code) return null
+    if (!mod.meta || !('code' in mod.meta)) return null
     const mapString = mod.meta.code.match(
       VITE_RUNTIME_SOURCEMAPPING_REGEXP,
     )?.[1]

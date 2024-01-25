@@ -76,15 +76,36 @@ export interface ModuleCache {
   imports?: Set<string>
 }
 
-export interface FetchResult {
-  id?: string
-  code?: string
-  file?: string | null
-  externalize?: string
+export type FetchResult = ExternalFetchResult | ViteFetchResult
+
+export interface ExternalFetchResult {
+  /**
+   * The path to the externalized module starting with file://,
+   * by default this will be imported via a dynamic "import"
+   * instead of being transformed by vite and loaded with vite runtime
+   */
+  externalize: string
+  /**
+   * Type of the module. Will be used to determine if import statement is correct.
+   * For example, if Vite needs to throw an error if variable is not actually exported
+   */
   type?: 'module' | 'commonjs' | 'builtin'
 }
 
-export interface ResolvedResult extends Omit<FetchResult, 'id'> {
+export interface ViteFetchResult {
+  /**
+   * Code that will be evaluated by vite runtime
+   * by default this will be wrapped in an async function
+   */
+  code: string
+  /**
+   * File path of the module on disk.
+   * This will be resolved as import.meta.url/filename
+   */
+  file: string | null
+}
+
+export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
   id: string
 }
 

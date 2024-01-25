@@ -15,7 +15,8 @@ export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
-export { ssrFetchModule } from './ssr/ssrFetchModule'
+export { fetchModule } from './ssr/fetchModule'
+export type { FetchModuleOptions } from './ssr/fetchModule'
 export * from './publicUtils'
 
 // additional types

@@ -152,7 +152,7 @@ export class ViteRuntime {
     fetchResult: ResolvedResult,
     metadata?: SSRImportMetadata,
   ) {
-    if (!fetchResult.externalize) {
+    if (!('externalize' in fetchResult)) {
       return exports
     }
     const { id, type } = fetchResult
@@ -242,16 +242,17 @@ export class ViteRuntime {
     // if we used id for that, it's possible to have a duplicated module
     const idQuery = id.split('?')[1]
     const query = idQuery ? `?${idQuery}` : ''
-    const fullFile = fetchedModule.file ? `${fetchedModule.file}${query}` : id
+    const file = 'file' in fetchedModule ? fetchedModule.file : undefined
+    const fullFile = file ? `${file}${query}` : id
     const moduleId = this.moduleCache.normalize(fullFile)
     const mod = this.moduleCache.getByModuleId(moduleId)
-    fetchedModule.id = moduleId
+    ;(fetchedModule as ResolvedResult).id = moduleId
     mod.meta = fetchedModule
 
-    if (fetchedModule.file) {
-      const fileModules = this.fileToIdMap.get(fetchedModule.file) || []
+    if (file) {
+      const fileModules = this.fileToIdMap.get(file) || []
       fileModules.push(moduleId)
-      this.fileToIdMap.set(fetchedModule.file, fileModules)
+      this.fileToIdMap.set(file, fileModules)
     }
 
     this.idToUrlMap.set(id, moduleId)
@@ -262,10 +263,11 @@ export class ViteRuntime {
   // override is allowed, consider this a public API
   protected async directRequest(
     id: string,
-    { file, externalize, code, id: moduleId }: ResolvedResult,
+    fetchResult: ResolvedResult,
     _callstack: string[],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
+    const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
 
     const mod = this.moduleCache.getByModuleId(moduleId)
@@ -291,12 +293,15 @@ export class ViteRuntime {
     const requestStubs = this.options.requestStubs || {}
     if (id in requestStubs) return requestStubs[id]
 
-    if (externalize) {
+    if ('externalize' in fetchResult) {
+      const { externalize } = fetchResult
       this.debug?.('[vite-runtime] externalizing', externalize)
       const exports = await this.runner.runExternalModule(externalize, metadata)
       mod.exports = exports
       return exports
     }
+
+    const { code, file } = fetchResult
 
     if (code == null) {
       const importer = callstack[callstack.length - 2]

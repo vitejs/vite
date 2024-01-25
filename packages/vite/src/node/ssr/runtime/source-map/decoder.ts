@@ -8,8 +8,6 @@ interface SourceMapLike {
   sourcesContent?: string[]
 }
 
-type Bias = typeof LEAST_UPPER_BOUND | typeof GREATEST_LOWER_BOUND
-
 type OriginalMapping = {
   source: string | null
   line: number
@@ -20,7 +18,6 @@ type OriginalMapping = {
 type Needle = {
   line: number
   column: number
-  bias?: Bias
 }
 
 export class DecodedMap {
@@ -140,8 +137,6 @@ const SOURCES_INDEX = 1
 const SOURCE_LINE = 2
 const SOURCE_COLUMN = 3
 const NAMES_INDEX = 4
-const LEAST_UPPER_BOUND = -1
-const GREATEST_LOWER_BOUND = 1
 
 function OMapping(
   source: string | null,
@@ -180,12 +175,6 @@ function binarySearch(
   return low - 1
 }
 
-function upperBound(haystack: number[][], needle: number, index: number) {
-  for (let i = index + 1; i < haystack.length; index = i++) {
-    if (haystack[i][COLUMN] !== needle) break
-  }
-  return index
-}
 function lowerBound(haystack: number[][], needle: number, index: number) {
   for (let i = index - 1; i >= 0; index = i--) {
     if (haystack[i][COLUMN] !== needle) break
@@ -235,16 +224,11 @@ function traceSegmentInternal(
   memo: Stats,
   line: number,
   column: number,
-  bias: Bias,
 ) {
   let index = memoizedBinarySearch(segments, column, memo, line)
   if (found) {
-    index = (bias === LEAST_UPPER_BOUND ? upperBound : lowerBound)(
-      segments,
-      column,
-      index,
-    )
-  } else if (bias === LEAST_UPPER_BOUND) index++
+    index = lowerBound(segments, column, index)
+  }
   if (index === -1 || index === segments.length) return -1
   return index
 }
@@ -262,13 +246,7 @@ export function getOriginalPosition(
   // mapping (like a "//# sourceMappingURL=") at the end of the child file.
   if (line >= decoded.length) return null
   const segments = decoded[line]
-  const index = traceSegmentInternal(
-    segments,
-    map._decodedMemo,
-    line,
-    column,
-    GREATEST_LOWER_BOUND,
-  )
+  const index = traceSegmentInternal(segments, map._decodedMemo, line, column)
   if (index === -1) return null
   const segment = segments[index]
   if (segment.length === 1) return null
