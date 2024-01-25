@@ -1005,9 +1005,7 @@ export function resolvePackageEntry(
 
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
-      const mainFields = [...options.mainFields]
-
-      for (const field of mainFields) {
+      for (const field of options.mainFields) {
         if (field === 'browser') {
           if (targetWeb) {
             entryPoint = tryResolveBrowserEntry(dir, data, options)
@@ -1142,7 +1140,7 @@ function resolveExportsOrImports(
     return undefined
   }
 
-  // We need to support array conditions like `["./src/*.ts", "./src/*.tsx"]`
+  // We need to support array conditions like `["./*.js", "./*.mjs"]`
   // So loop through each result and find one that actually exists
   if (result.length > 1) {
     for (const entry of result) {

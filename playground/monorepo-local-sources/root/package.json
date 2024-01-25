@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/test-monorepo-local-sources-custom-dir": "workspace:*",
+    "@vitejs/test-monorepo-local-sources-custom-dir": "link:../custom-dir",
     "@vitejs/test-monorepo-local-sources-no-dir": "workspace:*",
     "@vitejs/test-monorepo-local-sources-src-dir": "workspace:*",
     "@vitejs/test-monorepo-local-sources-not-local": "file:../not-local"

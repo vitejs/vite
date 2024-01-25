@@ -818,7 +818,7 @@ importers:
   playground/monorepo-local-sources/root:
     dependencies:
       '@vitejs/test-monorepo-local-sources-custom-dir':
-        specifier: workspace:*
+        specifier: link:../custom-dir
         version: link:../custom-dir
       '@vitejs/test-monorepo-local-sources-no-dir':
         specifier: workspace:*
