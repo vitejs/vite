@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { FSWatcher } from 'dep-types/chokidar'
 import type { ResolvedConfig } from './config'
 import {
   createDebugger,
@@ -8,6 +9,7 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from './utils'
+import { searchForWorkspaceRoot } from './server/searchRoot'
 
 const debug = createDebugger('vite:fs')
 
@@ -29,10 +31,7 @@ export interface FsUtils {
     preserveSymlinks?: boolean,
   ) => { path?: string; type: 'directory' | 'file' } | undefined
 
-  onFileAdd?: (file: string) => void
-  onFileUnlink?: (file: string) => void
-  onDirectoryAdd?: (file: string) => void
-  onDirectoryUnlink?: (file: string) => void
+  initWatcher?: (watcher: FSWatcher) => void
 }
 
 // An implementation of fsUtils without caching
@@ -65,17 +64,12 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
       // we can support custom ignored patterns later
       fsUtils = commonFsUtils
-    } /* TODO: Enabling for testing, we need to review if this guard is needed
-    else if (config.server.watch === null || config.server.watch?.ignored) {
-      config.logger.warn(
-        colors.yellow(
-          `${colors.bold(
-            `(!)`,
-          )} server.fs.cachedChecks isn't supported if server.watch is null or a custom server.watch.ignored is configured\n`,
-        ),
-      )
+    } else if (
+      !config.resolve.preserveSymlinks &&
+      config.root !== getRealPath(config.root)
+    ) {
       fsUtils = commonFsUtils
-    } */ else {
+    } else {
       fsUtils = createCachedFsUtils(config)
       addActiveResolvedConfig(config, fsUtils)
     }
@@ -95,7 +89,7 @@ type DirentCacheType =
   | 'file_maybe_symlink'
 
 interface DirentCache {
-  dirents?: DirentsMap | Promise<DirentsMap>
+  dirents?: DirentsMap
   type: DirentCacheType
 }
 
@@ -110,7 +104,7 @@ function readDirCacheSync(file: string): undefined | DirentsMap {
 }
 
 function direntsToDirentMap(fsDirents: fs.Dirent[]): DirentsMap {
-  const dirents = new Map<string, DirentCache>()
+  const dirents: DirentsMap = new Map()
   for (const dirent of fsDirents) {
     // We ignore non directory, file, and symlink entries
     const type = dirent.isDirectory()
@@ -233,8 +227,14 @@ function findCompatibleRootCache(
   return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
 }
 
+function pathUntilPart(root: string, parts: string[], i: number): string {
+  let p = root
+  for (let k = 0; k < i; k++) p += '/' + parts[k]
+  return p
+}
+
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
-  const { root } = config
+  const root = normalizePath(searchForWorkspaceRoot(config.root))
   const rootDirPath = `${root}/`
 
   const rootCache = findCompatibleRootCache(config)
@@ -249,8 +249,8 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     for (let i = 0; i < parts.length; i++) {
       if (direntCache.type === 'directory') {
         let dirPath
-        if (!direntCache.dirents || direntCache.dirents instanceof Promise) {
-          dirPath = path.posix.join(root, ...parts.slice(0, i))
+        if (!direntCache.dirents) {
+          dirPath = pathUntilPart(root, parts, i)
           const dirents = readDirCacheSync(dirPath)
           if (!dirents) {
             direntCache.type = 'error'
@@ -263,7 +263,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           return
         }
         if (nextDirentCache.type === 'directory_maybe_symlink') {
-          dirPath ??= path.posix.join(root, ...parts.slice(0, i))
+          dirPath ??= pathUntilPart(root, parts, i)
           const isSymlink = fs
             .lstatSync(dirPath, { throwIfNoEntry: false })
             ?.isSymbolicLink()
@@ -282,7 +282,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         if (direntCache.type === 'file_maybe_symlink') {
           ensureFileMaybeSymlinkIsResolved(
             direntCache,
-            path.posix.join(root, ...parts.slice(0, i)),
+            pathUntilPart(root, parts, i),
           )
           return direntCache
         } else if (direntCache.type === 'file') {
@@ -313,28 +313,32 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     return direntCache
   }
 
-  async function onPathAdd(
+  function onPathAdd(
     file: string,
     type: 'directory_maybe_symlink' | 'file_maybe_symlink',
-  ): Promise<void> {
-    const direntCache = getDirentCacheFromPath(path.dirname(file))
-    if (direntCache && direntCache.type === 'directory') {
-      // We don't know if the file is a symlink or not for the stats
-      // in the chokidar callback, so we add it with type unknown.
-      // If it is accessed, we'll do a new fs call to get the real type.
-      if (direntCache.dirents) {
-        ;(await direntCache.dirents).set(path.basename(file), { type })
-      }
+  ) {
+    const direntCache = getDirentCacheFromPath(
+      normalizePath(path.dirname(file)),
+    )
+    if (
+      direntCache &&
+      direntCache.type === 'directory' &&
+      direntCache.dirents
+    ) {
+      direntCache.dirents.set(path.basename(file), { type })
     }
   }
 
-  async function onPathUnlink(file: string): Promise<void> {
-    const direntCache = getDirentCacheFromPath(path.dirname(file))
-    if (direntCache && direntCache.type === 'directory') {
-      if (direntCache.dirents) {
-        const dirents = await direntCache.dirents
-        dirents.delete(path.basename(file))
-      }
+  function onPathUnlink(file: string) {
+    const direntCache = getDirentCacheFromPath(
+      normalizePath(path.dirname(file)),
+    )
+    if (
+      direntCache &&
+      direntCache.type === 'directory' &&
+      direntCache.dirents
+    ) {
+      direntCache.dirents.delete(path.basename(file))
     }
   }
 
@@ -407,7 +411,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         return
       }
 
-      if (!direntCache.dirents || direntCache.dirents instanceof Promise) {
+      if (!direntCache.dirents) {
         const dirents = readDirCacheSync(dirPath)
         if (!dirents) {
           direntCache.type = 'error'
@@ -421,7 +425,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         const fileName = base + ext
         const fileDirentCache = direntCache.dirents.get(fileName)
         if (fileDirentCache) {
-          const filePath = path.posix.join(dirPath, fileName)
+          const filePath = dirPath + '/' + fileName
           ensureFileMaybeSymlinkIsResolved(fileDirentCache, filePath)
           if (fileDirentCache.type === 'symlink') {
             // fallback to built-in fs for symlinked files
@@ -474,14 +478,16 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       return direntCache && direntCache.type === 'directory'
     },
 
-    onFileAdd(file) {
-      onPathAdd(file, 'file_maybe_symlink')
+    initWatcher(watcher: FSWatcher) {
+      watcher.on('add', (file) => {
+        onPathAdd(file, 'file_maybe_symlink')
+      })
+      watcher.on('addDir', (dir) => {
+        onPathAdd(dir, 'directory_maybe_symlink')
+      })
+      watcher.on('unlink', onPathUnlink)
+      watcher.on('unlinkDir', onPathUnlink)
     },
-    onFileUnlink: onPathUnlink,
-    onDirectoryAdd(file) {
-      onPathAdd(file, 'directory_maybe_symlink')
-    },
-    onDirectoryUnlink: onPathUnlink,
   }
 }
 

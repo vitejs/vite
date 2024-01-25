@@ -40,11 +40,22 @@ npm add -D terser
 - **Type:** `string | string[] | { [key: string]: string }`
 - **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
-  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets).
+  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **legacy chunks**.
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
 
   If it's not set, plugin-legacy will load [the browserslist config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
+
+### `modernTargets`
+
+- **Type:** `string | string[]`
+- **Default:** [`'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'`](https://browsersl.ist/#q=edge%3E%3D80%2C+firefox%3E%3D72%2C+chrome%3E%3D80%2C+safari%3E%3D13.1%2C+chromeAndroid%3E%3D80%2C+iOS%3E%3D13.1)
+
+  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **modern chunks**.
+
+  The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
+
+  If it's not set, plugin-legacy will fallback to the default value.
 
 ### `polyfills`
 
@@ -76,7 +87,7 @@ npm add -D terser
 
   Note it is **not recommended** to use the `true` value (which uses auto-detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
 
-  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider using an on-demand service like [Polyfill.io](https://polyfill.io/v3/) to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
+  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider using an on-demand service like [Polyfill.io](https://polyfill.io) to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
 
 ### `renderLegacyChunks`
 

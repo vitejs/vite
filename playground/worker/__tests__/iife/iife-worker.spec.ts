@@ -114,17 +114,17 @@ describe.runIf(isBuild)('build', () => {
 test('module worker', async () => {
   await untilUpdated(
     async () => page.textContent('.worker-import-meta-url'),
-    /A\sstring.*\/iife\/.+url-worker\.js/,
+    /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
     true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
-    /A\sstring.*\/iife\/.+url-worker\.js/,
+    /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
     true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-without-extension'),
-    'A string',
+    /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
     true,
   )
   await untilUpdated(
@@ -161,7 +161,7 @@ test('import.meta.glob eager in worker', async () => {
 })
 
 test.runIf(isServe)('sourcemap boundary', async () => {
-  const response = page.waitForResponse(/my-worker.ts\?type=module&worker_file/)
+  const response = page.waitForResponse(/my-worker.ts\?worker_file&type=module/)
   await page.goto(viteTestUrl)
   const content = await (await response).text()
   const { mappings } = decodeSourceMapUrl(content)

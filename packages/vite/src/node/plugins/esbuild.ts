@@ -444,14 +444,7 @@ async function loadTsconfigJsonForFile(
   filename: string,
 ): Promise<TSConfigJSON> {
   try {
-    if (tsconfckCache) {
-      // shortcut, the cache stores resolved TSConfckParseResult
-      // so getting it from the cache directly we bypass async fn call wrapping it in a promise again
-      if (tsconfckCache.hasParseResult(filename)) {
-        const result = await tsconfckCache.getParseResult(filename)
-        return result.tsconfig
-      }
-    } else {
+    if (!tsconfckCache) {
       tsconfckCache = new TSConfckCache<TSConfckParseResult>()
     }
     const result = await parse(filename, {
@@ -498,7 +491,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     // server may not be available if vite config is updated at the same time
     if (server) {
       // force full reload
-      server.ws.send({
+      server.hot.send({
         type: 'full-reload',
         path: '*',
       })

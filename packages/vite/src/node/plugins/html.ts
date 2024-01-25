@@ -45,6 +45,8 @@ interface ScriptAssetsUrl {
 
 const htmlProxyRE =
   /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(js|css)$/
+const isHtmlProxyRE = /\?html-proxy\b/
+
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
@@ -63,7 +65,7 @@ const importMapAppendRE = new RegExp(
   'i',
 )
 
-export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
+export const isHTMLProxy = (id: string): boolean => isHtmlProxyRE.test(id)
 
 export const isHTMLRequest = (request: string): boolean =>
   htmlLangRE.test(request)
@@ -88,7 +90,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:html-inline-proxy',
 
     resolveId(id) {
-      if (htmlProxyRE.test(id)) {
+      if (isHTMLProxy(id)) {
         return id
       }
     },
@@ -322,10 +324,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const relativeUrlPath = path.posix.relative(
-          config.root,
-          normalizePath(id),
-        )
+        id = normalizePath(id)
+        const relativeUrlPath = path.posix.relative(config.root, id)
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -345,18 +345,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const nodeStartWithLeadingWhitespace = (
           node: DefaultTreeAdapterMap['node'],
         ) => {
-          if (node.sourceCodeLocation!.startOffset === 0)
-            return node.sourceCodeLocation!.startOffset
+          const startOffset = node.sourceCodeLocation!.startOffset
+          if (startOffset === 0) return 0
 
           // Gets the offset for the start of the line including the
           // newline trailing the previous node
           const lineStartOffset =
-            node.sourceCodeLocation!.startOffset -
-            node.sourceCodeLocation!.startCol
-          const line = s.slice(
-            Math.max(0, lineStartOffset),
-            node.sourceCodeLocation!.startOffset,
-          )
+            startOffset - node.sourceCodeLocation!.startCol
 
           // <previous-line-node></previous-line-node>
           // <target-node></target-node>
@@ -369,9 +364,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           //
           // However, if there is content between our target node start and the
           // previous newline, we cannot strip it out without risking content deletion.
-          return line.trim()
-            ? node.sourceCodeLocation!.startOffset
-            : lineStartOffset
+          let isLineEmpty = false
+          try {
+            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+            isLineEmpty = !line.trim()
+          } catch {
+            // magic-string may throw if there's some content removed in the sliced string,
+            // which we ignore and assume the line is not empty
+          }
+
+          return isLineEmpty ? lineStartOffset : startOffset
         }
 
         // pre-transform
@@ -1201,27 +1203,31 @@ export async function applyHtmlTransforms(
         tags = res.tags
       }
 
-      const headTags: HtmlTagDescriptor[] = []
-      const headPrependTags: HtmlTagDescriptor[] = []
-      const bodyTags: HtmlTagDescriptor[] = []
-      const bodyPrependTags: HtmlTagDescriptor[] = []
+      let headTags: HtmlTagDescriptor[] | undefined
+      let headPrependTags: HtmlTagDescriptor[] | undefined
+      let bodyTags: HtmlTagDescriptor[] | undefined
+      let bodyPrependTags: HtmlTagDescriptor[] | undefined
 
       for (const tag of tags) {
-        if (tag.injectTo === 'body') {
-          bodyTags.push(tag)
-        } else if (tag.injectTo === 'body-prepend') {
-          bodyPrependTags.push(tag)
-        } else if (tag.injectTo === 'head') {
-          headTags.push(tag)
-        } else {
-          headPrependTags.push(tag)
+        switch (tag.injectTo) {
+          case 'body':
+            ;(bodyTags ??= []).push(tag)
+            break
+          case 'body-prepend':
+            ;(bodyPrependTags ??= []).push(tag)
+            break
+          case 'head':
+            ;(headTags ??= []).push(tag)
+            break
+          default:
+            ;(headPrependTags ??= []).push(tag)
         }
       }
 
-      html = injectToHead(html, headPrependTags, true)
-      html = injectToHead(html, headTags)
-      html = injectToBody(html, bodyPrependTags, true)
-      html = injectToBody(html, bodyTags)
+      if (headPrependTags) html = injectToHead(html, headPrependTags, true)
+      if (headTags) html = injectToHead(html, headTags)
+      if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
+      if (bodyTags) html = injectToBody(html, bodyTags)
     }
   }
 

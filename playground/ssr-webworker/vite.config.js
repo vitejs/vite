@@ -11,6 +11,9 @@ export default defineConfig({
   ssr: {
     target: 'webworker',
     noExternal: ['this-should-be-replaced-by-the-boolean'],
+    // Some webworker builds may choose to externalize node builtins as they may be implemented
+    // in the runtime, and so we can externalize it when bundling.
+    external: ['node:assert'],
   },
   plugins: [
     {

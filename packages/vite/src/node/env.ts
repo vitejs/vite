@@ -2,16 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { expand } from 'dotenv-expand'
-import { arraify, tryStatSync } from './utils'
+import { arraify, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
-export function getEnvFilesForMode(mode: string): string[] {
+export function getEnvFilesForMode(mode: string, envDir: string): string[] {
   return [
     /** default file */ `.env`,
     /** local file */ `.env.local`,
     /** mode file */ `.env.${mode}`,
     /** mode local file */ `.env.${mode}.local`,
-  ]
+  ].map((file) => normalizePath(path.join(envDir, file)))
 }
 
 export function loadEnv(
@@ -27,11 +27,10 @@ export function loadEnv(
   }
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
-  const envFiles = getEnvFilesForMode(mode)
+  const envFiles = getEnvFilesForMode(mode, envDir)
 
   const parsed = Object.fromEntries(
-    envFiles.flatMap((file) => {
-      const filePath = path.join(envDir, file)
+    envFiles.flatMap((filePath) => {
       if (!tryStatSync(filePath)?.isFile()) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))

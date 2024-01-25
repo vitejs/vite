@@ -69,30 +69,27 @@ export function createDevHtmlTransformFn(
     config.plugins,
     config.logger,
   )
+  const transformHooks = [
+    preImportMapHook(config),
+    ...preHooks,
+    htmlEnvHook(config),
+    devHtmlHook,
+    ...normalHooks,
+    ...postHooks,
+    postImportMapHook(),
+  ]
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(
-      html,
-      [
-        preImportMapHook(config),
-        ...preHooks,
-        htmlEnvHook(config),
-        devHtmlHook,
-        ...normalHooks,
-        ...postHooks,
-        postImportMapHook(),
-      ],
-      {
-        path: url,
-        filename: getHtmlFilename(url, server),
-        server,
-        originalUrl,
-      },
-    )
+    return applyHtmlTransforms(html, transformHooks, {
+      path: url,
+      filename: getHtmlFilename(url, server),
+      server,
+      originalUrl,
+    })
   }
 }
 
@@ -114,6 +111,10 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
 
 const wordCharRE = /\w/
 
+function isBareRelative(url: string) {
+  return wordCharRE.test(url[0]) && !url.includes(':')
+}
+
 const isSrcSet = (attr: Token.Attribute) =>
   attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
@@ -123,6 +124,7 @@ const processNodeUrl = (
   htmlPath: string,
   originalUrl?: string,
   server?: ViteDevServer,
+  isClassicScriptLink?: boolean,
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
@@ -143,20 +145,30 @@ const processNodeUrl = (
       // rewrite `./index.js` -> `localhost:5173/a/index.js`.
       // rewrite `../index.js` -> `localhost:5173/index.js`.
       // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
-      ((url[0] === '.' || (wordCharRE.test(url[0]) && !url.includes(':'))) &&
+      ((url[0] === '.' || isBareRelative(url)) &&
         originalUrl &&
         originalUrl !== '/' &&
         htmlPath === '/index.html')
     ) {
-      const devBase = config.base
-      const fullUrl = path.posix.join(devBase, url)
-      if (server && shouldPreTransform(url, config)) {
-        preTransformRequest(server, fullUrl, devBase)
-      }
-      return fullUrl
-    } else {
-      return url
+      url = path.posix.join(config.base, url)
     }
+
+    if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
+      let preTransformUrl: string | undefined
+      if (url[0] === '/' && url[1] !== '/') {
+        preTransformUrl = url
+      } else if (url[0] === '.' || isBareRelative(url)) {
+        preTransformUrl = path.posix.join(
+          config.base,
+          path.posix.dirname(htmlPath),
+          url,
+        )
+      }
+      if (preTransformUrl) {
+        preTransformRequest(server, preTransformUrl, config.base)
+      }
+    }
+    return url
   }
 
   const processedUrl = useSrcSetReplacer
@@ -257,6 +269,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           htmlPath,
           originalUrl,
           server,
+          !isModule,
         )
         if (processedUrl !== src.value) {
           overwriteAttrValue(s, sourceCodeLocation!, processedUrl)

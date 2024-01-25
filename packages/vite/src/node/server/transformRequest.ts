@@ -23,7 +23,8 @@ import {
   unwrapId,
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
-import { getDepsOptimizer } from '../optimizer'
+import { isDepsOptimizerEnabled } from '../config'
+import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
@@ -132,6 +133,10 @@ async function doTransform(
   const { config, pluginContainer } = server
   const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
+
+  if (ssr && isDepsOptimizerEnabled(config, true)) {
+    await initDevSsrDepsOptimizer(config, server)
+  }
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
 
@@ -322,6 +327,7 @@ async function loadAndTransform(
     )
 
     if (path.isAbsolute(mod.file)) {
+      let modDirname
       for (
         let sourcesIndex = 0;
         sourcesIndex < normalizedMap.sources.length;
@@ -333,8 +339,9 @@ async function loadAndTransform(
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
           if (path.isAbsolute(sourcePath)) {
+            modDirname ??= path.dirname(mod.file)
             normalizedMap.sources[sourcesIndex] = path.relative(
-              path.dirname(mod.file),
+              modDirname,
               sourcePath,
             )
           }
@@ -356,10 +363,8 @@ async function loadAndTransform(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }
@@ -411,7 +416,7 @@ async function handleModuleSoftInvalidation(
     await init
     const source = transformResult.code
     const s = new MagicString(source)
-    const [imports] = parseImports(source)
+    const [imports] = parseImports(source, mod.id || undefined)
 
     for (const imp of imports) {
       let rawUrl = source.slice(imp.s, imp.e)
@@ -460,10 +465,8 @@ async function handleModuleSoftInvalidation(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    server.moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }

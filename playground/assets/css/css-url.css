@@ -10,6 +10,11 @@
   background-size: 10px;
 }
 
+.css-url-encoded {
+  background: url('/nested/asset%5Bsmall%5D.png');
+  background-size: 10px;
+}
+
 .css-image-set-relative {
   background-image: -webkit-image-set(
     url('../nested/asset.png') 1x,
