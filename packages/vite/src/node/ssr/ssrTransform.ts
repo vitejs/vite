@@ -12,9 +12,9 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
-import { combineSourcemaps } from '../utils'
+import { combineSourcemaps, isDefined } from '../utils'
 import { isJSONRequest } from '../plugins/json'
 
 type Node = _Node & {
@@ -26,6 +26,19 @@ interface TransformOptions {
   json?: {
     stringify?: boolean
   }
+}
+
+interface DefineImportMetadata {
+  /**
+   * Imported names of an import statement, e.g.
+   *
+   * import foo, { bar as baz, qux } from 'hello'
+   * => ['default', 'bar', 'qux']
+   *
+   * import * as namespace from 'world
+   * => undefined
+   */
+  importedNames?: string[]
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
@@ -71,12 +84,7 @@ async function ssrTransformScript(
 
   let ast: any
   try {
-    ast = parser.parse(code, {
-      sourceType: 'module',
-      ecmaVersion: 'latest',
-      locations: true,
-      allowHashBang: true,
-    })
+    ast = await rollupParseAstAsync(code)
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
     const line = err.loc.line
@@ -98,14 +106,26 @@ async function ssrTransformScript(
   // hoist at the start of the file, after the hashbang
   const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
 
-  function defineImport(source: string) {
+  function defineImport(source: string, metadata?: DefineImportMetadata) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
+
+    // Reduce metadata to undefined if it's all default values
+    if (
+      metadata &&
+      (metadata.importedNames == null || metadata.importedNames.length === 0)
+    ) {
+      metadata = undefined
+    }
+    const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
+
     // There will be an error if the module is called before it is imported,
     // so the module import statement is hoisted to the top
     s.appendLeft(
       hoistIndex,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`,
+      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
+        source,
+      )}${metadataStr});\n`,
     )
     return importId
   }
@@ -124,7 +144,14 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
-      const importId = defineImport(node.source.value as string)
+      const importId = defineImport(node.source.value as string, {
+        importedNames: node.specifiers
+          .map((s) => {
+            if (s.type === 'ImportSpecifier') return s.imported.name
+            else if (s.type === 'ImportDefaultSpecifier') return 'default'
+          })
+          .filter(isDefined),
+      })
       s.remove(node.start, node.end)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
@@ -167,7 +194,9 @@ async function ssrTransformScript(
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(node.source.value as string)
+          const importId = defineImport(node.source.value as string, {
+            importedNames: node.specifiers.map((s) => s.local.name),
+          })
           // hoist re-exports near the defined import so they are immediately exported
           for (const spec of node.specifiers) {
             defineExport(

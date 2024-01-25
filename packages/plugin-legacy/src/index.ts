@@ -24,6 +24,7 @@ import type {
 } from '@babel/core'
 import colors from 'picocolors'
 import browserslist from 'browserslist'
+import { resolveToEsbuildTarget } from 'esbuild-plugin-browserslist'
 import type { Options } from './types'
 import {
   detectModernBrowserCode,
@@ -119,9 +120,13 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
+const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
+const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
+  let modernTargets: Options['modernTargets']
 
   // browsers supporting ESM + dynamic import + import.meta + async generator
   const modernTargetsEsbuild = [
@@ -180,6 +185,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   let overriddenBuildTarget = false
+  let overriddenDefaultModernTargets = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
@@ -202,7 +208,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
-          config.build.target = modernTargetsEsbuild
+          overriddenDefaultModernTargets = options.modernTargets !== undefined
+          config.build.target = options.modernTargets
+            ? resolveToEsbuildTarget(browserslist(options.modernTargets))
+            : modernTargetsEsbuild
         }
       }
 
@@ -220,6 +229,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         config.logger.warn(
           colors.yellow(
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
+          ),
+        )
+      }
+      if (overriddenDefaultModernTargets) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
           ),
         )
       }
@@ -319,6 +335,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
 
+      modernTargets = options.modernTargets || modernTargetsBabel
+      isDebug &&
+        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
+
       const getLegacyOutputFileName = (
         fileNames:
           | string
@@ -337,14 +357,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
-          } else if (fileName.includes('[hash]')) {
+          } else if (nonLeadingHashInFileNameRE.test(fileName)) {
             // custom[hash].[format] -> [name]-legacy[hash].[format]
             // custom-[hash].[format] -> [name]-legacy-[hash].[format]
             // custom.[hash].[format] -> [name]-legacy.[hash].[format]
-            fileName = fileName.replace(/[.-]?\[hash\]/, '-legacy$&')
+            // custom.[hash:10].[format] -> custom-legacy.[hash:10].[format]
+            fileName = fileName.replace(prefixedHashInFileNameRE, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
-            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+            // entry.min.js -> entry-legacy.min.js
+            fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
           }
 
           return fileName
@@ -389,7 +411,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargetsBabel, modernPolyfills)
+          await detectPolyfills(raw, modernTargets, modernPolyfills)
         }
 
         const ms = new MagicString(raw)
@@ -842,5 +864,7 @@ export const cspHashes = [
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
 ].map((i) => createHash('sha256').update(i).digest('base64'))
+
+export type { Options }
 
 export default viteLegacyPlugin

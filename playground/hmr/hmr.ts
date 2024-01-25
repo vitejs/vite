@@ -4,12 +4,18 @@ import './importing-updated'
 import './invalidation/parent'
 import './file-delete-restore'
 import './optional-chaining/parent'
+import './intermediate-file-delete'
+import './circular'
+import logo from './logo.svg'
+import { msg as softInvalidationMsg } from './soft-invalidation'
 
 export const foo = 1
 text('.app', foo)
 text('.dep', depFoo)
 text('.nested', nestedFoo)
 text('.virtual', virtual)
+text('.soft-invalidation', softInvalidationMsg)
+setLogo(logo)
 
 const btn = document.querySelector('.virtual-update') as HTMLButtonElement
 btn.onclick = () => {
@@ -34,6 +40,11 @@ if (import.meta.hot) {
     text('.nested', newNestedFoo)
   }
 
+  import.meta.hot.accept('./logo.svg', (newUrl) => {
+    setLogo(newUrl.default)
+    console.log('Logo updated', newUrl.default)
+  })
+
   import.meta.hot.accept('./hmrDep', ({ foo, nestedFoo }) => {
     handleDep('single dep', foo, nestedFoo)
   })
@@ -55,7 +66,7 @@ if (import.meta.hot) {
 
     const cssUpdate = event.updates.find(
       (update) =>
-        update.type === 'css-update' && update.path.match('global.css'),
+        update.type === 'css-update' && update.path.includes('global.css'),
     )
     if (cssUpdate) {
       text(
@@ -119,6 +130,10 @@ if (import.meta.hot) {
 
 function text(el, text) {
   document.querySelector(el).textContent = text
+}
+
+function setLogo(src) {
+  ;(document.querySelector('#logo') as HTMLImageElement).src = src
 }
 
 function removeCb({ msg }) {

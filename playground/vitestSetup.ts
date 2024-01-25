@@ -1,6 +1,5 @@
 import type * as http from 'node:http'
-import path, { dirname, join, resolve } from 'node:path'
-import os from 'node:os'
+import path, { dirname, resolve } from 'node:path'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
@@ -22,7 +21,7 @@ import {
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
-import { beforeAll } from 'vitest'
+import { beforeAll, inject } from 'vitest'
 
 // #region env
 
@@ -80,8 +79,6 @@ export function setViteUrl(url: string): void {
 
 // #endregion
 
-const DIR = join(os.tmpdir(), 'vitest_playwright_global_setup')
-
 beforeAll(async (s) => {
   const suite = s as File
   // skip browser setup for non-playground tests
@@ -89,7 +86,7 @@ beforeAll(async (s) => {
     return
   }
 
-  const wsEndpoint = fs.readFileSync(join(DIR, 'wsEndpoint'), 'utf-8')
+  const wsEndpoint = inject('wsEndpoint')
   if (!wsEndpoint) {
     throw new Error('wsEndpoint not found')
   }
@@ -177,13 +174,8 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe(): Promise<void> {
+async function loadConfig(configEnv: ConfigEnv) {
   let config: UserConfig | null = null
-
-  const configEnv: ConfigEnv = {
-    command: isBuild ? 'build' : 'serve',
-    mode: isBuild ? 'production' : 'development',
-  }
 
   // config file named by convention as the *.spec.ts folder
   const variantName = path.basename(dirname(testPath))
@@ -218,7 +210,6 @@ export async function startDefaultServe(): Promise<void> {
         usePolling: true,
         interval: 100,
       },
-      host: true,
       fs: {
         strict: !isBuild,
       },
@@ -232,18 +223,20 @@ export async function startDefaultServe(): Promise<void> {
     },
     customLogger: createInMemoryLogger(serverLogs),
   }
+  return mergeConfig(options, config || {})
+}
 
+export async function startDefaultServe(): Promise<void> {
   setupConsoleWarnCollector(serverLogs)
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    const testConfig = mergeConfig(options, config || {})
-    viteServer = server = await (await createServer(testConfig)).listen()
-    // use resolved port/base from server
-    const devBase = server.config.base
-    viteTestUrl = `http://localhost:${server.config.server.port}${
-      devBase === '/' ? '' : devBase
-    }`
+    const config = await loadConfig({ command: 'serve', mode: 'development' })
+    viteServer = server = await (await createServer(config)).listen()
+    viteTestUrl = server.resolvedUrls.local[0]
+    if (server.config.base === '/') {
+      viteTestUrl = viteTestUrl.replace(/\/$/, '')
+    }
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
@@ -254,24 +247,30 @@ export async function startDefaultServe(): Promise<void> {
         resolvedConfig = config
       },
     })
-    options.plugins = [resolvedPlugin()]
-    const testConfig = mergeConfig(options, config || {})
-    const rollupOutput = await build(testConfig)
+    const buildConfig = mergeConfig(
+      await loadConfig({ command: 'build', mode: 'production' }),
+      {
+        plugins: [resolvedPlugin()],
+      },
+    )
+    const rollupOutput = await build(buildConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
     if (isWatch) {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    if (config && config.__test__) {
-      config.__test__()
+    if (buildConfig.__test__) {
+      buildConfig.__test__()
     }
-    // TODO: use something like ConfigEnv['cmd'] https://github.com/vitejs/vite/pull/12298
-    if (config?.testConfig?.previewBase) {
-      testConfig.base = config.testConfig.previewBase
-    }
+
+    const previewConfig = await loadConfig({
+      command: 'serve',
+      mode: 'development',
+      isPreview: true,
+    })
     const _nodeEnv = process.env.NODE_ENV
-    const previewServer = await preview(testConfig)
+    const previewServer = await preview(previewConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
     viteTestUrl = previewServer.resolvedUrls.local[0]
@@ -350,16 +349,11 @@ declare module 'vite' {
      * runs after build and before preview
      */
     __test__?: () => void
-    /**
-     * special test only configs
-     */
-    testConfig?: {
-      /**
-       * a base used for preview
-       *
-       * useful for relative base tests
-       */
-      previewBase?: string
-    }
+  }
+}
+
+declare module 'vitest' {
+  export interface ProvidedContext {
+    wsEndpoint: string
   }
 }

@@ -129,7 +129,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    *   the descriptors.
    *
    * - The hook can also return an empty array and then perform custom updates
-   *   by sending a custom hmr payload via server.ws.send().
+   *   by sending a custom hmr payload via server.hot.send().
    *
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
@@ -150,7 +150,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        assertions: Record<string, string>
+        attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
@@ -179,3 +179,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
+
+export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
+  [P in K]: NonNullable<Plugin[P]>
+}

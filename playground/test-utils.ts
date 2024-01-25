@@ -12,6 +12,7 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ExecaChildProcess } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
@@ -232,6 +233,25 @@ export async function withRetry(
   await func()
 }
 
+export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
+  type A = Assertion<T>
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        return async (...args) => {
+          await withRetry(
+            async () => expect(await getActual())[key](...args),
+            true,
+          )
+        }
+      },
+    },
+  ) as {
+    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
+  }
+}
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilBrowserLogAfter(
@@ -267,12 +287,7 @@ async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
   expectOrder = true,
 ): Promise<string[]> {
-  let resolve: () => void
-  let reject: (reason: any) => void
-  const promise = new Promise<void>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
+  const { promise, resolve, reject } = promiseWithResolvers<void>()
 
   const logs = []
 
@@ -362,4 +377,19 @@ export async function killProcess(
   } else {
     serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
   }
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
 }

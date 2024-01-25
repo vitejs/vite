@@ -13,11 +13,6 @@ declare module 'http-proxy' {
   export = proxy
 }
 
-declare module 'connect-history-api-fallback' {
-  const plugin: any
-  export = plugin
-}
-
 declare module 'launch-editor-middleware' {
   const plugin: any
   export = plugin

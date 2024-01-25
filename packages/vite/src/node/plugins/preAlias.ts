@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import type {
   Alias,
@@ -16,6 +15,7 @@ import {
   moduleListContains,
   withTrailingSlash,
 } from '../utils'
+import { getFsUtils } from '../fsUtils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
 
@@ -26,11 +26,12 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
   const isBuild = config.command === 'build'
+  const fsUtils = getFsUtils(config)
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
       const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const depsOptimizer = !isBuild && getDepsOptimizer(config, ssr)
       if (
         importer &&
         depsOptimizer &&
@@ -56,7 +57,6 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           const resolved = await this.resolve(id, importer, {
             ...options,
             custom: { ...options.custom, 'vite:pre-alias': true },
-            skipSelf: true,
           })
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
             const optimizeDeps = depsOptimizer.options
@@ -64,7 +64,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
             const isVirtual = resolvedId === id || resolvedId.includes('\0')
             if (
               !isVirtual &&
-              fs.existsSync(resolvedId) &&
+              fsUtils.existsSync(resolvedId) &&
               !moduleListContains(optimizeDeps.exclude, id) &&
               path.isAbsolute(resolvedId) &&
               (isInNodeModules(resolvedId) ||

@@ -14,7 +14,6 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
-  RollupWarning,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
@@ -28,6 +27,7 @@ import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
+  arraify,
   asyncFlatten,
   copyDir,
   emptyDir,
@@ -45,12 +45,16 @@ import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ensureWatchPlugin } from './plugins/ensureWatch'
-import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_MODULES_TARGET,
+  VERSION,
+} from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
+import { getHookHandler } from './plugins'
 
 export interface BuildOptions {
   /**
@@ -101,7 +105,9 @@ export interface BuildOptions {
    * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit?:
+    | number
+    | ((filePath: string, content: Buffer) => boolean | undefined)
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -325,7 +331,7 @@ export function resolveBuildOptions(
   const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
@@ -368,11 +374,11 @@ export function resolveBuildOptions(
       modulePreload === false
         ? false
         : typeof modulePreload === 'object'
-        ? {
-            ...defaultModulePreload,
-            ...modulePreload,
-          }
-        : defaultModulePreload,
+          ? {
+              ...defaultModulePreload,
+              ...modulePreload,
+            }
+          : defaultModulePreload,
   }
 
   // handle special build targets
@@ -426,16 +432,11 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      ...(options.watch ? [ensureWatchPlugin()] : []),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      ...((
-        await asyncFlatten(
-          Array.isArray(rollupOptionsPlugins)
-            ? rollupOptionsPlugins
-            : [rollupOptionsPlugins],
-        )
-      ).filter(Boolean) as Plugin[]),
+      ...((await asyncFlatten(arraify(rollupOptionsPlugins))).filter(
+        Boolean,
+      ) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
@@ -485,22 +486,35 @@ export async function build(
       (typeof libOptions.entry === 'string'
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
-        ? libOptions.entry.map(resolve)
-        : Object.fromEntries(
-            Object.entries(libOptions.entry).map(([alias, file]) => [
-              alias,
-              resolve(file),
-            ]),
-          ))
+          ? libOptions.entry.map(resolve)
+          : Object.fromEntries(
+              Object.entries(libOptions.entry).map(([alias, file]) => [
+                alias,
+                resolve(file),
+              ]),
+            ))
     : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
+      ? resolve(options.ssr)
+      : options.rollupOptions?.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`,
     )
+  }
+  if (config.build.cssCodeSplit === false) {
+    const inputs =
+      typeof input === 'string'
+        ? [input]
+        : Array.isArray(input)
+          ? input
+          : Object.values(input)
+    if (inputs.some((input) => input.endsWith('.css'))) {
+      throw new Error(
+        `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
+      )
+    }
   }
 
   const outDir = resolve(options.outDir)
@@ -518,8 +532,8 @@ export async function build(
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
-      ? 'strict'
-      : false,
+        ? 'strict'
+        : false,
     cache: config.build.watch ? undefined : false,
     ...options.rollupOptions,
     input,
@@ -530,7 +544,7 @@ export async function build(
     },
   }
 
-  const outputBuildError = (e: RollupError) => {
+  const mergeRollupError = (e: RollupError) => {
     let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
       msg += `\nfile: ${colors.cyan(
@@ -540,6 +554,12 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
+    return msg
+  }
+
+  const outputBuildError = (e: RollupError) => {
+    const msg = mergeRollupError(e)
+    clearLine()
     config.logger.error(msg, { error: e })
   }
 
@@ -552,6 +572,20 @@ export async function build(
           `You've set "rollupOptions.output.output" in your config. ` +
             `This is deprecated and will override all Vite.js default output options. ` +
             `Please use "rollupOptions.output" instead.`,
+        )
+      }
+      if (output.file) {
+        throw new Error(
+          `Vite does not support "rollupOptions.output.file". ` +
+            `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+        )
+      }
+      if (output.sourcemap) {
+        config.logger.warnOnce(
+          colors.yellow(
+            `Vite does not support "rollupOptions.output.sourcemap". ` +
+              `Please use "build.sourcemap" instead.`,
+          ),
         )
       }
 
@@ -574,6 +608,7 @@ export async function build(
         exports: 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
+        hoistTransitiveImports: libOptions ? false : undefined,
         // es2015 enables `generatedCode.symbols`
         // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // - #1048 add `Symbol.toStringTag` for module default export
@@ -581,16 +616,16 @@ export async function build(
         entryFileNames: ssr
           ? `[name].${jsExt}`
           : libOptions
-          ? ({ name }) =>
-              resolveLibFilename(
-                libOptions,
-                format,
-                name,
-                config.root,
-                jsExt,
-                config.packageCache,
-              )
-          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+            ? ({ name }) =>
+                resolveLibFilename(
+                  libOptions,
+                  format,
+                  name,
+                  config.root,
+                  jsExt,
+                  config.packageCache,
+                )
+            : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name]-[hash].${jsExt}`
           : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
@@ -674,7 +709,8 @@ export async function build(
     }
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
-    outputBuildError(e)
+    e.message = mergeRollupError(e)
+    clearLine()
     throw e
   } finally {
     if (bundle) await bundle.close()
@@ -857,8 +893,16 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`,
 ]
 
+function clearLine() {
+  const tty = process.stdout.isTTY && !process.env.CI
+  if (tty) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+  }
+}
+
 export function onRollupWarning(
-  warning: RollupWarning,
+  warning: RollupLog,
   warn: LoggingFunction,
   config: ResolvedConfig,
 ): void {
@@ -876,7 +920,7 @@ export function onRollupWarning(
         const id = warning.id
         const exporter = warning.exporter
         // throw unless it's commonjs external...
-        if (!id || !/\?commonjs-external$/.test(id)) {
+        if (!id || !id.endsWith('?commonjs-external')) {
           throw new Error(
             `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
               `This is most likely unintended because it can break your application at runtime.\n` +
@@ -913,11 +957,7 @@ export function onRollupWarning(
     warn(warnLog)
   }
 
-  const tty = process.stdout.isTTY && !process.env.CI
-  if (tty) {
-    process.stdout.clearLine(0)
-    process.stdout.cursorTo(0)
-  }
+  clearLine()
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
@@ -962,7 +1002,7 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
 function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
@@ -980,7 +1020,7 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
 function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
@@ -999,7 +1039,7 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
 function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))

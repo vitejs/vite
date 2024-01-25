@@ -71,6 +71,20 @@ pre::-webkit-scrollbar {
   display: none;
 }
 
+pre.frame::-webkit-scrollbar {
+  display: block;
+  height: 5px;
+}
+
+pre.frame::-webkit-scrollbar-thumb {
+  background: #999;
+  border-radius: 5px;
+}
+
+pre.frame {
+  scrollbar-width: thin;
+}
+
 .message {
   line-height: 1.3;
   font-weight: 600;
@@ -151,7 +165,7 @@ kbd {
 `
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
-const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
+const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
 // `HTMLElement` was not originally defined.
@@ -221,7 +235,12 @@ export class ErrorOverlay extends HTMLElement {
           link.textContent = file
           link.className = 'file-link'
           link.onclick = () => {
-            fetch(`${base}__open-in-editor?file=` + encodeURIComponent(file))
+            fetch(
+              new URL(
+                `${base}__open-in-editor?file=${encodeURIComponent(file)}`,
+                import.meta.url,
+              ),
+            )
           }
           el.appendChild(link)
           curIndex += frag.length + file.length

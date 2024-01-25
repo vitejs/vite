@@ -10,6 +10,11 @@
   background-size: 10px;
 }
 
+.css-url-encoded {
+  background: url('/nested/asset%5Bsmall%5D.png');
+  background-size: 10px;
+}
+
 .css-image-set-relative {
   background-image: -webkit-image-set(
     url('../nested/asset.png') 1x,
@@ -107,3 +112,16 @@ urls inside comments should be ignored
   background-size: 10px;
 }
 */
+
+.css-url-svg {
+  background: url(../nested/fragment-bg.svg);
+  background-size: 10px;
+}
+
+.css-image-set-svg {
+  background: -webkit-image-set(
+    url('../nested/fragment-bg.svg') 1x,
+    url('../nested/fragment-bg.svg') 2x
+  );
+  background-size: 10px;
+}

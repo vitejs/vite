@@ -9,6 +9,7 @@ const { version } = JSON.parse(
 export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
+  'browser',
   'module',
   'jsnext:main', // moment still uses this...
   'jsnext',
@@ -117,6 +118,9 @@ export const KNOWN_ASSET_TYPES = [
   'flac',
   'aac',
   'opus',
+  'mov',
+  'm4a',
+  'vtt',
 
   // fonts
   'woff2?',
@@ -151,3 +155,7 @@ export const wildcardHosts = new Set([
 export const DEFAULT_DEV_PORT = 5173
 
 export const DEFAULT_PREVIEW_PORT = 4173
+
+export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
+
+export const METADATA_FILENAME = '_metadata.json'
