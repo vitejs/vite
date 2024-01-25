@@ -10,7 +10,7 @@ import {
   normalizePath,
   withTrailingSlash,
 } from '../utils'
-import { LogLevels } from '../logger'
+import { LogLevels, buildFailInfo } from '../logger'
 
 const groups = [
   { name: 'Assets', color: colors.green },
@@ -48,7 +48,6 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   let chunkCount = 0
   let compressedCount = 0
   let startTime = Date.now()
-  let buildFailed = false
 
   async function getCompressedSize(
     code: string | Uint8Array,
@@ -109,8 +108,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       transformedCount = 0
     },
 
-    buildEnd(error?: Error) {
-      buildFailed = !!error
+    buildEnd() {
       if (shouldLogInfo) {
         if (tty) {
           clearLine()
@@ -303,7 +301,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     closeBundle() {
-      if (shouldLogInfo && !config.build.watch && !buildFailed) {
+      if (shouldLogInfo && !config.build.watch && !buildFailInfo.failed) {
         config.logger.info(
           `${colors.green(
             `✓ built in ${displayTime(Date.now() - startTime)}`,

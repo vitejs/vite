@@ -37,6 +37,7 @@ import {
   withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
+import { buildFailInfo } from './logger'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
@@ -554,6 +555,7 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
+    buildFailInfo.failed = true
     return msg
   }
 
@@ -659,6 +661,7 @@ export async function build(
 
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
+    buildFailInfo.failed = false
     // watch file changes with rollup
     if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))

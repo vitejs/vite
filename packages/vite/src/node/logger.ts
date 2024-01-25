@@ -26,6 +26,10 @@ export interface LogErrorOptions extends LogOptions {
   error?: Error | RollupError | null
 }
 
+export const buildFailInfo: Record<string, boolean> = {
+  failed: false,
+}
+
 export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
