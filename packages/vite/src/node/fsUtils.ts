@@ -219,24 +219,28 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     file: string,
     type: 'directory_maybe_symlink' | 'file_maybe_symlink',
   ) {
-    const direntCache = getDirentCacheFromPath(path.dirname(file))
+    const direntCache = getDirentCacheFromPath(
+      normalizePath(path.dirname(file)),
+    )
     if (
       direntCache &&
       direntCache.type === 'directory' &&
       direntCache.dirents
     ) {
-      direntCache.dirents.set(path.basename(file), { type })
+      direntCache.dirents.set(normalizePath(path.basename(file)), { type })
     }
   }
 
   function onPathUnlink(file: string) {
-    const direntCache = getDirentCacheFromPath(path.dirname(file))
+    const direntCache = getDirentCacheFromPath(
+      normalizePath(path.dirname(file)),
+    )
     if (
       direntCache &&
       direntCache.type === 'directory' &&
       direntCache.dirents
     ) {
-      direntCache.dirents.delete(path.basename(file))
+      direntCache.dirents.delete(normalizePath(path.basename(file)))
     }
   }
 
