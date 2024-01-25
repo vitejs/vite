@@ -1,0 +1,22 @@
+{
+  "name": "@vitejs/test-monorepo-local-sources-not-local",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "exports": {
+    ".": {
+      "module": "./build/index.js"
+    },
+    "./*": {
+      "module": [
+        "./build/*.js"
+      ]
+    }
+  }
+}

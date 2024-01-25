@@ -807,40 +807,30 @@ importers:
 
   playground/monorepo-auto-alias/shared: {}
 
-  playground/monorepo-vite-condition: {}
+  playground/monorepo-local-sources: {}
 
-  playground/monorepo-vite-condition/exports: {}
+  playground/monorepo-local-sources/custom-dir: {}
 
-  playground/monorepo-vite-condition/exports-external: {}
+  playground/monorepo-local-sources/no-dir: {}
 
-  playground/monorepo-vite-condition/exports-internal: {}
+  playground/monorepo-local-sources/not-local: {}
 
-  playground/monorepo-vite-condition/main: {}
-
-  playground/monorepo-vite-condition/main-external: {}
-
-  playground/monorepo-vite-condition/main-internal: {}
-
-  playground/monorepo-vite-condition/root:
+  playground/monorepo-local-sources/root:
     dependencies:
-      '@vitejs/test-monorepo-vite-condition-exports':
+      '@vitejs/test-monorepo-local-sources-custom-dir':
         specifier: workspace:*
-        version: link:../exports
-      '@vitejs/test-monorepo-vite-condition-exports-external':
-        specifier: file:../exports-external
-        version: file:playground/monorepo-vite-condition/exports-external
-      '@vitejs/test-monorepo-vite-condition-exports-internal':
-        specifier: link:../exports-internal
-        version: link:../exports-internal
-      '@vitejs/test-monorepo-vite-condition-main':
+        version: link:../custom-dir
+      '@vitejs/test-monorepo-local-sources-no-dir':
         specifier: workspace:*
-        version: link:../main
-      '@vitejs/test-monorepo-vite-condition-main-external':
-        specifier: file:../main-external
-        version: file:playground/monorepo-vite-condition/main-external
-      '@vitejs/test-monorepo-vite-condition-main-internal':
-        specifier: link:../main-internal
-        version: link:../main-internal
+        version: link:../no-dir
+      '@vitejs/test-monorepo-local-sources-not-local':
+        specifier: file:../not-local
+        version: file:playground/monorepo-local-sources/not-local
+      '@vitejs/test-monorepo-local-sources-src-dir':
+        specifier: workspace:*
+        version: link:../src-dir
+
+  playground/monorepo-local-sources/src-dir: {}
 
   playground/multiple-entrypoints:
     devDependencies:
@@ -9779,14 +9769,9 @@ packages:
     name: '@vitejs/test-minify'
     dev: false
 
-  file:playground/monorepo-vite-condition/exports-external:
-    resolution: {directory: playground/monorepo-vite-condition/exports-external, type: directory}
-    name: '@vitejs/test-monorepo-vite-condition-exports-external'
-    dev: false
-
-  file:playground/monorepo-vite-condition/main-external:
-    resolution: {directory: playground/monorepo-vite-condition/main-external, type: directory}
-    name: '@vitejs/test-monorepo-vite-condition-main-external'
+  file:playground/monorepo-local-sources/not-local:
+    resolution: {directory: playground/monorepo-local-sources/not-local, type: directory}
+    name: '@vitejs/test-monorepo-local-sources-not-local'
     dev: false
 
   file:playground/optimize-deps-no-discovery/dep-no-discovery:

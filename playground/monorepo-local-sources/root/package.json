@@ -1,0 +1,18 @@
+{
+  "name": "@vitejs/test-monorepo-local-sources-root",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/test-monorepo-local-sources-custom-dir": "workspace:*",
+    "@vitejs/test-monorepo-local-sources-no-dir": "workspace:*",
+    "@vitejs/test-monorepo-local-sources-src-dir": "workspace:*",
+    "@vitejs/test-monorepo-local-sources-not-local": "file:../not-local"
+  }
+}
