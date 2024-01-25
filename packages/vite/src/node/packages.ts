@@ -21,6 +21,7 @@ export type PackageCache = Map<string, PackageData>
 
 export interface PackageData {
   dir: string
+  srcDir: string | null
   hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
   inWorkspace: boolean
   webResolvedImports: Record<string, string | undefined>
@@ -195,11 +196,30 @@ export function loadPackageData(pkgPath: string): PackageData {
     hasSideEffects = () => null
   }
 
+  // Determine if the package is locally within a monorepo workspace
+  const inWorkspace = isPackageInWorkspace(pkgPath)
+  let srcDir = null
+
+  // When in a workspace, attempt to find a source directory.
+  // We do this check here, so that it only runs once per package,
+  // and not for every file in the package!
+  if (inWorkspace) {
+    for (const srcName of ['src', 'sources']) {
+      const srcPath = path.join(pkgDir, srcName)
+
+      if (fs.existsSync(srcPath)) {
+        srcDir = srcPath
+        break
+      }
+    }
+  }
+
   const pkg: PackageData = {
     dir: pkgDir,
     data,
     hasSideEffects,
-    inWorkspace: isPackageInWorkspace(pkgPath),
+    inWorkspace,
+    srcDir,
     webResolvedImports: {},
     nodeResolvedImports: {},
     setResolvedCache(key: string, entry: string, targetWeb: boolean) {

@@ -127,7 +127,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   idOnly?: boolean
 
   // Maps to the experiment of the same name
-  vitePackageEntryPoints?: boolean
+  resolveLocalPackageSources?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -760,13 +760,14 @@ export function tryNodeResolve(
     return
   }
 
-  let resolved: string | undefined
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
+  let resolved: string | undefined
+
   // If a local package, attempt to resolve the original source file,
   // and avoid entry points or pre-built files
-  if (pkg.inWorkspace) {
+  if (pkg.inWorkspace && options.resolveLocalPackageSources) {
     try {
       resolved = resolveSourceFile(unresolvedId, pkg, targetWeb, options)
     } catch {
@@ -1006,11 +1007,6 @@ export function resolvePackageEntry(
     if (!entryPoint) {
       const mainFields = [...options.mainFields]
 
-      // Support `vite` entry point field for local packages
-      if (pkg.inWorkspace && options.vitePackageEntryPoints) {
-        mainFields.unshift('vite')
-      }
-
       for (const field of mainFields) {
         if (field === 'browser') {
           if (targetWeb) {
@@ -1084,17 +1080,7 @@ export function resolveSourceFile(
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
-  let srcDir = pkg.dir
-
-  // Attempt to find a source directory
-  for (const srcName of ['src', 'sources']) {
-    const srcPath = path.join(pkg.dir, srcName)
-
-    if (fs.existsSync(srcPath)) {
-      srcDir = srcPath
-      break
-    }
-  }
+  const srcDir = pkg.srcDir ?? pkg.dir
 
   return tryFsResolve(
     id.startsWith('.')
@@ -1144,11 +1130,6 @@ function resolveExportsOrImports(
     }
     return true
   })
-
-  // Support `vite` condition for local packages
-  if (pkg.inWorkspace && options.vitePackageEntryPoints) {
-    conditions.unshift('vite')
-  }
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg.data, key, {

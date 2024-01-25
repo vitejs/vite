@@ -311,14 +311,13 @@ export interface ExperimentalOptions {
    */
   skipSsrTransform?: boolean
   /**
-   * Resolves source files of local packages (in a monorepo workspace) using `package.json`
-   * entry points. If using `exports`, uses the `vite` condition. Otherwise, uses the `vite`
-   * main-like field.
+   * Resolves source files of local packages (in a monorepo workspace) instead of using
+   * pre-built files.
    *
    * @experimental
    * @default false
    */
-  vitePackageEntryPoints?: boolean
+  resolveLocalPackageSources?: boolean
 }
 
 export interface LegacyOptions {
