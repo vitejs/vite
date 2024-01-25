@@ -13,6 +13,7 @@ export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
+export { getAssets, assetUrlRE } from './plugins/asset'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 export * from './publicUtils'
@@ -118,6 +119,7 @@ export type {
   TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+export type { AssetPluginApi, GeneratedAssetMeta } from './plugins/asset'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
