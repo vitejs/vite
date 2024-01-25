@@ -793,6 +793,20 @@ importers:
 
   playground/monorepo-alias/shared: {}
 
+  playground/monorepo-auto-alias:
+    devDependencies:
+      '@vitejs/test-resolve-linked':
+        specifier: workspace:*
+        version: link:../resolve-linked
+
+  playground/monorepo-auto-alias/root:
+    dependencies:
+      '@vitejs/test-monorepo-auto-alias-shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  playground/monorepo-auto-alias/shared: {}
+
   playground/monorepo-vite-condition: {}
 
   playground/monorepo-vite-condition/exports: {}

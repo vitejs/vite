@@ -760,17 +760,30 @@ export function tryNodeResolve(
     return
   }
 
+  let resolved: string | undefined
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
-  let resolved: string | undefined
-  try {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
-  } catch (err) {
-    if (!options.tryEsmOnly) {
-      throw err
+  // If a local package, attempt to resolve the original source file,
+  // and avoid entry points or pre-built files
+  if (pkg.inWorkspace) {
+    try {
+      resolved = resolveSourceFile(unresolvedId, pkg, targetWeb, options)
+    } catch {
+      // If nothing found, resolve with other methods
     }
   }
+
+  if (!resolved) {
+    try {
+      resolved = resolveId(unresolvedId, pkg, targetWeb, options)
+    } catch (err) {
+      if (!options.tryEsmOnly) {
+        throw err
+      }
+    }
+  }
+
   if (!resolved && options.tryEsmOnly) {
     resolved = resolveId(unresolvedId, pkg, targetWeb, {
       ...options,
@@ -1063,6 +1076,37 @@ export function resolvePackageEntry(
     packageEntryFailure(id, e.message)
   }
   packageEntryFailure(id)
+}
+
+export function resolveSourceFile(
+  id: string,
+  pkg: PackageData,
+  targetWeb: boolean,
+  options: InternalResolveOptions,
+): string | undefined {
+  let srcDir = pkg.dir
+
+  // Attempt to find a source directory
+  for (const srcName of ['src', 'sources']) {
+    const srcPath = path.join(pkg.dir, srcName)
+
+    if (fs.existsSync(srcPath)) {
+      srcDir = srcPath
+      break
+    }
+  }
+
+  return tryFsResolve(
+    id.startsWith('.')
+      ? // File relative from package source directory
+        path.join(srcDir, id)
+      : // Is the package name, so return an index entry point
+        srcDir,
+    options,
+    true,
+    targetWeb,
+    true,
+  )
 }
 
 function packageEntryFailure(id: string, details?: string) {

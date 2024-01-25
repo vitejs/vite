@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-monorepo-auto-alias",
+  "private": true,
+  "devDependencies": {
+    "@vitejs/test-resolve-linked": "workspace:*"
+  }
+}
