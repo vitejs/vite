@@ -74,7 +74,11 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       fsUtils = commonFsUtils
     } else {
       fsUtils = createCachedFsUtils(config)
-      addActiveResolvedConfig(config, fsUtils)
+      if (!fsUtils) {
+        fsUtils = commonFsUtils
+      } else {
+        addActiveResolvedConfig(config, fsUtils)
+      }
     }
     cachedFsUtilsMap.set(config, fsUtils)
   }
@@ -236,13 +240,13 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
   return p
 }
 
-export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
+function createCachedFsUtils(config: ResolvedConfig): FsUtils | undefined {
   const root = normalizePath(searchForWorkspaceRoot(config.root))
   const rootDirPath = `${root}/`
 
   const rootCache = findCompatibleRootCache(config)
   if (!rootCache) {
-    return commonFsUtils
+    return
   }
 
   cachedFsUtilsMeta.set(config, { root, rootCache })
