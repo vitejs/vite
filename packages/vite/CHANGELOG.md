@@ -1,3 +1,20 @@
+## 5.1.0-beta.4 (2024-01-26)
+
+* perf: lazy load rollup during dev (#15621) ([6f88a90](https://github.com/vitejs/vite/commit/6f88a90)), closes [#15621](https://github.com/vitejs/vite/issues/15621)
+* perf: use workspace root for fs cache (#15712) ([8815763](https://github.com/vitejs/vite/commit/8815763)), closes [#15712](https://github.com/vitejs/vite/issues/15712)
+* chore: remove unneeded normalizePath (#15713) ([92f2747](https://github.com/vitejs/vite/commit/92f2747)), closes [#15713](https://github.com/vitejs/vite/issues/15713)
+* chore(proxy): update proxy error info (#15678) ([09bd58d](https://github.com/vitejs/vite/commit/09bd58d)), closes [#15678](https://github.com/vitejs/vite/issues/15678)
+* feat: enable fs.cachedChecks by default (#15704) ([a05c709](https://github.com/vitejs/vite/commit/a05c709)), closes [#15704](https://github.com/vitejs/vite/issues/15704)
+* feat(optimizer): holdUntilCrawlEnd option (#15244) ([b7c6629](https://github.com/vitejs/vite/commit/b7c6629)), closes [#15244](https://github.com/vitejs/vite/issues/15244)
+* fix: normalize prettify url (#15705) ([98bc3dc](https://github.com/vitejs/vite/commit/98bc3dc)), closes [#15705](https://github.com/vitejs/vite/issues/15705)
+* fix: windows add/delete file ([3a7b650](https://github.com/vitejs/vite/commit/3a7b650))
+* fix(build): build error message output twice (#15664) ([74382b9](https://github.com/vitejs/vite/commit/74382b9)), closes [#15664](https://github.com/vitejs/vite/issues/15664)
+* fix(hmr): pass id in `parseImports` for better debugging DX (#15707) ([fb4bddc](https://github.com/vitejs/vite/commit/fb4bddc)), closes [#15707](https://github.com/vitejs/vite/issues/15707)
+* fix(node): remove timestamp query of `staticImportedUrls` (#15663) ([6c4bf26](https://github.com/vitejs/vite/commit/6c4bf26)), closes [#15663](https://github.com/vitejs/vite/issues/15663)
+* fix(preview): set isPreview true (#15695) ([93fce55](https://github.com/vitejs/vite/commit/93fce55)), closes [#15695](https://github.com/vitejs/vite/issues/15695)
+
+
+
 ## 5.1.0-beta.3 (2024-01-22)
 
 * perf: middleware to short-circuit on 304 (#15586) ([35ae4f8](https://github.com/vitejs/vite/commit/35ae4f8)), closes [#15586](https://github.com/vitejs/vite/issues/15586)
