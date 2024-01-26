@@ -614,6 +614,8 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
 })
 ```
 
+The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Additionally, all options parameters must be static values (i.e. string literals).
+
 ### Import with Query Suffixes
 
 A web worker script can be directly imported by appending `?worker` or `?sharedworker` to the import request. The default export will be a custom worker constructor:
