@@ -15,7 +15,7 @@
 
     "useDefineForClassFields": true,
     "importsNotUsedAsValues": "preserve",
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
   },
-  "include": ["./src"]
+  "include": ["./src"],
 }

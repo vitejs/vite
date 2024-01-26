@@ -10,6 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.13"
+    "vue": "^3.4.15"
   }
 }

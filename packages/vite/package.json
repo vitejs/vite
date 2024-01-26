@@ -84,7 +84,7 @@
   "devDependencies": {
     "@ampproject/remapping": "^2.2.1",
     "@babel/parser": "^7.23.6",
-    "@jridgewell/trace-mapping": "^0.3.21",
+    "@jridgewell/trace-mapping": "^0.3.22",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-dynamic-import-vars": "^2.1.2",
@@ -105,7 +105,7 @@
     "cross-spawn": "^7.0.3",
     "debug": "^4.3.4",
     "dep-types": "link:./src/types",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.3.2",
     "dotenv-expand": "^10.0.0",
     "es-module-lexer": "^1.4.1",
     "escape-html": "^1.0.3",

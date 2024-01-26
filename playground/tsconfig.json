@@ -16,7 +16,7 @@
     "jsx": "preserve",
     "types": ["vite/client", "node"],
     "paths": {
-      "~utils": ["./test-utils.ts"]
-    }
-  }
+      "~utils": ["./test-utils.ts"],
+    },
+  },
 }
