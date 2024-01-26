@@ -188,10 +188,7 @@ function expandUntilOtherRoot(
   return { part: lastPart, dirents: lastDirents }
 }
 
-function connectRootCacheToActiveRoots(
-  config: ResolvedConfig,
-): DirentCache | undefined {
-  const { root } = config
+function connectRootCacheToActiveRoots(root: string): DirentCache | undefined {
   debug?.(`active configs: ${activeResolvedConfigs.length}`)
   const childRoots: CachedFsUtilsMeta[] = []
   for (const otherConfigRef of activeResolvedConfigs) {
@@ -241,14 +238,13 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
 
 function createCachedFsUtils(config: ResolvedConfig): FsUtils | undefined {
   const root = normalizePath(searchForWorkspaceRoot(config.root))
-  const rootDirPath = `${root}/`
-
-  const rootCache = connectRootCacheToActiveRoots(config)
+  const rootCache = connectRootCacheToActiveRoots(root)
   if (!rootCache) {
     return
   }
-
   cachedFsUtilsMeta.set(config, { root, rootCache })
+
+  const rootDirPath = `${root}/`
 
   const getDirentCacheSync = (parts: string[]): DirentCache | undefined => {
     let direntCache: DirentCache = rootCache
