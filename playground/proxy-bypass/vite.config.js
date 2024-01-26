@@ -4,7 +4,7 @@ export default defineConfig({
   server: {
     port: 9606,
     proxy: {
-      '/anotherApp': {
+      '/nonExistentApp': {
         target: 'http://localhost:9607',
         bypass: () => {
           return false
