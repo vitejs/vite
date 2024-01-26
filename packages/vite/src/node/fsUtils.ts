@@ -152,7 +152,6 @@ function expandUntilOtherRoot(
   root: string,
   otherRoot: string,
 ) {
-  // Start a parent Tree, and expand it to reach the otherRoot
   if (!rootCache.dirents) {
     rootCache.dirents = readDirCacheSync(root)
   }
@@ -184,54 +183,54 @@ function expandUntilOtherRoot(
   }
   const lastDirents = currentDirentCache.dirents as DirentsMap
   if (!lastDirents.has(lastPart)) {
-    return undefined
+    return
   }
   return { part: lastPart, dirents: lastDirents }
 }
 
-function findCompatibleRootCache(
+function connectRootCacheToActiveRoots(
   config: ResolvedConfig,
 ): DirentCache | undefined {
   const { root } = config
   debug?.(`active configs: ${activeResolvedConfigs.length}`)
+  const childRoots: CachedFsUtilsMeta[] = []
   for (const otherConfigRef of activeResolvedConfigs) {
     const otherConfig = otherConfigRef?.deref()
     if (otherConfig) {
-      const otherRoot = otherConfig.root
       const otherCachedFsUtilsMeta = cachedFsUtilsMeta.get(otherConfig)!
-      const otherRootCache = otherCachedFsUtilsMeta.rootCache
-      debug?.(
-        `Checking if ${root} can be connected to the cache for ${otherRoot}`,
-      )
-      if (otherRoot === root) {
+      const { rootCache: otherRootCache, root: otherRoot } =
+        otherCachedFsUtilsMeta
+      if (root === otherRoot) {
         debug?.(`FsUtils for ${root} sharing root cache with compatible cache`)
         return otherRootCache
-      } else if (otherRoot.startsWith(root + '/')) {
-        const rootCache = { type: 'directory' } as DirentCache
-        const last = expandUntilOtherRoot(rootCache, root, otherRoot)
-        if (!last) {
-          return
-        }
-        last.dirents.set(last.part, otherRootCache)
-        debug?.(
-          `FsUtils for ${root} connected as a parent to the cache for ${otherRoot}`,
-        )
-        return rootCache
       } else if (root.startsWith(otherRoot + '/')) {
         const last = expandUntilOtherRoot(otherRootCache, otherRoot, root)
         if (!last) {
-          return
+          continue
         }
         debug?.(
           `FsUtils for ${root} connected as a child to the cache for ${otherRoot}`,
         )
         return last.dirents.get(last.part)
+      } else if (otherRoot.startsWith(root + '/')) {
+        childRoots.push(otherCachedFsUtilsMeta)
       }
     }
   }
 
-  debug?.(`FsUtils for ${root} started as an independent cache`)
-  return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
+  debug?.(`FsUtils for ${root} started as an new root cache`)
+  const newRootCache = { type: 'directory' as DirentCacheType } // dirents will be computed lazily
+  for (const childMeta of childRoots) {
+    const last = expandUntilOtherRoot(newRootCache, root, childMeta.root)
+    if (!last) {
+      continue
+    }
+    last.dirents.set(last.part, childMeta.rootCache)
+    debug?.(
+      `FsUtils for ${root} connected as a parent to the cache for ${childMeta.root}`,
+    )
+  }
+  return newRootCache
 }
 
 function pathUntilPart(root: string, parts: string[], i: number): string {
@@ -244,7 +243,7 @@ function createCachedFsUtils(config: ResolvedConfig): FsUtils | undefined {
   const root = normalizePath(searchForWorkspaceRoot(config.root))
   const rootDirPath = `${root}/`
 
-  const rootCache = findCompatibleRootCache(config)
+  const rootCache = connectRootCacheToActiveRoots(config)
   if (!rootCache) {
     return
   }
