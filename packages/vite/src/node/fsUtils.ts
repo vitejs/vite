@@ -46,7 +46,6 @@ export const commonFsUtils: FsUtils = {
 
 const activeResolvedConfigs = new Array<WeakRef<ResolvedConfig>>()
 const registry = new FinalizationRegistry((fsUtils: FsUtils) => {
-  debug?.(`removing config`)
   const i = activeResolvedConfigs.findIndex((r) => !r.deref())
   activeResolvedConfigs.splice(i, 1)
 })
@@ -147,50 +146,7 @@ interface CachedFsUtilsMeta {
 }
 const cachedFsUtilsMeta = new WeakMap<ResolvedConfig, CachedFsUtilsMeta>()
 
-function expandUntilOtherRoot(
-  rootCache: DirentCache,
-  root: string,
-  otherRoot: string,
-) {
-  if (!rootCache.dirents) {
-    rootCache.dirents = readDirCacheSync(root)
-  }
-  if (!rootCache.dirents) {
-    return
-  }
-  const parts = otherRoot.slice(root.length + 1).split('/')
-  const lastPart = parts.pop()!
-  let currentDirPath = root
-  let currentDirentCache = rootCache
-  while (parts.length) {
-    const nextDirentCache = (currentDirentCache.dirents as DirentsMap).get(
-      parts[0],
-    )
-    if (!nextDirentCache || nextDirentCache.type === 'file') {
-      return
-    }
-    if (nextDirentCache.type === 'symlink') {
-      // We don't support sharing trees with symlinks in the middle of the path
-      return
-    }
-    // We know it's a directory
-    currentDirPath += '/' + parts.shift()!
-    nextDirentCache.dirents = readDirCacheSync(currentDirPath)
-    if (!nextDirentCache.dirents) {
-      return
-    }
-    currentDirentCache = nextDirentCache
-  }
-  const lastDirents = currentDirentCache.dirents as DirentsMap
-  if (!lastDirents.has(lastPart)) {
-    return
-  }
-  return { part: lastPart, dirents: lastDirents }
-}
-
-function connectRootCacheToActiveRoots(root: string): DirentCache | undefined {
-  debug?.(`active configs: ${activeResolvedConfigs.length}`)
-  const childRoots: CachedFsUtilsMeta[] = []
+function createSharedRootCache(root: string): DirentCache | undefined {
   for (const otherConfigRef of activeResolvedConfigs) {
     const otherConfig = otherConfigRef?.deref()
     if (otherConfig) {
@@ -200,34 +156,12 @@ function connectRootCacheToActiveRoots(root: string): DirentCache | undefined {
       if (root === otherRoot) {
         debug?.(`FsUtils for ${root} sharing root cache with compatible cache`)
         return otherRootCache
-      } else if (root.startsWith(otherRoot + '/')) {
-        const last = expandUntilOtherRoot(otherRootCache, otherRoot, root)
-        if (!last) {
-          continue
-        }
-        debug?.(
-          `FsUtils for ${root} connected as a child to the cache for ${otherRoot}`,
-        )
-        return last.dirents.get(last.part)
-      } else if (otherRoot.startsWith(root + '/')) {
-        childRoots.push(otherCachedFsUtilsMeta)
       }
     }
   }
 
   debug?.(`FsUtils for ${root} started as an new root cache`)
-  const newRootCache = { type: 'directory' as DirentCacheType } // dirents will be computed lazily
-  for (const childMeta of childRoots) {
-    const last = expandUntilOtherRoot(newRootCache, root, childMeta.root)
-    if (!last) {
-      continue
-    }
-    last.dirents.set(last.part, childMeta.rootCache)
-    debug?.(
-      `FsUtils for ${root} connected as a parent to the cache for ${childMeta.root}`,
-    )
-  }
-  return newRootCache
+  return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
 }
 
 function pathUntilPart(root: string, parts: string[], i: number): string {
@@ -238,7 +172,7 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
 
 function createCachedFsUtils(config: ResolvedConfig): FsUtils | undefined {
   const root = normalizePath(searchForWorkspaceRoot(config.root))
-  const rootCache = connectRootCacheToActiveRoots(root)
+  const rootCache = createSharedRootCache(root)
   if (!rootCache) {
     return
   }
