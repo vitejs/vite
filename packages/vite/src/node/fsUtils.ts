@@ -253,7 +253,10 @@ function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       direntCache.type === 'directory' &&
       direntCache.dirents
     ) {
-      direntCache.dirents.set(path.basename(file), { type })
+      const fileBasename = path.basename(file)
+      if (!direntCache.dirents.has(fileBasename)) {
+        direntCache.dirents.set(fileBasename, { type })
+      }
     }
   }
 
