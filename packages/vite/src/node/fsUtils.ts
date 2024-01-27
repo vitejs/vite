@@ -73,11 +73,7 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       fsUtils = commonFsUtils
     } else {
       fsUtils = createCachedFsUtils(config)
-      if (!fsUtils) {
-        fsUtils = commonFsUtils
-      } else {
-        addActiveResolvedConfig(config, fsUtils)
-      }
+      addActiveResolvedConfig(config, fsUtils)
     }
     cachedFsUtilsMap.set(config, fsUtils)
   }
@@ -146,8 +142,7 @@ interface CachedFsUtilsMeta {
 }
 const cachedFsUtilsMeta = new WeakMap<ResolvedConfig, CachedFsUtilsMeta>()
 
-function createSharedRootCache(root: string): DirentCache | undefined {
-  /* commented to test ecosystem CI
+function createSharedRootCache(root: string): DirentCache {
   for (const otherConfigRef of activeResolvedConfigs) {
     const otherConfig = otherConfigRef?.deref()
     if (otherConfig) {
@@ -160,7 +155,6 @@ function createSharedRootCache(root: string): DirentCache | undefined {
       }
     }
   }
-  */
 
   debug?.(`FsUtils for ${root} started as an new root cache`)
   return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
@@ -172,15 +166,11 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
   return p
 }
 
-function createCachedFsUtils(config: ResolvedConfig): FsUtils | undefined {
+function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const root = normalizePath(searchForWorkspaceRoot(config.root))
-  const rootCache = createSharedRootCache(root)
-  if (!rootCache) {
-    return
-  }
-  cachedFsUtilsMeta.set(config, { root, rootCache })
-
   const rootDirPath = `${root}/`
+  const rootCache = createSharedRootCache(root)
+  cachedFsUtilsMeta.set(config, { root, rootCache })
 
   const getDirentCacheSync = (parts: string[]): DirentCache | undefined => {
     let direntCache: DirentCache = rootCache
