@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { isDepsOptimizerEnabled, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -41,7 +41,6 @@ import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
@@ -523,10 +522,6 @@ export async function build(
   const plugins = (
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
-
-  if (isDepsOptimizerEnabled(config, ssr)) {
-    await initDepsOptimizer(config)
-  }
 
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
