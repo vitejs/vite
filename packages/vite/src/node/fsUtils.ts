@@ -147,6 +147,7 @@ interface CachedFsUtilsMeta {
 const cachedFsUtilsMeta = new WeakMap<ResolvedConfig, CachedFsUtilsMeta>()
 
 function createSharedRootCache(root: string): DirentCache | undefined {
+  /* commented to test ecosystem CI
   for (const otherConfigRef of activeResolvedConfigs) {
     const otherConfig = otherConfigRef?.deref()
     if (otherConfig) {
@@ -159,6 +160,7 @@ function createSharedRootCache(root: string): DirentCache | undefined {
       }
     }
   }
+  */
 
   debug?.(`FsUtils for ${root} started as an new root cache`)
   return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
