@@ -41,7 +41,7 @@ const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
-// adjusted `convertSourceMap.mapFileCommentRegex` to match only at the last line
+// modified convert-source-map's `mapFileCommentRegex` to match only at the last line
 // https://github.com/thlorenz/convert-source-map/blob/1afbeee2f2a42a3747c31dfcfc355387afdf42e2/index.js#L14
 const lastMapFileCommentRegex =
   // eslint-disable-next-line regexp/no-super-linear-backtracking
