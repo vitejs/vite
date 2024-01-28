@@ -514,8 +514,9 @@ function __vite__mapDeps(indexes) {
 }\n`
 
           // inject extra code before the last sourcemap comment
-          const mapFileCommentMatch = lastMapFileCommentRegex.exec(code)
-          if (config.build.sourcemap && mapFileCommentMatch) {
+          const mapFileCommentMatch =
+            config.build.sourcemap && lastMapFileCommentRegex.exec(code)
+          if (mapFileCommentMatch) {
             s.appendRight(mapFileCommentMatch.index, mapDepsCode)
           } else {
             s.append(mapDepsCode)
