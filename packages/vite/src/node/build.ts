@@ -30,6 +30,7 @@ import {
   arraify,
   asyncFlatten,
   copyDir,
+  displayTime,
   emptyDir,
   joinUrlSegments,
   normalizePath,
@@ -37,7 +38,7 @@ import {
   withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
-import { buildFailInfo } from './logger'
+import { LogLevels } from './logger'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
@@ -555,7 +556,6 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
-    buildFailInfo.failed = true
     return msg
   }
 
@@ -566,6 +566,7 @@ export async function build(
   }
 
   let bundle: RollupBuild | undefined
+  let startTime: number | undefined
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
@@ -661,7 +662,6 @@ export async function build(
 
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
-    buildFailInfo.failed = false
     // watch file changes with rollup
     if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
@@ -700,6 +700,7 @@ export async function build(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
+    startTime = Date.now()
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
@@ -710,10 +711,24 @@ export async function build(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
+    const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
+    if (shouldLogInfo) {
+      config.logger.info(
+        `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+      )
+    }
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     e.message = mergeRollupError(e)
     clearLine()
+    if (startTime) {
+      config.logger.error(
+        `${colors.red(
+          `x Builed failed in ${displayTime(Date.now() - startTime)}`,
+        )}`,
+      )
+      startTime = undefined
+    }
     throw e
   } finally {
     if (bundle) await bundle.close()
