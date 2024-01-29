@@ -3,7 +3,7 @@ import type { ModuleNode, TransformResult, ViteDevServer } from '..'
 import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isFilePathESM, unwrapId } from '../utils'
+import { isBuiltin, isExternalUrl, isFilePathESM, unwrapId } from '../utils'
 import type { FetchResult } from './runtime/types'
 
 interface NodeImportResolveOptions
@@ -26,6 +26,10 @@ export async function fetchModule(
   // builtins should always be externalized
   if (url.startsWith('data:') || isBuiltin(url)) {
     return { externalize: url, type: 'builtin' }
+  }
+
+  if (isExternalUrl(url)) {
+    return { externalize: url, type: 'network' }
   }
 
   if (url[0] !== '.' && url[0] !== '/') {

@@ -89,7 +89,7 @@ export interface ExternalFetchResult {
    * Type of the module. Will be used to determine if import statement is correct.
    * For example, if Vite needs to throw an error if variable is not actually exported
    */
-  type?: 'module' | 'commonjs' | 'builtin'
+  type?: 'module' | 'commonjs' | 'builtin' | 'network'
 }
 
 export interface ViteFetchResult {
