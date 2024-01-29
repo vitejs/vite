@@ -77,8 +77,6 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-const hasImportInQueryParamsRE = /[?&]import=?\b/
-
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
@@ -92,14 +90,7 @@ interface UrlPosition {
 }
 
 export function isExplicitImportRequired(url: string): boolean {
-  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
-}
-
-function markExplicitImport(url: string) {
-  if (isExplicitImportRequired(url)) {
-    return injectQuery(url, 'import')
-  }
-  return url
+  return !isJSRequest(url) && !isCSSRequest(url)
 }
 
 function extractImportedBindings(
@@ -363,18 +354,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // make the URL browser-valid if not SSR
         if (!ssr) {
           // mark non-js/css imports with `?import`
-          url = markExplicitImport(url)
-
-          // If the url isn't a request for a pre-bundled common chunk,
-          // for relative js/css imports, or self-module virtual imports
-          // (e.g. vue blocks), inherit importer's version query
-          // do not do this for unknown type imports, otherwise the appended
-          // query can break 3rd party plugin's extension checks.
-          if (
+          if (isExplicitImportRequired(url)) {
+            url = injectQuery(url, 'import')
+          } else if (
             (isRelative || isSelfImport) &&
-            !hasImportInQueryParamsRE.test(url) &&
             !DEP_VERSION_RE.test(url)
           ) {
+            // If the url isn't a request for a pre-bundled common chunk,
+            // for relative js/css imports, or self-module virtual imports
+            // (e.g. vue blocks), inherit importer's version query
+            // do not do this for unknown type imports, otherwise the appended
+            // query can break 3rd party plugin's extension checks.
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
