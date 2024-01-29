@@ -45,6 +45,14 @@ class NoopWatcher extends EventEmitter implements FSWatcher {
     return {}
   }
 
+  ref() {
+    return this
+  }
+
+  unref() {
+    return this
+  }
+
   async close() {
     // noop
   }

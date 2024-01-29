@@ -41,6 +41,19 @@ export class FSWatcher extends EventEmitter implements fs.FSWatcher {
   constructor(options?: WatchOptions)
 
   /**
+   * When called, requests that the Node.js event loop not exit so long as the fs.FSWatcher is active.
+   * Calling watcher.ref() multiple times will have no effect.
+   */
+  ref(): this
+
+  /**
+   * When called, the active fs.FSWatcher object will not require the Node.js event loop to remain active.
+   * If there is no other activity keeping the event loop running, the process may exit before the fs.FSWatcher object's callback is invoked.
+   * Calling watcher.unref() multiple times will have no effect.
+   */
+  unref(): this
+
+  /**
    * Add files, directories, or glob patterns for tracking. Takes an array of strings or just one
    * string.
    */
