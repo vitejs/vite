@@ -1,7 +1,7 @@
 import type { ViteRuntime } from '../runtime'
 import { interceptStackTrace } from './interceptor'
 
-export function enableSourceMapSupport(runtime: ViteRuntime): void {
+export function enableSourceMapSupport(runtime: ViteRuntime): () => void {
   if (runtime.options.sourcemapInterceptor === 'node') {
     if (typeof process === 'undefined') {
       throw new TypeError(
@@ -13,10 +13,11 @@ export function enableSourceMapSupport(runtime: ViteRuntime): void {
         `Cannot use "sourcemapInterceptor: 'node'" because "process.setSourceMapsEnabled" function is not available. Please use Node >= 16.6.0.`,
       )
     }
+    const isEnabledAlready = process.sourceMapsEnabled ?? false
     process.setSourceMapsEnabled(true)
-    return
+    return () => !isEnabledAlready && process.setSourceMapsEnabled(false)
   }
-  interceptStackTrace(
+  return interceptStackTrace(
     runtime,
     typeof runtime.options.sourcemapInterceptor === 'object'
       ? runtime.options.sourcemapInterceptor

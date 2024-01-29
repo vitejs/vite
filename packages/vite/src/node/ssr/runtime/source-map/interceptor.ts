@@ -1,19 +1,73 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import type { ViteRuntime } from '../runtime'
 import { posixDirname, posixResolve } from '../utils'
+import type { ModuleCacheMap } from '../moduleCache'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
+interface RetrieveFileHandler {
+  (path: string): string | null | undefined | false
+}
+
+interface RetrieveSourceMapHandler {
+  (path: string): null | { url: string; map: any }
+}
+
 export interface InterceptorOptions {
-  retrieveFile?: (path: string) => string | null | undefined | false
-  retrieveSourceMap?: (path: string) => null | { url: string; map: any }
+  retrieveFile?: RetrieveFileHandler
+  retrieveSourceMap?: RetrieveSourceMapHandler
+}
+
+const sourceMapCache: Record<string, CachedMapEntry> = {}
+const fileContentsCache: Record<string, string> = {}
+
+const moduleGraphs: Set<ModuleCacheMap> = new Set()
+const retrieveFileHandlers = new Set<RetrieveFileHandler>()
+const retrieveSourceMapHandlers = new Set<RetrieveSourceMapHandler>()
+
+const createExecHandlers = <T extends (...args: any) => any>(
+  handlers: Set<T>,
+) => {
+  return ((...args: Parameters<T>) => {
+    for (const handler of handlers) {
+      const result = handler(...(args as []))
+      if (result) return result
+    }
+    return null
+  }) as T
+}
+
+const retrieveFileFromHandlers = createExecHandlers(retrieveFileHandlers)
+const retrievSourceMapFromHandlers = createExecHandlers(
+  retrieveSourceMapHandlers,
+)
+
+let overriden = false
+const originalPrepare = Error.prepareStackTrace
+
+function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
+  moduleGraphs.delete(runtime.moduleCache)
+  if (options.retrieveFile) retrieveFileHandlers.delete(options.retrieveFile)
+  if (options.retrieveSourceMap)
+    retrieveSourceMapHandlers.delete(options.retrieveSourceMap)
+  if (moduleGraphs.size === 0) {
+    Error.prepareStackTrace = originalPrepare
+    overriden = false
+  }
 }
 
 export function interceptStackTrace(
   runtime: ViteRuntime,
   options: InterceptorOptions = {},
-): void {
-  Error.prepareStackTrace = (error, stack) =>
-    prepareStackTrace(runtime, options, error, stack)
+): () => void {
+  if (!overriden) {
+    Error.prepareStackTrace = prepareStackTrace
+    overriden = true
+  }
+  moduleGraphs.add(runtime.moduleCache)
+  if (options.retrieveFile) retrieveFileHandlers.add(options.retrieveFile)
+  if (options.retrieveSourceMap)
+    retrieveSourceMapHandlers.add(options.retrieveSourceMap)
+  return () => resetInterceptor(runtime, options)
 }
 
 interface CallSite extends NodeJS.CallSite {
@@ -30,8 +84,6 @@ interface CachedMapEntry {
   map: DecodedMap | null
   vite?: boolean
 }
-const sourceMapCache: Record<string, CachedMapEntry> = {}
-const fileContentsCache: Record<string, string> = {}
 
 // Support URLs relative to a directory, but be careful about a protocol prefix
 function supportRelativeURL(file: string, url: string) {
@@ -51,28 +103,23 @@ function supportRelativeURL(file: string, url: string) {
   return protocol + posixResolve(dir.slice(protocol.length), url)
 }
 
-function getRuntimeSourceMap(
-  runtime: ViteRuntime,
-  position: OriginalMapping,
-): CachedMapEntry | null {
-  const sourceMap = runtime.moduleCache.getSourceMap(position.source as string)
-  if (sourceMap) {
-    return {
-      url: position.source,
-      map: sourceMap,
-      vite: true,
+function getRuntimeSourceMap(position: OriginalMapping): CachedMapEntry | null {
+  for (const moduleCache of moduleGraphs) {
+    const sourceMap = moduleCache.getSourceMap(position.source as string)
+    if (sourceMap) {
+      return {
+        url: position.source,
+        map: sourceMap,
+        vite: true,
+      }
     }
   }
   return null
 }
 
-function retrieveFile(
-  path: string,
-  options: InterceptorOptions,
-): string | null | undefined | false {
-  if (!options.retrieveFile) return null
+function retrieveFile(path: string): string | null | undefined | false {
   if (path in fileContentsCache) return fileContentsCache[path]
-  const content = options.retrieveFile(path)
+  const content = retrieveFileFromHandlers(path)
   if (typeof content === 'string') {
     fileContentsCache[path] = content
     return content
@@ -80,9 +127,9 @@ function retrieveFile(
   return null
 }
 
-function retrieveSourceMapURL(source: string, options: InterceptorOptions) {
+function retrieveSourceMapURL(source: string) {
   // Get the URL of the source map
-  const fileData = retrieveFile(source, options)
+  const fileData = retrieveFile(source)
   if (!fileData) return null
   const re =
     /\/\/[@#]\s*sourceMappingURL=([^\s'"]+)\s*$|\/\*[@#]\s*sourceMappingURL=[^\s*'"]+\s*\*\/\s*$/gm
@@ -97,13 +144,11 @@ function retrieveSourceMapURL(source: string, options: InterceptorOptions) {
 
 const reSourceMap = /^data:application\/json[^,]+base64,/
 
-function retrieveSourceMap(source: string, options: InterceptorOptions) {
-  if (options.retrieveSourceMap) {
-    const urlAndMap = options.retrieveSourceMap(source)
-    if (urlAndMap) return urlAndMap
-  }
+function retrieveSourceMap(source: string) {
+  const urlAndMap = retrievSourceMapFromHandlers(source)
+  if (urlAndMap) return urlAndMap
 
-  let sourceMappingURL = retrieveSourceMapURL(source, options)
+  let sourceMappingURL = retrieveSourceMapURL(source)
   if (!sourceMappingURL) return null
 
   // Read the contents of the source map
@@ -116,7 +161,7 @@ function retrieveSourceMap(source: string, options: InterceptorOptions) {
   } else {
     // Support source map URLs relative to the source URL
     sourceMappingURL = supportRelativeURL(source, sourceMappingURL)
-    sourceMapData = retrieveFile(sourceMappingURL, options)
+    sourceMapData = retrieveFile(sourceMappingURL)
   }
 
   if (!sourceMapData) return null
@@ -127,17 +172,13 @@ function retrieveSourceMap(source: string, options: InterceptorOptions) {
   }
 }
 
-function mapSourcePosition(
-  runtime: ViteRuntime,
-  options: InterceptorOptions,
-  position: OriginalMapping,
-) {
+function mapSourcePosition(position: OriginalMapping) {
   if (!position.source) return position
-  let sourceMap = getRuntimeSourceMap(runtime, position)
+  let sourceMap = getRuntimeSourceMap(position)
   if (!sourceMap) sourceMap = sourceMapCache[position.source]
   if (!sourceMap) {
     // Call the (overrideable) retrieveSourceMap function to get the source map.
-    const urlAndMap = retrieveSourceMap(position.source, options)
+    const urlAndMap = retrieveSourceMap(position.source)
     if (urlAndMap && urlAndMap.map) {
       const url = urlAndMap.url
       sourceMap = sourceMapCache[position.source] = {
@@ -197,15 +238,11 @@ function mapSourcePosition(
 
 // Parses code generated by FormatEvalOrigin(), a function inside V8:
 // https://code.google.com/p/v8/source/browse/trunk/src/messages.js
-function mapEvalOrigin(
-  runtime: ViteRuntime,
-  options: InterceptorOptions,
-  origin: string,
-): string {
+function mapEvalOrigin(origin: string): string {
   // Most eval() calls are in this format
   let match = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/.exec(origin)
   if (match) {
-    const position = mapSourcePosition(runtime, options, {
+    const position = mapSourcePosition({
       name: null,
       source: match[2],
       line: +match[3],
@@ -216,8 +253,7 @@ function mapEvalOrigin(
 
   // Parse nested eval() calls using recursion
   match = /^eval at ([^(]+) \((.+)\)$/.exec(origin)
-  if (match)
-    return `eval at ${match[1]} (${mapEvalOrigin(runtime, options, match[2])})`
+  if (match) return `eval at ${match[1]} (${mapEvalOrigin(match[2])})`
 
   // Make sure we still return useful information if we didn't find anything
   return origin
@@ -310,12 +346,7 @@ function cloneCallSite(frame: CallSite) {
   return object
 }
 
-function wrapCallSite(
-  runtime: ViteRuntime,
-  options: InterceptorOptions,
-  frame: CallSite,
-  state: State,
-) {
+function wrapCallSite(frame: CallSite, state: State) {
   // provides interface backward compatibility
   if (state === undefined) state = { nextPosition: null, curPosition: null }
 
@@ -341,7 +372,7 @@ function wrapCallSite(
     if (line === 1 && column > headerLength && !frame.isEval())
       column -= headerLength
 
-    const position = mapSourcePosition(runtime, options, {
+    const position = mapSourcePosition({
       name: null,
       source,
       line,
@@ -376,7 +407,7 @@ function wrapCallSite(
   // Code called using eval() needs special handling
   let origin = frame.isEval() && frame.getEvalOrigin()
   if (origin) {
-    origin = mapEvalOrigin(runtime, options, origin)
+    origin = mapEvalOrigin(origin)
     frame = cloneCallSite(frame)
     frame.getEvalOrigin = function () {
       return origin || undefined
@@ -389,8 +420,8 @@ function wrapCallSite(
 }
 
 function prepareStackTrace(
-  runtime: ViteRuntime,
-  options: InterceptorOptions,
+  // runtime: ViteRuntime,
+  // options: InterceptorOptions,
   error: Error,
   stack: CallSite[],
 ) {
@@ -401,9 +432,7 @@ function prepareStackTrace(
   const state = { nextPosition: null, curPosition: null }
   const processedStack = []
   for (let i = stack.length - 1; i >= 0; i--) {
-    processedStack.push(
-      `\n    at ${wrapCallSite(runtime, options, stack[i], state)}`,
-    )
+    processedStack.push(`\n    at ${wrapCallSite(stack[i], state)}`)
     state.nextPosition = state.curPosition
   }
   state.curPosition = state.nextPosition = null

@@ -3,7 +3,11 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, test } from 'vitest'
-import type { InlineConfig, ViteDevServer } from '../../../index'
+import type {
+  InlineConfig,
+  MainThreadRuntimeOptions,
+  ViteDevServer,
+} from '../../../index'
 import { createServer } from '../../../index'
 import type { ViteRuntime } from '../runtime'
 import { createViteRuntime } from '../node/mainThreadRuntime'
@@ -15,6 +19,7 @@ interface TestClient {
 
 export async function createViteRuntimeTester(
   config: InlineConfig = {},
+  runtimeConfig: MainThreadRuntimeOptions = {},
 ): Promise<TestAPI<TestClient>> {
   function waitForWatcher(server: ViteDevServer) {
     return new Promise<void>((resolve) => {
@@ -74,7 +79,9 @@ export async function createViteRuntimeTester(
       hmr: {
         logger: false,
       },
-      sourcemapInterceptor: 'prepareStackTrace',
+      // don't override by default so Vitest source maps are correct
+      sourcemapInterceptor: false,
+      ...runtimeConfig,
     })
     if (config.server?.watch) {
       await waitForWatcher(t.server)
@@ -82,6 +89,7 @@ export async function createViteRuntimeTester(
   })
 
   afterEach<TestClient>(async (t) => {
+    await t.runtime.destroy()
     await t.server.close()
   })
 

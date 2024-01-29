@@ -6,7 +6,7 @@ import type { ViteModuleRunner, ViteServerClientOptions } from '../types'
 import type { HMRLogger } from '../../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
 
-interface MainThreadRuntimeOptions
+export interface MainThreadRuntimeOptions
   extends Omit<ViteServerClientOptions, 'root' | 'fetchModule' | 'hmr'> {
   hmr?:
     | false

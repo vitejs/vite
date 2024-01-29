@@ -3,8 +3,7 @@ import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect } from 'vitest'
 import { isWindows } from '../utils'
-import type { ViteRuntime } from '../runtime'
-import { createViteRuntimeTester, editFile, resolvePath } from './utils'
+import { createViteRuntimeTester } from './utils'
 
 const _URL = URL
 
@@ -100,56 +99,6 @@ describe('vite-runtime initialization', async () => {
     )
   })
 
-  const getError = async (cb: () => void): Promise<Error> => {
-    try {
-      await cb()
-      expect.unreachable()
-    } catch (err) {
-      return err
-    }
-  }
-  const serializeStack = (runtime: ViteRuntime, err: Error) => {
-    return err.stack!.split('\n')[1].replace(runtime.options.root, '<root>')
-  }
-
-  it('source maps are correctly applied to stack traces', async ({
-    runtime,
-    server,
-  }) => {
-    expect.assertions(3)
-    const topLevelError = await getError(() =>
-      runtime.executeUrl('/fixtures/has-error.js'),
-    )
-    expect(serializeStack(runtime, topLevelError)).toBe(
-      '    at <root>/fixtures/has-error.js:2:7',
-    )
-
-    const methodError = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')
-      mod.throwError()
-    })
-    expect(serializeStack(runtime, methodError)).toBe(
-      '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
-    )
-
-    // simulate HMR
-    editFile(
-      resolvePath(import.meta.url, './fixtures/throws-error-method.ts'),
-      (code) => '\n\n\n\n\n' + code + '\n',
-    )
-    runtime.moduleCache.clear()
-    server.moduleGraph.invalidateAll()
-
-    const methodErrorNew = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')
-      mod.throwError()
-    })
-
-    expect(serializeStack(runtime, methodErrorNew)).toBe(
-      '    at Module.throwError (<root>/fixtures/throws-error-method.ts:11:9)',
-    )
-  })
-
   it('throws the same error', async ({ runtime }) => {
     expect.assertions(3)
     const s = Symbol()
@@ -238,8 +187,6 @@ describe('vite-runtime initialization', async () => {
       await runtime.executeUrl<typeof import('./fixtures/basic')>(
         '/fixtures/basic',
       )
-    // so it isn't transformed by Vitest
-    const _URL = URL
     const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
     expect(meta.url).toBe(basicUrl)
 

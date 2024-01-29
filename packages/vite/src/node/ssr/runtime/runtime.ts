@@ -52,6 +52,9 @@ export class ViteRuntime {
   private fileToIdMap = new Map<string, string[]>()
   private envProxy: ImportMetaEnv
 
+  private _destroyed = false
+  private _resetSourceMapSupport?: () => void
+
   constructor(
     public options: ViteServerClientOptions,
     public runner: ViteModuleRunner,
@@ -76,7 +79,7 @@ export class ViteRuntime {
       options.hmr.connection.onUpdate(createHMRHandler(this))
     }
     if (options.sourcemapInterceptor !== false) {
-      enableSourceMapSupport(this)
+      this._resetSourceMapSupport = enableSourceMapSupport(this)
     }
   }
 
@@ -106,6 +109,13 @@ export class ViteRuntime {
     this.idToUrlMap.clear()
     this.entrypoints.clear()
     this.hmrClient?.clear()
+  }
+
+  public async destroy(): Promise<void> {
+    this._resetSourceMapSupport?.()
+    this.clearCache()
+    this.hmrClient = undefined
+    this._destroyed = true
   }
 
   private invalidateFiles(files: string[]) {
@@ -225,6 +235,9 @@ export class ViteRuntime {
     id: string,
     importer?: string,
   ): Promise<ResolvedResult> {
+    if (this._destroyed) {
+      throw new Error(`[vite] Vite runtime has been destroyed.`)
+    }
     const normalized = this.idToUrlMap.get(id)
     if (normalized) {
       const mod = this.moduleCache.getByModuleId(normalized)
