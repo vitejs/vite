@@ -32,6 +32,7 @@ export const ports = {
   ssr: 9600,
   'ssr-deps': 9601,
   'ssr-html': 9602,
+  'ssr-hmr': 9609, // not imported but used in `ssr-hmr/vite.config.js`
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,

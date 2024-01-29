@@ -57,7 +57,10 @@ import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
 import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
-import { transformMiddleware } from './middlewares/transform'
+import {
+  cachedTransformMiddleware,
+  transformMiddleware,
+} from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware,
@@ -194,7 +197,7 @@ export interface FileSystemServeOptions {
    * Enable caching of fs calls.
    *
    * @experimental
-   * @default false
+   * @default true
    */
   cachedChecks?: boolean
 }
@@ -696,7 +699,17 @@ export async function _createServer(
 
     if (publicDir && publicFiles) {
       if (file.startsWith(publicDir)) {
-        publicFiles[isUnlink ? 'delete' : 'add'](file.slice(publicDir.length))
+        const path = file.slice(publicDir.length)
+        publicFiles[isUnlink ? 'delete' : 'add'](path)
+        if (!isUnlink) {
+          const moduleWithSamePath = await moduleGraph.getModuleByUrl(path)
+          const etag = moduleWithSamePath?.transformResult?.etag
+          if (etag) {
+            // The public file should win on the next request over a module with the
+            // same path. Prevent the transform etag fast path from serving the module
+            moduleGraph.etagToModuleMap.delete(etag)
+          }
+        }
       }
     }
     await handleFileAddUnlink(file, server, isUnlink)
@@ -765,6 +778,8 @@ export async function _createServer(
   if (cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
+
+  middlewares.use(cachedTransformMiddleware(server))
 
   // proxy
   const { proxy } = serverConfig
@@ -986,8 +1001,7 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks:
-      server.fs?.cachedChecks ?? !!process.env.VITE_SERVER_FS_CACHED_CHECKS,
+    cachedChecks: server.fs?.cachedChecks ?? true,
   }
 
   if (server.origin?.endsWith('/')) {

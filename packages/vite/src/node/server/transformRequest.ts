@@ -363,10 +363,8 @@ async function loadAndTransform(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }
@@ -418,7 +416,7 @@ async function handleModuleSoftInvalidation(
     await init
     const source = transformResult.code
     const s = new MagicString(source)
-    const [imports] = parseImports(source)
+    const [imports] = parseImports(source, mod.id || undefined)
 
     for (const imp of imports) {
       let rawUrl = source.slice(imp.s, imp.e)
@@ -467,10 +465,8 @@ async function handleModuleSoftInvalidation(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    server.moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }

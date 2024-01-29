@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { isDepsOptimizerEnabled, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -41,7 +41,6 @@ import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
@@ -524,10 +523,6 @@ export async function build(
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
 
-  if (isDepsOptimizerEnabled(config, ssr)) {
-    await initDepsOptimizer(config)
-  }
-
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
       ? 'allow-extension'
@@ -544,7 +539,7 @@ export async function build(
     },
   }
 
-  const outputBuildError = (e: RollupError) => {
+  const mergeRollupError = (e: RollupError) => {
     let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
       msg += `\nfile: ${colors.cyan(
@@ -554,6 +549,11 @@ export async function build(
     if (e.frame) {
       msg += `\n` + colors.yellow(e.frame)
     }
+    return msg
+  }
+
+  const outputBuildError = (e: RollupError) => {
+    const msg = mergeRollupError(e)
     clearLine()
     config.logger.error(msg, { error: e })
   }
@@ -704,7 +704,8 @@ export async function build(
     }
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
-    outputBuildError(e)
+    e.message = mergeRollupError(e)
+    clearLine()
     throw e
   } finally {
     if (bundle) await bundle.close()
