@@ -166,7 +166,7 @@ export class ViteRuntime {
       return exports
     }
     const { id, type } = fetchResult
-    if (type === 'builtin') return exports
+    if (type !== 'module' && type !== 'commonjs') return exports
     analyzeImportedModDifference(exports, id, type, metadata)
     return proxyGuardOnlyEsm(exports, id, metadata)
   }
