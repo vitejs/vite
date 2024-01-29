@@ -456,10 +456,13 @@ export default new Proxy({}, {
         }
       }
       if (id.startsWith(optionalPeerDepId)) {
+        const [, peerDep, parentDep] = id.split(':')
         if (isProduction) {
+          this.warn(
+            `Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?`,
+          )
           return `export default {}`
         } else {
-          const [, peerDep, parentDep] = id.split(':')
           return `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
         }
       }
