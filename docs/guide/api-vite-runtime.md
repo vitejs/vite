@@ -118,7 +118,7 @@ export interface ViteRuntimeOptions {
         logger?: false | HMRLogger
       }
   /**
-   * Custom module cache. If not provided, creates a separate module cache for each ViteRuntime instance.
+   * Custom module cache. If not provided, it creates a separate module cache for each ViteRuntime instance.
    */
   moduleCache?: ModuleCacheMap
   /**
