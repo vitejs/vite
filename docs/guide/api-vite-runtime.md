@@ -168,7 +168,7 @@ export interface HMRRuntimeConnection {
   /**
    * Send message to the client.
    */
-  send(messages: string): void
+  send(message: string): void
   /**
    * Configure how HMR is handled when this connection triggers an update.
    * This method expects that connection will start listening for HMR updates and call this callback when it's received.
