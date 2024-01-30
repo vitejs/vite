@@ -8,7 +8,7 @@ The "Vite Runtime" is a tool that allows running any code by processing it with 
 
 One of the goals of this feature is to provide a customizable API to process and run the code. Vite provides enough tools to use Vite Runtime out of the box, but users can build upon it if their needs do not align with Vite's built-in implementation.
 
-All APIs can be imported from `vite/runtime`, unless stated otherwise.
+All APIs can be imported from `vite/runtime` unless stated otherwise.
 
 ## `ViteRuntime`
 
