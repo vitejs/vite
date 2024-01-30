@@ -22,7 +22,7 @@ export class ViteRuntime {
     private debug?: ViteRuntimeDebugger,
   ) {}
   /**
-   * URL to execute. Accepts file path, server path or id relative to the root.
+   * URL to execute. Accepts file path, server path, or id relative to the root.
    */
   public async executeUrl<T = any>(url: string): Promise<T>
   /**
