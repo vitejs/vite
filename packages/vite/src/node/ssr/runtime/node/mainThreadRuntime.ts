@@ -2,17 +2,23 @@ import { existsSync, readFileSync } from 'node:fs'
 import type { ViteDevServer } from '../../../index'
 import { ViteRuntime } from '../runtime'
 import { ESModulesRunner } from '../esmRunner'
-import type { ViteModuleRunner, ViteServerClientOptions } from '../types'
+import type { ViteModuleRunner, ViteRuntimeOptions } from '../types'
 import type { HMRLogger } from '../../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
 
 export interface MainThreadRuntimeOptions
-  extends Omit<ViteServerClientOptions, 'root' | 'fetchModule' | 'hmr'> {
+  extends Omit<ViteRuntimeOptions, 'root' | 'fetchModule' | 'hmr'> {
+  /**
+   * Disable HMR or configure HMR logger.
+   */
   hmr?:
     | false
     | {
         logger?: false | HMRLogger
       }
+  /**
+   * Provide a custom module runner. This controls how the code is executed.
+   */
   runner?: ViteModuleRunner
 }
 

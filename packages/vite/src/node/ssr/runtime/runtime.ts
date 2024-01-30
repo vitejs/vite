@@ -10,7 +10,7 @@ import type {
   ViteModuleRunner,
   ViteRuntimeImportMeta,
   ViteRuntimeModuleContext,
-  ViteServerClientOptions,
+  ViteRuntimeOptions,
 } from './types'
 import {
   cleanUrl,
@@ -56,7 +56,7 @@ export class ViteRuntime {
   private _resetSourceMapSupport?: () => void
 
   constructor(
-    public options: ViteServerClientOptions,
+    public options: ViteRuntimeOptions,
     public runner: ViteModuleRunner,
     private debug?: ViteRuntimeDebugger,
   ) {
@@ -94,7 +94,8 @@ export class ViteRuntime {
 
   /**
    * Entrypoint URL to execute. Accepts file path, server path or id relative to the root.
-   * In the case of a full reload triggered by HMR, these are the modules that will be reloaded
+   * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
+   * If this method is called multiple times, all entrypoints will be reloaded one at a time.
    */
   public async executeEntrypoint<T = any>(url: string): Promise<T> {
     url = this.normalizeEntryUrl(url)
@@ -104,6 +105,9 @@ export class ViteRuntime {
     })
   }
 
+  /**
+   * Clear all caches including HMR listeners.
+   */
   public clearCache(): void {
     this.moduleCache.clear()
     this.idToUrlMap.clear()
@@ -111,11 +115,22 @@ export class ViteRuntime {
     this.hmrClient?.clear()
   }
 
+  /**
+   * Clears all caches, removes all HMR listeners, and resets source map support.
+   * This method doesn't stop the HMR connection.
+   */
   public async destroy(): Promise<void> {
     this._resetSourceMapSupport?.()
     this.clearCache()
     this.hmrClient = undefined
     this._destroyed = true
+  }
+
+  /**
+   * Returns `true` if the runtime has been destroyed by calling `destroy()` method.
+   */
+  public isDestroyed(): boolean {
+    return this._destroyed
   }
 
   private invalidateFiles(files: string[]) {
@@ -221,7 +236,7 @@ export class ViteRuntime {
       if (mod.promise)
         return this.processImport(await mod.promise, fetchedModule, metadata)
 
-      const promise = this.directRequest(id, fetchedModule, callstack, metadata)
+      const promise = this.directRequest(id, fetchedModule, callstack)
       mod.promise = promise
       mod.evaluated = false
       return this.processImport(await promise, fetchedModule, metadata)
@@ -278,7 +293,6 @@ export class ViteRuntime {
     id: string,
     fetchResult: ResolvedResult,
     _callstack: string[],
-    metadata?: SSRImportMetadata,
   ): Promise<any> {
     const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
@@ -309,7 +323,7 @@ export class ViteRuntime {
     if ('externalize' in fetchResult) {
       const { externalize } = fetchResult
       this.debug?.('[vite-runtime] externalizing', externalize)
-      const exports = await this.runner.runExternalModule(externalize, metadata)
+      const exports = await this.runner.runExternalModule(externalize)
       mod.exports = exports
       return exports
     }
@@ -359,8 +373,11 @@ export class ViteRuntime {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
         get: () => {
+          if (!this.hmrClient) {
+            throw new Error(`[vite-runtime] HMR client was destroyed.`)
+          }
           this.debug?.('[vite-runtime] creating hmr context for', moduleId)
-          hotContext ||= new HMRContext(this.hmrClient!, moduleId)
+          hotContext ||= new HMRContext(this.hmrClient, moduleId)
           return hotContext
         },
         set: (value) => {
@@ -379,7 +396,7 @@ export class ViteRuntime {
 
     this.debug?.('[vite-runtime] executing', href)
 
-    await this.runner.runViteModule(context, code, id, metadata)
+    await this.runner.runViteModule(context, code, id)
 
     return exports
   }

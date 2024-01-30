@@ -26,6 +26,10 @@ export interface DefineImportMetadata {
 }
 
 export interface HMRRuntimeConnection extends HMRConnection {
+  /**
+   * Configure how HMR is handled when this connection triggers an update.
+   * This method expects that connection will start listening for HMR updates and call this callback when it's received.
+   */
   onUpdate(callback: (payload: HMRPayload) => void): void
 }
 
@@ -53,20 +57,28 @@ export interface ViteRuntimeModuleContext {
 }
 
 export interface ViteModuleRunner {
+  /**
+   * Run code that was transformed by Vite.
+   * @param context Function context
+   * @param code Transformed code
+   * @param id ID that was used to fetch the module
+   */
   runViteModule(
     context: ViteRuntimeModuleContext,
     code: string,
     id: string,
-    metadata?: SSRImportMetadata,
   ): Promise<any>
-  runExternalModule(file: string, metadata?: SSRImportMetadata): Promise<any>
+  /**
+   * Run externalized module.
+   * @param file File URL to the external module
+   */
+  runExternalModule(file: string): Promise<any>
 }
 
 export interface ModuleCache {
   promise?: Promise<any>
   exports?: any
   evaluated?: boolean
-  resolving?: boolean
   map?: DecodedMap
   meta?: FetchResult
   /**
@@ -114,22 +126,52 @@ export type FetchFunction = (
   importer?: string,
 ) => Promise<FetchResult>
 
-export interface ViteServerClientOptions {
+export interface ViteRuntimeOptions {
+  /**
+   * Root of the project
+   */
   root: string
+  /**
+   * A method to get the information about the module.
+   * For SSR, Vite exposes `server.ssrFetchModule` function that you can use here.
+   * For other runtime use cases, Vite also exposes `fetchModule` from its main entry point.
+   */
   fetchModule: FetchFunction
+  /**
+   * Custom environment variables available on `import.meta.env`. This doesn't modify the actual `process.env`.
+   */
   environmentVariables?: Record<string, any>
+  /**
+   * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
+   * Otherwise it will use `prepareStackTrace` by default.
+   */
   sourcemapInterceptor?:
     | false
     | 'node'
     | 'prepareStackTrace'
     | InterceptorOptions
+  /**
+   * Disable HMR or configure HMR options.
+   */
   hmr?:
     | false
     | {
+        /**
+         * Configure how HMR communicates between the client and the server.
+         */
         connection: HMRRuntimeConnection
+        /**
+         * Configure HMR logger.
+         */
         logger?: false | HMRLogger
       }
+  /**
+   * Custom module cache. If not provided, creates a separate module cache for each ViteRuntime instance.
+   */
   moduleCache?: ModuleCacheMap
+  /**
+   * Resolved modules that will be returned instead of executing the code.
+   */
   requestStubs?: Record<string, any>
 }
 

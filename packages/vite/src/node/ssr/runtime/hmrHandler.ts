@@ -15,7 +15,7 @@ export async function handleHMRUpdate(
   payload: HMRPayload,
 ): Promise<void> {
   const hmrClient = runtime.hmrClient
-  if (!hmrClient) return
+  if (!hmrClient || runtime.isDestroyed()) return
   switch (payload.type) {
     case 'connected':
       hmrClient.logger.debug(`[vite] connected.`)
