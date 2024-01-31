@@ -26,9 +26,9 @@ export class ViteRuntime {
    */
   public async executeUrl<T = any>(url: string): Promise<T>
   /**
-   * Entrypoint URL to execute. Accepts file path, server path or id relative to the root.
+   * Entry point URL to execute. Accepts file path, server path or id relative to the root.
    * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
-   * If this method is called multiple times, all entrypoints will be reloaded one at a time.
+   * If this method is called multiple times, all entry points will be reloaded one at a time.
    */
   public async executeEntrypoint<T = any>(url: string): Promise<T>
   /**
