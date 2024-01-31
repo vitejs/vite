@@ -477,12 +477,34 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
+
+  // We will warn if the root path includes either the '#' or '?' character
+  const badPathCharacters = []
+
   if (resolvedRoot.includes('#')) {
+    badPathCharacters.push('#')
+  }
+
+  if (resolvedRoot.includes('?')) {
+    badPathCharacters.push('?')
+  }
+
+  if (badPathCharacters.length > 0) {
+    const characterString =
+      badPathCharacters.length > 1
+        ? badPathCharacters.map((c) => `"${c}"`).join(' and ')
+        : badPathCharacters.map((c) => `"${c}"`).join('')
+
+    const inflectedChars =
+      badPathCharacters.length > 1 ? 'characters' : 'character'
+
+    // FIXME: Shouldn't this fail hard? There's no way paths with either
+    //        # or ? in them will be resolved correctly?
     logger.warn(
       colors.yellow(
-        `The project root contains the "#" character (${colors.cyan(
+        `The project root contains the ${characterString} ${inflectedChars} (${colors.cyan(
           resolvedRoot,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the ${characterString} ${inflectedChars}.`,
       ),
     )
   }
@@ -1258,7 +1280,7 @@ function optimizeDepsDisabledBackwardCompatibility(
       }
       resolved.logger.warn(
         colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
-    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty. 
+    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty.
     Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
     ${
       commonjsPluginDisabled
