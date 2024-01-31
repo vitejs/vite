@@ -42,7 +42,7 @@ jobs:
         node_version: [18, 20]
         include:
           # Active LTS + other OS
-          - os: macos-latest
+          - os: macos-14 # use M1 machines
             node_version: 20
           - os: windows-latest
             node_version: 20
