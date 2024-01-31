@@ -477,17 +477,17 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
-  const notAcceptableCharacters = ["#","?"]
+  const notAcceptableCharacters = ['#', '?']
 
-  notAcceptableCharacters.forEach(character => {
+  notAcceptableCharacters.forEach((character) => {
     if (resolvedRoot.includes(character)) {
       logger.warn(
         colors.yellow(
           `The project root contains the "${character}" character (${colors.cyan(resolvedRoot)}), which may not work when running Vite. Consider renaming the directory to remove the "${character}".`,
         ),
-      );
+      )
     }
-  });  
+  })
 
   const clientAlias = [
     {
