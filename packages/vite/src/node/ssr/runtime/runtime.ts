@@ -3,7 +3,6 @@ import { HMRClient, HMRContext } from '../../../shared/hmr'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
-  ImportMetaEnv,
   ModuleCache,
   ResolvedResult,
   SSRImportMetadata,
@@ -14,7 +13,6 @@ import type {
 } from './types'
 import {
   cleanUrl,
-  createImportMetaEnvProxy,
   isPrimitive,
   isWindows,
   posixDirname,
@@ -50,7 +48,13 @@ export class ViteRuntime {
 
   private idToUrlMap = new Map<string, string>()
   private fileToIdMap = new Map<string, string[]>()
-  private envProxy: ImportMetaEnv
+  private envProxy = new Proxy({} as any, {
+    get(_, p) {
+      throw new Error(
+        `[vite-runtime] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
+      )
+    },
+  })
 
   private _destroyed = false
   private _resetSourceMapSupport?: () => void
@@ -61,7 +65,6 @@ export class ViteRuntime {
     private debug?: ViteRuntimeDebugger,
   ) {
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
-    this.envProxy = createImportMetaEnvProxy(options.environmentVariables)
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
         options.hmr.logger === false
@@ -316,9 +319,6 @@ export class ViteRuntime {
       }
       return request(dep, { isDynamicImport: true })
     }
-
-    const requestStubs = this.options.requestStubs || {}
-    if (id in requestStubs) return requestStubs[id]
 
     if ('externalize' in fetchResult) {
       const { externalize } = fetchResult

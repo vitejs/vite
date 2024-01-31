@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-hmr",
+  "name": "@vitejs/test-hmr-ssr",
   "private": true,
   "version": "0.0.0",
   "type": "module",

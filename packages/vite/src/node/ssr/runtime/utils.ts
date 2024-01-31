@@ -1,5 +1,3 @@
-import type { ImportMetaEnv } from './types'
-
 export const isWindows =
   typeof process !== 'undefined' && process.platform === 'win32'
 
@@ -29,66 +27,9 @@ export function slash(p: string): string {
   return p.replace(windowsSlashRE, '/')
 }
 
-export const queryRE = /\?.*$/s
-export const hashRE = /#.*$/s
-
+const postfixRE = /[?#].*$/s
 export function cleanUrl(url: string): string {
-  return url.replace(hashRE, '').replace(queryRE, '')
-}
-
-const _envShim = Object.create(null)
-
-const _getEnv = (environmentVariables?: Record<string, any>) =>
-  globalThis.process?.env ||
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore "env" in meta is not typed for SSR code
-  import.meta.env ||
-  // @ts-expect-error Deno global is not typed
-  globalThis.Deno?.env.toObject() ||
-  environmentVariables
-
-export function createImportMetaEnvProxy(
-  environmentVariables?: Record<string, any>,
-): ImportMetaEnv {
-  const booleanKeys = ['DEV', 'PROD', 'SSR']
-  return new Proxy(
-    {},
-    {
-      get(_, key) {
-        if (typeof key !== 'string') return undefined
-        const env = _getEnv(environmentVariables)
-        if (booleanKeys.includes(key)) return !!env[key]
-        return env[key] ?? _envShim[key]
-      },
-      has(_, key) {
-        const env = _getEnv(environmentVariables)
-        return key in env || key in _envShim
-      },
-      set(_, key, value) {
-        if (typeof key !== 'string') return true
-
-        if (booleanKeys.includes(key)) {
-          value = value ? '1' : ''
-        }
-
-        const env = _getEnv(environmentVariables) || _envShim
-        env[key] = value
-        return true
-      },
-      deleteProperty(_, prop) {
-        if (!prop) {
-          return false
-        }
-        const env = _getEnv(environmentVariables) || _envShim
-        delete env[prop as any]
-        return true
-      },
-      ownKeys() {
-        const env = _getEnv(environmentVariables) || _envShim
-        return Object.keys(env)
-      },
-    },
-  ) as ImportMetaEnv
+  return url.replace(postfixRE, '')
 }
 
 export function isPrimitive(value: unknown): boolean {

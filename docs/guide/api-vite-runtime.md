@@ -90,12 +90,9 @@ export interface ViteRuntimeOptions {
    */
   fetchModule: FetchFunction
   /**
-   * Custom environment variables available on `import.meta.env`. This doesn't modify the actual `process.env`.
-   */
-  environmentVariables?: Record<string, any>
-  /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
-   * Otherwise it will use `prepareStackTrace` by default.
+   * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.
+   * You can provide an object to configure how file contents and source maps are resolved for files that were not processed by Vite.
    */
   sourcemapInterceptor?:
     | false
@@ -121,10 +118,6 @@ export interface ViteRuntimeOptions {
    * Custom module cache. If not provided, it creates a separate module cache for each ViteRuntime instance.
    */
   moduleCache?: ModuleCacheMap
-  /**
-   * Resolved modules that will be returned instead of executing the code.
-   */
-  requestStubs?: Record<string, any>
 }
 ```
 

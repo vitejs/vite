@@ -7,10 +7,10 @@ export function createHMRHandler(
   runtime: ViteRuntime,
 ): (payload: HMRPayload) => Promise<void> {
   const queue = new Queue()
-  return (payload) => queue.enqueue(() => handleHMRUpdate(runtime, payload))
+  return (payload) => queue.enqueue(() => handleHMRPayload(runtime, payload))
 }
 
-export async function handleHMRUpdate(
+export async function handleHMRPayload(
   runtime: ViteRuntime,
   payload: HMRPayload,
 ): Promise<void> {
