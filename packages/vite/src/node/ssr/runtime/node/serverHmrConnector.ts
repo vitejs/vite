@@ -29,6 +29,10 @@ class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
   }
 }
 
+/**
+ * The connector class to establish HMR communication between the server and the Vite runtime.
+ * @experimental
+ */
 export class ServerHMRConnector implements HMRRuntimeConnection {
   private handlers: ((payload: HMRPayload) => void)[] = []
   private hmrChannel: ServerHMRChannel

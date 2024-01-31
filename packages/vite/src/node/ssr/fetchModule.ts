@@ -17,6 +17,10 @@ export interface FetchModuleOptions {
   processSourceMap?<T extends NonNullable<TransformResult['map']>>(map: T): T
 }
 
+/**
+ * Fetch module information for Vite runtime.
+ * @experimental
+ */
 export async function fetchModule(
   server: ViteDevServer,
   url: string,

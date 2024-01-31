@@ -6,6 +6,9 @@ import type { ViteModuleRunner, ViteRuntimeOptions } from '../types'
 import type { HMRLogger } from '../../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
 
+/**
+ * @experimental
+ */
 export interface MainThreadRuntimeOptions
   extends Omit<ViteRuntimeOptions, 'root' | 'fetchModule' | 'hmr'> {
   /**
@@ -60,6 +63,10 @@ function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
   return prepareStackTrace
 }
 
+/**
+ * Create an instance of the Vite SSR runtime that support HMR.
+ * @experimental
+ */
 export async function createViteRuntime(
   server: ViteDevServer,
   options: MainThreadRuntimeOptions = {},

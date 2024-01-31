@@ -121,6 +121,9 @@ export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
   id: string
 }
 
+/**
+ * @experimental
+ */
 export type FetchFunction = (
   id: string,
   importer?: string,

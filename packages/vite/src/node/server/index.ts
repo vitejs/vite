@@ -298,7 +298,8 @@ export interface ViteDevServer {
     opts?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
   /**
-   * Fetch information about the module
+   * Fetch information about the module for Vite SSR runtime.
+   * @experimental
    */
   ssrFetchModule(id: string, importer?: string): Promise<FetchResult>
   /**
