@@ -430,11 +430,13 @@ export class ModuleGraph {
   ): void {
     if (ssr) {
       mod.ssrTransformResult = result
+      mod.ssrInvalidationState = undefined
     } else {
       const prevEtag = mod.transformResult?.etag
       if (prevEtag) this.etagToModuleMap.delete(prevEtag)
 
       mod.transformResult = result
+      mod.invalidationState = undefined
 
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
     }
