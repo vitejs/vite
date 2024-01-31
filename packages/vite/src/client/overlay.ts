@@ -44,10 +44,10 @@ const template = /*html*/ `
 .window {
   font-family: var(--monospace);
   line-height: 1.5;
-  width: 800px;
+  width: 80vw;
   color: var(--window-color);
   margin: 30px auto;
-  padding: 25px 40px;
+  padding: 2.5vh 4vw;
   position: relative;
   background: var(--window-background);
   border-radius: 6px 6px 8px 8px;
@@ -113,6 +113,8 @@ pre.frame {
 .stack {
   font-size: 13px;
   color: var(--dim);
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .tip {
