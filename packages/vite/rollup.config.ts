@@ -153,6 +153,7 @@ function createNodeConfig(isProduction: boolean) {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts'),
       constants: path.resolve(__dirname, 'src/node/constants.ts'),
+      runtime: path.resolve(__dirname, 'src/node/ssr/runtime/index.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
@@ -299,7 +300,12 @@ const __require = require;
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
-
+      // don't patch runtime utils chunk because it should stay lightweight and we know it doesn't use require
+      if (
+        chunk.name === 'utils' &&
+        chunk.moduleIds.some((id) => id.endsWith('/ssr/runtime/utils.ts'))
+      )
+        return
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)

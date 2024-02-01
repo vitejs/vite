@@ -1,6 +1,7 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { Server } from 'node:http'
+import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
@@ -252,6 +253,9 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
+          // browser modules are invalidated by changing ?t= query,
+          // but in ssr we control the module system, so we can directly remove them form cache
+          ssrInvalidates: getSSRInvalidatedImporters(acceptedVia),
         }),
       ),
     )
@@ -286,6 +290,32 @@ export function updateModules(
     type: 'update',
     updates,
   })
+}
+
+function populateSSRImporters(
+  module: ModuleNode,
+  timestamp: number,
+  seen: Set<ModuleNode>,
+) {
+  module.ssrImportedModules.forEach((importer) => {
+    if (seen.has(importer)) {
+      return
+    }
+    if (
+      importer.lastHMRTimestamp === timestamp ||
+      importer.lastInvalidationTimestamp === timestamp
+    ) {
+      seen.add(importer)
+      populateSSRImporters(importer, timestamp, seen)
+    }
+  })
+  return seen
+}
+
+function getSSRInvalidatedImporters(module: ModuleNode) {
+  return [
+    ...populateSSRImporters(module, module.lastHMRTimestamp, new Set()),
+  ].map((m) => m.file!)
 }
 
 export async function handleFileAddUnlink(
@@ -750,4 +780,50 @@ export function createHMRBroadcaster(): HMRBroadcaster {
     },
   }
   return broadcaster
+}
+
+export interface ServerHMRChannel extends HMRChannel {
+  api: {
+    innerEmitter: EventEmitter
+    outsideEmitter: EventEmitter
+  }
+}
+
+export function createServerHMRChannel(): ServerHMRChannel {
+  const innerEmitter = new EventEmitter()
+  const outsideEmitter = new EventEmitter()
+
+  return {
+    name: 'ssr',
+    send(...args: any[]) {
+      let payload: HMRPayload
+      if (typeof args[0] === 'string') {
+        payload = {
+          type: 'custom',
+          event: args[0],
+          data: args[1],
+        }
+      } else {
+        payload = args[0]
+      }
+      outsideEmitter.emit('send', payload)
+    },
+    off(event, listener: () => void) {
+      innerEmitter.off(event, listener)
+    },
+    on: ((event: string, listener: () => unknown) => {
+      innerEmitter.on(event, listener)
+    }) as ServerHMRChannel['on'],
+    close() {
+      innerEmitter.removeAllListeners()
+      outsideEmitter.removeAllListeners()
+    },
+    listen() {
+      innerEmitter.emit('connection')
+    },
+    api: {
+      innerEmitter,
+      outsideEmitter,
+    },
+  }
 }

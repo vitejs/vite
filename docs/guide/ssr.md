@@ -125,10 +125,16 @@ app.use('*', async (req, res, next) => {
     //    preambles from @vitejs/plugin-react
     template = await vite.transformIndexHtml(url, template)
 
-    // 3. Load the server entry. ssrLoadModule automatically transforms
+    // 3a. Load the server entry. ssrLoadModule automatically transforms
     //    ESM source code to be usable in Node.js! There is no bundling
     //    required, and provides efficient invalidation similar to HMR.
     const { render } = await vite.ssrLoadModule('/src/entry-server.js')
+    // 3b. Since Vite 5.1, you can use createViteRuntime API instead.
+    //    It fully supports HMR and works in a simillar way to ssrLoadModule
+    //    More advanced use case would be creating a runtime in a separate
+    //    thread or even a different machine using ViteRuntime class
+    const runtime = await vite.createViteRuntime(server)
+    const { render } = await runtime.executeEntrypoint('/src/entry-server.js')
 
     // 4. render the app HTML. This assumes entry-server.js's exported
     //     `render` function calls appropriate framework SSR APIs,
@@ -163,7 +169,7 @@ The `dev` script in `package.json` should also be changed to use the server scri
 To ship an SSR project for production, we need to:
 
 1. Produce a client build as normal;
-2. Produce an SSR build, which can be directly loaded via `import()` so that we don't have to go through Vite's `ssrLoadModule`;
+2. Produce an SSR build, which can be directly loaded via `import()` so that we don't have to go through Vite's `ssrLoadModule` or `runtime.executeEntrypoint`;
 
 Our scripts in `package.json` will look like this:
 
@@ -181,9 +187,9 @@ Note the `--ssr` flag which indicates this is an SSR build. It should also speci
 
 Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
 
-- Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
+- Instead of reading the root `index.html`, use the `dist/client/index.html` as the template, since it contains the correct asset links to the client build.
 
-- Instead of `await vite.ssrLoadModule('/src/entry-server.js')`, use `import('./dist/server/entry-server.js')` instead (this file is the result of the SSR build).
+- Instead of `await vite.ssrLoadModule('/src/entry-server.js')` or `await runtime.executeEntrypoint('/src/entry-server.js')`, use `import('./dist/server/entry-server.js')` (this file is the result of the SSR build).
 
 - Move the creation and all usage of the `vite` dev server behind dev-only conditional branches, then add static file serving middlewares to serve files from `dist/client`.
 

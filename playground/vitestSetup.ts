@@ -82,7 +82,11 @@ export function setViteUrl(url: string): void {
 beforeAll(async (s) => {
   const suite = s as File
   // skip browser setup for non-playground tests
-  if (!suite.filepath.includes('playground')) {
+  // TODO: ssr playground?
+  if (
+    !suite.filepath.includes('playground') ||
+    suite.filepath.includes('hmr-ssr')
+  ) {
     return
   }
 

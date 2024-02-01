@@ -32,11 +32,22 @@
     "./client": {
       "types": "./client.d.ts"
     },
+    "./runtime": {
+      "types": "./dist/node/runtime.d.ts",
+      "import": "./dist/node/runtime.js"
+    },
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
     },
     "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "runtime": [
+        "dist/node/runtime.d.ts"
+      ]
+    }
   },
   "files": [
     "bin",
@@ -64,7 +75,7 @@
     "build": "rimraf dist && run-s build-bundle build-types",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
     "build-types": "run-s build-types-temp build-types-roll build-types-check",
-    "build-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
+    "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node",
     "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin typescript && rimraf temp",
     "build-types-check": "tsc --project tsconfig.check.json",
     "typecheck": "tsc --noEmit",

@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/unit-runtime",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@vitejs/cjs-external": "link:./fixtures/cjs-external",
+    "@vitejs/esm-external": "link:./fixtures/esm-external",
+    "tinyspy": "2.2.0"
+  }
+}

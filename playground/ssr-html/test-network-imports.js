@@ -1,8 +1,8 @@
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
-import { createServer } from 'vite'
+import { createServer, createViteRuntime } from 'vite'
 
-async function runTest() {
+async function runTest(useRuntime) {
   const server = await createServer({
     configFile: false,
     root: fileURLToPath(new URL('.', import.meta.url)),
@@ -10,9 +10,15 @@ async function runTest() {
       middlewareMode: true,
     },
   })
-  const mod = await server.ssrLoadModule('/src/network-imports.js')
+  let mod
+  if (useRuntime) {
+    const runtime = await createViteRuntime(server, { hmr: false })
+    mod = await runtime.executeUrl('/src/network-imports.js')
+  } else {
+    mod = await server.ssrLoadModule('/src/network-imports.js')
+  }
   assert.equal(mod.slash('foo\\bar'), 'foo/bar')
   await server.close()
 }
 
-runTest()
+runTest(process.argv.includes('--runtime'))

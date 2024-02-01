@@ -280,6 +280,10 @@ export default defineConfig({
               link: '/guide/api-javascript',
             },
             {
+              text: 'Vite Runtime API',
+              link: '/guide/api-vite-runtime',
+            },
+            {
               text: 'Config Reference',
               link: '/config/',
             },
