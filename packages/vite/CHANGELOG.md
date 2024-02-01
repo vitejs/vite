@@ -1,3 +1,11 @@
+## 5.1.0-beta.6 (2024-02-01)
+
+* feat: experimental Vite Runtime API (#12165) ([8b3ab07](https://github.com/vitejs/vite/commit/8b3ab07)), closes [#12165](https://github.com/vitejs/vite/issues/12165)
+* fix: add ref() and unref() to chokidar.d.ts for typescript build to work (#15706) ([6b45037](https://github.com/vitejs/vite/commit/6b45037)), closes [#15706](https://github.com/vitejs/vite/issues/15706)
+* perf: simplify explicit import mark in import analysis (#15724) ([2805b2d](https://github.com/vitejs/vite/commit/2805b2d)), closes [#15724](https://github.com/vitejs/vite/issues/15724)
+
+
+
 ## 5.1.0-beta.5 (2024-01-27)
 
 * fix: do not init optimizer during build (#15727) ([a08f646](https://github.com/vitejs/vite/commit/a08f646)), closes [#15727](https://github.com/vitejs/vite/issues/15727)
