@@ -444,6 +444,22 @@ importers:
 
   packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep: {}
 
+  packages/vite/src/node/ssr/runtime/__tests__:
+    dependencies:
+      '@vitejs/cjs-external':
+        specifier: link:./fixtures/cjs-external
+        version: link:fixtures/cjs-external
+      '@vitejs/esm-external':
+        specifier: link:./fixtures/esm-external
+        version: link:fixtures/esm-external
+      tinyspy:
+        specifier: 2.2.0
+        version: 2.2.0
+
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/cjs-external: {}
+
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external: {}
+
   playground:
     devDependencies:
       convert-source-map:
@@ -713,6 +729,8 @@ importers:
   playground/glob-import/import-meta-glob-pkg: {}
 
   playground/hmr: {}
+
+  playground/hmr-ssr: {}
 
   playground/html: {}
 
@@ -8998,7 +9016,6 @@ packages:
   /tinyspy@2.2.0:
     resolution: {integrity: sha512-d2eda04AN/cPOR89F7Xv5bK/jrQEhmcLFe6HFldoeO9AJtps+fqEnh486vnT/8y4bw38pSyxDcTCAq+Ks2aJTg==}
     engines: {node: '>=14.0.0'}
-    dev: true
 
   /to-fast-properties@2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
