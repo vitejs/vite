@@ -137,7 +137,7 @@ code {
 @media screen and (max-width: 1000px) {
   .window {
     width: 80vw;
-    padding: 2.5vh 4vh;
+    padding: 2.5vh 4vw;
   }
   .stack {
     white-space: pre-wrap;
