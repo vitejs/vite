@@ -8,7 +8,7 @@ const normalizeString = (str: string) => {
   return str
 }
 
-it('resolveConfig with root path including both # and ? should warn for both charchters ', async () => {
+it('resolveConfig with root path including both "#" and "?" should warn for both charchters ', async () => {
   const logger = createLogger('info')
   logger.warn = (str) => {
     expect(normalizeString(str)).toEqual(
@@ -21,7 +21,7 @@ it('resolveConfig with root path including both # and ? should warn for both cha
   await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
 })
 
-it('resolveConfig with root path including # should warn accordingly ', async () => {
+it('resolveConfig with root path including "#" should warn accordingly ', async () => {
   const logger = createLogger('info')
   logger.warn = (str) => {
     expect(normalizeString(str)).toEqual(
