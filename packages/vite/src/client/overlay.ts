@@ -44,10 +44,10 @@ const template = /*html*/ `
 .window {
   font-family: var(--monospace);
   line-height: 1.5;
-  width: 80vw;
+  width: 800px;
   color: var(--window-color);
   margin: 30px auto;
-  padding: 2.5vh 4vw;
+  padding: 25px 40px;
   position: relative;
   background: var(--window-background);
   border-radius: 6px 6px 8px 8px;
@@ -113,8 +113,6 @@ pre.frame {
 .stack {
   font-size: 13px;
   color: var(--dim);
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 
 .tip {
@@ -134,6 +132,17 @@ code {
 .file-link {
   text-decoration: underline;
   cursor: pointer;
+}
+
+@media screen and (max-width: 1000px) {
+  .window {
+    width: 80vw;
+    padding: 2.5vh 4vh;
+  }
+  .stack {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 }
 
 kbd {
