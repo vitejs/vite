@@ -1,4 +1,4 @@
-import { DecodedMap } from './source-map/decoder'
+import { DecodedMap } from './sourcemap/decoder'
 import type { ModuleCache } from './types'
 import { decodeBase64, isWindows } from './utils'
 

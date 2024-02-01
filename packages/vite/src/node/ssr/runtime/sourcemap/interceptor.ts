@@ -419,12 +419,7 @@ function wrapCallSite(frame: CallSite, state: State) {
   return frame
 }
 
-function prepareStackTrace(
-  // runtime: ViteRuntime,
-  // options: InterceptorOptions,
-  error: Error,
-  stack: CallSite[],
-) {
+function prepareStackTrace(error: Error, stack: CallSite[]) {
   const name = error.name || 'Error'
   const message = error.message || ''
   const errorString = `${name}: ${message}`

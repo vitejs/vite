@@ -31,7 +31,7 @@ import {
 } from './constants'
 import { silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
-import { enableSourceMapSupport } from './source-map/index'
+import { enableSourceMapSupport } from './sourcemap/index'
 
 interface ViteRuntimeDebugger {
   (formatter: unknown, ...args: unknown[]): void

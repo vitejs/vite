@@ -9,8 +9,8 @@ import type {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import type { DecodedMap } from './source-map/decoder'
-import type { InterceptorOptions } from './source-map/interceptor'
+import type { DecodedMap } from './sourcemap/decoder'
+import type { InterceptorOptions } from './sourcemap/interceptor'
 
 export interface DefineImportMetadata {
   /**
