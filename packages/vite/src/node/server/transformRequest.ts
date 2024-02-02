@@ -400,10 +400,13 @@ async function handleModuleSoftInvalidation(
   // Skip if not soft-invalidated
   if (!transformResult || transformResult === 'HARD_INVALIDATED') return
 
-  if (ssr ? mod.ssrTransformResult : mod.transformResult) {
-    throw new Error(
-      `Internal server error: Soft-invalidated module "${mod.url}" should not have existing transform result`,
-    )
+  // Race condition could happend when invalidation is called before this process is finished
+  if (timestamp < mod.lastInvalidationTimestamp) {
+    if (ssr ? mod.ssrTransformResult : mod.transformResult) {
+      throw new Error(
+        `Internal server error: Soft-invalidated module "${mod.url}" should not have existing transform result`,
+      )
+    }
   }
 
   let result: TransformResult
