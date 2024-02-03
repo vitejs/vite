@@ -15,6 +15,8 @@ export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
+export { fetchModule } from './ssr/fetchModule'
+export type { FetchModuleOptions } from './ssr/fetchModule'
 export * from './publicUtils'
 
 // additional types
@@ -118,6 +120,18 @@ export type {
   TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+
+export type {
+  HMRBroadcaster,
+  HMRChannel,
+  ServerHMRChannel,
+  HMRBroadcasterClient,
+} from './server/hmr'
+
+export type { FetchFunction } from './ssr/runtime/index'
+export { createViteRuntime } from './ssr/runtime/node/mainThreadRuntime'
+export type { MainThreadRuntimeOptions } from './ssr/runtime/node/mainThreadRuntime'
+export { ServerHMRConnector } from './ssr/runtime/node/serverHmrConnector'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
