@@ -333,7 +333,7 @@ describe('svg fragments', () => {
     expect(await img.getAttribute('src')).toMatch(
       isBuild
         ? // Assert trimmed (data URI starts with < and ends with >)
-          /^data:image\/svg\+xml,%3c.*%3e#icon-heart-view$/
+          /^data:image\/svg\+xml,<.*>#icon-heart-view$/
         : /svg#icon-heart-view$/,
     )
   })
