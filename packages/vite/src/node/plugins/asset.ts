@@ -446,6 +446,7 @@ function svgToDataURL(content: Buffer): string {
         .replaceAll('"', "'")
         .replaceAll('%', '%25')
         .replaceAll('#', '%23')
+        .replaceAll('<style', '%3сstyle')
         // Spaces are not valid in srcset it has some use cases
         // it can make the uncompressed URI slightly higher than base64, but will compress way better
         // https://github.com/vitejs/vite/pull/14643#issuecomment-1766288673
