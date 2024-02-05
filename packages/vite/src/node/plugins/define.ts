@@ -179,7 +179,6 @@ export async function replaceDefine(
   }
 
   for (const marker in replacementMarkers) {
-    // TODO: this could also break sourcemap?
     result.code = result.code.replaceAll(marker, replacementMarkers[marker])
   }
 
