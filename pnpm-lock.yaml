@@ -647,6 +647,8 @@ importers:
         specifier: file:./commonjs-dep
         version: file:playground/define/commonjs-dep
 
+  playground/define-wip: {}
+
   playground/define/commonjs-dep: {}
 
   playground/dynamic-import:
