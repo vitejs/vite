@@ -15,8 +15,14 @@ export default defineConfig({
           if (name.includes('after-preload-dynamic')) {
             return 'after-preload-dynamic'
           }
+          if (name.includes('with-define-object')) {
+            return 'with-define-object'
+          }
         },
       },
     },
+  },
+  define: {
+    __testDefineObject: '{ "hello": "test" }',
   },
 })

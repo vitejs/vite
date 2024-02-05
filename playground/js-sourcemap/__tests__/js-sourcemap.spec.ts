@@ -156,4 +156,32 @@ describe.runIf(isBuild)('build tests', () => {
       /^\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map$/,
     )
   })
+
+  test('sourcemap is correct when using object as "define" value', async () => {
+    const map = findAssetFile(/with-define-object.*\.js\.map/)
+    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
+      {
+        "mappings": "qBAGA,SAASA,GAAK,CACTC,GACL,CAEA,SAASA,GAAK,CACJ,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAG",
+        "sources": [
+          "../../with-define-object.ts",
+        ],
+        "sourcesContent": [
+          "declare let __testDefineObject: unknown
+
+      // test complicated stack since broken sourcemap might still looks correct with a simple case
+      function f1() {
+        f2()
+      }
+
+      function f2() {
+        console.trace('with-define-object', __testDefineObject)
+      }
+
+      f1()
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
 })
