@@ -1,9 +1,5 @@
 import { transform } from 'esbuild'
-import {
-  TraceMap,
-  decodedMap,
-  encodedMappings,
-} from '@jridgewell/trace-mapping'
+import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, getHash } from '../utils'
@@ -169,6 +165,7 @@ export async function replaceDefine(
     if (originalMap.sources.length >= 2) {
       const sourceIndex = originalMap.sources.indexOf(id)
       const decoded = decodedMap(originalMap)
+      decoded.sources = [id]
       decoded.mappings = decoded.mappings.map((segments) =>
         segments.filter((segment) => {
           // modify and filter
@@ -177,9 +174,7 @@ export async function replaceDefine(
           return index === sourceIndex
         }),
       )
-      result.map = JSON.stringify({
-        mappings: encodedMappings(new TraceMap(decoded)),
-      })
+      result.map = JSON.stringify(encodedMap(new TraceMap(decoded)))
     }
   }
 
