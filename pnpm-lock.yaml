@@ -647,8 +647,6 @@ importers:
         specifier: file:./commonjs-dep
         version: file:playground/define/commonjs-dep
 
-  playground/define-sourcemap: {}
-
   playground/define/commonjs-dep: {}
 
   playground/dynamic-import:
