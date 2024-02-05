@@ -5,4 +5,7 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
   },
+  define: {
+    __defineObject: '{ "hello": "test" }',
+  },
 })

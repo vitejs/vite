@@ -163,7 +163,7 @@ export async function replaceDefine(
   })
 
   // remove esbuild's <define:...> source entries
-  // since they would confuse source map remapping which expects single source
+  // since they would confuse source map remapping/collapsing which expects a single source
   if (result.map.includes('<define:')) {
     const originalMap = new TraceMap(result.map)
     if (originalMap.sources.length >= 2) {

@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-define-wip",
+  "name": "@vitejs/test-define-sourcemap",
   "private": true,
   "version": "0.0.0",
   "type": "module",
