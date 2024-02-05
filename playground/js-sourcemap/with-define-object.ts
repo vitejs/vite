@@ -1,13 +1,12 @@
-declare let __testDefineObject: unknown
-
 // test complicated stack since broken sourcemap
 // might still look correct with a simple case
-function f1() {
-  f2()
+function main() {
+  mainInner()
 }
 
-function f2() {
+function mainInner() {
+  // @ts-expect-error "define"
   console.trace('with-define-object', __testDefineObject)
 }
 
-f1()
+main()

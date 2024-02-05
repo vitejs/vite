@@ -3,6 +3,6 @@ export function error() {
 }
 
 function errorInner() {
-  // @ts-ignore
+  // @ts-expect-error "define"
   throw new Error('with-define-object: ' + JSON.stringify(__testDefineObject))
 }

@@ -163,24 +163,23 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/with-define-object.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "qBAIA,SAASA,GAAK,CACTC,GACL,CAEA,SAASA,GAAK,CACJ,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAG",
+        "mappings": "qBAEA,SAASA,GAAO,CACJC,GACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
         "sources": [
           "../../with-define-object.ts",
         ],
         "sourcesContent": [
-          "declare let __testDefineObject: unknown
-
-      // test complicated stack since broken sourcemap
+          "// test complicated stack since broken sourcemap
       // might still look correct with a simple case
-      function f1() {
-        f2()
+      function main() {
+        mainInner()
       }
 
-      function f2() {
+      function mainInner() {
+        // @ts-expect-error "define"
         console.trace('with-define-object', __testDefineObject)
       }
 
-      f1()
+      main()
       ",
         ],
         "version": 3,
