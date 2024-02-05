@@ -673,12 +673,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const _orderedImportedUrls = orderedImportedUrls.filter(isDefined)
       const importedUrls = new Set(_orderedImportedUrls)
-      // `importedUrls` will be mixed with watched files for the module graph,
-      // `staticImportedUrls` will only contain the static top-level imports and
-      // dynamic imports
-      const staticImportedUrls = new Set(
-        _orderedImportedUrls.map((url) => removeTimestampQuery(url)),
-      )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
@@ -744,12 +738,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const pluginImports = (this as any)._addedImports as
           | Set<string>
           | undefined
+        const watchedUrls = new Set<string>()
         if (pluginImports) {
           ;(
             await Promise.all(
               [...pluginImports].map((id) => normalizeUrl(id, 0, true)),
             )
-          ).forEach(([url]) => importedUrls.add(url))
+          ).forEach(([url]) => {
+            watchedUrls.add(removeImportQuery(removeTimestampQuery(url)))
+            importedUrls.add(url)
+          })
         }
         // HMR transforms are no-ops in SSR, so an `accept` call will
         // never be injected. Avoid updating the `isSelfAccepting`
@@ -775,7 +773,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
           ssr,
-          staticImportedUrls,
+          watchedUrls,
         )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)

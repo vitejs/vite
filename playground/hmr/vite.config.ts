@@ -64,6 +64,9 @@ function transformCountPlugin(): Plugin {
     name: 'transform-count',
     transform(code) {
       if (code.includes('__TRANSFORM_COUNT__')) {
+        this.addWatchFile(
+          path.resolve(__dirname, './soft-invalidation/child-watched.js'),
+        )
         return code.replace('__TRANSFORM_COUNT__', String(++num))
       }
     },

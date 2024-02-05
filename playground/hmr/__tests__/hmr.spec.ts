@@ -187,6 +187,14 @@ if (!isBuild) {
       'soft-invalidation/index.js is transformed 1 times. child is updated',
     )
 
+    editFile('soft-invalidation/child-watched.js', (code) =>
+      code.replace('bar', 'updated'),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'soft-invalidation/index.js is transformed 2 times. child is updated',
+    )
+
     editFile('soft-invalidation/index.js', (code) =>
       code.replace('child is', 'child is now'),
     )
@@ -195,7 +203,7 @@ if (!isBuild) {
     )
     await untilUpdated(
       () => el.textContent(),
-      'soft-invalidation/index.js is transformed 2 times. child is now updated?',
+      'soft-invalidation/index.js is transformed 3 times. child is now updated?',
     )
   })
 
