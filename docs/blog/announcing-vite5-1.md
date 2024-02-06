@@ -60,7 +60,7 @@ Read more in the [Vite Runtime API guide](https://main.vitejs.dev/guide/api-vite
 
 Vite 5.1 will add support for `.css?url`, which was the last remaining hurdle in Remix move to Vite. See [#15259](https://github.com/vitejs/vite/issues/15259).
 
-`build.assetsInlineLimit` now [supports a callback](https://vitejs.dev/config/build-options.html#build-assetsinlinelimit). In this case, a boolean can be returned to opt-in or opt-out. If nothing is returned the default logic applies. See [#15366](https://github.com/vitejs/vite/issues/15366).
+`build.assetsInlineLimit` now [supports a callback](https://main.vitejs.dev/config/build-options.html#build-assetsinlinelimit). In this case, a boolean can be returned to opt-in or opt-out. If nothing is returned the default logic applies. See [#15366](https://github.com/vitejs/vite/issues/15366).
 
 Reload for circular imports only if error. The page will no longer be forcefully reloaded if a circular import is detected for the HMR boundary. Instead, it'll signal to the client to "watch out" for fails and if so, trigger a reload. See [#15118](https://github.com/vitejs/vite/issues/15118).
 
