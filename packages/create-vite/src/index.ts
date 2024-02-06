@@ -255,7 +255,7 @@ async function init() {
 
   prompts.override({
     overwrite: argv.overwrite,
-  });
+  })
 
   try {
     result = await prompts(
