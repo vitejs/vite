@@ -31,7 +31,7 @@ _February 12, 2024_
 
 ![Vite 5.1 Announcement Cover Image](/og-image-announcing-vite5-1.png)
 
-Vite 5 [was released](./announcing-vite5.md) last November, and it represented a big another big leap for Vite and the ecosystem. A few weeks ago we celebrated 10 million weekly npm downloads and 900 contributors to the Vite repo. Today, we're excited to announce the release of Vite 5.1.
+Vite 5 [was released](./announcing-vite5.md) last November, and it represented another big leap for Vite and the ecosystem. A few weeks ago we celebrated 10 million weekly npm downloads and 900 contributors to the Vite repo. Today, we're excited to announce the release of Vite 5.1.
 
 Quick links: [Docs](/), [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md)
 
