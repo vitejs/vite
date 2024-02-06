@@ -3,12 +3,15 @@ import path from 'node:path'
 import type { FSWatcher } from 'dep-types/chokidar'
 import type { ResolvedConfig } from './config'
 import {
+  createDebugger,
   isInNodeModules,
   normalizePath,
   safeRealpathSync,
   tryStatSync,
 } from './utils'
 import { searchForWorkspaceRoot } from './server/searchRoot'
+
+const debug = createDebugger('vite:fs')
 
 export interface FsUtils {
   existsSync: (path: string) => boolean
@@ -41,10 +44,24 @@ export const commonFsUtils: FsUtils = {
   tryResolveRealFileOrType,
 }
 
+const activeResolvedConfigs = new Array<WeakRef<ResolvedConfig>>()
+const registry = new FinalizationRegistry((fsUtils: FsUtils) => {
+  const i = activeResolvedConfigs.findIndex((r) => !r.deref())
+  activeResolvedConfigs.splice(i, 1)
+})
+function addActiveResolvedConfig(config: ResolvedConfig, fsUtils: FsUtils) {
+  activeResolvedConfigs.push(new WeakRef(config))
+  registry.register(config, fsUtils)
+  debug?.(
+    `registered FsUtils for config with root ${config.root}, active configs: ${activeResolvedConfigs.length}`,
+  )
+}
+
 const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
+    debug?.(`resolving FsUtils for ${config.root}`)
     if (config.command !== 'serve' || !config.server.fs.cachedChecks) {
       // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
       // we can support custom ignored patterns later
@@ -56,6 +73,7 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
       fsUtils = commonFsUtils
     } else {
       fsUtils = createCachedFsUtils(config)
+      addActiveResolvedConfig(config, fsUtils)
     }
     cachedFsUtilsMap.set(config, fsUtils)
   }
@@ -118,16 +136,41 @@ function ensureFileMaybeSymlinkIsResolved(
     isSymlink === undefined ? 'error' : isSymlink ? 'symlink' : 'file'
 }
 
+interface CachedFsUtilsMeta {
+  root: string
+  rootCache: DirentCache
+}
+const cachedFsUtilsMeta = new WeakMap<ResolvedConfig, CachedFsUtilsMeta>()
+
+function createSharedRootCache(root: string): DirentCache {
+  for (const otherConfigRef of activeResolvedConfigs) {
+    const otherConfig = otherConfigRef?.deref()
+    if (otherConfig) {
+      const otherCachedFsUtilsMeta = cachedFsUtilsMeta.get(otherConfig)!
+      const { rootCache: otherRootCache, root: otherRoot } =
+        otherCachedFsUtilsMeta
+      if (root === otherRoot) {
+        debug?.(`FsUtils for ${root} sharing root cache with compatible cache`)
+        return otherRootCache
+      }
+    }
+  }
+
+  debug?.(`FsUtils for ${root} started as an new root cache`)
+  return { type: 'directory' as DirentCacheType } // dirents will be computed lazily
+}
+
 function pathUntilPart(root: string, parts: string[], i: number): string {
   let p = root
   for (let k = 0; k < i; k++) p += '/' + parts[k]
   return p
 }
 
-export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
+function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const root = normalizePath(searchForWorkspaceRoot(config.root))
   const rootDirPath = `${root}/`
-  const rootCache: DirentCache = { type: 'directory' } // dirents will be computed lazily
+  const rootCache = createSharedRootCache(root)
+  cachedFsUtilsMeta.set(config, { root, rootCache })
 
   const getDirentCacheSync = (parts: string[]): DirentCache | undefined => {
     let direntCache: DirentCache = rootCache
@@ -210,7 +253,10 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       direntCache.type === 'directory' &&
       direntCache.dirents
     ) {
-      direntCache.dirents.set(path.basename(file), { type })
+      const fileBasename = path.basename(file)
+      if (!direntCache.dirents.has(fileBasename)) {
+        direntCache.dirents.set(fileBasename, { type })
+      }
     }
   }
 
