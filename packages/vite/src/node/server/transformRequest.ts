@@ -131,14 +131,70 @@ async function doTransform(
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
-  const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  let module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  if (module) {
+    // try use cache from url
+    const cached = await getCachedTransformResult(
+      url,
+      module,
+      server,
+      ssr,
+      timestamp,
+    )
+    if (cached) return cached
+  }
+
+  const resolved = module
+    ? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
+
+  // resolve
+  const id = module?.id ?? resolved?.id ?? url
+
+  module ??= server.moduleGraph.getModuleById(id)
+  if (module) {
+    // if a different url maps to an existing loaded id,  make sure we relate this url to the id
+    await server.moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+    // try use cache from id
+    const cached = await getCachedTransformResult(
+      url,
+      module,
+      server,
+      ssr,
+      timestamp,
+    )
+    if (cached) return cached
+  }
+
+  const result = loadAndTransform(
+    id,
+    url,
+    server,
+    options,
+    timestamp,
+    module,
+    resolved,
+  )
+
+  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
+
+  return result
+}
+
+async function getCachedTransformResult(
+  url: string,
+  module: ModuleNode,
+  server: ViteDevServer,
+  ssr: boolean,
+  timestamp: number,
+) {
+  const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
@@ -157,27 +213,6 @@ async function doTransform(
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
-
-  const resolved = module
-    ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
-
-  // resolve
-  const id = module?.id ?? resolved?.id ?? url
-
-  const result = loadAndTransform(
-    id,
-    url,
-    server,
-    options,
-    timestamp,
-    module,
-    resolved,
-  )
-
-  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
-
-  return result
 }
 
 async function loadAndTransform(
