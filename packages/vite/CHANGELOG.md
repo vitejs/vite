@@ -2,7 +2,7 @@
 
 ### Vite Runtime API
 
-Vite 5.1 adds experimental support for a new Vite Runtime API. It allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This lets library and framework authors to implement their own layer of communication between the server and the runtime. This new API is intendeed to replace Vite's current SSR primitives once it is stable. Apart from this flexibility, Vite will finally support HMR for SSR. Read more in the [Vite Runtime API guide](https://main.vitejs.dev/guide/api-vite-runtime) and [give us feedback](https://github.com/vitejs/vite/discussions/15774).
+Vite 5.1 adds experimental support for a new Vite Runtime API. It allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This lets library and framework authors to implement their own layer of communication between the server and the runtime. This new API is intended to replace Vite's current SSR primitives once it is stable. Apart from this flexibility, Vite will finally support HMR for SSR. Read more in the [Vite Runtime API guide](https://main.vitejs.dev/guide/api-vite-runtime) and [give us feedback](https://github.com/vitejs/vite/discussions/15774).
 
 * feat: experimental Vite Runtime API (#12165) ([8b3ab07](https://github.com/vitejs/vite/commit/8b3ab07)), closes [#12165](https://github.com/vitejs/vite/issues/12165)
 
@@ -31,7 +31,7 @@ The dev server had several perf gains in general too:
 
 ### Deprecations
 
-We continue to reduce Vite's API surface were possible to make the project manintainable long term.
+We continue to reduce Vite's API surface where possible to make the project maintainable long term.
 
 * feat(glob-import): deprecate as option (#14420) ([953e697](https://github.com/vitejs/vite/commit/953e697)), closes [#14420](https://github.com/vitejs/vite/issues/14420)
 * refactor: remove build time pre-bundling (#15184) ([757844f](https://github.com/vitejs/vite/commit/757844f)), closes [#15184](https://github.com/vitejs/vite/issues/15184)
