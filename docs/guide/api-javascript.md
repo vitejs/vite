@@ -144,7 +144,11 @@ interface ViteDevServer {
   /**
    * Apply Vite built-in HTML transforms and any plugin HTML transforms.
    */
-  transformIndexHtml(url: string, html: string): Promise<string>
+  transformIndexHtml(
+    url: string,
+    html: string,
+    originalUrl?: string,
+  ): Promise<string>
   /**
    * Load a given URL as an instantiated module for SSR.
    */
