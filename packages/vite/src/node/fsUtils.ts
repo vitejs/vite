@@ -148,11 +148,11 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           return
         }
         if (nextDirentCache.type === 'directory_maybe_symlink') {
-          dirPath ??= pathUntilPart(root, parts, i)
+          dirPath ??= pathUntilPart(root, parts, i + 1)
           const isSymlink = fs
             .lstatSync(dirPath, { throwIfNoEntry: false })
             ?.isSymbolicLink()
-          direntCache.type = isSymlink ? 'symlink' : 'directory'
+          nextDirentCache.type = isSymlink ? 'symlink' : 'directory'
         }
         direntCache = nextDirentCache
       } else if (direntCache.type === 'symlink') {
