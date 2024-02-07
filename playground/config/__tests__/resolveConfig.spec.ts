@@ -19,6 +19,8 @@ it('resolveConfig with root path including both "#" and "?" should warn for both
   }
 
   await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
+
+  expect.assertions(1)
 })
 
 it('resolveConfig with root path including "#" should warn accordingly ', async () => {
@@ -32,6 +34,8 @@ it('resolveConfig with root path including "#" should warn accordingly ', async 
   }
 
   await resolveConfig({ root: './includ#s', customLogger: logger }, 'build')
+
+  expect.assertions(1)
 })
 
 it('resolveConfig with root path including "?" should warn accordingly ', async () => {
@@ -45,4 +49,6 @@ it('resolveConfig with root path including "?" should warn accordingly ', async 
   }
 
   await resolveConfig({ root: './inc?udes', customLogger: logger }, 'build')
+
+  expect.assertions(1)
 })
