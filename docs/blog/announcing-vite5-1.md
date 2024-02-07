@@ -58,41 +58,54 @@ Read more in the [Vite Runtime API guide](/guide/api-vite-runtime) and [give us 
 
 ## Features
 
-- **Improved support for `.css?url`** ([#15259](https://github.com/vitejs/vite/issues/15259))
+### Improved support for `.css?url`
 
-Import CSS files as URLs now works reliably and correctly. This was the last remaining hurdle in Remix's move to Vite.
+Import CSS files as URLs now works reliably and correctly. This was the last remaining hurdle in Remix's move to Vite. See ([#15259](https://github.com/vitejs/vite/issues/15259)).
 
-- **`build.assetsInlineLimit` now supports a callback** ([#15366](https://github.com/vitejs/vite/issues/15366))
+### `build.assetsInlineLimit` now supports a callback
 
-Users can now [provide a callback](/config/build-options.html#build-assetsinlinelimit) that returns a boolean to opt-in or opt-out of inlining for specific assets. If `undefined` is returned, the defalt logic applies.
+Users can now [provide a callback](/config/build-options.html#build-assetsinlinelimit) that returns a boolean to opt-in or opt-out of inlining for specific assets. If `undefined` is returned, the defalt logic applies. See ([#15366](https://github.com/vitejs/vite/issues/15366)).
 
-- **Improved HMR for circular imports** ([#15118](https://github.com/vitejs/vite/issues/15118))
+### Improved HMR for circular import
 
-In Vite 5.0, accepted modules within circular imports always triggered a full page reload even if they can be handled fine in the client. This is now relaxed to allow HMR to apply without a full page reload, but if any error happens during HMR, the page will be reloaded.
+In Vite 5.0, accepted modules within circular imports always triggered a full page reload even if they can be handled fine in the client. This is now relaxed to allow HMR to apply without a full page reload, but if any error happens during HMR, the page will be reloaded. See ([#15118](https://github.com/vitejs/vite/issues/15118)).
 
-- **Support `ssr.external: true` to externalize all SSR packages** ([#10939](https://github.com/vitejs/vite/issues/10939))
+### Support `ssr.external: true` to externalize all SSR packages
 
-Historically, Vite externalizes all packages except for linked packages. This new option can be used to force externalize all packages including linked packages too. This is handy in tests within monorepos where we want to emulate the usual case of all packages externalized, or when using `ssrLoadModule` to load an arbitrary file and we want to always external packages as we don't care about HMR.
+Historically, Vite externalizes all packages except for linked packages. This new option can be used to force externalize all packages including linked packages too. This is handy in tests within monorepos where we want to emulate the usual case of all packages externalized, or when using `ssrLoadModule` to load an arbitrary file and we want to always external packages as we don't care about HMR. See ([#10939](https://github.com/vitejs/vite/issues/10939)).
 
-- **Expose `close` method in the preview server** ([#15630](https://github.com/vitejs/vite/issues/15630))
+### Expose `close` method in the preview server
 
-The preview server now exposes a `close` method, which will properly teardown the server including all opened socket connections.
+The preview server now exposes a `close` method, which will properly teardown the server including all opened socket connections. See ([#15630](https://github.com/vitejs/vite/issues/15630)).
 
 ## Performance improvements
 
-Vite keeps getting faster with each release, and Vite 5.1 is packed with performance improvements.
+Vite keeps getting faster with each release, and Vite 5.1 is packed with performance improvements. We measured the loading time for 10K modules (25 level deep tree) using [vite-dev-server-perf](https://github.com/yyx990803/vite-dev-server-perf) for all minor versions from Vite 4.0. This is a good benchmark to meassure the effect of Vite's bundle-less approach. Each module is a small TypeScript file with a counter and imports to other files in the tree, so this mostly meassuring the time it takes to do the requests a separate modules. In Vite 4.0, loading 10K modules took 8 seconds on a M1 MAX. We had a breakthrough in [Vite 4.3 were we focused on performance](./announcing-vite4-3.md), and we were able to load them in 6.35 seconds. In Vite 5.1, we managed to do another performance leap. Vite is now serving the 10K modules in 5.35 seconds.
 
-- **Run CSS preprocessors in threads** ([#13584](https://github.com/vitejs/vite/issues/13584))
+![Vite 10K Modules Loading time progression](/vite5-1-10K-modules-loading-time.png)
 
-Vite now has opt-in support for running CSS preprocessors in threads. You can enable it using [`css.preprocessorMaxWorkers: true`](/config/shared-options.html#css-preprocessormaxworkers). For a Vuetify 2 project, dev startup time was reduced by 40% with this feature enabled. There is [performance comparison for others setups in the PR](https://github.com/vitejs/vite/pull/13584#issuecomment-1678827918).
+The results of this benchmark run on Headless Puppeteer and are a good way to compare versions. They don't represent the time as experienced by users though. When running the same 10K modules in an Incognito window is Chrome, we have:
 
-- **New options to improve server cold starts**
+| 10K Modules           | Vite 5.0 | Vite 5.1 |
+| --------------------- | :------: | :------: |
+| Loading time          |  2892ms  |  2765ms  |
+| Loading time (cached) |  2778ms  |  2477ms  |
+| Full reload           |  2003ms  |  1878ms  |
+| Full reload (cached)  |  1682ms  |  1604ms  |
+
+### Run CSS preprocessors in threads
+
+Vite now has opt-in support for running CSS preprocessors in threads. You can enable it using [`css.preprocessorMaxWorkers: true`](/config/shared-options.html#css-preprocessormaxworkers). For a Vuetify 2 project, dev startup time was reduced by 40% with this feature enabled. There is [performance comparison for others setups in the PR](https://github.com/vitejs/vite/pull/13584#issuecomment-1678827918). See ([#13584](https://github.com/vitejs/vite/issues/13584)).
+
+### New options to improve server cold starts
 
 You can set `optimizeDeps.holdUntilCrawlEnd: false` to switch to a new strategy for deps optimization that may help in big projects. We're considering switching to this strategy by default in the future. ([#15244](https://github.com/vitejs/vite/issues/15244))
 
+### Faster resolving with cached checks
+
 The `fs.cachedChecks` optimization is now enabled by default. In Windows, `tryFsResolve` was ~14x faster with it, and resolving ids overall got a ~5x speed up in the triangle benchmark. ([#15704](https://github.com/vitejs/vite/issues/15704))
 
-- **Internal performance improvements**
+### Internal performance improvements
 
 The dev server had several incremental performance gains. A new middleware to short-circuit on 304 ([#15586](https://github.com/vitejs/vite/issues/15586)). We avoided `parseRequest` in hot paths ([#15617](https://github.com/vitejs/vite/issues/15617)). Rollup is now properly lazy loaded ([#15621](https://github.com/vitejs/vite/issues/15621))
 
@@ -100,13 +113,13 @@ The dev server had several incremental performance gains. A new middleware to sh
 
 We continue to reduce Vite's API surface where possible to make the project manintainable long term.
 
-- **Deprecated `as` option in `import.meta.glob`** ([#14420](https://github.com/vitejs/vite/issues/14420))
+### Deprecated `as` option in `import.meta.glob`
 
-The standard moved to [Import Attributes](https://github.com/tc39/proposal-import-attributes), but we don't plan to replace `as` with a new option at this point. Instead, it is recommended that the user switches to `query`.
+The standard moved to [Import Attributes](https://github.com/tc39/proposal-import-attributes), but we don't plan to replace `as` with a new option at this point. Instead, it is recommended that the user switches to `query`. See ([#14420](https://github.com/vitejs/vite/issues/14420)).
 
-- **Removed experimental build-time pre-bundling** ([#15184](https://github.com/vitejs/vite/issues/15184))
+### Removed experimental build-time pre-bundling
 
-Build-time pre-bundling, an experimental feature added in Vite 3, is removed. With Rollup 4 switching its parser to native, and Rolldown being worked on, both the performance and the dev-vs-build inconsistency story for this feature are no longer valid. We want to continue improving dev/build consistency, and have concluded that using Rolldown for "prebundling during dev" and "production builds" is the better bet moving forward. Rolldown may also implement caching in a way that is a lot more efficient during build than deps prebundling.
+Build-time pre-bundling, an experimental feature added in Vite 3, is removed. With Rollup 4 switching its parser to native, and Rolldown being worked on, both the performance and the dev-vs-build inconsistency story for this feature are no longer valid. We want to continue improving dev/build consistency, and have concluded that using Rolldown for "prebundling during dev" and "production builds" is the better bet moving forward. Rolldown may also implement caching in a way that is a lot more efficient during build than deps prebundling. See ([#15184](https://github.com/vitejs/vite/issues/15184)).
 
 ## Get Involved
 
