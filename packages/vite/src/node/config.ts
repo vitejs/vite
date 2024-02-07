@@ -398,6 +398,45 @@ export type ResolveFn = (
   ssr?: boolean,
 ) => Promise<string | undefined>
 
+/**
+ * Check for, and warn, if `path` includes characters that are not handled,
+ * e.g. `#` and `?`.
+ *
+ * This function only outputs a warning to `logger` if any unhandled character
+ * is found in `path`.
+ *
+ * @param path The path to check
+ * @param logger The logger to use to output the warning
+ */
+function checkBadCharactersInPath(path: string, logger: Logger): void {
+  // We will warn if the root path includes either the '#' or '?' character
+  const badPathCharacters = []
+
+  if (path.includes('#')) {
+    badPathCharacters.push('#')
+  }
+
+  if (path.includes('?')) {
+    badPathCharacters.push('?')
+  }
+
+  if (badPathCharacters.length > 0) {
+    const characterString = badPathCharacters.map((c) => `"${c}"`).join(' and ')
+    const inflectedChars =
+      badPathCharacters.length > 1 ? 'characters' : 'character'
+
+    // FIXME: Shouldn't this fail hard? There's no way paths with either
+    //        # or ? in them will be resolved correctly?
+    logger.warn(
+      colors.yellow(
+        `The project root contains the ${characterString} ${inflectedChars} (${colors.cyan(
+          path,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the ${characterString} ${inflectedChars}.`,
+      ),
+    )
+  }
+}
+
 export async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
@@ -478,36 +517,7 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  // We will warn if the root path includes either the '#' or '?' character
-  const badPathCharacters = []
-
-  if (resolvedRoot.includes('#')) {
-    badPathCharacters.push('#')
-  }
-
-  if (resolvedRoot.includes('?')) {
-    badPathCharacters.push('?')
-  }
-
-  if (badPathCharacters.length > 0) {
-    const characterString =
-      badPathCharacters.length > 1
-        ? badPathCharacters.map((c) => `"${c}"`).join(' and ')
-        : badPathCharacters.map((c) => `"${c}"`).join('')
-
-    const inflectedChars =
-      badPathCharacters.length > 1 ? 'characters' : 'character'
-
-    // FIXME: Shouldn't this fail hard? There's no way paths with either
-    //        # or ? in them will be resolved correctly?
-    logger.warn(
-      colors.yellow(
-        `The project root contains the ${characterString} ${inflectedChars} (${colors.cyan(
-          resolvedRoot,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the ${characterString} ${inflectedChars}.`,
-      ),
-    )
-  }
+  checkBadCharactersInPath(resolvedRoot, logger)
 
   const clientAlias = [
     {
