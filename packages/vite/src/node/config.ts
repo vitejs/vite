@@ -460,6 +460,7 @@ export async function resolveConfig(
       config.root,
       config.logLevel,
       config.customLogger,
+      config.clearScreen,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -965,6 +966,7 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
+  allowClearScreen?: boolean,
 ): Promise<{
   path: string
   config: UserConfig
@@ -1018,7 +1020,7 @@ export async function loadConfigFromFile(
       dependencies: bundled.dependencies,
     }
   } catch (e) {
-    createLogger(logLevel, { customLogger }).error(
+    createLogger(logLevel, { customLogger, allowClearScreen }).error(
       colors.red(`failed to load config from ${resolvedPath}`),
       {
         error: e,
