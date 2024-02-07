@@ -45,9 +45,13 @@ const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
-    if (config.command !== 'serve' || !config.server.fs.cachedChecks) {
-      // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
-      // we can support custom ignored patterns later
+    if (
+      config.command !== 'serve' ||
+      config.server.fs.cachedChecks === false ||
+      config.server.watch?.ignored
+    ) {
+      // cached fsUtils is only used in the dev server for now
+      // it is enabled by default only when there aren't custom watcher ignored patterns configured
       fsUtils = commonFsUtils
     } else if (
       !config.resolve.preserveSymlinks &&
