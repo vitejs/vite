@@ -3,7 +3,7 @@ import type { InlineConfig } from '..'
 import type { PluginOption, UserConfig, UserConfigExport } from '../config'
 import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../publicUtils'
+import { createLogger, mergeConfig } from '../publicUtils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -331,5 +331,18 @@ describe('resolveConfig', () => {
 
     expect(results1.clearScreen).toBe(false)
     expect(results2.clearScreen).toBe(false)
+  })
+
+  test('resolveConfig with root path including "#" and "?" should warn ', async () => {
+    expect.assertions(1)
+
+    const logger = createLogger('info')
+    logger.warn = (str) => {
+      expect(str).to.include(
+        'Consider renaming the directory to remove the characters',
+      )
+    }
+
+    await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
   })
 })
