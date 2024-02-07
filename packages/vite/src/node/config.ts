@@ -425,8 +425,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
     const inflectedChars =
       badPathCharacters.length > 1 ? 'characters' : 'character'
 
-    // FIXME: Shouldn't this fail hard? There's no way paths with either
-    //        # or ? in them will be resolved correctly?
+    // FIXME: In the future this should probably raise an error, since there's
+    //        no way paths with either # or ? in them will be resolved
+    //        correctly, so the build will fail somewhere down the line.
     logger.warn(
       colors.yellow(
         `The project root contains the ${characterString} ${inflectedChars} (${colors.cyan(
