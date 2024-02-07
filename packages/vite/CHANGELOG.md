@@ -1,3 +1,15 @@
+## 5.1.0-beta.7 (2024-02-07)
+
+* fix: disable fs.cachedChecks for custom watch ignore patterns (#15828) ([9070be3](https://github.com/vitejs/vite/commit/9070be3)), closes [#15828](https://github.com/vitejs/vite/issues/15828)
+* fix: judge next dirent cache type (#15787) ([5fbeba3](https://github.com/vitejs/vite/commit/5fbeba3)), closes [#15787](https://github.com/vitejs/vite/issues/15787)
+* fix: scan entries when the root is in node_modules (#15746) ([c3e83bb](https://github.com/vitejs/vite/commit/c3e83bb)), closes [#15746](https://github.com/vitejs/vite/issues/15746)
+* fix(config): improved warning when root path includes bad characters (#15761) ([1c0dc3d](https://github.com/vitejs/vite/commit/1c0dc3d)), closes [#15761](https://github.com/vitejs/vite/issues/15761)
+* docs: fix typos in CHANGELOG (#15825) ([3ee4e7b](https://github.com/vitejs/vite/commit/3ee4e7b)), closes [#15825](https://github.com/vitejs/vite/issues/15825)
+* perf: use transform cache by resolved id (#15785) ([78d838a](https://github.com/vitejs/vite/commit/78d838a)), closes [#15785](https://github.com/vitejs/vite/issues/15785)
+* chore: release notes (#15777) ([775bb50](https://github.com/vitejs/vite/commit/775bb50)), closes [#15777](https://github.com/vitejs/vite/issues/15777)
+
+
+
 ## 5.1.0-beta.6 (2024-02-01)
 
 ### Vite Runtime API
