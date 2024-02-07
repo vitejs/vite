@@ -399,40 +399,28 @@ export type ResolveFn = (
 ) => Promise<string | undefined>
 
 /**
- * Check for, and warn, if `path` includes characters that are not handled,
- * e.g. `#` and `?`.
- *
- * This function only outputs a warning to `logger` if any unhandled character
- * is found in `path`.
- *
- * @param path The path to check
- * @param logger The logger to use to output the warning
+ * Check and warn if `path` includes characters that don't work well in Vite,
+ * such as `#` and `?`.
  */
 function checkBadCharactersInPath(path: string, logger: Logger): void {
-  // We will warn if the root path includes either the '#' or '?' character
-  const badPathCharacters = []
+  const badChars = []
 
   if (path.includes('#')) {
-    badPathCharacters.push('#')
+    badChars.push('#')
   }
-
   if (path.includes('?')) {
-    badPathCharacters.push('?')
+    badChars.push('?')
   }
 
-  if (badPathCharacters.length > 0) {
-    const characterString = badPathCharacters.map((c) => `"${c}"`).join(' and ')
-    const inflectedChars =
-      badPathCharacters.length > 1 ? 'characters' : 'character'
+  if (badChars.length > 0) {
+    const charString = badChars.map((c) => `"${c}"`).join(' and ')
+    const inflectedChars = badChars.length > 1 ? 'characters' : 'character'
 
-    // FIXME: In the future this should probably raise an error, since there's
-    //        no way paths with either # or ? in them will be resolved
-    //        correctly, so the build will fail somewhere down the line.
     logger.warn(
       colors.yellow(
-        `The project root contains the ${characterString} ${inflectedChars} (${colors.cyan(
+        `The project root contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the ${characterString} ${inflectedChars}.`,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the characters.`,
       ),
     )
   }
