@@ -11,13 +11,13 @@ import {
   normalizePath,
   unique,
   withTrailingSlash,
-  wrapId,
 } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
+import { wrapId } from '../../shared/utils'
 import type { ModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 

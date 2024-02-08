@@ -3,8 +3,9 @@ import type { ModuleNode, TransformResult, ViteDevServer } from '..'
 import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isExternalUrl, isFilePathESM, unwrapId } from '../utils'
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 import type { FetchResult } from '../../runtime/types'
+import { unwrapId } from '../../shared/utils'
 
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {

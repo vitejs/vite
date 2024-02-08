@@ -1,6 +1,7 @@
+import { isWindows } from '../shared/utils'
+import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ModuleCache } from './types'
-import { decodeBase64, isWindows } from './utils'
 
 let SOURCEMAPPING_URL = 'sourceMa'
 SOURCEMAPPING_URL += 'ppingURL'

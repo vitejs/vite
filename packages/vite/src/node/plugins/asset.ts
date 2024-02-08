@@ -18,7 +18,6 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
-  cleanUrl,
   getHash,
   injectQuery,
   joinUrlSegments,
@@ -31,6 +30,7 @@ import {
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import type { ModuleGraph } from '../server/moduleGraph'
+import { cleanUrl } from '../../shared/utils'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g

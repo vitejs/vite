@@ -17,7 +17,6 @@ import {
 } from '../constants'
 import {
   bareImportRE,
-  cleanUrl,
   createDebugger,
   deepImportRE,
   fsPathFromId,
@@ -32,10 +31,8 @@ import {
   isObject,
   isOptimizable,
   isTsRequest,
-  isWindows,
   normalizePath,
   safeRealpathSync,
-  slash,
   tryStatSync,
   withTrailingSlash,
 } from '../utils'
@@ -51,6 +48,7 @@ import {
   loadPackageData,
   resolvePackageData,
 } from '../packages'
+import { cleanUrl, isWindows, slash } from '../../shared/utils'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)

@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { cleanUrl } from '../shared/utils'
 import type { ResolvedConfig } from './config'
 import {
   ERR_SYMLINK_IN_RECURSIVE_READDIR,
-  cleanUrl,
   normalizePath,
   recursiveReaddir,
   withTrailingSlash,
