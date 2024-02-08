@@ -259,10 +259,6 @@ cli
   .option('--manifest [name]', `[boolean | string] emit build manifest json`)
   .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
   .option(
-    '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`,
-  )
-  .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`,
   )
@@ -280,7 +276,6 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        optimizeDeps: { force: options.force },
         build: buildOptions,
       })
     } catch (e) {
