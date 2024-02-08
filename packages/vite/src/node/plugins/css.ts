@@ -718,92 +718,90 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (!chunkCSS && !s) {
-        return null
-      }
+      if (chunkCSS) {
+        if (config.build.cssCodeSplit) {
+          if (opts.format === 'es' || opts.format === 'cjs') {
+            if (isPureCssChunk) {
+              // this is a shared CSS-only chunk that is empty.
+              pureCssChunks.add(chunk)
+            }
 
-      if (config.build.cssCodeSplit) {
-        if (opts.format === 'es' || opts.format === 'cjs') {
-          if (isPureCssChunk) {
-            // this is a shared CSS-only chunk that is empty.
-            pureCssChunks.add(chunk)
-          }
-
-          const isEntry = chunk.isEntry && isPureCssChunk
-          const cssFullAssetName = ensureFileExt(chunk.name, '.css')
-          // if facadeModuleId doesn't exist or doesn't have a CSS extension,
-          // that means a JS entry file imports a CSS file.
-          // in this case, only use the filename for the CSS chunk name like JS chunks.
-          const cssAssetName =
-            chunk.isEntry &&
-            (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
-              ? path.basename(cssFullAssetName)
-              : cssFullAssetName
-          const originalFilename = getChunkOriginalFileName(
-            chunk,
-            config.root,
-            opts.format,
-          )
-
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
-
-          // wait for previous tasks as well
-          chunkCSS = await codeSplitEmitQueue.run(async () => {
-            return finalizeCss(chunkCSS, true, config)
-          })
-
-          // emit corresponding css file
-          const referenceId = this.emitFile({
-            name: cssAssetName,
-            type: 'asset',
-            source: chunkCSS,
-          })
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName: originalFilename, isEntry })
-          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-        } else if (!config.build.ssr) {
-          // legacy build and inline css
-
-          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
-          // and injected later by the `'vite:build-html'` plugin into the `index.html`
-          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
-          // But because entry chunk can be imported by dynamic import,
-          // we shouldn't remove the inlined CSS. (#10285)
-
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
-          let cssString = JSON.stringify(chunkCSS)
-          cssString =
-            renderAssetUrlInJS(
-              this,
-              config,
+            const isEntry = chunk.isEntry && isPureCssChunk
+            const cssFullAssetName = ensureFileExt(chunk.name, '.css')
+            // if facadeModuleId doesn't exist or doesn't have a CSS extension,
+            // that means a JS entry file imports a CSS file.
+            // in this case, only use the filename for the CSS chunk name like JS chunks.
+            const cssAssetName =
+              chunk.isEntry &&
+              (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
+                ? path.basename(cssFullAssetName)
+                : cssFullAssetName
+            const originalFilename = getChunkOriginalFileName(
               chunk,
-              opts,
-              cssString,
-            )?.toString() || cssString
-          const style = `__vite_style__`
-          const injectCode =
-            `var ${style} = document.createElement('style');` +
-            `${style}.textContent = ${cssString};` +
-            `document.head.appendChild(${style});`
-          let injectionPoint
-          const wrapIdx = code.indexOf('System.register')
-          if (wrapIdx >= 0) {
-            const executeFnStart = code.indexOf('execute:', wrapIdx)
-            injectionPoint = code.indexOf('{', executeFnStart) + 1
-          } else {
-            const insertMark = "'use strict';"
-            injectionPoint = code.indexOf(insertMark) + insertMark.length
-          }
-          s ||= new MagicString(code)
-          s.appendRight(injectionPoint, injectCode)
-        }
-      } else {
-        // resolve public URL from CSS paths, we need to use absolute paths
-        chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
-        // finalizeCss is called for the aggregated chunk in generateBundle
+              config.root,
+              opts.format,
+            )
 
-        chunkCSSMap.set(chunk.fileName, chunkCSS)
+            chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+
+            // wait for previous tasks as well
+            chunkCSS = await codeSplitEmitQueue.run(async () => {
+              return finalizeCss(chunkCSS, true, config)
+            })
+
+            // emit corresponding css file
+            const referenceId = this.emitFile({
+              name: cssAssetName,
+              type: 'asset',
+              source: chunkCSS,
+            })
+            generatedAssets
+              .get(config)!
+              .set(referenceId, { originalName: originalFilename, isEntry })
+            chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+          } else if (!config.build.ssr) {
+            // legacy build and inline css
+
+            // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+            // and injected later by the `'vite:build-html'` plugin into the `index.html`
+            // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+            // But because entry chunk can be imported by dynamic import,
+            // we shouldn't remove the inlined CSS. (#10285)
+
+            chunkCSS = await finalizeCss(chunkCSS, true, config)
+            let cssString = JSON.stringify(chunkCSS)
+            cssString =
+              renderAssetUrlInJS(
+                this,
+                config,
+                chunk,
+                opts,
+                cssString,
+              )?.toString() || cssString
+            const style = `__vite_style__`
+            const injectCode =
+              `var ${style} = document.createElement('style');` +
+              `${style}.textContent = ${cssString};` +
+              `document.head.appendChild(${style});`
+            let injectionPoint
+            const wrapIdx = code.indexOf('System.register')
+            if (wrapIdx >= 0) {
+              const executeFnStart = code.indexOf('execute:', wrapIdx)
+              injectionPoint = code.indexOf('{', executeFnStart) + 1
+            } else {
+              const insertMark = "'use strict';"
+              injectionPoint = code.indexOf(insertMark) + insertMark.length
+            }
+            s ||= new MagicString(code)
+            s.appendRight(injectionPoint, injectCode)
+          }
+        } else {
+          // resolve public URL from CSS paths, we need to use absolute paths
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+          // finalizeCss is called for the aggregated chunk in generateBundle
+
+          chunkCSSMap.set(chunk.fileName, chunkCSS)
+        }
       }
 
       if (s) {
