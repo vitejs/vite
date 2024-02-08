@@ -239,16 +239,15 @@ function orderedDependencies(deps: Record<string, string>) {
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
-  const rootPattern = glob.convertPathToPattern(config.root)
   return glob(pattern, {
     cwd: config.root,
     ignore: [
-      `${rootPattern}/**/node_modules/**`,
-      `${rootPattern}/**/${config.build.outDir}/**`,
+      '**/node_modules/**',
+      `**/${config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
       ...(config.optimizeDeps.entries
         ? []
-        : [`${rootPattern}/**/__tests__/**`, `${rootPattern}/**/coverage/**`]),
+        : [`**/__tests__/**`, `**/coverage/**`]),
     ],
     absolute: true,
     suppressErrors: true, // suppress EACCES errors
