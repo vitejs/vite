@@ -124,6 +124,7 @@
       }
     },
     "patchedDependencies": {
+      "@jridgewell/resolve-uri@3.1.1": "patches/@jridgewell__resolve-uri@3.1.1.patch",
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "sirv@2.0.4": "patches/sirv@2.0.4.patch"
     },

@@ -1,0 +1,25 @@
+diff --git a/dist/resolve-uri.mjs b/dist/resolve-uri.mjs
+index 94d8dceb931e21c2a55058c1249eb34c2dddfbc9..c09b5f1af2a8118cf7c45959a441cbfe57386e9c 100644
+--- a/dist/resolve-uri.mjs
++++ b/dist/resolve-uri.mjs
+@@ -21,8 +21,8 @@ const urlRegex = /^([\w+.-]+:)\/\/([^@/#?]*@)?([^:/#?]*)(:\d+)?(\/[^#?]*)?(\?[^#
+  * 4. Hash, including "#", optional.
+  */
+ const fileRegex = /^file:(?:\/\/((?![a-z]:)[^/#?]*)?)?(\/?[^#?]*)(\?[^#]*)?(#.*)?/i;
+-var UrlType;
+-(function (UrlType) {
++var UrlType = /* #__PURE__ */ (function () {
++    var UrlType = {};
+     UrlType[UrlType["Empty"] = 1] = "Empty";
+     UrlType[UrlType["Hash"] = 2] = "Hash";
+     UrlType[UrlType["Query"] = 3] = "Query";
+@@ -30,7 +30,8 @@ var UrlType;
+     UrlType[UrlType["AbsolutePath"] = 5] = "AbsolutePath";
+     UrlType[UrlType["SchemeRelative"] = 6] = "SchemeRelative";
+     UrlType[UrlType["Absolute"] = 7] = "Absolute";
+-})(UrlType || (UrlType = {}));
++    return UrlType;
++})();
+ function isAbsoluteUrl(input) {
+     return schemeRegex.test(input);
+ }

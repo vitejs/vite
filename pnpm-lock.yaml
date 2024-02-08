@@ -10,6 +10,9 @@ overrides:
 packageExtensionsChecksum: 4e49e84b7a11dfd4895fbffb006a7015
 
 patchedDependencies:
+  '@jridgewell/resolve-uri@3.1.1':
+    hash: w3ykihndrrld7utbtpy6utj3bu
+    path: patches/@jridgewell__resolve-uri@3.1.1.patch
   chokidar@3.6.0:
     hash: bckcfsslxcffppz65mxcq6naau
     path: patches/chokidar@3.6.0.patch
@@ -384,6 +387,9 @@ importers:
       rollup-plugin-dts:
         specifier: ^6.1.0
         version: 6.1.0(rollup@4.2.0)(typescript@5.2.2)
+      rollup-plugin-esbuild:
+        specifier: ^6.1.1
+        version: 6.1.1(esbuild@0.19.3)(rollup@4.2.0)
       rollup-plugin-license:
         specifier: ^3.2.0
         version: 3.2.0(rollup@4.2.0)
@@ -3627,9 +3633,10 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
       '@jridgewell/trace-mapping': 0.3.22
 
-  /@jridgewell/resolve-uri@3.1.1:
+  /@jridgewell/resolve-uri@3.1.1(patch_hash=w3ykihndrrld7utbtpy6utj3bu):
     resolution: {integrity: sha512-dSYZh7HhCDtCKm4QakX0xFpsRDqjjtZf/kjI/v3T3Nwt5r8/qz/M19F9ySyOqU94SXBmeG9ttTul+YnR4LOxFA==}
     engines: {node: '>=6.0.0'}
+    patched: true
 
   /@jridgewell/set-array@1.1.2:
     resolution: {integrity: sha512-xnkseuNADM0gt2bs+BvhO0p78Mk762YnZdsuzFV018NoG1Sj1SCQvpSqa7XUaTam5vAGasABV9qXASMKnFMwMw==}
@@ -3648,13 +3655,13 @@ packages:
   /@jridgewell/trace-mapping@0.3.22:
     resolution: {integrity: sha512-Wf963MzWtA2sjrNt+g18IAln9lKnlRp+K2eH4jjIoF1wYeq3aMREpG09xhlhdzS0EjwU7qmUJYangWa+151vZw==}
     dependencies:
-      '@jridgewell/resolve-uri': 3.1.1
+      '@jridgewell/resolve-uri': 3.1.1(patch_hash=w3ykihndrrld7utbtpy6utj3bu)
       '@jridgewell/sourcemap-codec': 1.4.15
 
   /@jridgewell/trace-mapping@0.3.9:
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
     dependencies:
-      '@jridgewell/resolve-uri': 3.1.1
+      '@jridgewell/resolve-uri': 3.1.1(patch_hash=w3ykihndrrld7utbtpy6utj3bu)
       '@jridgewell/sourcemap-codec': 1.4.15
 
   /@mapbox/node-pre-gyp@1.0.11:
@@ -8455,6 +8462,23 @@ packages:
       typescript: 5.2.2
     optionalDependencies:
       '@babel/code-frame': 7.23.5
+    dev: true
+
+  /rollup-plugin-esbuild@6.1.1(esbuild@0.19.3)(rollup@4.2.0):
+    resolution: {integrity: sha512-CehMY9FAqJD5OUaE/Mi1r5z0kNeYxItmRO2zG4Qnv2qWKF09J2lTy5GUzjJR354ZPrLkCj4fiBN41lo8PzBUhw==}
+    engines: {node: '>=14.18.0'}
+    peerDependencies:
+      esbuild: '>=0.18.0'
+      rollup: ^1.20.0 || ^2.0.0 || ^3.0.0 || ^4.0.0
+    dependencies:
+      '@rollup/pluginutils': 5.1.0(rollup@4.2.0)
+      debug: 4.3.4
+      es-module-lexer: 1.4.1
+      esbuild: 0.19.3
+      get-tsconfig: 4.7.2
+      rollup: 4.2.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /rollup-plugin-license@3.2.0(rollup@4.2.0):
