@@ -49,6 +49,11 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
       url: 'https://remix.run/',
       img: '/remix.svg',
     },
+    {
+      name: 'Transloadit',
+      url: 'https://transloadit.com/?utm_source=vite&utm_medium=referral&utm_campaign=sponsorship&utm_content=website',
+      img: '/transloadit.svg',
+    },
   ],
 }
 
@@ -84,7 +89,7 @@ function mapSponsors(sponsors: Sponsors) {
     {
       tier: 'Gold Sponsors',
       size: 'medium',
-      items: viteSponsors['gold'].concat(mapImgPath(sponsors['gold'])),
+      items: [...mapImgPath(sponsors['gold']), ...viteSponsors['gold']],
     },
   ]
 }
