@@ -1,3 +1,17 @@
+## 5.2.0 (2024-02-08)
+
+* fix(create-vite): turn off `react/jsx-no-target-blank` ESLint rule in React JS template (#15672) ([a6f39e8](https://github.com/vitejs/vite/commit/a6f39e8)), closes [#15672](https://github.com/vitejs/vite/issues/15672)
+* fix(deps): update all non-major dependencies (#15375) ([ab56227](https://github.com/vitejs/vite/commit/ab56227)), closes [#15375](https://github.com/vitejs/vite/issues/15375)
+* fix(deps): update all non-major dependencies (#15603) ([109fb80](https://github.com/vitejs/vite/commit/109fb80)), closes [#15603](https://github.com/vitejs/vite/issues/15603)
+* fix(deps): update all non-major dependencies (#15675) ([4d9363a](https://github.com/vitejs/vite/commit/4d9363a)), closes [#15675](https://github.com/vitejs/vite/issues/15675)
+* fix(deps): update all non-major dependencies (#15803) ([e0a6ef2](https://github.com/vitejs/vite/commit/e0a6ef2)), closes [#15803](https://github.com/vitejs/vite/issues/15803)
+* feat(create-vite): allow overwrite in command line (#15808) ([1882c73](https://github.com/vitejs/vite/commit/1882c73)), closes [#15808](https://github.com/vitejs/vite/issues/15808)
+* feat(create-vite): set "strict: true" in tsconfig.node.json (#15820) ([5e5ca7d](https://github.com/vitejs/vite/commit/5e5ca7d)), closes [#15820](https://github.com/vitejs/vite/issues/15820)
+* docs: changed bunx create-vite to bun create vite (#15646) ([f3c11bb](https://github.com/vitejs/vite/commit/f3c11bb)), closes [#15646](https://github.com/vitejs/vite/issues/15646)
+* chore(deps): update dependency @vitejs/plugin-vue to v5 (#15474) ([17857e7](https://github.com/vitejs/vite/commit/17857e7)), closes [#15474](https://github.com/vitejs/vite/issues/15474)
+
+
+
 ## 5.1.0 (2023-12-12)
 
 * fix(deps): update all non-major dependencies (#15233) ([ad3adda](https://github.com/vitejs/vite/commit/ad3adda)), closes [#15233](https://github.com/vitejs/vite/issues/15233)
