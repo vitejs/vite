@@ -21,6 +21,7 @@ export interface ManifestChunk {
   css?: string[]
   assets?: string[]
   isEntry?: boolean
+  name?: string
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
@@ -67,6 +68,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
         if (chunk.isEntry) {
           manifestChunk.isEntry = true
+          manifestChunk.name = chunk.name
         }
         if (chunk.isDynamicEntry) {
           manifestChunk.isDynamicEntry = true
