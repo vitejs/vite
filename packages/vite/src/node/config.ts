@@ -91,16 +91,22 @@ export interface ConfigEnv {
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
 
-export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
-export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
-export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
+export type UserConfigFnObject<E extends Record<string, any>> = (
+  env: ConfigEnv & E,
+) => UserConfig
+export type UserConfigFnPromise<E extends Record<string, any>> = (
+  env: ConfigEnv & E,
+) => Promise<UserConfig>
+export type UserConfigFn<E extends Record<string, any>> = (
+  env: ConfigEnv & E,
+) => UserConfig | Promise<UserConfig>
 
-export type UserConfigExport =
+export type UserConfigExport<E extends Record<string, any>> =
   | UserConfig
   | Promise<UserConfig>
-  | UserConfigFnObject
-  | UserConfigFnPromise
-  | UserConfigFn
+  | UserConfigFnObject<E>
+  | UserConfigFnPromise<E>
+  | UserConfigFn<E>
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -110,9 +116,15 @@ export type UserConfigExport =
  */
 export function defineConfig(config: UserConfig): UserConfig
 export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
-export function defineConfig(config: UserConfigFnObject): UserConfigFnObject
-export function defineConfig(config: UserConfigExport): UserConfigExport
-export function defineConfig(config: UserConfigExport): UserConfigExport {
+export function defineConfig<E extends Record<string, any>>(
+  config: UserConfigFnObject<E>,
+): UserConfigFnObject<E>
+export function defineConfig<E extends Record<string, any>>(
+  config: UserConfigExport<E>,
+): UserConfigExport<E>
+export function defineConfig<E extends Record<string, any>>(
+  config: UserConfigExport<E>,
+): UserConfigExport<E> {
   return config
 }
 
