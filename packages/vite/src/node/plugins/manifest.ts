@@ -11,6 +11,8 @@ import { normalizePath, sortObjectKeys } from '../utils'
 import { generatedAssets } from './asset'
 import type { GeneratedAssetMeta } from './asset'
 
+const endsWithJSRE = /\.[cm]?js$/
+
 export type Manifest = Record<string, ManifestChunk>
 
 export interface ManifestChunk {
@@ -134,13 +136,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
-          const file = manifest[src]?.file || ''
-          if (
-            file.endsWith('.js') ||
-            file.endsWith('.mjs') ||
-            file.endsWith('.cjs')
-          )
-            continue
+          const file = manifest[src]?.file
+          if (file && endsWithJSRE.test(file)) continue
 
           manifest[src] = asset
           fileNameToAsset.set(chunk.fileName, asset)
