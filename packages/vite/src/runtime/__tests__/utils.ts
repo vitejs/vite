@@ -7,8 +7,8 @@ import type {
   InlineConfig,
   MainThreadRuntimeOptions,
   ViteDevServer,
-} from '../../../index'
-import { createServer } from '../../../index'
+} from '../../node'
+import { createServer } from '../../node'
 import type { ViteRuntime } from '../runtime'
 import { createViteRuntime } from '../node/mainThreadRuntime'
 

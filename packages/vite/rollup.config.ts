@@ -160,6 +160,7 @@ function createNodeConfig(isProduction: boolean) {
       sourcemap: !isProduction,
     },
     external: [
+      /^vite\//,
       'fsevents',
       'lightningcss',
       'rollup/parseAst',
@@ -180,7 +181,7 @@ function createRuntimeConfig(isProduction: boolean) {
   return defineConfig({
     ...sharedNodeOptions,
     input: {
-      runtime: path.resolve(__dirname, 'src/node/ssr/runtime/index.ts'),
+      runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
     },
     output: {
       ...sharedNodeOptions.output,

@@ -1,5 +1,5 @@
 import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../../../shared/hmr'
+import { HMRClient, HMRContext } from '../shared/hmr'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,

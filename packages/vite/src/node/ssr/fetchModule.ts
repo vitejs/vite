@@ -4,7 +4,7 @@ import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM, unwrapId } from '../utils'
-import type { FetchResult } from './runtime/types'
+import type { FetchResult } from '../../runtime/types'
 
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
