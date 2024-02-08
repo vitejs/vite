@@ -134,7 +134,14 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
-          if (/\.(?:m|c)?js/.test(manifest[src]?.file ?? '')) continue
+          const { file } = manifest[src]
+          if (
+            file.endsWith('.js') ||
+            file.endsWith('.mjs') ||
+            file.endsWith('.cjs')
+          )
+            continue
+
           manifest[src] = asset
           fileNameToAsset.set(chunk.fileName, asset)
         }
