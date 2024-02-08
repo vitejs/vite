@@ -2,7 +2,7 @@
 title: Vite 5.1 is out!
 author:
   name: The Vite Team
-date: 2024-02-12
+date: 2024-02-08
 sidebar: false
 head:
   - - meta
@@ -27,13 +27,13 @@ head:
 
 # Vite 5.1 is out!
 
-_February 12, 2024_
+_February 8, 2024_
 
 ![Vite 5.1 Announcement Cover Image](/og-image-announcing-vite5-1.png)
 
 Vite 5 [was released](./announcing-vite5.md) last November, and it represented another big leap for Vite and the ecosystem. A few weeks ago we celebrated 10 million weekly npm downloads and 900 contributors to the Vite repo. Today, we're excited to announce the release of Vite 5.1.
 
-Quick links: [Docs](/), [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md)
+Quick links: [Docs](/), [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#510-2024-02-08)
 
 Docs in other languages: [简体中文](https://cn.vitejs.dev/), [日本語](https://ja.vitejs.dev/), [Español](https://es.vitejs.dev/), [Português](https://pt.vitejs.dev/), [한국어](https://ko.vitejs.dev/), [Deutsch](https://de.vitejs.dev/)
 
