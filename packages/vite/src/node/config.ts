@@ -459,6 +459,7 @@ export async function resolveConfig(
       configFile,
       config.root,
       config.logLevel,
+      config.customLogger,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -963,6 +964,7 @@ export async function loadConfigFromFile(
   configFile?: string,
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
+  customLogger?: Logger,
 ): Promise<{
   path: string
   config: UserConfig
@@ -1016,9 +1018,11 @@ export async function loadConfigFromFile(
       dependencies: bundled.dependencies,
     }
   } catch (e) {
-    createLogger(logLevel).error(
+    createLogger(logLevel, { customLogger }).error(
       colors.red(`failed to load config from ${resolvedPath}`),
-      { error: e },
+      {
+        error: e,
+      },
     )
     throw e
   }
