@@ -1,5 +1,8 @@
 ## 5.1.0 (2024-02-08)
 
+Vite 5.1 is out! Read the announcement blog post at https://vitejs.dev/blog/announcing-vite5-1!
+
+
 * chore: revert #15746 (#15839) ([ed875f8](https://github.com/vitejs/vite/commit/ed875f8)), closes [#15746](https://github.com/vitejs/vite/issues/15746) [#15839](https://github.com/vitejs/vite/issues/15839)
 * fix: pass `customLogger` to `loadConfigFromFile` (fix #15824) (#15831) ([55a3427](https://github.com/vitejs/vite/commit/55a3427)), closes [#15824](https://github.com/vitejs/vite/issues/15824) [#15831](https://github.com/vitejs/vite/issues/15831)
 * fix(deps): update all non-major dependencies (#15803) ([e0a6ef2](https://github.com/vitejs/vite/commit/e0a6ef2)), closes [#15803](https://github.com/vitejs/vite/issues/15803)
@@ -20,45 +23,6 @@
 
 
 ## 5.1.0-beta.6 (2024-02-01)
-
-### Vite Runtime API
-
-Vite 5.1 adds experimental support for a new Vite Runtime API. It allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This lets library and framework authors to implement their own layer of communication between the server and the runtime. This new API is intended to replace Vite's current SSR primitives once it is stable. Apart from this flexibility, Vite will finally support HMR for SSR. Read more in the [Vite Runtime API guide](https://main.vitejs.dev/guide/api-vite-runtime) and [give us feedback](https://github.com/vitejs/vite/discussions/15774).
-
-* feat: experimental Vite Runtime API (#12165) ([8b3ab07](https://github.com/vitejs/vite/commit/8b3ab07)), closes [#12165](https://github.com/vitejs/vite/issues/12165)
-
-### Unlocking downstream projects
-
-Vite 5.1 will add support for `.css?url`, that was the last remain hurdle in Remix move to Vite.
-
-* fix(css): `.css?url` support (#15259) ([ed56d96](https://github.com/vitejs/vite/commit/ed56d96)), closes [#15259](https://github.com/vitejs/vite/issues/15259)
-
-### Vite performance improvements
-
-Vite keeps getting faster on each release, and Vite 5.1 is packed with performance improvements. Vite now has opt-in support for running CSS preprocessors in threads. For a Vuetify 2 project, dev startup time was reduced by 40%.
-
-* perf: use thread for preprocessors (#13584) ([acd795f](https://github.com/vitejs/vite/commit/acd795f)), closes [#13584](https://github.com/vitejs/vite/issues/13584)
-
-There are also new tools to speed up dev server cold start. You can set `optimizeDeps.holdUntilCrawlEnd: false` to switch to a new strategy for deps optimization that may help in big projects. We're considering switching to this strategy by default in the future.
-
-* feat(optimizer): holdUntilCrawlEnd option (#15244) ([b7c6629](https://github.com/vitejs/vite/commit/b7c6629)), closes [#15244](https://github.com/vitejs/vite/issues/15244)
-
-The dev server had several perf gains in general too:
-
-* perf: middleware to short-circuit on 304 (#15586) ([35ae4f8](https://github.com/vitejs/vite/commit/35ae4f8)), closes [#15586](https://github.com/vitejs/vite/issues/15586)
-* perf: avoid parseRequest (#15617) ([0cacfad](https://github.com/vitejs/vite/commit/0cacfad)), closes [#15617](https://github.com/vitejs/vite/issues/15617)
-* feat(hmr): reload for circular imports only if error (#15118) ([6ace32b](https://github.com/vitejs/vite/commit/6ace32b)), closes [#15118](https://github.com/vitejs/vite/issues/15118)
-* feat: enable fs.cachedChecks by default (#15704) ([a05c709](https://github.com/vitejs/vite/commit/a05c709)), closes [#15704](https://github.com/vitejs/vite/issues/15704)
-
-### Deprecations
-
-We continue to reduce Vite's API surface where possible to make the project maintainable long term.
-
-* feat(glob-import): deprecate as option (#14420) ([953e697](https://github.com/vitejs/vite/commit/953e697)), closes [#14420](https://github.com/vitejs/vite/issues/14420)
-* refactor: remove build time pre-bundling (#15184) ([757844f](https://github.com/vitejs/vite/commit/757844f)), closes [#15184](https://github.com/vitejs/vite/issues/15184)
-
-
-### Commits in beta.6
 
 * feat: experimental Vite Runtime API (#12165) ([8b3ab07](https://github.com/vitejs/vite/commit/8b3ab07)), closes [#12165](https://github.com/vitejs/vite/issues/12165)
 * fix: add ref() and unref() to chokidar.d.ts for typescript build to work (#15706) ([6b45037](https://github.com/vitejs/vite/commit/6b45037)), closes [#15706](https://github.com/vitejs/vite/issues/15706)
