@@ -197,7 +197,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(165)],
   })
 }
 
@@ -327,18 +327,22 @@ const __require = require;
  * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
+  let size = 0
+
   return {
     name: 'bundle-limit',
-    generateBundle(options, bundle) {
-      const size = Buffer.byteLength(
+    generateBundle(_, bundle) {
+      size = Buffer.byteLength(
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
           .join(''),
         'utf-8',
       )
+    },
+    closeBundle() {
       const kb = size / 1000
       if (kb > limit) {
-        throw new Error(
+        this.error(
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,

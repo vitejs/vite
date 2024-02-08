@@ -1,8 +1,8 @@
 diff --git a/lib/fsevents-handler.js b/lib/fsevents-handler.js
-index 0f7f2cba857e0dbe001a5597061b11a9268d1e0e..5e99d97b917f8e2616cd3deb48b7a19d8b038928 100644
+index fe29393c179d3d6673f996ca6f95bbc83f9a0699..08e425fa3135df4b6d1912329f4d8b8b99c8048c 100644
 --- a/lib/fsevents-handler.js
 +++ b/lib/fsevents-handler.js
-@@ -303,7 +303,8 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
+@@ -305,7 +305,8 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
    if (this.fsw.closed || this.fsw._isIgnored(watchPath)) return;
    const opts = this.fsw.options;
    const watchCallback = async (fullPath, flags, info) => {

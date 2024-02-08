@@ -12,7 +12,7 @@
     "noUnusedLocals": true,
     "esModuleInterop": true,
     "paths": {
-      "vite": ["../vite/src/node/index.js"],
-    },
-  },
+      "vite": ["../vite/src/node/index.js"]
+    }
+  }
 }
