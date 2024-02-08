@@ -40,8 +40,8 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.23.6",
-    "@eslint-types/typescript-eslint": "^6.18.1",
+    "@babel/types": "^7.23.9",
+    "@eslint-types/typescript-eslint": "^6.19.1",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.6",
@@ -53,14 +53,14 @@
     "@types/fs-extra": "^11.0.4",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.6",
-    "@types/node": "^20.11.5",
+    "@types/node": "^20.11.16",
     "@types/picomatch": "^2.3.3",
     "@types/sass": "~1.43.1",
     "@types/semver": "^7.5.6",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^4.1.0",
     "eslint": "^8.56.0",
@@ -71,22 +71,22 @@
     "execa": "^8.0.1",
     "feed": "^4.2.2",
     "fs-extra": "^11.2.0",
-    "lint-staged": "^15.2.0",
-    "npm-run-all2": "^6.1.1",
+    "lint-staged": "^15.2.2",
+    "npm-run-all2": "^6.1.2",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.41.1",
-    "prettier": "3.2.4",
+    "playwright-chromium": "^1.41.2",
+    "prettier": "3.2.5",
     "rimraf": "^5.0.5",
     "rollup": "^4.2.0",
-    "semver": "^7.5.4",
+    "semver": "^7.6.0",
     "simple-git-hooks": "^2.9.0",
     "tslib": "^2.6.2",
     "tsx": "^4.7.0",
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-rc.40",
-    "vitest": "^1.2.1",
+    "vitepress": "1.0.0-rc.42",
+    "vitest": "^1.2.2",
     "vue": "^3.4.15"
   },
   "simple-git-hooks": {
@@ -106,7 +106,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.14.2",
+  "packageManager": "pnpm@8.15.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
@@ -124,7 +124,7 @@
       }
     },
     "patchedDependencies": {
-      "chokidar@3.5.3": "patches/chokidar@3.5.3.patch",
+      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch",
       "sirv@2.0.4": "patches/sirv@2.0.4.patch"
     },

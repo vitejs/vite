@@ -5,6 +5,6 @@
     "types": [],
     "target": "ES2019",
     "lib": ["ESNext", "DOM"],
-    "declaration": false,
-  },
+    "declaration": false
+  }
 }
