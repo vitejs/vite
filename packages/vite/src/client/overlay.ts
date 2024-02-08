@@ -177,6 +177,16 @@ export class ErrorOverlay extends HTMLElement {
   constructor(err: ErrorPayload['err'], links = true) {
     super()
     this.root = this.attachShadow({ mode: 'open' })
+
+    if (typeof trustedTypes !== 'undefined') {
+      const sanitizer = trustedTypes.createPolicy('error-overlay', {
+        createHTML: (t: string) => t,
+      })
+      this.root.innerHTML = sanitizer.createHTML(template)
+    } else {
+      this.root.innerHTML = template
+    }
+
     this.root.innerHTML = template
 
     codeframeRE.lastIndex = 0
