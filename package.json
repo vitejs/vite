@@ -124,7 +124,7 @@
       }
     },
     "patchedDependencies": {
-      "chokidar@3.5.3": "patches/chokidar@3.5.3.patch",
+      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch",
       "sirv@2.0.4": "patches/sirv@2.0.4.patch"
     },
