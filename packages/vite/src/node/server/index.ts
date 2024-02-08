@@ -88,6 +88,7 @@ import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import directoryIndex from './middlewares/directoryIndex'
 import { warmupFiles } from './warmup'
 
 export interface ServerOptions extends CommonServerOptions {
@@ -843,6 +844,11 @@ export async function _createServer(
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(root, server))
+
+    // handle directory indexes
+    const directoryIndexPlugin = directoryIndex()
+    ;(directoryIndexPlugin as any).configResolved(config)
+    ;(directoryIndexPlugin as any).configureServer(server)
 
     // handle 404s
     middlewares.use(notFoundMiddleware())
