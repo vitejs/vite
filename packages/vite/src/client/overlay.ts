@@ -7,9 +7,15 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
+// Error Template
+const template = document.createElement('div')
+template.classList.add('backdrop')
+template.setAttribute('part', 'backdrop')
+
+// Style
 // set :host styles to make playwright detect the element as visible
-const template = /*html*/ `
-<style>
+const style = document.createElement('style')
+style.textContent = `
 :host {
   position: fixed;
   top: 0;
@@ -148,21 +154,72 @@ kbd {
   border-color: rgb(54, 57, 64);
   border-image: initial;
 }
-</style>
-<div class="backdrop" part="backdrop">
-  <div class="window" part="window">
-    <pre class="message" part="message"><span class="plugin" part="plugin"></span><span class="message-body" part="message-body"></span></pre>
-    <pre class="file" part="file"></pre>
-    <pre class="frame" part="frame"></pre>
-    <pre class="stack" part="stack"></pre>
-    <div class="tip" part="tip">
-      Click outside, press <kbd>Esc</kbd> key, or fix the code to dismiss.<br>
-      You can also disable this overlay by setting
-      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">${hmrConfigName}.</code>
-    </div>
-  </div>
-</div>
 `
+
+// Error Window
+const errorWindow = document.createElement('div')
+errorWindow.classList.add('window')
+errorWindow.setAttribute('part', 'window')
+const message = document.createElement('pre')
+message.classList.add('message')
+message.setAttribute('part', 'message')
+const plugin = document.createElement('span')
+plugin.classList.add('plugin')
+plugin.setAttribute('part', 'plugin')
+const messageBody = document.createElement('span')
+messageBody.classList.add('message-body')
+messageBody.setAttribute('part', 'message-body')
+message.appendChild(plugin)
+message.appendChild(messageBody)
+
+// Error Info
+const file = document.createElement('pre')
+file.classList.add('file')
+file.setAttribute('part', 'file')
+const frame = document.createElement('pre')
+frame.classList.add('frame')
+frame.setAttribute('part', 'frame')
+const stack = document.createElement('pre')
+stack.classList.add('stack')
+stack.setAttribute('part', 'stack')
+
+// Tip
+const tip = document.createElement('div')
+tip.classList.add('tip')
+tip.setAttribute('part', 'tip')
+tip.appendChild(document.createTextNode('Click outside, press '))
+const kbd = document.createElement('kbd')
+const kbdContent = document.createTextNode('Esc')
+kbd.appendChild(kbdContent)
+tip.appendChild(kbd)
+tip.appendChild(document.createTextNode(' key, or fix the code to dismiss.'))
+tip.appendChild(document.createElement('br'))
+tip.appendChild(
+  document.createTextNode('You can also disable this overlay by setting '),
+)
+const hmr = document.createElement('code')
+hmr.setAttribute('part', 'config-option-name')
+hmr.appendChild(document.createTextNode('server.hmr.overlay'))
+tip.appendChild(hmr)
+tip.appendChild(document.createTextNode(' to '))
+const hmrValue = document.createElement('code')
+hmrValue.setAttribute('part', 'config-option-value')
+hmrValue.appendChild(document.createTextNode('false'))
+tip.appendChild(hmrValue)
+tip.appendChild(document.createTextNode(' in '))
+const hmrConfig = document.createElement('code')
+hmrConfig.setAttribute('part', 'config-file-name')
+hmrConfig.appendChild(document.createTextNode(hmrConfigName))
+tip.appendChild(hmrConfig)
+tip.appendChild(document.createTextNode('.'))
+
+template.appendChild(style)
+template.appendChild(errorWindow)
+errorWindow.appendChild(message)
+errorWindow.appendChild(file)
+errorWindow.appendChild(frame)
+errorWindow.appendChild(stack)
+errorWindow.appendChild(tip)
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
@@ -178,16 +235,7 @@ export class ErrorOverlay extends HTMLElement {
     super()
     this.root = this.attachShadow({ mode: 'open' })
 
-    if (typeof trustedTypes !== 'undefined') {
-      const sanitizer = trustedTypes.createPolicy('error-overlay', {
-        createHTML: (t: string) => t,
-      })
-      this.root.innerHTML = sanitizer.createHTML(template)
-    } else {
-      this.root.innerHTML = template
-    }
-
-    this.root.innerHTML = template
+    this.root.appendChild(template)
 
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
