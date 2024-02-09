@@ -1,3 +1,11 @@
+## <small>5.1.1 (2024-02-09)</small>
+
+* fix: empty CSS file was output when only .css?url is used (#15846) ([b2873ac](https://github.com/vitejs/vite/commit/b2873ac)), closes [#15846](https://github.com/vitejs/vite/issues/15846)
+* fix: skip not only .js but also .mjs manifest entries (#15841) ([3d860e7](https://github.com/vitejs/vite/commit/3d860e7)), closes [#15841](https://github.com/vitejs/vite/issues/15841)
+* chore: post 5.1 release edits (#15840) ([9da6502](https://github.com/vitejs/vite/commit/9da6502)), closes [#15840](https://github.com/vitejs/vite/issues/15840)
+
+
+
 ## 5.1.0 (2024-02-08)
 
 Vite 5.1 is out! Read the announcement blog post at https://vitejs.dev/blog/announcing-vite5-1!
